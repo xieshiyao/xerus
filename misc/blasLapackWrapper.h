@@ -1,0 +1,165 @@
+// Xerus - A General Purpose Tensor Library
+// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// 
+// Xerus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// Xerus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with Xerus. If not, see <http://www.gnu.org/licenses/>.
+//
+// For further information on Xerus visit https://libXerus.org 
+// or contact us at contact@libXerus.org.
+
+#pragma once
+
+#include <complex.h>
+// Fix for broken complex implementation
+#undef I
+
+// Workaround for brocken Lapack
+#define lapack_complex_float    float _Complex
+#define lapack_complex_double   double _Complex
+extern "C"
+{
+    #include <cblas.h> 
+}
+#include <lapacke/lapacke.h>
+
+#include <memory>
+#include "standard.h"
+#include "test.h"
+ 
+#ifdef BLAS_ANALYSIS
+    #include <map>
+    #include <sstream>
+    #include "timeMeasure.h"
+    #include "stringUtilities.h"
+    
+    START_MISC_NAMESPACE
+
+    class CallCounter {
+    public:
+        std::map<std::string, std::pair<size_t, size_t>> calls;
+        size_t totalTime;
+        size_t totalCalls;
+    };
+
+    extern std::map<std::string, CallCounter> callCounter;
+    
+    void add_blas_call(const std::string& _callName, const std::string& _callParameter, const size_t _startTime);
+    
+    END_MISC_NAMESPACE
+#endif
+
+START_MISC_NAMESPACE
+    
+std::string print_blas_analysis();
+
+size_t total_blas_time();
+
+namespace blasWrapper {
+    //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
+    
+    ///@brief: Computes the two norm =||x||
+    double two_norm(const double* const _x, const size_t _n);
+    
+    ///@brief: Computes the dot product = x^T*y
+    double dot_product(const double* const _x, const size_t _n, const double* const _y);
+    
+    
+    //----------------------------------------------- LEVEL II BLAS ---------------------------------------------------------
+    
+    ///@brief: Perfroms x = alpha*OP(A)*y
+    void matrix_vector_product(double* const _x, const size_t _m, const double _alpha, const double* const _A, const size_t _n, const bool _transposed, const double* const _y);
+    
+    ///@brief: Performs A = alpha*x*y^T
+    void dyadic_vector_product(double* _A, const size_t _m, const size_t _n, const double _alpha, const double*const _x, const double*const _y);
+    
+    //----------------------------------------------- LEVEL III BLAS --------------------------------------------------------
+    ///@brief: Performs the Matrix-Matrix product C = alpha*OP(A) * OP(B)
+    void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const double* const _A,
+                                const size_t _lda,
+                                const bool _transposeA,
+                                const size_t _middleDim,
+                                const double* const _B,
+                                const size_t _ldb,
+                                const bool _transposeB);
+    
+    ///@brief: Performs the Matrix-Matrix product C = alpha*OP(A) * OP(B)
+    _inline_ void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const double* const _A,
+                                const bool _transposeA,
+                                const size_t _middleDim,
+                                const double* const _B,
+                                const bool _transposeB) {
+        
+        matrix_matrix_product( _C, _leftDim, _rightDim, _alpha, _A, _transposeA ? _leftDim : _middleDim, _transposeA, _middleDim, _B, _transposeB ? _middleDim : _rightDim, _transposeB);
+    }
+    
+    //----------------------------------------------- LAPACK ----------------------------------------------------------------
+    
+    ///@brief: Performs (U,S,V) = SVD(A)
+    void svd( double* const _U, double* const _S, double* const _Vt, const double* const _A, const size_t _m, const size_t _n);
+
+    ///@brief: Performs (U,S,V) = SVD(A). Destroys A
+    void svd_destructive( double* const _U, double* const _S, double* const _Vt, double* const _A, const size_t _m, const size_t _n);
+    
+    
+    
+    ///@brief: Performs (Q,R) = QR(A)
+    void qr( double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n);
+    
+    ///@brief: Performs (AtoQ,R) = QR(AtoQ)
+    void inplace_qr(double* const _AtoQ, double* const _R, const size_t _m, const size_t _n);
+    
+    ///@brief: Performs (Q,R) = QR(A), destroys A in the process
+    void qr_destructive( double* const _Q, double* const _R, double* const _A, const size_t _m, const size_t _n);
+    
+    
+    
+    ///@brief: Performs (R,Q) = RQ(A)
+    void rq( double* const _R, double* const _Q, const double* const _A, const size_t _m, const size_t _n);
+    
+    ///@brief: Performs (R,AtoQ) = RQ(AtoQ)
+    void inplace_rq( double* const _R, double* const _AtoQ, const size_t _m, const size_t _n);
+    
+    ///@brief: Performs (R,Q) = RQ(A), destroys A in the process
+    void rq_destructive( double* const _R, double* const _Q, double* const _A, const size_t _m, const size_t _n);
+
+    
+    
+    ///@brief: Solves Ax = b for x
+    void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b);
+    
+    ///@brief: Solves Ax = b for x, Destroys A and b
+    void solve_destructive( double* const _bToX, double* const _A, const size_t _n);
+    
+    
+    
+    ///@brief: Solves min ||Ax - b||_2 for x
+    void solve_least_squares( double* const _x, const double* const A, const size_t _m, const size_t _n, const double* const _b);
+    
+    ///@brief: Solves min ||Ax - b||_2 for x
+    void solve_least_squares_destructive( double* const _x, double* const A, const size_t _m, const size_t _n, double* const _b);
+    
+    
+    
+    ///@brief: Performs B = A^-1
+    void inverse( double* const _B, const double* const _A, const size_t _m, const size_t _n);
+}
+
+END_MISC_NAMESPACE

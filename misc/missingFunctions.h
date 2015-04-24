@@ -1,0 +1,230 @@
+// Xerus - A General Purpose Tensor Library
+// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// 
+// Xerus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// Xerus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with Xerus. If not, see <http://www.gnu.org/licenses/>.
+//
+// For further information on Xerus visit https://libXerus.org 
+// or contact us at contact@libXerus.org.
+
+#pragma once
+#include <vector>
+#include <set>
+#include <map>
+#include <algorithm>
+#include <iostream>
+#include <cstring>
+#include <memory>
+#include "standard.h"
+#include "sfinae.h"
+#include "namedLogger.h"
+
+// Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
+#define VLA(T, name) auto name##_store = MISC_NAMESPACE::make_unique_array(new T); auto const & name = name##_store.get();
+
+START_MISC_NAMESPACE
+
+template<class T>
+std::unique_ptr<T> make_unique(T* _ptr) {
+	return std::unique_ptr<T>(_ptr);
+}
+
+template<class T>
+std::unique_ptr<T[]> make_unique_array(T* _ptr) {
+	return std::unique_ptr<T[]>(_ptr);
+}
+
+GENERATE_HAS_MEMBER(count)
+
+
+///@brief: Counts how often an element is contained in an arbitary container
+template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+    size_t count = 0;
+    for(const item_t& otherItem : _container) {
+        if(otherItem == _item) { count++; }
+    }
+    return count;
+}
+
+///@brief: Counts how often an element is contained in an arbitary container
+template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+    return _container.count(_item);
+}
+
+///@brief: Checks whether an arbitary container contains a certain element.
+template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+    return std::find(_container.begin(), _container.end(), _item) != _container.end();
+}
+
+///@brief: Checks whether an arbitary container contains a certain element.
+template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+    return _container.find(_item) != _container.end();
+}
+
+
+
+///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
+template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
+bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
+    for(const item_t &item : _smallContainer) {
+        if(!contains(_largeContainer, item)) { return false; }
+    }
+    return true;
+}
+
+///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+bool disjunct(const container_t<item_t, rest_t...>& _containerA, const container_t<item_t, rest_t...>& _containerB) {
+    for(const item_t& item : _containerA) {
+        if(contains(_containerB, item)) { return false; }
+    }
+    return true;
+}
+
+
+///@brief: Checks whether all object in two iterator ranges coincide.
+template< class InputIt1, class InputIt2 >
+bool equal( InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2 ) 
+{
+    while (first1 != last1) {
+        if (first2 == last2 || *first1 != *first2) return false;
+        ++first1; ++ first2;
+    }
+    return first2 == last2;
+}
+
+///@brief: Selects the maximal element from an arbitary container.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+item_t max(const container_t<item_t, rest_t...>& _container) {
+    REQUIRE(!_container.empty(), "max must not be invoked with empty container");
+    item_t result = *_container.begin();
+    for(const item_t &item : _container) {
+        if(item > result) { result = item; }
+    }
+    return result;
+}
+
+///@brief: Selects the minimal element from an arbitary container.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+item_t min(const container_t<item_t, rest_t...>& _container) {
+    REQUIRE(!_container.empty(), "min must not be invoked with empty container");
+    item_t result = *_container.begin();
+    for(const item_t &item : _container) {
+        if(item < result) { result = item; }
+    }
+    return result;
+}
+
+
+///@brief: Calculates the sum of all entries of an arbitary container.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+_pure_ item_t sum(const container_t<item_t, rest_t...>& _container) {
+    item_t sum = item_t(0);
+    for(const item_t& item : _container){
+        sum += item;
+    }
+    return sum;
+}
+
+///@brief: Calculates the product of all entries of an arbitary container.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+_pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
+    item_t product = item_t(1);
+    for(const item_t& item : _container){ product *= item; }
+    return product;
+}
+
+///@brief: Removes _item from the container _container.
+template<template<class, class...> class container_t, class item_t, class... rest_t>
+void remove(container_t<item_t, rest_t...>& _container, const item_t _item) {
+    std::remove_if(_container.begin(), _container.end(), [&_item](const item_t& _test){return _test == _item;});
+}
+
+///@brief: Calculates _a*_a
+template<class T>
+T sqr(const T &_a) {
+	return _a*_a;
+}
+
+///@brief: Calculates _base^_exp by binary exponentiation
+template<class T> 
+constexpr T pow(const T &_base, const uint64 _exp) {
+    return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
+}
+
+
+///@brief: Deprecated
+template<class T>
+bool compare_memory_to_vector(T* _ptr, const std::vector<T>& _vec) {
+    return memcmp(_ptr, &(_vec[0]), sizeof(T)*_vec.size()) == 0;
+}
+
+///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
+template<class T>
+bool approx_equal(T _a, T _b, T _eps) {
+	return std::abs(_a-_b) < _eps;
+}
+
+/// Pipe normal containers to ostreams
+template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
+               std::is_base_of<std::vector<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{} 
+            || std::is_base_of<std::set<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{}, 
+            int>::type = 0>
+std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
+    if(_container.size() == 0) { _out << "{ }"; return _out; }
+    _out << "{ ";
+    for(const item_t& item : _container) { _out << item << ", "; }
+    _out << "\b\b }";
+    return _out;
+}
+
+/// Pipe map containers to ostreams
+template<class T, class U>
+std::ostream& operator<<(std::ostream& _out, const std::map<T,U>& _set) {
+    if(_set.size() == 0) { _out << "{ }"; return _out; }
+    _out << "{ ";
+    for(const std::pair<T,U>& item : _set) {  _out << "(" << item.first << ", " << item.second << "), "; }
+    _out << "\b\b }";
+    return _out;
+}
+
+END_MISC_NAMESPACE
+
+// We need these functions two times in case there is a misc namespace
+#ifdef MISC_NAMESPACE
+    /// Pipe normal containers to ostreams
+    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
+                std::is_base_of<std::vector<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{} 
+                || std::is_base_of<std::set<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{}, 
+                int>::type = 0>
+    std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
+        if(_container.size() == 0) { _out << "{ }"; return _out; }
+        _out << "{ ";
+        for(const item_t& item : _container) { _out << item << ", "; }
+        _out << "\b\b }";
+        return _out;
+    }
+
+    template<class T, class U>
+    std::ostream& operator<<(std::ostream& _out, const std::map<T,U>& _set) {
+        if(_set.size() == 0) { _out << "{ }"; return _out; }
+        _out << "{ ";
+        for(const std::pair<T,U>& item : _set) {  _out << "(" << item.first << ", " << item.second << "), "; }
+        _out << "\b\b }";
+        return _out;
+    }
+#endif

@@ -1,0 +1,50 @@
+// Xerus - A General Purpose Tensor Library
+// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// 
+// Xerus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// Xerus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with Xerus. If not, see <http://www.gnu.org/licenses/>.
+//
+// For further information on Xerus visit https://libXerus.org 
+// or contact us at contact@libXerus.org.
+
+#pragma once
+#include <exception>
+#include <string>
+#include "standard.h"
+#include "namedLogger.h"
+#include "stringUtilities.h"
+
+START_MISC_NAMESPACE
+
+struct generic_error : public std::exception {
+	std::string error_info;
+	
+	template<class T>
+    generic_error& operator<<(const T &_info) noexcept {
+		error_info += ::MISC::to_string(_info);
+		return *this;
+	}
+	
+	const char* what() const noexcept override {
+		return &error_info[0];
+	}
+	
+    generic_error(const generic_error &_other) noexcept
+		: error_info(_other.error_info) { }
+	
+    generic_error() {};
+};
+
+#define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")
+
+END_MISC_NAMESPACE
