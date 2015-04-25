@@ -32,9 +32,11 @@ namespace xerus {
         IndexedTensorWritable<TensorNetwork>(new TensorNetwork(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
     
     // Allow casts from tensor Network to FullTensor
+    template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<TensorNetwork> &  _other ) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), _other.indices, true) { }
 
+    template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other ) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), std::move(_other.indices), true) { }
 }
