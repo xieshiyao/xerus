@@ -96,6 +96,14 @@ namespace xerus {
         virtual void reset(      std::vector<size_t>&& _newDim) = 0;
     
         
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        virtual value_t& operator[](const size_t _position) = 0;
+        virtual value_t operator[](const size_t _position) const = 0;
+        
+        virtual value_t& operator[](const std::vector<size_t>& _positions) = 0;
+        virtual value_t operator[](const std::vector<size_t>& _positions) const = 0;
+        
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         template<typename... args>
         IndexedTensor<Tensor> operator()(args... _args) {

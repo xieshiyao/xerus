@@ -15,7 +15,6 @@ ifndef USECLANG
 	OPTIMIZE += --param ggc-min-heapsize=$(FREE_RAM) # Allow GCC to use X KB ram before bothering to free any
 endif
 
-<<<<<<< HEAD:misc/generalMakefile
 #Disabeled Warnings
 WARNINGS += -Wno-comment				# Ignore warning about /* inside /*...*/
 WARNINGS += -Wno-unused-parameter			# No warning about unused parameters

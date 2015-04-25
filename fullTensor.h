@@ -200,11 +200,11 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        value_t& operator[](const size_t _position);
-        value_t  operator[](const size_t _position) const;
+        virtual value_t& operator[](const size_t _position) override;
+        virtual value_t operator[](const size_t _position) const override;
         
-        value_t& operator[](const std::vector<size_t>& _positions);
-        value_t  operator[](const std::vector<size_t>& _positions) const;
+        virtual value_t& operator[](const std::vector<size_t>& _positions) override;
+        virtual value_t operator[](const std::vector<size_t>& _positions) const override;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

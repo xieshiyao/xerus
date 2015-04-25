@@ -86,10 +86,13 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        value_t& operator[](const size_t _position);
-        value_t& operator[](const std::vector<size_t>& _indices);
         
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        virtual value_t& operator[](const size_t _position) override;
+        virtual value_t  operator[](const size_t _position) const override;
+        
+        virtual value_t& operator[](const std::vector<size_t>& _positions) override;
+        virtual value_t operator[](const std::vector<size_t>& _positions) const override;
         
         value_t at(const size_t _position) const;
         value_t at(const std::vector<size_t>& _indices) const;
