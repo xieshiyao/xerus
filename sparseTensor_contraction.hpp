@@ -35,46 +35,102 @@
 // };
 
 
-// #include "xerus.h"
+
 
 namespace xerus {
 
     // Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
-    cs_di_sparse to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _matrificationIndices ) {
-        std::vector<Index> reorderedIndices(_matrificationIndices);
-        size_t m = 1, n = 1;
-        size_t spanOffset = 0;
-        for(const Index& idx : _tensor.indices) {
-            if(contains(_matrificationIndices, idx)) {
-                for(size_t i = 0; i < idx.span; ++i) {
-                    m *= _tensor.tensorObjectReadOnly->dimensions[spanOffset+i];
-                }
-            } else {
-                reorderedIndices.push_back(idx);
-                for(size_t i = 0; i < idx.span; ++i) {
-                    n *= _tensor.tensorObjectReadOnly->dimensions[spanOffset+i];
-                }
-            }
-            spanOffset += idx.span;
+    cs_di_sparse to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
+        REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
+        
+        size_t rowDim = 1;
+        size_t colDim = 1;
+        const AssignedIndices assIndices = _tensor.assign_indices();
+        for(size_t i = 0; i < assIndices.numIndices; ++i) {
+            if(contains(_lhsIndices, assIndices.indices[i])) {
+                REQUIRE(assIndices.indexOpen[i], "Internal Error.");
+                rowDim *= assIndices.indexDimensions[i];
+            } else if(contains(_rhsIndices, assIndices.indices[i])) {
+                REQUIRE(assIndices.indexOpen[i], "Internal Error.");
+                colDim *= assIndices.indexDimensions[i];
+            }   
         }
         
-        REQUIRE(m*n == _tensor.tensorObjectReadOnly->size, "Internal Error.");
+        
+        std::vector<Index> inverseIndexOrder(_rhsIndices);
+        inverseIndexOrder.insert(inverseIndexOrder.end(), _lhsIndices.begin(), _lhsIndices.end());
         
         SparseTensor reorderedTensor;
-        reorderedTensor(reorderedIndices) = _tensor;
+        reorderedTensor(inverseIndexOrder) = _tensor;
         
-        
+        REQUIRE(reorderedTensor.size == rowDim*colDim, "Internal Error");
         
         cs_di_sparse cs_format;
-        cs_format.nzmax = (int) reorderedTensor.count_non_zero_entries();
-        cs_format.m = (int) m;
-        cs_format.n = (int) n;
-        cs_format.p = new int[n+1];
-        cs_format.i = new int[cs_format.nzmax];
+        cs_format.nzmax = (int) reorderedTensor.entries->size();
+        cs_format.m = (int) rowDim;
+        cs_format.n = (int) colDim;
         cs_format.x = new value_t[cs_format.nzmax];
+        cs_format.i = new int[cs_format.nzmax];
+        cs_format.p = new int[colDim+1];
         cs_format.nz = -1;
         
+        int entryPos = 0;
+        int currRow = -1;
+        cs_format.i[0] = 0;
+        
+        for(const std::pair<size_t, value_t>& entry : *reorderedTensor.entries.get() ) {
+            cs_format.x[entryPos] = entry.second;
+            cs_format.i[entryPos] = (int) (entry.first%rowDim);
+            while(currRow < (int) (entry.first/rowDim)) {
+                cs_format.p[++currRow] = entryPos;
+            }
+            entryPos++;
+        }
+        REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error");
+        while(currRow < (int) colDim+1) {
+            cs_format.p[++currRow] = entryPos;
+        }
+            
+        cs_format.p[currRow] = entryPos;
+        
         return cs_format;
+    }
+    
+    
+    SparseTensor from_cs_format(const cs_di_sparse& _cs_format, const std::vector<size_t>& _dimensions) {
+        SparseTensor reconstructedTensor(_dimensions);
+        
+        for(int i = 0; i < _cs_format.n; ++i) {
+            for(int j = _cs_format.p[i]; j < _cs_format.p[i+1]; ++j) {
+                auto ret = reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format.i[j]*_cs_format.n+i, _cs_format.x[j]));
+                REQUIRE(ret.second, "Internal Error");
+            }
+        }
+        
+        return reconstructedTensor;
+    }
+    
+    void print_cs(const cs_di_sparse& _cs_format) {
+        std::cout << "{";
+        std::cout << _cs_format.x[0];
+        for(int i = 1; i < _cs_format.nzmax; ++i) {
+            std::cout << ", " << _cs_format.x[i];
+        }
+        std::cout << "}" << std::endl;
+        
+        std::cout << "{";
+        std::cout << _cs_format.i[0];
+        for(int i = 1; i < _cs_format.nzmax; ++i) {
+            std::cout << ", " << _cs_format.i[i];
+        }
+        std::cout << "}" << std::endl;
+        
+        std::cout << "{";
+        std::cout << _cs_format.p[0];
+        for(int i = 1; i < _cs_format.n + 1; ++i) {
+            std::cout << ", " << _cs_format.p[i];
+        }
+        std::cout << "}" << std::endl;
     }
 
     void matrix_matrix_product( std::set<value_t>& _C,

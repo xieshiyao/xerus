@@ -76,6 +76,20 @@ help:
 	\t\tbenchmark \t\t -- Build a loosly related benchmark program.\n \
 	\t\tclean \t\t\t -- Remove all object and library and executable files.\n \
 	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n"
+	
+debug:
+	@printf "Some variables we have set:\n \
+	\t\t LIB_NAME_SHARED \t == \t $(LIB_NAME_SHARED)\n \
+	\t\t LIB_NAME_STATIC \t == \t $(LIB_NAME_STATIC)\n \
+	\t\t TEST_NAME \t == \t $(TEST_NAME)\n \
+	\t\t LIB_SOURCES \t == \t $(LIB_SOURCES)\n \
+	\t\t LIB_OBJECTS \t == \t $(LIB_OBJECTS)\n \
+	\t\t TEST_SOURCES \t == \t $(TEST_SOURCES)\n \
+	\t\t TEST_OBJECTS \t == \t $(TEST_OBJECTS)\n \
+	\t\t LOCAL_HEADERS \t == \t $(LOCAL_HEADERS)\n \
+	\t\t LOCAL_HPP \t == \t $(LOCAL_HPP)\n \
+	\t\t LOCAL_HXX \t == \t $(LOCAL_HXX)\n \
+	\t\t MINIMAL_DEPS \t == \t $(MINIMAL_DEPS)\n"
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
 	$(CXX) -D TEST_ -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
@@ -85,7 +99,7 @@ ifdef LTO
 $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)
 		gcc-ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
 else 
-$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)
+$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)     
 		ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
 endif
 

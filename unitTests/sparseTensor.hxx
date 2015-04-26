@@ -20,6 +20,39 @@
 #pragma once
 #include "../xerus.h"
 
+
+UNIT_TEST(SparseTensor, X,
+    Index i, j, k;
+    
+    SparseTensor SA({8,8});
+    
+    
+    SA[{0,0}] = 1;
+    SA[{1,1}] = 2; 
+    SA[{2,2}] = 3;
+    SA[{3,3}] = 4; 
+    SA[{3,4}] = 5;
+    SA[{4,4}] = 6;
+    SA[{5,4}] = 7;
+    SA[{5,5}] = 8;
+    
+    FullTensor FA(SA);
+    FullTensor FR;
+    
+    FR(i,j) = FA(i,k)*FA(k,j);
+    
+    cs_di_sparse inputA = to_cs_format(SA(i,j), {i}, {j});
+    cs_di_sparse inputB = to_cs_format(SA(i,j), {i}, {j});
+    
+    cs_di_sparse* cs_result = cs_multiply(&inputA, &inputB);
+    
+    SparseTensor SR = from_cs_format(*cs_result, {8,8});
+    
+    TEST(approx_equal(FR, FullTensor(SR), 1e-12));
+    
+    std::cout << std::endl << FR.to_string() << std::endl << std::endl << SR.to_string() << std::endl;
+)
+
 UNIT_TEST(SparseTensor, Creation,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0); 

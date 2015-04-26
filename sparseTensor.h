@@ -131,6 +131,9 @@ namespace xerus {
         
         /// Returns the frobenious norm of the tensor
         virtual value_t frob_norm() const;
+        
+        /// Returns a string representation of the Tensor
+        std::string to_string() const;
     };
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

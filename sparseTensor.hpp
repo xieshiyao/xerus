@@ -327,6 +327,22 @@ namespace xerus {
         return factor*norm;
     }
     
+    std::string SparseTensor::to_string() const {
+        if (degree() == 0) return xerus::to_string(at(0));
+        std::string result;
+        for (size_t i=0; i<size; ++i) {
+            result += xerus::to_string(at(i)) + " ";
+            if ((i+1) % (size / dimensions[0]) == 0) {
+                result += '\n';
+            } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
+                result += '\t';
+            } else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
+                result += "/ ";
+            }
+        }
+        return result;
+    }
+    
 }
 
 bool approx_equal(const xerus::SparseTensor& _sparse, const xerus::FullTensor& _full, const xerus::value_t _eps, const bool pureDataCompare) {

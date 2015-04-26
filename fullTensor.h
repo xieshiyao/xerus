@@ -246,6 +246,8 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+        /// Returns a string representation of the Tensor
         std::string to_string() const;
         
         bool compare_data(std::vector<value_t> _values) const;

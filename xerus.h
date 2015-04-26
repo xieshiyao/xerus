@@ -39,7 +39,7 @@
 // File which sets the custom log levels
 #include "tensorLogger.h"
 
-
+   
 namespace xerus {
     /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.
     typedef double value_t;
@@ -68,6 +68,7 @@ namespace xerus {
 #include "tensor.h"
 #include "fullTensor.h"
 #include "sparseTensor.h"
+#include "sparseTensor_contraction.h"
 #include "indexedTensor_tensor.h"
 #include "indexedTensor_tensor_operators.h"
 #include "indexedTensor_tensor_factorisations.h"
