@@ -27,14 +27,10 @@ std::string demangle_cxa(const std::string &_cxa) {
 	int status;
 	std::unique_ptr<char[]> realname;
 	realname.reset(abi::__cxa_demangle(_cxa.data(), 0, 0, &status));
-	if (status != 0) {
-		return _cxa;
-	}
-	if (realname) {
-		return std::string(realname.get());
-	} else {
-		return "";
-	}
+	if (status != 0) { return _cxa; }
+
+	if (realname) { return std::string(realname.get()); } 
+	else { return ""; }
 }
 
 std::vector<std::string> explode(const std::string& _string, const char delim) {

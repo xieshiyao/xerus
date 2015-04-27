@@ -68,7 +68,7 @@ namespace xerus {
             entryPos++;
         }
         REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) rowDim << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
-        while(currRow < (int) colDim+1) {
+        while(currRow < (int) colDim) {
             cs_format->p[++currRow] = entryPos;
         }
             
