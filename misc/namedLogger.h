@@ -60,13 +60,24 @@ namespace err {
 
 // default log levels  
 #define SET_DEFAULT_LOG_LEVELS \
-    template<> struct ___logFlag<___log_namehash("fatal")>{ static const int flag = err::LOGGING_FULL; };\
+    template<> struct ___logFlag<___log_namehash("fatal")>{ static const int flag = err::LOGGING_ON_ERROR; };\
     template<> struct ___logFlag<___log_namehash("critical")>{ static const int flag = err::LOGGING_ON_ERROR; };\
     template<> struct ___logFlag<___log_namehash("error")>{ static const int flag = err::LOGGING_ON_ERROR; };\
     template<> struct ___logFlag<___log_namehash("warning")>{ static const int flag = err::LOGGING_ON_ERROR; };\
     template<> struct ___logFlag<___log_namehash("info")>{ static const int flag = err::LOGGING_ON_ERROR; };\
     template<> struct ___logFlag<___log_namehash("debug")>{ static const int flag = err::LOGGING_ON_ERROR; }; 
     
+#ifdef FATAL_
+#undef SET_DEFAULT_LOG_LEVELS
+#define SET_DEFAULT_LOG_LEVELS \
+    template<> struct ___logFlag<___log_namehash("fatal")>{ static const int flag = err::LOGGING_FULL; };\
+    template<> struct ___logFlag<___log_namehash("critical")>{ static const int flag = err::LOGGING_ON_ERROR; };\
+    template<> struct ___logFlag<___log_namehash("error")>{ static const int flag = err::LOGGING_ON_ERROR; };\
+    template<> struct ___logFlag<___log_namehash("warning")>{ static const int flag = err::LOGGING_ON_ERROR; };\
+    template<> struct ___logFlag<___log_namehash("info")>{ static const int flag = err::LOGGING_ON_ERROR; };\
+    template<> struct ___logFlag<___log_namehash("debug")>{ static const int flag = err::LOGGING_ON_ERROR; }; 
+#endif
+
 #ifdef CRITICAL_
 #undef SET_DEFAULT_LOG_LEVELS
 #define SET_DEFAULT_LOG_LEVELS \
@@ -137,40 +148,55 @@ namespace err {
 #endif  
 
 
+
 #define ___LOGBUFFER (*err::bufferStreams.curr)
+#ifdef LOG_BUFFER_
+	#include <limits>
+	namespace err {
+		struct BufferStreams {
+			std::stringstream *curr;
+			std::stringstream *old;
+			BufferStreams() {
+				old = new std::stringstream;
+				curr = new std::stringstream;
+			}
+			void checkSwitch() {
+				if (curr->str().size() > 1024*1024) {
+					delete old; 
+					old = curr;
+					curr = new std::stringstream;
+				}
+			}
+			~BufferStreams() {
+				delete old;
+				delete curr;
+			}
+		};
+		
+		extern BufferStreams bufferStreams;
+		void dump_log_buffer(std::string _comment);
+	}
+#endif
+
+
+
 #include <sstream>
-#include <limits>
 namespace err {
-    struct BufferStreams {
-        std::stringstream *curr;
-        std::stringstream *old;
-        BufferStreams() {
-            old = new std::stringstream;
-            curr = new std::stringstream;
-        }
-        void checkSwitch() {
-            if (curr->str().size() > 1024*1024) {
-                delete old; 
-                old = curr;
-                curr = new std::stringstream;
-            }
-        }
-        ~BufferStreams() {
-            delete old;
-            delete curr;
-        }
-    };
-    extern BufferStreams bufferStreams;
-    void dump_log_buffer(std::string _comment);
     extern std::mutex namedLoggerMutex;
     extern std::string logFilePrefix;
+	extern bool silenced;
 }
- 
-    
+
+
 // no exit if inside unit-test
-#ifdef TEST_
+#if defined(TEST_) && defined(NO_XERUS_EXCEPTIONS)
+#pragma warning "tried to compile with test but without exceptions... failtests would exit the program"
+#undef NO_XERUS_EXCEPTIONS
+#endif
+
+
+#ifndef NO_XERUS_EXCEPTIONS
 	#include "exceptions.h"
-	#define exit(a) XERUS_THROW(::MISC::generic_error() << "exit(a) called (ignored by unit-testing)\ncallstack:\n" << ::MISC::get_call_stack());
 #endif
     
 #define ___LOG_TIME std::right << (1900+__ltm->tm_year) << '-' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_mon \
@@ -183,94 +209,66 @@ namespace err {
 				<< std::setfill(' ') << std::setw(12) << std::left
     
 #define COMPILE_TIME_EVAL(e) (std::integral_constant<decltype(e), e>::value)
-    
-#ifndef TEST_
-#ifndef LOG_BUFFER_
-    #define LOG(lvl, ...) \
-        if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag == err::LOGGING_FULL) { \
-			time_t __t=std::time(0); tm *__ltm = localtime(&__t);\
-			err::namedLoggerMutex.lock(); \
-            ___LOGSTREAM << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
-			err::namedLoggerMutex.unlock(); \
-            if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) { exit(1); }; \
-        } else \
-            (void)0
-            
-#else
-    #define LOG(lvl, ...) \
-        if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::NOT_LOGGING) { \
-			std::stringstream __tmp; \
-			time_t __t=std::time(0); tm *__ltm = localtime(&__t);\
-			__tmp << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
-			err::namedLoggerMutex.lock(); \
-            if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag == err::LOGGING_FULL) { \
-                ___LOGSTREAM << __tmp.str() << std::flush; \
-            } \
-            ___LOGBUFFER << __tmp.str(); \
-            err::bufferStreams.checkSwitch(); \
-            if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("error"))) {err::dump_log_buffer(std::string("error invoked:\n")+__tmp.str()); }; \
-            if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("critical"))) {err::dump_log_buffer(std::string("critical error invoked:\n")+__tmp.str()); }; \
-            if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) {err::dump_log_buffer(std::string("fatal error invoked:\n")+__tmp.str()); exit(1); }; \
-			err::namedLoggerMutex.unlock(); \
-        } else \
-            (void)0
-// in the above note the following:
+
+
+// in the following note that:
 // - everything is piped into a stringstream for two reasons: 1. so that functions appearing in msg will only be executed once
 //                                                            2. so that buffer(pointers) can be piped as usual even though they empty the buffer while being piped
-// - in performance critical programs logging should be disabled completely, the mutex in the above code will block the whole function. a read/write mutex could
-//   increase performance a bit (by only making sure that the delete inside checkSwitch is not called why another thread is piping something) and the mutex
+// - in performance critical programs logging should be disabled completely, the mutex in the following code will block the whole function. a read/write mutex could
+//   increase performance a bit (by only making sure that the delete inside checkSwitch is not called while another thread is piping something) and the mutex
 //   in the LOG_NO_BUFFER version could be disabled completely (the streams are thread"safe" (only the output will be jumbled a bit)
-            
+
+#ifdef NO_XERUS_EXCEPTIONS
+#define NAMED_LOGGER_ON_FATAL \
+	if (!err::silenced) { \
+		if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::LOGGING_FULL) { \
+			___LOGSTREAM << __tmp.str() << "callstack:\n" << MISC::get_call_stack());\
+		} else { \
+			___LOGSTREAM << "callstack:\n" << MISC::get_call_stack());\
+		} \
+	} \
+	exit(1);
+	
+#else // with xerus exceptions
+#define NAMED_LOGGER_ON_FATAL \
+	XERUS_THROW(::MISC::generic_error() << __tmp.str() << "callstack:\n" << MISC::get_call_stack());
+	
 #endif
 
-#else 
-// ie TEST_ is defined
-#ifndef LOG_BUFFER_
-    #define LOG(lvl, ...) \
-        if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag == err::LOGGING_FULL) { \
-			time_t __t=std::time(0); tm *__ltm = localtime(&__t);\
-			if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) { \
-				std::stringstream ss; \
-				ss << std::endl << "\033[36m" << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << "\033[0m";\
-				XERUS_THROW(::MISC::generic_error() << ss.str() << "\ncallstack:\n" << ::MISC::get_call_stack()); \
-			} else { \
-				err::namedLoggerMutex.lock(); \
-				___LOGSTREAM << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
-				err::namedLoggerMutex.unlock(); \
-			} \
-        } else \
-            (void)0
-            
-#else
-    #define LOG(lvl, ...) \
-        if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::NOT_LOGGING) { \
-			std::stringstream __tmp; \
-			time_t __t=std::time(0); tm *__ltm = localtime(&__t); \
-			__tmp << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
-			if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) { \
-				err::namedLoggerMutex.lock(); \
-				___LOGBUFFER << __tmp.str(); \
-				err::bufferStreams.checkSwitch(); \
-				err::dump_log_buffer(std::string("fatal error invoked (might be expected):\n")+__tmp.str()); \
-				err::namedLoggerMutex.unlock(); \
-				XERUS_THROW(::MISC::generic_error() << __tmp.str() << "\ncallstack:\n" << MISC::get_call_stack()); \
-			} else { \
-				err::namedLoggerMutex.lock(); \
-				if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag == err::LOGGING_FULL) { \
-					___LOGSTREAM << __tmp.str() << std::flush; \
-				} \
-				___LOGBUFFER << __tmp.str(); \
-				err::bufferStreams.checkSwitch(); \
-				if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("error"))) {err::dump_log_buffer(std::string("error invoked:\n")+__tmp.str()); }; \
-				if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("critical"))) {err::dump_log_buffer(std::string("critical error invoked:\n")+__tmp.str()); }; \
-				err::namedLoggerMutex.unlock(); \
-			} \
-        } else \
-            (void)0
 
 
+#ifdef LOG_BUFFER_
+#define NAMED_LOGGER_LOGBUFFER \
+	___LOGBUFFER << __tmp.str(); \
+	err::bufferStreams.checkSwitch(); \
+	if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("error"))) {err::dump_log_buffer(std::string("error invoked:\n")+__tmp.str()); }; \
+	if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("critical"))) {err::dump_log_buffer(std::string("critical error invoked:\n")+__tmp.str()); }; \
+	if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) {err::dump_log_buffer(std::string("fatal error invoked:\n")+__tmp.str()); }; 
+	
+#else // no log buffer
+#define NAMED_LOGGER_LOGBUFFER
+
 #endif
-#endif
+
+
+
+
+#define LOG(lvl, ...) \
+	if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::NOT_LOGGING) { \
+		std::stringstream __tmp; \
+		time_t __t=std::time(0); tm *__ltm = localtime(&__t); \
+		__tmp << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
+		err::namedLoggerMutex.lock(); \
+		if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag == err::LOGGING_FULL && !err::silenced) { \
+			___LOGSTREAM << __tmp.str() << std::flush; \
+		} \
+		NAMED_LOGGER_LOGBUFFER \
+		err::namedLoggerMutex.unlock(); \
+		if (COMPILE_TIME_EVAL(___log_namehash(STRINGIFY(lvl))==___log_namehash("fatal"))) { \
+			NAMED_LOGGER_ON_FATAL \
+		} \
+	} else \
+		(void)0
 
 #define IS_LOGGING(lvl) \
     (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::NOT_LOGGING)

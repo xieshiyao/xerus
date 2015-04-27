@@ -29,11 +29,13 @@ namespace err {
     std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
 #endif
     
-    BufferStreams bufferStreams;
     std::mutex namedLoggerMutex;
     std::string logFilePrefix;
+	bool silenced = false;
     
-    
+#ifdef LOG_BUFFER_
+	BufferStreams bufferStreams;
+	
     void dump_log_buffer(std::string _comment)  {
         std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(0)) + ".txt";
         std::ofstream out(name, std::ofstream::out);
@@ -60,4 +62,5 @@ namespace err {
             << err::bufferStreams.curr->str() << err::bufferStreams.old->str() << "horst" << std::endl; 
         out.close();
     }
+#endif
 }
