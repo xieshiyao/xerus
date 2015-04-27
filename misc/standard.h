@@ -21,11 +21,6 @@
 
 #include <cstdint>
 
-// Define for easy use of misc namespace
-#ifndef MISC_NAMESPACE
-#define MISC_NAMESPACE xerus
-#endif
-
 #ifdef MISC_NAMESPACE
     #define START_MISC_NAMESPACE namespace MISC_NAMESPACE {
     #define END_MISC_NAMESPACE }

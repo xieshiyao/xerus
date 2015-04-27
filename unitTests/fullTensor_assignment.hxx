@@ -57,32 +57,32 @@ UNIT_TEST(FullTensor, Assignment_Trivia,
     A[{1,1,2,0,1}]=24;
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i&0) = A(i&0);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i&0) = A(i^5);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i^5) = A(i&0);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i^3, j&3) = A(i&2,j^2);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     
     res(j,i,k,l,m) = A(j,i,k,l,m);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i,j,k,l,m) = A(j,i,k,l,m);
-    TEST(res.compare_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     res(j,i,k,l,m) = A(i,j,k,l,m);
-    TEST(res.compare_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     
     res2(i,k,j,l,m) = A(i,j,k,l,m);
-    TEST(res2.compare_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
+    TEST(res2.compare_to_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
     res2(i,j,k,l,m) = A(i,k,j,l,m);
-    TEST(res2.compare_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
+    TEST(res2.compare_to_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
     
     res(i,j,k,l,m) = A(i,j,l,k,m);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i,j,l,k,m) = A(i,j,k,l,m);
-    TEST(res.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
 UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
@@ -128,32 +128,32 @@ UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
     A[{1,1,2,0,1}]=24;
     
     res1(i,j,k,l,m) = A(i,j,k,l,m);
-    TEST(res1.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res2(i&0) = A(i&0);
-    TEST(res2.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res2.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res3(i&0) = A(i^5);
-    TEST(res3.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res3.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res4(i^5) = A(i&0);
-    TEST(res4.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res4.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res5(i^3, j&3) = A(i&2,j^2);
-    TEST(res5.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res5.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     
     res6(j,i,k,l,m) = A(j,i,k,l,m);
-    TEST(res6.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res6.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res7(i,j,k,l,m) = A(j,i,k,l,m);
-    TEST(res7.compare_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(res7.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     res8(j,i,k,l,m) = A(i,j,k,l,m);
-    TEST(res8.compare_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(res8.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     
     res9(i,k,j,l,m) = A(i,j,k,l,m);
-    TEST(res9.compare_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
+    TEST(res9.compare_to_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
     res10(i,j,k,l,m) = A(i,k,j,l,m);
-    TEST(res10.compare_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
+    TEST(res10.compare_to_data({1,2,7,8,3,4,9,10,5,6,11,12,13,14,19,20,15,16,21,22,17,18,23,24}));
     
     res11(i,j,k,l,m) = A(i,j,l,k,m);
-    TEST(res11.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res11.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res12(i,j,l,k,m) = A(i,j,k,l,m);
-    TEST(res12.compare_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res12.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
 UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS, 
@@ -173,9 +173,9 @@ UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J);
-    TEST(compare_memory_to_vector(B.data.get(), {1,2,3,4}));
+    TEST(B.compare_to_data({1,2,3,4}));
     B(i,J) = B(J,i);
-    TEST(compare_memory_to_vector(B.data.get(), {1,3,2,4}));
+    TEST(B.compare_to_data({1,3,2,4}));
 )
 
 UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
@@ -212,34 +212,34 @@ UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
     A[{1,1,2,0,1}]=24;
     
     res1(i,j,k,l) = A(0,i,j,k,l);
-    TEST(res1.compare_data({1,2,3,4,5,6,7,8,9,10,11,12}));
+    TEST(res1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12}));
     res1(i,j,k,l) = A(1,i,j,k,l);
-    TEST(res1.compare_data({13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(res1.compare_to_data({13,14,15,16,17,18,19,20,21,22,23,24}));
     
     res1(i,j,k,l) = A(i,0,j,k,l);
-    TEST(res1.compare_data({1,2,3,4,5,6,13,14,15,16,17,18}));
+    TEST(res1.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18}));
     res1(i,j,k,l) = A(i,1,j,k,l);
-    TEST(res1.compare_data({7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(res1.compare_to_data({7,8,9,10,11,12,19,20,21,22,23,24}));
     
     res1(i,j,k,l) = A(i,j,k,l,0);
-    TEST(res1.compare_data({1,3,5,7,9,11,13,15,17,19,21,23}));
+    TEST(res1.compare_to_data({1,3,5,7,9,11,13,15,17,19,21,23}));
     res1(i,j,k,l) = A(i,j,k,l,1);
-    TEST(res1.compare_data({2,4,6,8,10,12,14,16,18,20,22,24}));
+    TEST(res1.compare_to_data({2,4,6,8,10,12,14,16,18,20,22,24}));
     
     res2(i,j,k) = A(i,j,1,k,1);
-    TEST(res2.compare_data({4,10,16,22}));
+    TEST(res2.compare_to_data({4,10,16,22}));
     res2(i,j,k) = A(i,j,2,k,1);
-    TEST(res2.compare_data({6,12,18,24}));
+    TEST(res2.compare_to_data({6,12,18,24}));
     res2(i,j,k) = A(j,i,2,k,1);
-    TEST(res2.compare_data({6,18,12,24}));
+    TEST(res2.compare_to_data({6,18,12,24}));
     
     res2(i,k,j) = A(j,i,2,k,1);
-    TEST(res2.compare_data({6,18,12,24}));
+    TEST(res2.compare_to_data({6,18,12,24}));
     
     res3(i,j) = A(j,i,2,0,1);
-    TEST(res3.compare_data({6,18,12,24}));
+    TEST(res3.compare_to_data({6,18,12,24}));
     res3(i,j) = A(1,i,2,j,1);
-    TEST(res3.compare_data({18,24}));
+    TEST(res3.compare_to_data({18,24}));
 )
 
 UNIT_TEST(FullTensor, Assignment_Negatives,

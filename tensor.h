@@ -156,6 +156,13 @@ namespace xerus {
             dimensions = std::forward<Vec>(_newDimensions);
         }
         
+        
+        /// Compares the Tensor entriewise to the given data
+        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const = 0;
+        
+        /// Compares the Tensor entriewise to the given data
+        virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const = 0;
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
         /// Assigns all member variables of Tensor

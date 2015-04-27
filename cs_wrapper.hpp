@@ -19,28 +19,17 @@
 
 #pragma once
 
-#include "sparseTensor.h"
-
-#include <suitesparse/cs.h>
-
-// CSparse sparse matrix representation
-// typedef struct cs_sparse {
-//     int nzmax; // maximum number of entries
-//     int m; // number of rows
-//     int n; // number of columns
-//     int *p; // column pointers (size n+1) or col indices (size nzmax)
-//     int *i; // row indices, size nzmax
-//     double *x; // numerical values, size nzmax
-//     int nz; // # of entries in triplet matrix, -1 for compressed-col
-// };
-
- 
-
+#include "xerus.h"
 
 namespace xerus {
-
+    CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N) {
+        REQUIRE(_m < std::numeric_limits<int>::max() && _n < std::numeric_limits<int>::max() && _N < std::numeric_limits<int>::max(), "Sparse Tensor is to large for SuiteSparse");
+        return CsUniquePtr(cs_spalloc((int) _m, (int) _n, (int) _N, 1, 0), &cs_spfree);
+    }
+    
+    
     // Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
-    cs_di_sparse to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
+    CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
         REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
         
         size_t rowDim = 1;
@@ -65,45 +54,38 @@ namespace xerus {
         
         REQUIRE(reorderedTensor.size == rowDim*colDim, "Internal Error");
         
-        cs_di_sparse cs_format;
-        cs_format.nzmax = (int) reorderedTensor.entries->size();
-        cs_format.m = (int) rowDim;
-        cs_format.n = (int) colDim;
-        cs_format.x = new value_t[cs_format.nzmax];
-        cs_format.i = new int[cs_format.nzmax];
-        cs_format.p = new int[colDim+1];
-        cs_format.nz = -1;
+        CsUniquePtr cs_format = create_cs(rowDim, colDim, reorderedTensor.entries->size());
         
         int entryPos = 0;
         int currRow = -1;
-        cs_format.i[0] = 0;
+        cs_format->i[0] = 0;
         
         for(const std::pair<size_t, value_t>& entry : *reorderedTensor.entries.get() ) {
-            cs_format.x[entryPos] = entry.second;
-            cs_format.i[entryPos] = (int) (entry.first%rowDim);
+            cs_format->x[entryPos] = entry.second;
+            cs_format->i[entryPos] = (int) (entry.first%rowDim);
             while(currRow < (int) (entry.first/rowDim)) {
-                cs_format.p[++currRow] = entryPos;
+                cs_format->p[++currRow] = entryPos;
             }
             entryPos++;
         }
         LOG(bla, "Dims " << _tensor.tensorObjectReadOnly->dimensions << ", " << reorderedTensor.dimensions);
         REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) rowDim << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
         while(currRow < (int) colDim+1) {
-            cs_format.p[++currRow] = entryPos;
+            cs_format->p[++currRow] = entryPos;
         }
             
-        cs_format.p[currRow] = entryPos;
+        cs_format->p[currRow] = entryPos;
         
         return cs_format;
     }
     
     
-    SparseTensor from_cs_format(const cs_di_sparse& _cs_format, const std::vector<size_t>& _dimensions) {
+    SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions) {
         SparseTensor reconstructedTensor(_dimensions);
         
-        for(int i = 0; i < _cs_format.n; ++i) {
-            for(int j = _cs_format.p[i]; j < _cs_format.p[i+1]; ++j) {
-                auto ret = reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format.i[j]*_cs_format.n+i, _cs_format.x[j]));
+        for(int i = 0; i < _cs_format->n; ++i) {
+            for(int j = _cs_format->p[i]; j < _cs_format->p[i+1]; ++j) {
+                auto ret = reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format->i[j]*_cs_format->n+i, _cs_format->x[j]));
                 REQUIRE(ret.second, "Internal Error");
             }
         }
@@ -111,39 +93,33 @@ namespace xerus {
         return reconstructedTensor;
     }
     
-    void print_cs(const cs_di_sparse& _cs_format) {
-        std::cout << "{";
-        std::cout << _cs_format.x[0];
-        for(int i = 1; i < _cs_format.nzmax; ++i) {
-            std::cout << ", " << _cs_format.x[i];
-        }
-        std::cout << "}" << std::endl;
-        
-        std::cout << "{";
-        std::cout << _cs_format.i[0];
-        for(int i = 1; i < _cs_format.nzmax; ++i) {
-            std::cout << ", " << _cs_format.i[i];
-        }
-        std::cout << "}" << std::endl;
-        
-        std::cout << "{";
-        std::cout << _cs_format.p[0];
-        for(int i = 1; i < _cs_format.n + 1; ++i) {
-            std::cout << ", " << _cs_format.p[i];
-        }
-        std::cout << "}" << std::endl;
-    }
-
-    void matrix_matrix_product( std::set<value_t>& _C,
-                                const size_t _leftDim,
-                                const size_t _rightDim,
-                                const double _alpha,
-                                const std::set<value_t>& _A,
-                                const bool _transposeA,
-                                const size_t _middleDim,
-                                const std::set<value_t>& _B,
-                                const bool _transposeB) {
-        
+    
+    CsUniquePtr matrix_matrix_product(const CsUniquePtr& _lhs, const CsUniquePtr& _rhs) {
+        return CsUniquePtr(cs_multiply(_lhs.get(), _rhs.get()), &cs_spfree);
     }
     
+    
+    void print_cs(const CsUniquePtr& _cs_format) {
+        std::cout << "Sparse Matrix parameters: n = " << _cs_format->n << ", m = " << _cs_format->m << ", Max Entries = " << _cs_format->nzmax << std::endl;
+        std::cout << "Values =  {";
+        std::cout << _cs_format->x[0];
+        for(int i = 1; i < _cs_format->nzmax; ++i) {
+            std::cout << ", " << _cs_format->x[i];
+        }
+        std::cout << "}" << std::endl;
+        
+        std::cout << "Row idx = {";
+        std::cout << _cs_format->i[0];
+        for(int i = 1; i < _cs_format->nzmax; ++i) {
+            std::cout << ", " << _cs_format->i[i];
+        }
+        std::cout << "}" << std::endl;
+        
+        std::cout << "Col Pos = {";
+        std::cout << _cs_format->p[0];
+        for(int i = 1; i < _cs_format->n + 1; ++i) {
+            std::cout << ", " << _cs_format->p[i];
+        }
+        std::cout << "}" << std::endl;
+    }
 }

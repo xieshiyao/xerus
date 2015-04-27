@@ -42,7 +42,7 @@ namespace xerus {
 #include "tensor_specializations.hpp"
 #include "fullTensor.hpp"
 #include "sparseTensor.hpp"
-#include "sparseTensor_contraction.hpp"
+#include "cs_wrapper.hpp"
 #include "indexedTensor_tensor_evaluate.hpp"
 #include "indexedTensor_tensor_contraction.hpp"
 #include "indexedTensor_tensor_solve.hpp"

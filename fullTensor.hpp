@@ -441,14 +441,6 @@ namespace xerus {
     }
 
 
-    value_t FullTensor::data_difference_frob_norm(const std::vector<value_t>& _otherData) const {
-        value_t norm = 0;
-        for(size_t i=0; i<size; ++i) {
-            norm += sqr(factor*data.get()[i] - _otherData[i]);
-        }
-        return std::sqrt(norm);
-    }
-
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     bool FullTensor::is_sparse() const {
@@ -472,17 +464,17 @@ namespace xerus {
     }
 
 
-    bool FullTensor::compare_data(std::vector<value_t> _values) const {
+    bool FullTensor::compare_to_data(std::vector<value_t> _values, const double _eps) const {
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*data.get()[i]-_values[i]) > 1e-13) { return false; }
+            if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }
         }
         return true;
     }
 
-    bool FullTensor::compare_data(const value_t* _values) const {
+    bool FullTensor::compare_to_data(const value_t* _values, const double _eps) const {
         for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*data.get()[i]-_values[i]) > 1e-13) { return false; }
+            if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }
         }
         return true;
     }

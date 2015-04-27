@@ -36,6 +36,17 @@ UNIT_TEST(SparseTensor, X,
     SA[{4,4}] = 6;
     SA[{5,4}] = 7;
     SA[{5,5}] = 8;
+    SA[{5,1}] = 9;
+    SA[{5,2}] = 10;
+    SA[{5,3}] = 11;
+    SA[{0,1}] = 11;
+    SA[{0,2}] = 11;
+    SA[{0,3}] = 11;
+    SA[{0,4}] = 11;
+    SA[{0,5}] = 11;
+    SA[{1,0}] = 11;
+    SA[{2,0}] = 11;
+    SA[{3,0}] = 11;
     
     FullTensor FA(SA);
     FullTensor FR;
@@ -44,16 +55,10 @@ UNIT_TEST(SparseTensor, X,
     
     SRX(i,j) = SA(i,k)*SA(k,j);
     
-    cs_di_sparse inputA = to_cs_format(SA(i,j), {i}, {j});
-    cs_di_sparse inputB = to_cs_format(SA(i,j), {i}, {j});
     
-    cs_di_sparse* cs_result = cs_multiply(&inputA, &inputB);
+    TEST(approx_equal(FR, FullTensor(SRX), 1e-12));
     
-    SparseTensor SR = from_cs_format(*cs_result, {8,8});
-    
-    TEST(approx_equal(FR, FullTensor(SR), 1e-12));
-    
-    std::cout << std::endl << FR.to_string() << std::endl << std::endl << SR.to_string() << std::endl << std::endl << std::endl << SRX.to_string() << std::endl;
+    std::cout << std::endl << FR.to_string() << std::endl << std::endl << std::endl << SRX.to_string() << std::endl;
 )
 
 UNIT_TEST(SparseTensor, Creation,
