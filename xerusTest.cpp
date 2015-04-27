@@ -29,6 +29,8 @@ using namespace xerus;
     #include "unitTests/sparseTensor_arithmetic_cpy.hxx"
     #include "unitTests/sparseTensor_assignment_cpy.hxx"
     #include "unitTests/sparseTensor_contraction_cpy.hxx"
+    #include "unitTests/sparseTensor_product_cpy.hxx"
+    #include "unitTests/sparseTensor_trace_cpy.hxx"
     #include "unitTests/sparseTensor_assignment.hxx"
 //         #include "unitTests/sparseTensor_contraction.hxx"
     #include "unitTests/tensorNetwork.hxx"
