@@ -72,7 +72,6 @@ namespace xerus {
 #include "indexedTensor_tensor.h"
 #include "indexedTensor_tensor_operators.h"
 #include "indexedTensor_tensor_factorisations.h"
-#include "unknownContraction.h"
 #include "tensorNode.h"
 #include "tensorNetwork.h"
 #include "indexedTensor_TN.h"

@@ -185,6 +185,43 @@ namespace xerus {
         // We don't want result to have any factor that might interfere
         _result.tensorObject->factor = 1.0;
         
+        if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
+            std::vector<Index> lhsOpen, rhsOpen, common;
+            
+            for(const Index& idx : lhsAssIndices.indices) {
+                if(contains(resultAssIndices.indices, idx)) {
+                    lhsOpen.push_back(idx);
+                } else if(contains(rhsAssIndices.indices, idx)) {
+                    common.push_back(idx);
+                }
+            }
+            for(const Index& idx : rhsAssIndices.indices) {
+                if(contains(resultAssIndices.indices, idx)) {
+                    rhsOpen.push_back(idx);
+                }
+            }
+            
+            cs_di_sparse lhsCS = to_cs_format(_lhs, lhsOpen, common);
+            std::cout << std::endl;
+            print_cs(lhsCS);
+            std::cout << std::endl;
+            
+            cs_di_sparse rhsCS = to_cs_format(_rhs, common, rhsOpen);
+            std::cout << std::endl;
+            print_cs(rhsCS);
+            std::cout << std::endl;
+            
+            cs_di_sparse* cs_result = cs_multiply(&lhsCS, &rhsCS);
+            std::cout << std::endl;
+            print_cs(*cs_result);
+            std::cout << std::endl;
+            
+            lhsOpen.insert(lhsOpen.end(), rhsOpen.begin(), rhsOpen.end());
+            
+            evaluate(_result, from_cs_format(*cs_result, _result.tensorObject->dimensions)(lhsOpen));
+            return;
+        }
+        
         // Check whether both sides are separated and whether their open indices are ordered
         LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
         bool lhsNeedsReshuffle, lhsIsOrdered;
@@ -391,7 +428,16 @@ namespace xerus {
                 dimensionCount += idx.inverseSpan ? _rhs.degree()-idx.span : idx.span;
             }
         }
-        IndexedTensorMoveable<Tensor> result(new FullTensor(outDimensions, DONT_SET_ZERO()), outIndices); // TODO sparse
+        
+        
+        // TODO More intelligence when to use a sparse result
+        Tensor* resultTensor;
+        if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse()) {
+            resultTensor = new SparseTensor(outDimensions);
+        } else {
+            resultTensor = new FullTensor(outDimensions, DONT_SET_ZERO());
+        }
+        IndexedTensorMoveable<Tensor> result(resultTensor, outIndices);
         contract(result, _lhs, _rhs);
         return result;
     }

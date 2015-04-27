@@ -51,7 +51,6 @@ namespace xerus {
 #include "tensorNetwork_specializations.hpp"
 #include "tensorNetwork.hpp"
 #include "tensorNode.hpp"
-#include "unknownContraction.hpp"
 #include "ttTensor_specializations.h"
 #include "indexedTensor_TN_operators.hpp"
 #include "contractionHeuristic.hpp"

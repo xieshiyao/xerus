@@ -25,6 +25,7 @@ UNIT_TEST(SparseTensor, X,
     Index i, j, k;
     
     SparseTensor SA({8,8});
+    SparseTensor SRX({8,8});
     
     
     SA[{0,0}] = 1;
@@ -41,6 +42,8 @@ UNIT_TEST(SparseTensor, X,
     
     FR(i,j) = FA(i,k)*FA(k,j);
     
+    SRX(i,j) = SA(i,k)*SA(k,j);
+    
     cs_di_sparse inputA = to_cs_format(SA(i,j), {i}, {j});
     cs_di_sparse inputB = to_cs_format(SA(i,j), {i}, {j});
     
@@ -50,7 +53,7 @@ UNIT_TEST(SparseTensor, X,
     
     TEST(approx_equal(FR, FullTensor(SR), 1e-12));
     
-    std::cout << std::endl << FR.to_string() << std::endl << std::endl << SR.to_string() << std::endl;
+    std::cout << std::endl << FR.to_string() << std::endl << std::endl << SR.to_string() << std::endl << std::endl << std::endl << SRX.to_string() << std::endl;
 )
 
 UNIT_TEST(SparseTensor, Creation,

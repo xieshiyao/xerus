@@ -69,14 +69,14 @@ LOGGING += -D INFO_
 # linking a program using Xerus). 
 
 # Uncomment or add the suiteable blas and lapack libraries 
- BLAS_LIBRARIES = -lopenblas -lgfortran			# Openblas, serial
+# BLAS_LIBRARIES = -lopenblas -lgfortran			# Openblas, serial
 # BLAS_LIBRARIES = -lopenblasp -lgfortran	   		# Openblas, parallel
 # BLAS_LIBRARIES = -lsatlas -lgfortran	# Atlas
-# BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran	# Custom
+ BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran	# Custom
 
 
- LAPACK_LIBRARIES = -llapacke -llapack		    # Standard Lapack + Lapacke libraries
-# LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a       # Custom
+# LAPACK_LIBRARIES = -llapacke -llapack		    # Standard Lapack + Lapacke libraries
+ LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a       # Custom
 
 # Change the following line if you want to use a self compiled verion of the SuiteSparse library
 SUITESPARSE = -lcxsparse

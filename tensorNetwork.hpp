@@ -20,6 +20,7 @@
 #pragma once
 
 #include "xerus.h"
+#include <boost/concept_check.hpp>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -350,10 +351,10 @@ namespace xerus {
 			size_t remaining = base.contract(toContract);
 			
 			// remove contracted degree-0 tensor
-			REQUIRE(base.nodes[remaining].degree() == 0, "ie");
+			REQUIRE(base.nodes[remaining].degree() == 0, "Internal Error.");
 			//TODO this should be a static_cast (which does not yet exist)
 			base.factor *= (*reinterpret_cast<FullTensor *>(base.nodes[remaining].tensorObject.get()))[{}];
-			REQUIRE(base.nodes[remaining].neighbors.empty(), "ie");
+			REQUIRE(base.nodes[remaining].neighbors.empty(), "Internal Error.");
 			base.nodes[remaining].erased = true;
 		}
     }
@@ -391,8 +392,8 @@ namespace xerus {
         }
         for (size_t d=0; d<node2.degree(); ++d) {
             if (node2.neighbors[d].links(_nodeId1)) {
-                REQUIRE(i1.size()>node2.neighbors[d].indexPosition, "ie");
-                REQUIRE(node1.neighbors[node2.neighbors[d].indexPosition].links(_nodeId2), "ie"); // consistency check
+                REQUIRE(i1.size()>node2.neighbors[d].indexPosition, "Internal Error.");
+                REQUIRE(node1.neighbors[node2.neighbors[d].indexPosition].links(_nodeId2), "Internal Error."); // consistency check
                 i2.push_back(i1[node2.neighbors[d].indexPosition]); // common index
             } else if (node2.neighbors[d].links(_nodeId2) && d > node2.neighbors[d].indexPosition) {
                 i2.push_back(i2[node2.neighbors[d].indexPosition]);
@@ -406,10 +407,13 @@ namespace xerus {
         // Construct new node
         std::shared_ptr<Tensor> newTensor;
         if (node1.tensorObject) {
-            REQUIRE(node2.tensorObject, "ie");
-            newTensor = unknown_contraction(node1.tensorObject, i1, node2.tensorObject, i2, ri);
+            REQUIRE(node2.tensorObject, "Internal Error.");
+            
+            IndexedTensorMoveable<Tensor> result(xerus::contract((*node1.tensorObject)(i1), (*node2.tensorObject)(i2)));
+            newTensor.reset(result.tensorObjectReadOnly->construct_new());
+            (*newTensor.get())(ri) = result;
         } else {
-            REQUIRE(!node2.tensorObject, "ie");
+            REQUIRE(!node2.tensorObject, "Internal Error.");
         } 
         TensorNode newNode(newTensor, newLinks);
         
@@ -425,7 +429,7 @@ namespace xerus {
             } else {
                 nn = &nodes[newLinks[d].other].neighbors[newLinks[d].indexPosition];
             }
-            REQUIRE(nn->other == _nodeId2 || nn->other == _nodeId1, "ie"); // consistency check
+            REQUIRE(nn->other == _nodeId2 || nn->other == _nodeId1, "Internal Error."); // consistency check
             nn->other = _nodeId1;
             nn->indexPosition = d;
         }
@@ -617,7 +621,7 @@ namespace xerus {
             //if (bestScore < 256*256*256) break;
         }
         
-        REQUIRE(bestScore < 1e32f && bestOrder, "ie");
+        REQUIRE(bestScore < 1e32f && bestOrder, "Internal Error.");
         // perform contractions
         for (const std::pair<size_t,size_t> &c : *bestOrder) {
             contract(c.first, c.second);
