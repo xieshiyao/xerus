@@ -51,10 +51,14 @@
 	#define TEST(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
 	#ifdef CHECK_
-        #define FAILTEST(test) err::logFilePrefix = "failtest/"; try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} err::logFilePrefix.clear(); void(0)
+		#define FAILTEST(test) \
+			err::logFilePrefix = "failtest/"; err::silenced = true; \
+			try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
+			err::logFilePrefix.clear();  err::silenced = false;  \
+			void(0)
 	#else
-        #define FAILTEST(test) LOG(warning, "Failtest is not useful without flag CHECK_")
-    #endif
+		#define FAILTEST(test) LOG(warning, "Failtest is not useful without flag CHECK_")
+	#endif
 	
 	#define ASSERT(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); return false;} else {PRINTCHECK;} void(0)
 	

@@ -30,7 +30,7 @@
 DEBUG += -D CHECK_
 
 # Disable the use of exceptions by the xerus library
-# NO_EXCEPTIONS = TRUE
+# NO_XERUS_EXCEPTIONS = TRUE
 
 
 # You can add all kind of debuging options. In the following are some examples
@@ -82,4 +82,4 @@ LOGGING += -D INFO_
 SUITESPARSE = -lcxsparse
 
 # If needed set additional include paths
-# ADDITIONAL_INCLUDE = -I ../include/
+ADDITIONAL_INCLUDE = -I ../include/
