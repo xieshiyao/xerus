@@ -20,7 +20,7 @@
 #pragma once
 #include "../xerus.h"
 
-UNIT_TEST(SparseTensor, Assignment_Trivia, 
+UNIT_TEST(SparseTensor, Assignment_Trivia2, 
     SparseTensor A({2,2,3,1,2});
     SparseTensor res({2,2,3,1,2});
 
