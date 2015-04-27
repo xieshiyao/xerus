@@ -60,9 +60,9 @@ UNIT_TEST(TensorSum, lhs_equals_rhs,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J) + C(i,J);
-    ASSERT(compare_memory_to_vector(B.data.get(), {6,8,10,12}));
+    TEST(compare_memory_to_vector(B.data.get(), {6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
-    ASSERT(compare_memory_to_vector(B.data.get(), {12,18,18,24}));
+    TEST(compare_memory_to_vector(B.data.get(), {12,18,18,24}));
 )
 
 namespace ___I_AM_A_NEW_NAMESPACE____________ {

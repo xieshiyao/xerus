@@ -31,9 +31,10 @@
 
     #include "testManager.h"
     #include "stringUtilities.h"
+#include <sys/stat.h>
 
-    uint ___UnitTest::uses = 0;
     std::map<std::string, std::map<std::string, std::function<bool ()>>> *___UnitTest::tests;
+	std::map<___RequiredTest::identifier, size_t> *___RequiredTest::tests;
 
     bool ___test(const std::pair<std::string, std::function<bool ()>> &_t) {
         bool passed = false;
@@ -91,7 +92,7 @@
     }
 
     _noreturn_ void ___catch_signals(int _sig)  {
-        XERUS_THROW(::MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "\ncallstack:\n" << ::MISC::get_call_stack());
+        XERUS_THROW(::MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
     }
 
     #undef main
@@ -183,6 +184,33 @@
         std::cout << "|" << std::endl;
         std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << (double)totalTime/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
         std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		
+		// check whether all REQUIRED_TESTs were tested
+		std::map<std::string, std::pair<size_t, size_t>> perFile;
+		
+		for (auto &t : (*___RequiredTest::tests)) {
+			//TODO this does not work yet....
+// 			std::cout << MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << t.second << std::endl;
+			std::pair<size_t, size_t> &pf = perFile[t.first.filename];
+			pf.second += 1;
+			if (t.second == 0) {
+				std::cout << "\033[1;31m missing test for function \033[0m" 
+					<< MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << std::endl;
+			} else {
+				pf.first += 1;
+			}
+		}
+		
+		for (auto &f : perFile) {
+			std::pair<size_t, size_t> &fstats = f.second;
+			if (fstats.first == fstats.second) {
+				std::cout << "file " << f.first << " :\033[1;32m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
+			} else {
+				std::cout << "file " << f.first << " :\033[1;31m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
+			}
+		}
+		
+		
         
         return totalPassCount != totalCount;
     }

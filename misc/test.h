@@ -27,7 +27,11 @@
 
 	#define PCHECK(precondition, condition, level, message) if(IS_LOGGING(level)) { precondition; if(condition) { LOG(level, #condition << " failed msg: " << message); }} else void(0)
 
-	#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#ifdef TEST_
+		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#else
+		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#endif
 
 	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
 
@@ -50,6 +54,15 @@
 
 	#define TEST(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
+	// struct teststruct { __attribute__((constructor)) static void bla() {___RequiredTest requiredTest(__func__, __FILE__, __LINE__); } };
+	// []() __attribute__((constructor)) { ___RequiredTest requiredTest(__func__, __FILE__, __LINE__); };
+	#define REQUIRE_TEST \
+		do { \
+			static ___RequiredTest requiredTest(__func__, __FILE__, __LINE__);\
+			(void)requiredTest;\
+			___RequiredTest::increaseCounter(__func__, __FILE__, __LINE__);\
+		} while(false)
+	
 	#ifdef CHECK_
 		#define FAILTEST(test) \
 			err::logFilePrefix = "failtest/"; err::silenced = true; \
@@ -60,8 +73,6 @@
 		#define FAILTEST(test) LOG(warning, "Failtest is not useful without flag CHECK_")
 	#endif
 	
-	#define ASSERT(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); return false;} else {PRINTCHECK;} void(0)
-	
 	#define UNIT_TEST(grp, name, ...) \
 		___UnitTest *PASTE(grp,name) = new ___UnitTest(#grp, #name, []()->bool{\
 				bool passed = true;\
@@ -69,7 +80,6 @@
 				return passed;\
 			});
 			
-    #pragma message("Using Test") 
 	#define main(...) ___horst_main_will_not_be_called( __VA_ARGS__ )
 
 #else

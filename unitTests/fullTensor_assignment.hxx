@@ -173,9 +173,9 @@ UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J);
-    ASSERT(compare_memory_to_vector(B.data.get(), {1,2,3,4}));
+    TEST(compare_memory_to_vector(B.data.get(), {1,2,3,4}));
     B(i,J) = B(J,i);
-    ASSERT(compare_memory_to_vector(B.data.get(), {1,3,2,4}));
+    TEST(compare_memory_to_vector(B.data.get(), {1,3,2,4}));
 )
 
 UNIT_TEST(FullTensor, Assignment_Fixed_Indices,

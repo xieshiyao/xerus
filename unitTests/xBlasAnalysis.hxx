@@ -21,7 +21,14 @@
 
 #include "../xerus.h"
 
+#ifdef BLAS_BENCHMARK
 UNIT_TEST(X_BlasAnalysis_X, Analysis,
-          std::cout << print_blas_analysis();
+	std::cout << print_blas_analysis();
     LOG(Indices, "A total of " << -Index().valueId << " indices were used");
 )
+#else
+UNIT_TEST(X_BlasAnalysis_X, Analysis,
+// 	std::cout << print_blas_analysis();
+    LOG(Indices, "A total of " << -Index().valueId << " indices were used");
+)
+#endif

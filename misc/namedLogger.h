@@ -270,6 +270,7 @@ namespace err {
 	} else \
 		(void)0
 
+
 #define IS_LOGGING(lvl) \
     (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::NOT_LOGGING)
 
