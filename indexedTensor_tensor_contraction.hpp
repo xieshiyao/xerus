@@ -182,10 +182,10 @@ namespace xerus {
             check_for_index_compatability(resultAssIndices, lhsAssIndices, rhsAssIndices);
         #endif
         
-        // We don't want result to have any factor that might interfere
-        _result.tensorObject->factor = 1.0;
-        
         if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
+            // We have to propagate the common factors
+            _result.tensorObject->factor = _lhs.tensorObjectReadOnly->factor*_rhs.tensorObjectReadOnly->factor;
+            
             std::vector<Index> lhsOpen, rhsOpen, common;
             
             for(const Index& idx : lhsAssIndices.indices) {
@@ -201,26 +201,20 @@ namespace xerus {
                 }
             }
             
-            cs_di_sparse lhsCS = to_cs_format(_lhs, lhsOpen, common);
-            std::cout << std::endl;
+            CsUniquePtr lhsCS = to_cs_format(_lhs, lhsOpen, common);
             print_cs(lhsCS);
-            std::cout << std::endl;
+            CsUniquePtr rhsCS = to_cs_format(_rhs, common, rhsOpen);
             
-            cs_di_sparse rhsCS = to_cs_format(_rhs, common, rhsOpen);
-            std::cout << std::endl;
-            print_cs(rhsCS);
-            std::cout << std::endl;
-            
-            cs_di_sparse* cs_result = cs_multiply(&lhsCS, &rhsCS);
-            std::cout << std::endl;
-            print_cs(*cs_result);
-            std::cout << std::endl;
+            CsUniquePtr cs_result = matrix_matrix_product(lhsCS, rhsCS);
             
             lhsOpen.insert(lhsOpen.end(), rhsOpen.begin(), rhsOpen.end());
             
-            evaluate(_result, from_cs_format(*cs_result, _result.tensorObject->dimensions)(lhsOpen));
+            evaluate(_result, from_cs_format(cs_result, _result.tensorObject->dimensions)(lhsOpen));
             return;
         }
+        
+        // We don't want the result to have any factor that might interfere
+        _result.tensorObject->factor = 1.0;
         
         // Check whether both sides are separated and whether their open indices are ordered
         LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");

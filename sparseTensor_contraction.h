@@ -19,41 +19,26 @@
 
 #pragma once
 
-#include "sparseTensor.h"
-
 #include <suitesparse/cs.h>
 
-// CSparse sparse matrix representation
-// typedef struct cs_sparse {
-//     int nzmax; // maximum number of entries
-//     int m; // number of rows
-//     int n; // number of columns
-//     int *p; // column pointers (size n+1) or col indices (size nzmax)
-//     int *i; // row indices, size nzmax
-//     double *x; // numerical values, size nzmax
-//     int nz; // # of entries in triplet matrix, -1 for compressed-col
-// };
-
-
-// #include "xerus.h"
+#include "sparseTensor.h"
 
 namespace xerus {
+    /// Unique_ptr wrapper that should always be used for the CS sparse matrix format
+    typedef std::unique_ptr<cs_di, cs_di*(*)(cs_di*)> CsUniquePtr;
+    
+    /// Allocates a CS sparse matrix with given dimensions and number of entries
+    CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 
     // Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
-    cs_di_sparse to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices);
+    CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices);
     
+    /// Calculates the Matrix Matrix product between to CS sparse matrices
+    CsUniquePtr matrix_matrix_product(const CsUniquePtr& _lhs, const CsUniquePtr& _rhs);
+    
+    /// Retransforms a CS sparse matrix to sparseTensor format
     SparseTensor from_cs_format(const cs_di_sparse& _cs_format, const std::vector<size_t>& _dimensions);
     
-    void print_cs(const cs_di_sparse& _cs_format);
-
-    void matrix_matrix_product( std::set<value_t>& _C,
-                                const size_t _leftDim,
-                                const size_t _rightDim,
-                                const double _alpha,
-                                const std::set<value_t>& _A,
-                                const bool _transposeA,
-                                const size_t _middleDim,
-                                const std::set<value_t>& _B,
-                                const bool _transposeB);
+    void print_cs(const CsUniquePtr& _cs_format);
     
 }
