@@ -34,7 +34,7 @@
 //     int nz; // # of entries in triplet matrix, -1 for compressed-col
 // };
 
-
+ 
 
 
 namespace xerus {
@@ -55,7 +55,7 @@ namespace xerus {
                 colDim *= assIndices.indexDimensions[i];
             }   
         }
-        
+        LOG(indices, assIndices.indices << ", " << _lhsIndices<< ", " << _rhsIndices);
         
         std::vector<Index> inverseIndexOrder(_rhsIndices);
         inverseIndexOrder.insert(inverseIndexOrder.end(), _lhsIndices.begin(), _lhsIndices.end());
@@ -86,7 +86,8 @@ namespace xerus {
             }
             entryPos++;
         }
-        REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error");
+        LOG(bla, "Dims " << _tensor.tensorObjectReadOnly->dimensions << ", " << reorderedTensor.dimensions);
+        REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) rowDim << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
         while(currRow < (int) colDim+1) {
             cs_format.p[++currRow] = entryPos;
         }

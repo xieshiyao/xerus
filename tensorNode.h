@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "unknownContraction.h"
+#include "indexedTensor_tensor_factorisations.h"
 
 namespace xerus {
     class TensorNode {
