@@ -20,24 +20,22 @@
 // File containing the unit tests for the xerus library
 
 #include "xerus.h"
-
 #include <test.h>
+  
+//------------------------ Unit Tests --------------------------------
+using namespace xerus;
+    #include "unitTests/sparseTensor.hxx"
+    #include "unitTests/sparseTensor_assignment.hxx"
+//         #include "unitTests/sparseTensor_contraction.hxx"
+    #include "unitTests/tensorNetwork.hxx"
+    #include "unitTests/ttCreation.hxx"
+    #include "unitTests/ttRounding.hxx"
+    #include "unitTests/ttArithmetic.hxx"
+    #include "unitTests/xBlasAnalysis.hxx"
+    #include "unitTests/als.hxx"
+    #include "unitTests/misc.hxx"
+//      #include "unitTests/strassen.hxx"
 
-//------------------------ Unit Tests -------------------------------- 
-namespace xerus {
-    namespace unitTests {
-        #include "unitTests/sparseTensor.hxx"
-        #include "unitTests/sparseTensor_assignment.hxx"
-        #include "unitTests/tensorNetwork.hxx"
-        #include "unitTests/ttCreation.hxx"
-        #include "unitTests/ttRounding.hxx"
-        #include "unitTests/ttArithmetic.hxx"
-        #include "unitTests/xBlasAnalysis.hxx"
-        #include "unitTests/als.hxx"
-		#include "unitTests/misc.hxx"
-//          #include "unitTests/strassen.hxx"
-    }
-}
 
     
 int main() {

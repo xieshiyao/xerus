@@ -34,7 +34,7 @@ UNIT_TEST(FullTensor, SVD_Identity,
     Index i, j, k, l, m, n;
     
     (res1(i,j,m), res2(m,n), res3(n,k,l)) = SVD(A(i,j,k,l));
-    TEST(res2.compare_data(A.data.get()));
+    TEST(res2.compare_to_data(A.data.get()));
 )
 
 UNIT_TEST(FullTensor, SVD_Random_512x512,

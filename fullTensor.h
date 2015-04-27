@@ -242,16 +242,16 @@ namespace xerus {
         
         virtual value_t frob_norm() const override;
 		
-        value_t data_difference_frob_norm(const std::vector<value_t>& _otherData) const;
-        
-        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /// Returns a string representation of the Tensor
         std::string to_string() const;
         
-        bool compare_data(std::vector<value_t> _values) const;
-        bool compare_data(const value_t* _values) const;
+        /// Compares the Tensor entriewise to the given data
+        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const override;
+        
+        /// Compares the Tensor entriewise to the given data
+        virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const override;
         
     };
     

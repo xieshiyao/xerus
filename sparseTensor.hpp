@@ -343,6 +343,21 @@ namespace xerus {
         return result;
     }
     
+    bool SparseTensor::compare_to_data(std::vector<value_t> _values, const double _eps) const {
+        if(size != _values.size()) { return false; }
+        for(size_t i=0; i < size; ++i) {
+            if(std::abs(at(i)-_values[i]) > _eps) { return false; }
+        }
+        return true;
+    }
+
+    bool SparseTensor::compare_to_data(const value_t* _values, const double _eps) const {
+        for(size_t i=0; i < size; ++i) {
+            if(std::abs(at(i)-_values[i]) > _eps) { return false; }
+        }
+        return true;
+    }
+    
 }
 
 bool approx_equal(const xerus::SparseTensor& _sparse, const xerus::FullTensor& _full, const xerus::value_t _eps, const bool pureDataCompare) {

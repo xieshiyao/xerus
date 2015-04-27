@@ -17,6 +17,9 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+// ([a-zA-Z0-9]*)\.data_difference_frob_norm\((\{[0-9, +]*\})\) ?< ?([0-9e-]*)
+// \1.compare_to_data(\2, \3)
+
 #pragma once
 #include "../xerus.h"
 
@@ -28,13 +31,13 @@ UNIT_TEST(FullTensor, remove_slate,
     FullTensor A({3,3}, [&](const std::vector<size_t> &){ n+=1; return n; } );
     
     A.remove_slate(0,1);
-    TEST(A.data_difference_frob_norm({1,2,3,7,8,9}) < 1e-14);
+    TEST(A.compare_to_data({1,2,3,7,8,9}, 1e-14));
     A.resize_dimension(0,3,1);
-    TEST(A.data_difference_frob_norm({1,2,3,0,0,0,7,8,9}) < 1e-14);
+    TEST(A.compare_to_data({1,2,3,0,0,0,7,8,9}, 1e-14));
     A.remove_slate(1,0);
-    TEST(A.data_difference_frob_norm({2,3,0,0,8,9}) < 1e-14);
+    TEST(A.compare_to_data({2,3,0,0,8,9}, 1e-14));
     A.resize_dimension(1,3,1);
-    TEST(A.data_difference_frob_norm({2,0,3,0,0,0,8,0,9}) < 1e-14);
+    TEST(A.compare_to_data({2,0,3,0,0,0,8,0,9}, 1e-14));
 )
 
 UNIT_TEST(FullTensor, dimension_reduction,
@@ -53,17 +56,17 @@ UNIT_TEST(FullTensor, dimension_reduction,
     C = A;
     
     A.resize_dimension(0,1);
-    TEST(A.data_difference_frob_norm({1,2,3,4}) < 1e-13);
+    TEST(A.compare_to_data({1,2,3,4}, 1e-13));
     TEST(A.dimensions[0] == 1);
     TEST(A.size == 4);
     
     B.resize_dimension(1,1);
-    TEST(B.data_difference_frob_norm({1,2,5,6}) < 1e-13);
+    TEST(B.compare_to_data({1,2,5,6}, 1e-13));
     TEST(B.dimensions[1] == 1);
     TEST(B.size == 4);
     
     C.resize_dimension(2,1);
-    TEST(C.data_difference_frob_norm({1,3,5,7}) < 1e-13);
+    TEST(C.compare_to_data({1,3,5,7}, 1e-13));
     TEST(C.dimensions[2] == 1);
     TEST(C.size == 4);
 )
@@ -84,17 +87,17 @@ UNIT_TEST(FullTensor, dimension_expansion,
     C = A;
     
     A.resize_dimension(0,3);
-    TEST(A.data_difference_frob_norm({1,2,3,4,5,6,7,8,0,0,0,0}) < 1e-13);
+    TEST(A.compare_to_data({1,2,3,4,5,6,7,8,0,0,0,0}, 1e-13));
     TEST(A.dimensions[0] == 3);
     TEST(A.size == 12);
     
     B.resize_dimension(1,3);
-    TEST(B.data_difference_frob_norm({1,2,3,4,0,0,5,6,7,8,0,0}) < 1e-13);
+    TEST(B.compare_to_data({1,2,3,4,0,0,5,6,7,8,0,0}, 1e-13));
     TEST(B.dimensions[1] == 3);
     TEST(B.size == 12);
     
     C.resize_dimension(2,3);
-    TEST(C.data_difference_frob_norm({1,2,0,3,4,0,5,6,0,7,8,0}) < 1e-13);
+    TEST(C.compare_to_data({1,2,0,3,4,0,5,6,0,7,8,0}, 1e-13));
     TEST(C.dimensions[2] == 3);
     TEST(C.size == 12);
 )

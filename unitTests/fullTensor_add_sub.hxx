@@ -17,6 +17,9 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+// compare_memory_to_vector\(([a-zA-Z0-9]*)\.data\.get\(\), ?(\{[0-9, +\*]*\})\)
+// \1.compare_to_data(\2)
+
 #pragma once
 #include "../xerus.h"
 
@@ -38,9 +41,9 @@ UNIT_TEST(TensorSum, matrix_2x2,
     C[{1,1}]=8;
     
     res(i,J) = B(i,J) + C(i,J);
-    TEST(compare_memory_to_vector(res.data.get(), {6,8,10,12}));
+    TEST(res.compare_to_data({6,8,10,12}));
     res(i,J) = B(i,J) + C(J,i);
-    TEST(compare_memory_to_vector(res.data.get(), {6,9,9,12}));
+    TEST(res.compare_to_data({6,9,9,12}));
 )
  
 UNIT_TEST(TensorSum, lhs_equals_rhs,
@@ -60,36 +63,10 @@ UNIT_TEST(TensorSum, lhs_equals_rhs,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J) + C(i,J);
-    ASSERT(compare_memory_to_vector(B.data.get(), {6,8,10,12}));
+    ASSERT(B.compare_to_data({6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
-    ASSERT(compare_memory_to_vector(B.data.get(), {12,18,18,24}));
+    ASSERT(B.compare_to_data({12,18,18,24}));
 )
-
-namespace ___I_AM_A_NEW_NAMESPACE____________ {
-_pure_  value_t filler1(const std::vector<size_t> &_idx) {
-    return double(_idx[0] + _idx[1]);
-}
-_pure_  value_t filler2(const std::vector<size_t> &_idx) {
-    return double(_idx[0] * _idx[1]);
-}
-_pure_ value_t filler12(const std::vector<size_t> &_idx) {
-    return double(_idx[0] + _idx[1] + _idx[0] * _idx[1]);
-}
-
-UNIT_TEST(TensorSum, matrix_1000x1000,
-    FullTensor res({1024,1024});
-    FullTensor A({1024,1024}, filler1);
-    FullTensor B({1024,1024}, filler2);
-    FullTensor C({1024,1024}, filler12);
-
-    Index i, J;
-    
-    res(i,J) = A(i,J) + B(i,J);
-    TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1024*1024)==0);
-    res(J,i) = A(J,i) + B(i,J);
-    TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1024*1024)==0);
-)
-}
 
 UNIT_TEST(TensorSum, dyadic,
     FullTensor res({2,2});
@@ -105,7 +82,7 @@ UNIT_TEST(TensorSum, dyadic,
     C[{1}]=9;
     
     FAILTEST(res(i,J) = B(i) + C(J));
-//     TEST(compare_memory_to_vector(res.data.get(), {6,10,7,11}));
+//     TEST(res.compare_to_data({6,10,7,11}));
 )
 
 UNIT_TEST(TensorSum, threefold_sum,
@@ -126,5 +103,5 @@ UNIT_TEST(TensorSum, threefold_sum,
     D[{1}]=13;
     
     res(i) = B(i) + C(i) + D(i);
-    TEST(compare_memory_to_vector(res.data.get(), {13,24}));
+    TEST(res.compare_to_data({13,24}));
 )

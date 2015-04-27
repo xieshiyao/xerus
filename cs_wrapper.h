@@ -40,5 +40,4 @@ namespace xerus {
     SparseTensor from_cs_format(const cs_di_sparse& _cs_format, const std::vector<size_t>& _dimensions);
     
     void print_cs(const CsUniquePtr& _cs_format);
-    
 }
