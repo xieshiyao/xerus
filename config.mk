@@ -14,7 +14,7 @@
 # The last level activates all optimazations available, including non-ISO C++ conform optimization 
 # and optimazations that may result in a loss of numerical precicsion, use at your own risk.
 #Optimization options
-  LOW_OPTIMIZATION = TRUE		# Activates -O0
+#   LOW_OPTIMIZATION = TRUE		# Activates -O0
 # HIGH_OPTIMIZATION = TRUE		# Activates -O3 -march=native and some others
 # DANGEROUS_OPTIMIZATION = TRUE		# Activates everything of HIGH_OPTIMIZATION plus basically everything that is said to improve performance including several potentially unsafe optimizations
 
@@ -71,12 +71,12 @@ LOGGING += -D INFO_
 # Uncomment or add the suiteable blas and lapack libraries 
 # BLAS_LIBRARIES = -lopenblas -lgfortran			# Openblas, serial
 # BLAS_LIBRARIES = -lopenblasp -lgfortran	   		# Openblas, parallel
-BLAS_LIBRARIES = /usr/lib64/atlas/libsatlas.so -lgfortran	# Atlas
-#  BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran	# Custom
+# BLAS_LIBRARIES = /usr/lib64/atlas/libsatlas.so -lgfortran	# Atlas
+ BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran	# Custom
 
 
-LAPACK_LIBRARIES = -llapacke -llapack		    # Standard Lapack + Lapacke libraries
-#  LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a       # Custom
+# LAPACK_LIBRARIES = -llapacke -llapack		    # Standard Lapack + Lapacke libraries
+ LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a       # Custom
 
 # Change the following line if you want to use a self compiled verion of the SuiteSparse library
 SUITESPARSE = -lcxsparse

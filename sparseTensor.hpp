@@ -282,27 +282,31 @@ namespace xerus {
     
     void SparseTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
         change_dimensions(_newDim);
+        factor = 1.0;
     }
     
     void SparseTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
         change_dimensions(std::move(_newDim));
+        factor = 1.0;
     }
     
     void SparseTensor::reset(const std::vector<size_t>&  _newDim) {
         change_dimensions(_newDim);
+        factor = 1.0;
         if(entries.unique()) {
             entries->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>(*entries));
+            entries.reset(new std::map<size_t, value_t>());
         }
     }
     
     void SparseTensor::reset(      std::vector<size_t>&& _newDim) {
         change_dimensions(std::move(_newDim));
+        factor = 1.0;
         if(entries.unique()) {
             entries->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>(*entries));
+            entries.reset(new std::map<size_t, value_t>());
         }
     }
     
@@ -344,6 +348,7 @@ namespace xerus {
     }
     
     bool SparseTensor::compare_to_data(std::vector<value_t> _values, const double _eps) const {
+        REQUIRE(entries, "Internal Error");
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {
             if(std::abs(at(i)-_values[i]) > _eps) { return false; }

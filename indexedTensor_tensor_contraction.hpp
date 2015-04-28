@@ -201,15 +201,21 @@ namespace xerus {
                 }
             }
             
+//             LOG(bla, "LHS: " << _lhs.tensorObjectReadOnly->to_string());
             CsUniquePtr lhsCS = to_cs_format(_lhs, lhsOpen, common);
-            print_cs(lhsCS);
-            CsUniquePtr rhsCS = to_cs_format(_rhs, common, rhsOpen);
+//             print_cs(lhsCS);
             
-            CsUniquePtr cs_result = matrix_matrix_product(lhsCS, rhsCS);
+//             LOG(bla, "RHS: " << _rhs.tensorObjectReadOnly->to_string());
+            CsUniquePtr rhsCS = to_cs_format(_rhs, common, rhsOpen);
+//             print_cs(lhsCS);
+            
+            CsUniquePtr resultCS = matrix_matrix_product(lhsCS, rhsCS);
+//             LOG(bla, "Result:");
+//             print_cs(resultCS);
             
             lhsOpen.insert(lhsOpen.end(), rhsOpen.begin(), rhsOpen.end());
             
-            evaluate(_result, from_cs_format(cs_result, _result.tensorObject->dimensions)(lhsOpen));
+            evaluate(_result, from_cs_format(resultCS, _result.get_evaluated_dimensions(lhsOpen))(lhsOpen));
             return;
         }
         

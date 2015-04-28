@@ -133,7 +133,7 @@ namespace xerus {
         virtual value_t frob_norm() const;
         
         /// Returns a string representation of the Tensor
-        std::string to_string() const;
+        virtual std::string to_string() const override;
         
         
         /// Compares the Tensor entriewise to the given data
