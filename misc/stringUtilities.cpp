@@ -25,12 +25,15 @@ START_MISC_NAMESPACE
 
 std::string demangle_cxa(const std::string &_cxa) {
 	int status;
-	std::unique_ptr<char[]> realname;
-	realname.reset(abi::__cxa_demangle(_cxa.data(), 0, 0, &status));
+	std::unique_ptr<char[]> realname(new char[1024]);
+	abi::__cxa_demangle(_cxa.data(), realname.get(), 1023, &status);
 	if (status != 0) { return _cxa; }
 
-	if (realname) { return std::string(realname.get()); } 
-	else { return ""; }
+	if (realname) { 
+		return std::string(realname.release()); 
+	} else { 
+		return ""; 
+	}
 }
 
 std::vector<std::string> explode(const std::string& _string, const char delim) {
