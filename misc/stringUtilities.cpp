@@ -25,12 +25,13 @@ START_MISC_NAMESPACE
 
 std::string demangle_cxa(const std::string &_cxa) {
 	int status;
-	std::unique_ptr<char[]> realname(new char[1024]);
-	abi::__cxa_demangle(_cxa.data(), realname.get(), 1023, &status);
+	std::unique_ptr<char[]> realname(new char[2048]);
+	size_t bufferlength = 2047;
+	abi::__cxa_demangle(_cxa.data(), realname.get(), &bufferlength, &status);
 	if (status != 0) { return _cxa; }
 
 	if (realname) { 
-		return std::string(realname.release()); 
+		return std::string(realname.get()); 
 	} else { 
 		return ""; 
 	}
