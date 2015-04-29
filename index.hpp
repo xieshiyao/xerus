@@ -28,7 +28,7 @@ namespace xerus {
     Index::Index() : valueId(--idCounter), span(1), inverseSpan(false) { REQUIRE(idCounter < 0, "Index ID counter overflowed"); }
     
     Index::Index(const long _i) : valueId(_i), span(1), inverseSpan(false) {
-        CHECK(_i >= 0, fatal, "Negative valueId= " <<_i<< " given");
+        REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
     }
     
     Index::Index(const long _valueId, const size_t _span, const bool _inverseSpan) : valueId(_valueId), span(_span), inverseSpan(_inverseSpan) { }

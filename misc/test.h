@@ -54,13 +54,14 @@
 
 	#define TEST(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
-	// struct teststruct { __attribute__((constructor)) static void bla() {___RequiredTest requiredTest(__func__, __FILE__, __LINE__); } };
-	// []() __attribute__((constructor)) { ___RequiredTest requiredTest(__func__, __FILE__, __LINE__); };
 	#define REQUIRE_TEST \
 		do { \
-			static ___RequiredTest requiredTest(__func__, __FILE__, __LINE__);\
-			(void)requiredTest;\
-			___RequiredTest::increaseCounter(__func__, __FILE__, __LINE__);\
+			struct ___a{ static void rt() {\
+				___RequiredTest::register_test(__func__, __FILE__, __LINE__);\
+			} };\
+			static auto ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
+			(void) ___rtp; \
+			___RequiredTest::increase_counter(__func__, __FILE__, __LINE__); \
 		} while(false)
 	
 	#ifdef CHECK_

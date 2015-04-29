@@ -189,7 +189,6 @@
 		std::map<std::string, std::pair<size_t, size_t>> perFile;
 		
 		for (auto &t : (*___RequiredTest::tests)) {
-			//TODO this does not work yet....
 // 			std::cout << MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << t.second << std::endl;
 			std::pair<size_t, size_t> &pf = perFile[t.first.filename];
 			pf.second += 1;

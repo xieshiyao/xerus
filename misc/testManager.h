@@ -67,23 +67,23 @@ struct ___RequiredTest {
 	// order of contruction of global objects is random so the first one has to create the map
 	static std::map<identifier, size_t> *tests;
 	
-	___RequiredTest(std::string _functionName, std::string _fileName, size_t _lineNb) 
+	static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb) 
 	{
 		if (!tests) {
 			tests = new std::map<identifier, size_t>();
 		}
 		identifier key = identifier(_functionName, _fileName, _lineNb);
-		if (tests->count(key) > 0) {
-			LOG(warning, "test of function " << MISC::demangle_cxa(_functionName) << " file " << _fileName << " line " << _lineNb << " was required several times");
+		if (tests->count(key) == 0) {
+			(*tests)[key] = 0;
 		}
-		(*tests)[key] = 0;
 	}
 	
-	static void increaseCounter(std::string _functionName, std::string _fileName, size_t _lineNb) {
-		identifier key = identifier(_functionName, _fileName, _lineNb);
-		if (tests->count(key) == 0) {
-			LOG(fatal, "ie: unknown required test in " << MISC::demangle_cxa(_functionName) << " file " << _fileName << " line " << _lineNb);
+	static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb) {
+		if (!tests) {
+			// this can happen if some function in the init section (ie. before main) use REQUIREs
+			tests = new std::map<identifier, size_t>();
 		}
+		identifier key = identifier(_functionName, _fileName, _lineNb);
 		(*tests)[key] += 1;
 	}
 };
