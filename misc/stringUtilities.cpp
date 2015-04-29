@@ -22,11 +22,10 @@
 #include <cxxabi.h>
 
 START_MISC_NAMESPACE
-
+ 
 std::string demangle_cxa(const std::string &_cxa) {
 	int status;
-	std::unique_ptr<char[]> realname(new char[1024]);
-	abi::__cxa_demangle(_cxa.data(), realname.get(), 1023, &status);
+	std::unique_ptr<char, void(*)(void*)> realname(abi::__cxa_demangle(_cxa.data(), nullptr, nullptr, &status), &free);
 	if (status != 0) { return _cxa; }
 
 	if (realname) { 
