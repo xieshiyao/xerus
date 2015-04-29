@@ -21,46 +21,6 @@
 #include "../xerus.h"
 
 
-UNIT_TEST(SparseTensor, X,
-    Index i, j, k;
-    
-    SparseTensor SA({8,8});
-    SparseTensor SRX({8,8});
-    
-    
-    SA[{0,0}] = 1;
-    SA[{1,1}] = 2; 
-    SA[{2,2}] = 3;
-    SA[{3,3}] = 4; 
-    SA[{3,4}] = 5;
-    SA[{4,4}] = 6;
-    SA[{5,4}] = 7;
-    SA[{5,5}] = 8;
-    SA[{5,1}] = 9;
-    SA[{5,2}] = 10;
-    SA[{5,3}] = 11;
-    SA[{0,1}] = 11;
-    SA[{0,2}] = 11;
-    SA[{0,3}] = 11;
-    SA[{0,4}] = 11;
-    SA[{0,5}] = 11;
-    SA[{1,0}] = 11;
-    SA[{2,0}] = 11;
-    SA[{3,0}] = 11;
-    
-    FullTensor FA(SA);
-    FullTensor FR;
-    
-    FR(i,j) = FA(i,k)*FA(k,j);
-    
-    SRX(i,j) = SA(i,k)*SA(k,j);
-    
-    
-    TEST(approx_equal(FR, FullTensor(SRX), 1e-12));
-    
-    std::cout << std::endl << FR.to_string() << std::endl << std::endl << std::endl << SRX.to_string() << std::endl;
-)
-
 UNIT_TEST(SparseTensor, Creation,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0); 

@@ -23,10 +23,10 @@
 #pragma once
 #include "../xerus.h"
 
-UNIT_TEST(FullTensor, sum_matrix_2x2,
-    FullTensor res({2,2});
-    FullTensor B({2,2});
-    FullTensor C({2,2});
+UNIT_TEST(SparseTensor, sum_matrix_2x2,
+    SparseTensor res({2,2});
+    SparseTensor B({2,2});
+    SparseTensor C({2,2});
 
     Index i, J;
     
@@ -46,9 +46,9 @@ UNIT_TEST(FullTensor, sum_matrix_2x2,
     TEST(res.compare_to_data({6,9,9,12}));
 )
  
-UNIT_TEST(FullTensor, sum_lhs_equals_rhs,
-    FullTensor B({2,2});
-    FullTensor C({2,2});
+UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
+    SparseTensor B({2,2});
+    SparseTensor C({2,2});
 
     Index i, J;
     
@@ -68,15 +68,16 @@ UNIT_TEST(FullTensor, sum_lhs_equals_rhs,
     TEST(B.compare_to_data({12,18,18,24}));
 )
 
-UNIT_TEST(FullTensor, sum_matrix_1000x1000,
-    FullTensor res({1024,1024});
-    FullTensor A({1024,1024}, [](const std::vector<size_t> &_idx) {
+/* TODO
+UNIT_TEST(SparseTensor, sum_matrix_1000x1000,
+    SparseTensor res({1024,1024});
+    SparseTensor A({1024,1024}, [](const std::vector<size_t> &_idx) {
 		return double(_idx[0] + _idx[1]);
 	});
-    FullTensor B({1024,1024}, [](const std::vector<size_t> &_idx) {
+    SparseTensor B({1024,1024}, [](const std::vector<size_t> &_idx) {
 		return double(_idx[0] * _idx[1]);
 	});
-    FullTensor C({1024,1024}, [](const std::vector<size_t> &_idx) {
+    SparseTensor C({1024,1024}, [](const std::vector<size_t> &_idx) {
 		return double(_idx[0] + _idx[1] + _idx[0] * _idx[1]);
 	});
 
@@ -86,12 +87,12 @@ UNIT_TEST(FullTensor, sum_matrix_1000x1000,
     TEST(approx_equal(res, C, 1e-14, true));
     res(J,i) = A(J,i) + B(i,J);
     TEST(approx_equal(res, C, 1e-14, true));
-)
+)*/
 
-UNIT_TEST(FullTensor, sum_dyadic,
-    FullTensor res({2,2});
-    FullTensor B({2});
-    FullTensor C({2});
+UNIT_TEST(SparseTensor, sum_dyadic,
+    SparseTensor res({2,2});
+    SparseTensor B({2});
+    SparseTensor C({2});
 
     Index i, J, K;
     
@@ -105,11 +106,11 @@ UNIT_TEST(FullTensor, sum_dyadic,
 //     TEST(res.compare_to_data({6,10,7,11}));
 )
 
-UNIT_TEST(FullTensor, sum_threefold_sum,
-    FullTensor res({2});
-    FullTensor B({2});
-    FullTensor C({2});
-    FullTensor D({2});
+UNIT_TEST(SparseTensor, sum_threefold,
+    SparseTensor res({2});
+    SparseTensor B({2});
+    SparseTensor C({2});
+    SparseTensor D({2});
 
     Index i, J, K;
     

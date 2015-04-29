@@ -20,14 +20,14 @@
 #pragma once
 #include "../xerus.h"
 
-UNIT_TEST(FullTensor, Arithmetic_Negatives,
-    FullTensor A({2,2,2});
-    FullTensor B({2,2});
-    FullTensor B2({3,3});
-    FullTensor B3({3,2});
-    FullTensor B4({2,3});
-    FullTensor B5({2,2,2});
-    FullTensor C({2});
+UNIT_TEST(SparseTensor, Arithmetic_Negatives,
+    SparseTensor A({2,2,2});
+    SparseTensor B({2,2});
+    SparseTensor B2({3,3});
+    SparseTensor B3({3,2});
+    SparseTensor B4({2,3});
+    SparseTensor B5({2,2,2});
+    SparseTensor C({2});
     
     Index i,j,k;
 
@@ -41,18 +41,18 @@ UNIT_TEST(FullTensor, Arithmetic_Negatives,
     FAILTEST(B(i,j) = B(i,j) + B5(j,j,j));
 )
 
-UNIT_TEST(FullTensor, triple_indices,
+UNIT_TEST(SparseTensor, triple_indices,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-	FullTensor A(3);
-	FullTensor B(2);
-	FullTensor C(2);
-	FullTensor D(2);
-	FullTensor F(2);
-	FullTensor E0(0);
-	FullTensor E1(1);
-	FullTensor E2(2);
+	SparseTensor A({1,1,1});
+	SparseTensor B({1,1});
+	SparseTensor C({1,1});
+	SparseTensor D({1,1});
+	SparseTensor F({1,1});
+	SparseTensor E0;
+	SparseTensor E1({1});
+	SparseTensor E2({1});
 	Index i1,i2,i3,i4;
 	
 	FAILTEST(E0()   = A(i1,i1,i2)*B(i2,i2));
@@ -70,5 +70,4 @@ UNIT_TEST(FullTensor, triple_indices,
 	FAILTEST(E0()      = B(i1,i2)*C(i2,i3)*D(i3,i4)*F(i4,i2));
 // 	FAILTEST(E2(i1,i2) = B(i1,i2)*C(i2,i3)*D(i3,i4)*F(i4,i2)); //FEATURE
 )
-
     

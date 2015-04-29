@@ -35,12 +35,7 @@ namespace xerus {
         }
         if (all.empty()) {
 			tensorObject->reset({}, DONT_SET_ZERO());
-			//TODO [] into tensor
-			if (tensorObject->is_sparse()) {
-				(*static_cast<SparseTensor *>(tensorObject))[{}] = cpy.factor;
-			} else {
-				(*static_cast<FullTensor *>(tensorObject))[{}] = cpy.factor;
-			}
+            tensorObject->operator[]({}) = cpy.factor;
 		} else {
 			size_t res = cpy.contract(all);
 			

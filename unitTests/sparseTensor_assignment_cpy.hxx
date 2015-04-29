@@ -23,11 +23,11 @@
 
 #include <type_traits>
 
-UNIT_TEST(FullTensor, Assignment_Trivia, 
-    FullTensor A({2,2,3,1,2});
-    FullTensor res({2,2,3,1,2});
-    FullTensor res2({2,3,2,1,2});
-    FullTensor res3({2,3,1,2,2});
+UNIT_TEST(SparseTensor, Assignment_Trivia, 
+    SparseTensor A({2,2,3,1,2});
+    SparseTensor res({2,2,3,1,2});
+    SparseTensor res2({2,3,2,1,2});
+    SparseTensor res3({2,3,1,2,2});
 
     Index i,j,k,l,m;
     
@@ -85,20 +85,20 @@ UNIT_TEST(FullTensor, Assignment_Trivia,
     TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
-    FullTensor A({2,2,3,1,2});
-    FullTensor res1({2,2,3,1,2});
-    FullTensor res2({1,3,5,1,7});
-    FullTensor res3({2,3,2,2,3});
-    FullTensor res4({13,9,2,5,3});
-    FullTensor res5({1,1,1,1,1});
-    FullTensor res6(5);
-    FullTensor res7({1,2,3,4,5});
-    FullTensor res8({5,4,3,2,1});
-    FullTensor res9({3,2,3,2,3});
-    FullTensor res10({4,5,3,1,3});
-    FullTensor res11(5);
-    FullTensor res12({1,5,3,1,3});
+UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
+    SparseTensor A({2,2,3,1,2});
+    SparseTensor res1({2,2,3,1,2});
+    SparseTensor res2({1,3,5,1,7});
+    SparseTensor res3({2,3,2,2,3});
+    SparseTensor res4({13,9,2,5,3});
+    SparseTensor res5({1,1,1,1,1});
+    SparseTensor res6;
+    SparseTensor res7({1,2,3,4,5});
+    SparseTensor res8({5,4,3,2,1});
+    SparseTensor res9({3,2,3,2,3});
+    SparseTensor res10({4,5,3,1,3});
+    SparseTensor res11;
+    SparseTensor res12({1,5,3,1,3});
 
     Index i,j,k,l,m;
     
@@ -156,9 +156,9 @@ UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
     TEST(res12.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS, 
-    FullTensor B({2,2});
-    FullTensor C({2,2});
+UNIT_TEST(SparseTensor, Assignment_LHS_Equals_RHS, 
+    SparseTensor B({2,2});
+    SparseTensor C({2,2});
 
     Index i, J, K;
     
@@ -178,11 +178,11 @@ UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS,
     TEST(B.compare_to_data({1,3,2,4}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
-    FullTensor A({2,2,3,1,2});
-    FullTensor res1({2,3,1,2});
-    FullTensor res2;
-    FullTensor res3;
+UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
+    SparseTensor A({2,2,3,1,2});
+    SparseTensor res1({2,3,1,2});
+    SparseTensor res2;
+    SparseTensor res3;
     
     Index i,j,k,l,m;
     
@@ -242,13 +242,13 @@ UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
     TEST(res3.compare_to_data({18,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Negatives,
-    FullTensor A({2,2,2,2});
-    FullTensor A2({2,2,2,2});
-    FullTensor B({2,2,2});
-    FullTensor C(2);
-    FullTensor D({2,2});
-    FullTensor E({});
+UNIT_TEST(SparseTensor, Assignment_Negatives,
+    SparseTensor A({2,2,2,2});
+    SparseTensor A2({2,2,2,2});
+    SparseTensor B({2,2,2});
+    SparseTensor C;
+    SparseTensor D({2,2});
+    SparseTensor E({});
     
     Index i,j,k,l;
         

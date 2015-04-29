@@ -137,20 +137,20 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 
 
 
-UNIT_TEST(FullTensor, Factorisations_Plus_Arithmetic,
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    FullTensor A = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
-    FullTensor B = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
-    FullTensor C = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
-    FullTensor Q1(4);
-    FullTensor Q2(4);
-    FullTensor Q3(4);
-    FullTensor R1(4);
-    FullTensor R2(4);
-    FullTensor R3(4);
-    FullTensor res1(6);
-    FullTensor res2(6);
-     
-)
+// UNIT_TEST(FullTensor, Factorisations_Plus_Arithmetic,
+//     std::mt19937_64 rnd;
+//     std::normal_distribution<value_t> dist (0.0, 10.0);
+// 
+//     FullTensor A = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
+//     FullTensor B = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
+//     FullTensor C = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
+//     FullTensor Q1(4);
+//     FullTensor Q2(4);
+//     FullTensor Q3(4);
+//     FullTensor R1(4);
+//     FullTensor R2(4);
+//     FullTensor R3(4);
+//     FullTensor res1(6);
+//     FullTensor res2(6);
+//      
+// )

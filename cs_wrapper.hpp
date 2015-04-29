@@ -32,19 +32,18 @@ namespace xerus {
     CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
         REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
         
-        size_t rowDim = 1;
-        size_t colDim = 1;
+        size_t m = 1;
+        size_t n = 1;
         const AssignedIndices assIndices = _tensor.assign_indices();
         for(size_t i = 0; i < assIndices.numIndices; ++i) {
             if(contains(_lhsIndices, assIndices.indices[i])) {
                 REQUIRE(assIndices.indexOpen[i], "Internal Error.");
-                rowDim *= assIndices.indexDimensions[i];
+                m *= assIndices.indexDimensions[i];
             } else if(contains(_rhsIndices, assIndices.indices[i])) {
                 REQUIRE(assIndices.indexOpen[i], "Internal Error.");
-                colDim *= assIndices.indexDimensions[i];
+                n *= assIndices.indexDimensions[i];
             }   
         }
-        LOG(indices, assIndices.indices << ", " << _lhsIndices<< ", " << _rhsIndices);
         
         std::vector<Index> inverseIndexOrder(_rhsIndices);
         inverseIndexOrder.insert(inverseIndexOrder.end(), _lhsIndices.begin(), _lhsIndices.end());
@@ -52,35 +51,37 @@ namespace xerus {
         SparseTensor reorderedTensor;
         reorderedTensor(inverseIndexOrder) = _tensor;
         
-        REQUIRE(reorderedTensor.size == rowDim*colDim, "Internal Error");
+        REQUIRE(reorderedTensor.size == m*n, "Internal Error");
         
-        CsUniquePtr cs_format = create_cs(rowDim, colDim, reorderedTensor.entries->size());
+        // We want A (m x n) in compressed coloum storage. We have reordered the tensor to A^T (n x m) and 
+        // transform it to compressed row storage. This results in A in compressed coloum storage as demanded.
+        
+        CsUniquePtr cs_format = create_cs(m, n, reorderedTensor.entries->size());
         
         int entryPos = 0;
         int currRow = -1;
         cs_format->i[0] = 0;
         
-        for(const std::pair<size_t, value_t>& entry : *reorderedTensor.entries.get() ) {
+        for(const std::pair<size_t, value_t>& entry : *reorderedTensor.entries.get()) {
             cs_format->x[entryPos] = entry.second;
-            cs_format->i[entryPos] = (int) (entry.first%rowDim);
-            while(currRow < (int) (entry.first/rowDim)) {
+            cs_format->i[entryPos] = (int) (entry.first%m);
+            while(currRow < (int) (entry.first/m)) {
                 cs_format->p[++currRow] = entryPos;
             }
             entryPos++;
         }
-        LOG(bla, "Dims " << _tensor.tensorObjectReadOnly->dimensions << ", " << reorderedTensor.dimensions);
-        REQUIRE(currRow <= (int) rowDim && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) rowDim << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
-        while(currRow < (int) colDim+1) {
+        REQUIRE(currRow < (int) n && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) n << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
+        while(currRow < (int) n) {
             cs_format->p[++currRow] = entryPos;
         }
-            
-        cs_format->p[currRow] = entryPos;
         
         return cs_format;
     }
     
     
     SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions) {
+        REQUIRE(_cs_format, "NullPtr cannot be converted to SparseTensor.");
+        
         SparseTensor reconstructedTensor(_dimensions);
         
         for(int i = 0; i < _cs_format->n; ++i) {
