@@ -108,12 +108,16 @@ namespace xerus {
     }
 
     std::unique_ptr<const size_t[]> get_step_sizes(const AssignedIndices _assIndices) {
-        size_t* stepSizes = new size_t[_assIndices.numIndices];
-        stepSizes[_assIndices.numIndices-1] = 1;
-        for(size_t i = _assIndices.numIndices-1; i > 0; --i) {
-            stepSizes[i-1] = stepSizes[i]*_assIndices.indexDimensions[i];
+        if(_assIndices.numIndices == 0) {
+            return std::unique_ptr<const size_t[]>();
+        } else {
+            size_t* stepSizes = new size_t[_assIndices.numIndices];
+            stepSizes[_assIndices.numIndices-1] = 1;
+            for(size_t i = _assIndices.numIndices-1; i > 0; --i) {
+                stepSizes[i-1] = stepSizes[i]*_assIndices.indexDimensions[i];
+            }
+            return std::unique_ptr<const size_t[]>(stepSizes);
         }
-        return std::unique_ptr<const size_t[]>(stepSizes);
     }
 
 
