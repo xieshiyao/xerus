@@ -56,12 +56,13 @@
 	
 	#define REQUIRE_TEST \
 		do { \
+			static const char * ___fname = __PRETTY_FUNCTION__;\
 			struct ___a{ static void rt() {\
-				___RequiredTest::register_test(__func__, __FILE__, __LINE__);\
+				___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
 			} };\
 			static auto ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
 			(void) ___rtp; \
-			___RequiredTest::increase_counter(__func__, __FILE__, __LINE__); \
+			___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
 		} while(false)
 	
 	#ifdef CHECK_

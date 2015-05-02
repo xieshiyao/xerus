@@ -29,7 +29,7 @@ std::string demangle_cxa(const std::string &_cxa) {
 	if (status != 0) { return _cxa; }
 
 	if (realname) { 
-		return std::string(realname.release()); 
+		return std::string(realname.get()); 
 	} else { 
 		return ""; 
 	}
