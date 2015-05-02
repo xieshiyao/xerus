@@ -120,10 +120,24 @@ clean:
 	
 
 selectFunctions: misc/preCompileSelector.cpp .obj/explodeString.o .obj/TimeMeasure.o .obj/timer.o .obj/log.o .obj/blasLapackWrapper.o
-	$(CXX) includes/preCompileSelector.cpp -std=c++11 -I includes -I ../include -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native -fgcse-sm -fgcse-las -funswitch-loops -fipa-pta -fbranch-target-load-optimize -fsched-stalled-insns=100 -fsched-stalled-insns-dep=100 -fvariable-expansion-in-unroller --param max-crossjump-edges=1000 --param max-grow-copy-bb-insns=10 --param max-delay-slot-insn-search=1000 --param max-delay-slot-live-search=1000 --param max-gcse-memory=6442450 --param max-pending-list-length=1000 --param max-modulo-backtrack-attempts=1000 --param max-inline-insns-single=4000 --param max-inline-insns-auto=400 --param large-function-insns=10000 --param large-function-growth=200 --param inline-unit-growth=100 --param ipcp-unit-growth=100 --param max-reload-search-insns=500 --param max-cselib-memory-locations=5000 --param max-sched-ready-insns=1000 --param max-sched-region-blocks=100 --param max-pipeline-region-blocks=150 --param max-sched-region-insns=1000 --param max-pipeline-region-insns=2000 --param selsched-max-lookahead=500 --param max-partial-antic-length=0 --param sccvn-max-scc-size=100000 --param sccvn-max-alias-queries-per-access=10000 --param ira-max-loops-num=1000 --param ira-max-conflict-table-size=20000 --param loop-invariant-max-bbs-in-loop=100000 --param loop-max-datarefs-for-datadeps=10000 --param max-vartrack-size=0 --param max-vartrack-expr-depth=120 -freciprocal-math -fmerge-all-constants -D FULL_SELECTION_ .obj/explodeString.o .obj/TimeMeasure.o .obj/timer.o .obj/log.o .obj/blasLapackWrapper.o $(EXTRA_LAPACK) -o includes/.obj/PreCompileSelector
+	$(CXX) includes/preCompileSelector.cpp -std=c++11 -I includes -I ../include -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
+	-fgcse-sm -fgcse-las -funswitch-loops -fipa-pta -fbranch-target-load-optimize -fsched-stalled-insns=100 -fsched-stalled-insns-dep=100 -fvariable-expansion-in-unroller \
+	--param max-crossjump-edges=1000 --param max-grow-copy-bb-insns=10 --param max-delay-slot-insn-search=1000 --param max-delay-slot-live-search=1000 --param max-gcse-memory=6442450 \
+	--param max-pending-list-length=1000 --param max-modulo-backtrack-attempts=1000 --param max-inline-insns-single=4000 --param max-inline-insns-auto=400 --param large-function-insns=10000 \
+	--param large-function-growth=200 --param inline-unit-growth=100 --param ipcp-unit-growth=100 --param max-reload-search-insns=500 --param max-cselib-memory-locations=5000 \
+	--param max-sched-ready-insns=1000 --param max-sched-region-blocks=100 --param max-pipeline-region-blocks=150 --param max-sched-region-insns=1000 --param max-pipeline-region-insns=2000 \
+	--param selsched-max-lookahead=500 --param max-partial-antic-length=0 --param sccvn-max-scc-size=100000 --param sccvn-max-alias-queries-per-access=10000 --param ira-max-loops-num=1000 \
+	--param ira-max-conflict-table-size=20000 --param loop-invariant-max-bbs-in-loop=100000 --param loop-max-datarefs-for-datadeps=10000 --param max-vartrack-size=0 --param max-vartrack-expr-depth=120 \
+	-freciprocal-math -fmerge-all-constants -D FULL_SELECTION_ .obj/explodeString.o .obj/TimeMeasure.o .obj/timer.o .obj/log.o .obj/blasLapackWrapper.o $(EXTRA_LAPACK) -o includes/.obj/PreCompileSelector
 	includes/.obj/PreCompileSelector
 	
+
 #Compile local source files - depend on all Headers and local directorys
 .obj/%.o: %.cpp $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
+	mkdir -p $(dir $@)
+	$(CXX) $< -c -D TEST_ -D CHECK_ $(FLAGS) -o $@
+
+#Compile local source files - depend on all Headers and local directorys
+.obj/%.o: %.cxx $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
 	mkdir -p $(dir $@)
 	$(CXX) $< -c -D TEST_ -D CHECK_ $(FLAGS) -o $@
