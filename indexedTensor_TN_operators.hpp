@@ -26,6 +26,7 @@ namespace xerus {
     template<> 
     void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork> &_rhs) {
         std::vector<Index> rightIndices = _rhs.get_assigned_indices();
+//         LOG(LetsTrySomething, _rhs.tensorObjectReadOnly->factor);
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
 		TensorNetwork::trace_out_double_indices(rightIndices, cpy(rightIndices));
         
@@ -33,6 +34,7 @@ namespace xerus {
         for (size_t i=0; i < cpy.nodes.size(); ++i) {
             if (!cpy.nodes[i].erased) all.insert(i);
         }
+        
         if (all.empty()) {
 			tensorObject->reset({}, DONT_SET_ZERO());
             tensorObject->operator[]({}) = cpy.factor;

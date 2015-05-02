@@ -72,7 +72,8 @@ struct ___RequiredTest {
 		if (!tests) {
 			tests = new std::map<identifier, size_t>();
 		}
-		identifier key = identifier(_functionName, _fileName, _lineNb);
+//         identifier key = identifier(_functionName, _fileName, _lineNb);
+        identifier key = identifier("Unknown", _fileName, _lineNb);
 		if (tests->count(key) == 0) {
 			(*tests)[key] = 0;
 		}
@@ -83,7 +84,8 @@ struct ___RequiredTest {
 			// this can happen if some function in the init section (ie. before main) use REQUIREs
 			tests = new std::map<identifier, size_t>();
 		}
-		identifier key = identifier(_functionName, _fileName, _lineNb);
+//         identifier key = identifier(_functionName, _fileName, _lineNb);
+        identifier key = identifier("Unknown", _fileName, _lineNb);
 		(*tests)[key] += 1;
 	}
 };

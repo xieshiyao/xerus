@@ -45,7 +45,6 @@ include config.mk
 
 # SUGGEST_ATTRIBUTES = TRUE 		# Tell the compiler to suggest attributes
 
-LOGGING += -D BLAS_ANALYSIS		# Enable BLAS/LAPACK analysis 
   
 # OPTIMIZE += -fprofile-generate	# Generate Profile output for optimization 
 # OPTIMIZE += -fprofile-use		# Use a previously generated profile output

@@ -14,7 +14,7 @@
 # The last level activates all optimazations available, including non-ISO C++ conform optimization 
 # and optimazations that may result in a loss of numerical precicsion, use at your own risk.
 #Optimization options
-#   LOW_OPTIMIZATION = TRUE		# Activates -O0
+# LOW_OPTIMIZATION = TRUE		# Activates -O0
 # HIGH_OPTIMIZATION = TRUE		# Activates -O3 -march=native and some others
 # DANGEROUS_OPTIMIZATION = TRUE		# Activates everything of HIGH_OPTIMIZATION plus basically everything that is said to improve performance including several potentially unsafe optimizations
 
@@ -22,7 +22,7 @@
 # LTO = TRUE
 
 #=================================================================================================
-# Debug and Logging
+# Debug and Logging   
 #=================================================================================================
 # The Xerus library performs a number of runtime checks to ensure a valid input to all routines.
 # While not recommended these runtime checks can be completly disabled by commenting the following
@@ -36,7 +36,6 @@ DEBUG += -D CHECK_
 # You can add all kind of debuging options. In the following are some examples
 # DEBUG = -D_GLIBCXX_DEBUG		# Enables bounds checking for stl containers
  DEBUG += -g				# Adds debug symbols
- DEBUG += -fno-omit-frame-pointer	#
 
 
 # Sanitization 
@@ -46,8 +45,8 @@ DEBUG += -D CHECK_
 
 
 # Set the logging level. Xerus has a logging system to provide runtime information. Here you can adjust the logging level used by the library
-# LOGGING += -D DEBUG_			
-LOGGING += -D INFO_
+LOGGING += -D DEBUG_			
+# LOGGING += -D INFO_
 # LOGGING += -D WARNING_
 # LOGGING += -D CRITICAL_
 
@@ -57,6 +56,9 @@ LOGGING += -D INFO_
 # Uncomment the following line to save the last LOgs in a circular buffer (without printing them) to allow detailed reports in case of errors.
 # Note that this can significatly slow down the library.
 #  LOGGING += -D LOG_BUFFER_
+
+# Add time measurments for all blas and Lapack calls
+# LOGGING += -D BLAS_ANALYSIS		# Enable BLAS/LAPACK analysis
 
 
 
