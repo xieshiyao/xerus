@@ -73,6 +73,7 @@ struct ___RequiredTest {
 			tests = new std::map<identifier, size_t>();
 		}
 		identifier key = identifier(_functionName, _fileName, _lineNb);
+// 		std::cout << "registered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
 		if (tests->count(key) == 0) {
 			(*tests)[key] = 0;
 		}
@@ -84,6 +85,7 @@ struct ___RequiredTest {
 			tests = new std::map<identifier, size_t>();
 		}
 		identifier key = identifier(_functionName, _fileName, _lineNb);
+// 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
 		(*tests)[key] += 1;
 	}
 };
