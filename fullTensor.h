@@ -104,7 +104,6 @@ namespace xerus {
         template<class generator, class distribution, ADD_MOVE(std::vector<size_t>, Vec)>
         static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
-			REQUIRE(result.degree() == 0 || result.size != 0, "may not create tensors with an index == 0");
             for(size_t i=0; i < result.size; ++i) {
                 result.data.get()[i] = _dist(_rnd);
             }

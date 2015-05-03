@@ -33,7 +33,7 @@
 namespace xerus {
     namespace internal {
         void array_deleter_vt(value_t* const _toDelete) { delete[] _toDelete; }
-        void array_deleter_st(size_t* const _toDelete) { delete[] _toDelete; }
+        void array_deleter_st( size_t* const _toDelete) { delete[] _toDelete; }
     }
 }
 

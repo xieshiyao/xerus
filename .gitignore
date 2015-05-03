@@ -21,3 +21,4 @@
 
 # However we really want to ignore
 misc/lapacke/*
+config.mk

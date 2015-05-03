@@ -48,11 +48,15 @@ namespace xerus {
 
         /// Creates a tensor with the given dimensions and factor
         ALLOW_MOVE(std::vector<size_t>, Vec)
-        explicit Tensor(Vec&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Vec>(_dimensions)), size(product(dimensions)), factor(_factor)  { }
+        explicit Tensor(Vec&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Vec>(_dimensions)), size(product(dimensions)), factor(_factor) {
+            REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+        }
         
         /// Creates a tensor with the given dimensions and factor
         ALLOW_MOVE(std::initializer_list<size_t>, Init)
-        explicit Tensor(Init&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Init>(_dimensions)), size(product(dimensions)), factor(_factor)  { }
+        explicit Tensor(Init&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Init>(_dimensions)), size(product(dimensions)), factor(_factor) {
+            REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+        }
         
         /// Returns a pointer containing a copy of the object with appropriate type
         virtual Tensor* get_copy() const = 0;

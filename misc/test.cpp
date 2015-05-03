@@ -44,7 +44,7 @@
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         try {
             passed = _t.second(); // executes the test
-        } catch (const ::MISC::generic_error &e) {
+        } catch (const MISC::generic_error &e) {
             std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
             std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
             std::cerr << e.what() << std::endl;
@@ -92,7 +92,7 @@
     }
 
     _noreturn_ void ___catch_signals(int _sig)  {
-        XERUS_THROW(::MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
+        XERUS_THROW(MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
     }
 
     #undef main

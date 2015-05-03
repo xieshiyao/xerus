@@ -24,13 +24,14 @@ LIB_SOURCES += misc/callStack.cpp
 LIB_SOURCES += misc/simpleNumerics.cpp
 
 LIB_OBJECTS = $(LIB_SOURCES:%.cpp=.obj/%.o)
+TEST_LIB_OBJECTS = $(LIB_SOURCES:%.cpp=.testObj/%.o)
 
 # Register source files for the unit tests
 TEST_SOURCES += xerusTest.cpp
 TEST_SOURCES += unitTests/fullTensor_tests.cpp
 TEST_SOURCES += misc/test.cpp
 
-TEST_OBJECTS = $(TEST_SOURCES:%.cpp=.obj/%.o)
+TEST_OBJECTS = $(TEST_SOURCES:%.cpp=.testObj/%.o)
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ debug:
 	\t\t MINIMAL_DEPS \t == \t $(MINIMAL_DEPS)\n"
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
-	$(CXX) -D TEST_ -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
 
 # Support non lto build for outdated systems
 ifdef LTO
@@ -102,8 +103,8 @@ $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)
 		ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
 endif
 
-$(TEST_NAME): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HXX) $(LIB_NAME_STATIC) $(TEST_OBJECTS) 
-	$(CXX) -D TEST_ -D CHECK_ $(FLAGS) $(TEST_OBJECTS) $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o $(TEST_NAME)
+$(TEST_NAME): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HXX) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) 
+	$(CXX) -D TEST_ $(FLAGS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o $(TEST_NAME)
 
 test:  $(TEST_NAME)
 	./$(TEST_NAME) all
@@ -115,28 +116,25 @@ benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_S
 	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o BenchmarkTest
 
 clean:
-	-rm -f $(LIB_NAME) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_OBJECTS)
+	-rm -f $(LIB_NAME_STATIC) $(LIB_NAME_SHARED) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS)
 	
 
-selectFunctions: misc/preCompileSelector.cpp .obj/explodeString.o .obj/TimeMeasure.o .obj/timer.o .obj/log.o .obj/blasLapackWrapper.o
-	$(CXX) includes/preCompileSelector.cpp -std=c++11 -I includes -I ../include -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
-	-fgcse-sm -fgcse-las -funswitch-loops -fipa-pta -fbranch-target-load-optimize -fsched-stalled-insns=100 -fsched-stalled-insns-dep=100 -fvariable-expansion-in-unroller \
-	--param max-crossjump-edges=1000 --param max-grow-copy-bb-insns=10 --param max-delay-slot-insn-search=1000 --param max-delay-slot-live-search=1000 --param max-gcse-memory=6442450 \
-	--param max-pending-list-length=1000 --param max-modulo-backtrack-attempts=1000 --param max-inline-insns-single=4000 --param max-inline-insns-auto=400 --param large-function-insns=10000 \
-	--param large-function-growth=200 --param inline-unit-growth=100 --param ipcp-unit-growth=100 --param max-reload-search-insns=500 --param max-cselib-memory-locations=5000 \
-	--param max-sched-ready-insns=1000 --param max-sched-region-blocks=100 --param max-pipeline-region-blocks=150 --param max-sched-region-insns=1000 --param max-pipeline-region-insns=2000 \
-	--param selsched-max-lookahead=500 --param max-partial-antic-length=0 --param sccvn-max-scc-size=100000 --param sccvn-max-alias-queries-per-access=10000 --param ira-max-loops-num=1000 \
-	--param ira-max-conflict-table-size=20000 --param loop-invariant-max-bbs-in-loop=100000 --param loop-max-datarefs-for-datadeps=10000 --param max-vartrack-size=0 --param max-vartrack-expr-depth=120 \
-	-freciprocal-math -fmerge-all-constants -D FULL_SELECTION_ .obj/explodeString.o .obj/TimeMeasure.o .obj/timer.o .obj/log.o .obj/blasLapackWrapper.o $(EXTRA_LAPACK) -o includes/.obj/PreCompileSelector
-	includes/.obj/PreCompileSelector
+selectFunctions: misc/preCompileSelector.cpp .obj/misc/stringUtilities.o .obj/misc/timeMeasure.o .obj/misc/namedLogger.o .obj/misc/blasLapackWrapper.o
+	$(CXX) misc/preCompileSelector.cpp -std=c++11 -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
+	-D FULL_SELECTION_ libxerus.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o .obj/PreCompileSelector 
+	.obj/PreCompileSelector
 	
+# Compile sources to test object files
+.testObj/%.o: %.cpp $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
+	mkdir -p $(dir $@)
+	$(CXX) $< -c -D TEST_ $(FLAGS) -o $@
+
+.testObj/%.o: %.cxx $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP) $(LOCAL_HXX)
+	mkdir -p $(dir $@)
+	$(CXX) $< -c -D TEST_ $(FLAGS) -o $@
 
 #Compile local source files - depend on all Headers and local directorys
 .obj/%.o: %.cpp $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
 	mkdir -p $(dir $@)
-	$(CXX) $< -c -D TEST_ -D CHECK_ $(FLAGS) -o $@
+	$(CXX) $< -c $(FLAGS) -o $@
 
-#Compile local source files - depend on all Headers and local directorys
-.obj/%.o: %.cxx $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
-	mkdir -p $(dir $@)
-	$(CXX) $< -c -D TEST_ -D CHECK_ $(FLAGS) -o $@

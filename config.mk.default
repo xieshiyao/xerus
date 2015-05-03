@@ -45,8 +45,8 @@ DEBUG += -D CHECK_
 
 
 # Set the logging level. Xerus has a logging system to provide runtime information. Here you can adjust the logging level used by the library
-LOGGING += -D DEBUG_			
-# LOGGING += -D INFO_
+# LOGGING += -D DEBUG_			
+LOGGING += -D INFO_
 # LOGGING += -D WARNING_
 # LOGGING += -D CRITICAL_
 
