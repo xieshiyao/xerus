@@ -116,7 +116,7 @@ benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_S
 	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o BenchmarkTest
 
 clean:
-	-rm -f $(LIB_NAME_STATIC) $(LIB_NAME_SHARED) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS)
+	-rm -f $(LIB_NAME_STATIC) $(LIB_NAME_SHARED) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) .obj/PreCompileSelector
 	
 
 selectFunctions: misc/preCompileSelector.cpp .obj/misc/stringUtilities.o .obj/misc/timeMeasure.o .obj/misc/namedLogger.o .obj/misc/blasLapackWrapper.o

@@ -19,7 +19,8 @@
 # DANGEROUS_OPTIMIZATION = TRUE		# Activates everything of HIGH_OPTIMIZATION plus basically everything that is said to improve performance including several potentially unsafe optimizations
 
 # Additionally Link Time Optimization support can be build into the library by uncommenting the following line.
-# LTO = TRUE
+# USE_LTO = TRUE
+COMPILE_THREADS = 8
 
 #=================================================================================================
 # Debug and Logging   
