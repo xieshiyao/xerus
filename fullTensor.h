@@ -110,6 +110,7 @@ namespace xerus {
             return result;
         }
         
+        
         // Unfortunaly all construcotrs based on vectors have to be copied for initializer_list
         
         /// Creates a tensor with the given dimensions and undefined entries
@@ -141,6 +142,9 @@ namespace xerus {
             return construct_random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
         }
         
+        
+        
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /// Returns a pointer containing a copy of the object with appropriate type
@@ -160,6 +164,8 @@ namespace xerus {
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const override;
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
 
+        
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// Ensures that this tensor is the sole owner of the data array. If needed a new array with the same entries is created
         virtual void ensure_own_data() override;
@@ -173,9 +179,11 @@ namespace xerus {
         /// Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
         virtual void ensure_own_data_and_apply_factor() override;
         
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         FullTensor& operator=(const FullTensor&  _other);
         FullTensor& operator=(      FullTensor&& _other);
+        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         FullTensor& operator+=(const FullTensor& _other);

@@ -69,6 +69,7 @@ namespace xerus {
 #include "fullTensor.h"
 #include "sparseTensor.h"
 #include "cs_wrapper.h"
+#include "sparseTimesFullContraction.h"
 #include "indexedTensor_tensor.h"
 #include "indexedTensor_tensor_operators.h"
 #include "indexedTensor_tensor_factorisations.h"

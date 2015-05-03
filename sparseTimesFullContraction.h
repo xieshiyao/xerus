@@ -19,14 +19,16 @@
 
 #pragma once
 
-#include "sparseTimesFullContraction.h"
+#include "cs_wrapper.h"
 
 namespace xerus {
-    void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base);
-
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
-    
-    IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
-    
-    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b);
+    void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const double* const _A,
+                                const bool _transposeA,
+                                const size_t _midDim,
+                                const std::map<size_t, double>& _B,
+                                const bool _transposeB);
 }

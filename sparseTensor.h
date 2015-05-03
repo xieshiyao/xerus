@@ -33,18 +33,45 @@ namespace xerus {
         ///Empty constructor (creates an order zero Tensor)
         explicit SparseTensor();
         
-        ///Copy and move Constructors
+        ///Copy Constructors
         implicit SparseTensor( const SparseTensor&  _other);
+        
+        /// Move Constructors
         implicit SparseTensor(       SparseTensor&& _other);
         
-        /// Creates a tensor with the given dimensions and all entries equals zero (i.e. no entries)
+        /// Creates a SparseTensor with the given dimensions and all entries equals zero (i.e. no entries)
         ALLOW_MOVE(std::vector<size_t>, T)
         explicit SparseTensor(T&& _dimensions) : Tensor(std::forward<T>(_dimensions)), entries(new std::map<size_t, value_t>()) { }
         
-        /// Creates a tensor with the given dimensions and all entries equals zero
+        /// Creates a SparseTensor with the given dimensions and all entries equals zero (i.e. no entries)
         explicit SparseTensor(std::initializer_list<size_t>&& _dimensions);
         
+        /// Creates a SparseTensor from the given FullTensor, keeps all values larger than eps
         explicit SparseTensor(const FullTensor & _full, const double _eps = 1e-14);
+        
+        /// Creates a SparseTensor with the given dimensions and uses the given function to create N non zero entries
+        ALLOW_MOVE(std::vector<size_t>, Vec)
+        explicit SparseTensor(Vec&& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N) : SparseTensor(std::forward<Vec>(_dimensions)) {
+            REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
+            for (size_t i=0; i < _N; ++i) {
+                entries->insert(_f(i, size));
+            }
+        }
+        
+        explicit SparseTensor(std::initializer_list<size_t>&& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N) : SparseTensor(std::move(_dimensions)) {
+            REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
+            for (size_t i=0; i < _N; ++i) {
+                std::pair<size_t, value_t> entry = _f(i, size);
+                REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
+                REQUIRE(!contains(*entries, entry.first), "Allready contained " << entry.first);
+                entries->insert(std::move(entry));
+            } 
+            
+            REQUIRE(count_non_zero_entries() == _N , "Oo " << _N << " != " << count_non_zero_entries());
+        }
+        
+        
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /// Returns a pointer containing a copy of the object with appropriate type
         virtual Tensor* get_copy() const;
@@ -62,6 +89,8 @@ namespace xerus {
         /// Returns a pointer to a newly constructed tensor of appropriate type with undefined entries
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const override;
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
+        
+        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// Ensures that this tensor is the sole owner of the entrie set. If needed a new set with the same entries is created
