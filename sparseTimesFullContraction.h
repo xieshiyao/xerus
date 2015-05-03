@@ -31,4 +31,14 @@ namespace xerus {
                                 const size_t _midDim,
                                 const std::map<size_t, double>& _B,
                                 const bool _transposeB);
+    
+    void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const std::map<size_t, double>& _A,
+                                const bool _transposeA,
+                                const size_t _midDim,
+                                const double* const _B,
+                                const bool _transposeB);
 }

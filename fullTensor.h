@@ -268,7 +268,7 @@ namespace xerus {
     
     _inline_ value_t frob_norm(const FullTensor& _fullTensor) { return _fullTensor.frob_norm(); }
     
-    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
+    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps = 1e-14, const bool pureDataCompare = false);
 }
 
 
