@@ -209,7 +209,9 @@
 			}
 		}
 		
-		
+		// destroy all stored tests to make memory-leak detection simpler
+		delete ___UnitTest::tests;
+		delete ___RequiredTest::tests;
         
         return totalPassCount != totalCount;
     }
