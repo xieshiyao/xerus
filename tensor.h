@@ -152,7 +152,7 @@ namespace xerus {
         /// Reinterprets the dimensions. Opposed to change_dimensions() it is assumed that the underlying data and the Size is NOT changed.
         ALLOW_MOVE(std::vector<size_t>, Vec)
         void reinterpret_dimensions( Vec&& _newDimensions) {
-            REQUIRE(product(_newDimensions) == product(dimensions), "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << product(dimensions));
+            REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
             dimensions = std::forward<Vec>(_newDimensions);
         }
         
