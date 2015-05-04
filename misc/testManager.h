@@ -29,7 +29,7 @@
 #include "stringUtilities.h"
 
 
-struct ___UnitTest {
+struct ___UnitTest final {
 	// order of contruction of global objects is random so the first one has to create the map
 	static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
 	
