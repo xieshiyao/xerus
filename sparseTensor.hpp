@@ -128,6 +128,7 @@ namespace xerus {
         }
     }
     
+    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     SparseTensor& SparseTensor::operator=(const SparseTensor&  _other) {
         assign(_other);
@@ -283,11 +284,21 @@ namespace xerus {
     void SparseTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
         change_dimensions(_newDim);
         factor = 1.0;
+        if(entries.unique()) {
+            entries->clear();
+        } else {
+            entries.reset(new std::map<size_t, value_t>());
+        }
     }
     
     void SparseTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
         change_dimensions(std::move(_newDim));
         factor = 1.0;
+        if(entries.unique()) {
+            entries->clear();
+        } else {
+            entries.reset(new std::map<size_t, value_t>());
+        }
     }
     
     void SparseTensor::reset(const std::vector<size_t>&  _newDim) {

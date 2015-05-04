@@ -27,6 +27,8 @@ namespace xerus {
     /// Unique_ptr wrapper that should always be used for the CS sparse matrix format
     typedef std::unique_ptr<cs_di, cs_di*(*)(cs_di*)> CsUniquePtr;
     
+    bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries);
+    
     /// Allocates a CS sparse matrix with given dimensions and number of entries
     CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 

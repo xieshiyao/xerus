@@ -33,7 +33,7 @@
 namespace xerus {
     namespace internal {
         void array_deleter_vt(value_t* const _toDelete) { delete[] _toDelete; }
-        void array_deleter_st(size_t* const _toDelete) { delete[] _toDelete; }
+        void array_deleter_st( size_t* const _toDelete) { delete[] _toDelete; }
     }
 }
 
@@ -43,6 +43,7 @@ namespace xerus {
 #include "fullTensor.hpp"
 #include "sparseTensor.hpp"
 #include "cs_wrapper.hpp"
+#include "sparseTimesFullContraction.hpp"
 #include "indexedTensor_tensor_evaluate.hpp"
 #include "indexedTensor_tensor_contraction.hpp"
 #include "indexedTensor_tensor_solve.hpp"

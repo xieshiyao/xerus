@@ -31,7 +31,7 @@ struct generic_error : public std::exception {
 	
 	template<class T>
     generic_error& operator<<(const T &_info) noexcept {
-		error_info += ::MISC::to_string(_info);
+		error_info += MISC::to_string(_info);
 		return *this;
 	}
 	

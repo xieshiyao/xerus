@@ -22,7 +22,11 @@
 #include "xerus.h"
 
 namespace xerus {
-    std::vector<ContractionHeuristic>* ContractionHeuristic::list = 0;
+    std::vector<ContractionHeuristic>* ContractionHeuristic::list = nullptr;
+	static __attribute__((destructor)) void destroy_list() {
+		delete ContractionHeuristic::list;
+		ContractionHeuristic::list = nullptr;
+	}
 
 	//TODO non-quadratic
 #define GREEDY(name, alg) \

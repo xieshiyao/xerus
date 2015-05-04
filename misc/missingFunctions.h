@@ -169,7 +169,8 @@ START_MISC_NAMESPACE
     ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
     template<class T>
     bool approx_equal(T _a, T _b, T _eps) {
-        return std::abs(_a-_b) < _eps;
+        bool horst = std::abs(_a-_b) < _eps;
+        return horst;
     }
 
 END_MISC_NAMESPACE

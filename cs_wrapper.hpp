@@ -22,6 +22,15 @@
 #include "xerus.h"
 
 namespace xerus {
+    bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries) {
+        const size_t lhsSize = _lhsDim*_midDim;
+        const size_t rhsSize = _midDim*_rhsDim;
+        const size_t upperBound = std::min(_lhsDim*_rhsEntries, _rhsDim*_lhsEntries);
+        const size_t finalSize = _lhsDim*_rhsDim;
+        return finalSize > 100*upperBound || (lhsSize > 100*_lhsEntries && rhsSize > 100*_rhsEntries);
+    }
+    
+    
     CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N) {
         REQUIRE(_m < std::numeric_limits<int>::max() && _n < std::numeric_limits<int>::max() && _N < std::numeric_limits<int>::max(), "Sparse Tensor is to large for SuiteSparse");
         return CsUniquePtr(cs_spalloc((int) _m, (int) _n, (int) _N, 1, 0), &cs_spfree);

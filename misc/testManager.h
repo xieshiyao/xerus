@@ -29,7 +29,7 @@
 #include "stringUtilities.h"
 
 
-struct ___UnitTest {
+struct ___UnitTest final {
 	// order of contruction of global objects is random so the first one has to create the map
 	static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
 	
@@ -64,7 +64,7 @@ struct ___RequiredTest {
 		}
 	};
 	
-	// order of contruction of global objects is random so the first one has to create the map
+	// order of construction of global objects is random so the first one has to create the map
 	static std::map<identifier, size_t> *tests;
 	
 	static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb) 
@@ -73,6 +73,7 @@ struct ___RequiredTest {
 			tests = new std::map<identifier, size_t>();
 		}
 		identifier key = identifier(_functionName, _fileName, _lineNb);
+// 		std::cout << "registered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
 		if (tests->count(key) == 0) {
 			(*tests)[key] = 0;
 		}
@@ -84,6 +85,7 @@ struct ___RequiredTest {
 			tests = new std::map<identifier, size_t>();
 		}
 		identifier key = identifier(_functionName, _fileName, _lineNb);
+// 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
 		(*tests)[key] += 1;
 	}
 };
