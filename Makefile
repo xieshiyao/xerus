@@ -95,10 +95,9 @@ $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
 	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
 
 # Support non lto build for outdated systems
-ifdef LTO
+ifdef USE_LTO
 $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)
 	gcc-ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
-	gcc-ranlib $(LIB_NAME_STATIC)
 else 
 $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)     
 	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
