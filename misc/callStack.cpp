@@ -28,6 +28,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <iostream>
 #include "stringUtilities.h"
 
 START_MISC_NAMESPACE
@@ -43,6 +44,50 @@ struct bfdResolver {
 	static std::map<void *, storedBfd> bfds;
 	static bool bfd_initialized;
 	
+	static std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
+		if (!bfd_initialized) {
+			bfd_init();
+			bfd_initialized = true;
+		}
+		
+		// get path and offset of shared object that contains this address
+		Dl_info info;
+		dladdr(_addr, &info);
+		if (info.dli_fbase == nullptr) {
+			return std::pair<uintptr_t, uintptr_t>(0,0);
+		}
+		
+		// load the corresponding bfd file (from file or map)
+		if (bfds.count(info.dli_fbase) == 0) {
+			std::unique_ptr<storedBfd> newBfd(new storedBfd);
+			newBfd->abfd = bfd_openr(info.dli_fname, 0);
+			if (!newBfd->abfd) {
+				return std::pair<uintptr_t, uintptr_t>(0,0);
+			}
+			bfd_check_format(newBfd->abfd,bfd_object);
+			size_t storage_needed = bfd_get_symtab_upper_bound(newBfd->abfd);
+			newBfd->symbols =reinterpret_cast<asymbol**>(new char[storage_needed]);
+			/*size_t numSymbols = */bfd_canonicalize_symtab(newBfd->abfd, newBfd->symbols );
+			
+			newBfd->offset = (intptr_t)info.dli_fbase;
+			
+			bfds.insert(std::pair<void *, storedBfd>(info.dli_fbase, *newBfd.release()));
+		}
+		
+		storedBfd &currBfd = bfds.at(info.dli_fbase);
+		
+		asection *section = currBfd.abfd->sections;
+		while (section != nullptr) {
+			std::cout << "sections " << section->name << " " << _name << std::endl;
+			if (_name == section->name) {
+				return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
+			} else {
+				section = section->next;
+				continue;
+			}
+		}
+		return std::pair<uintptr_t, uintptr_t>(0,0);
+	}
 	
 	static std::string resolve(void *address) {
 		if (!bfd_initialized) {
@@ -140,6 +185,10 @@ std::string get_call_stack() {
 		res += bfdResolver::resolve(stack[i]) + '\n';
 	}
 	return res;
+}
+
+std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
+	return bfdResolver::get_range_of_section(_addr, _name);
 }
 
 END_MISC_NAMESPACE

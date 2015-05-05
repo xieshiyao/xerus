@@ -60,8 +60,9 @@
 			struct ___a{ static void rt() {\
 				___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
 			} };\
-			static auto ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
-			(void) ___rtp; \
+			typedef void (*___t)();\
+			static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
+			(void)___rtp; \
 			___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
 		} while(false)
 	

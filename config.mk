@@ -15,11 +15,11 @@
 # and optimazations that may result in a loss of numerical precicsion, use at your own risk.
 #Optimization options
 #   LOW_OPTIMIZATION = TRUE		# Activates -O0
-# HIGH_OPTIMIZATION = TRUE		# Activates -O3 -march=native and some others
+ HIGH_OPTIMIZATION = TRUE		# Activates -O3 -march=native and some others
 # DANGEROUS_OPTIMIZATION = TRUE		# Activates everything of HIGH_OPTIMIZATION plus basically everything that is said to improve performance including several potentially unsafe optimizations
 
 # Additionally Link Time Optimization support can be build into the library by uncommenting the following line.
-# LTO = TRUE
+#  LTO = TRUE
 
 #=================================================================================================
 # Debug and Logging
@@ -36,7 +36,7 @@ DEBUG += -D CHECK_
 # You can add all kind of debuging options. In the following are some examples
 # DEBUG = -D_GLIBCXX_DEBUG		# Enables bounds checking for stl containers
  DEBUG += -g				# Adds debug symbols
- DEBUG += -fno-omit-frame-pointer	#
+ DEBUG += -save-temps
 
 
 # Sanitization 

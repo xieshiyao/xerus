@@ -95,6 +95,8 @@
         XERUS_THROW(::MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
     }
 
+    typedef void (*required_test_t)(void);
+    
     #undef main
     int main(int argc, char* argv[]) {
     // 	signal(SIGINT, ___catch_signals); // users ctrl+c should actually terminate the program
@@ -105,6 +107,19 @@
         signal(SIGILL,___catch_signals);
         signal(SIGSEGV,___catch_signals);
         
+		// perform required_test initializations
+		// pass address of ___catch_signals as the address of main cannot be taken as by ISO c++...
+		std::pair<uintptr_t, uintptr_t> requiredTestRange = MISC::get_range_of_section(reinterpret_cast<void *>(&___catch_signals), "required_tests");
+		std::cout << requiredTestRange.first << " " << requiredTestRange.second << std::endl;
+		for (required_test_t *p = (required_test_t *)requiredTestRange.first; p < (required_test_t *)requiredTestRange.second; p += 1) {
+			try {
+				(*p)();
+			} catch (...) {
+				std::cout << "required test initialization failed. required test listing might will be wrong." << std::endl;
+				break;
+			}
+		}
+		
         //Calculate complete time
         std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         
