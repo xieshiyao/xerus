@@ -11,7 +11,9 @@ Some key features include:
 * Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
 * Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS and DMRG).
 * Capabilites to handle arbitrary Tensor Networks and the possibility for the user to define own decomposition formats.
+* Lazy evaluation of contractions featuring heuristics to find good contraction orders.
 * Fast calculations thanks to wide-spread backends on the `blas` basis (in particular `openblas` or `atlas`) and the `suiteSparse` sparse capabilities.
+* Thread-safe up to 256 threads.
 
 ## Version History
 
@@ -22,13 +24,12 @@ at these early stages of development), but be adviced that these development ver
 ## Getting Started
 
 There are a number of tutorials to get you started using the `xerus` library.
-* [Building xerus](@ref md_tut_build) - instruction on how to build the library iteself and your first own program using it.
+* [Building xerus](@ref tutorial_build) - instruction on how to build the library iteself and your first own program using it.
 * [First Calculations](@ref md_tut_fullTensor) - defining and using tensors of arbitrary degree and shorthand index notations.
 * [TT Tensors](@ref md_tut_ttTensor) - using the MPS or Tensor-Train decomposition.
+* [Debugging](@ref md_tut_debugging) - using `xerus`'s capabilities to debug your own application.
 
 ## Issues
 
 Should you have any problems with the library do not hesitate to contact us at [contact[at]libxerus.org] or describe your problem in the [issuetracker](https://git.hemio.de/xerus/xerus/issues).
 
-
- 
