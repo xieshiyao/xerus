@@ -22,9 +22,6 @@
 
 namespace xerus {
 
-	const ALSVariant ALS(1, 1e-13, ALSVariant::lapack_solver);
-    const ALSVariant DMRG(2, 1e-13, ALSVariant::lapack_solver);
-	
     void ALSVariant::lapack_solver(const TensorNetwork &_A, Tensor &_x, const Tensor &_b) {
         const size_t d = _x.degree();
         FullTensor A(_A);
