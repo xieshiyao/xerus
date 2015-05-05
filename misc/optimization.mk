@@ -2,37 +2,31 @@
 # Uses: USE_CLANG, USE_LTO, LOW_OPTIMIZATION, HIGH_OPTIMIZATION, DANGEROUS_OPTIMIZATION, RIDICULOUS_OPTIMIZATION, FREE_RAM, COMPILE_THREADS, GRAPHITE_AVAILABLE
 
 # Set default values
-ifndef FREE_RAM
-	FREE_RAM = 6291456
-endif
 
 ifndef COMPILE_THREADS
 	COMPILE_THREADS=1
 endif
 
+ifndef FREE_RAM
+    FREE_RAM = 6291456
+endif
+
 # Allow GCC to use all the Free Ram available or 6 GB if nothin is set.
 ifndef USECLANG
-	OPTIMIZE += --param ggc-min-heapsize=$(FREE_RAM) # Allow GCC to use X KB ram before bothering to free any
+	OPTIMIZE += --param ggc-min-heapsize=$(FREE_RAM)    # Allow GCC to use X KB ram before bothering to free any
 endif
 
-#Disabeled Warnings
-WARNINGS += -Wno-comment				# Ignore warning about /* inside /*...*/
-WARNINGS += -Wno-unused-parameter			# No warning about unused parameters
 
 ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Set Optimization Options - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ##
-ifndef USECLANG
-	# Should improve GGC compile speed (NOT the executable)
-	OPTIMIZE += --param ggc-min-heapsize=5442450	 	# Allow GCC to use more ram (2 GB) before bothering to free any
-endif
 
 # Set LTO usage
 ifdef USE_LTO
 	ifndef USE_CLANG
-		OPTIMIZE += -flto=$(COMPILE_THREADS)	# Use LTO at compiling using X threads
-		OPTIMIZE += -fno-fat-lto-objects	# No none LTO code in object files
-		OPTIMIZE += -flto-compression-level=0	# Do not compress the gimple code
+		OPTIMIZE += -flto=$(COMPILE_THREADS)	    # Use LTO at compiling using X threads
+		OPTIMIZE += -fno-fat-lto-objects	        # No none LTO code in object files
+		OPTIMIZE += -flto-compression-level=0	    # Do not compress the gimple code
 	else
-		OPTIMIZE += -flto			# Use LTO at compiling
+		OPTIMIZE += -flto			                # Use LTO at compiling
 	endif
 endif
 
