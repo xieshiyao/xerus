@@ -37,9 +37,11 @@ START_MISC_NAMESPACE
 
 struct bfdResolver {
 	struct storedBfd {
-		bfd* abfd;
-		asymbol** symbols;
+		typedef bfd_boolean(deleter_t)(bfd*);
+		std::unique_ptr<bfd, deleter_t*> abfd;
+		std::unique_ptr<asymbol*[]> symbols;
 		intptr_t offset;
+		storedBfd(bfd *_abfd, deleter_t *_del) : abfd(_abfd, _del) {}
 	};
 	static std::map<void *, storedBfd> bfds;
 	static bool bfd_initialized;
@@ -107,19 +109,18 @@ struct bfdResolver {
 		
 		// load the corresponding bfd file (from file or map)
 		if (bfds.count(info.dli_fbase) == 0) {
-			std::unique_ptr<storedBfd> newBfd(new storedBfd);
-			newBfd->abfd = bfd_openr(info.dli_fname, 0);
+			std::unique_ptr<storedBfd> newBfd(new storedBfd(bfd_openr(info.dli_fname, 0), &bfd_close));
 			if (!newBfd->abfd) {
 				return res.str()+" .?] <could not open object file>";
 			}
-			bfd_check_format(newBfd->abfd,bfd_object);
-			size_t storage_needed = bfd_get_symtab_upper_bound(newBfd->abfd);
-			newBfd->symbols =reinterpret_cast<asymbol**>(new char[storage_needed]);
-			/*size_t numSymbols = */bfd_canonicalize_symtab(newBfd->abfd, newBfd->symbols );
+			bfd_check_format(newBfd->abfd.get(),bfd_object);
+			size_t storage_needed = bfd_get_symtab_upper_bound(newBfd->abfd.get());
+			newBfd->symbols.reset(reinterpret_cast<asymbol**>(new char[storage_needed]));
+			/*size_t numSymbols = */bfd_canonicalize_symtab(newBfd->abfd.get(), newBfd->symbols.get());
 			
 			newBfd->offset = (intptr_t)info.dli_fbase;
 			
-			bfds.insert(std::pair<void *, storedBfd>(info.dli_fbase, *newBfd.release()));
+			bfds.insert(std::pair<void *, storedBfd>(info.dli_fbase, std::move(*newBfd.get())));
 		} 
 		
 		storedBfd &currBfd = bfds.at(info.dli_fbase);
@@ -144,7 +145,7 @@ struct bfdResolver {
 			const char *file;
 			const char *func;
 			unsigned line;
-			if (bfd_find_nearest_line(currBfd.abfd, section, currBfd.symbols, offset, &file, &func, &line)) {
+			if (bfd_find_nearest_line(currBfd.abfd.get(), section, currBfd.symbols.get(), offset, &file, &func, &line)) {
 				if (file) {
 					return res.str()+"] "+std::string(file)+":"+to_string(line)+" (inside "+demangle_cxa(func)+")";
 				} else {

@@ -37,10 +37,10 @@ using namespace xerus;
     #include "unitTests/ttCreation.hxx"
     #include "unitTests/ttRounding.hxx"
     #include "unitTests/ttArithmetic.hxx"
-    #include "unitTests/xBlasAnalysis.hxx"
     #include "unitTests/als.hxx"
     #include "unitTests/misc.hxx"
 //      #include "unitTests/strassen.hxx"
+    #include "unitTests/xBlasAnalysis.hxx"
 
 
     

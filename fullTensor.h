@@ -104,12 +104,12 @@ namespace xerus {
         template<class generator, class distribution, ADD_MOVE(std::vector<size_t>, Vec)>
         static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
-			REQUIRE(result.degree() == 0 || result.size != 0, "may not create tensors with an index == 0");
             for(size_t i=0; i < result.size; ++i) {
                 result.data.get()[i] = _dist(_rnd);
             }
             return result;
         }
+        
         
         // Unfortunaly all construcotrs based on vectors have to be copied for initializer_list
         
@@ -142,6 +142,9 @@ namespace xerus {
             return construct_random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
         }
         
+        
+        
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /// Returns a pointer containing a copy of the object with appropriate type
@@ -161,6 +164,8 @@ namespace xerus {
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const override;
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
 
+        
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// Ensures that this tensor is the sole owner of the data array. If needed a new array with the same entries is created
         virtual void ensure_own_data() override;
@@ -174,9 +179,11 @@ namespace xerus {
         /// Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
         virtual void ensure_own_data_and_apply_factor() override;
         
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         FullTensor& operator=(const FullTensor&  _other);
         FullTensor& operator=(      FullTensor&& _other);
+        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         FullTensor& operator+=(const FullTensor& _other);
@@ -261,7 +268,7 @@ namespace xerus {
     
     _inline_ value_t frob_norm(const FullTensor& _fullTensor) { return _fullTensor.frob_norm(); }
     
-    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
+    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps = 1e-14, const bool pureDataCompare = false);
 }
 
 

@@ -18,25 +18,12 @@
 // or contact us at contact@libXerus.org.
 
 #include <fstream>
-#include <sstream>
-#include <complex.h>
 
-// Fix for broken complex implementation
-#undef I
+#include "../xerus.h"
 
-// Workaround for brocken Lapack!
-#define lapack_complex_float    float _Complex
-#define lapack_complex_double   double _Complex
-extern "C"
-{
-    #include <cblas.h> 
-}
-#include <lapacke/lapacke.h>
- 
+#include "timeMeasure.h"
 
-#include "standard.h"
-#include "test.h"
-#include "TimeMeasure.h"
+using namespace xerus; 
 
 #ifdef FULL_SELECTION_
     const size_t createN = (1024*1024*1024/8)/2;
@@ -142,10 +129,12 @@ int main() {
     #endif
     
     
-    std::fstream headerFile("../includes/selectedFunctions.h", std::fstream::out);
+    std::fstream headerFile("misc/selectedFunctions.h", std::fstream::out);
     headerFile << "#pragma once" << std::endl << std::endl;
     headerFile << "#include <cstring>" << std::endl;
     headerFile << "#include \"blasLapackWrapper.h\"" << std::endl << std::endl << std::endl;
+    
+    headerFile << "START_MISC_NAMESPACE" << std::endl << std::endl;
     
     // Standard template functions for ordinary types
     headerFile << "template <typename T>" << std::endl;
@@ -221,12 +210,10 @@ int main() {
             self_copy(offset(B, m), offset(A, m), m);
             add_call("copy", m, "selfCpy", timer.get());
             
-            #ifdef _BLAS
-                timer.step();
-                REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
-                cblas_dcopy((int) m, offset(A, m), 1, offset(B, m), 1);
-                add_call("copy", m, "blasCpy", timer.get());
-            #endif
+            timer.step();
+            REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
+            cblas_dcopy((int) m, offset(A, m), 1, offset(B, m), 1);
+            add_call("copy", m, "blasCpy", timer.get());
         }
     }
     determine_winner("copy", headerFile);
@@ -248,14 +235,12 @@ int main() {
             self_scaled_copy(offset(B, m), normalDist(rnd), offset(A, m), m);
             add_call("scaledCopy", m, "selfScaledCpy", timer.get());
             
-            #ifdef _BLAS
-                double* const x = offset(A, m);
-                timer.step();
-                REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
-                cblas_dcopy((int) m, x, 1, offset(B, m), 1);
-                cblas_dscal((int) m, normalDist(rnd), x, 1);
-                add_call("scaledCopy", m, "blasScaledCpy", timer.get());
-            #endif
+            double* const x = offset(A, m);
+            timer.step();
+            REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
+            cblas_dcopy((int) m, x, 1, offset(B, m), 1);
+            cblas_dscal((int) m, normalDist(rnd), x, 1);
+            add_call("scaledCopy", m, "blasScaledCpy", timer.get());
             
             #ifdef _ATLAS
                 timer.step();
@@ -284,12 +269,10 @@ int main() {
             self_scale(offset(A, m), m, normalDist(rnd));
             add_call("scale", m, "selfScale", timer.get());
             
-            #ifdef _BLAS
-                timer.step();
-                REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
-                cblas_dscal((int) m, normalDist(rnd), offset(A, m), 1);
-                add_call("scale", m, "blasScale", timer.get());
-            #endif
+            timer.step();
+            REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
+            cblas_dscal((int) m, normalDist(rnd), offset(A, m), 1);
+            add_call("scale", m, "blasScale", timer.get());
         }
     }
     determine_winner("scale", headerFile);
@@ -313,12 +296,10 @@ int main() {
             self_add(offset(A, m), m, normalDist(rnd), offset(B, m));
             add_call("add", m, "selfAdd", timer.get());
             
-            #ifdef _BLAS
-                timer.step();
-                REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
-                cblas_daxpy((int) m, normalDist(rnd), offset(B, m), 1, offset(A, m), 1);
-                add_call("add", m, "blasAdd", timer.get());
-            #endif
+            timer.step();
+            REQUIRE(m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for blas/lapack");
+            cblas_daxpy((int) m, normalDist(rnd), offset(B, m), 1, offset(A, m), 1);
+            add_call("add", m, "blasAdd", timer.get());
             
             #ifdef _ATLAS
                 timer.step();
@@ -360,6 +341,7 @@ int main() {
     
     
     
+    headerFile << "END_MISC_NAMESPACE" << std::endl << std::endl;
     headerFile.close();
         
     delete[] A;

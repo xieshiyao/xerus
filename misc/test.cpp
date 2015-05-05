@@ -44,7 +44,7 @@
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         try {
             passed = _t.second(); // executes the test
-        } catch (const ::MISC::generic_error &e) {
+        } catch (const MISC::generic_error &e) {
             std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
             std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
             std::cerr << e.what() << std::endl;
@@ -92,7 +92,7 @@
     }
 
     _noreturn_ void ___catch_signals(int _sig)  {
-        XERUS_THROW(::MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
+        XERUS_THROW(MISC::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << MISC::get_call_stack());
     }
 
     typedef void (*required_test_t)(void);
@@ -126,6 +126,13 @@
         std::cout << "###############################################################################" << std::endl;
         std::cout << "#                                unit-testing                                 #" << std::endl;
         std::cout << "###############################################################################" << std::endl;
+		// no unittests defined (ie. the map tests does not exist!)
+		if (!___UnitTest::tests) {
+			std::cout << "no unittests defined." << std::endl;
+			std::cout << "use the macro UNIT_TEST(group, testname, ...) to define unittests inside the sourcecode." << std::endl;
+			return 0;
+		}
+		
         if (argc < 2) {
             std::cout << "usage:" << std::endl;
             std::cout << "  " << MISC_NAMESPACE::explode(argv[0],'/').back() << " [groupname] ..." << std::endl;
@@ -163,7 +170,11 @@
             // explicit test inside a group?
             std::vector<std::string> cmd = MISC_NAMESPACE::explode(grp,':');
             if (cmd.size()>1) {
-                if ((*___UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
+				if (cmd.size()>2) {
+                    std::cout << "########## \033[1;31munknown syntax '" << grp << "'\033[0m" << std::endl;
+                    continue;
+                }
+                if (!___UnitTest::tests->count(cmd[0]) || (*___UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
                     std::cout << "########## \033[1;31munknown unittest '" << cmd[0] << ":" << cmd[1] << "'\033[0m" << std::endl;
                     continue;
                 }
@@ -224,7 +235,9 @@
 			}
 		}
 		
-		
+		// destroy all stored tests to make memory-leak detection simpler
+		delete ___UnitTest::tests;
+		delete ___RequiredTest::tests;
         
         return totalPassCount != totalCount;
     }

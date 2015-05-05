@@ -352,8 +352,7 @@ namespace xerus {
 			
 			// remove contracted degree-0 tensor
 			REQUIRE(base.nodes[remaining].degree() == 0, "Internal Error.");
-			//TODO this should be a static_cast (which does not yet exist)
-			base.factor *= (*reinterpret_cast<FullTensor *>(base.nodes[remaining].tensorObject.get()))[{}];
+			base.factor *= (*base.nodes[remaining].tensorObject.get())[0];
 			REQUIRE(base.nodes[remaining].neighbors.empty(), "Internal Error.");
 			base.nodes[remaining].erased = true;
 		}

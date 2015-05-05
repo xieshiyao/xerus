@@ -204,7 +204,7 @@ namespace err {
 				<< ' ' << std::setw(2) << std::setfill('0') << __ltm->tm_hour \
 				<< ':' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_min \
 				<< ':' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_sec << " " \
-				<< std::setfill(' ') << std::setw(20) << std::left << ::MISC::explode(__FILE__, '/').back() << ":" \
+				<< std::setfill(' ') << std::setw(20) << std::left << MISC::explode(__FILE__, '/').back() << ":" \
 				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
 				<< std::setfill(' ') << std::setw(12) << std::left
     
@@ -231,7 +231,7 @@ namespace err {
 	
 #else // with xerus exceptions
 #define NAMED_LOGGER_ON_FATAL \
-	XERUS_THROW(::MISC::generic_error() << __tmp.str() << "callstack:\n" << MISC::get_call_stack());
+	XERUS_THROW(MISC::generic_error() << __tmp.str() << "callstack:\n" << MISC::get_call_stack());
 	
 #endif
 
@@ -283,6 +283,6 @@ SET_LOGGING_DEFAULT(err::LOGGING_FULL)
 template<typename T>
 std::string GET_OBJECT_NAME(const T* const) {
 	std::string name = typeid(T).name();
-	return ::MISC::demangle_cxa(name);
+	return MISC::demangle_cxa(name);
 }
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "cs_wrapper.h"
+#include "sparseTimesFullContraction.h"
 
 namespace xerus {
     void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base);
