@@ -69,27 +69,30 @@ MINIMAL_DEPS = Makefile misc/general.mk misc/warnings.mk misc/optimization.mk co
 # ------------------------------------------------------------------------------------------------------
 help:
 	@printf "Possible make targets are:\n \
-	\t\t$(LIB_NAME_SHARED) \t\t -- Build Xerus as a shared library.\n \
-	\t\t$(LIB_NAME_STATIC) \t\t -- Build Xerus as a static library.\n \
-	\t\t$(TEST_NAME) \t\t -- Build the Xerus unit tests.\n \
-	\t\ttest \t\t\t -- Run the Xerus unit tests.\n \
+	\t\tall \t\t\t -- Build xerus both as a shared and a static library.\n \
+	\t\t$(LIB_NAME_SHARED) \t\t -- Build xerus as a shared library.\n \
+	\t\t$(LIB_NAME_STATIC) \t\t -- Build xerus as a static library.\n \
+	\t\ttest \t\t\t -- Build and run the xerus unit tests.\n \
+	\t\tinstall \t\t -- Install the shared library and header files (may require root).\n \
+	\t\t$(TEST_NAME) \t\t -- Only build the xerus unit tests.\n \
 	\t\tbenchmark \t\t -- Build a loosly related benchmark program.\n \
 	\t\tclean \t\t\t -- Remove all object and library and executable files.\n \
-	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n"
+	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n \
+	\t\tdebug \t\t\t -- Print information on the Makefile variables set.\n"
 	
 debug:
 	@printf "Some variables we have set:\n \
-	\t\t LIB_NAME_SHARED \t == \t $(LIB_NAME_SHARED)\n \
-	\t\t LIB_NAME_STATIC \t == \t $(LIB_NAME_STATIC)\n \
-	\t\t TEST_NAME \t == \t $(TEST_NAME)\n \
-	\t\t LIB_SOURCES \t == \t $(LIB_SOURCES)\n \
-	\t\t LIB_OBJECTS \t == \t $(LIB_OBJECTS)\n \
-	\t\t TEST_SOURCES \t == \t $(TEST_SOURCES)\n \
-	\t\t TEST_OBJECTS \t == \t $(TEST_OBJECTS)\n \
-	\t\t LOCAL_HEADERS \t == \t $(LOCAL_HEADERS)\n \
-	\t\t LOCAL_HPP \t == \t $(LOCAL_HPP)\n \
-	\t\t LOCAL_HXX \t == \t $(LOCAL_HXX)\n \
-	\t\t MINIMAL_DEPS \t == \t $(MINIMAL_DEPS)\n"
+	\t\t LIB_NAME_SHARED \t == \t $(LIB_NAME_SHARED)\n\n \
+	\t\t LIB_NAME_STATIC \t == \t $(LIB_NAME_STATIC)\n\n \
+	\t\t TEST_NAME \t\t == \t $(TEST_NAME)\n\n \
+	\t\t LIB_SOURCES \t\t == \t $(LIB_SOURCES)\n\n \
+	\t\t LIB_OBJECTS \t\t == \t $(LIB_OBJECTS)\n\n \
+	\t\t TEST_SOURCES \t\t == \t $(TEST_SOURCES)\n\n \
+	\t\t TEST_OBJECTS \t\t == \t $(TEST_OBJECTS)\n\n \
+	\t\t LOCAL_HEADERS \t\t == \t $(LOCAL_HEADERS)\n\n \
+	\t\t LOCAL_HPP \t\t == \t $(LOCAL_HPP)\n\n \
+	\t\t LOCAL_HXX \t\t == \t $(LOCAL_HXX)\n\n \
+	\t\t MINIMAL_DEPS \t\t == \t $(MINIMAL_DEPS)\n\n"
 
 all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 
@@ -104,6 +107,9 @@ else
 $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)     
 	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
 endif
+
+install:
+	@printf "Sorry not yet supported\n" # TODO
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HXX) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) 
 	$(CXX) -D TEST_ $(FLAGS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o $(TEST_NAME)

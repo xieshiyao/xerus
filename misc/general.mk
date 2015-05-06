@@ -23,8 +23,3 @@ LOCAL_HPP += $(wildcard */*/*.hpp)
 LOCAL_HXX = $(wildcard *.hxx)
 LOCAL_HXX += $(wildcard */*.hxx)
 LOCAL_HXX += $(wildcard */*/*.hxx)
-
-#Create Object list from general sources list and add path
-# LIB_OBJECTS = $(LIB_SOURCES:%.cpp=.obj/%.o)
-# TEST_OBJECTS = $(TEST_SOURCES:%.cpp=.obj/%.o)
-
