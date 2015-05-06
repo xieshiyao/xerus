@@ -232,6 +232,7 @@ UNIT_TEST(FullTensor, Contraction_Order_3_Same_Dimensions,
     FullTensor A({2,2,2});
     FullTensor B({2,2,2});
     FullTensor res2({2,2});
+    FullTensor res2a({2});
     FullTensor res3({});
 
     Index i,j,k,l,m;
@@ -256,6 +257,13 @@ UNIT_TEST(FullTensor, Contraction_Order_3_Same_Dimensions,
     
     contract(res2(i,j), A(l,m,j), B(m,i,l));
     TEST(res2.compare_to_data({5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
+    
+    contract(res2a(i), A(l,m,0), B(m,i,l));
+    TEST(res2a.compare_to_data({5+2*7+3*9+4*11, 6+2*8+3*10+4*12}));
+    
+    contract(res2a(j), A(l,m,j), B(m,1,l));
+    TEST(res2a.compare_to_data({6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
+    
     contract(res3(), A(i,j,k), B(i,k,j));
     TEST(approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
