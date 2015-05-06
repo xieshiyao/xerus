@@ -33,7 +33,7 @@ START_MISC_NAMESPACE
 std::string demangle_cxa(const std::string &_cxa);
 
 ///@brief: Explodes a string at positions indicated by _delim.
-std::vector<std::string> explode(const std::string& _string, const char _delim);
+_const_ std::vector<std::string> explode(const std::string& _string, const char _delim);
 
 ///@brief: Replaces all occurences of _search in _string by _replace.
 void replace(std::string& _string, const std::string& _search, const std::string& _replace);

@@ -37,6 +37,7 @@ DEBUG += -D CHECK_
 # You can add all kind of debuging options. In the following are some examples
 # DEBUG = -D_GLIBCXX_DEBUG		# Enables bounds checking for stl containers
  DEBUG += -g				# Adds debug symbols
+# DEBUG += -save-temps
 
 
 # Sanitization 
