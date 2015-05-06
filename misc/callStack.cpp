@@ -85,7 +85,6 @@ struct bfdResolver {
 		
 		asection *section = currBfd.abfd->sections;
 		while (section != nullptr) {
-			std::cout << "sections " << section->name << " " << _name << std::endl;
 			if (_name == section->name) {
 				return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
 			} else {
