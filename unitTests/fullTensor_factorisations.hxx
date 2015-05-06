@@ -96,6 +96,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     FullTensor R2(5);
     FullTensor Q3(5);
     FullTensor R3(3);
+    FullTensor Q4(4);
     FullTensor res4(6);
     
     Index i, j, k, l, m, n, o, p, q, r;
@@ -133,6 +134,11 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     (R3(i,k,l), Q3(l,m,j,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R3(i,k,o)*Q3(o,m,j,n,r);
     TEST(approx_equal(res4, A, 1e-12));
+    
+    
+    (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));
+    res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
+    TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
 )
 
 

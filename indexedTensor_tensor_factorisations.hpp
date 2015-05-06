@@ -27,9 +27,18 @@ namespace xerus {
         const std::vector<Index> baseIndices = _base.get_assigned_indices();
         
         // Calculate future spans of lhs and rhs.
-        size_t lhsSpan = 1; // Start with 1 because there is a new dimension introduced in the split. 
-        for(const Index& idx : baseIndices) { if(contains(_lhs.indices, idx)) { lhsSpan += idx.span; } }
-        const size_t rhsSpan = _base.degree() - lhsSpan + 2; // +1 because of the extra dim and +1 because the extra dim is allready added to lhsSpan
+        size_t lhsSpan = 1, rhsSpan = 1; // Start with 1 because there is a new dimension introduced in the split. 
+        
+        for(const Index& idx : baseIndices) {
+            if(_base.is_open(idx)) { // TODO inefficent
+                if(contains(_lhs.indices, idx)) { 
+                    lhsSpan += idx.span; 
+                } else {
+                    REQUIRE(contains(_rhs.indices, idx), "Every open index of factorisation base must be contained in one of the targets");
+                    rhsSpan += idx.span;
+                }
+            }
+        }
         
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices(lhsSpan);
         const std::vector<Index> rhsIndices = _rhs.get_assigned_indices(rhsSpan);
@@ -168,8 +177,6 @@ namespace xerus {
         
         std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, A, Q, R);
         
-        REQUIRE(Q.degree()+R.degree() == A.degree()+2, "Q and R must have have the degree of the input tensor plus two in RQ factorization.");
-        
         // R has to carry the constant factor
         R.tensorObject->factor = reorderedBaseTensor->factor;
         
@@ -192,8 +199,6 @@ namespace xerus {
         size_t lhsSize, rhsSize, rank;
         
         std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, A, R, Q);
-        
-        REQUIRE(Q.degree()+R.degree() == A.degree()+2, "Q and R must have have the degree of A plus two in RQ factorization.");
         
         // R has to carry the constant factor
         R.tensorObject->factor = reorderedBaseTensor->factor;

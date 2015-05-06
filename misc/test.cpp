@@ -109,7 +109,7 @@
         
 		// perform required_test initializations
 		// pass address of ___catch_signals as the address of main cannot be taken as by ISO c++...
-		std::pair<uintptr_t, uintptr_t> requiredTestRange = MISC::get_range_of_section(reinterpret_cast<void *>(&___catch_signals), "required_tests");
+		std::pair<uintptr_t, uintptr_t> requiredTestRange = MISC::get_range_of_section(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(&___catch_signals)), "required_tests");
 		std::cout << requiredTestRange.first << " " << requiredTestRange.second << std::endl;
 		for (required_test_t *p = (required_test_t *)requiredTestRange.first; p < (required_test_t *)requiredTestRange.second; p += 1) {
 			try {
