@@ -24,7 +24,7 @@ at these early stages of development), but be adviced that these development ver
 ## Getting Started
 
 There are a number of tutorials to get you started using the `xerus` library.
-* [Building xerus](@ref tutorial_build) - instruction on how to build the library iteself and your first own program using it.
+* [Building xerus](@ref md_tut_build) - instruction on how to build the library iteself and your first own program using it.
 * [First Calculations](@ref md_tut_fullTensor) - defining and using tensors of arbitrary degree and shorthand index notations.
 * [TT Tensors](@ref md_tut_ttTensor) - using the MPS or Tensor-Train decomposition.
 * [Debugging](@ref md_tut_debugging) - using `xerus`'s capabilities to debug your own application.
