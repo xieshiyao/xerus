@@ -43,7 +43,7 @@ which creates a `3x3x3` tensor with independend gaussian distributed random entr
 Xerus allows to perform contractions between Tensors using Einstein-like index conventions. To calculate the matrix matrix product of A and B we can simply write
 \code{.cpp}
     xerus::Index i,j,k;
-    FullTensor D;
+    xerus::FullTensor D;
     
     D(i,k) = A(i,j)*B(j,k);
 \endcode
@@ -51,7 +51,7 @@ The syntax is however much more powerfull, for example the matrix product @f$ A 
 \code{.cpp}
     D(i,k) = A(i,j)*B(k,j);
 \endcode
-or to calculate the contraction @f$ D_{l,m,n} = /sum_{i,j,k} X_{i,j,k} A_{i,l} B_{j,m} C_{k,n} @f$ we can write
+or to calculate the contraction @f$ D_{l,m,n} = \sum_{i,j,k} X_{i,j,k} A_{i,l} B_{j,m} C_{k,n} @f$ we can write
 \code{.cpp}
     xerus::Index l,m,n;
     
@@ -66,6 +66,5 @@ As A and B are the identity and C is only @f$ 2I @f$ D should be two times X, wh
     std::cout << "D:" << std::endl << D.to_string() << std::endl;
 \endcode
 
-The full source code is 
-\code{.cpp}
+The full source code can be found in `tutorial.cpp`
 

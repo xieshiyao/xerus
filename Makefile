@@ -91,6 +91,8 @@ debug:
 	\t\t LOCAL_HXX \t == \t $(LOCAL_HXX)\n \
 	\t\t MINIMAL_DEPS \t == \t $(MINIMAL_DEPS)\n"
 
+all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
+
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
 	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
 
