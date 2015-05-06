@@ -22,14 +22,36 @@
 #include "xerus.h"
     
 int main() {
+    xerus::FullTensor A({3,3});
+
+    A[{0,0}] = 1.0;
+    A[{1,1}] = 1.0;
+    A[{2,2}] = 1.0;
+
+    xerus::FullTensor B({3,3});
+    xerus::FullTensor C({3,3});
     
-    // Create a 4x4 matrix, i.e. a Tensor of order two.
-    xerus::FullTensor A({4,4});
+    B = 2*A;
+    C = B-A;
+
+    std::cout << "The frobenius norm of A-C equals " << frob_norm(A-C) << std::endl; 
+
+    std::mt19937_64 rnd;
+    std::normal_distribution<double> dist (0.0, 10.0);
+    xerus::FullTensor X = xerus::FullTensor::construct_random({3,3,3}, rnd, dist);
+
+    xerus::Index i,j,k;
+    xerus::FullTensor D;
     
-    // By default 
+    D(i,k) = A(i,j)*B(j,k);
+
+    D(i,k) = A(i,j)*B(k,j);
+
+    xerus::Index l,m,n;
     
-    const char* const horst = __PRETTY_FUNCTION__;
+    D(l,m,n) = X(i,j,k)*A(i,l)*B(j,m)*C(k,n);
+
+    std::cout << "X:" << std::endl << X.to_string() << std::endl;
     
-    LOG(fatal, "Wuhu this is a Tutorial." << horst);
-    return 0;
+    std::cout << "D:" << std::endl << D.to_string() << std::endl;
 }

@@ -71,7 +71,7 @@ namespace xerus {
             for(j = 0; j < _rhsAssIndices.numIndices; ++j) {
                 if(_lhsAssIndices.indices[i] == _rhsAssIndices.indices[j]) {
                     REQUIRE(_lhsAssIndices.indices[i].span == _rhsAssIndices.indices[j].span, "Span of indices in lhs and rhs of contraction must conincide.");
-                    REQUIRE(_lhsAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in lhs and rhs of contraction  must conincide.");
+                    REQUIRE(_lhsAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in lhs and rhs of contraction must conincide.");
                     REQUIRE(_rhsAssIndices.indexOpen[j], "Index appearing open in lhs of contraction must also be open in rhs.");
                     break;
                 }
