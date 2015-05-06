@@ -20,10 +20,14 @@
 // File containing the unit tests for the xerus library
 
 #include "xerus.h"
-
-UNIT_TEST(FullTensor, sum_matrix_2x2,)
     
 int main() {
+    
+    // Create a 4x4 matrix, i.e. a Tensor of order two.
+    xerus::FullTensor A({4,4});
+    
+    // By default 
+    
     const char* const horst = __PRETTY_FUNCTION__;
     
     LOG(fatal, "Wuhu this is a Tutorial." << horst);

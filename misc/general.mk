@@ -2,7 +2,7 @@
 # Uses: USE_CLANG, 
 
 # Set Compiler used
-ifdef USECLANG
+ifdef USE_CLANG
 	CXX = clang++
 else
 	CXX = g++
