@@ -345,7 +345,7 @@ namespace blasWrapper {
     }
     
     
-    
+/*  TODO we need test cases for these  
     /// Solves Ax = b for x
     void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b) {
         const std::unique_ptr<double[]> tmpA(new double[_n*_n]);
@@ -375,7 +375,7 @@ namespace blasWrapper {
         CHECK(lapackAnswer == 0, error, "Unable to solves Ax = b. Lapacke says: " << lapackAnswer);
         
         ADD_CALL("Solve ", to_string(_n)+"x"+to_string(_n));
-    }
+    }*/
     
     /// Solves min ||Ax - b||_2 for x
     void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b){

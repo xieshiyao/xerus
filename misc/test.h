@@ -52,7 +52,7 @@
 	#define PASTE2( a, b) a##b
 	#define PASTE( a, b) PASTE2( a, b)
 
-	#define TEST(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); passed = false;} else {PRINTCHECK;} void(0)
+	#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
 	#define REQUIRE_TEST \
 		do { \

@@ -24,6 +24,7 @@
    
 //------------------------ Unit Tests --------------------------------
 using namespace xerus;
+    #include "unitTests/fullTensor_sparseTensor_interaction.hxx"
     #include "unitTests/sparseTensor.hxx"
     #include "unitTests/sparseTensor_add_sub_cpy.hxx"
     #include "unitTests/sparseTensor_arithmetic_cpy.hxx"

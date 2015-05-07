@@ -160,6 +160,10 @@ namespace xerus {
             dimensions = std::forward<Vec>(_newDimensions);
         }
         
+        _inline_ void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions) {
+            reinterpret_dimensions(std::vector<size_t>(_newDimensions));
+        }
+        
         
         /// Returns a string representation of the Tensor
         virtual std::string to_string() const = 0;
