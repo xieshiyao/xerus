@@ -126,7 +126,7 @@ namespace xerus {
         const AssignedIndices baseAssIdx = _base.assign_indices();
         const AssignedIndices outAssIdx = _out.assign_indices();
         
-        #ifdef CHECK_ // Performe complete check whether the input is valid
+        #ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
             REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
             REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of SparseTensor to FullTensor not implemented and probably not useful.");
             

@@ -374,7 +374,7 @@ public:
 	static TTNetwork construct_random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
         const size_t N = isOperator?2:1;
 		REQUIRE(_ranks.size() == _dimensions.size()/N-1,"non-matching amount of ranks given to TTNetwork::construct_random");
-		#ifdef CHECK_
+		#ifndef DISABLE_RUNTIME_CHECKS_
 		for (size_t d : _dimensions) {
 			REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
 		}
@@ -448,7 +448,7 @@ public:
     static TTNetwork construct_identity(const std::vector<size_t>& _dimensions) {
         const size_t N = isOperator?2:1;
 		REQUIRE(isOperator, "tttensor identity ill-defined");
-		#ifdef CHECK_
+		#ifndef DISABLE_RUNTIME_CHECKS_
 		for (size_t d : _dimensions) {
 			REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
 		}

@@ -33,7 +33,7 @@ namespace xerus {
     double ALSVariant::operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const {
         LOG(ALS, "ALS("<< sites << ", " << minimumLocalResidual <<") called");
 
-        #ifdef CHECK_
+        #ifndef DISABLE_RUNTIME_CHECKS_
         REQUIRE(_x.degree() > 0, "");
         REQUIRE(_x.dimensions == _b.dimensions, "");
         REQUIRE(_A.dimensions.size() == _b.dimensions.size()*2, "");

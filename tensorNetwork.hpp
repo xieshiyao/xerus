@@ -267,7 +267,7 @@ namespace xerus {
 
     void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
         TensorNetwork &base = *_base.tensorObject;
-        #ifdef CHECK_
+        #ifndef DISABLE_RUNTIME_CHECKS_
             std::set<Index> contractedIndices;
         #endif
         size_t j=0;
@@ -306,7 +306,7 @@ namespace xerus {
                         base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 2;
                     }
                 }
-                #ifdef CHECK_
+                #ifndef DISABLE_RUNTIME_CHECKS_
                     contractedIndices.insert(ij);
                 #endif
                 // remove index from indexed tensor and mark as contracted
@@ -486,7 +486,7 @@ namespace xerus {
         _base.indices.insert(_base.indices.end(), toInsertIndices.begin(), toInsertIndices.end());
         base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
         
-        #ifdef CHECK_
+        #ifndef DISABLE_RUNTIME_CHECKS_
         for (const Index &idx : _base.indices) {
             REQUIRE(count(_base.indices, idx) < 3, "Internal Error.");
         }
