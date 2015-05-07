@@ -23,6 +23,7 @@
 
 namespace xerus {
     
+    /// The main class used to represent any sparse tensor.
     class SparseTensor final : public Tensor {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

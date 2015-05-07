@@ -59,25 +59,25 @@ namespace xerus {
             REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
         }
         
-        /// Returns a pointer containing a copy of the tensor with appropriate type (i.e. FullTensor or SparseTensor).
+        /// Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_copy() const = 0;
         
-        /// Returns a pointer containing a moved copy of the object with appropriate type (i.e. FullTensor or SparseTensor).
+        /// Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_moved_copy() = 0;
         
-        /// Returns a pointer to a newly constructed order zero tensor of appropriate type (i.e. FullTensor or SparseTensor) with entry equals zero.
+        /// Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
         virtual Tensor* construct_new() const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type (i.e. FullTensor or SparseTensor) with all entries set to zero.
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type (i.e. FullTensor or SparseTensor) with all entries set to zero.
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type (i.e. FullTensor or SparseTensor) with undefined entries.
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type (i.e. FullTensor or SparseTensor) with undefined entries.
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
         /// Destructor
@@ -172,7 +172,7 @@ namespace xerus {
         /// Returns the number of non-zero entries.
         virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const = 0;
         
-        /// Returns the frobenious norm of the tensor.
+        /// Calculates the frobenious norm of the tensor.
         virtual value_t frob_norm() const = 0;
 		
         /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
