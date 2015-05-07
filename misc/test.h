@@ -22,8 +22,8 @@
 #include "namedLogger.h"
 #include "testManager.h"
 
-// Only define the check macros if CHECK_ is aktive
-#ifdef CHECK_
+// Only define the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
+#ifndef DISABLE_RUNTIME_CHECKS_
 
 	#define PCHECK(precondition, condition, level, message) if(IS_LOGGING(level)) { precondition; if(condition) { LOG(level, #condition << " failed msg: " << message); }} else void(0)
 
@@ -66,14 +66,14 @@
 			___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
 		} while(false)
 	
-	#ifdef CHECK_
+	#ifndef DISABLE_RUNTIME_CHECKS_
 		#define FAILTEST(test) \
 			err::logFilePrefix = "failtest/"; err::silenced = true; \
 			try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
 			err::logFilePrefix.clear();  err::silenced = false;  \
 			void(0)
 	#else
-		#define FAILTEST(test) LOG(warning, "Failtest is not useful without flag CHECK_")
+		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")
 	#endif
 	
 	#define UNIT_TEST(grp, name, ...) \

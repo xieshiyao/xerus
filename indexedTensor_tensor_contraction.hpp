@@ -23,7 +23,7 @@
 
 namespace xerus {
 
-    #ifdef CHECK_
+    #ifndef DISABLE_RUNTIME_CHECKS_
     /// Check if common and open indices defined by _lhs and _rhs coincide with the ones defined by _result
     void check_for_index_compatability(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
         LOG(ContractionDebug, "Checking input indices...");
@@ -178,7 +178,7 @@ namespace xerus {
         const AssignedIndices rhsAssIndices = _rhs.assign_indices();
         const AssignedIndices resultAssIndices = _result.assign_indices();
 
-        #ifdef CHECK_
+        #ifndef DISABLE_RUNTIME_CHECKS_
             check_for_index_compatability(resultAssIndices, lhsAssIndices, rhsAssIndices);
         #endif
         

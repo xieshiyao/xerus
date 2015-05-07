@@ -211,7 +211,7 @@ namespace xerus {
         
         /// Checks whether the indices are usefull in combination with the current dimensions
         void check_indices(const bool _allowNonOpen = true) const {
-            #ifdef CHECK_
+            #ifndef DISABLE_RUNTIME_CHECKS_
                 size_t dimensionCount = 0;
                 for(const Index& idx : indices) {
                     REQUIRE(_allowNonOpen || !idx.is_fixed(), "Fixed indices are not allowed here.");
