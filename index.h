@@ -108,6 +108,14 @@ namespace xerus {
             return Index(valueId, _span, Flag::INVERSE_SPAN);
         }
         
+        /** Allow the creation of Indices covering an x-th fraction of the indices. 
+         *  E.g. A(i&0) = B(i/2, j/2) * C(j&0), defines A as the contraction between the symmetric matrification of B combining the vectorisation of C, indifferent of the actual order of B and C. 
+         */
+        _inline_ Index operator/(const size_t _span) const {
+            REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
+            return Index(valueId, _span, Flag::FRACTIONAL_SPAN);
+        }
+        
         /// Two Indices are equal if their valueId coincides. Fixed indices are never equal.
         _inline_ bool operator==(const Index& _other) const {
             return valueId == _other.valueId && !fixed() && !_other.fixed();
