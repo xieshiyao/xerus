@@ -117,62 +117,68 @@ namespace xerus {
             assignedIndices.numIndices = 0;
             assignedIndices.indices.reserve(indices.size());
             assignedIndices.indexDimensions.reserve(indices.size());
-            assignedIndices.indexOpen.reserve(indices.size());
             
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
-                REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
-                
                 // We don't look at span zero indices
-                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == this->degree())) {
+                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == degree()) || (idx.flags[Index::Flag::FRACTIONAL_SPAN] && degree()/idx.span == 0)) {
+                    REQUIRE(!idx.fixed(), "Fixed index must have span == 1");
                     continue;
                 }
                 
-                // Set span
-                size_t span;
-                if(idx.flags[Index::Flag::INVERSE_SPAN]) {
-                    REQUIRE(idx.span < degree(), "Index used with variable span (e.g. i&3) would have negative span " << (long)(degree() - idx.span) << "!");
-                    REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
-                    span = degree()-idx.span;
+                // Fixed indices want special treatnment
+                if(idx.fixed()) {
+                    REQUIRE(!idx.flags[Index::Flag::INVERSE_SPAN], "Fixed index must not have inverse span.");
+                    REQUIRE(!idx.flags[Index::Flag::FRACTIONAL_SPAN], "Fixed index must not have fractional span.");
+                    REQUIRE(idx.span == 1, "Fixed index must have span one.");
+                    
+                    assignedIndices.numIndices++;
+                    assignedIndices.indices.emplace_back(idx.valueId, 1, Index::Flag::FIXED, Index::Flag::OPEN_CHECKED);
+                    assignedIndices.indexDimensions.emplace_back(tensorObjectReadOnly->dimensions[dimensionCount++]);
+                    assignedIndices.allIndicesOpen = false; 
                 } else {
-                    span = idx.span;
-                }
-                
-                // Calculate multDimension
-                REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
-                size_t multDimension = 1;
-                for(size_t i=0; i < span; ++i) {
-                    multDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
-                }
-                
-                // Determine whether index is open and 
-                bool open;
-                if(idx.fixed() ) {
-                    open = false;
-                } else {
-                    open = true;
+                    // Set span
+                    size_t span;
+                    if(idx.flags[Index::Flag::INVERSE_SPAN]) {
+                        REQUIRE(idx.span < degree(), "Index used with variable span (e.g. i&3) would have negative span " << degree() << " - " << idx.span << " = " << degree() - idx.span << "!");
+                        span = degree()-idx.span;
+                    } else if(idx.flags[Index::Flag::FRACTIONAL_SPAN]) {
+                        CHECK(degree()%idx.span == 0, warning, "Fractional span used in tensor with an degree that is not divisable by the given fraction.");
+                        span = degree()/idx.span;
+                    } else {
+                        span = idx.span;
+                    }
+                    
+                    // Calculate multDimension
+                    REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
+                    size_t multDimension = 1;
+                    for(size_t i=0; i < span; ++i) {
+                        multDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
+                    }
+                    
+                    
+                    // Determine whether index is open
+                    bool open = true;
                     for(size_t i = 0; i < assignedIndices.indices.size(); ++i) {
                         if(idx == assignedIndices.indices[i]) {
-                            REQUIRE(assignedIndices.indexOpen[i], "An index must not appere more than twice!");
-                            assignedIndices.indexOpen[i] = false;
+                            REQUIRE(assignedIndices.indices[i].open(), "An index must not appere more than twice!");
+                            assignedIndices.indices[i].open(false);
                             open = false;
                         }
                     }
+                    
+                    assignedIndices.numIndices++;
+                    assignedIndices.indices.emplace_back(idx.valueId, span, Index::Flag::OPEN, open);
+                    assignedIndices.indexDimensions.emplace_back(multDimension);
+                    assignedIndices.allIndicesOpen = assignedIndices.allIndicesOpen && open; 
                 }
-                
-                assignedIndices.numIndices++;
-                assignedIndices.indices.emplace_back(idx.valueId, span, Index::Flag::FIXED, Index::Flag::OPEN, idx.fixed(), open);
-                assignedIndices.indexDimensions.emplace_back(multDimension);
-                assignedIndices.indexOpen.push_back(open);
-                assignedIndices.allIndicesOpen = assignedIndices.allIndicesOpen && open; 
             }
             
-            REQUIRE(assignedIndices.numIndices == assignedIndices.indices.size() && assignedIndices.numIndices == assignedIndices.indexDimensions.size() && assignedIndices.numIndices == assignedIndices.indexOpen.size(), "Internal Error"); 
+            REQUIRE(assignedIndices.numIndices == assignedIndices.indices.size() && assignedIndices.numIndices == assignedIndices.indexDimensions.size(), "Internal Error"); 
             REQUIRE(dimensionCount >= degree(), "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
             REQUIRE(dimensionCount <= degree(), "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
             return assignedIndices;
         }
-        
         
         std::vector<Index> get_assigned_indices() const {
             return get_assigned_indices(this->degree());
@@ -184,24 +190,35 @@ namespace xerus {
             
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
-                REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
-                
                 // We don't look at span zero indices
-                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree)) {
+                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree) || (idx.flags[Index::Flag::FRACTIONAL_SPAN] && _futureDegree/idx.span == 0)) {
+                    REQUIRE(!idx.fixed(), "Fixed index must have span == 1");
                     continue;
                 }
                 
-                // Set span
-                size_t span;
-                if(idx.flags[Index::Flag::INVERSE_SPAN]) {
-                    REQUIRE(idx.span < _futureDegree, "Index used with variable span (e.g. i&3) would have negative span " << _futureDegree << " - " << idx.span << " = " << (long)(_futureDegree - idx.span) << "!");
-                    REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
-                    span = _futureDegree-idx.span;
+                // Fixed indices want special treatnment
+                if(idx.fixed()) {
+                    REQUIRE(!idx.flags[Index::Flag::INVERSE_SPAN], "Fixed index must not have inverse span.");
+                    REQUIRE(!idx.flags[Index::Flag::FRACTIONAL_SPAN], "Fixed index must not have fractional span.");
+                    REQUIRE(idx.span == 1, "Fixed index must have span one.");
+                    assignedIndices.emplace_back(idx.valueId, 1, Index::Flag::FIXED);
+                    dimensionCount++;
                 } else {
-                    span = idx.span;
+                    // Set span
+                    size_t span;
+                    if(idx.flags[Index::Flag::INVERSE_SPAN]) {
+                        REQUIRE(idx.span < _futureDegree, "Index used with variable span (e.g. i&3) would have negative span " << _futureDegree << " - " << idx.span << " = " << _futureDegree - idx.span << "!");
+                        span = _futureDegree-idx.span;
+                    } else if(idx.flags[Index::Flag::FRACTIONAL_SPAN]) {
+                        CHECK(_futureDegree%idx.span == 0, warning, "Fractional span used in tensor with an degree that is not divisable by the given fraction.");
+                        span = _futureDegree/idx.span;
+                    } else {
+                        span = idx.span;
+                    }
+                    
+                    assignedIndices.emplace_back(idx.valueId, span);
+                    dimensionCount += span;
                 }
-                assignedIndices.emplace_back(idx.valueId, span, Index::Flag::FIXED, idx.fixed());
-                dimensionCount += span;
             }
             
             REQUIRE(dimensionCount >= _futureDegree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
@@ -223,6 +240,9 @@ namespace xerus {
                         REQUIRE(idx.span <= degree(), "Index used with variable span (e.g. i&3) would have negative span " << (long)(degree() - idx.span) << "!");
                         REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
                         dimensionCount += degree()-idx.span;
+                    } else if(idx.flags[Index::Flag::FRACTIONAL_SPAN]) {
+                        CHECK(degree()%idx.span == 0, warning, "Fractional span used in tensor with an degree that is not divisable by the given fraction.");
+                        dimensionCount += degree()/idx.span;
                     } else {
                         dimensionCount += idx.span;
                     }
@@ -231,8 +251,6 @@ namespace xerus {
                 REQUIRE(dimensionCount <= degree(), "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
             #endif
         }
-        
-        
     };
 
     template<class T>

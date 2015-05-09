@@ -144,7 +144,7 @@ namespace xerus {
                 if(j < outAssIdx.numIndices) {
                     REQUIRE(baseAssIdx.indexDimensions[i] == outAssIdx.indexDimensions[j], "The indexDimensions in the target and base of evaluation must coincide. Here " << baseAssIdx.indexDimensions[i] << "!=" << outAssIdx.indexDimensions[j] << ". For index " << baseAssIdx.indices[i] << " == " << outAssIdx.indices[j]);
                     REQUIRE(baseAssIdx.indices[i].span == outAssIdx.indices[j].span, "The indexSpans in the target and base of evaluation must coincide.");
-                    REQUIRE(baseAssIdx.indexOpen[i], "Indices appearing in the target of evaluation must not be part of a trace nor be fixed.");
+                    REQUIRE(baseAssIdx.indices[i].open(), "Indices appearing in the target of evaluation must not be part of a trace nor be fixed.");
                     continue;
                 }
                 
@@ -159,7 +159,7 @@ namespace xerus {
             
             // Check out indices
             for(size_t i = 0; i < outAssIdx.numIndices; ++i) {
-                REQUIRE(outAssIdx.indexOpen[i],  "Traces and fixed indices are not allowed in the target of evaluation.");
+                REQUIRE(outAssIdx.indices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation.");
                 REQUIRE(count(baseAssIdx.indices, outAssIdx.indices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation.");
             }
         #endif

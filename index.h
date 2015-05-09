@@ -88,6 +88,12 @@ namespace xerus {
             return flags[Index::Flag::OPEN];
         }
         
+        /// Sets whether the index is open.
+        _inline_ void open(const bool _open) {
+            flags[Flag::OPEN] = _open;
+            flags[Flag::OPEN_CHECKED] = true;
+        }
+        
         /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.
         _inline_ Index operator^(const size_t _span) const {
             REQUIRE(flags.none(), "Cannot apply ^ operator to an index that has any flag set.");

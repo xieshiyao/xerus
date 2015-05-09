@@ -37,7 +37,7 @@ namespace xerus {
                 if(_resultAssIndices.indices[i] == _lhsAssIndices.indices[j]) {
                     REQUIRE(_resultAssIndices.indices[i].span == _lhsAssIndices.indices[j].span, "Span of indices in result and lhs must conincide.");
                     REQUIRE(_resultAssIndices.indexDimensions[i] == _lhsAssIndices.indexDimensions[j], "Dimensions of indices in result and lhs must conincide.");
-                    REQUIRE(_lhsAssIndices.indexOpen[j], "Index appearing in result of contraction must be open in lhs.");
+                    REQUIRE(_lhsAssIndices.indices[j].open(), "Index appearing in result of contraction must be open in lhs.");
                     REQUIRE(!contains(_rhsAssIndices.indices, _resultAssIndices.indices[i]), "Index appearing in result of contraction must not appear in lhs AND rhs.");
                     break;
                 }
@@ -49,7 +49,7 @@ namespace xerus {
                     if(_resultAssIndices.indices[i] == _rhsAssIndices.indices[j]) {
                         REQUIRE(_resultAssIndices.indices[i].span == _rhsAssIndices.indices[j].span, "Span of indices in result and rhs must conincide.");
                         REQUIRE(_resultAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in result and rhs must conincide.");
-                        REQUIRE(_rhsAssIndices.indexOpen[j], "Index appearing in result of contraction must be open in rhs.");
+                        REQUIRE(_rhsAssIndices.indices[j].open(), "Index appearing in result of contraction must be open in rhs.");
                         break;
                     }
                 }
@@ -60,7 +60,7 @@ namespace xerus {
         
         // Check that every index in lhs is either non-open, appears in rhs with right span and dimension, or is contained in result
         for(size_t i = 0; i < _lhsAssIndices.numIndices; ++i) {
-            if(!_lhsAssIndices.indexOpen[i]) {
+            if(!_lhsAssIndices.indices[i].open()) {
                 REQUIRE(_lhsAssIndices.indices[i].fixed() || !contains(_rhsAssIndices.indices, _lhsAssIndices.indices[i]), "Index that part of a trace in lhs, must not appear in rhs");
                 // It cannot be contained in result because of previous checks
                 continue;
@@ -72,7 +72,7 @@ namespace xerus {
                 if(_lhsAssIndices.indices[i] == _rhsAssIndices.indices[j]) {
                     REQUIRE(_lhsAssIndices.indices[i].span == _rhsAssIndices.indices[j].span, "Span of indices in lhs and rhs of contraction must conincide.");
                     REQUIRE(_lhsAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in lhs and rhs of contraction must conincide.");
-                    REQUIRE(_rhsAssIndices.indexOpen[j], "Index appearing open in lhs of contraction must also be open in rhs.");
+                    REQUIRE(_rhsAssIndices.indices[j].open(), "Index appearing open in lhs of contraction must also be open in rhs.");
                     break;
                 }
             }
@@ -82,7 +82,7 @@ namespace xerus {
         
         // Check that every index in rhs is either non-open, or appears in lhs or result
         for(size_t i = 0; i < _rhsAssIndices.numIndices; ++i) {
-            REQUIRE(!_rhsAssIndices.indexOpen[i] || contains(_lhsAssIndices.indices, _rhsAssIndices.indices[i]) || contains(_resultAssIndices.indices, _rhsAssIndices.indices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
+            REQUIRE(!_rhsAssIndices.indices[i].open() || contains(_lhsAssIndices.indices, _rhsAssIndices.indices[i]) || contains(_resultAssIndices.indices, _rhsAssIndices.indices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
         }
         
         LOG(ContractionDebug, "Input indices look right.");
