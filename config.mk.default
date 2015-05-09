@@ -25,9 +25,9 @@
 # Debug and Logging   
 #=================================================================================================
 # The Xerus library performs a number of runtime checks to ensure a valid input to all routines.
-# While not recommended these runtime checks can be completly disabled by commenting the following
+# While not recommended these runtime checks can be completly disabled by uncommenting the following
 # line. This slighlty improves the performance.
-DEBUG += -D CHECK_                  # Disable all runtime checks
+# DEBUG += -D DISABLE_RUNTIME_CHECKS_    # Disable all runtime checks
 
 
 # In the default configuration xerus will throw exceptions if it encounters invalid inputs

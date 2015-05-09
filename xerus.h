@@ -34,6 +34,7 @@
 
 // Additionall std stuff needed by xerus
 #include <atomic>
+#include <bitset> 
 
 
 // File which sets the custom log levels

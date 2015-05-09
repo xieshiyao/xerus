@@ -61,7 +61,7 @@ namespace xerus {
         // Check that every index in lhs is either non-open, appears in rhs with right span and dimension, or is contained in result
         for(size_t i = 0; i < _lhsAssIndices.numIndices; ++i) {
             if(!_lhsAssIndices.indexOpen[i]) {
-                REQUIRE(_lhsAssIndices.indices[i].is_fixed() || !contains(_rhsAssIndices.indices, _lhsAssIndices.indices[i]), "Index that part of a trace in lhs, must not appear in rhs");
+                REQUIRE(_lhsAssIndices.indices[i].fixed() || !contains(_rhsAssIndices.indices, _lhsAssIndices.indices[i]), "Index that part of a trace in lhs, must not appear in rhs");
                 // It cannot be contained in result because of previous checks
                 continue;
             }
@@ -168,7 +168,7 @@ namespace xerus {
         return true;
     }
 
-    /** Performs a contraction of all common indices of _lhs and _rhs and saves the resulting tensor in _result
+    /** Performs the contraction of all common indices of _lhs and _rhs and saves the resulting tensor in _result
     * precondition: compatible indices for _result = _lhs * _rhs; and correct dimensions in result tensorObject
     * postcondition: _result.tensorObject updated to correcly contain the product
     */
@@ -402,24 +402,24 @@ namespace xerus {
         size_t dimensionCount = 0;
         for(const Index& idx : lhsIndices) {
             if(_lhs.is_open(idx) && !contains(rhsIndices, idx)) {
-                outIndices.emplace_back(idx.valueId, idx.inverseSpan ? _lhs.degree()-idx.span : idx.span, false);
+                outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span);
                 for(size_t i=0; i < outIndices.back().span; ++i) {
                     outDimensions.push_back(_lhs.tensorObjectReadOnly->dimensions[dimensionCount++]);
                 }
             } else {
-                dimensionCount += idx.inverseSpan ? _lhs.degree()-idx.span : idx.span;
+                dimensionCount += idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span;
             }
         }
         
         dimensionCount = 0;
         for(const Index& idx : rhsIndices) {
             if(_rhs.is_open(idx) && !contains(lhsIndices, idx)) {
-                outIndices.emplace_back(idx.valueId, idx.inverseSpan ? _rhs.degree()-idx.span : idx.span, false);
+                outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _rhs.degree()-idx.span : idx.span);
                 for(size_t i=0; i < outIndices.back().span; ++i) {
                     outDimensions.push_back(_rhs.tensorObjectReadOnly->dimensions[dimensionCount++]);
                 }
             } else {
-                dimensionCount += idx.inverseSpan ? _rhs.degree()-idx.span : idx.span;
+                dimensionCount += idx.flags[Index::Flag::INVERSE_SPAN] ? _rhs.degree()-idx.span : idx.span;
             }
         }
         

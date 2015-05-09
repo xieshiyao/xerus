@@ -34,6 +34,8 @@
 	#endif
 
 	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
+	
+    #define IF_CHECK(expression) expression
 
 #else
 
@@ -42,6 +44,8 @@
 	#define CHECK(condition, level, message) void(0)
 
 	#define REQUIRE(condition, message) void(0)
+	
+    #define IF_CHECK(expression)  
 
 #endif
  

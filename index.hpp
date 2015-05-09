@@ -22,22 +22,52 @@
 #include "tensor.h"
 
 namespace xerus {
-    std::atomic<long> Index::idThreadInitCounter(0);
-    thread_local long Index::idCounter = -((idThreadInitCounter++)<<55);
+    std::atomic<size_t> Index::idThreadInitCounter(0);
+    thread_local size_t Index::idCounter = (idThreadInitCounter++)<<54;
     
-    Index::Index() : valueId(--idCounter), span(1), inverseSpan(false) {/* REQUIRE(idCounter < 0, "Index ID counter overflowed");*/ }
+    Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ul<<54, "Index ID counter left thread safe range."); }
     
-    Index::Index(const long _i) : valueId(_i), span(1), inverseSpan(false) {
-//         REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+    Index::Index(const long _i) : valueId(_i), span(1) {
+        REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+        flags[Flag::FIXED] = true;
     }
     
-    Index::Index(const long _valueId, const size_t _span, const bool _inverseSpan) : valueId(_valueId), span(_span), inverseSpan(_inverseSpan) { }
+    
+    Index::Index(const size_t _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
+    
+    Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span) {
+        IF_CHECK(
+        if(_flag1 == Flag::OPEN) {
+            flags[Flag::OPEN_CHECKED] = true;
+        })
+        
+        flags[_flag1] = _flagValue1;
+    }
+    
+    Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1, const Flag _flag2, const bool _flagValue1, const bool _flagValue2) : valueId(_valueId), span(_span) {
+        IF_CHECK(
+        if(_flag1 == Flag::OPEN || _flag2 == Flag::OPEN) {
+            flags[Flag::OPEN_CHECKED] = true;
+        })
+        
+        flags[_flag1] = _flagValue1;
+        flags[_flag2] = _flagValue2;
+    }
+    
+    Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1, const Flag _flag2, const Flag _flag3, const bool _flagValue1, const bool _flagValue2, const bool _flagValue3) : valueId(_valueId), span(_span) {
+        IF_CHECK(
+        if(_flag1 == Flag::OPEN || _flag2 == Flag::OPEN || _flag3 == Flag::OPEN) {
+            flags[Flag::OPEN_CHECKED] = true;
+        })
+        
+        flags[_flag1] = _flagValue1;
+        flags[_flag2] = _flagValue2;
+        flags[_flag3] = _flagValue3;
+    }
     
     std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx) {
-        _out << _idx.valueId << "(" << (_idx.inverseSpan? "-" : "") << _idx.span << ")";
+        _out << _idx.valueId << "(" << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "-" : "") << _idx.span << ")";
         return _out;
     }
 }
-
-
 

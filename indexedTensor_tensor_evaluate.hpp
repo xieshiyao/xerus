@@ -133,8 +133,8 @@ namespace xerus {
             // Check base indices
             for(size_t i = 0; i < baseAssIdx.numIndices; ++i) {
                 // If the index is fixed we don't expect to find it anywhere
-                if(baseAssIdx.indices[i].is_fixed()) {
-                    REQUIRE(baseAssIdx.indices[i].span == 1, "Fixed indices must have span one. Indices are: " << baseAssIdx.indices << ", total should be " << baseAssIdx.numIndices << ". The problem is: " << baseAssIdx.indices[i] << " -- " << baseAssIdx.indices[i].is_fixed());
+                if(baseAssIdx.indices[i].fixed()) {
+                    REQUIRE(baseAssIdx.indices[i].span == 1, "Fixed indices must have span one. Indices are: " << baseAssIdx.indices << ", total should be " << baseAssIdx.numIndices << ". The problem is: " << baseAssIdx.indices[i] << " -- " << baseAssIdx.indices[i].fixed());
                     continue;
                 }
                 
@@ -220,7 +220,7 @@ namespace xerus {
                 
                 if(outPos < outAssIdx.numIndices) { // If we found it we are basically finished
                     stepSizes[outPos] = baseIndexStepSizes[i];
-                } else if(baseAssIdx.indices[i].is_fixed()) { // One reason for an index to not be in _out is to be fixed
+                } else if(baseAssIdx.indices[i].fixed()) { // One reason for an index to not be in _out is to be fixed
                     fixedIndexOffset += size_t(baseAssIdx.indices[i].valueId)*baseIndexStepSizes[i];
                 } else { // If the Index is not fixed, then it has to be part of a trace
                     for(size_t j = i+1; j < baseAssIdx.numIndices-numOrderedIndices; ++j) {
@@ -289,7 +289,7 @@ namespace xerus {
                 }
                 
                 // Check whether the index is fixed
-                if(baseAssIdx.indices[i].is_fixed()) {
+                if(baseAssIdx.indices[i].fixed()) {
                     fixedFlags[i] = true;
                     traceFlags[i] = false;
                     attributes[i] = (size_t) baseAssIdx.indices[i].valueId;

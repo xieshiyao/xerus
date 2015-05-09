@@ -78,12 +78,12 @@ namespace xerus {
         }
         
         bool is_open(const Index& idx) const {
-            REQUIRE(contains(indices, idx), "Index " << idx << " not contained in indices: " << indices);
-            return !idx.is_fixed() && count(indices, idx) == 1;
+            REQUIRE(idx.fixed() || contains(indices, idx), "Index " << idx << " not contained in indices: " << indices); // TODO would be nice to check that fixed indices are also contained...
+            return !idx.fixed() && count(indices, idx) == 1;
         }
         
         bool is_contained_and_open(const Index& idx) const {
-            return !idx.is_fixed() && count(indices, idx) == 1;
+            return !idx.fixed() && count(indices, idx) == 1;
         }
         
         std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder) const {
@@ -94,10 +94,10 @@ namespace xerus {
                 
                 // Find index
                 size_t indexPos = 0, dimCount = 0;
-                while(indices[indexPos] != idx) { dimCount += indices[indexPos].inverseSpan ? degree()-indices[indexPos].span : indices[indexPos].span; ++indexPos; }
+                while(indices[indexPos] != idx) { dimCount += indices[indexPos].flags[Index::Flag::INVERSE_SPAN] ? degree()-indices[indexPos].span : indices[indexPos].span; ++indexPos; }
                 
                 // Calculate span
-                size_t span = indices[indexPos].inverseSpan ? degree()-indices[indexPos].span : indices[indexPos].span;
+                size_t span = indices[indexPos].flags[Index::Flag::INVERSE_SPAN] ? degree()-indices[indexPos].span : indices[indexPos].span;
                 
                 REQUIRE(dimCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
                 
@@ -121,18 +121,18 @@ namespace xerus {
             
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
-                REQUIRE(!idx.is_fixed() || idx.span == 1, "Fixed index must have span == 1");
+                REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
                 
                 // We don't look at span zero indices
-                if((!idx.inverseSpan && idx.span == 0) || (idx.inverseSpan && idx.span == this->degree())) {
+                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == this->degree())) {
                     continue;
                 }
                 
                 // Set span
                 size_t span;
-                if(idx.inverseSpan) {
+                if(idx.flags[Index::Flag::INVERSE_SPAN]) {
                     REQUIRE(idx.span < degree(), "Index used with variable span (e.g. i&3) would have negative span " << (long)(degree() - idx.span) << "!");
-                    REQUIRE(!idx.is_fixed(), "Fixed index must not have inverse span");
+                    REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
                     span = degree()-idx.span;
                 } else {
                     span = idx.span;
@@ -147,7 +147,7 @@ namespace xerus {
                 
                 // Determine whether index is open and 
                 bool open;
-                if(idx.is_fixed() ) {
+                if(idx.fixed() ) {
                     open = false;
                 } else {
                     open = true;
@@ -161,7 +161,7 @@ namespace xerus {
                 }
                 
                 assignedIndices.numIndices++;
-                assignedIndices.indices.emplace_back(idx.valueId, span);
+                assignedIndices.indices.emplace_back(idx.valueId, span, Index::Flag::FIXED, Index::Flag::OPEN, idx.fixed(), open);
                 assignedIndices.indexDimensions.emplace_back(multDimension);
                 assignedIndices.indexOpen.push_back(open);
                 assignedIndices.allIndicesOpen = assignedIndices.allIndicesOpen && open; 
@@ -184,23 +184,23 @@ namespace xerus {
             
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
-                REQUIRE(!idx.is_fixed() || idx.span == 1, "Fixed index must have span == 1");
+                REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
                 
                 // We don't look at span zero indices
-                if((!idx.inverseSpan && idx.span == 0) || (idx.inverseSpan && idx.span == _futureDegree)) {
+                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree)) {
                     continue;
                 }
                 
                 // Set span
                 size_t span;
-                if(idx.inverseSpan) {
+                if(idx.flags[Index::Flag::INVERSE_SPAN]) {
                     REQUIRE(idx.span < _futureDegree, "Index used with variable span (e.g. i&3) would have negative span " << _futureDegree << " - " << idx.span << " = " << (long)(_futureDegree - idx.span) << "!");
-                    REQUIRE(!idx.is_fixed(), "Fixed index must not have inverse span");
+                    REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
                     span = _futureDegree-idx.span;
                 } else {
                     span = idx.span;
                 }
-                assignedIndices.emplace_back(idx.valueId, span, false);
+                assignedIndices.emplace_back(idx.valueId, span, Index::Flag::FIXED, idx.fixed());
                 dimensionCount += span;
             }
             
@@ -214,14 +214,14 @@ namespace xerus {
             #ifndef DISABLE_RUNTIME_CHECKS_
                 size_t dimensionCount = 0;
                 for(const Index& idx : indices) {
-                    REQUIRE(_allowNonOpen || !idx.is_fixed(), "Fixed indices are not allowed here.");
-                    REQUIRE(!idx.is_fixed() || idx.span == 1, "Fixed index must have span == 1");
+                    REQUIRE(_allowNonOpen || !idx.fixed(), "Fixed indices are not allowed here.");
+                    REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
                     REQUIRE(_allowNonOpen || count(indices, idx) == 1, "Traces are not allowed here.");
-                    REQUIRE(idx.is_fixed() || count(indices, idx) <= 2, "An index must not appere more than twice!");
+                    REQUIRE(idx.fixed() || count(indices, idx) <= 2, "An index must not appere more than twice!");
                     
-                    if(idx.inverseSpan) {
+                    if(idx.flags[Index::Flag::INVERSE_SPAN]) {
                         REQUIRE(idx.span <= degree(), "Index used with variable span (e.g. i&3) would have negative span " << (long)(degree() - idx.span) << "!");
-                        REQUIRE(!idx.is_fixed(), "Fixed index must not have inverse span");
+                        REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
                         dimensionCount += degree()-idx.span;
                     } else {
                         dimensionCount += idx.span;
@@ -243,8 +243,8 @@ namespace xerus {
     _inline_ size_t get_eval_degree(const std::vector<Index>& _indices) {
         size_t degree = 0;
         for(const Index& idx : _indices) {
-            REQUIRE(!idx.inverseSpan, "Internal Error");
-            if(!idx.is_fixed() && count(_indices, idx) != 2) { degree += idx.span; }
+            REQUIRE(!idx.flags[Index::Flag::INVERSE_SPAN], "Internal Error");
+            if(!idx.fixed() && count(_indices, idx) != 2) { degree += idx.span; }
         }
         return degree;
     }
