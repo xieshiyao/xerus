@@ -101,11 +101,11 @@ namespace xerus {
         
         _lhs.tensorObject->reset(std::move(lhsDims), DONT_SET_ZERO());
         _lhs.tensorObject->ensure_own_data_no_copy();
-        _lhs.check_indices(false);
+        IF_CHECK( _lhs.check_indices(false); )
         
         _rhs.tensorObject->reset(std::move(rhsDims), DONT_SET_ZERO());
         _rhs.tensorObject->ensure_own_data_no_copy();
-        _rhs.check_indices(false);
+        IF_CHECK( _rhs.check_indices(false); )
         
         return std::unique_ptr<Tensor>(reorderedBaseTensor.tensorObject);
     }

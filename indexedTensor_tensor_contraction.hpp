@@ -25,7 +25,7 @@ namespace xerus {
 
     #ifndef DISABLE_RUNTIME_CHECKS_
     /// Check if common and open indices defined by _lhs and _rhs coincide with the ones defined by _result
-    void check_for_index_compatability(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
+    void check_input_validity(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
         LOG(ContractionDebug, "Checking input indices...");
         REQUIRE(_resultAssIndices.allIndicesOpen, "Result of contraction must not contain traces or fixed indices!");
         
@@ -85,11 +85,11 @@ namespace xerus {
             REQUIRE(!_rhsAssIndices.indices[i].open() || contains(_lhsAssIndices.indices, _rhsAssIndices.indices[i]) || contains(_resultAssIndices.indices, _rhsAssIndices.indices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
         }
         
-        LOG(ContractionDebug, "Input indices look right.");
+        LOG(ContractionDebug, "Input indices look alright.");
     }
     #endif
     
-    /// Tests whether the indices of @a _other are seperated in @a _candidate and wether the order of the common indices coincides. Also gives @a _needsReshuffle = true, if @a _candidate contains non-open indices
+    /// Tests whether the indices of @a _other are seperated in @a _candidate and whether the order of the common indices coincides. Also gives @a _needsReshuffle = true, if @a _candidate contains non-open indices
     void test_seperation_and_order(bool& _needsReshuffle, bool& _isOrdered, const AssignedIndices& _candidate, const AssignedIndices& _other) {
         // If there are non-open indices the tensor has to be reshuffeled
         if(!_candidate.allIndicesOpen) {_needsReshuffle = true; _isOrdered = true; return; }
@@ -102,18 +102,19 @@ namespace xerus {
         size_t resultStartIndex = 0;
         if(contains(_other.indices, _candidate.indices[0])) { // First index is common
             bool switched = false;
-            while(_other.indices[resultStartIndex] != _candidate.indices[0]) { // Find the position of the first index in the other tensor
-                ++resultStartIndex;
-                REQUIRE(resultStartIndex < _other.indices.size(), "Internal Error");
-            }
+            
+            // Find the position of the first index in the other tensor
+            while(_other.indices[resultStartIndex] != _candidate.indices[0]) { ++resultStartIndex; }
+            
+            // Iterate over all _candidate indices and check for correct order
             for(size_t i=1; i < _candidate.numIndices; ++i) {
-                if(!contains(_other.indices, _candidate.indices[i])) { 
+                if(!contains(_other.indices, _candidate.indices[i])) {
                     switched = true; 
-                } else if(switched) {
-                    _needsReshuffle = true;
+                } else if(switched) { // We are not seperated -> everything is lost.
+                    _needsReshuffle = true; 
                     _isOrdered = true; // If the the tensor is reshuffeled it is also ordered afterwards
                     break; 
-                } else if(resultStartIndex+i >= _other.numIndices || _other.indices[resultStartIndex+i] != _candidate.indices[i]) { 
+                } else if(resultStartIndex+i >= _other.numIndices || _other.indices[resultStartIndex+i] != _candidate.indices[i]) { // The order does not coincide
                     _isOrdered = false;
                 }
             }
@@ -133,13 +134,34 @@ namespace xerus {
                             _isOrdered = false; 
                         }
                     }
-                } else if(openIndexFound) {
+                } else if(openIndexFound) { // We are not seperated -> everything is lost.
                     _needsReshuffle = true;
                     _isOrdered = true; // If the the tensor is reordered it is also ordered afterwards
                     break;
                 }
             }
         }
+    }
+    
+    /// Check whether lhsIndices and rhsIndices are compatible in the sense that the common indices are in the same order
+    bool check_compatibility(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
+        bool bothSidesAreCompatible = true;
+        LOG(ContractionDebug, "Both sides are separated => Checking whether they are compatible");
+        std::vector<Index>::const_iterator lhsItr = _lhsAssIndices.indices.begin();
+        std::vector<Index>::const_iterator rhsItr = _rhsAssIndices.indices.begin();
+        while (lhsItr != _lhsAssIndices.indices.end() && contains(_resultAssIndices.indices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
+        while (rhsItr != _rhsAssIndices.indices.end() && contains(_resultAssIndices.indices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
+        // Note that indices are separated at this point
+        while (lhsItr != _lhsAssIndices.indices.end() && rhsItr != _rhsAssIndices.indices.end() && !contains(_resultAssIndices.indices, *lhsItr)) {
+            if(*lhsItr != *rhsItr) {
+                LOG(ContractionDebug, "Common index order does not coincide => Not compatible.");
+                bothSidesAreCompatible = false;
+                break;
+            }
+            lhsItr++;
+            rhsItr++;
+        }
+        return bothSidesAreCompatible;
     }
 
     /// Check whether a perfect order is possible, i.e. the indices belonging to lhs and rhs are separated in the result
@@ -179,8 +201,55 @@ namespace xerus {
         const AssignedIndices resultAssIndices = _result.assign_indices();
 
         #ifndef DISABLE_RUNTIME_CHECKS_
-            check_for_index_compatability(resultAssIndices, lhsAssIndices, rhsAssIndices);
+            check_input_validity(resultAssIndices, lhsAssIndices, rhsAssIndices);
         #endif
+        
+        // We don't want the result to have any factor that might interfere
+        _result.tensorObject->factor = 1.0;
+        
+        // Check whether both sides are separated and whether their open indices are ordered
+        LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
+        bool lhsNeedsReshuffle, lhsIsOrdered;
+        bool rhsNeedsReshuffle, rhsIsOrdered;
+        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, lhsAssIndices, resultAssIndices);
+        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, rhsAssIndices, resultAssIndices);
+        
+        // Check compatibility, if either needs a reshuffle, both sides will be compatible afterwards
+        const bool bothSidesAreCompatible = lhsNeedsReshuffle || rhsNeedsReshuffle || check_compatibility(resultAssIndices, lhsAssIndices, rhsAssIndices);
+        
+        // If both sides ar enot compatible we have to reorder the smaller one
+        if(!bothSidesAreCompatible) {
+            LOG(ContractionDebug, "Common indices not compatible =>  reorder the smaller factor.");
+            if(_lhs.tensorObjectReadOnly->reorder_costs() < _rhs.tensorObjectReadOnly->reorder_costs()) {
+                lhsNeedsReshuffle = true;
+                lhsIsOrdered = true;
+            } else {
+                rhsNeedsReshuffle = true;
+                rhsIsOrdered = true;
+            }
+        }
+        
+        // Check whether it is cheaper to perform pre- or post-ordering
+        bool reorderResult = true;
+        if(perfect_order_possible(resultAssIndices, lhsAssIndices, rhsAssIndices)) {
+            LOG(ContractionDebug, "Perfect order is possible. Calculating preorder costs");
+            size_t preOrderCosts = 0;
+            if(!lhsIsOrdered) { preOrderCosts += _lhs.tensorObjectReadOnly->reorder_costs(); }
+            if(!rhsIsOrdered) { preOrderCosts += _rhs.tensorObjectReadOnly->reorder_costs(); }
+            
+            if(preOrderCosts < _result.tensorObjectReadOnly->size) { // TODO approximate the cost for reordering result (non-zero entries not yet known)
+                LOG(ContractionDebug, "Cost for preorder are less than postOrder costs => Preorder factors to achieve perfect order.");
+                if(!lhsIsOrdered) { lhsNeedsReshuffle = true; }
+                if(!rhsIsOrdered) { rhsNeedsReshuffle = true; }
+                reorderResult = false;
+            }
+        }
+
+        // Construct the vectors for reordering
+        std::vector<Index> reorderedLhsIndices, reorderedRhsIndices, unorderedResultIndices;
+        // TODO ...
+        
+        
         
         if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
             // We have to propagate the common factors
@@ -213,64 +282,10 @@ namespace xerus {
             return;
         }
         
-        // We don't want the result to have any factor that might interfere
-        _result.tensorObject->factor = 1.0;
-        
-        // Check whether both sides are separated and whether their open indices are ordered
-        LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
-        bool lhsNeedsReshuffle, lhsIsOrdered;
-        bool rhsNeedsReshuffle, rhsIsOrdered;
-        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, lhsAssIndices, resultAssIndices);
-        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, rhsAssIndices, resultAssIndices);
         
         
-        // Check compatibility
-        bool bothSidesAreCompatible = true;
-        if(!lhsNeedsReshuffle && !rhsNeedsReshuffle) { // If either needs a reshuffle, both sides will be compatible afterwards
-            LOG(ContractionDebug, "Both sides are separated => Checking whether they are compatible");
-            std::vector<Index>::const_iterator lhsItr = lhsAssIndices.indices.begin();
-            std::vector<Index>::const_iterator rhsItr = rhsAssIndices.indices.begin();
-            while (lhsItr != lhsAssIndices.indices.end() && contains(_result.indices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
-            while (rhsItr != rhsAssIndices.indices.end() && contains(_result.indices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
-            // Note that indices are separated at this point
-            while (lhsItr != lhsAssIndices.indices.end() && rhsItr != rhsAssIndices.indices.end() && !contains(_result.indices, *lhsItr)) {
-                if(*lhsItr != *rhsItr) {
-                    LOG(ContractionDebug, "Common index order does not coincide => Not compatible.");
-                    bothSidesAreCompatible = false;
-                    break;
-                }
-                lhsItr++;
-                rhsItr++;
-            }
-        }
 
-        //Check whether it is cheaper to perform pre- or post-ordering
-        bool reorderResult = true;
-        if(perfect_order_possible(resultAssIndices, lhsAssIndices, rhsAssIndices)) {
-            LOG(ContractionDebug, "Perfect order is possible. Calculating preorder costs");
-            size_t preOrderCosts = 0;
-            if(!lhsIsOrdered) { preOrderCosts += _lhs.tensorObjectReadOnly->size; }
-            if(!rhsIsOrdered) { preOrderCosts += _rhs.tensorObjectReadOnly->size; }
-            // if not compatible, the smaller one is no "cost" as it has to be reordered anyway
-            if(!bothSidesAreCompatible) { preOrderCosts -= std::min(std::min(_lhs.tensorObjectReadOnly->size, _rhs.tensorObjectReadOnly->size), preOrderCosts); }
-            
-            
-            if(preOrderCosts < _result.tensorObjectReadOnly->size) {
-                LOG(ContractionDebug, "Cost for preorder are less than postOrder costs => Preorder factors to achieve perfect order.");
-                if(!lhsIsOrdered) { lhsNeedsReshuffle = true; }
-                if(!rhsIsOrdered) { rhsNeedsReshuffle = true; }
-                reorderResult = false;
-            }
-        }
-
-        if(!lhsNeedsReshuffle && !rhsNeedsReshuffle && !bothSidesAreCompatible) {
-            LOG(ContractionDebug, "Common indices not compatible =>  reorder the smaller factor.");
-            if(_lhs.tensorObjectReadOnly->size < _rhs.tensorObjectReadOnly->size) {
-                lhsNeedsReshuffle = true;
-            } else {
-                rhsNeedsReshuffle = true;
-            }
-        }
+        
         
         // Actually reorder LHS and RHS if necessary and create temporary result if reordering is necessary and calculate the dimensions of the matrification
         std::unique_ptr<IndexedTensor<Tensor>> lhsSaveSlot, rhsSaveSlot, workingResultSaveSlot;

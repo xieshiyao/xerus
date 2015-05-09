@@ -172,6 +172,11 @@ namespace xerus {
         /// Returns the number of non-zero entries.
         virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const = 0;
         
+        /// Returns an approximation of the reorder costs
+        size_t reorder_costs() const {
+            return is_sparse() ? 10*count_non_zero_entries() : size;
+        }
+        
         /// Calculates the frobenious norm of the tensor.
         virtual value_t frob_norm() const = 0;
 		
