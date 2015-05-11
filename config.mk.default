@@ -30,10 +30,16 @@
 # DEBUG += -D DISABLE_RUNTIME_CHECKS_    # Disable all runtime checks
 
 
+# When performing tests it is useful to ensure that all of the code in covered. This is ensured by
+# a set of macros including REQUIRE_TEST to mark lines that need to be tested. With the following
+# definition this coverage is tested.
+# DEBUG += -D TEST_COVERAGE_			# enable coverage tests
+
+
 # In the default configuration xerus will throw exceptions if it encounters invalid inputs
 # or (hopefully never) suffers an internal error. For some debugging purposes however it is
 # more convinient to instruct xerus to directly exit in such cases.
- NO_XERUS_EXCEPTIONS = TRUE         # Disable the use of exceptions by the xerus library
+# NO_XERUS_EXCEPTIONS = TRUE         # Disable the use of exceptions by the xerus library
 
 
 # You can add all kind of debuging options. In the following are some examples
@@ -75,15 +81,15 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 # libraries here (otherwise only when linking your own program using Xerus). 
 
 # Uncomment or add the appropriate blas libraries 
-# BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
+ BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
 # BLAS_LIBRARIES = -lopenblasp -lgfortran                   # Openblas, parallel
 # BLAS_LIBRARIES = /usr/lib64/atlas/libsatlas.so -lgfortran # Atlas
- BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran  # Custom
+# BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran  # Custom
 
 
 # Uncomment or add the appropriate lapack libraries 
-# LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
- LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a    # Custom
+ LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
+# LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a    # Custom
 
 # Uncomment or add the appropriate CXSparse library
 SUITESPARSE = -lcxsparse

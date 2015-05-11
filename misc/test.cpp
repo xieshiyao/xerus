@@ -210,6 +210,7 @@
         std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << (double)totalTime/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
         std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		
+#ifdef TEST_COVERAGE_
 		// check whether all REQUIRED_TESTs were tested
 		std::map<std::string, std::pair<size_t, size_t>> perFile;
 		
@@ -234,7 +235,7 @@
 				std::cout << "file " << f.first << " :\033[1;31m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
 			}
 		}
-		
+#endif
 		// destroy all stored tests to make memory-leak detection simpler
 		delete ___UnitTest::tests;
 		delete ___RequiredTest::tests;

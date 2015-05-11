@@ -58,17 +58,21 @@
 
 	#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
-	#define REQUIRE_TEST \
-		do { \
-			static const char * ___fname = __PRETTY_FUNCTION__;\
-			struct ___a{ static void rt() {\
-				___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
-			} };\
-			typedef void (*___t)();\
-			static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
-			(void)___rtp; \
-			___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
-		} while(false)
+	#ifdef TEST_COVERAGE_
+		#define REQUIRE_TEST \
+			do { \
+				static const char * ___fname = __PRETTY_FUNCTION__;\
+				struct ___a{ static void rt() {\
+					___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
+				} };\
+				typedef void (*___t)();\
+				static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
+				(void)___rtp; \
+				___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
+			} while(false)
+	#else
+		#define REQUIRE_TEST (void)0
+	#endif
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		#define FAILTEST(test) \
