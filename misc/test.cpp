@@ -215,11 +215,12 @@
 		
 		for (auto &t : (*___RequiredTest::tests)) {
 // 			std::cout << MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << t.second << std::endl;
-			std::pair<size_t, size_t> &pf = perFile[t.first.filename];
+			std::string normPath = MISC::normalize_pathname(t.first.filename);
+			std::pair<size_t, size_t> &pf = perFile[normPath];
 			pf.second += 1;
 			if (t.second == 0) {
 				std::cout << "\033[1;31m missing test for function \033[0m" 
-					<< MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << std::endl;
+					<< MISC::demangle_cxa(t.first.functionName) << " (" << normPath << ":" << t.first.lineNumber << ")" << std::endl;
 			} else {
 				pf.first += 1;
 			}

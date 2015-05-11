@@ -56,8 +56,6 @@ struct ___RequiredTest {
 				return true;
 			} else if (functionName == _rhs.functionName && lineNumber < _rhs.lineNumber) {
 				return true;
-			} else if (functionName == _rhs.functionName && lineNumber == _rhs.lineNumber && filename < _rhs.filename) {
-				return true;
 			} else {
 				return false;
 			}
