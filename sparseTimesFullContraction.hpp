@@ -34,7 +34,7 @@ namespace xerus {
         return std::unique_ptr<double[]>(AT);
     }
     
-    //TODO this is most likely not efficent
+    //TODO this is most likely not efficent and also wrong
     void transpose_inplace(double* const _A, const size_t _leftDim, const size_t _rightDim) {
         for(size_t i = 0; i < _leftDim; ++i) {
             for(size_t j = i+1; j < _rightDim; ++j) {
@@ -57,18 +57,20 @@ namespace xerus {
                                 const double* const _B) {
         // Prepare output array
         array_set_zero(_C, _leftDim*_rightDim);
-        
+        LOG(bla, "CALLED");
         // Transposition of A only changes how i and j are calculated
         if(!_transposeA) {
             for(const std::pair<size_t, double>& entry : _A) {
-                const size_t i = entry.first/_rightDim;
-                const size_t j = entry.first%_rightDim;
+                const size_t i = entry.first/_midDim;
+                const size_t j = entry.first%_midDim;
+                LOG(bla, "Found entry: " << i << ":" << j);
                 array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         } else {
             for(const std::pair<size_t, double>& entry : _A) {
-                const size_t i = entry.first%_rightDim;
-                const size_t j = entry.first/_rightDim;
+                const size_t i = entry.first%_midDim;
+                const size_t j = entry.first/_midDim;
+                LOG(bla, "Found entry: " << i << ":" << j);
                 array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }

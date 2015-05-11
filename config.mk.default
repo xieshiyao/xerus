@@ -42,7 +42,7 @@
 # NO_XERUS_EXCEPTIONS = TRUE         # Disable the use of exceptions by the xerus library
 
 
-# with the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
+# With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
 # includes the function names, source-files and line numbers.
 # NOTE: this requires the binutils libraries -lbfd -liberty -lz and -ldl
 FANCY_CALLSTACK = TRUE					# show detailed callstacks

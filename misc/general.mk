@@ -12,6 +12,7 @@ endif
 # include fancy_callstack specific libraries (binutils + dependencies)
 ifdef FANCY_CALLSTACK
 	CALLSTACK_LIBS = -lbfd -liberty -lz -ldl
+	OTHER += -D FANCY_CALLSTACK_
 else
 	CALLSTACK_LIBS = 
 endif

@@ -49,5 +49,6 @@ namespace xerus {
                                 const std::map<size_t, double>& _A,
                                 const bool _transposeA,
                                 const size_t _midDim,
-                                const double* const _B);
+                                const double* const _B,
+                                const bool _transposeB);
 }
