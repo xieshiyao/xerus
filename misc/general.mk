@@ -9,6 +9,14 @@ else
 endif
 
 
+# include fancy_callstack specific libraries (binutils + dependencies)
+ifdef FANCY_CALLSTACK
+	CALLSTACK_LIBS = -lbfd -liberty -lz -ldl
+else
+	CALLSTACK_LIBS = 
+endif
+
+
 # Create list of local header files
 LOCAL_HEADERS =  $(wildcard *.h)
 LOCAL_HEADERS += $(wildcard */*.h)
