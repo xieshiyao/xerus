@@ -111,17 +111,20 @@ namespace xerus {
         
         
         std::vector<Index> get_assigned_indices() const {
-            return get_assigned_indices(this->degree());
+            return get_assigned_indices(this->degree(), true);
         }
         
-        std::vector<Index> get_assigned_indices(const size_t _futureDegree) const {
+        std::vector<Index> get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions = false) const {
             std::vector<Index> assignedIndices;
             assignedIndices.reserve(indices.size());
             
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
                 // We don't look at span zero indices
-                if((!idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree) || (idx.flags[Index::Flag::FRACTIONAL_SPAN] && _futureDegree/idx.span == 0)) {
+                if((   !idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) 
+                    || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree) 
+                    || (idx.flags[Index::Flag::FRACTIONAL_SPAN] && _futureDegree/idx.span == 0)) 
+                {
                     REQUIRE(!idx.fixed(), "Fixed index must have span == 1");
                     continue;
                 }
@@ -131,8 +134,12 @@ namespace xerus {
                     REQUIRE(!idx.flags[Index::Flag::INVERSE_SPAN], "Fixed index must not have inverse span.");
                     REQUIRE(!idx.flags[Index::Flag::FRACTIONAL_SPAN], "Fixed index must not have fractional span.");
                     REQUIRE(idx.span == 1, "Fixed index must have span one.");
-                    assignedIndices.emplace_back(idx.valueId, 1, Index::Flag::OPEN, Index::Flag::FIXED, false);
-                    dimensionCount++;
+                    if(_assignDimensions) {
+                        assignedIndices.emplace_back(idx.valueId, 1, tensorObjectReadOnly->dimensions[dimensionCount++], Index::Flag::OPEN, Index::Flag::FIXED, false);
+                    } else {
+                        assignedIndices.emplace_back(idx.valueId, 1, 0, Index::Flag::OPEN, Index::Flag::FIXED, false);
+                        dimensionCount++;
+                    }
                 } else {
                     // Set span
                     size_t span;
@@ -146,6 +153,17 @@ namespace xerus {
                         span = idx.span;
                     }
                     
+                    // Calculate multDimension
+                    size_t multDimension = 1;
+                    if(_assignDimensions) {
+                        REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
+                        for(size_t i = 0; i < span; ++i) {
+                            multDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
+                        }
+                    } else {
+                        dimensionCount += span;
+                    }
+                    
                     // Determine whether index is open
                     bool open = true;
                     for(size_t i = 0; i < assignedIndices.size(); ++i) {
@@ -157,8 +175,7 @@ namespace xerus {
                         }
                     }
                     
-                    assignedIndices.emplace_back(idx.valueId, span, Index::Flag::OPEN, open);
-                    dimensionCount += span;
+                    assignedIndices.emplace_back(idx.valueId, span, multDimension, Index::Flag::OPEN, open);
                 }
             }
             
@@ -190,9 +207,9 @@ namespace xerus {
                     REQUIRE(idx.span == 1, "Fixed index must have span one.");
                     
                     assignedIndices.numIndices++;
-                    assignedIndices.indices.emplace_back(idx.valueId, 1, Index::Flag::FIXED, Index::Flag::OPEN, true, false);
+                    assignedIndices.indices.emplace_back(idx.valueId, 1, tensorObjectReadOnly->dimensions[dimensionCount], Index::Flag::FIXED, Index::Flag::OPEN, true, false);
                     assignedIndices.indexDimensions.emplace_back(tensorObjectReadOnly->dimensions[dimensionCount++]);
-                    assignedIndices.allIndicesOpen = false; 
+                    assignedIndices.allIndicesOpen = false;
                 } else {
                     // Set span
                     size_t span;
@@ -226,7 +243,7 @@ namespace xerus {
                     }
                     
                     assignedIndices.numIndices++;
-                    assignedIndices.indices.emplace_back(idx.valueId, span, Index::Flag::OPEN, open);
+                    assignedIndices.indices.emplace_back(idx.valueId, span, multDimension, Index::Flag::OPEN, open);
                     assignedIndices.indexDimensions.emplace_back(multDimension);
                     assignedIndices.allIndicesOpen = assignedIndices.allIndicesOpen && open; 
                 }

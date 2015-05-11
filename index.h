@@ -43,6 +43,9 @@ namespace xerus {
         /// The span states how many dimensions are covered by the index.
         size_t span;
         
+        /// The product of the external dimensions this index correstponds to. Only set for assinged indices
+        size_t dimension;
+        
         /// Bitset of all possible flags the index may possess.
         std::bitset<NUM_FLAGS> flags;
         
@@ -58,6 +61,7 @@ namespace xerus {
         /// Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
         implicit Index(const long _i);
         
+        
         /// Internal constructor, do not use this unless you know what you are doing.
         explicit Index(const size_t _valueId, const size_t _span);
         
@@ -65,10 +69,13 @@ namespace xerus {
         explicit Index(const size_t _valueId, const size_t _span, const Flag _flag1, const bool _flagValue1 = true);
         
         /// Internal constructor, do not use this unless you know what you are doing.
-        explicit Index(const size_t _valueId, const size_t _span, const Flag _flag1, const Flag _flag2, const bool _flagValue1 = true, const bool _flagValue2 = true);
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension);
         
         /// Internal constructor, do not use this unless you know what you are doing.
-        explicit Index(const size_t _valueId, const size_t _span, const Flag _flag1, const Flag _flag2, const Flag _flag3, const bool _flagValue1 = true, const bool _flagValue2 = true, const bool _flagValue3 = true);
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1 = true);
+        
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1 = true, const bool _flagValue2 = true);
         
     public:
         /// Indices are default assignable.
