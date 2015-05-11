@@ -80,9 +80,11 @@ namespace xerus {
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
+#ifndef DISABLE_RUNTIME_CHECKS_
             for(const TensorNode& node : nodes) {
                 REQUIRE(node.erased, "Tensor Network with degree zero must not have unerased nodes.");
             }
+#endif
             result.reset(new FullTensor());
             static_cast<FullTensor*>(result.get())->data.get()[0] = factor;
         } else {
