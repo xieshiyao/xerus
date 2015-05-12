@@ -806,6 +806,12 @@ public:
 		LOG(fatal, "forbidden");
 		return nullptr;
 	}
+	virtual value_t frob_norm() const override {
+		Index i;
+		TTNetwork<isOperator> tmp(this->degree());
+		tmp(i&0) = (*this)(i&0);
+		return tmp.frob_norm();
+	}
 };
 
 

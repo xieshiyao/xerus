@@ -38,11 +38,21 @@ int main() {
 	// the TTOperator of order 2d is thus fully indexed by two indices of the form i^d, j^d
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
+	REQUIRE(A.check_consistency(), "asd");
+	
 	// the rank of A increased in the last operation:
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
 	
 	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
-	xerus::ALS(A, X, B, 1e-4);
+	std::vector<double> perfdata;
+	xerus::ALSVariant ALSb(xerus::ALS);
+	ALSb.printProgress = true;
+	
+	B(i&0) = A(i^d, j^d) * X(j^d);
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+	
+	ALSb(A, X, B, 1e-4, &perfdata);
 	
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
 	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor
