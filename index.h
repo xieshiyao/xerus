@@ -32,6 +32,7 @@ namespace xerus {
             enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, OPEN, NUM_FLAGS};
         #endif
         
+            static bool all_open(const std::vector<Index>& _indices);
     private:
         static std::atomic<size_t> idThreadInitCounter;
         static thread_local size_t idCounter;
@@ -44,7 +45,7 @@ namespace xerus {
         size_t span;
         
         /// The product of the external dimensions this index correstponds to. Only set for assinged indices
-        size_t dimension;
+        size_t assingedDimension;
         
         /// Bitset of all possible flags the index may possess.
         std::bitset<NUM_FLAGS> flags;
@@ -99,6 +100,12 @@ namespace xerus {
         _inline_ void open(const bool _open) {
             flags[Flag::OPEN] = _open;
             IF_CHECK( flags[Flag::ASSINGED] = true; )
+        }
+        
+        /// Returns the (mult)Dimension assinged to this index.
+        _inline_ size_t dimension() const {
+            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
+            return assingedDimension;
         }
         
         /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.

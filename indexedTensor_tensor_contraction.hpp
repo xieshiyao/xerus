@@ -22,67 +22,67 @@
 #include "xerus.h"
 
 namespace xerus {
-
+    
     #ifndef DISABLE_RUNTIME_CHECKS_
     /// Check if common and open indices defined by _lhs and _rhs coincide with the ones defined by _result
-    void check_input_validity(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
+    void check_input_validity(const std::vector<Index>& _resultIndices, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
         LOG(ContractionDebug, "Checking input indices...");
-        REQUIRE(_resultAssIndices.allIndicesOpen, "Result of contraction must not contain traces or fixed indices!");
+        REQUIRE(Index::all_open(_resultIndices), "Result of contraction must not contain traces or fixed indices!");
         
         // Check that every index in result appears exactly once on lhs or rhs and that span and dimension conincide
-        for(size_t i = 0; i < _resultAssIndices.numIndices; ++i) {
+        for(size_t i = 0; i < _resultIndices.size(); ++i) {
             size_t j;
             // Look for the index in lhs
-            for(j = 0; j < _lhsAssIndices.numIndices; ++j) {
-                if(_resultAssIndices.indices[i] == _lhsAssIndices.indices[j]) {
-                    REQUIRE(_resultAssIndices.indices[i].span == _lhsAssIndices.indices[j].span, "Span of indices in result and lhs must conincide.");
-                    REQUIRE(_resultAssIndices.indexDimensions[i] == _lhsAssIndices.indexDimensions[j], "Dimensions of indices in result and lhs must conincide.");
-                    REQUIRE(_lhsAssIndices.indices[j].open(), "Index appearing in result of contraction must be open in lhs.");
-                    REQUIRE(!contains(_rhsAssIndices.indices, _resultAssIndices.indices[i]), "Index appearing in result of contraction must not appear in lhs AND rhs.");
+            for(j = 0; j < _lhsIndices.size(); ++j) {
+                if(_resultIndices[i] == _lhsIndices[j]) {
+                    REQUIRE(_resultIndices[i].span == _lhsIndices[j].span, "Span of indices in result and lhs must conincide.");
+                    REQUIRE(_resultIndices[i].dimension() == _lhsIndices[j].dimension(), "Dimensions of indices in result and lhs must conincide.");
+                    REQUIRE(_lhsIndices[j].open(), "Index appearing in result of contraction must be open in lhs.");
+                    REQUIRE(!contains(_rhsIndices, _resultIndices[i]), "Index appearing in result of contraction must not appear in lhs AND rhs.");
                     break;
                 }
             }
             
             // If the index is not found in the lhs, search rhs
-            if(j == _lhsAssIndices.numIndices) {
-                for(j = 0; j < _rhsAssIndices.numIndices; ++j) {
-                    if(_resultAssIndices.indices[i] == _rhsAssIndices.indices[j]) {
-                        REQUIRE(_resultAssIndices.indices[i].span == _rhsAssIndices.indices[j].span, "Span of indices in result and rhs must conincide.");
-                        REQUIRE(_resultAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in result and rhs must conincide.");
-                        REQUIRE(_rhsAssIndices.indices[j].open(), "Index appearing in result of contraction must be open in rhs.");
+            if(j == _lhsIndices.size()) {
+                for(j = 0; j < _rhsIndices.size(); ++j) {
+                    if(_resultIndices[i] == _rhsIndices[j]) {
+                        REQUIRE(_resultIndices[i].span == _rhsIndices[j].span, "Span of indices in result and rhs must conincide.");
+                        REQUIRE(_resultIndices[i].dimension() == _rhsIndices[j].dimension(), "Dimensions of indices in result and rhs must conincide.");
+                        REQUIRE(_rhsIndices[j].open(), "Index appearing in result of contraction must be open in rhs.");
                         break;
                     }
                 }
                 
-                REQUIRE(j < _rhsAssIndices.numIndices, "Index appearing in the result of contraction must appear on either lhs or rhs side.");
+                REQUIRE(j < _rhsIndices.size(), "Index appearing in the result of contraction must appear on either lhs or rhs side.");
             }
         }
         
         // Check that every index in lhs is either non-open, appears in rhs with right span and dimension, or is contained in result
-        for(size_t i = 0; i < _lhsAssIndices.numIndices; ++i) {
-            if(!_lhsAssIndices.indices[i].open()) {
-                REQUIRE(_lhsAssIndices.indices[i].fixed() || !contains(_rhsAssIndices.indices, _lhsAssIndices.indices[i]), "Index that part of a trace in lhs, must not appear in rhs");
+        for(size_t i = 0; i < _lhsIndices.size(); ++i) {
+            if(!_lhsIndices[i].open()) {
+                REQUIRE(_lhsIndices[i].fixed() || !contains(_rhsIndices, _lhsIndices[i]), "Index that part of a trace in lhs, must not appear in rhs");
                 // It cannot be contained in result because of previous checks
                 continue;
             }
             
             // Look for the index in rhs
             size_t j;
-            for(j = 0; j < _rhsAssIndices.numIndices; ++j) {
-                if(_lhsAssIndices.indices[i] == _rhsAssIndices.indices[j]) {
-                    REQUIRE(_lhsAssIndices.indices[i].span == _rhsAssIndices.indices[j].span, "Span of indices in lhs and rhs of contraction must conincide.");
-                    REQUIRE(_lhsAssIndices.indexDimensions[i] == _rhsAssIndices.indexDimensions[j], "Dimensions of indices in lhs and rhs of contraction must conincide.");
-                    REQUIRE(_rhsAssIndices.indices[j].open(), "Index appearing open in lhs of contraction must also be open in rhs.");
+            for(j = 0; j < _rhsIndices.size(); ++j) {
+                if(_lhsIndices[i] == _rhsIndices[j]) {
+                    REQUIRE(_lhsIndices[i].span == _rhsIndices[j].span, "Span of indices in lhs and rhs of contraction must conincide.");
+                    REQUIRE(_lhsIndices[i].dimension() == _rhsIndices[j].dimension(), "Dimensions of indices in lhs and rhs of contraction must conincide.");
+                    REQUIRE(_rhsIndices[j].open(), "Index appearing open in lhs of contraction must also be open in rhs.");
                     break;
                 }
             }
             
-            REQUIRE(j < _rhsAssIndices.numIndices || contains(_resultAssIndices.indices, _lhsAssIndices.indices[i]), "Index appearing in the lhs of contraction must appear on either rhs or result.");
+            REQUIRE(j < _rhsIndices.size() || contains(_resultIndices, _lhsIndices[i]), "Index appearing in the lhs of contraction must appear on either rhs or result.");
         }
         
         // Check that every index in rhs is either non-open, or appears in lhs or result
-        for(size_t i = 0; i < _rhsAssIndices.numIndices; ++i) {
-            REQUIRE(!_rhsAssIndices.indices[i].open() || contains(_lhsAssIndices.indices, _rhsAssIndices.indices[i]) || contains(_resultAssIndices.indices, _rhsAssIndices.indices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
+        for(size_t i = 0; i < _rhsIndices.size(); ++i) {
+            REQUIRE(!_rhsIndices[i].open() || contains(_lhsIndices, _rhsIndices[i]) || contains(_resultIndices, _rhsIndices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
         }
         
         LOG(ContractionDebug, "Input indices look alright.");
@@ -90,47 +90,47 @@ namespace xerus {
     #endif
     
     /// Tests whether the indices of @a _other are seperated in @a _candidate and whether the order of the common indices coincides. Also gives @a _needsReshuffle = true, if @a _candidate contains non-open indices
-    void test_seperation_and_order(bool& _needsReshuffle, bool& _isOrdered, const AssignedIndices& _candidate, const AssignedIndices& _other) {
+    void test_seperation_and_order(bool& _needsReshuffle, bool& _isOrdered, const std::vector<Index>& _candidate, const std::vector<Index>& _other) {
         // If there are non-open indices the tensor has to be reshuffeled
-        if(!_candidate.allIndicesOpen) {_needsReshuffle = true; _isOrdered = true; return; }
+        if(!Index::all_open(_candidate)) {_needsReshuffle = true; _isOrdered = true; return; }
         
         // A set of zero indices is trivially seperated and ordered, the same applies if the result has no indices (and all indices are open).
-        if(_candidate.indices.empty() || _other.indices.empty()) { _needsReshuffle = false; _isOrdered = true; return; }
+        if(_candidate.empty() || _other.empty()) { _needsReshuffle = false; _isOrdered = true; return; }
 
         _needsReshuffle = false;
         _isOrdered = true;
         size_t resultStartIndex = 0;
-        if(contains(_other.indices, _candidate.indices[0])) { // First index is common
+        if(contains(_other, _candidate[0])) { // First index is common
             bool switched = false;
             
             // Find the position of the first index in the other tensor
-            while(_other.indices[resultStartIndex] != _candidate.indices[0]) { ++resultStartIndex; }
+            while(_other[resultStartIndex] != _candidate[0]) { ++resultStartIndex; }
             
             // Iterate over all _candidate indices and check for correct order
-            for(size_t i=1; i < _candidate.numIndices; ++i) {
-                if(!contains(_other.indices, _candidate.indices[i])) {
+            for(size_t i=1; i < _candidate.size(); ++i) {
+                if(!contains(_other, _candidate[i])) {
                     switched = true; 
                 } else if(switched) { // We are not seperated -> everything is lost.
                     _needsReshuffle = true; 
                     _isOrdered = true; // If the the tensor is reshuffeled it is also ordered afterwards
                     break; 
-                } else if(resultStartIndex+i >= _other.numIndices || _other.indices[resultStartIndex+i] != _candidate.indices[i]) { // The order does not coincide
+                } else if(resultStartIndex+i >= _other.size() || _other[resultStartIndex+i] != _candidate[i]) { // The order does not coincide
                     _isOrdered = false;
                 }
             }
         } else { // First index is un-common
             bool openIndexFound = false;
-            for(size_t i=1; i < _candidate.numIndices; ++i){
-                if(contains(_other.indices, _candidate.indices[i]) ) {
+            for(size_t i=1; i < _candidate.size(); ++i){
+                if(contains(_other, _candidate[i]) ) {
                     if(!openIndexFound) {
                         openIndexFound = true;
-                        while(_other.indices[resultStartIndex] != _candidate.indices[i]) {  // Find this first common index in the result tensor
+                        while(_other[resultStartIndex] != _candidate[i]) {  // Find this first common index in the result tensor
                             ++resultStartIndex;
-                            REQUIRE(resultStartIndex < _other.indices.size(), "Internal Error");
+                            REQUIRE(resultStartIndex < _other.size(), "Internal Error");
                         }
                         resultStartIndex -= i; // We want to add i in the following
                     } else {
-                        if(resultStartIndex+i >= _other.numIndices || _other.indices[resultStartIndex+i] != _candidate.indices[i]) { 
+                        if(resultStartIndex+i >= _other.size() || _other[resultStartIndex+i] != _candidate[i]) { 
                             _isOrdered = false; 
                         }
                     }
@@ -144,15 +144,15 @@ namespace xerus {
     }
     
     /// Check whether lhsIndices and rhsIndices are compatible in the sense that the common indices are in the same order
-    bool check_compatibility(const AssignedIndices& _resultAssIndices, const AssignedIndices& _lhsAssIndices, const AssignedIndices& _rhsAssIndices) {
+    bool check_compatibility(const std::vector<Index>& _resultAssIndices, const std::vector<Index>& _lhsAssIndices, const std::vector<Index>& _rhsAssIndices) {
+        LOG(ContractionDebug, "Checking whether they are compatible");
         bool bothSidesAreCompatible = true;
-        LOG(ContractionDebug, "Both sides are separated => Checking whether they are compatible");
-        std::vector<Index>::const_iterator lhsItr = _lhsAssIndices.indices.begin();
-        std::vector<Index>::const_iterator rhsItr = _rhsAssIndices.indices.begin();
-        while (lhsItr != _lhsAssIndices.indices.end() && contains(_resultAssIndices.indices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
-        while (rhsItr != _rhsAssIndices.indices.end() && contains(_resultAssIndices.indices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
+        std::vector<Index>::const_iterator lhsItr = _lhsAssIndices.begin();
+        std::vector<Index>::const_iterator rhsItr = _rhsAssIndices.begin();
+        while (lhsItr != _lhsAssIndices.end() && contains(_resultAssIndices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
+        while (rhsItr != _rhsAssIndices.end() && contains(_resultAssIndices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
         // Note that indices are separated at this point
-        while (lhsItr != _lhsAssIndices.indices.end() && rhsItr != _rhsAssIndices.indices.end() && !contains(_resultAssIndices.indices, *lhsItr)) {
+        while (lhsItr != _lhsAssIndices.end() && rhsItr != _rhsAssIndices.end() && !contains(_resultAssIndices, *lhsItr)) {
             if(*lhsItr != *rhsItr) {
                 LOG(ContractionDebug, "Common index order does not coincide => Not compatible.");
                 bothSidesAreCompatible = false;
@@ -163,23 +163,23 @@ namespace xerus {
         }
         return bothSidesAreCompatible;
     }
-
+    
     /// Check whether a perfect order is possible, i.e. the indices belonging to lhs and rhs are separated in the result
-    bool perfect_order_possible(const AssignedIndices& _result, const AssignedIndices& _lhs, const AssignedIndices& _rhs) {
+    bool perfect_order_possible(const std::vector<Index>& _result, const std::vector<Index>& _lhs, const std::vector<Index>& _rhs) {
         LOG(ContractionDebug, "Checking whether a perfect order is possible...");
-        if(!_lhs.indices.empty() && !_rhs.indices.empty() && !_result.indices.empty()) { // If any index set is empty perfect order is always possible
+        if(!_lhs.empty() && !_rhs.empty() && !_result.empty()) { // If any index set is empty perfect order is always possible
             bool switched = false;
-            if(contains(_lhs.indices, _result.indices[0])){ // First index is contained in LHS
-                for(size_t i=1; i< _result.numIndices; ++i) {
-                    if(!contains(_lhs.indices, _result.indices[i])) {
+            if(contains(_lhs, _result[0])){ // First index is contained in LHS
+                for(size_t i=1; i< _result.size(); ++i) {
+                    if(!contains(_lhs, _result[i])) {
                         switched = true;
                     } else if(switched) {
                         return false;
                     }
                 }
             } else { // == first index is contained in RHS
-                for(size_t i=1; i< _result.numIndices; ++i) {
-                    if(!contains(_rhs.indices, _result.indices[i])) {
+                for(size_t i=1; i< _result.size(); ++i) {
+                    if(!contains(_rhs, _result[i])) {
                         switched = true;
                     } else if(switched) {
                         return false;
@@ -196,27 +196,23 @@ namespace xerus {
     */
     void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs) {
         // Get the assigned indices (we assume that result is already of the right dimensions)
-        const AssignedIndices lhsAssIndices = _lhs.assign_indices(); // TODO get rid of AssignedIndices
-        const AssignedIndices rhsAssIndices = _rhs.assign_indices();
-        const AssignedIndices resultAssIndices = _result.assign_indices();
-        
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
         const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
         const std::vector<Index> resultIndices = _result.get_assigned_indices();
 
         #ifndef DISABLE_RUNTIME_CHECKS_
-            check_input_validity(resultAssIndices, lhsAssIndices, rhsAssIndices);
+            check_input_validity(resultIndices, lhsIndices, rhsIndices);
         #endif
         
         // Check whether both sides are separated and whether their open indices are ordered
         LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
         bool lhsNeedsReshuffle, lhsIsOrdered;
         bool rhsNeedsReshuffle, rhsIsOrdered;
-        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, lhsAssIndices, resultAssIndices);
-        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, rhsAssIndices, resultAssIndices);
+        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, lhsIndices, resultIndices);
+        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, rhsIndices, resultIndices);
         
         // Check compatibility, if either needs a reshuffle, both sides will be compatible afterwards
-        const bool bothSidesAreCompatible = lhsNeedsReshuffle || rhsNeedsReshuffle || check_compatibility(resultAssIndices, lhsAssIndices, rhsAssIndices);
+        const bool bothSidesAreCompatible = lhsNeedsReshuffle || rhsNeedsReshuffle || check_compatibility(resultIndices, lhsIndices, rhsIndices);
         
         // If both sides ar enot compatible we have to reorder the smaller one
         if(!bothSidesAreCompatible) {
@@ -232,7 +228,7 @@ namespace xerus {
         
         // Check whether it is cheaper to perform pre- or post-ordering
         bool reorderResult = true;
-        if(perfect_order_possible(resultAssIndices, lhsAssIndices, rhsAssIndices)) {
+        if(perfect_order_possible(resultIndices, lhsIndices, rhsIndices)) {
             LOG(ContractionDebug, "Perfect order is possible. Calculating preorder costs");
             size_t preOrderCosts = 0;
             if(!lhsIsOrdered) { preOrderCosts += _lhs.tensorObjectReadOnly->reorder_costs(); }
@@ -256,7 +252,7 @@ namespace xerus {
             for(const Index& idx : resultIndices) {
                 if(contains(lhsIndices, idx)) {
                     lhsOpenIndices.push_back(idx);
-                    leftDim *= idx.dimension;
+                    leftDim *= idx.dimension();
                 }
             }
             
@@ -264,7 +260,7 @@ namespace xerus {
             for(const Index& idx : rhsIndices) {
                 if(contains(lhsIndices, idx)) {
                     commonIndices.push_back(idx);
-                    midDim *= idx.dimension;
+                    midDim *= idx.dimension();
                 }
             }
         } else {
@@ -272,10 +268,10 @@ namespace xerus {
             for(const Index& idx : lhsIndices) {
                 if(contains(resultIndices, idx)) {
                     lhsOpenIndices.push_back(idx);
-                    leftDim *= idx.dimension;
+                    leftDim *= idx.dimension();
                 } else if(contains(rhsIndices, idx)) {
                     commonIndices.push_back(idx);
-                    midDim *= idx.dimension;
+                    midDim *= idx.dimension();
                 }
             }
         }
@@ -286,7 +282,7 @@ namespace xerus {
             for(const Index& idx : resultIndices) {
                 if(contains(rhsIndices, idx)) {
                     rhsOpenIndices.push_back(idx);
-                    rightDim *= idx.dimension;
+                    rightDim *= idx.dimension();
                 }
             }
         } else {
@@ -294,7 +290,7 @@ namespace xerus {
             for(const Index& idx : rhsIndices) {
                 if(contains(resultIndices, idx)) {
                     rhsOpenIndices.push_back(idx);
-                    rightDim *= idx.dimension;
+                    rightDim *= idx.dimension();
                 }
             }
         }
@@ -362,15 +358,15 @@ namespace xerus {
                 _result.tensorObject->ensure_own_data_no_copy();
                 
                 // Check whether both sides have to be swaped to achieve perfect order
-                if(!_result.indices.empty() && !contains(lhsAssIndices.indices, _result.indices[0])) {
+                if(!_result.indices.empty() && !contains(lhsIndices, resultIndices[0])) {
                     std::swap(actualLhs, actualRhs);
                     std::swap(leftDim, rightDim);
                 }
             }
             
             // Check if Matrices have to be transposed
-            const bool lhsTrans = !(actualLhs->indices.empty() || contains(resultAssIndices.indices, actualLhs->indices[0]));
-            const bool rhsTrans = !(actualRhs->indices.empty() || !contains(resultAssIndices.indices, actualRhs->indices[0]));
+            const bool lhsTrans = !(actualLhs->indices.empty() || contains(resultIndices, actualLhs->indices[0]));
+            const bool rhsTrans = !(actualRhs->indices.empty() || !contains(resultIndices, actualRhs->indices[0]));
             
             LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
             
@@ -412,7 +408,7 @@ namespace xerus {
         size_t dimensionCount = 0;
         for(const Index& idx : lhsIndices) {
             if(_lhs.is_open(idx) && !contains(rhsIndices, idx)) {
-                outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span);
+                outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span); // TODO this Index is assigned?!?!
                 for(size_t i=0; i < outIndices.back().span; ++i) {
                     lhsOpenDim *= _lhs.tensorObjectReadOnly->dimensions[dimensionCount];
                     outDimensions.push_back(_lhs.tensorObjectReadOnly->dimensions[dimensionCount]);

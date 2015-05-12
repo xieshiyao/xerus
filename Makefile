@@ -53,6 +53,7 @@ include config.mk
 OTHER += -I misc 			# Add search Path for header files
 OTHER += -std=c++11			# Use old C++11 standard
 OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
+OTHER += -MMD
 
 
 # ------------------------------------------------------------------------------------------------------

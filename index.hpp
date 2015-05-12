@@ -22,6 +22,14 @@
 #include "tensor.h"
 
 namespace xerus {
+    
+    bool Index::all_open(const std::vector<Index>& _indices) {
+        for(const Index& idx : _indices) {
+            if(!idx.open()) { return false; }
+        }
+        return true;
+    }
+            
     std::atomic<size_t> Index::idThreadInitCounter(0);
     thread_local size_t Index::idCounter = (idThreadInitCounter++)<<54;
     
@@ -39,14 +47,14 @@ namespace xerus {
         flags[_flag1] = _flagValue1;
     }
     
-    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), dimension(_dimension) {}
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), assingedDimension(_dimension) {}
     
-    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span), dimension(_dimension) {
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
         IF_CHECK( flags[Flag::ASSINGED] = true; )
         flags[_flag1] = _flagValue1;
     }
     
-    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1, const bool _flagValue2) : valueId(_valueId), span(_span), dimension(_dimension) {
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1, const bool _flagValue2) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
         IF_CHECK( flags[Flag::ASSINGED] = true; )
         flags[_flag1] = _flagValue1;
         flags[_flag2] = _flagValue2;
