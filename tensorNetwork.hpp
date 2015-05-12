@@ -234,62 +234,58 @@ namespace xerus {
 		nodes.resize(newSize);
 	}
     
-    
+#ifndef DISABLE_RUNTIME_CHECKS_
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
     bool TensorNetwork::is_valid_network() const {
-		if (!std::isfinite(factor)) {
-			return false;
-		}
+		REQUIRE(std::isfinite(factor), "factor = " << factor);
 		// per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
 			const TensorNode::Link &el = externalLinks[n];
-			if (el.other >= nodes.size() 
-				|| el.dimension <= 0
-				|| el.external) 
-			{
-				return false;
-			}
+			REQUIRE(el.other < nodes.size(), "n=" << n);
+			REQUIRE(el.dimension > 0, "n=" << n);
+			REQUIRE(!el.external, "n=" << n);
+			
 			const TensorNode &other = nodes[el.other];
-			if (other.degree() <= el.indexPosition 
-				|| !other.neighbors[el.indexPosition].external 
-				|| other.neighbors[el.indexPosition].indexPosition != n
-				|| other.neighbors[el.indexPosition].dimension != el.dimension) 
-			{
-				return false;
-			}
+			REQUIRE(other.degree() > el.indexPosition, "n=" << n);
+			REQUIRE(other.neighbors[el.indexPosition].external, "n=" << n);
+			REQUIRE(other.neighbors[el.indexPosition].indexPosition == n, "n=" << n);
+			REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
 		}
 		
 		// per node
 		for (size_t n=0; n<nodes.size(); ++n) {
 			const TensorNode &currNode = nodes[n];
-			if (currNode.erased || (currNode.tensorObject && currNode.degree() != currNode.tensorObject->degree())) {
-				return false;
+			REQUIRE(!currNode.erased, "n=" << n);
+			if (currNode.tensorObject) {
+				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "n=" << n << " " << currNode.degree() << " vs " << currNode.tensorObject->degree());
 			}
 			// per neighbor
 			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
 				const TensorNode::Link &el = currNode.neighbors[i];
-				if ((el.other >= nodes.size() && !el.external)
-					|| el.dimension <= 0
-					|| (currNode.tensorObject && el.dimension!=currNode.tensorObject->dimensions[i])) 
-				{
-					return false;
+				REQUIRE(el.dimension > 0, "n=" << n << " i=" << i);
+				if (currNode.tensorObject) {
+					REQUIRE(el.dimension==currNode.tensorObject->dimensions[i],  "n=" << n << " i=" << i << " " << el.dimension << " vs " << currNode.tensorObject->dimensions[i]);
 				}
 				if (!el.external) { // externals were already checked
+					REQUIRE(el.other < nodes.size(), "n=" << n << " i=" << i << " " << el.other << " vs " << nodes.size());
 					const TensorNode &other = nodes[el.other];
-					if (other.degree() <= el.indexPosition 
-						|| other.neighbors[el.indexPosition].external 
-						|| other.neighbors[el.indexPosition].other != n
-						|| other.neighbors[el.indexPosition].indexPosition != i
-						|| other.neighbors[el.indexPosition].dimension != el.dimension) 
-					{
-						return false;
-					}
+					REQUIRE(other.degree() > el.indexPosition, "n=" << n << " i=" << i << " " << other.degree() << " vs " << el.indexPosition);
+					REQUIRE(!other.neighbors[el.indexPosition].external, "n=" << n << " i=" << i);
+					REQUIRE(other.neighbors[el.indexPosition].other == n, "n=" << n << " i=" << i);
+					REQUIRE(other.neighbors[el.indexPosition].indexPosition == i, "n=" << n << " i=" << i);
+					REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " i=" << i << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
 				}
 			}
 		}
 		
 		return true;
 	}
+#else
+	/// no checks are performed with disabled checks... 
+    bool TensorNetwork::is_valid_network() const {
+		return true;
+	}
+#endif
 	
 	bool TensorNetwork::is_in_expected_format() const {
 		return is_valid_network();
@@ -339,7 +335,7 @@ namespace xerus {
         while (j<_modifiedIndices.size()) {
             Index &ij = _modifiedIndices[j];
             if (!_base.is_contained_and_open(ij)) {
-                REQUIRE(contractedIndices.count(ij) == 0, "Indices must occure at most twice per contraction");
+                REQUIRE(contractedIndices.count(ij) == 0, "Indices must occur at most twice per contraction");
                 // trace out this index
                 // find the id of the second occurance
                 size_t k=j+1;
