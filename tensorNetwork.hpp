@@ -77,7 +77,7 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
-		REQUIRE(check_consistency(), "cannot fully contract inconsistent network");
+		REQUIRE(is_valid_network(), "cannot fully contract inconsistent network");
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
@@ -236,7 +236,11 @@ namespace xerus {
     
     
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
-    bool TensorNetwork::check_consistency() const {
+    bool TensorNetwork::is_valid_network() const {
+		if (!std::isfinite(factor)) {
+			return false;
+		}
+		// per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
 			const TensorNode::Link &el = externalLinks[n];
 			if (el.other >= nodes.size() 
@@ -255,14 +259,13 @@ namespace xerus {
 			}
 		}
 		
+		// per node
 		for (size_t n=0; n<nodes.size(); ++n) {
 			const TensorNode &currNode = nodes[n];
-			if (currNode.tensorObject) {
-				if (currNode.degree() != currNode.tensorObject->degree()) 
-				{
-					return false;
-				}
+			if (currNode.erased || (currNode.tensorObject && currNode.degree() != currNode.tensorObject->degree())) {
+				return false;
 			}
+			// per neighbor
 			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
 				const TensorNode::Link &el = currNode.neighbors[i];
 				if ((el.other >= nodes.size() && !el.external)
@@ -286,6 +289,10 @@ namespace xerus {
 		}
 		
 		return true;
+	}
+	
+	bool TensorNetwork::is_in_expected_format() const {
+		return is_valid_network();
 	}
     
     /// Creates a copy of a subnet that only contains nullptr as data pointers
@@ -323,7 +330,7 @@ namespace xerus {
 
     void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
 		TensorNetwork &base = *_base.tensorObject;
-		REQUIRE(base.check_consistency(), "Network that is supposed to be traced out is inconsistent.");
+		REQUIRE(base.is_valid_network(), "Network that is supposed to be traced out is inconsistent.");
         #ifndef DISABLE_RUNTIME_CHECKS_
             std::set<Index> contractedIndices;
         #endif
@@ -564,7 +571,7 @@ namespace xerus {
         // Find traces (former contractions have become traces due to the joining)
         trace_out_double_indices(_base.indices, _base);
 		
-		REQUIRE(_base.tensorObject->check_consistency(), "ie");
+		REQUIRE(_base.tensorObject->is_valid_network(), "ie");
     }
 
 

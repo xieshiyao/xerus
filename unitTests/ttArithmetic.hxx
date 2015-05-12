@@ -290,7 +290,7 @@ UNIT_TEST(TT, ax_b,
 			return 0.0;
 		}
 	});
-	TTOperator A = TTOperator::construct_random({10,10,10,10,10,10}, {2,2}, rnd, dist);
+	TTOperator A= TTOperator::construct_random({10,10,10,10,10,10}, {2,2}, rnd, dist);
 	TTTensor T(3);
 	TTTensor S(3);
 	Index i,j,k;
@@ -311,8 +311,8 @@ UNIT_TEST(TT, ax_b,
     TEST(frob_norm(FullTensor(T) - fT) < 1e-7);
     TEST(frob_norm(FullTensor(T)(i^3) - fT(i^3)) < 1e-7);
 	
-	T(i^3) = A(i^3, j^3) * X(j^3);
-    TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
+// 	T(i^3) = A(i^3, j^3) * X(j^3);
+//     TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
     
 	TEST(frob_norm(T(i^3) - X(i^3))<1e-7);
 	T(i^3) = T(i^3) - X(i^3);

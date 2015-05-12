@@ -158,6 +158,7 @@ protected:
         if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, _A.degree()-1, _A.dimensions[_A.degree()-1], true); }
         
         REQUIRE((N==1 && remainingDim == _A.dimensions.back()) || (N==2 && remainingDim == _A.dimensions[_A.degree()/2-1]*_A.dimensions[_A.degree()-1]), "Internal Error");
+		REQUIRE(_out.is_in_expected_format(), "ie");
     }
     
     static void round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps) {
@@ -230,10 +231,11 @@ protected:
             _me.nodes[position  ].neighbors.back().dimension  = rank;
             _me.nodes[position+1].neighbors.front().dimension = rank;
         }
+        REQUIRE(_me.is_in_expected_format(), "ie");
     }
     
     static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
-		REQUIRE(_me.tensorObject->check_consistency(), "cannot contract inconsistent ttStack");
+		REQUIRE(_me.tensorObject->is_valid_network(), "cannot contract inconsistent ttStack");
 		const size_t N = isOperator?2:1;
 		const size_t numNodes = _me.degree()/N;
 		std::set<size_t> toContract;
@@ -249,7 +251,7 @@ protected:
 		// so modulus gives the correct wanted id
 		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
 		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
-		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
+		REQUIRE(_me.tensorObject->is_valid_network(), "something went wrong in contract_stack");
 		
 		// reset to new external links
 		_me.tensorObject->externalLinks.clear();
@@ -320,7 +322,7 @@ protected:
 		}
 		
 		
-		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
+		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
 	}
     
 public:
@@ -370,6 +372,7 @@ public:
 			);
 		}
 		REQUIRE(nodes.size() == _degree/N,"ie");
+		REQUIRE(is_valid_tt(), "ie");
 	} 
     
     explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15) { //TODO no magic numbers
@@ -461,7 +464,7 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
-		REQUIRE(result.check_consistency(), "ie");
+		REQUIRE(result.is_valid_tt(), "ie");
         return result;
     }
     
@@ -546,7 +549,7 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
-		REQUIRE(result.check_consistency(), "ie");
+		REQUIRE(result.is_valid_tt(), "ie");
         return result;
     }
     
@@ -613,7 +616,7 @@ public:
 		}
 		result.externalLinks = newLinks;
 		
-		REQUIRE(result.check_consistency(), "ie");
+		REQUIRE(result.is_valid_tt(), "ie");
 		return result;
 	}
 	
@@ -670,6 +673,86 @@ public:
 			result += n.tensorObject->size;
 		}
 		return result;
+	}
+	
+	/// tests whether the network resembles that of a TTTensor and checks consistency with the udnerlying tensor objects
+	/// @note will not check for orthogonality
+	bool is_valid_tt() const {
+		const size_t N = isOperator?2:1;
+		const size_t numNodes = degree()/N;
+		if (nodes.size() != numNodes || externalLinks.size() != degree() || !std::isfinite(factor)) {
+			return false;
+		}
+		// per external link
+		for (size_t n=0; n<externalLinks.size(); ++n) {
+			const TensorNode::Link &l = externalLinks[n];
+			if (l.dimension != dimensions[n]
+				|| l.external
+				|| l.other >= numNodes
+				|| l.indexPosition >= nodes[l.other].neighbors.size()
+				|| !nodes[l.other].neighbors[l.indexPosition].external
+				|| nodes[l.other].neighbors[l.indexPosition].indexPosition != n
+				|| nodes[l.other].neighbors[l.indexPosition].dimension != l.dimension)
+			{
+				return false;
+			}
+		}
+		// per node
+		for (size_t n=0; n<numNodes; ++n) {
+			const TensorNode &node = nodes[n];
+			if (n==0) { // first node (or only node)
+				if (node.degree() != N+(numNodes>1?1:0)
+					|| (node.tensorObject && node.tensorObject->degree() != N+(numNodes>1?1:0))
+					|| node.erased
+					|| !node.neighbors[0].external
+					|| node.neighbors[0].indexPosition != 0
+					|| (isOperator && (!node.neighbors[1].external
+										|| node.neighbors[1].indexPosition != numNodes))
+					|| (numNodes>1 && (node.neighbors.back().external
+										|| node.neighbors.back().other != 1
+										|| node.neighbors.back().indexPosition != 0
+										|| nodes[n+1].neighbors.empty()
+										|| node.neighbors.back().dimension != nodes[n+1].neighbors[0].dimension))
+				) {
+					return false;
+				}
+			} else if (n==numNodes-1) { // last node (and not also the first)
+				if (node.degree() != N+1
+					|| (node.tensorObject && node.tensorObject->degree() != N+1)
+					|| node.erased 
+					|| node.neighbors[0].external
+					|| node.neighbors[0].other != n-1
+					|| node.neighbors[0].indexPosition != N+(n>1?1:0)
+					|| !node.neighbors[1].external
+					|| node.neighbors[1].indexPosition != n
+					|| (isOperator && (!node.neighbors[2].external
+										|| node.neighbors[2].indexPosition != numNodes+n))
+				) {
+					return false;
+				}
+			} else { // middle nodes
+				if (node.degree() != N+2
+					|| (node.tensorObject && node.tensorObject->degree() != N+2)
+					|| node.erased 
+					|| node.neighbors[0].external
+					|| node.neighbors[0].other != n-1
+					|| node.neighbors[0].indexPosition != N+(n>1?1:0)
+					|| !node.neighbors[1].external
+					|| node.neighbors[1].indexPosition != n
+					|| (isOperator && (!node.neighbors[2].external
+										|| node.neighbors[2].indexPosition != numNodes+n))
+					|| node.neighbors.back().external
+					|| node.neighbors.back().other != n+1
+					|| node.neighbors.back().indexPosition != 0
+					|| nodes[n+1].neighbors.empty()
+					|| node.neighbors.back().dimension != nodes[n+1].neighbors[0].dimension
+				) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
 	}
 	
 	/// moves core to the left (eg. to perform a round operation that then moves it to the right)
@@ -776,6 +859,10 @@ public:
 	
 	virtual value_t frob_norm() const override {
 		return nodes.back().tensorObject->frob_norm();
+	}
+	
+	virtual bool is_in_expected_format() const override {
+		return is_valid_tt();
 	}
 };
 

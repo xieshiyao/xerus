@@ -136,7 +136,7 @@ namespace xerus {
 		void reshuffle_nodes(std::function<size_t(size_t)> _f);
 		
 		/// check whether all links in the network are set consistently and matching the underlying tensor objects
-		bool check_consistency() const;
+		bool is_valid_network() const;
         
         /// Creates a copy of a subnet that only contains nullptr as data pointers
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
@@ -167,5 +167,11 @@ namespace xerus {
 		size_t contract(std::set<size_t> _ids);
 		
 		virtual value_t frob_norm() const;
+		
+		/**
+		 * checks whether the given TensorNetwork adheres to the format definition it expects according to its other virtual overloads
+		 * eg. calls is_valid_tt for tt tensors and is_valid_network by default
+		 */
+		virtual bool is_in_expected_format() const;
     };
 }
