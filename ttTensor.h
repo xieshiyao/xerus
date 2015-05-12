@@ -700,9 +700,6 @@ public:
 		for (size_t n=0; n<numNodes; ++n) {
 			const TensorNode &node = nodes[n];
 			REQUIRE(!node.erased, "n=" << n);
-			if (node.tensorObject) {
-				REQUIRE(n == numNodes-1 || !node.tensorObject->has_factor(), "n="<<n);
-			}
 			if (n==0) { // first node (or only node)
 				REQUIRE(node.degree() == N+(numNodes>1?1:0), "n=" << n << " " << node.degree());
 				if (node.tensorObject) {
@@ -730,6 +727,9 @@ public:
 				}
 			}
 			if (n < numNodes-1) {
+				if (node.tensorObject) {
+					REQUIRE(!node.tensorObject->has_factor(), "n="<<n);
+				}
 				REQUIRE(!node.neighbors.back().external, "n=" << n);
 				REQUIRE(node.neighbors.back().other == n+1, "n=" << n << " " << node.neighbors.back().other);
 				REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);

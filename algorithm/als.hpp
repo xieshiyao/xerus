@@ -48,8 +48,6 @@ namespace xerus {
         const size_t d = _x.degree();
         Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
         
-		LOG(test, frob_norm(_A(n1^d,n2^d)*_x(n2^d) - _b(n1^d)));
-		
         auto A = [&](size_t _i)->const Tensor& {
             return *_A.nodes[_i].tensorObject;
         };
@@ -139,7 +137,7 @@ namespace xerus {
                 _perfData->push_back(frob_norm(_A(n1^d,n2^d)*_x(n2^d) - _b(n1^d)));
                 LOG(ALS, "calculated residual for perfData after tensor "<< currIndex <<": " << _perfData->back() << " ( " << std::abs(_perfData->back() - energy) << " vs " << _convergenceEpsilon << " ) ");
                 if (printProgress) {
-                    std::cout << "optimized tensor "<< currIndex << ": " << _perfData->back() << " ( \t" << std::abs(_perfData->back() - energy) << " vs \t" << _convergenceEpsilon << " ) \n" << std::flush;
+                    std::cout << "optimized tensor "<< currIndex << ": " << _perfData->back() << " ( \t" << std::abs(_perfData->back() - energy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
                 }
             }
             
@@ -172,7 +170,6 @@ namespace xerus {
                     }
                     return energy; 
                 }
-                LOG(test, energy);
 //                 if (energy > lastEnergy && energy > lastEnergy2) {
 //                     LOG(warning, "ALS did not converge to desired accuracy. curr:"<< energy <<" last: " << (lastEnergy) << " " << (lastEnergy2) << " eps = " << _convergenceEpsilon);
 //                     if (!walkingRight) {

@@ -133,6 +133,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
     
     for(size_t position = 0; position < numNodes; ++position) {
         // Get current input nodes
+		// TODO sparse
         FullTensor &myNode = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position].tensorObject.get());
         FullTensor &otherNode = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position].tensorObject.get());
         
