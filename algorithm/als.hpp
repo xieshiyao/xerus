@@ -152,10 +152,10 @@ namespace xerus {
                     energy = _perfData->back();
                 } else {
                     LOG(ALS, "calculating energy for loop condition");
-    // 				FullTensor xax(0), bx(0);
-    // 				xax() = xAxL.back()(r1,r2,r3) * X[currIndex](r1,n1,cr1) * A[currIndex](r2,n1,n2,cr2) * X[currIndex](r3,n2,cr3) * xAxR.back()(cr1,cr2,cr3);
-    // 				bx() = bxL.back()(r1,r2) * B[currIndex](r1,n1,cr1) * X[currIndex](r2,n1,cr2) * bxR.back()(cr1,cr2);
-    // 				energy = 0.5*xax.data[0] - bx.data[0];
+//     				FullTensor xax(0), bx(0);
+//     				xax() = xAxL.back()(r1,r2,r3) * X(currIndex)(r1,n1,cr1) * A(currIndex)(r2,n1,n2,cr2) * X(currIndex)(r3,n2,cr3) * xAxR.back()(cr1,cr2,cr3);
+//     				bx() = bxL.back()(r1,r2) * B(currIndex)(r1,n1,cr1) * X(currIndex)(r2,n1,cr2) * bxR.back()(cr1,cr2);
+//     				energy = 0.5*xax[0] - bx[0];
                     energy = frob_norm(_A(n1^d,n2^d)*_x(n2^d) - _b(n1^d));
                 }
                 
@@ -170,13 +170,14 @@ namespace xerus {
                     }
                     return energy; 
                 }
-                if (energy > lastEnergy && energy > lastEnergy2) {
-                    LOG(warning, "ALS did not converge to desired accuracy. curr:"<< energy <<" last: " << (lastEnergy) << " " << (lastEnergy2) << " eps = " << _convergenceEpsilon);
-                    if (!walkingRight) {
-                        _x.cannonicalize_right();
-                    }
-                    return energy;
-                }
+                LOG(test, energy);
+//                 if (energy > lastEnergy && energy > lastEnergy2) {
+//                     LOG(warning, "ALS did not converge to desired accuracy. curr:"<< energy <<" last: " << (lastEnergy) << " " << (lastEnergy2) << " eps = " << _convergenceEpsilon);
+//                     if (!walkingRight) {
+//                         _x.cannonicalize_right();
+//                     }
+//                     return energy;
+//                 }
                 
                 walkingRight = !walkingRight;
                 changedSmth = false;

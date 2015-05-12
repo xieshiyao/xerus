@@ -1,4 +1,4 @@
-# Building Xerus                                 {#tutorial_build}
+# Building Xerus
 
 ## Obtaining Xerus
 

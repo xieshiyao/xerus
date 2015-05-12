@@ -45,7 +45,7 @@
 # With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
 # includes NO function names, source-filenames and line numbers.
 # NOTE: activate this to remove the dependence on the binutils libraries -lbfd -liberty -lz and -ldl
-# NO_FANCY_CALLSTACK = TRUE					# show detailed callstacks
+# NO_FANCY_CALLSTACK = TRUE					# show simple callstacks only
 
 
 # You can add all kind of debuging options. In the following are some examples
