@@ -77,6 +77,7 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
+		REQUIRE(check_consistency(), "cannot fully contract inconsistent network");
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
@@ -235,7 +236,55 @@ namespace xerus {
     
     
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
-    bool check_network_consistency() const {
+    bool TensorNetwork::check_consistency() const {
+		for (size_t n=0; n<externalLinks.size(); ++n) {
+			const TensorNode::Link &el = externalLinks[n];
+			if (el.other >= nodes.size() 
+				|| el.dimension <= 0
+				|| el.external) 
+			{
+				return false;
+			}
+			const TensorNode &other = nodes[el.other];
+			if (other.degree() <= el.indexPosition 
+				|| !other.neighbors[el.indexPosition].external 
+				|| other.neighbors[el.indexPosition].indexPosition != n
+				|| other.neighbors[el.indexPosition].dimension != el.dimension) 
+			{
+				return false;
+			}
+		}
+		
+		for (size_t n=0; n<nodes.size(); ++n) {
+			const TensorNode &currNode = nodes[n];
+			if (currNode.tensorObject) {
+				if (currNode.degree() != currNode.tensorObject->degree()) 
+				{
+					return false;
+				}
+			}
+			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
+				const TensorNode::Link &el = currNode.neighbors[i];
+				if ((el.other >= nodes.size() && !el.external)
+					|| el.dimension <= 0
+					|| (currNode.tensorObject && el.dimension!=currNode.tensorObject->dimensions[i])) 
+				{
+					return false;
+				}
+				if (!el.external) { // externals were already checked
+					const TensorNode &other = nodes[el.other];
+					if (other.degree() <= el.indexPosition 
+						|| other.neighbors[el.indexPosition].external 
+						|| other.neighbors[el.indexPosition].other != n
+						|| other.neighbors[el.indexPosition].indexPosition != i
+						|| other.neighbors[el.indexPosition].dimension != el.dimension) 
+					{
+						return false;
+					}
+				}
+			}
+		}
+		
 		return true;
 	}
     
@@ -273,7 +322,8 @@ namespace xerus {
     
 
     void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
-        TensorNetwork &base = *_base.tensorObject;
+		TensorNetwork &base = *_base.tensorObject;
+		REQUIRE(base.check_consistency(), "Network that is supposed to be traced out is inconsistent.");
         #ifndef DISABLE_RUNTIME_CHECKS_
             std::set<Index> contractedIndices;
         #endif
@@ -518,6 +568,8 @@ namespace xerus {
         
         // Find traces (former contractions have become traces due to the joining)
         trace_out_double_indices(_base.indices, _base);
+		
+		REQUIRE(_base.tensorObject->check_consistency(), "ie");
     }
 
 

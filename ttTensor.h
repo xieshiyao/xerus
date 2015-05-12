@@ -233,6 +233,7 @@ protected:
     }
     
     static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
+		REQUIRE(_me.tensorObject->check_consistency(), "cannot contract inconsistent ttStack");
 		const size_t N = isOperator?2:1;
 		const size_t numNodes = _me.degree()/N;
 		std::set<size_t> toContract;
@@ -302,6 +303,8 @@ protected:
 			}
 			n.tensorObject->reinterpret_dimensions(newDimensions);
 		}
+		
+		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
 	}
     
 public:
@@ -442,6 +445,7 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
+		REQUIRE(result.check_consistency(), "ie");
         return result;
     }
     
@@ -526,6 +530,7 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
+		REQUIRE(result.check_consistency(), "ie");
         return result;
     }
     
@@ -592,6 +597,7 @@ public:
 		}
 		result.externalLinks = newLinks;
 		
+		REQUIRE(result.check_consistency(), "ie");
 		return result;
 	}
 	

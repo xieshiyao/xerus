@@ -134,6 +134,9 @@ namespace xerus {
 		
 		/// reshuffled the nodes according to the given function
 		void reshuffle_nodes(std::function<size_t(size_t)> _f);
+		
+		/// check whether all links in the network are set consistently and matching the underlying tensor objects
+		bool check_consistency() const;
         
         /// Creates a copy of a subnet that only contains nullptr as data pointers
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
