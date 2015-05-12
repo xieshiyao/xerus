@@ -329,7 +329,6 @@ namespace xerus {
         #endif
         size_t j=0;
         size_t spanSumJ=0;
-		LOG(afsklj, "new trace_out "<< _base.indices);
         while (j<_modifiedIndices.size()) {
             Index &ij = _modifiedIndices[j];
             if (!_base.is_contained_and_open(ij)) {
@@ -358,10 +357,6 @@ namespace xerus {
                     base.dimensions.erase(base.dimensions.begin()+(long)(spanSumJ));
                     
                     for(size_t i = spanSumJ; i< spanSumK-n-1; ++i) {
-						LOG(asdkj, base.nodes.size() << " " << base.externalLinks.size() << " " << spanSumJ << " " << spanSumK);
-						LOG(asdss, base.externalLinks[i].other << " " << base.externalLinks[i].indexPosition);
-						LOG(aslkd, "nodes[].neighbors.size " << base.nodes[base.externalLinks[i].other].neighbors.size());
-						LOG(kklk,  base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition);
                         base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 1;
                     }
                     for(size_t i = spanSumK-n-1; i < base.externalLinks.size(); ++i) {

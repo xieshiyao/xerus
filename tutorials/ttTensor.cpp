@@ -47,5 +47,5 @@ int main() {
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
 	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor
 	// in this case j&0 simply denotes that j should span all indices of X and B
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(j&0)) << " this is likely not equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely not equal to 0..." << std::endl;
 }

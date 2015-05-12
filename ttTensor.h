@@ -247,7 +247,23 @@ protected:
 		// all are contracted, reshuffle them to be in the correct order
 		// after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
 		// so modulus gives the correct wanted id
-		_me.tensorObject->reshuffle_nodes([&numNodes](size_t i){return i%(numNodes);});
+		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
+		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
+		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
+		
+		// reset to new external links
+		_me.tensorObject->externalLinks.clear();
+		_me.tensorObject->externalLinks.emplace_back(0, 0, _me.tensorObject->dimensions[0], false);
+		for(size_t i = 1; i < numNodes; ++i) {
+			_me.tensorObject->externalLinks.emplace_back(i, 1, _me.tensorObject->dimensions[i], false);
+		}
+		if(N == 2) {
+			_me.tensorObject->externalLinks.emplace_back(0, 1, _me.tensorObject->dimensions[numNodes], false);
+			for(size_t i = 1; i < numNodes; ++i) {
+				_me.tensorObject->externalLinks.emplace_back(i, 2, _me.tensorObject->dimensions[numNodes+i], false);
+			}
+		}
+		
 		// ensure right amount and order of links
 		Index ext[N];
 		size_t lastRank, externalDim[N], newRank;
@@ -256,8 +272,8 @@ protected:
 		std::vector<Index> newIndices;
 		std::vector<size_t> newDimensions;
 		for (size_t i=0; i<numNodes; ++i) {
-			lastIndices = oldIndices; oldIndices.clear();
-			lastRight = newRight; newRight.clear();
+			lastIndices = std::move(oldIndices); oldIndices.clear();
+			lastRight = std::move(newRight); newRight.clear();
 			lastRank = newRank; newRank=1;
 			TensorNode &n = _me.tensorObject->nodes[i];
 			for (TensorNode::Link &l : n.neighbors) {
@@ -265,7 +281,6 @@ protected:
 					size_t externalNumber = 0;
 					if (N==2) {
 						externalNumber = l.indexPosition>=numNodes?1:0;
-						REQUIRE(externalNumber < N, "ie");
 					}
 					oldIndices.push_back(ext[externalNumber]);
 					externalDim[externalNumber] = l.dimension;
@@ -280,8 +295,7 @@ protected:
 					LOG(fatal, "ie");
 				}
 			}
-			newIndices.clear();
-			newIndices.insert(newIndices.end(), lastRight.begin(), lastRight.end());
+			newIndices = std::move(lastRight);
 			newIndices.insert(newIndices.end(), ext, ext+N);
 			newIndices.insert(newIndices.end(), newRight.begin(), newRight.end());
 			
@@ -294,6 +308,7 @@ protected:
 				newDimensions.push_back(lastRank);
 			}
 			for (size_t j=0; j<N; ++j) {
+				REQUIRE(_me.tensorObject->dimensions[i+j*numNodes] == externalDim[j], "ie");
 				n.neighbors.emplace_back(0,i+j*numNodes,externalDim[j], true);
 				newDimensions.push_back(externalDim[j]);
 			}
@@ -303,6 +318,7 @@ protected:
 			}
 			n.tensorObject->reinterpret_dimensions(newDimensions);
 		}
+		
 		
 		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
 	}
