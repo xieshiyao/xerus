@@ -36,31 +36,18 @@ namespace xerus {
     Index::Index(const size_t _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
     
     Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span) {
-        IF_CHECK(
-        if(_flag1 == Flag::OPEN) {
-            flags[Flag::OPEN_CHECKED] = true;
-        })
-        
         flags[_flag1] = _flagValue1;
     }
     
     Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), dimension(_dimension) {}
     
     Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span), dimension(_dimension) {
-        IF_CHECK(
-        if(_flag1 == Flag::OPEN) {
-            flags[Flag::OPEN_CHECKED] = true;
-        })
-        
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
         flags[_flag1] = _flagValue1;
     }
     
     Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1, const bool _flagValue2) : valueId(_valueId), span(_span), dimension(_dimension) {
-        IF_CHECK(
-        if(_flag1 == Flag::OPEN || _flag2 == Flag::OPEN) {
-            flags[Flag::OPEN_CHECKED] = true;
-        })
-        
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
         flags[_flag1] = _flagValue1;
         flags[_flag2] = _flagValue2;
     }

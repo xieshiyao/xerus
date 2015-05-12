@@ -67,77 +67,43 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Assignment,
     
 )
 
-UNIT_TEST(FullTensor_SparseTensor_Interaction, Product_Order_1,
-    SparseTensor A({2});
-    SparseTensor B({2});
-    SparseTensor C({3});
-    SparseTensor res;
-    FullTensor resF;
+UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 10.0);
+
+    Index i,j,k,l,m,n,o,p,q;
     
-    Index i,j;
+    SparseTensor AS = SparseTensor::construct_random({2,3,4,3,5}, 23, rnd, dist);
+    SparseTensor BS = SparseTensor::construct_random({6,3,4,2,3}, 23, rnd, dist);
     
-    A[{0}] = 1;
-    A[{1}] = 2;
+    FullTensor AF(AS);
+    FullTensor BF(BS);
+
+    FullTensor resSF;
+    FullTensor resFS;
+    FullTensor check;
     
-    B[{0}] = 3;
-    B[{1}] = 4;
+    check(i,j,k,m,n,o,p,q) = AF(i,j,k,l,m)*BF(n,l,o,p,q);
+    resSF(i,j,k,m,n,o,p,q) = AS(i,j,k,l,m)*BF(n,l,o,p,q);
+    TEST(approx_equal(check, resSF, 1e-13));
+    resFS(i,j,k,m,n,o,p,q) = AF(i,j,k,l,m)*BS(n,l,o,p,q);
+    TEST(approx_equal(check, resFS, 1e-13));
     
-    C[{0}] = 5;
-    C[{1}] = 6;
-    C[{2}] = 7;
+    check(i,j,m,n,p,q) = AF(i,j,k,l,m)*BF(n,l,k,p,q);
+    resSF(i,j,m,n,p,q) = AS(i,j,k,l,m)*BF(n,l,k,p,q);
+    TEST(approx_equal(check, resSF, 1e-13));
+    resFS(i,j,m,n,p,q) = AF(i,j,k,l,m)*BS(n,l,k,p,q);
+    TEST(approx_equal(check, resFS, 1e-13));
     
-    FullTensor AF(A);
-    FullTensor BF(B);
-    FullTensor CF(C);
+    check(i,j,m,n,p,q) = AF(q,j,k,l,n)*BF(m,l,k,i,p);
+    resSF(i,j,m,n,p,q) = AS(q,j,k,l,n)*BF(m,l,k,i,p);
+    TEST(approx_equal(check, resSF, 1e-13));
+    resFS(i,j,m,n,p,q) = AF(q,j,k,l,n)*BS(m,l,k,i,p);
+    TEST(approx_equal(check, resFS, 1e-13));
     
-    LOG(AF, AF.to_string());
-    LOG(BF, BF.to_string());
-    LOG(CF, CF.to_string());
-    
-    // Same dimensions
-    // Contraction with no index being contracted
-//     res(i,j) = A(i) * BF(j);
-//     TEST(res.compare_to_data({3,4,6,8}));
-//     LOG(bla, res.to_string());
-//     res(i,j) = AF(i) * B(j);
-//     TEST(res.compare_to_data({3,4,6,8}));
-//     LOG(bla, res.to_string());
-    resF(i,j) = A(i) * BF(j);
-    TEST(resF.compare_to_data({3,4,6,8}));
-    LOG(bla, resF.to_string());
-    resF(i,j) = AF(i) * B(j);
-    TEST(resF.compare_to_data({3,4,6,8}));
-    LOG(bla, resF.to_string());
-    
-    /*
-    res(j,i) = A(j) * B(i);
-    TEST(res.compare_to_data({3,4,6,8}));
-    res(i,j) = A(j) * B(i);
-    TEST(res.compare_to_data({3,6,4,8}));
-    res(j,i) = A(i) * B(j);
-    TEST(res.compare_to_data({3,6,4,8}));
-    
-    // Contraction with one index being contracted
-    res() = A(i) * B(i);
-    TEST(res.compare_to_data({11}));
-    
-    // Different dimensions
-    // Contraction with no index being contracted
-    res(i,j) = A(i) * C(j);
-    TEST(res.compare_to_data({5,6,7,10,12,14}));
-    res(j,i) = A(j) * C(i);
-    TEST(res.compare_to_data({5,6,7,10,12,14}));
-    res(i,j) = C(i) * A(j);
-    TEST(res.compare_to_data({5,10,6,12,7,14}));
-    res(j,i) = C(j) * A(i);
-    TEST(res.compare_to_data({5,10,6,12,7,14}));
-    
-    res(i,j) = A(j) * C(i);
-    TEST(res.compare_to_data({5,10,6,12,7,14}));
-    res(j,i) = A(i) * C(j);
-    TEST(res.compare_to_data({5,10,6,12,7,14}));
-    res(i,j) = C(j) * A(i);
-    TEST(res.compare_to_data({5,6,7,10,12,14}));
-    res(j,i) = C(i) * A(j);
-    TEST(res.compare_to_data({5,6,7,10,12,14}));*/
+    check(i,m,n,q) = AF(q,j,k,l,n)*BF(m,l,k,i,j);
+    resSF(i,m,n,q) = AS(q,j,k,l,n)*BF(m,l,k,i,j);
+    TEST(approx_equal(check, resSF, 1e-13));
+    resFS(i,m,n,q) = AF(q,j,k,l,n)*BS(m,l,k,i,j);
+    TEST(approx_equal(check, resFS, 1e-13));
 )

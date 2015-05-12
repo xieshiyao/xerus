@@ -27,7 +27,7 @@ namespace xerus {
     class Index {
     public:
         #ifndef DISABLE_RUNTIME_CHECKS_
-            enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, OPEN, OPEN_CHECKED, NUM_FLAGS};
+            enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, ASSINGED, OPEN, NUM_FLAGS};
         #else
             enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, OPEN, NUM_FLAGS};
         #endif
@@ -60,7 +60,7 @@ namespace xerus {
         
         /// Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
         implicit Index(const long _i);
-        
+
         
         /// Internal constructor, do not use this unless you know what you are doing.
         explicit Index(const size_t _valueId, const size_t _span);
@@ -91,14 +91,14 @@ namespace xerus {
         
         /// Checks whether the index is open.
         _inline_ bool open() const {
-            REQUIRE(flags[Index::Flag::OPEN_CHECKED], "Check for index openness only allowed if the openness was checked before.");
+            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");
             return flags[Index::Flag::OPEN];
         }
         
         /// Sets whether the index is open.
         _inline_ void open(const bool _open) {
             flags[Flag::OPEN] = _open;
-            IF_CHECK( flags[Flag::OPEN_CHECKED] = true; )
+            IF_CHECK( flags[Flag::ASSINGED] = true; )
         }
         
         /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.

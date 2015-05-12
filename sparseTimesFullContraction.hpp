@@ -24,25 +24,33 @@
 namespace xerus {
     
     //TODO this is most likely not efficent
-    std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
-        double* const AT = new double[_leftDim*_rightDim];
+    void transpose(double* const __restrict _out, const double* const __restrict _in, const size_t _leftDim, const size_t _rightDim) {
         for(size_t i = 0; i < _leftDim; ++i) {
             for(size_t j = 0; j < _rightDim; ++j) {
-                AT[j*_leftDim+i] = _A[i*_rightDim+j];
+                _out[j*_leftDim+i] = _in[i*_rightDim+j];
             }
         }
-        return std::unique_ptr<double[]>(AT);
     }
     
-    //TODO this is most likely not efficent and also wrong
-    void transpose_inplace(double* const _A, const size_t _leftDim, const size_t _rightDim) {
-        for(size_t i = 0; i < _leftDim; ++i) {
-            for(size_t j = i+1; j < _rightDim; ++j) {
-                const double x = _A[i*_rightDim+j];
-                _A[i*_rightDim+j] = _A[j*_leftDim+i];
-                _A[j*_leftDim+i] = x;
-            }
+    std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
+        std::unique_ptr<double[]> AT(new double[_leftDim*_rightDim]);
+        transpose(AT.get(), _A, _leftDim, _rightDim);
+        return AT;
+    }
+    
+    
+    void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+        for(const std::pair<size_t, double>& entry : _in) {
+            const size_t i = entry.first/_rightDim;
+            const size_t j = entry.first%_rightDim;
+            _out.emplace(j*_leftDim + i, entry.second);
         }
+    }
+    
+    std::map<size_t, double> transpose(const std::map<size_t, double>& _A, const size_t _leftDim, const size_t _rightDim) {
+        std::map<size_t, double> AT;
+        transpose(AT, _A, _leftDim, _rightDim);
+        return AT;
     }
     
     // - - - - - - - - - - - - - - - - - - - - - - - - - Mix to Full - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -57,22 +65,37 @@ namespace xerus {
                                 const double* const _B) {
         // Prepare output array
         array_set_zero(_C, _leftDim*_rightDim);
-        LOG(bla, "CALLED");
+        
         // Transposition of A only changes how i and j are calculated
         if(!_transposeA) {
             for(const std::pair<size_t, double>& entry : _A) {
                 const size_t i = entry.first/_midDim;
                 const size_t j = entry.first%_midDim;
-                LOG(bla, "Found entry: " << i << ":" << j);
                 array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         } else {
             for(const std::pair<size_t, double>& entry : _A) {
-                const size_t i = entry.first%_midDim;
-                const size_t j = entry.first/_midDim;
-                LOG(bla, "Found entry: " << i << ":" << j);
+                const size_t i = entry.first%_leftDim;
+                const size_t j = entry.first/_leftDim;
                 array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
+        }
+    }
+    
+    void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const std::map<size_t, double>& _A,
+                                const bool _transposeA,
+                                const size_t _midDim,
+                                const double* const _B,
+                                const bool _transposeB) {
+        if(_transposeB) {
+            const std::unique_ptr<double[]> BT = transpose(_B, _rightDim, _midDim);
+            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _transposeA, _midDim, BT.get());
+        } else {
+            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _transposeA, _midDim, _B);
         }
     }
     
@@ -86,35 +109,60 @@ namespace xerus {
                                 const std::map<size_t, double>& _B,
                                 const bool _transposeB) {
         // It is significantly faster to calculate (B^T * A*T)^T
-        if(!_transposeA) {
-            const std::unique_ptr<double[]> AT = transpose(_A, _leftDim, _midDim);
-            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _B, !_transposeB, _midDim, AT.get());
-        } else {
-            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _B, !_transposeB, _midDim, _A);
-        }
-        transpose_inplace(_C, _rightDim, _leftDim);
-    }
-    
-    void matrix_matrix_product( double* const _C,
-                                const size_t _leftDim,
-                                const size_t _rightDim,
-                                const double _alpha,
-                                const std::map<size_t, double>& _A,
-                                const bool _transposeA,
-                                const size_t _midDim,
-                                const double* const _B,
-                                const bool _transposeB) {
-        if(_transposeB) {
-            const std::unique_ptr<double[]> BT = transpose(_B, _midDim, _rightDim);
-            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _transposeA, _midDim, BT.get());
-        } else {
-            matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _transposeA, _midDim, _B);
-        }
+        const std::unique_ptr<double[]> CT(new double[_leftDim*_rightDim]);
+        matrix_matrix_product(CT.get(), _rightDim, _leftDim, _alpha, _B, !_transposeB, _midDim, _A, !_transposeA);
+        transpose(_C, CT.get(), _rightDim, _leftDim);
     }
     
     
     // - - - - - - - - - - - - - - - - - - - - - - - - - Mix to Sparse - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     
+    void matrix_matrix_product( std::map<size_t, double>& _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const std::map<size_t, double>& _A,
+                                const size_t _midDim,
+                                const double* const _B) {
+        size_t currentRow = 0;
+        std::unique_ptr<double[]> row(new double[_rightDim]);
+        array_set_zero(row.get(), _rightDim);
+        
+        for(const std::pair<size_t, double>& entry : _A) {
+            const size_t i = entry.first/_midDim;
+            const size_t j = entry.first%_midDim;
+            
+            if(i == currentRow) {
+                array_add(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+            } else {
+                REQUIRE(i > currentRow, "Internal Error");
+                
+                // Copy old row to _C
+                for(size_t k = 0; k < _rightDim; ++k) {
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wfloat-equal"
+                    if(row.get()[k] != 0) {
+                        _C.emplace(currentRow*_rightDim + k, row.get()[k]);
+                    }
+                    #pragma GCC diagnostic pop
+                }
+                
+                // Start new row
+                currentRow = i;
+                array_scaled_copy(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+            }
+        }
+        
+        // Copy the last row to _C
+        for(size_t k = 0; k < _rightDim; ++k) {
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(row.get()[k] != 0) {
+                _C.emplace(currentRow*_rightDim + k, row.get()[k]);
+            }
+            #pragma GCC diagnostic pop
+        }
+    }
     
     void matrix_matrix_product( std::map<size_t, double>& _C,
                                 const size_t _leftDim,
@@ -123,49 +171,38 @@ namespace xerus {
                                 const std::map<size_t, double>& _A,
                                 const bool _transposeA,
                                 const size_t _midDim,
-                                const double* const _B) {
-        std::map<size_t, double*> rows;
-        
-        // Transposition of A only changes how i and j are calculated
-        if(!_transposeA) {
-            for(const std::pair<size_t, double>& entry : _A) {
-                const size_t i = entry.first/_rightDim;
-                const size_t j = entry.first%_rightDim;
-                auto row = rows.find(i);
-                if(row != rows.end()) {
-                    array_add(row->second, _alpha*entry.second, _B+j*_rightDim, _rightDim);
-                } else {
-                    double* const tmpPtr = new double[_rightDim];
-                    rows.insert(std::pair<size_t, double*>(i, tmpPtr));
-                    array_scaled_copy(tmpPtr, _alpha*entry.second, _B+j*_rightDim, _rightDim);
-                }
+                                const double* const _B,
+                                const bool _transposeB) {
+        if(_transposeA) {
+            const std::map<size_t, double> AT = transpose(_A, _midDim, _leftDim);
+            if(_transposeB) {
+                std::unique_ptr<double[]> BT = transpose(_B, _rightDim, _midDim);
+                matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, AT, _midDim, BT.get());
+            } else {
+                matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, AT, _midDim, _B);
             }
         } else {
-            for(const std::pair<size_t, double>& entry : _A) {
-                const size_t i = entry.first%_rightDim;
-                const size_t j = entry.first/_rightDim;
-                auto row = rows.find(i);
-                if(row != rows.end()) {
-                    array_add(row->second, _alpha*entry.second, _B+j*_rightDim, _rightDim);
-                } else {
-                    double* const tmpPtr = new double[_rightDim];
-                    rows.insert(std::pair<size_t, double*>(i, tmpPtr));
-                    array_scaled_copy(tmpPtr, _alpha*entry.second, _B+j*_rightDim, _rightDim);
-                }
+            if(_transposeB) {
+                std::unique_ptr<double[]> BT = transpose(_B, _rightDim, _midDim);
+                matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _midDim, BT.get());
+            } else {
+                matrix_matrix_product(_C, _leftDim, _rightDim, _alpha, _A, _midDim, _B);
             }
-        }
-        
-        for(const std::pair<size_t, double*>& row : rows) {
-            for(size_t i = 0; i < _rightDim; ++i) {
-                #pragma GCC diagnostic push
-                #pragma GCC diagnostic ignored "-Wfloat-equal"
-                if(row.second[i] != 0) {
-                    _C.insert(std::pair<size_t, double>(row.first*_rightDim+i, row.second[i]));
-                }
-                #pragma GCC diagnostic pop
-            }
-            delete[] row.second;
         }
     }
     
+    void matrix_matrix_product( std::map<size_t, double>& _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const double* const _A,
+                                const bool _transposeA,
+                                const size_t _midDim,
+                                const std::map<size_t, double>& _B,
+                                const bool _transposeB) {
+        // It is significantly faster to calculate (B^T * A*T)^T (TODO this is only benchmarked for mix -> Full yet...)
+        std::map<size_t, double> CT;
+        matrix_matrix_product(CT, _rightDim, _leftDim, _alpha, _B, !_transposeB, _midDim, _A, !_transposeA);
+        transpose(_C, CT, _rightDim, _leftDim);
+    }
 }

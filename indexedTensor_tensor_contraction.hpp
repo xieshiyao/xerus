@@ -302,7 +302,7 @@ namespace xerus {
         std::vector<Index> workingResultIndices(lhsOpenIndices);
         workingResultIndices.insert(workingResultIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
         
-        // - - - - - - - - - - - - - - - - - - - - - - - SparseTensor * SparseTensor ==> FullTensor - - - - - - - - - - - - - - - - - - - - - - -
+        // - - - - - - - - - - - - - - - - - - - - - - - SparseTensor * SparseTensor ==> SparseTensor - - - - - - - - - - - - - - - - - - - - - - -
         if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
             // We have to propagate the common factors
             _result.tensorObject->factor = _lhs.tensorObjectReadOnly->factor*_rhs.tensorObjectReadOnly->factor;
@@ -380,21 +380,19 @@ namespace xerus {
             const bool rhsSparse = _rhs.tensorObjectReadOnly->is_sparse();
             const bool resultSparse = _result.tensorObjectReadOnly->is_sparse();
             
-            LOG(bla, "WHAT: " << lhsSparse << rhsSparse << resultSparse);
+//             LOG(bla, "WHAT: " << lhsSparse << rhsSparse << resultSparse);
             // Select actual case
             if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
                 blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
-                LOG(bla, "WHAT");
                 matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
-                LOG(bla, "WHAT");
                 matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
-//                 matrix_matrix_product(static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
-//                 matrix_matrix_product(static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
-            } // TODO
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+            }
             
             if(reorderResult) {
                 LOG(ContractionDebug, "Reordering result");

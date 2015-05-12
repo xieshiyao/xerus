@@ -71,6 +71,23 @@ namespace xerus {
             REQUIRE(count_non_zero_entries() == _N , "Oo " << _N << " != " << count_non_zero_entries());
         }
         
+        /// Creates a SparseTensor with the given dimensions and uses the given random generator and distribution to assign the values to n randomly choosen entries.
+        template<ADD_MOVE(std::vector<size_t>, Vec), class generator, class distribution>
+        static SparseTensor construct_random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+            SparseTensor result(std::forward<Vec>(_dimensions));
+            std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
+            while(result.entries->size() < _n) {
+                result.entries->emplace(entryDist(_rnd), _dist(_rnd));
+            }
+
+            return result;
+        }
+        
+        /// Creates a SparseTensor with the given dimensions and uses the given random generator and distribution to assign the values to n randomly choosen entries.
+        template<class generator, class distribution>
+        static SparseTensor construct_random(std::initializer_list<size_t>&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+            return construct_random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
+        }
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
@@ -178,7 +195,7 @@ namespace xerus {
         return _rhs*_lhs;
     }
     
-}
+} 
 
 bool approx_equal(const xerus::SparseTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
 bool approx_equal(const xerus::FullTensor& _a, const xerus::SparseTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
