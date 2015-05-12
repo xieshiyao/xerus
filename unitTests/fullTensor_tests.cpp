@@ -21,7 +21,7 @@
 
 #include "../xerus.h"
 
-#include <test.h>
+#include "../misc/test.h"
 
 //------------------------ Unit Tests -------------------------------- 
 namespace xerus {

@@ -42,10 +42,11 @@
 # NO_XERUS_EXCEPTIONS = TRUE         # Disable the use of exceptions by the xerus library
 
 
-# with the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
+# With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
 # includes NO function names, source-filenames and line numbers.
 # NOTE: activate this to remove the dependence on the binutils libraries -lbfd -liberty -lz and -ldl
 # NO_FANCY_CALLSTACK = TRUE					# show detailed callstacks
+
 
 # You can add all kind of debuging options. In the following are some examples
  DEBUG += -g                # Adds debug symbols
@@ -70,7 +71,7 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 
 # Uncomment the following line to save the last Logs in a circular buffer (without printing them) to allow detailed reports in case of errors.
 # Note that this can significatly slow down the library.
-#  LOGGING += -D LOG_BUFFER_            # Activate the log buffer
+# LOGGING += -D LOG_BUFFER_            # Activate the log buffer
 
 # Add time measurments for all Blas and Lapack calls. This allow to use print_blas_analysis() to get a listing on all called blas/lapack fucntions the time spend on them.
 # LOGGING += -D BLAS_ANALYSIS           # Enable BLAS/LAPACK analysis
@@ -86,14 +87,14 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 # libraries here (otherwise only when linking your own program using Xerus). 
 
 # Uncomment or add the appropriate blas libraries 
- BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
+BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
 # BLAS_LIBRARIES = -lopenblasp -lgfortran                   # Openblas, parallel
 # BLAS_LIBRARIES = /usr/lib64/atlas/libsatlas.so -lgfortran # Atlas
 # BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran  # Custom
 
 
 # Uncomment or add the appropriate lapack libraries 
- LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
+LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
 # LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a    # Custom
 
 # Uncomment or add the appropriate CXSparse library

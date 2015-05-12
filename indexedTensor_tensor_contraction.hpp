@@ -195,17 +195,18 @@ namespace xerus {
     * postcondition: _result.tensorObject updated to correcly contain the product
     */
     void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs) {
-        // Get the assigned indices, we assume that result is already of right dimension
-        const AssignedIndices lhsAssIndices = _lhs.assign_indices();
+        // Get the assigned indices (we assume that result is already of the right dimensions)
+        const AssignedIndices lhsAssIndices = _lhs.assign_indices(); // TODO get rid of AssignedIndices
         const AssignedIndices rhsAssIndices = _rhs.assign_indices();
         const AssignedIndices resultAssIndices = _result.assign_indices();
+        
+        const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
+        const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
+        const std::vector<Index> resultIndices = _result.get_assigned_indices();
 
         #ifndef DISABLE_RUNTIME_CHECKS_
             check_input_validity(resultAssIndices, lhsAssIndices, rhsAssIndices);
         #endif
-        
-        // We don't want the result to have any factor that might interfere
-        _result.tensorObject->factor = 1.0;
         
         // Check whether both sides are separated and whether their open indices are ordered
         LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
@@ -246,180 +247,176 @@ namespace xerus {
         }
 
         // Construct the vectors for reordering
-        std::vector<Index> reorderedLhsIndices, reorderedRhsIndices, unorderedResultIndices;
-        // TODO ...
+        std::vector<Index> lhsOpenIndices, rhsOpenIndices, commonIndices;
+        size_t leftDim = 1, midDim = 1, rightDim = 1;
         
-        
-        
-        if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
-            // We have to propagate the common factors
-            _result.tensorObject->factor = _lhs.tensorObjectReadOnly->factor*_rhs.tensorObjectReadOnly->factor;
-            
-            std::vector<Index> lhsOpen, rhsOpen, common;
-            
-            for(const Index& idx : lhsAssIndices.indices) {
-                if(contains(resultAssIndices.indices, idx)) {
-                    lhsOpen.push_back(idx);
-                } else if(contains(rhsAssIndices.indices, idx)) {
-                    common.push_back(idx);
-                }
-            }
-            for(const Index& idx : rhsAssIndices.indices) {
-                if(contains(resultAssIndices.indices, idx)) {
-                    rhsOpen.push_back(idx);
-                }
-            }
-            
-            CsUniquePtr lhsCS = to_cs_format(_lhs, lhsOpen, common);
-            
-            CsUniquePtr rhsCS = to_cs_format(_rhs, common, rhsOpen);
-            
-            CsUniquePtr resultCS = matrix_matrix_product(lhsCS, rhsCS);
-            
-            lhsOpen.insert(lhsOpen.end(), rhsOpen.begin(), rhsOpen.end());
-            
-            evaluate(_result, from_cs_format(resultCS, _result.get_evaluated_dimensions(lhsOpen))(lhsOpen));
-            return;
-        }
-        
-        
-        
-
-        
-        
-        // Actually reorder LHS and RHS if necessary and create temporary result if reordering is necessary and calculate the dimensions of the matrification
-        std::unique_ptr<IndexedTensor<Tensor>> lhsSaveSlot, rhsSaveSlot, workingResultSaveSlot;
-        const IndexedTensorReadOnly<Tensor> *actualLhs, *actualRhs;
-        const IndexedTensorWritable<Tensor> *workingResult;
-        size_t leftDim = 1, rightDim=1, midDim=1;
-        
+        // Set lhs and common indices
         if(lhsNeedsReshuffle) {
-            LOG(ContractionDebug, "Reordering LHS");
-            std::vector<Index> newIndexOrder;
-            
             // Add open indices in the order as they appear in the result
-            for(size_t i = 0; i < resultAssIndices.numIndices; ++i) {
-                if(contains(lhsAssIndices.indices, resultAssIndices.indices[i])) {
-                    newIndexOrder.push_back(resultAssIndices.indices[i]);
-                    leftDim *= resultAssIndices.indexDimensions[i];
+            for(const Index& idx : resultIndices) {
+                if(contains(lhsIndices, idx)) {
+                    lhsOpenIndices.push_back(idx);
+                    leftDim *= idx.dimension;
                 }
             }
             
             // Add common indices in the order as they appear in RHS
-            for(size_t i = 0; i < rhsAssIndices.numIndices; ++i) {
-                if(contains(lhsAssIndices.indices, rhsAssIndices.indices[i])) {
-                    newIndexOrder.push_back(rhsAssIndices.indices[i]);
-                    midDim *= rhsAssIndices.indexDimensions[i];
+            for(const Index& idx : rhsIndices) {
+                if(contains(lhsIndices, idx)) {
+                    commonIndices.push_back(idx);
+                    midDim *= idx.dimension;
                 }
             }
-            
-            lhsSaveSlot.reset(new IndexedTensor<Tensor>(new FullTensor(_lhs.get_evaluated_dimensions(newIndexOrder), DONT_SET_ZERO()), newIndexOrder, true));
-            evaluate(*lhsSaveSlot, _lhs);
-            actualLhs = lhsSaveSlot.get();
         } else {
-            LOG(ContractionDebug, "LHS does not need reordering");
-            for(size_t i = 0; i < lhsAssIndices.numIndices; ++i) {
-                if(contains(resultAssIndices.indices, lhsAssIndices.indices[i])) {
-                    leftDim *= lhsAssIndices.indexDimensions[i];
-                } else {
-                    midDim *= lhsAssIndices.indexDimensions[i];
+            // Add indices in the order they also appear in LHS
+            for(const Index& idx : lhsIndices) {
+                if(contains(resultIndices, idx)) {
+                    lhsOpenIndices.push_back(idx);
+                    leftDim *= idx.dimension;
+                } else if(contains(rhsIndices, idx)) {
+                    commonIndices.push_back(idx);
+                    midDim *= idx.dimension;
                 }
             }
-            actualLhs = &_lhs;
         }
         
+        // Set lhs and common indices
         if(rhsNeedsReshuffle) {
-            LOG(ContractionDebug, "Reordering RHS");
-            std::vector<Index> newIndexOrder;
-            
-            // Add common indices in the order of as they appear in the acutal LHS
-            for(const Index& idx : actualLhs->indices) {
-                if(contains(_rhs.indices, idx)) {
-                    newIndexOrder.push_back(idx);
-                }
-            }
-            
             // Add open indices in the order as they appear in the result
-            for(size_t i = 0; i < resultAssIndices.numIndices; ++i) {
-                if(contains(_rhs.indices, resultAssIndices.indices[i])) {
-                    newIndexOrder.push_back(resultAssIndices.indices[i]);
-                    rightDim *= resultAssIndices.indexDimensions[i];
+            for(const Index& idx : resultIndices) {
+                if(contains(rhsIndices, idx)) {
+                    rhsOpenIndices.push_back(idx);
+                    rightDim *= idx.dimension;
                 }
             }
-            
-            rhsSaveSlot.reset(new IndexedTensor<Tensor>(new FullTensor(_rhs.get_evaluated_dimensions(newIndexOrder), DONT_SET_ZERO()), newIndexOrder, true));
-            evaluate(*rhsSaveSlot, _rhs);
-            actualRhs = rhsSaveSlot.get();
         } else {
-            LOG(ContractionDebug, "RHS does not need reordering");
-            for(size_t i = 0; i < rhsAssIndices.numIndices; ++i) {
-                if(contains(resultAssIndices.indices, rhsAssIndices.indices[i])) {
-                    rightDim *= rhsAssIndices.indexDimensions[i];
+            // Add indices in the order they also appear in RHS
+            for(const Index& idx : rhsIndices) {
+                if(contains(resultIndices, idx)) {
+                    rhsOpenIndices.push_back(idx);
+                    rightDim *= idx.dimension;
                 }
-            }
-            actualRhs = &_rhs;
-        }
-        
-        if(reorderResult) {
-            LOG(ContractionDebug, "Creating temporary result tensor");
-            std::vector<Index> newIndexOrder;
-            
-            // Add LHS indices in the order as they appear
-            for(const Index& idx : actualLhs->indices) {
-                if(contains(_result.indices, idx)) {
-                    newIndexOrder.push_back(idx);
-                }
-            }
-            
-            // Add RHS indices in the order of as they appear
-            for(const Index& idx : actualRhs->indices) {
-                if(contains(_result.indices, idx)) {
-                    newIndexOrder.push_back(idx);
-                }
-            }
-            
-            workingResultSaveSlot.reset(new IndexedTensor<Tensor>(new FullTensor(_result.get_evaluated_dimensions(newIndexOrder), DONT_SET_ZERO()), newIndexOrder, true));
-            workingResult = workingResultSaveSlot.get();
-        } else {
-            workingResult = &_result;
-            static_cast<FullTensor*>(_result.tensorObject)->ensure_own_data_no_copy();
-            
-            // Check whether sides have to be switched to achieve perfect order
-            if(!_result.indices.empty() && !contains(_lhs.indices, _result.indices[0])) {
-                std::swap(actualLhs, actualRhs);
-                std::swap(leftDim, rightDim);
             }
         }
         
-        // Check if Matrices have to be transposed
-        bool lhsTrans = !(actualLhs->indices.empty() || contains(resultAssIndices.indices, actualLhs->indices[0]));
-        bool rhsTrans = !(actualRhs->indices.empty() || !contains(resultAssIndices.indices, actualRhs->indices[0]));
+        std::vector<Index> workingResultIndices(lhsOpenIndices);
+        workingResultIndices.insert(workingResultIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
         
-        LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
-        
-        const value_t commonFactor = _lhs.tensorObjectReadOnly->factor * _rhs.tensorObjectReadOnly->factor;
-        blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
-        
-        if(reorderResult) {
-            LOG(ContractionDebug, "Reordering result");
-            evaluate(_result, *workingResultSaveSlot);
+        // - - - - - - - - - - - - - - - - - - - - - - - SparseTensor * SparseTensor ==> SparseTensor - - - - - - - - - - - - - - - - - - - - - - -
+        if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse() && _result.tensorObjectReadOnly->is_sparse()) {
+            // We have to propagate the common factors
+            _result.tensorObject->factor = _lhs.tensorObjectReadOnly->factor*_rhs.tensorObjectReadOnly->factor;
+            
+            CsUniquePtr lhsCS = to_cs_format(_lhs, lhsOpenIndices, commonIndices);
+            
+            CsUniquePtr rhsCS = to_cs_format(_rhs, commonIndices, rhsOpenIndices);
+            
+            CsUniquePtr resultCS = matrix_matrix_product(lhsCS, rhsCS);
+            
+            evaluate(_result, from_cs_format(resultCS, _result.get_evaluated_dimensions(workingResultIndices))(workingResultIndices)); // TODO this evaluation should be part of from_cs_format
+            
+        // - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - 
+        } else { 
+            // We don't want the result to have any factor since we take the factors into account during the calculation.
+            _result.tensorObject->factor = 1.0;
+            
+            // Actually reorder LHS and RHS if necessary and create temporary result if reordering is necessary and calculate the dimensions of the matrification
+            std::unique_ptr<IndexedTensor<Tensor>> lhsSaveSlot, rhsSaveSlot, workingResultSaveSlot;
+            const IndexedTensorReadOnly<Tensor> *actualLhs, *actualRhs;
+            const IndexedTensorWritable<Tensor> *workingResult;
+            
+            if(lhsNeedsReshuffle) {
+                LOG(ContractionDebug, "Reordering LHS");
+                
+                // Add the common indices to the open ones
+                lhsOpenIndices.insert(lhsOpenIndices.end(), commonIndices.begin(), commonIndices.end());
+                
+                lhsSaveSlot.reset(new IndexedTensor<Tensor>(_lhs.tensorObjectReadOnly->construct_new(_lhs.get_evaluated_dimensions(lhsOpenIndices), DONT_SET_ZERO()), std::move(lhsOpenIndices), true));
+                evaluate(*lhsSaveSlot, _lhs);
+                actualLhs = lhsSaveSlot.get();
+            } else {
+                actualLhs = &_lhs;
+            }
+            
+            if(rhsNeedsReshuffle) {
+                LOG(ContractionDebug, "Reordering RHS");
+                
+                // Add the open indices to the common ones
+                commonIndices.insert(commonIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
+               
+                
+                rhsSaveSlot.reset(new IndexedTensor<Tensor>(_rhs.tensorObjectReadOnly->construct_new(_rhs.get_evaluated_dimensions(commonIndices), DONT_SET_ZERO()), std::move(commonIndices), true));
+                evaluate(*rhsSaveSlot, _rhs);
+                actualRhs = rhsSaveSlot.get();
+            } else {
+                actualRhs = &_rhs;
+            }
+            
+            if(reorderResult) {
+                LOG(ContractionDebug, "Creating temporary result tensor");
+                
+                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(_result.tensorObjectReadOnly->construct_new(_result.get_evaluated_dimensions(workingResultIndices), DONT_SET_ZERO()), std::move(workingResultIndices), true));
+                workingResult = workingResultSaveSlot.get();
+            } else {
+                workingResult = &_result;
+                _result.tensorObject->ensure_own_data_no_copy();
+                
+                // Check whether both sides have to be swaped to achieve perfect order
+                if(!_result.indices.empty() && !contains(lhsAssIndices.indices, _result.indices[0])) {
+                    std::swap(actualLhs, actualRhs);
+                    std::swap(leftDim, rightDim);
+                }
+            }
+            
+            // Check if Matrices have to be transposed
+            const bool lhsTrans = !(actualLhs->indices.empty() || contains(resultAssIndices.indices, actualLhs->indices[0]));
+            const bool rhsTrans = !(actualRhs->indices.empty() || !contains(resultAssIndices.indices, actualRhs->indices[0]));
+            
+            LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
+            
+            const value_t commonFactor = _lhs.tensorObjectReadOnly->factor * _rhs.tensorObjectReadOnly->factor;
+            
+            const bool lhsSparse = _lhs.tensorObjectReadOnly->is_sparse();
+            const bool rhsSparse = _rhs.tensorObjectReadOnly->is_sparse();
+            const bool resultSparse = _result.tensorObjectReadOnly->is_sparse();
+            
+//             LOG(bla, "WHAT: " << lhsSparse << rhsSparse << resultSparse);
+            // Select actual case
+            if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
+                blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+            } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
+                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+            } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
+                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+            } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+            } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+            }
+            
+            if(reorderResult) {
+                LOG(ContractionDebug, "Reordering result");
+                evaluate(_result, *workingResultSaveSlot);
+            }
         }
-        
-        return; // This was fun wasn't it?
     }
 
+    
     IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs) {
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
         const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
         std::vector<Index> outIndices;
         std::vector<size_t> outDimensions;
                 
+        size_t lhsOpenDim = 1, rhsOpenDim = 1;
         size_t dimensionCount = 0;
         for(const Index& idx : lhsIndices) {
             if(_lhs.is_open(idx) && !contains(rhsIndices, idx)) {
                 outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span);
                 for(size_t i=0; i < outIndices.back().span; ++i) {
-                    outDimensions.push_back(_lhs.tensorObjectReadOnly->dimensions[dimensionCount++]);
+                    lhsOpenDim *= _lhs.tensorObjectReadOnly->dimensions[dimensionCount];
+                    outDimensions.push_back(_lhs.tensorObjectReadOnly->dimensions[dimensionCount]);
+                    dimensionCount++;
                 }
             } else {
                 dimensionCount += idx.flags[Index::Flag::INVERSE_SPAN] ? _lhs.degree()-idx.span : idx.span;
@@ -431,21 +428,25 @@ namespace xerus {
             if(_rhs.is_open(idx) && !contains(lhsIndices, idx)) {
                 outIndices.emplace_back(idx.valueId, idx.flags[Index::Flag::INVERSE_SPAN] ? _rhs.degree()-idx.span : idx.span);
                 for(size_t i=0; i < outIndices.back().span; ++i) {
-                    outDimensions.push_back(_rhs.tensorObjectReadOnly->dimensions[dimensionCount++]);
+                    rhsOpenDim *= _rhs.tensorObjectReadOnly->dimensions[dimensionCount];
+                    outDimensions.push_back(_rhs.tensorObjectReadOnly->dimensions[dimensionCount]);
+                    dimensionCount++;
                 }
             } else {
                 dimensionCount += idx.flags[Index::Flag::INVERSE_SPAN] ? _rhs.degree()-idx.span : idx.span;
             }
         }
         
-        
-        // TODO More intelligence when to use a sparse result
         Tensor* resultTensor;
-        if(_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse()) {
+        if(   (_lhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->is_sparse())
+           || (_lhs.tensorObjectReadOnly->is_sparse() && _lhs.tensorObjectReadOnly->count_non_zero_entries() < lhsOpenDim)
+           || (_rhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->count_non_zero_entries() < rhsOpenDim)
+        ) {
             resultTensor = new SparseTensor(outDimensions);
         } else {
             resultTensor = new FullTensor(outDimensions, DONT_SET_ZERO());
         }
+        
         IndexedTensorMoveable<Tensor> result(resultTensor, outIndices);
         contract(result, _lhs, _rhs);
         return result;

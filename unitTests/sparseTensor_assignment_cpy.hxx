@@ -18,7 +18,6 @@
 // or contact us at contact@libXerus.org.
 
 #pragma once
-#pragma once
 #include "../xerus.h"
 
 #include <type_traits>
