@@ -675,85 +675,78 @@ public:
 		return result;
 	}
 	
+#ifndef DISABLE_RUNTIME_CHECKS_
 	/// tests whether the network resembles that of a TTTensor and checks consistency with the udnerlying tensor objects
 	/// @note will not check for orthogonality
 	bool is_valid_tt() const {
 		const size_t N = isOperator?2:1;
 		const size_t numNodes = degree()/N;
-		if (nodes.size() != numNodes || externalLinks.size() != degree() || !std::isfinite(factor)) {
-			return false;
-		}
+		REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
+		REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
+		REQUIRE(std::isfinite(factor), factor);
+		
 		// per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
 			const TensorNode::Link &l = externalLinks[n];
-			if (l.dimension != dimensions[n]
-				|| l.external
-				|| l.other >= numNodes
-				|| l.indexPosition >= nodes[l.other].neighbors.size()
-				|| !nodes[l.other].neighbors[l.indexPosition].external
-				|| nodes[l.other].neighbors[l.indexPosition].indexPosition != n
-				|| nodes[l.other].neighbors[l.indexPosition].dimension != l.dimension)
-			{
-				return false;
-			}
+			REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
+			REQUIRE(!l.external, "n=" << n);
+			REQUIRE(l.other < numNodes, "n=" << n << " " << l.other << " vs " << numNodes);
+			REQUIRE(l.indexPosition < nodes[l.other].neighbors.size(), "n=" << n << " " << l.indexPosition << " vs " << nodes[l.other].neighbors.size());
+			REQUIRE(nodes[l.other].neighbors[l.indexPosition].external, "n=" << n);
+			REQUIRE(nodes[l.other].neighbors[l.indexPosition].indexPosition == n, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].indexPosition);
+			REQUIRE(nodes[l.other].neighbors[l.indexPosition].dimension == l.dimension, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].dimension << " vs " << l.dimension);
 		}
 		// per node
 		for (size_t n=0; n<numNodes; ++n) {
 			const TensorNode &node = nodes[n];
+			REQUIRE(!node.erased, "n=" << n);
+			if (node.tensorObject) {
+				REQUIRE(n == numNodes-1 || !node.tensorObject->has_factor(), "n="<<n);
+			}
 			if (n==0) { // first node (or only node)
-				if (node.degree() != N+(numNodes>1?1:0)
-					|| (node.tensorObject && node.tensorObject->degree() != N+(numNodes>1?1:0))
-					|| node.erased
-					|| !node.neighbors[0].external
-					|| node.neighbors[0].indexPosition != 0
-					|| (isOperator && (!node.neighbors[1].external
-										|| node.neighbors[1].indexPosition != numNodes))
-					|| (numNodes>1 && (node.neighbors.back().external
-										|| node.neighbors.back().other != 1
-										|| node.neighbors.back().indexPosition != 0
-										|| nodes[n+1].neighbors.empty()
-										|| node.neighbors.back().dimension != nodes[n+1].neighbors[0].dimension))
-				) {
-					return false;
+				REQUIRE(node.degree() == N+(numNodes>1?1:0), "n=" << n << " " << node.degree());
+				if (node.tensorObject) {
+					REQUIRE(node.tensorObject->degree() == N+(numNodes>1?1:0), "n=" << n << " " << node.tensorObject->degree());
 				}
-			} else if (n==numNodes-1) { // last node (and not also the first)
-				if (node.degree() != N+1
-					|| (node.tensorObject && node.tensorObject->degree() != N+1)
-					|| node.erased 
-					|| node.neighbors[0].external
-					|| node.neighbors[0].other != n-1
-					|| node.neighbors[0].indexPosition != N+(n>1?1:0)
-					|| !node.neighbors[1].external
-					|| node.neighbors[1].indexPosition != n
-					|| (isOperator && (!node.neighbors[2].external
-										|| node.neighbors[2].indexPosition != numNodes+n))
-				) {
-					return false;
+				REQUIRE(node.neighbors[0].external, "n=" << n);
+				REQUIRE(node.neighbors[0].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
+				if (isOperator) {
+					REQUIRE(node.neighbors[1].external, "n=" << n);
+					REQUIRE(node.neighbors[1].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
 				}
-			} else { // middle nodes
-				if (node.degree() != N+2
-					|| (node.tensorObject && node.tensorObject->degree() != N+2)
-					|| node.erased 
-					|| node.neighbors[0].external
-					|| node.neighbors[0].other != n-1
-					|| node.neighbors[0].indexPosition != N+(n>1?1:0)
-					|| !node.neighbors[1].external
-					|| node.neighbors[1].indexPosition != n
-					|| (isOperator && (!node.neighbors[2].external
-										|| node.neighbors[2].indexPosition != numNodes+n))
-					|| node.neighbors.back().external
-					|| node.neighbors.back().other != n+1
-					|| node.neighbors.back().indexPosition != 0
-					|| nodes[n+1].neighbors.empty()
-					|| node.neighbors.back().dimension != nodes[n+1].neighbors[0].dimension
-				) {
-					return false;
+			} else {
+				REQUIRE(node.degree() == N+(n<numNodes-1?2:1), "n=" << n << " " << node.degree());
+				if (node.tensorObject) {
+					REQUIRE(node.tensorObject->degree() == N+(n<numNodes-1?2:1), "n=" << n << " " << node.tensorObject->degree());
+				}
+				REQUIRE(!node.neighbors[0].external, "n=" << n);
+				REQUIRE(node.neighbors[0].other == n-1, "n=" << n);
+				REQUIRE(node.neighbors[0].indexPosition == N+(n>1?1:0), "n=" << n << " " << node.neighbors[0].indexPosition);
+				REQUIRE(node.neighbors[1].external, "n=" << n);
+				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
+				if (isOperator) {
+					REQUIRE(node.neighbors[2].external, "n=" << n);
+					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
 				}
 			}
+			if (n < numNodes-1) {
+				REQUIRE(!node.neighbors.back().external, "n=" << n);
+				REQUIRE(node.neighbors.back().other == n+1, "n=" << n << " " << node.neighbors.back().other);
+				REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);
+				REQUIRE(!nodes[n+1].neighbors.empty(), "n=" << n);
+				REQUIRE(node.neighbors.back().dimension == nodes[n+1].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
+				
+			} 
 		}
 		
 		return true;
 	}
+#else
+	/// performs no tests if checks are disabled
+	bool is_valid_tt() const {
+		return true;
+	}
+#endif
 	
 	/// moves core to the left (eg. to perform a round operation that then moves it to the right)
 	void cannonicalize_left() {
@@ -858,6 +851,7 @@ public:
 	}
 	
 	virtual value_t frob_norm() const override {
+		REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
 		return nodes.back().tensorObject->frob_norm();
 	}
 	

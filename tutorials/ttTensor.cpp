@@ -38,7 +38,7 @@ int main() {
 	// the TTOperator of order 2d is thus fully indexed by two indices of the form i^d, j^d
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
-	REQUIRE(A.check_consistency(), "asd");
+	REQUIRE(A.is_valid_network(), "asd");
 	
 	// the rank of A increased in the last operation:
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
@@ -49,8 +49,9 @@ int main() {
 	ALSb.printProgress = true;
 	
 	B(i&0) = A(i^d, j^d) * X(j^d);
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(B(i^d) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i/2, j/2)*X(j/1) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d) * X(j^d) - B(i&0)) << " this is likely equal to 0..." << std::endl;
 	
 	ALSb(A, X, B, 1e-4, &perfdata);
 	

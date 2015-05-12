@@ -171,7 +171,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         
         
         // Copy own Tensor into place
-        if(position == outTensor.degree()-1) {
+        if(position == numNodes-1) {
             for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
                 for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
                     // RightIdx can be copied as one piece
@@ -190,7 +190,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         
         
         // Copy other Tensor into place
-        if(position == outTensor.degree()-1) {
+        if(position == numNodes-1) {
             for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
                 for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
                     // RightIdx can be copied as one piece
