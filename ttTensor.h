@@ -709,11 +709,8 @@ public:
 	}
 	
 	virtual value_t frob_norm() const override {
-		FullTensor &core = *std::dynamic_pointer_cast<FullTensor>(nodes.back().tensorObject);
-		return core.frob_norm();
+		return nodes.back().tensorObject->frob_norm();
 	}
-	
-	
 };
 
 
