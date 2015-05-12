@@ -1,0 +1,51 @@
+/**
+ * @file 
+ * @short the source code to the "TTTensors" tutorial
+ */
+
+#include "../xerus.h"
+
+int main() {
+	std::mt19937_64 rnd;
+	std::normal_distribution<double> dist (0.0, 10.0);
+	xerus::Index i,j,k;
+	
+	// the order of the tensors in the following calculation
+	const size_t d = 5;
+	
+	// the dimensions of the states and the operators
+	const std::vector<size_t> stateDims(d, 4);
+	const std::vector<size_t> operatorDims(2*d, 4);
+	
+	// create random ttTensors of rank 2
+    xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+	
+	// and set the TTOperator A to be the identity
+	xerus::TTOperator A = xerus::TTOperator::construct_identity(operatorDims);
+	
+	// solve the system A*X = B with the ALS (this should give us X == B)
+	xerus::ALS(A, X, B);
+	
+	// verify that X is indeed equal to B by calculating the Frobenius Norm of the difference
+	std::cout << "Frobenius norm of X-B is: " << frob_norm(X-B) << " this should be almost 0..." << std::endl;
+	
+	// replace the operator by a random rank-2 operator
+	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
+	
+	// ensure that A is symmetric by calculating @f$ A\cdot A^T @f$
+	// here i^d signifies, that i should represent a multi-index of dimension d
+	// the TTOperator of order 2d is thus fully indexed by two indices of the form i^d, j^d
+	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
+	
+	// the rank of A increased in the last operation:
+	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
+	
+	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
+	xerus::ALS(A, X, B, 1e-4);
+	
+	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
+	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor
+	// in this case j&0 simply denotes that j should span all indices of X and B
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(j&0)) << " this is likely not equal to 0..." << std::endl;
+}

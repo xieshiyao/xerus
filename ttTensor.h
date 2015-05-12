@@ -363,11 +363,11 @@ public:
 	}
 	
 	explicit TTNetwork(const TensorNetwork &_cpy, double _eps=1e-14) : TensorNetwork(_cpy) {
-		to_cannonical_format(_eps);
+		LOG(fatal, "cast of arbitrary tensor network to TT not yet supported");
 	}
 	
 	explicit TTNetwork(TensorNetwork &&_mov, double _eps=1e-14) : TensorNetwork(std::move(_mov)) {
-		to_cannonical_format(_eps);
+		LOG(fatal, "cast of arbitrary tensor network to TT not yet supported");
 	}
 	
 	template<class generator, class distribution>
@@ -444,6 +444,12 @@ public:
 		result.cannonicalize_right();
         return result;
     }
+    
+    template<class generator, class distribution>
+	_inline_ static TTNetwork construct_random(const std::vector<size_t>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
+		const size_t N = isOperator?2:1;
+		return construct_random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+	}
     
     static TTNetwork construct_identity(const std::vector<size_t>& _dimensions) {
         const size_t N = isOperator?2:1;
@@ -674,13 +680,7 @@ public:
 			}
 		}
 	}
-	
-	void to_cannonical_format(double _eps=1e-14) {
-        // create tt in case of ttstack or fullltensor
-        // fail otherwise(for the time being)
-		LOG(fatal, "not yet implemented"); //TODO ?
-    }
-    
+	    
     /// swaps all external indices to create the transposed operator
     template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
 	void transpose() {
@@ -698,7 +698,51 @@ public:
 			std::swap(l1.dimension, l2.dimension);
 		}
 	}
-    
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	TTNetwork& operator+=(const TTNetwork& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) + _other(i&0);
+		return *this;
+	}
+	TTNetwork  operator+(const TTNetwork& _other) const {
+		TTNetwork cpy(*this);
+		cpy += _other;
+		return cpy;
+	}
+	
+	TTNetwork& operator-=(const TTNetwork& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) - _other(i&0);
+		return *this;
+	}
+	TTNetwork  operator-(const TTNetwork& _other) const {
+		TTNetwork cpy(*this);
+		cpy -= _other;
+		return cpy;
+	}
+	
+	TTNetwork& operator*=(const value_t _prod) {
+		factor *= _prod;
+		return *this;
+	}
+	TTNetwork  operator*(const value_t _prod) const {
+		TTNetwork result(*this);
+		result *= _prod;
+		return result;
+	}
+	
+	TTNetwork& operator/=(const value_t _div) {
+		factor /= _div;
+		return *this;
+	}
+	TTNetwork  operator/(const value_t _div) const {
+		TTNetwork result(*this);
+		result /= _div;
+		return result;
+	}
+	
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
 	virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
@@ -716,6 +760,12 @@ public:
 	
 };
 
+template<bool isOperator>
+_inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
+
+/// Returns the frobenius norm of the given tensor
+template<bool isOperator>
+_inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
 
 
 typedef TTNetwork<false> TTTensor;

@@ -227,7 +227,7 @@ namespace xerus {
         virtual value_t operator[](const std::vector<size_t>& _positions) const override;
         
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /// Resets the tensor with the given dimensions and undefined entries.
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;

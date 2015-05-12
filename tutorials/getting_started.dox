@@ -1,4 +1,4 @@
-# Getting started
+/** @example "Getting Started"
 
 In this part of the tutorial the basic functionalities of `xerus` for FullTensors are introduced. 
 
@@ -68,5 +68,9 @@ As A and B are the identity and C is only @f$ 2I @f$, D should be two times X, w
     std::cout << "D:" << std::endl << D.to_string() << std::endl;
 \endcode
 
-The full source code can be found in the file [tutorials/fulltensor.cpp](@ref tutorials/fulltensor.cpp)
+The full source code thus looks as follows ([tutorials/fulltensor.cpp](@ref tutorials/fulltensor.cpp) )
 
+
+
+\include fulltensor.cpp
+*/
