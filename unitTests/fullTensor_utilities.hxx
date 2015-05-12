@@ -102,3 +102,44 @@ UNIT_TEST(FullTensor, dimension_expansion,
     TEST(C.size == 12);
 )
 
+UNIT_TEST(FullTensor, modify_elements,
+    FullTensor A({4,4});
+    FullTensor B({4,4,7});
+    FullTensor C({2,8});
+    
+    A[{0,0}] = 1;
+    A[{0,1}] = 2;
+    A[{0,2}] = 3;
+    A[{0,3}] = 4;
+    A[{1,0}] = 5;
+    A[{1,1}] = 6;
+    A[{1,2}] = 7;
+    A[{1,3}] = 8;
+    A[{2,0}] = 9;
+    A[{2,1}] = 10;
+    A[{2,2}] = 11;
+    A[{2,3}] = 12;
+    A[{3,0}] = 13;
+    A[{3,1}] = 14;
+    A[{3,2}] = 15;
+    A[{3,3}] = 16;
+    
+    A.modify_diag_elements([](value_t& _entry){});
+    TEST(A.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}));
+    
+    A.modify_diag_elements([](value_t& _entry){_entry = 73.5*_entry;});
+    TEST(A.compare_to_data({73.5*1,2,3,4,5,73.5*6,7,8,9,10,73.5*11,12,13,14,15,73.5*16}));
+    
+    A.modify_diag_elements([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - (value_t)_position;});
+    TEST(A.compare_to_data({73.5*73.5*1,2,3,4,5,73.5*73.5*6-1.0,7,8,9,10,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
+    
+    A.reinterpret_dimensions({2,8});
+    
+    A.modify_diag_elements([](value_t& _entry){_entry = 0;});
+    TEST(A.compare_to_data({0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
+    
+    FAILTEST(B.modify_diag_elements([](value_t& _entry){return _entry;}));
+    FAILTEST(B.modify_diag_elements([](value_t& _entry, const size_t _position){return _entry;}));
+)
+
+

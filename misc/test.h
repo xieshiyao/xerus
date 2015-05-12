@@ -22,8 +22,8 @@
 #include "namedLogger.h"
 #include "testManager.h"
 
-// Only define the check macros if CHECK_ is aktive
-#ifdef CHECK_
+// Only define the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
+#ifndef DISABLE_RUNTIME_CHECKS_
 
 	#define PCHECK(precondition, condition, level, message) if(IS_LOGGING(level)) { precondition; if(condition) { LOG(level, #condition << " failed msg: " << message); }} else void(0)
 
@@ -34,6 +34,8 @@
 	#endif
 
 	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
+	
+    #define IF_CHECK(expression) expression
 
 #else
 
@@ -42,6 +44,8 @@
 	#define CHECK(condition, level, message) void(0)
 
 	#define REQUIRE(condition, message) void(0)
+	
+    #define IF_CHECK(expression)  
 
 #endif
  
@@ -52,28 +56,32 @@
 	#define PASTE2( a, b) a##b
 	#define PASTE( a, b) PASTE2( a, b)
 
-	#define TEST(cond) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed"); passed = false;} else {PRINTCHECK;} void(0)
+	#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); passed = false;} else {PRINTCHECK;} void(0)
 	
-	#define REQUIRE_TEST \
-		do { \
-			static const char * ___fname = __PRETTY_FUNCTION__;\
-			struct ___a{ static void rt() {\
-				___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
-			} };\
-			typedef void (*___t)();\
-			static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
-			(void)___rtp; \
-			___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
-		} while(false)
+	#ifdef TEST_COVERAGE_
+		#define REQUIRE_TEST \
+			do { \
+				static const char * ___fname = __PRETTY_FUNCTION__;\
+				struct ___a{ static void rt() {\
+					___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
+				} };\
+				typedef void (*___t)();\
+				static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
+				(void)___rtp; \
+				___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
+			} while(false)
+	#else
+		#define REQUIRE_TEST (void)0
+	#endif
 	
-	#ifdef CHECK_
+	#ifndef DISABLE_RUNTIME_CHECKS_
 		#define FAILTEST(test) \
 			err::logFilePrefix = "failtest/"; err::silenced = true; \
 			try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
 			err::logFilePrefix.clear();  err::silenced = false;  \
 			void(0)
 	#else
-		#define FAILTEST(test) LOG(warning, "Failtest is not useful without flag CHECK_")
+		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")
 	#endif
 	
 	#define UNIT_TEST(grp, name, ...) \

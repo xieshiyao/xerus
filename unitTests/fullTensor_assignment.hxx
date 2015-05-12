@@ -85,6 +85,52 @@ UNIT_TEST(FullTensor, Assignment_Trivia,
     TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
+UNIT_TEST(FullTensor, Assignment_Const, 
+    FullTensor A({2,2,3,1,2});
+    FullTensor res({2,2,3,1,2});
+
+    Index i,j,k,l,m;
+    
+    A[{0,0,0,0,0}]=1;
+    A[{0,0,0,0,1}]=2;
+    A[{0,0,1,0,0}]=3;
+    A[{0,0,1,0,1}]=4;
+    A[{0,0,2,0,0}]=5;
+    A[{0,0,2,0,1}]=6;
+    A[{0,1,0,0,0}]=7;
+    A[{0,1,0,0,1}]=8;
+    A[{0,1,1,0,0}]=9;
+    A[{0,1,1,0,1}]=10;
+    A[{0,1,2,0,0}]=11;
+    A[{0,1,2,0,1}]=12;
+    A[{1,0,0,0,0}]=13;
+    A[{1,0,0,0,1}]=14;
+    A[{1,0,1,0,0}]=15;
+    A[{1,0,1,0,1}]=16;
+    A[{1,0,2,0,0}]=17;
+    A[{1,0,2,0,1}]=18;
+    A[{1,1,0,0,0}]=19;
+    A[{1,1,0,0,1}]=20;
+    A[{1,1,1,0,0}]=21;
+    A[{1,1,1,0,1}]=22;
+    A[{1,1,2,0,0}]=23;
+    A[{1,1,2,0,1}]=24;
+    
+    res(i,j,k,l,m) = A(i,j,k,l,m);
+    const FullTensor resC1(res);
+    TEST(resC1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
+    TEST(approx_equal(resC1[{0,0,0,0,0}], 1.0));
+    TEST(approx_equal(resC1[{0,1,2,0,0}], 11.0));
+    TEST(approx_equal(resC1[{1,1,2,0,0}], 23.0));
+    
+    res(j,i,k,l,m) = A(i,j,k,l,m);
+    const FullTensor resC2(res);
+    TEST(resC2.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
+    TEST(approx_equal(resC2[{0,0,0,0,0}], 1.0));
+    TEST(approx_equal(resC2[{0,1,2,0,0}], 17.0));
+    TEST(approx_equal(resC2[{1,1,2,0,0}], 23.0));
+)
+
 UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
     FullTensor A({2,2,3,1,2});
     FullTensor res1({2,2,3,1,2});

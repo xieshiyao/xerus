@@ -32,6 +32,9 @@ START_MISC_NAMESPACE
 /// demangles the function and class names created by gcc into a more readable format
 std::string demangle_cxa(const std::string &_cxa);
 
+/// resolves 'folder/..' occurences in pathnames
+_const_ std::string normalize_pathname(const std::string &_name);
+
 ///@brief: Explodes a string at positions indicated by _delim.
 _const_ std::vector<std::string> explode(const std::string& _string, const char _delim);
 

@@ -126,15 +126,15 @@ namespace xerus {
         const AssignedIndices baseAssIdx = _base.assign_indices();
         const AssignedIndices outAssIdx = _out.assign_indices();
         
-        #ifdef CHECK_ // Performe complete check whether the input is valid
+        #ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
             REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
             REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of SparseTensor to FullTensor not implemented and probably not useful.");
             
             // Check base indices
             for(size_t i = 0; i < baseAssIdx.numIndices; ++i) {
                 // If the index is fixed we don't expect to find it anywhere
-                if(baseAssIdx.indices[i].is_fixed()) {
-                    REQUIRE(baseAssIdx.indices[i].span == 1, "Fixed indices must have span one. Indices are: " << baseAssIdx.indices << ", total should be " << baseAssIdx.numIndices << ". The problem is: " << baseAssIdx.indices[i] << " -- " << baseAssIdx.indices[i].is_fixed());
+                if(baseAssIdx.indices[i].fixed()) {
+                    REQUIRE(baseAssIdx.indices[i].span == 1, "Fixed indices must have span one. Indices are: " << baseAssIdx.indices << ", total should be " << baseAssIdx.numIndices << ". The problem is: " << baseAssIdx.indices[i] << " -- " << baseAssIdx.indices[i].fixed());
                     continue;
                 }
                 
@@ -144,7 +144,7 @@ namespace xerus {
                 if(j < outAssIdx.numIndices) {
                     REQUIRE(baseAssIdx.indexDimensions[i] == outAssIdx.indexDimensions[j], "The indexDimensions in the target and base of evaluation must coincide. Here " << baseAssIdx.indexDimensions[i] << "!=" << outAssIdx.indexDimensions[j] << ". For index " << baseAssIdx.indices[i] << " == " << outAssIdx.indices[j]);
                     REQUIRE(baseAssIdx.indices[i].span == outAssIdx.indices[j].span, "The indexSpans in the target and base of evaluation must coincide.");
-                    REQUIRE(baseAssIdx.indexOpen[i], "Indices appearing in the target of evaluation must not be part of a trace nor be fixed.");
+                    REQUIRE(baseAssIdx.indices[i].open(), "Indices appearing in the target of evaluation must not be part of a trace nor be fixed. Base: " << baseAssIdx.indices << " Out: " << outAssIdx.indices);
                     continue;
                 }
                 
@@ -152,15 +152,15 @@ namespace xerus {
                 j = 0;
                 while(j < baseAssIdx.numIndices && (i == j || baseAssIdx.indices[i] != baseAssIdx.indices[j])) { ++j; }
                 REQUIRE(j < baseAssIdx.numIndices, "All indices of evalutation base must either be fixed, appear in the target or be part of a trace. Base: " << baseAssIdx.indices << " Out: " << outAssIdx.indices);
-                REQUIRE(count(baseAssIdx.indices, baseAssIdx.indices[i]) == 2, "Indices must appear at most two times.");
+                REQUIRE(count(baseAssIdx.indices, baseAssIdx.indices[i]) == 2, "Indices must appear at most two times. Base: " << baseAssIdx.indices << " Out: " << outAssIdx.indices);
                 REQUIRE(baseAssIdx.indexDimensions[i] == baseAssIdx.indexDimensions[j], "The indexDimensions of two traced indices must conince.");
                 REQUIRE(baseAssIdx.indices[i].span == 1 && baseAssIdx.indices[j].span == 1, "The indexSpans of traced indices must be one (It is ambigious what a trace of span 2 indices is meant to be).");
             }
             
             // Check out indices
             for(size_t i = 0; i < outAssIdx.numIndices; ++i) {
-                REQUIRE(outAssIdx.indexOpen[i],  "Traces and fixed indices are not allowed in the target of evaluation.");
-                REQUIRE(count(baseAssIdx.indices, outAssIdx.indices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation.");
+                REQUIRE(outAssIdx.indices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation. Base: " << baseAssIdx.indices << " Out: " << outAssIdx.indices);
+                REQUIRE(count(baseAssIdx.indices, outAssIdx.indices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseAssIdx.indices << " Out: " << outAssIdx.indices);
             }
         #endif
         
@@ -220,7 +220,7 @@ namespace xerus {
                 
                 if(outPos < outAssIdx.numIndices) { // If we found it we are basically finished
                     stepSizes[outPos] = baseIndexStepSizes[i];
-                } else if(baseAssIdx.indices[i].is_fixed()) { // One reason for an index to not be in _out is to be fixed
+                } else if(baseAssIdx.indices[i].fixed()) { // One reason for an index to not be in _out is to be fixed
                     fixedIndexOffset += size_t(baseAssIdx.indices[i].valueId)*baseIndexStepSizes[i];
                 } else { // If the Index is not fixed, then it has to be part of a trace
                     for(size_t j = i+1; j < baseAssIdx.numIndices-numOrderedIndices; ++j) {
@@ -289,7 +289,7 @@ namespace xerus {
                 }
                 
                 // Check whether the index is fixed
-                if(baseAssIdx.indices[i].is_fixed()) {
+                if(baseAssIdx.indices[i].fixed()) {
                     fixedFlags[i] = true;
                     traceFlags[i] = false;
                     attributes[i] = (size_t) baseAssIdx.indices[i].valueId;

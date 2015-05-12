@@ -37,10 +37,10 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
     const std::vector<Index> myIndices = _me.get_assigned_indices();
     const std::vector<Index> otherIndices = _other.get_assigned_indices();
     
-    // If the indices are in different order, we lost. TODO inverse order is also ok...
+    // If the indices are in different order, we are lost. TODO inverse order is also ok...
     if(myIndices != otherIndices) { return false; }
     
-    // If the other is not a TT tensor we also lost
+    // If the other is not a TT tensor we are also lost
 	const TTTensor* _otherPtr = dynamic_cast<const TTTensor*>( _other.tensorObjectReadOnly);
     if(!_otherPtr) { return false; }
     

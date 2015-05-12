@@ -19,6 +19,8 @@
 
 #include "callStack.h"
 
+#ifndef NO_FANCY_CALLSTACK
+
 #include <execinfo.h>
 #include <signal.h>
 #include <bfd.h>
@@ -28,13 +30,11 @@
 #include <memory>
 #include <map>
 #include <vector>
-#include <iostream>
 #include "stringUtilities.h"
 
 START_MISC_NAMESPACE
 
 // for the use of dladdr see also https://sourceware.org/git/?p=glibc.git;a=blob;f=debug/backtracesyms.c
-
 struct bfdResolver {
 	struct storedBfd {
 		typedef bfd_boolean(deleter_t)(bfd*);
@@ -161,8 +161,6 @@ bool bfdResolver::bfd_initialized = false;
 
 
 
-
-
 std::string get_call_stack() {
 	const size_t MAX_FRAMES = 100;
 	std::vector<void *> stack(MAX_FRAMES);
@@ -182,5 +180,41 @@ std::string get_call_stack() {
 std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
 	return bfdResolver::get_range_of_section(_addr, _name);
 }
+
+
+
+#else // no fancy callstack
+
+#include <execinfo.h>
+#include <iomanip>
+#include <vector>
+#include <sstream>
+
+START_MISC_NAMESPACE
+
+std::string get_call_stack() {
+	const size_t MAX_FRAMES = 100;
+	std::vector<void *> stack(MAX_FRAMES);
+	int num = backtrace(&stack[0], MAX_FRAMES);
+	if (num <= 0) {
+		return "Callstack could not be built.";
+	}
+	stack.resize((size_t) num);
+	std::stringstream res;
+	//NOTE i=0 corresponds to get_call_stack and is omitted
+	for (size_t i=1; i<(size_t)num; ++i) {
+		res << "[0x" << std::setw((int)sizeof(void*)*2) << std::setfill('0') << std::hex << (uintptr_t)stack[i] << " .?] <bfd not loaded, use addr2line to resolve>\n";
+	}
+	return res.str();
+}
+
+std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
+	return std::pair<uintptr_t, uintptr_t>(0,0);
+}
+
+
+
+
+#endif
 
 END_MISC_NAMESPACE

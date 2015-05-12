@@ -53,6 +53,7 @@ include config.mk
 OTHER += -I misc 			# Add search Path for header files
 OTHER += -std=c++11			# Use old C++11 standard
 OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
+OTHER += -MMD
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -97,7 +98,7 @@ debug:
 all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) -liberty -lz -ldl -lbfd
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) $(CALLSTACK_LIBS)
 
 # Support non lto build for outdated systems
 ifdef USE_LTO
@@ -112,7 +113,7 @@ install:
 	@printf "Sorry not yet supported\n" # TODO
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HXX) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) 
-	$(CXX) -D TEST_ $(FLAGS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o $(TEST_NAME)
+	$(CXX) -D TEST_ $(FLAGS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
 
 test:  $(TEST_NAME)
 	./$(TEST_NAME) all
@@ -121,7 +122,7 @@ benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) .obj/benchmark.o $(LIB_NAME_STATIC)
 	$(CXX) -D CHECK_ $(FLAGS) .obj/benchmark.o $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o Benchmark
 
 benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_STATIC)
-	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o BenchmarkTest
+	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o BenchmarkTest
 
 clean:
 	-rm -f $(LIB_NAME_STATIC) $(LIB_NAME_SHARED) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) .obj/PreCompileSelector
@@ -129,7 +130,7 @@ clean:
 
 selectFunctions: misc/preCompileSelector.cpp .obj/misc/stringUtilities.o .obj/misc/timeMeasure.o .obj/misc/namedLogger.o .obj/misc/blasLapackWrapper.o
 	$(CXX) misc/preCompileSelector.cpp -std=c++11 -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
-	-D FULL_SELECTION_ libxerus.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -lbfd -liberty -lz -ldl -o .obj/PreCompileSelector 
+	-D FULL_SELECTION_ libxerus.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o .obj/PreCompileSelector 
 	.obj/PreCompileSelector
 	
 # Compile sources to test object files

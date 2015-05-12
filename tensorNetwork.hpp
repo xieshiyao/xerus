@@ -77,12 +77,15 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
+		REQUIRE(check_consistency(), "cannot fully contract inconsistent network");
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
+#ifndef DISABLE_RUNTIME_CHECKS_
             for(const TensorNode& node : nodes) {
                 REQUIRE(node.erased, "Tensor Network with degree zero must not have unerased nodes.");
             }
+#endif
             result.reset(new FullTensor());
             static_cast<FullTensor*>(result.get())->data.get()[0] = factor;
         } else {
@@ -232,6 +235,59 @@ namespace xerus {
 	}
     
     
+    /// check whether all links in the network are set consistently and matching the underlying tensor objects
+    bool TensorNetwork::check_consistency() const {
+		for (size_t n=0; n<externalLinks.size(); ++n) {
+			const TensorNode::Link &el = externalLinks[n];
+			if (el.other >= nodes.size() 
+				|| el.dimension <= 0
+				|| el.external) 
+			{
+				return false;
+			}
+			const TensorNode &other = nodes[el.other];
+			if (other.degree() <= el.indexPosition 
+				|| !other.neighbors[el.indexPosition].external 
+				|| other.neighbors[el.indexPosition].indexPosition != n
+				|| other.neighbors[el.indexPosition].dimension != el.dimension) 
+			{
+				return false;
+			}
+		}
+		
+		for (size_t n=0; n<nodes.size(); ++n) {
+			const TensorNode &currNode = nodes[n];
+			if (currNode.tensorObject) {
+				if (currNode.degree() != currNode.tensorObject->degree()) 
+				{
+					return false;
+				}
+			}
+			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
+				const TensorNode::Link &el = currNode.neighbors[i];
+				if ((el.other >= nodes.size() && !el.external)
+					|| el.dimension <= 0
+					|| (currNode.tensorObject && el.dimension!=currNode.tensorObject->dimensions[i])) 
+				{
+					return false;
+				}
+				if (!el.external) { // externals were already checked
+					const TensorNode &other = nodes[el.other];
+					if (other.degree() <= el.indexPosition 
+						|| other.neighbors[el.indexPosition].external 
+						|| other.neighbors[el.indexPosition].other != n
+						|| other.neighbors[el.indexPosition].indexPosition != i
+						|| other.neighbors[el.indexPosition].dimension != el.dimension) 
+					{
+						return false;
+					}
+				}
+			}
+		}
+		
+		return true;
+	}
+    
     /// Creates a copy of a subnet that only contains nullptr as data pointers
     TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
         TensorNetwork cpy;
@@ -266,8 +322,9 @@ namespace xerus {
     
 
     void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
-        TensorNetwork &base = *_base.tensorObject;
-        #ifdef CHECK_
+		TensorNetwork &base = *_base.tensorObject;
+		REQUIRE(base.check_consistency(), "Network that is supposed to be traced out is inconsistent.");
+        #ifndef DISABLE_RUNTIME_CHECKS_
             std::set<Index> contractedIndices;
         #endif
         size_t j=0;
@@ -306,7 +363,7 @@ namespace xerus {
                         base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 2;
                     }
                 }
-                #ifdef CHECK_
+                #ifndef DISABLE_RUNTIME_CHECKS_
                     contractedIndices.insert(ij);
                 #endif
                 // remove index from indexed tensor and mark as contracted
@@ -486,7 +543,7 @@ namespace xerus {
         _base.indices.insert(_base.indices.end(), toInsertIndices.begin(), toInsertIndices.end());
         base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
         
-        #ifdef CHECK_
+        #ifndef DISABLE_RUNTIME_CHECKS_
         for (const Index &idx : _base.indices) {
             REQUIRE(count(_base.indices, idx) < 3, "Internal Error.");
         }
@@ -506,6 +563,8 @@ namespace xerus {
         
         // Find traces (former contractions have become traces due to the joining)
         trace_out_double_indices(_base.indices, _base);
+		
+		REQUIRE(_base.tensorObject->check_consistency(), "ie");
     }
 
 

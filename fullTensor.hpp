@@ -362,27 +362,25 @@ namespace xerus {
         resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
     }
 
-    #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
-    //NICETOHAVE Allow more 2d
+    //TODO Allow more 2d
     void FullTensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
         REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
         ensure_own_data_and_apply_factor();
         value_t* const realData = data.get();
         const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-        const size_t N = dimensions[0];
+        const size_t N = dimensions[1];
         for(size_t i=0; i<numDiags; ++i){
-            _f(realData[i+i*N]); 
+            _f(realData[i+i*N]);
         }
     }
-    #endif
     
-    //NICETOHAVE Allow more 2d
+    //TODO Allow more 2d
     void FullTensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
         REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
         ensure_own_data_and_apply_factor();
         value_t* const realData = data.get();
         const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-        const size_t N = dimensions[0];
+        const size_t N = dimensions[1];
         for(size_t i=0; i<numDiags; ++i){
             _f(realData[i+i*N], i);
         }

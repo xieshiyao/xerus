@@ -59,9 +59,9 @@ namespace xerus {
         }
         
         /**
-		 * call to solve @f$ A\cdot x = b@f$ for @f$ x @f$
+		 * call to solve @f$ A\cdot x = b@f$ for @f$ x @f$ (in a least-squares sense)
 		 * @param _A operator to solve for
-		 * @param _x[in,out] in: initial guess, out: solution as found by the alagorithm
+		 * @param[in,out] _x in: initial guess, out: solution as found by the alagorithm
 		 * @param _b right-hand side of the equation to be solved
 		 * @param _convergenceEpsilon minimum change in residual / energy under which the algorithm terminates
 		 * @param _perfData vector of performance data (residuals after every microiteration)

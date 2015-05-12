@@ -22,6 +22,18 @@
 #include "cs_wrapper.h"
 
 namespace xerus {
+    
+    // - - - - - - - - - - - - - - - - - - - - - - - - - Mix to Full - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    void matrix_matrix_product( double* const _C,
+                                const size_t _leftDim,
+                                const size_t _rightDim,
+                                const double _alpha,
+                                const std::map<size_t, double>& _A,
+                                const bool _transposeA,
+                                const size_t _midDim,
+                                const double* const _B,
+                                const bool _transposeB);
+    
     void matrix_matrix_product( double* const _C,
                                 const size_t _leftDim,
                                 const size_t _rightDim,
@@ -32,7 +44,9 @@ namespace xerus {
                                 const std::map<size_t, double>& _B,
                                 const bool _transposeB);
     
-    void matrix_matrix_product( double* const _C,
+    
+    // - - - - - - - - - - - - - - - - - - - - - - - - - Mix to Sparse - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    void matrix_matrix_product( std::map<size_t, double>& _C,
                                 const size_t _leftDim,
                                 const size_t _rightDim,
                                 const double _alpha,
@@ -46,8 +60,9 @@ namespace xerus {
                                 const size_t _leftDim,
                                 const size_t _rightDim,
                                 const double _alpha,
-                                const std::map<size_t, double>& _A,
+                                const double* const _A,
                                 const bool _transposeA,
                                 const size_t _midDim,
-                                const double* const _B);
+                                const std::map<size_t, double>& _B,
+                                const bool _transposeB);
 }

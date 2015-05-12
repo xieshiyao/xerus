@@ -400,7 +400,7 @@ UNIT_TEST(TT, full_contraction,
 	TTTensor ttB(B); 
 	
 	Index i;
-	LOG(unit_testsdthuej, "norm diff " << frob_norm(A(i&0)) - frob_norm(ttA(i&0)));
+	LOG(unit_test, "norm diff " << frob_norm(A(i&0)) - frob_norm(ttA(i&0)));
 	TEST(approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 1.6e-13));
 	LOG(unit_test, "norm diff " << frob_norm(B(i&0)) - frob_norm(ttB(i&0)));
 	TEST(approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));

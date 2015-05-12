@@ -25,46 +25,92 @@ namespace xerus {
     
     /// The Index class is used to write indexed tensor expressen, e.g. A(i,j)*B(j,k). Here i,j,k are of type xerus::Index. 
     class Index {
+    public:
+        #ifndef DISABLE_RUNTIME_CHECKS_
+            enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, ASSINGED, OPEN, NUM_FLAGS};
+        #else
+            enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, OPEN, NUM_FLAGS};
+        #endif
+        
+            static bool all_open(const std::vector<Index>& _indices);
     private:
-        static std::atomic<long> idThreadInitCounter;
-        static thread_local long idCounter;
+        static std::atomic<size_t> idThreadInitCounter;
+        static thread_local size_t idCounter;
         
     public:
-        /// If negative the unique Id of the index. If positive, the index is fixed (e.g. = 5).
-        long valueId;
+        /// Unqiue id of the index. In case the fixed flag is set, this is the fixed position.
+        size_t valueId;
         
-        /// The span allows a single index to cover more than one dimension of a tensor.
+        /// The span states how many dimensions are covered by the index.
         size_t span;
         
-        /// Flag indicating that this index covers all but span dimensions of the tensor.
-        bool inverseSpan;
+        /// The product of the external dimensions this index correstponds to. Only set for assinged indices
+        size_t assingedDimension;
+        
+        /// Bitset of all possible flags the index may possess.
+        std::bitset<NUM_FLAGS> flags;
         
         /// Empty constructor that creates a new Index with new ID. Use this to create indices.
         Index();
         
+        /// Indices are default copy constructable.
         Index(const Index&) = default;
+        
+        /// Indices are default move constructable.
         Index(Index&&) = default;
         
         /// Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
         implicit Index(const long _i);
+
         
-        /// Internal constructor to create indices with larger span. Do not use this unless you know what you are doing.
-        explicit Index(const long _valueId, const size_t _span, const bool _inverseSpan = false);
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span);
+        
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span, const Flag _flag1, const bool _flagValue1 = true);
+        
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension);
+        
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1 = true);
+        
+        /// Internal constructor, do not use this unless you know what you are doing.
+        explicit Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1 = true, const bool _flagValue2 = true);
         
     public:
-        /// Indices are default assignable
+        /// Indices are default assignable.
         Index& operator=(const Index&) = default;
         
-        /// Indices are default moveable
+        /// Indices are default moveable.
         Index& operator=(Index&&) = default;
         
-        /// Checks whether the Index represents a fixed number
-        _inline_ bool is_fixed() const {
-            return valueId >= 0;
+        /// Checks whether the Index represents a fixed number.
+        _inline_ bool fixed() const {
+            return flags[Index::Flag::FIXED];
+        }
+        
+        /// Checks whether the index is open.
+        _inline_ bool open() const {
+            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");
+            return flags[Index::Flag::OPEN];
+        }
+        
+        /// Sets whether the index is open.
+        _inline_ void open(const bool _open) {
+            flags[Flag::OPEN] = _open;
+            IF_CHECK( flags[Flag::ASSINGED] = true; )
+        }
+        
+        /// Returns the (mult)Dimension assinged to this index.
+        _inline_ size_t dimension() const {
+            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
+            return assingedDimension;
         }
         
         /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.
         _inline_ Index operator^(const size_t _span) const {
+            REQUIRE(flags.none(), "Cannot apply ^ operator to an index that has any flag set.");
             return Index(valueId, _span);
         }
         
@@ -72,17 +118,26 @@ namespace xerus {
          *  E.g. A() = B(i&0) * C(i&0), defines A as the full contraction between B and C, indifferent of the order of B and C (which have to coincide however). 
          */
         _inline_ Index operator&(const size_t _span) const {
-            return Index(valueId, _span, true);
+            REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
+            return Index(valueId, _span, Flag::INVERSE_SPAN);
         }
         
-        /// Two Indices are equal if their valueId coincides.
+        /** Allow the creation of Indices covering an x-th fraction of the indices. 
+         *  E.g. A(i&0) = B(i/2, j/2) * C(j&0), defines A as the contraction between the symmetric matrification of B combining the vectorisation of C, indifferent of the actual order of B and C. 
+         */
+        _inline_ Index operator/(const size_t _span) const {
+            REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
+            return Index(valueId, _span, Flag::FRACTIONAL_SPAN);
+        }
+        
+        /// Two Indices are equal if their valueId coincides. Fixed indices are never equal.
         _inline_ bool operator==(const Index& _other) const {
-            return valueId == _other.valueId;
+            return valueId == _other.valueId && !fixed() && !_other.fixed();
         }
         
-        /// Two Indices are equal if their valueId coincides.
+        /// Two Indices are equal if their valueId coincides. Fixed indices are never equal.
         _inline_ bool operator!=(const Index& _other) const {
-            return valueId != _other.valueId;
+            return valueId != _other.valueId || fixed() || _other.fixed();
         }
         
         /// The Comparision operator is needed for indices to be orderable in std::set, the valueId is used.
@@ -91,6 +146,6 @@ namespace xerus {
         }
     };
     
-    /// Allows to pretty print Indices, giving the valueId and span.
+    /// Allows to pretty print indices, giving the valueId and span.
     std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx); 
 }

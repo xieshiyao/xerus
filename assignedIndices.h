@@ -25,7 +25,6 @@ namespace xerus {
     struct AssignedIndices {
         std::vector<Index> indices;
         std::vector<size_t> indexDimensions;
-        std::vector<bool> indexOpen;
         size_t numIndices;
         bool allIndicesOpen;
     };

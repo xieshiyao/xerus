@@ -22,22 +22,47 @@
 #include "tensor.h"
 
 namespace xerus {
-    std::atomic<long> Index::idThreadInitCounter(0);
-    thread_local long Index::idCounter = -((idThreadInitCounter++)<<55);
     
-    Index::Index() : valueId(--idCounter), span(1), inverseSpan(false) {/* REQUIRE(idCounter < 0, "Index ID counter overflowed");*/ }
+    bool Index::all_open(const std::vector<Index>& _indices) {
+        for(const Index& idx : _indices) {
+            if(!idx.open()) { return false; }
+        }
+        return true;
+    }
+            
+    std::atomic<size_t> Index::idThreadInitCounter(0);
+    thread_local size_t Index::idCounter = (idThreadInitCounter++)<<54;
     
-    Index::Index(const long _i) : valueId(_i), span(1), inverseSpan(false) {
-//         REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+    Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ul<<54, "Index ID counter left thread safe range."); }
+    
+    Index::Index(const long _i) : valueId(_i), span(1) {
+        REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+        flags[Flag::FIXED] = true;
     }
     
-    Index::Index(const long _valueId, const size_t _span, const bool _inverseSpan) : valueId(_valueId), span(_span), inverseSpan(_inverseSpan) { }
+    
+    Index::Index(const size_t _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
+    
+    Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span) {
+        flags[_flag1] = _flagValue1;
+    }
+    
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), assingedDimension(_dimension) {}
+    
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
+        flags[_flag1] = _flagValue1;
+    }
+    
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const Flag _flag2, const bool _flagValue1, const bool _flagValue2) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
+        flags[_flag1] = _flagValue1;
+        flags[_flag2] = _flagValue2;
+    }
     
     std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx) {
-        _out << _idx.valueId << "(" << (_idx.inverseSpan? "-" : "") << _idx.span << ")";
+        _out << _idx.valueId << "(" << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "-" : "") << _idx.span << ")";
         return _out;
     }
 }
-
-
 

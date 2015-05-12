@@ -24,6 +24,6 @@
 #ifdef BLAS_ANALYSIS
     UNIT_TEST(X_BlasAnalysis_X, Analysis,
         std::cout << print_blas_analysis();
-        LOG(Indices, "A total of " << -Index().valueId << " indices were used");
+        LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
     )
 #endif

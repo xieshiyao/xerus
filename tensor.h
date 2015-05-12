@@ -23,21 +23,22 @@
 
 namespace xerus {
 	
+    /// Abstract class which defines the common functionalities of the actual tensor classes FullTensor and SparseTensor.
     class Tensor {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Vector containing the dimensions of the tensor
+        /// Vector containing the individual dimensions of the tensor.
         std::vector<size_t> dimensions;
         
-        /// Size of the Tensor -- always equal to the product of the dimensions
+        /// Size of the Tensor -- always equal to the product of the dimensions.
         size_t size;
         
-        /// Single value representing a constant factor
+        /// Single value representing a constant scaling factor.
         value_t factor;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Empty constructor which creates an order zero tensor
+        /// Empty constructor which creates an order zero tensor.
         implicit Tensor();
         
         /// Copy constructor
@@ -46,84 +47,105 @@ namespace xerus {
         /// Move constructor
         implicit Tensor( Tensor&& _other );
 
-        /// Creates a tensor with the given dimensions and factor
+        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
         ALLOW_MOVE(std::vector<size_t>, Vec)
         explicit Tensor(Vec&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Vec>(_dimensions)), size(product(dimensions)), factor(_factor) {
             REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
         }
         
-        /// Creates a tensor with the given dimensions and factor
+        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
         ALLOW_MOVE(std::initializer_list<size_t>, Init)
         explicit Tensor(Init&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Init>(_dimensions)), size(product(dimensions)), factor(_factor) {
             REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
         }
         
-        /// Returns a pointer containing a copy of the object with appropriate type
+        /// Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_copy() const = 0;
         
-        /// Returns a pointer containing a moved copy of the object with appropriate type
+        /// Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_moved_copy() = 0;
         
-        /// Returns a pointer to a newly constructed order zero tensor of appropriate type with entry equals zero
+        /// Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
         virtual Tensor* construct_new() const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type with all entries set to zero
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const = 0;
+        
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of appropriate type with undefined entries
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
+        
+        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
         /// Destructor
         virtual ~Tensor();
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with the same entries is created
+        /// Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
         virtual void ensure_own_data() = 0;
         
-        /// Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with undefined entries is created
+        /// Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
         virtual void ensure_own_data_no_copy() = 0;
         
-        /// Checks whether there is a non-trivial factor and applies it if nessecary.
+        /// Checks whether there is a non-trivial scaling factor and applies it if nessecary.
         virtual void apply_factor() = 0;
         
         /// Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
         virtual void ensure_own_data_and_apply_factor() = 0;
         
-        /// Resets the tensor with the given dimensions and undefined entries
+        /// Resets the tensor with the given dimensions and undefined entries.
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) = 0;
+        
+        /// Resets the tensor with the given dimensions and undefined entries.
         virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) = 0;
         
-        /// Resets the tensor with the given dimensions and all entries equals zero
+        /// Resets the tensor with the given dimensions and all entries equals zero.
         virtual void reset(const std::vector<size_t>&  _newDim) = 0;
+        
+        /// Resets the tensor with the given dimensions and all entries equals zero.
         virtual void reset(      std::vector<size_t>&& _newDim) = 0;
     
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+        /// Allows access to the entry at _position, assuming row-major ordering.
         virtual value_t& operator[](const size_t _position) = 0;
+        
+        /// Allows access to the entry at _position, assuming row-major ordering.
         virtual value_t operator[](const size_t _position) const = 0;
         
+        
+        /// Allows access to the entry at _position.
         virtual value_t& operator[](const std::vector<size_t>& _positions) = 0;
+        
+        /// Allows access to the entry at _position.
         virtual value_t operator[](const std::vector<size_t>& _positions) const = 0;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+        /// Indexes the tensor.
         template<typename... args>
         IndexedTensor<Tensor> operator()(args... _args) {
             return IndexedTensor<Tensor>(this, std::vector<Index>({_args...}), false);
         }
         
+        /// Indexes the tensor.
         template<typename... args>
         IndexedTensorReadOnly<Tensor> operator()(args... _args) const {
             return IndexedTensorReadOnly<Tensor>(this, std::vector<Index>({_args...}));
         }
         
+        /// Indexes the tensor.
         ALLOW_MOVE(std::vector<Index>, T)
         IndexedTensor<Tensor> operator()(T&&  _indices) {
             return IndexedTensor<Tensor>(this, std::forward<T>(_indices), false);
         }
         
+        /// Indexes the tensor.
         ALLOW_MOVE(std::vector<Index>, T)
         IndexedTensorReadOnly<Tensor> operator()(T&&  _indices) const {
             return IndexedTensorReadOnly<Tensor>(this, std::forward<T>(_indices));
@@ -131,15 +153,15 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Returns whether the object is of type SparseTensor
+        /// Checks whether the object is of type SparseTensor.
         virtual bool is_sparse() const = 0;
         
-        /// Returns the degree of the tensor (==dimensions.size() )
+        /// Returns the degree of the tensor (==dimensions.size()).
         _inline_ size_t degree() const {
             return dimensions.size();
         }
         
-        /// Returns whether the tensor has a non-trivial factor (i.e. factor != 1.0)
+        /// Returns whether the tensor has a non-trivial factor (i.e. factor != 1.0).
         _inline_ bool has_factor() const {
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -147,38 +169,47 @@ namespace xerus {
             #pragma GCC diagnostic pop
         }
         
-        /// Returns the number of non-zero entries
+        /// Returns the number of non-zero entries.
         virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const = 0;
         
-        /// Returns the frobenious norm of the tensor
+        /// Returns an approximation of the reorder costs
+        size_t reorder_costs() const {
+            return is_sparse() ? 10*count_non_zero_entries() : size;
+        }
+        
+        /// Calculates the frobenious norm of the tensor.
         virtual value_t frob_norm() const = 0;
 		
-        /// Reinterprets the dimensions. Opposed to change_dimensions() it is assumed that the underlying data and the Size is NOT changed.
+        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
         ALLOW_MOVE(std::vector<size_t>, Vec)
         void reinterpret_dimensions( Vec&& _newDimensions) {
             REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
             dimensions = std::forward<Vec>(_newDimensions);
         }
         
+        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
+        _inline_ void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions) {
+            reinterpret_dimensions(std::vector<size_t>(_newDimensions));
+        }
         
-        /// Returns a string representation of the Tensor
+        /// Returns a string representation of the tensor.
         virtual std::string to_string() const = 0;
         
-        /// Compares the Tensor entriewise to the given data
+        /// Compares the Tensor entriewise to the given data.
         virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const = 0;
         
-        /// Compares the Tensor entriewise to the given data
+        /// Compares the Tensor entriewise to the given data.
         virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const = 0;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
-        /// Assigns all member variables of Tensor
+        /// Assigns all member variables of tensor.
         void assign(const Tensor& _other);
         
-        /// Move assigns all member variables of Tensor
+        /// Move assigns all member variables of tensor.
         void assign(Tensor&& _other);
         
-        /// Changes the dimensions of the tensor. Recalculates the size of the tensor.
+        /// Changes the dimensions of the tensor and recalculates the size of the tensor.
         ALLOW_MOVE(std::vector<size_t>, Vec)
         void change_dimensions( Vec&& _newDimensions) {
             dimensions = std::forward<Vec>(_newDimensions);

@@ -25,6 +25,7 @@
 #include <iostream>
 #include <cstring>
 #include <memory>
+#include <limits>
 #include "standard.h"
 #include "sfinae.h"
 #include "namedLogger.h"
@@ -168,7 +169,7 @@ START_MISC_NAMESPACE
 
     ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
     template<class T>
-    bool approx_equal(T _a, T _b, T _eps) {
+    bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
         bool horst = std::abs(_a-_b) < _eps;
         return horst;
     }

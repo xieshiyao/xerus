@@ -46,10 +46,10 @@ namespace xerus {
         const AssignedIndices assIndices = _tensor.assign_indices();
         for(size_t i = 0; i < assIndices.numIndices; ++i) {
             if(contains(_lhsIndices, assIndices.indices[i])) {
-                REQUIRE(assIndices.indexOpen[i], "Internal Error.");
+                REQUIRE(assIndices.indices[i].open(), "Internal Error.");
                 m *= assIndices.indexDimensions[i];
             } else if(contains(_rhsIndices, assIndices.indices[i])) {
-                REQUIRE(assIndices.indexOpen[i], "Internal Error.");
+                REQUIRE(assIndices.indices[i].open(), "Internal Error.");
                 n *= assIndices.indexDimensions[i];
             }   
         }

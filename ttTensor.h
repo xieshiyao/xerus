@@ -233,6 +233,7 @@ protected:
     }
     
     static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
+		REQUIRE(_me.tensorObject->check_consistency(), "cannot contract inconsistent ttStack");
 		const size_t N = isOperator?2:1;
 		const size_t numNodes = _me.degree()/N;
 		std::set<size_t> toContract;
@@ -246,7 +247,23 @@ protected:
 		// all are contracted, reshuffle them to be in the correct order
 		// after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
 		// so modulus gives the correct wanted id
-		_me.tensorObject->reshuffle_nodes([&numNodes](size_t i){return i%(numNodes);});
+		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
+		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
+		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
+		
+		// reset to new external links
+		_me.tensorObject->externalLinks.clear();
+		_me.tensorObject->externalLinks.emplace_back(0, 0, _me.tensorObject->dimensions[0], false);
+		for(size_t i = 1; i < numNodes; ++i) {
+			_me.tensorObject->externalLinks.emplace_back(i, 1, _me.tensorObject->dimensions[i], false);
+		}
+		if(N == 2) {
+			_me.tensorObject->externalLinks.emplace_back(0, 1, _me.tensorObject->dimensions[numNodes], false);
+			for(size_t i = 1; i < numNodes; ++i) {
+				_me.tensorObject->externalLinks.emplace_back(i, 2, _me.tensorObject->dimensions[numNodes+i], false);
+			}
+		}
+		
 		// ensure right amount and order of links
 		Index ext[N];
 		size_t lastRank, externalDim[N], newRank;
@@ -255,8 +272,8 @@ protected:
 		std::vector<Index> newIndices;
 		std::vector<size_t> newDimensions;
 		for (size_t i=0; i<numNodes; ++i) {
-			lastIndices = oldIndices; oldIndices.clear();
-			lastRight = newRight; newRight.clear();
+			lastIndices = std::move(oldIndices); oldIndices.clear();
+			lastRight = std::move(newRight); newRight.clear();
 			lastRank = newRank; newRank=1;
 			TensorNode &n = _me.tensorObject->nodes[i];
 			for (TensorNode::Link &l : n.neighbors) {
@@ -264,7 +281,6 @@ protected:
 					size_t externalNumber = 0;
 					if (N==2) {
 						externalNumber = l.indexPosition>=numNodes?1:0;
-						REQUIRE(externalNumber < N, "ie");
 					}
 					oldIndices.push_back(ext[externalNumber]);
 					externalDim[externalNumber] = l.dimension;
@@ -279,8 +295,7 @@ protected:
 					LOG(fatal, "ie");
 				}
 			}
-			newIndices.clear();
-			newIndices.insert(newIndices.end(), lastRight.begin(), lastRight.end());
+			newIndices = std::move(lastRight);
 			newIndices.insert(newIndices.end(), ext, ext+N);
 			newIndices.insert(newIndices.end(), newRight.begin(), newRight.end());
 			
@@ -293,6 +308,7 @@ protected:
 				newDimensions.push_back(lastRank);
 			}
 			for (size_t j=0; j<N; ++j) {
+				REQUIRE(_me.tensorObject->dimensions[i+j*numNodes] == externalDim[j], "ie");
 				n.neighbors.emplace_back(0,i+j*numNodes,externalDim[j], true);
 				newDimensions.push_back(externalDim[j]);
 			}
@@ -302,6 +318,9 @@ protected:
 			}
 			n.tensorObject->reinterpret_dimensions(newDimensions);
 		}
+		
+		
+		REQUIRE(_me.tensorObject->check_consistency(), "something went wrong in contract_stack");
 	}
     
 public:
@@ -363,18 +382,18 @@ public:
 	}
 	
 	explicit TTNetwork(const TensorNetwork &_cpy, double _eps=1e-14) : TensorNetwork(_cpy) {
-		to_cannonical_format(_eps);
+		LOG(fatal, "cast of arbitrary tensor network to TT not yet supported");
 	}
 	
 	explicit TTNetwork(TensorNetwork &&_mov, double _eps=1e-14) : TensorNetwork(std::move(_mov)) {
-		to_cannonical_format(_eps);
+		LOG(fatal, "cast of arbitrary tensor network to TT not yet supported");
 	}
 	
 	template<class generator, class distribution>
 	static TTNetwork construct_random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
         const size_t N = isOperator?2:1;
 		REQUIRE(_ranks.size() == _dimensions.size()/N-1,"non-matching amount of ranks given to TTNetwork::construct_random");
-		#ifdef CHECK_
+		#ifndef DISABLE_RUNTIME_CHECKS_
 		for (size_t d : _dimensions) {
 			REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
 		}
@@ -442,13 +461,20 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
+		REQUIRE(result.check_consistency(), "ie");
         return result;
     }
+    
+    template<class generator, class distribution>
+	_inline_ static TTNetwork construct_random(const std::vector<size_t>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
+		const size_t N = isOperator?2:1;
+		return construct_random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+	}
     
     static TTNetwork construct_identity(const std::vector<size_t>& _dimensions) {
         const size_t N = isOperator?2:1;
 		REQUIRE(isOperator, "tttensor identity ill-defined");
-		#ifdef CHECK_
+		#ifndef DISABLE_RUNTIME_CHECKS_
 		for (size_t d : _dimensions) {
 			REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
 		}
@@ -520,6 +546,7 @@ public:
         }
         REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
 		result.cannonicalize_right();
+		REQUIRE(result.check_consistency(), "ie");
         return result;
     }
     
@@ -586,6 +613,7 @@ public:
 		}
 		result.externalLinks = newLinks;
 		
+		REQUIRE(result.check_consistency(), "ie");
 		return result;
 	}
 	
@@ -674,13 +702,7 @@ public:
 			}
 		}
 	}
-	
-	void to_cannonical_format(double _eps=1e-14) {
-        // create tt in case of ttstack or fullltensor
-        // fail otherwise(for the time being)
-		LOG(fatal, "not yet implemented"); //TODO ?
-    }
-    
+	    
     /// swaps all external indices to create the transposed operator
     template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
 	void transpose() {
@@ -698,7 +720,51 @@ public:
 			std::swap(l1.dimension, l2.dimension);
 		}
 	}
-    
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	TTNetwork& operator+=(const TTNetwork& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) + _other(i&0);
+		return *this;
+	}
+	TTNetwork  operator+(const TTNetwork& _other) const {
+		TTNetwork cpy(*this);
+		cpy += _other;
+		return cpy;
+	}
+	
+	TTNetwork& operator-=(const TTNetwork& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) - _other(i&0);
+		return *this;
+	}
+	TTNetwork  operator-(const TTNetwork& _other) const {
+		TTNetwork cpy(*this);
+		cpy -= _other;
+		return cpy;
+	}
+	
+	TTNetwork& operator*=(const value_t _prod) {
+		factor *= _prod;
+		return *this;
+	}
+	TTNetwork  operator*(const value_t _prod) const {
+		TTNetwork result(*this);
+		result *= _prod;
+		return result;
+	}
+	
+	TTNetwork& operator/=(const value_t _div) {
+		factor /= _div;
+		return *this;
+	}
+	TTNetwork  operator/(const value_t _div) const {
+		TTNetwork result(*this);
+		result /= _div;
+		return result;
+	}
+	
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
 	virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
@@ -709,13 +775,16 @@ public:
 	}
 	
 	virtual value_t frob_norm() const override {
-		FullTensor &core = *std::dynamic_pointer_cast<FullTensor>(nodes.back().tensorObject);
-		return core.frob_norm();
+		return nodes.back().tensorObject->frob_norm();
 	}
-	
-	
 };
 
+template<bool isOperator>
+_inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
+
+/// Returns the frobenius norm of the given tensor
+template<bool isOperator>
+_inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
 
 
 typedef TTNetwork<false> TTTensor;
