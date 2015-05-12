@@ -19,7 +19,7 @@
 
 #include "callStack.h"
 
-#ifdef FANCY_CALLSTACK
+#ifndef NO_FANCY_CALLSTACK
 
 #include <execinfo.h>
 #include <signal.h>

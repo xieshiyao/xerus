@@ -10,10 +10,11 @@ endif
 
 
 # include fancy_callstack specific libraries (binutils + dependencies)
-ifdef FANCY_CALLSTACK
-	CALLSTACK_LIBS = -lbfd -liberty -lz -ldl
+ifdef NO_FANCY_CALLSTACK
+	CALLSTACK_LIBS =
+	DEBUG += -D NO_FANCY_CALLSTACK
 else
-	CALLSTACK_LIBS = 
+	CALLSTACK_LIBS = -lbfd -liberty -lz -ldl 
 endif
 
 
