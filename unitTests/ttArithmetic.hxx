@@ -76,35 +76,57 @@ UNIT_TEST(TT, difference,
 )
 
 UNIT_TEST(TT, real_difference,
-	//Random numbers
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
-	std::normal_distribution<value_t> dist (0.0, 1.0);
-	
-	TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
-	TTTensor ttC(5); 
-	
-	Index i;
-	ttC(i&0) = ttA(i&0) - ttA(i&0);
-	LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-11);
-	
-	ttC(i&0) = ttB(i&0) - ttB(i&0);
-	LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-11);
-	
-	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
-	LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-11);
-	
-	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
-	LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-11);
-	
-	ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
-	LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 5e-10);
+    //Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(0X5EED);
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+    
+    TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+    TTTensor ttC(5); 
+    
+    Index i;
+    ttC(i&0) = ttA(i&0) - ttA(i&0);
+    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = ttB(i&0) - ttB(i&0);
+    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
+    LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
+    LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
+    LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 5e-10);
+)
+
+UNIT_TEST(TT, difference_of_TTStacks,
+    //Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(0X5EED);
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+    
+    TTOperator ttO = TTOperator::construct_random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+    TTTensor ttC; 
+    
+    Index i,j,k;
+    
+    ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
+    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
+    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
 )
 
 UNIT_TEST(TT, special_sum_diff,

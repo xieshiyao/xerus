@@ -111,11 +111,17 @@ namespace xerus {
     
     
     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
-		TensorNetwork *res = _rhs.tensorObjectReadOnly->get_copy();
-		res->factor *= _factor;
-		IndexedTensorMoveable<TensorNetwork> result(res, _rhs.indices);
-		return result;
+        TensorNetwork *res = _rhs.tensorObjectReadOnly->get_copy();
+        res->factor *= _factor;
+        IndexedTensorMoveable<TensorNetwork> result(res, _rhs.indices);
+        return result;
     }
+    
+//     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&  _rhs) {
+//         IndexedTensorMoveable<TensorNetwork> result(std::move(_rhs));
+//         result.tensorObject->factor *= _factor;
+//         return result;
+//     }
     
     
 

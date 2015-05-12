@@ -886,10 +886,12 @@ public:
 	virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me _unused_ , const IndexedTensorReadOnly<TensorNetwork> &_other _unused_) override {
 		LOG(fatal, "TTStack not supported as a storing type");
 	}
+	
 	virtual TensorNetwork* get_copy() const override {
 		LOG(fatal, "forbidden");
 		return nullptr;
 	}
+	
 	virtual value_t frob_norm() const override {
 		Index i;
 		TTNetwork<isOperator> tmp(this->degree());

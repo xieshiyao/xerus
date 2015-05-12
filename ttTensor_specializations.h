@@ -39,24 +39,26 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
     
     // If the indices are in different order, we are lost. TODO inverse order is also ok...
     if(myIndices != otherIndices) { return false; }
+    REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both opearants to share the same dimensions");
     
     // If the other is not a TT tensor we are also lost
 	const TTTensor* _otherPtr = dynamic_cast<const TTTensor*>( _other.tensorObjectReadOnly);
     if(!_otherPtr) { return false; }
     
+    // TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
     // If I am in fact a TTTensorStack, we have to evaluate me to TTTensor
     std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
     const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
     const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
 	if (movMe) {
-		internal::TTStack<false> *stackMe = dynamic_cast<internal::TTStack<false> *>(movMe->tensorObject);
+		internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
 		if (stackMe) {
 			meStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_me.degree()), myIndices, true));
 			(*meStorage) = _me;
 			realMePtr = meStorage.get();
 		}
 	} else {
-		REQUIRE(!dynamic_cast<const internal::TTStack<false> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+		REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
 	}
 	const IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
     
@@ -65,14 +67,14 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
     const IndexedTensorReadOnly<TensorNetwork> *realOtherPtr = &_other;
     const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
 	if (movOther) {
-		internal::TTStack<false> *stackOther = dynamic_cast<internal::TTStack<false> *>(movOther->tensorObject);
+		internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
 		if (stackOther) {
 			otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_other.degree()), otherIndices, true));
 			(*otherStorage) = _other;
 			realOtherPtr = otherStorage.get();
 		}
 	} else {
-		REQUIRE(!dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+		REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
 	}
 	const IndexedTensorReadOnly<TensorNetwork> &realOther = *realOtherPtr;
     
@@ -84,7 +86,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
     
     //The external dimensions are the same as the ones of the input
     tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
-    REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "invalid summation");
+    REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
 	
     IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
     TTTensor& outTensor = *static_cast<TTTensor*>(tmpOut.tensorObject);
