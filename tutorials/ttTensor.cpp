@@ -7,7 +7,7 @@
 
 int main() {
 	std::mt19937_64 rnd;
-	std::normal_distribution<double> dist (0.0, 10.0);
+	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
 	// the order of the tensors in the following calculation
@@ -38,8 +38,6 @@ int main() {
 	// the TTOperator of order 2d is thus fully indexed by two indices of the form i^d, j^d
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
-	REQUIRE(A.check_consistency(), "asd");
-	
 	// the rank of A increased in the last operation:
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
 	
@@ -48,9 +46,7 @@ int main() {
 	xerus::ALSVariant ALSb(xerus::ALS);
 	ALSb.printProgress = true;
 	
-	B(i&0) = A(i^d, j^d) * X(j^d);
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely equal to 0..." << std::endl;
+// 	B(i&0) = A(i^d, j^d) * X(j^d);
 	
 	ALSb(A, X, B, 1e-4, &perfdata);
 	
@@ -59,3 +55,12 @@ int main() {
 	// in this case j&0 simply denotes that j should span all indices of X and B
 	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely not equal to 0..." << std::endl;
 }
+
+/**
+ * examplary output of this program:
+ * > Frobenius norm of X-B is: 1.12371e-13 this should be almost 0...
+ * > The rank of A*A^T is { 4, 4, 4, 4 }
+ * > Residual ||A*X-B|| = 8170.59 this is likely not equal to 0...
+ */
+
+
