@@ -75,6 +75,8 @@ namespace xerus {
         template<ADD_MOVE(std::vector<size_t>, Vec), class generator, class distribution>
         static SparseTensor construct_random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
             SparseTensor result(std::forward<Vec>(_dimensions));
+            REQUIRE(_n < result.size, " Cannot create " << _n << " non zero entries in a tensor with only " << result.size << " total entries!");
+            
             std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
             while(result.entries->size() < _n) {
                 result.entries->emplace(entryDist(_rnd), _dist(_rnd));
