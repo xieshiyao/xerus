@@ -131,7 +131,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         return true;
     }
     
-    for(size_t position = 0; position < outTensor.degree(); ++position) {
+    for(size_t position = 0; position < numNodes; ++position) {
         // Get current input nodes
         FullTensor &myNode = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position].tensorObject.get());
         FullTensor &otherNode = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position].tensorObject.get());
@@ -147,7 +147,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         }
         nxtDimensions.emplace_back(outTensor.dimensions[position]);
         if(N == 2) { nxtDimensions.emplace_back(outTensor.dimensions[position+numNodes]); }
-        if(position != outTensor.degree()-1) {
+        if(position != numNodes-1) {
             nxtDimensions.emplace_back(myNode.dimensions.back()+otherNode.dimensions.back());
         }
         std::shared_ptr<FullTensor> nxtTensor(new FullTensor(std::move(nxtDimensions)) );
@@ -158,7 +158,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         if(position != 0) { outTensor.nodes.back().neighbors.emplace_back(position-1, ((position == 1) ? 0:1)+N, nxtTensor->dimensions.front(), false); }
         outTensor.nodes.back().neighbors.emplace_back(-1, position, outTensor.dimensions[position], true);
         if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, position+numNodes, outTensor.dimensions[position+numNodes], true); }
-        if(position != outTensor.degree()-1 ) { outTensor.nodes.back().neighbors.emplace_back(position+1, 0, nxtTensor->dimensions.back(), false); }
+        if(position != numNodes-1 ) { outTensor.nodes.back().neighbors.emplace_back(position+1, 0, nxtTensor->dimensions.back(), false); }
 
         const size_t leftIdxOffset = nxtTensor->size/nxtTensor->dimensions.front();
         const size_t extIdxOffset = nxtTensor->dimensions.back();
@@ -166,7 +166,7 @@ bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork>
         const size_t myExtIdxOffset = myNode.dimensions.back();
         const size_t otherLeftIdxOffset = otherNode.size/otherNode.dimensions.front();
         const size_t otherExtIdxOffset = otherNode.dimensions.back();
-        const size_t otherGeneralOffset = (position == 0 ? 0 : myNode.dimensions.front()*leftIdxOffset) + (position == outTensor.degree()-1 ? 0 : myNode.dimensions.back());
+        const size_t otherGeneralOffset = (position == 0 ? 0 : myNode.dimensions.front()*leftIdxOffset) + (position == numNodes-1 ? 0 : myNode.dimensions.back());
         
         
         

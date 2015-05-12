@@ -62,6 +62,7 @@ namespace xerus {
     }
     
     void TensorNetwork::apply_factor() {
+        REQUIRE(is_valid_network(), "Cannot apply factor to inconsistent network.");
         if(has_factor()) {
             // Find an unerased node to apply factor to. If there is none, then the factor stays
             for(TensorNode& node : nodes) {
@@ -77,15 +78,15 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
-		REQUIRE(is_valid_network(), "cannot fully contract inconsistent network");
+		REQUIRE(is_valid_network(), "Cannot fully contract inconsistent network.");
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
-#ifndef DISABLE_RUNTIME_CHECKS_
-            for(const TensorNode& node : nodes) {
-                REQUIRE(node.erased, "Tensor Network with degree zero must not have unerased nodes.");
-            }
-#endif
+            #ifndef DISABLE_RUNTIME_CHECKS_
+                for(const TensorNode& node : nodes) {
+                    REQUIRE(node.erased, "Tensor Network with degree zero must not have unerased nodes.");
+                }
+            #endif
             result.reset(new FullTensor());
             static_cast<FullTensor*>(result.get())->data.get()[0] = factor;
         } else {
@@ -139,6 +140,8 @@ namespace xerus {
     
     
     TensorNetwork& TensorNetwork::operator=(const TensorNetwork& _other) {
+        REQUIRE(_other.is_valid_network(), "Cannot assign inconsistent network.");
+        
         dimensions = _other.dimensions;
         nodes = _other.nodes;
         externalLinks = _other.externalLinks;
@@ -147,6 +150,8 @@ namespace xerus {
     }
     
     TensorNetwork& TensorNetwork::operator=(TensorNetwork &&_mv) {
+        REQUIRE(_mv.is_valid_network(), "Cannot move inconsistent network.");
+        
         dimensions = std::move(_mv.dimensions);
         nodes = std::move(_mv.nodes);
         externalLinks = std::move(_mv.externalLinks);
@@ -326,10 +331,13 @@ namespace xerus {
 
     void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
 		TensorNetwork &base = *_base.tensorObject;
+        
 		REQUIRE(base.is_valid_network(), "Network that is supposed to be traced out is inconsistent.");
+        
         #ifndef DISABLE_RUNTIME_CHECKS_
             std::set<Index> contractedIndices;
         #endif
+            
         size_t j=0;
         size_t spanSumJ=0;
         while (j<_modifiedIndices.size()) {
@@ -399,14 +407,16 @@ namespace xerus {
 				}
 			}
 		}
-		// construct set of all unseen nodes
+		
+		// Construct set of all unseen nodes...
 		std::set<size_t> toContract;
 		for (size_t i=0; i<base.nodes.size(); ++i) {
 			if (!seen[i] && !base.nodes[i].erased) {
 				toContract.insert(i);
 			}
 		}
-		// and contract them
+		
+		// ...and contract them
 		if (!toContract.empty()) {
 			size_t remaining = base.contract(toContract);
 			
@@ -416,6 +426,11 @@ namespace xerus {
 			REQUIRE(base.nodes[remaining].neighbors.empty(), "Internal Error.");
 			base.nodes[remaining].erased = true;
 		}
+		
+		// Remove all erased nodes
+		base.sanitize();
+		
+		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
     }
 
 
