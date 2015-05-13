@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------------------------------
 
 # Names of the Library
-LIB_NAME_SHARED = libxerus.so
-LIB_NAME_STATIC = libxerus.a
+LIB_NAME_SHARED = build/lib/libxerus.so
+LIB_NAME_STATIC = build/lib/libxerus.a
 
 # Name of the test executable
 TEST_NAME = XerusTest
@@ -14,24 +14,33 @@ TEST_NAME = XerusTest
 #				Register source files for the xerus library      
 # ------------------------------------------------------------------------------------------------------
 
-# Register source files for the library
-LIB_SOURCES += xerus.cpp
-LIB_SOURCES += misc/timeMeasure.cpp
-LIB_SOURCES += misc/stringUtilities.cpp
-LIB_SOURCES += misc/namedLogger.cpp
-LIB_SOURCES += misc/blasLapackWrapper.cpp
-LIB_SOURCES += misc/callStack.cpp
-LIB_SOURCES += misc/simpleNumerics.cpp
+# Register all library source files 
+LIB_SOURCES = $(wildcard src/xerus/*.cpp)
+LIB_SOURCES += $(wildcard src/xerus/algorithm/*.cpp)
+LIB_SOURCES_NO_DIR = $(notdir $(LIB_SOURCES))
 
-LIB_OBJECTS = $(LIB_SOURCES:%.cpp=.obj/%.o)
-TEST_LIB_OBJECTS = $(LIB_SOURCES:%.cpp=.testObj/%.o)
+# Register all misc source files 
+MISC_SOURCES = $(wildcard src/misc/*.cpp)
+MISC_SOURCES_NO_DIR = $(notdir $(MISC_SOURCES))
 
-# Register source files for the unit tests
-TEST_SOURCES += xerusTest.cpp
-TEST_SOURCES += unitTests/fullTensor_tests.cpp
-TEST_SOURCES += misc/test.cpp
+# Register all unit test source files 
+UNIT_TEST_SOURCES = $(wildcard src/unitTests/*.cpp)
+UNIT_TEST_SOURCES_NO_DIR = $(notdir $(UNIT_TEST_SOURCES))
 
-TEST_OBJECTS = $(TEST_SOURCES:%.cpp=.testObj/%.o)
+LIB_OBJECTS = $(LIB_SOURCES_NO_DIR:%.cpp=build/lib/.libObjects/%.o)
+LIB_DEPS    = $(LIB_SOURCES_NO_DIR:%.cpp=build/lib/.libObjects/%.d)
+
+MISC_OBJECTS = $(MISC_SOURCES_NO_DIR:%.cpp=build/lib/.miscObjects/%.o)
+MISC_DEPS    = $(MISC_SOURCES_NO_DIR:%.cpp=build/lib/.miscObjects/%.d)
+
+TEST_LIB_OBJECTS = $(LIB_SOURCES_NO_DIR:%.cpp=build/lib/.testLibObjects/%.o)
+TEST_LIB_DEPS    = $(LIB_SOURCES_NO_DIR:%.cpp=build/lib/.testLibObjects/%.d)
+
+TEST_MISC_OBJECTS = $(MISC_SOURCES_NO_DIR:%.cpp=build/lib/.testMiscObjects/%.o)
+TEST_MISC_DEPS    = $(MISC_SOURCES_NO_DIR:%.cpp=build/lib/.testMiscObjects/%.d)
+
+UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES_NO_DIR:%.cpp=build/lib/.unitTestObjects/%.o)
+UNIT_TEST_DEPS    = $(UNIT_TEST_SOURCES_NO_DIR:%.cpp=build/lib/.unitTestObjects/%.d)
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -53,18 +62,27 @@ include config.mk
 OTHER += -I misc 			# Add search Path for header files
 OTHER += -std=c++11			# Use old C++11 standard
 OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
-OTHER += -MMD
 
 
 # ------------------------------------------------------------------------------------------------------
 #					Setup general compiler options      
 # ------------------------------------------------------------------------------------------------------
-include misc/general.mk
-include misc/warnings.mk
-include misc/optimization.mk
+include makeIncludes/general.mk
+include makeIncludes/warnings.mk
+include makeIncludes/optimization.mk
 
 FLAGS = $(strip $(LOGGING) $(DEBUG) $(WARNINGS) $(OPTIMIZE) $(ADDITIONAL_INCLUDE) $(OTHER))
-MINIMAL_DEPS = Makefile misc/general.mk misc/warnings.mk misc/optimization.mk config.mk
+MINIMAL_DEPS = Makefile makeIncludes/general.mk makeIncludes/warnings.mk makeIncludes/optimization.mk config.mk build/.structure
+# ------------------------------------------------------------------------------------------------------
+#					Load dependency files
+# ------------------------------------------------------------------------------------------------------
+
+-include $(LIB_DEPS)
+-include $(MISC_DEPS)
+-include $(TEST_LIB_DEPS)
+-include $(TEST_MISC_DEPS)
+-include $(UNIT_TEST_DEPS)
+
 # ------------------------------------------------------------------------------------------------------
 #					Make Rules      
 # ------------------------------------------------------------------------------------------------------
@@ -88,62 +106,75 @@ debug:
 	\t\t TEST_NAME \t\t == \t $(TEST_NAME)\n\n \
 	\t\t LIB_SOURCES \t\t == \t $(LIB_SOURCES)\n\n \
 	\t\t LIB_OBJECTS \t\t == \t $(LIB_OBJECTS)\n\n \
-	\t\t TEST_SOURCES \t\t == \t $(TEST_SOURCES)\n\n \
+	\t\t LIB_DEPS \t\t == \t $(LIB_DEPS)\n\n \
 	\t\t TEST_OBJECTS \t\t == \t $(TEST_OBJECTS)\n\n \
 	\t\t LOCAL_HEADERS \t\t == \t $(LOCAL_HEADERS)\n\n \
 	\t\t LOCAL_HPP \t\t == \t $(LOCAL_HPP)\n\n \
 	\t\t LOCAL_HXX \t\t == \t $(LOCAL_HXX)\n\n \
 	\t\t MINIMAL_DEPS \t\t == \t $(MINIMAL_DEPS)\n\n"
 
-all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
+build/.structure:
+	mkdir -p build build/include build/include build/include/.preCompiledHeaders build/lib build/lib/.libObjects build/lib/.miscObjects build/lib/.testLibObjects build/lib/.testMiscObjects build/lib/.unitTestObjects
+	touch build/.structure
 
-$(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_SOURCES)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) -o $(LIB_NAME_SHARED) $(CALLSTACK_LIBS)
+all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
+	cp include/xerus.h build/include/
+	cp -r include/xerus build/include/
+	cp -r include/misc build/include/
+
+$(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES) $(MISC_SOURCES)
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) $(MISC_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
 
 # Support non lto build for outdated systems
 ifdef USE_LTO
-$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)
-	gcc-ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
+$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LIB_OBJECTS) $(MISC_OBJECTS)
+	gcc-ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS) $(MISC_OBJECTS)
 else 
-$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LIB_OBJECTS)     
-	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
+$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LIB_OBJECTS) $(MISC_OBJECTS) 
+	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS) $(MISC_OBJECTS)
 endif
 
 install:
 	@printf "Sorry not yet supported\n" # TODO
 
-$(TEST_NAME): $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HXX) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) 
-	$(CXX) -D TEST_ $(FLAGS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
+$(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_MISC_OBJECTS)
+	$(CXX) -D TEST_ $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_MISC_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
 
 test:  $(TEST_NAME)
 	./$(TEST_NAME) all
-	
-benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) .obj/benchmark.o $(LIB_NAME_STATIC)
-	$(CXX) -D CHECK_ $(FLAGS) .obj/benchmark.o $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o Benchmark
-
-benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_STATIC)
-	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o BenchmarkTest
-
+# 	
+# benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) .obj/benchmark.o $(LIB_NAME_STATIC)
+# 	$(CXX) -D CHECK_ $(FLAGS) .obj/benchmark.o $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o Benchmark
+# 
+# benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_STATIC)
+# 	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o BenchmarkTest
+# 
 clean:
-	-rm -f $(LIB_NAME_STATIC) $(LIB_NAME_SHARED) $(TEST_NAME) $(LIB_OBJECTS) $(TEST_LIB_OBJECTS) $(TEST_OBJECTS) .obj/PreCompileSelector
+	rm -fr build
+	-rm -f $(TEST_NAME)
+	-rm -f include/xerus.h.gch
 	
+# 
+# selectFunctions: misc/preCompileSelector.cpp .obj/misc/stringUtilities.o .obj/misc/timeMeasure.o .obj/misc/namedLogger.o .obj/misc/blasLapackWrapper.o
+# 	$(CXX) misc/preCompileSelector.cpp -std=c++11 -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
+# 	-D FULL_SELECTION_ libxerus.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o .obj/PreCompileSelector 
+# 	.obj/PreCompileSelector
 
-selectFunctions: misc/preCompileSelector.cpp .obj/misc/stringUtilities.o .obj/misc/timeMeasure.o .obj/misc/namedLogger.o .obj/misc/blasLapackWrapper.o
-	$(CXX) misc/preCompileSelector.cpp -std=c++11 -flto -fno-fat-lto-objects -flto-compression-level=0 --param ggc-min-heapsize=6442450 -Ofast -march=native \
-	-D FULL_SELECTION_ libxerus.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o .obj/PreCompileSelector 
-	.obj/PreCompileSelector
+build/lib/.libObjects%.o: src/xerus%.cpp $(MINIMAL_DEPS)
+	$(CXX) $< -c $(FLAGS) -MMD -o $@
+
+build/lib/.miscObjects%.o: src/misc%.cpp $(MINIMAL_DEPS)
+	$(CXX) $< -c $(FLAGS) -MMD -o $@
+
+build/lib/.testLibObjects%.o: src/xerus%.cpp $(MINIMAL_DEPS)
+	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
+
+build/lib/.testMiscObjects%.o: src/misc%.cpp $(MINIMAL_DEPS)
+	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
+
+build/lib/.unitTestObjects%.o: src/unitTests%.cpp $(MINIMAL_DEPS) include/xerus.h.gch
+	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
 	
-# Compile sources to test object files
-.testObj/%.o: %.cpp $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
-	mkdir -p $(dir $@)
-	$(CXX) $< -c -D TEST_ $(FLAGS) -o $@
-
-.testObj/%.o: %.cxx $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP) $(LOCAL_HXX)
-	mkdir -p $(dir $@)
-	$(CXX) $< -c -D TEST_ $(FLAGS) -o $@
-
-#Compile local source files - depend on all Headers and local directorys
-.obj/%.o: %.cpp $(MINIMAL_DEPS) $(LOCAL_HEADERS) $(LOCAL_HPP)
-	mkdir -p $(dir $@)
-	$(CXX) $< -c $(FLAGS) -o $@
+include/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS)
+	$(CXX) -D TEST_ $< $(FLAGS) -MMD -o $@
 
