@@ -41,13 +41,15 @@ int main() {
 	// the rank of A increased in the last operation:
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
 	
-	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
-	std::vector<double> perfdata;
+	// create a new variant of the ALS algorithm
 	xerus::ALSVariant ALSb(xerus::ALS);
+	// that will print its progress
 	ALSb.printProgress = true;
 	
 // 	B(i&0) = A(i^d, j^d) * X(j^d);
 	
+	std::vector<double> perfdata;
+	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
 	ALSb(A, X, B, 1e-4, &perfdata);
 	
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
