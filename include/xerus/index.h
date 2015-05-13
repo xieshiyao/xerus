@@ -25,7 +25,7 @@
 
 #include "misc/standard.h"
 #include "misc/test.h"
-
+ 
 
 namespace xerus {
     
@@ -92,64 +92,40 @@ namespace xerus {
         Index& operator=(Index&&) = default;
         
         /// Checks whether the Index represents a fixed number.
-        _inline_ bool fixed() const {
+        bool fixed() const {
             return flags[Index::Flag::FIXED];
         }
         
         /// Checks whether the index is open.
-        _inline_ bool open() const {
-            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");
-            return flags[Index::Flag::OPEN];
-        }
+        bool open() const;
         
         /// Sets whether the index is open.
-        _inline_ void open(const bool _open) {
-            flags[Flag::OPEN] = _open;
-            IF_CHECK( flags[Flag::ASSINGED] = true; )
-        }
+        void open(const bool _open);
         
         /// Returns the (mult)Dimension assinged to this index.
-        _inline_ size_t dimension() const {
-            REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
-            return assingedDimension;
-        }
+        size_t dimension() const;
         
         /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.
-        _inline_ Index operator^(const size_t _span) const {
-            REQUIRE(flags.none(), "Cannot apply ^ operator to an index that has any flag set.");
-            return Index(valueId, _span);
-        }
+        Index operator^(const size_t _span) const;
         
         /** Allow the creation of Indices covering all but x dimensions using the and operator. 
          *  E.g. A() = B(i&0) * C(i&0), defines A as the full contraction between B and C, indifferent of the order of B and C (which have to coincide however). 
          */
-        _inline_ Index operator&(const size_t _span) const {
-            REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
-            return Index(valueId, _span, Flag::INVERSE_SPAN);
-        }
+        Index operator&(const size_t _span) const;
         
         /** Allow the creation of Indices covering an x-th fraction of the indices. 
          *  E.g. A(i&0) = B(i/2, j/2) * C(j&0), defines A as the contraction between the symmetric matrification of B combining the vectorisation of C, indifferent of the actual order of B and C. 
          */
-        _inline_ Index operator/(const size_t _span) const {
-            REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
-            return Index(valueId, _span, Flag::FRACTIONAL_SPAN);
-        }
+        Index operator/(const size_t _span) const;
         
         /// Two Indices are equal if their valueId coincides. Fixed indices are never equal.
-        _inline_ bool operator==(const Index& _other) const {
-            return valueId == _other.valueId && !fixed() && !_other.fixed();
-        }
+        bool operator==(const Index& _other) const;
         
         /// Two Indices are equal if their valueId coincides. Fixed indices are never equal.
-        _inline_ bool operator!=(const Index& _other) const {
-            return valueId != _other.valueId || fixed() || _other.fixed();
-        }
+        bool operator!=(const Index& _other) const;
         
         /// The Comparision operator is needed for indices to be orderable in std::set, the valueId is used.
-        _inline_ bool operator<(const Index& _other) const {
-            return valueId < _other.valueId;
-        }
+        bool operator<(const Index& _other) const;
     };
     
     /// Allows to pretty print indices, giving the valueId and span.
