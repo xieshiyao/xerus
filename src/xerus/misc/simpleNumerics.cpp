@@ -17,8 +17,8 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/misc/simpleNumerics.h"
-#include "../../include/misc/missingFunctions.h"
+#include "../../../include/xerus/misc/simpleNumerics.h"
+#include "../../../include/xerus/misc/missingFunctions.h"
 
 START_MISC_NAMESPACE
 

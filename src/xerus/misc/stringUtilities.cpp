@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/misc/stringUtilities.h"
+#include "../../../include/xerus/misc/stringUtilities.h"
 #include <memory>
 #include <cxxabi.h>
 

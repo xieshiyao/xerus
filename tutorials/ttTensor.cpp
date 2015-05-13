@@ -3,7 +3,7 @@
  * @short the source code to the "TTTensors" tutorial
  */
 
-#include "../xerus.h"
+#include "../include/xerus.h"
 
 int main() {
 	std::mt19937_64 rnd;

@@ -19,8 +19,10 @@
 
 // File containing the unit tests for the xerus library
 
-#include "../../include/xerus.h"
-#include "../../include/misc/test.h"
+
+#include<xerus.h>
+
+#include "../../include/xerus/misc/test.h"
     
 int main() {
     LOG(fatal, "It looks like test was not active, although it had to be.");

@@ -20,8 +20,10 @@
 // compare_memory_to_vector\(([a-zA-Z0-9]*)\.data\.get\(\), ?(\{[0-9, +\*]*\})\)
 // \1.compare_to_data(\2)
 
-#include "../../include/xerus.h"
-#include "../../include/misc/test.h"
+
+#include<xerus.h>
+
+#include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
 UNIT_TEST(FullTensor, sum_matrix_2x2,

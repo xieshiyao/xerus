@@ -17,8 +17,8 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/misc/blasLapackWrapper.h"
-#include "../../include/misc/selectedFunctions.h"
+#include "../../../include/xerus/misc/blasLapackWrapper.h"
+#include "../../../include/xerus/misc/selectedFunctions.h"
 
 START_MISC_NAMESPACE
 

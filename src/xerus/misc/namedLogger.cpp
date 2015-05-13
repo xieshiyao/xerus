@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "../../include/misc/namedLogger.h"
+#include "../../../include/xerus/misc/namedLogger.h"
 
 namespace err {
 //Look if Log shall be streamed into a file

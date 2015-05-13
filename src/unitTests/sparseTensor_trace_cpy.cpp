@@ -17,8 +17,10 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
-#include "../../include/misc/test.h"
+
+#include<xerus.h>
+
+#include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Traces,

@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/misc/callStack.h"
+#include "../../../include/xerus/misc/callStack.h"
 
 #ifndef NO_FANCY_CALLSTACK
 
@@ -30,7 +30,7 @@
 #include <memory>
 #include <map>
 #include <vector>
-#include "../../include/misc/stringUtilities.h"
+#include "../../../include/xerus/misc/stringUtilities.h"
 
 START_MISC_NAMESPACE
 

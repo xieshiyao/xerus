@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/misc/timeMeasure.h"
+#include "../../../include/xerus/misc/timeMeasure.h"
 
 START_MISC_NAMESPACE
 

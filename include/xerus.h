@@ -23,15 +23,15 @@
     #define MISC_NAMESPACE xerus
 
     // The misc stuff needed by xerus
-    #include "misc/standard.h"
-    #include "misc/namedLogger.h"
-    #include "misc/missingFunctions.h"
-    #include "misc/stringUtilities.h"
-    #include "misc/sfinae.h"
-    #include "misc/blasLapackWrapper.h"
-    #include "misc/selectedFunctions.h"
-    #include "misc/callStack.h"
-    #include "misc/simpleNumerics.h"
+    #include "xerus/misc/standard.h"
+    #include "xerus/misc/namedLogger.h"
+    #include "xerus/misc/missingFunctions.h"
+    #include "xerus/misc/stringUtilities.h"
+    #include "xerus/misc/sfinae.h"
+    #include "xerus/misc/blasLapackWrapper.h"
+    #include "xerus/misc/selectedFunctions.h"
+    #include "xerus/misc/callStack.h"
+    #include "xerus/misc/simpleNumerics.h"
 
     // Additionall std stuff needed by xerus
     #include <atomic>

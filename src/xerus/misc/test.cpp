@@ -28,12 +28,12 @@
     #include <string.h> // for strsignal
     #include <sys/stat.h>
     
-    #include "../../include/misc/standard.h"
-    #include "../../include/misc/exceptions.h"
+    #include "../../../include/xerus/misc/standard.h"
+    #include "../../../include/xerus/misc/exceptions.h"
     
 
-    #include "../../include/misc/testManager.h"
-    #include "../../include/misc/stringUtilities.h"
+    #include "../../../include/xerus/misc/testManager.h"
+    #include "../../../include/xerus/misc/stringUtilities.h"
 
     std::map<std::string, std::map<std::string, std::function<bool ()>>> *___UnitTest::tests;
 	std::map<___RequiredTest::identifier, size_t> *___RequiredTest::tests;

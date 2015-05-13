@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "../misc/namedLogger.h"
+#include "misc/namedLogger.h"
 
 SET_LOGGING(ContractionDebug, err::LOGGING_ON_ERROR)
 SET_LOGGING(TNContract, err::LOGGING_ON_ERROR)
