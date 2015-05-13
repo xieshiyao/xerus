@@ -139,9 +139,15 @@ build/.testObjects/%.o: %.cpp $(MINIMAL_DEPS)
 	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
 
 # Build rule for unit test objects
+ifndef USE_CLANG
 build/.unitTestObjects/%.o: %.cpp $(MINIMAL_DEPS) build/.preCompileHeaders/xerus.h.gch
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I build/.preCompileHeaders $< -c $(FLAGS) -MMD -o $@
+else
+build/.unitTestObjects/%.o: %.cpp $(MINIMAL_DEPS)
+	mkdir -p $(dir $@)
+	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
+endif
 
 # Build rule for the preCompileHeader
 build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS)

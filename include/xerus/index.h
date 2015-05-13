@@ -19,7 +19,13 @@
 
 #pragma once
 
-#include "../xerus.h"
+#include <atomic>
+#include <bitset>
+#include <vector>
+
+#include "misc/standard.h"
+#include "misc/test.h"
+
 
 namespace xerus {
     

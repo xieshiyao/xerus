@@ -117,7 +117,7 @@ _inline_ std::string to_string(const char * obj) {
 template<typename T>
 std::string to_string(const T& obj, const size_t _precision){
     std::stringstream stream;
-    stream.precision(_precision);
+    stream.precision((long) _precision);
     stream << std::fixed << obj;
     return stream.str();
 }

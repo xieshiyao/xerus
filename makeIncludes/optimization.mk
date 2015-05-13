@@ -12,7 +12,7 @@ ifndef FREE_RAM
 endif
 
 # Allow GCC to use all the Free Ram available or 6 GB if nothin is set.
-ifndef USECLANG
+ifndef USE_CLANG
 	OPTIMIZE += --param ggc-min-heapsize=$(FREE_RAM)    # Allow GCC to use X KB ram before bothering to free any
 endif
 
