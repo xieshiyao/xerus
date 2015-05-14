@@ -42,21 +42,6 @@
     #include "xerus/tensorLogger.h"
 
     
-    namespace xerus {
-        /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.
-        typedef double value_t;
-        
-        namespace internal {
-            /// Internal deleter function, needed because std::shared_ptr misses an array overload.
-            void array_deleter_vt(value_t* const _toDelete);
-            
-            /// Internal deleter functions, needed because std::shared_ptr misses an array overload.
-            void array_deleter_st(size_t* const _toDelete);
-        }
-        
-        /// Helper class to provide possible overloads of several Tensor constructors
-        class DONT_SET_ZERO {};
-    }
 
 
     // All the xerus headers

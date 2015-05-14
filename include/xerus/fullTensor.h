@@ -21,6 +21,8 @@
 
 #include "tensor.h"
 
+#include "misc/selectedFunctions.h"
+
 namespace xerus {
     class SparseTensor;
     

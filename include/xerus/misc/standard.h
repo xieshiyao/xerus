@@ -20,6 +20,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 #ifdef MISC_NAMESPACE
     #define START_MISC_NAMESPACE namespace MISC_NAMESPACE {
