@@ -131,12 +131,12 @@ clean:
 # Build rule for normal lib objects
 build/.libObjects/%.o: %.cpp $(MINIMAL_DEPS)
 	mkdir -p $(dir $@) 
-	$(CXX) $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -I include $< -c $(FLAGS) -MMD -o $@
 
 # Build rule for test lib objects
 build/.testObjects/%.o: %.cpp $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
 
 # Build rule for unit test objects
 ifndef USE_CLANG

@@ -41,14 +41,14 @@ namespace xerus {
         
         size_t m = 1;
         size_t n = 1;
-        const AssignedIndices assIndices = _tensor.assign_indices();
-        for(size_t i = 0; i < assIndices.numIndices; ++i) {
-            if(contains(_lhsIndices, assIndices.indices[i])) {
-                REQUIRE(assIndices.indices[i].open(), "Internal Error.");
-                m *= assIndices.indexDimensions[i];
-            } else if(contains(_rhsIndices, assIndices.indices[i])) {
-                REQUIRE(assIndices.indices[i].open(), "Internal Error.");
-                n *= assIndices.indexDimensions[i];
+        const std::vector<Index> indices = _tensor.get_assigned_indices();
+        for(size_t i = 0; i < indices.size(); ++i) {
+            if(contains(_lhsIndices, indices[i])) {
+                REQUIRE(indices[i].open(), "Internal Error.");
+                m *= indices[i].dimension();
+            } else if(contains(_rhsIndices, indices[i])) {
+                REQUIRE(indices[i].open(), "Internal Error.");
+                n *= indices[i].dimension();
             }   
         }
         

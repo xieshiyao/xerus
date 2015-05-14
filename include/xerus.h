@@ -61,7 +61,6 @@
 
     // All the xerus headers
     #include "xerus/index.h"
-    #include "xerus/assignedIndices.h"
     #include "xerus/indexedTensorReadOnly.h"
     #include "xerus/indexedTensorWritable.h"
     #include "xerus/indexedTensor.h"
