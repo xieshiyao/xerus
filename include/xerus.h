@@ -33,16 +33,8 @@
     #include "xerus/misc/callStack.h"
     #include "xerus/misc/simpleNumerics.h"
 
-    // Additionall std stuff needed by xerus
-    #include <atomic>
-    #include <bitset> 
-
-
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"
-
-    
-
 
     // All the xerus headers
     #include "xerus/index.h"

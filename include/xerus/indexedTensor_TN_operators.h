@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "indexedTensorMoveable.h"
+
 namespace xerus {
     // Defined in the IndexedTensor classes: 
     template<> void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);

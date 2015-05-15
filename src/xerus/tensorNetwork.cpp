@@ -22,6 +22,9 @@
 #include <xerus/index.h>
 #include <xerus/contractionHeuristic.h>
 #include <xerus/indexedTensor_TN_operators.h>
+#include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/fullTensor.h>
+#include <xerus/sparseTensor.h>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

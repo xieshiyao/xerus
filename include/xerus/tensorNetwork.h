@@ -20,9 +20,16 @@
 #pragma once
 
 #include "tensorNode.h"
+#include "indexedTensor.h"
+#include <map>
+#include <set>
+
 
 namespace xerus {
-        
+    // Necessary forward declaritons
+    class FullTensor;
+    class SparseTensor;
+    
     //TODO add function do check all link and degree consistencies
     class TensorNetwork {
     public:
