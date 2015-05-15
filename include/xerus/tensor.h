@@ -19,7 +19,9 @@
 
 #pragma once
 
-#include "indexedTensorList.h"
+#include "indexedTensor.h"
+#include "indexedTensorMoveable.h"
+#include "misc/test.h"
 
 namespace xerus {
 	

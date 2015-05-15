@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "indexedTensor.h"
+#include "indexedTensorWritable.h"
 
 namespace xerus {
     /// IndexedTensor variant that signifies, that the tensorObject is moveable. meant for internal use only (strange things happen when storing these)

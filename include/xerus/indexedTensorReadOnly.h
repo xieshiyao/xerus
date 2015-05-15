@@ -23,10 +23,9 @@
 #include <vector>
 
 namespace xerus {
-    // Needed forward declaritons
+    // Necessary forward declaritons
     class Index;
-    class Tensor;
-    class TensorNetwork;
+
     
 	/**
 	 * Class representing any Tensor or TensorNetwork object equipped with an Index order, that can at least be read (i.e. is not nessecarily writeable)

@@ -22,6 +22,10 @@
 #include "indexedTensorReadOnly.h"
 
 namespace xerus {
+    // Necessary forward declaritons
+    class Tensor;
+    class TensorNetwork;
+    
     template<class tensor_type>
     class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
     public:

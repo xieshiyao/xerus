@@ -17,7 +17,10 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus/index.h"
+#include <xerus/index.h>
+
+#include <xerus/misc/standard.h>
+#include <xerus/misc/test.h>
 
 namespace xerus {
     

@@ -17,10 +17,9 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/indexedTensorReadOnly.h>
+#include <xerus/indexedTensorWritable.h>
 
 #include <xerus/index.h>
-#include <xerus/misc/sfinae.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>

@@ -19,13 +19,11 @@
 
 #pragma once
 
+#include "basic.h"
+
 #include <atomic>
 #include <bitset>
 #include <vector>
-
-#include "misc/standard.h"
-#include "misc/test.h"
- 
 
 namespace xerus {
     
@@ -68,7 +66,6 @@ namespace xerus {
         /// Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
         implicit Index(const long _i);
 
-        
         /// Internal constructor, do not use this unless you know what you are doing.
         explicit Index(const size_t _valueId, const size_t _span);
         

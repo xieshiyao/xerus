@@ -19,11 +19,12 @@
 
 #pragma once
 
+#include <vector>
 #include <functional>
-#include "indexedTensorMoveable.h"
 
 namespace xerus {
-
+    // Necessary forward declaritons
+    template<class tensor_type> class IndexedTensorWritable;
     class Tensor;
         
     class IndexedTensorList {
@@ -33,27 +34,15 @@ namespace xerus {
         IndexedTensorList() = delete;
         IndexedTensorList(const IndexedTensorList& _old) = delete;
         
-        IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) {} 
+        IndexedTensorList(IndexedTensorList&& _old);
         
-        IndexedTensorList(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second) {
-            tensors.emplace_back(&_first);
-            tensors.emplace_back(&_second);
-        }
+        IndexedTensorList(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second);
         
         // Generic =operator 
-        void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const {
-            _f(tensors);
-        }
+        void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const;
     };
 
-    _inline_ IndexedTensorList operator,(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second) {
-        return IndexedTensorList(_first, _second);
-    }
+    IndexedTensorList operator,(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second);
 
-    _inline_ IndexedTensorList operator,(IndexedTensorList &&_first, const IndexedTensorWritable<Tensor> &_second) {
-        _first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
-        return std::move(_first);
-    }
+    IndexedTensorList operator,(IndexedTensorList &&_first, const IndexedTensorWritable<Tensor> &_second);
 }
-
-    

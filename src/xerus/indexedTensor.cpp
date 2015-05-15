@@ -20,7 +20,6 @@
 #include <xerus/indexedTensor.h>
 
 #include <xerus/index.h>
-#include <xerus/misc/sfinae.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
