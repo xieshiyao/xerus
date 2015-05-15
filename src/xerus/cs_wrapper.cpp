@@ -17,7 +17,8 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/cs_wrapper.h>
+#include <xerus/index.h>
 
 namespace xerus {
     bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries) {

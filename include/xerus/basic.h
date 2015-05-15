@@ -20,6 +20,7 @@
 #pragma once
 
 #include "misc/standard.h"
+#include "tensorLogger.h"
 
 namespace xerus {
     /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.

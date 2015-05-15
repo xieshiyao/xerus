@@ -17,7 +17,8 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/fullTensor.h>
+#include <xerus/sparseTensor.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -28,6 +29,19 @@ namespace xerus {
     FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)), data(_other.data) { }
 
     FullTensor::FullTensor(const size_t _degree) : FullTensor(std::vector<size_t>(_degree, 1)) { }
+    
+    FullTensor::FullTensor(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) : Tensor(_dimensions),            data(new value_t[size], internal::array_deleter_vt) { }
+        
+    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : Tensor(std::move(_dimensions)), data(new value_t[size], internal::array_deleter_vt) { }
+    
+    FullTensor::FullTensor(const std::vector<size_t>&  _dimensions) : FullTensor(_dimensions, DONT_SET_ZERO()) {
+        array_set_zero(data.get(), size);
+    }
+    
+    /// Creates a tensor with the given dimensions and all entries equals zero.
+    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions) : FullTensor(std::move(_dimensions), DONT_SET_ZERO()) {
+        array_set_zero(data.get(), size);
+    }
     
     Tensor* FullTensor::get_copy() const {
         return new FullTensor(*this);

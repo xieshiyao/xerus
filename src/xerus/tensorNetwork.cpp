@@ -17,7 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/tensorNetwork.h>
+#include <xerus/basic.h>
+#include <xerus/index.h>
+#include <xerus/contractionHeuristic.h>
+#include <xerus/indexedTensor_TN_operators.h>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

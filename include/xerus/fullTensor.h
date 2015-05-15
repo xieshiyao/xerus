@@ -20,8 +20,8 @@
 #pragma once
 
 #include "tensor.h"
-
 #include "misc/selectedFunctions.h"
+#include "misc/sfinae.h"
 
 namespace xerus {
     class SparseTensor;
@@ -49,14 +49,16 @@ namespace xerus {
         explicit FullTensor(const size_t _degree);
         
         /// Creates a tensor with the given dimensions and undefined entries.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        explicit FullTensor(Vec&& _dimensions, _unused_ DONT_SET_ZERO) : Tensor(std::forward<Vec>(_dimensions)), data(new value_t[size], internal::array_deleter_vt) { }
+        explicit FullTensor(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO);
+        
+        /// Creates a tensor with the given dimensions and undefined entries.
+        explicit FullTensor(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO);
         
         /// Creates a tensor with the given dimensions and all entries equals zero.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        explicit FullTensor(Vec&& _dimensions) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
-            array_set_zero(data.get(), size);
-        }
+        explicit FullTensor(const std::vector<size_t>&  _dimensions);
+        
+        /// Creates a tensor with the given dimensions and all entries equals zero.
+        explicit FullTensor(      std::vector<size_t>&& _dimensions);
         
         /// Creates a tensor with the given dimensions and uses the given data as entries.
         template<ADD_MOVE(std::vector<size_t>, Vec), ADD_MOVE(std::shared_ptr<value_t>, SPtr)>
@@ -133,17 +135,14 @@ namespace xerus {
         /// Creates a tensor with the given dimensions and uses the given data as entries.
         _inline_ FullTensor(std::initializer_list<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::move(_data)) {}
         
-        #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
-            /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
-            _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t()>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
-            
-            /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
-            _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::vector<size_t>(_dimensions), _f) {}
-        #endif
+        /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
+        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t()>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
+        
+        /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
+        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::vector<size_t>(_dimensions), _f) {}
             
         /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
         _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
-        
         
         /// Creates a tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
         template<class generator, class distribution>

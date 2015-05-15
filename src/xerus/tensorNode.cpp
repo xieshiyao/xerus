@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/tensorNode.h>
 
 std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs) {
     _out << "L{" << _rhs.other << " (" << _rhs.indexPosition << "), " << _rhs.dimension << "}";

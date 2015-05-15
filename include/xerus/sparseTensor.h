@@ -20,6 +20,7 @@
 #pragma once
 
 #include "fullTensor.h"
+#include "misc/missingFunctions.h"
 
 namespace xerus {
     

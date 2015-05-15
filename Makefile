@@ -87,7 +87,7 @@ all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES)
 	mkdir -p $(dir $@)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) $(LIB_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
 
 # Support non lto build for outdated systems
 ifdef USE_LTO
