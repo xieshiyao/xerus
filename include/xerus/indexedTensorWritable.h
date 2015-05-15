@@ -22,7 +22,7 @@
 #include "indexedTensorReadOnly.h"
 
 namespace xerus {
-    template<class tensor_type, tensor_type_restrictions>
+    template<class tensor_type>
     class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
     public:
         // Non-const pointer to the tensor object. Must always coincide with tensorObject
@@ -33,76 +33,42 @@ namespace xerus {
         
         /// Creates an empty indexed Tensor, should only be used internally
     protected:
-        IndexedTensorWritable() : IndexedTensorReadOnly<tensor_type>(), tensorObject(nullptr), deleteTensorObject(false) {};
+        IndexedTensorWritable();
         
     public:
         /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
         IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
         
         /// Move constructor
-        IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
-            // Take ownership
-            _other.deleteTensorObject = false;
-        }
+        IndexedTensorWritable(IndexedTensorWritable &&_other );
         
         /// Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested
-        ALLOW_MOVE(std::vector<Index>, IdxVec)
-        IndexedTensorWritable(tensor_type* const _tensorObject, IdxVec&& _indices, const bool _takeOwnership) :
-            IndexedTensorReadOnly<tensor_type>(_tensorObject, std::forward<IdxVec>(_indices)), tensorObject(_tensorObject), deleteTensorObject(_takeOwnership) {}
-
+        IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership);
+        
+        /// Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested
+        IndexedTensorWritable(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership);
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        virtual ~IndexedTensorWritable() { 
-            if(deleteTensorObject) {
-                delete this->tensorObject;
-            }
-        }
+        virtual ~IndexedTensorWritable();
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        bool is_owner() const {
-            return deleteTensorObject;
-        }
+        bool is_owner() const;
         
-        void delete_if_owner() {
-            if(deleteTensorObject) {
-                delete this->tensorObject;
-            }
-        }
+        void delete_if_owner();
         
         /// Replacement for the original = operator
-        void copy_assign(const IndexedTensorWritable&  _other) {
-            if(_other.deleteTensorObject) {
-                tensorObject = _other.tensorObject.deep_copy();
-            } else {
-                tensorObject = _other.tensorObject;
-            }
-            this->tensorObjectReadOnly = tensorObject;
-            this->indices = _other.indices;
-            this->deleteTensorObject = _other.deleteTensorObject;
-        }
+        void copy_assign(const IndexedTensorWritable&  _other);
         
         /// Replacement for the original = operator
-        void assign(      IndexedTensorWritable&& _other) {
-            this->tensorObject = _other.tensorObject;
-            this->tensorObjectReadOnly = _other.tensorObjectReadOnly;
-            this->indices = std::move(_other.indices);
-            this->deleteTensorObject = _other.deleteTensorObject;
-            _other.deleteTensorObject = false;
-        }
+        void assign(      IndexedTensorWritable&& _other);
         
         /// Resets the IndexedTensorWritable
-        ALLOW_MOVE(std::vector<Index>, IdxVec)
-        void reset(tensor_type* const _tensorObject, IdxVec&& _indices, const bool _takeOwnership = false) {
-            // Delete old tensorObject
-            delete_if_owner();
-            
-            // Set new parameters
-            this->tensorObject = _tensorObject;
-            this->tensorObjectReadOnly = _tensorObject;
-            this->indices = std::forward<IdxVec>(_indices);
-            this->deleteTensorObject = _takeOwnership;
-        }
+        void reset(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership = false);
+        
+        /// Resets the IndexedTensorWritable
+        void reset(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership = false);
         
         // Assignment operators -- Used for tensor assignment WITH indices (i.e. in general the LHS and RHS indexTensors do NOT have the same indices)
         // Implementation is provided in the corresponding *_specialization.hpp files
@@ -110,8 +76,6 @@ namespace xerus {
         void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
         
         // NOTE: The following would be deleted due to move constructor and is therefore implemented here
-        _inline_ void operator=(const IndexedTensorWritable<tensor_type>& _rhs) {
-            operator=(static_cast<const IndexedTensorReadOnly<tensor_type> &>(_rhs));
-        }
+        void operator=(const IndexedTensorWritable<tensor_type>& _rhs);
     };
 }
