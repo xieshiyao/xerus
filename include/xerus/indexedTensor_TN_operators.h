@@ -24,16 +24,22 @@
 namespace xerus {
     // Defined in the IndexedTensor classes: 
     template<> void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
+    
     template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs);
+    
     template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
+    
     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, const IndexedTensorReadOnly<TensorNetwork>  & __restrict _network);
+    
 
-    _inline_ IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> & __restrict _network, value_t _factor) {
+    _inline_ IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> & _network, value_t _factor) {
         return _factor*_network;
     }
 
     IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // creates a new network
+    
     IndexedTensorMoveable<TensorNetwork> operator*(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // copy right into left network
+    
     _inline_ IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
 		return operator*(std::move(_rhs), _lhs);
 	}

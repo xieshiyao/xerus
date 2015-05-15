@@ -65,8 +65,10 @@ namespace xerus {
         explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions)), data(std::forward<SPtr>(_data)) { }
         
         /// Creates a tensor with the given dimensions and uses the given data as entries.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        explicit FullTensor(Vec&& _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(std::forward<Vec>(_dimensions)), data(_data.release(), internal::array_deleter_vt) { }
+        explicit FullTensor(const std::vector<size_t> & _dimensions, std::unique_ptr<value_t[]>&& _data);
+        
+        /// Creates a tensor with the given dimensions and uses the given data as entries.
+        explicit FullTensor(      std::vector<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data);
         
         
         /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
@@ -120,7 +122,7 @@ namespace xerus {
         }
         
         
-        // Unfortunaly all construcotrs based on vectors have to be copied for initializer_list
+        // Unfortunaly all ALLOW_MOVE construcotrs based on vectors have to be copied for initializer_list
         
         /// Creates a tensor with the given dimensions and undefined entries.
         _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : FullTensor(std::vector<size_t>(_dimensions), DONT_SET_ZERO()) {}

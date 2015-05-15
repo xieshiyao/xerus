@@ -42,8 +42,10 @@ namespace xerus {
         implicit SparseTensor(       SparseTensor&& _other);
         
         /// Creates a SparseTensor with the given dimensions and all entries equals zero (i.e. no entries)
-        ALLOW_MOVE(std::vector<size_t>, T)
-        explicit SparseTensor(T&& _dimensions) : Tensor(std::forward<T>(_dimensions)), entries(new std::map<size_t, value_t>()) { }
+        explicit SparseTensor(const std::vector<size_t> & _dimensions);
+        
+        /// Creates a SparseTensor with the given dimensions and all entries equals zero (i.e. no entries)
+        explicit SparseTensor(      std::vector<size_t>&& _dimensions);
         
         /// Creates a SparseTensor with the given dimensions and all entries equals zero (i.e. no entries)
         explicit SparseTensor(std::initializer_list<size_t>&& _dimensions);

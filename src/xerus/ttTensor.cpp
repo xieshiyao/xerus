@@ -392,6 +392,8 @@ namespace xerus {
         *_me.tensorObject = TTNetwork(rhs);
     }
 
+    
+    
     // Explicit instantiation of the two template parameters that will be implemented in the xerus library
     template class TTNetwork<false>;
     template class TTNetwork<true>;

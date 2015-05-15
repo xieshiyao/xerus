@@ -37,20 +37,16 @@ public:
 	};
 	
 	std::string name;
+    
 	float score;
+    
 	std::vector<std::pair<size_t,size_t>> contractions;
+    
 	std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> scoreFct;
 	
-	ContractionHeuristic(std::string _name, std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct) 
-		: name(_name), scoreFct(_scoreFct) {}
+	ContractionHeuristic(std::string _name, std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct);
 	
-	
-	float rescore(TensorNetwork _tn) { // NOTE take as value to get a deep copy instead of reference!
-		score=0;
-		contractions.clear();
-		scoreFct(score, contractions, _tn);
-		return score;
-	}
+	double rescore(TensorNetwork _tn); // NOTE take as value to get a deep copy instead of reference!
 };
 
 

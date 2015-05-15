@@ -26,6 +26,10 @@ namespace xerus {
     
     SparseTensor::SparseTensor(       SparseTensor&& _other) : Tensor(std::move(_other)), entries(std::move(_other.entries)) { }
     
+    SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions), entries(new std::map<size_t, value_t>()) { }
+        
+    SparseTensor::SparseTensor(      std::vector<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
+    
     SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
     
     SparseTensor::SparseTensor(const FullTensor& _full, const double _eps) : Tensor(_full), entries(new std::map<size_t, value_t>()) {

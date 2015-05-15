@@ -38,10 +38,13 @@ namespace xerus {
         array_set_zero(data.get(), size);
     }
     
-    /// Creates a tensor with the given dimensions and all entries equals zero.
     FullTensor::FullTensor(      std::vector<size_t>&& _dimensions) : FullTensor(std::move(_dimensions), DONT_SET_ZERO()) {
         array_set_zero(data.get(), size);
     }
+    
+    FullTensor::FullTensor(const std::vector<size_t> & _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(_dimensions), data(_data.release(), internal::array_deleter_vt) { }
+        
+    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(std::move(_dimensions)), data(_data.release(), internal::array_deleter_vt) { }
     
     Tensor* FullTensor::get_copy() const {
         return new FullTensor(*this);

@@ -65,6 +65,13 @@ namespace xerus {
         return newLinks;
     }
     
+    bool TensorNetwork::has_factor() const {
+        #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wfloat-equal"
+            return (factor != 1.0);
+        #pragma GCC diagnostic pop
+    }
+    
     void TensorNetwork::apply_factor() {
         REQUIRE(is_valid_network(), "Cannot apply factor to inconsistent network.");
         if(has_factor()) {
@@ -166,6 +173,24 @@ namespace xerus {
         _mv.nodes.clear();
         _mv.externalLinks.clear();
         return *this;
+    }
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
+        return IndexedTensor<TensorNetwork>(this, _indices, false);
+    }
+    
+    IndexedTensor<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) {
+        return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
+    }
+        
+    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
+        return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
+    }
+    
+    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) const {
+        return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
     }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */

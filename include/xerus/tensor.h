@@ -58,6 +58,7 @@ namespace xerus {
         
         /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
         explicit Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor = 1.0);
+
         
         /// Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_copy() const = 0;
