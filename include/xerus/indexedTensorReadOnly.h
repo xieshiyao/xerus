@@ -22,11 +22,6 @@
 #include "basic.h"
 #include <vector>
 
-#define tensor_type_restrictions typename std::enable_if< \
-               std::is_same<Tensor,        typename std::decay<tensor_type>::type>{}  \
-            || std::is_same<TensorNetwork, typename std::decay<tensor_type>::type>{},  \
-        int>::type = 0
-
 namespace xerus {
     // Needed forward declaritons
     class Index;
