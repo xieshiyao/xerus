@@ -18,6 +18,7 @@
 
 !*.md
 !*.xml
+!*.dox
 
 # ...even if they are in subdirectories
 !*/
