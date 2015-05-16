@@ -73,6 +73,11 @@ namespace xerus {
         REQUIRE(is_valid_tt(), "ie");
     }
     
+    template<bool isOperator>
+    TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps) { 
+        construct_train_from_full(*this, _full, _eps);
+    }
+    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - TTTensor - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
     template<>
@@ -861,6 +866,166 @@ namespace xerus {
         }
         return result;
     }
+    
+    
+    template<bool isOperator>
+    void TTNetwork<isOperator>::round(value_t _eps) {
+        cannonicalize_left();
+        const size_t N = isOperator?2:1;
+        round_train(*this, std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
+    }
+
+    template<bool isOperator>
+    void TTNetwork<isOperator>::round(size_t _maxRank) {
+        cannonicalize_left();
+        const size_t N = isOperator?2:1;
+        round_train(*this, std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
+    }
+
+    template<bool isOperator>
+    void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
+        cannonicalize_left();
+        round_train(*this, _maxRanks, 1e-15);
+    }
+    
+    template<bool isOperator>
+    void TTNetwork<isOperator>::round(int _maxRank) {
+        REQUIRE( _maxRank > 0, "MaxRank must be positive");
+        round(size_t(_maxRank));
+    }
+
+    template<bool isOperator>
+    std::vector<size_t> TTNetwork<isOperator>::ranks() const {
+        std::vector<size_t> res;
+        for (size_t n=0; n<nodes.size()-1; ++n) {
+            res.push_back(nodes[n].neighbors.back().dimension);
+        }
+        return res;
+    }
+    
+    template<bool isOperator>
+    size_t TTNetwork<isOperator>::rank(size_t _i) const {
+        REQUIRE(_i < nodes.size()-1, "requested illegal rank");
+        return nodes[_i].neighbors.back().dimension;
+    }
+    
+    template<bool isOperator>
+    size_t TTNetwork<isOperator>::datasize() const {
+        size_t result = 0;
+        for (const TensorNode &n : nodes) {
+            result += n.tensorObject->size;
+        }
+        return result;
+    }
+    
+    
+    
+    template<bool isOperator>
+    void TTNetwork<isOperator>::cannonicalize_left() {
+        Index i,r,j;
+        FullTensor core(2);
+        for (size_t n=nodes.size()-1; n>0; --n) {
+            REQUIRE(!nodes[n].erased, "ie n="<<n);
+            Tensor &currTensor = *nodes[n].tensorObject;
+            ( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?
+            Tensor &nextTensor = *nodes[n-1].tensorObject;
+            nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
+            if (currTensor.dimensions[0] != nodes[n].neighbors.front().dimension) {
+                nodes[n].neighbors.front().dimension = nodes[n-1].neighbors.back().dimension = currTensor.dimensions[0];
+            }
+        }
+    }
+    
+    template<bool isOperator>
+    void TTNetwork<isOperator>::cannonicalize_right() {
+        Index i,r,j;
+        FullTensor core(2);
+        for (size_t n=0; n<nodes.size()-1; ++n) {
+            Tensor &currTensor = *nodes[n].tensorObject;
+            ( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j)); //TODO we want a rank-detecting QR at this point?
+            Tensor &nextTensor = *nodes[n+1].tensorObject;
+            nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
+            if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
+                nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = nextTensor.dimensions[0];
+            }
+        }
+    }
+    
+    template<bool isOperator>
+    TensorNetwork* TTNetwork<isOperator>::get_copy() const {
+        return new TTNetwork(*this);
+    }
+    
+    template<bool isOperator>
+    value_t TTNetwork<isOperator>::frob_norm() const {
+        REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
+        return nodes.back().tensorObject->frob_norm();
+    }
+    
+    template<bool isOperator>
+    bool TTNetwork<isOperator>::is_in_expected_format() const {
+        return is_valid_tt();
+    }
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>& TTNetwork<isOperator>::operator+=(const TTNetwork<isOperator>& _other) {
+        Index i;
+        (*this)(i&0) = (*this)(i&0) + _other(i&0);
+        return *this;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>  TTNetwork<isOperator>::operator+(const TTNetwork<isOperator>& _other) const {
+        TTNetwork cpy(*this);
+        cpy += _other;
+        return cpy;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>& TTNetwork<isOperator>::operator-=(const TTNetwork<isOperator>& _other) {
+        Index i;
+        (*this)(i&0) = (*this)(i&0) - _other(i&0);
+        return *this;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>  TTNetwork<isOperator>::operator-(const TTNetwork<isOperator>& _other) const {
+        TTNetwork cpy(*this);
+        cpy -= _other;
+        return cpy;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>& TTNetwork<isOperator>::operator*=(const value_t _prod) {
+        factor *= _prod;
+        return *this;
+        
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>  TTNetwork<isOperator>::operator*(const value_t _prod) const {
+        TTNetwork result(*this);
+        result *= _prod;
+        return result;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>& TTNetwork<isOperator>::operator/=(const value_t _div) {
+        factor /= _div;
+        return *this;
+    }
+    
+    template<bool isOperator>
+    TTNetwork<isOperator>  TTNetwork<isOperator>::operator/(const value_t _div) const {
+        TTNetwork result(*this);
+        result /= _div;
+        return result;
+    }
+    
+    
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - TTOperator - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
