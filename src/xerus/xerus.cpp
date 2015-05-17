@@ -17,17 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-// This is the main .cpp file used for the creation of the xerus library. All pre compiled classes are included in this file, apart from the ones coming from includes.*
-
-#include "../../include/xerus.h"
-
-#include <initializer_list>
-#include <vector>
-#include <set>
-#include <map>
-#include <utility>
-#include <memory>
-#include <climits>
+#include <xerus/basic.h>
 
 // Provide an implementation of the internal deleter functions
 namespace xerus {
@@ -35,9 +25,4 @@ namespace xerus {
         void array_deleter_vt(value_t* const _toDelete) { delete[] _toDelete; }
         void array_deleter_st( size_t* const _toDelete) { delete[] _toDelete; }
     }
-}
-
-namespace xerus {
-    template class TTNetwork<false>;
-    template class TTNetwork<true>;
 }

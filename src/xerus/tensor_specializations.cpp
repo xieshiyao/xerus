@@ -17,7 +17,8 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/indexedTensorMoveable.h>
+#include <xerus/tensor.h>
 
 namespace xerus {
     

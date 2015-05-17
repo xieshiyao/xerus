@@ -376,18 +376,17 @@ namespace xerus {
         return true;
     }
     
-}
-
-bool approx_equal(const xerus::SparseTensor& _sparse, const xerus::FullTensor& _full, const xerus::value_t _eps, const bool pureDataCompare) {
-    REQUIRE(pureDataCompare || _sparse.dimensions == _full.dimensions, "The dimensions of the compared tensors don't match: " << _sparse.dimensions <<" vs. " << _full.dimensions);
-    
-    for(size_t i=0; i < _full.size; ++i) {
-        if(std::abs(_full[i]-_sparse.at(i)) > _eps) { LOG(aha, "At " << i << " mismatch " << _full[i] << " vs " << _sparse.at(i) << " Difference " << _full[i]-_sparse.at(i));  return false; }
+    bool approx_equal(const xerus::SparseTensor& _sparse, const xerus::FullTensor& _full, const xerus::value_t _eps, const bool pureDataCompare) {
+        REQUIRE(pureDataCompare || _sparse.dimensions == _full.dimensions, "The dimensions of the compared tensors don't match: " << _sparse.dimensions <<" vs. " << _full.dimensions);
+        
+        for(size_t i=0; i < _full.size; ++i) {
+            if(std::abs(_full[i]-_sparse.at(i)) > _eps) { LOG(aha, "At " << i << " mismatch " << _full[i] << " vs " << _sparse.at(i) << " Difference " << _full[i]-_sparse.at(i));  return false; }
+        }
+        
+        return true;
     }
-    
-    return true;
-}
 
-bool approx_equal(const xerus::FullTensor& _full, const xerus::SparseTensor& _sparse, const xerus::value_t _eps, const bool pureDataCompare) {
-    return approx_equal(_sparse, _full, _eps, pureDataCompare);
+    bool approx_equal(const xerus::FullTensor& _full, const xerus::SparseTensor& _sparse, const xerus::value_t _eps, const bool pureDataCompare) {
+        return approx_equal(_sparse, _full, _eps, pureDataCompare);
+    }
 }

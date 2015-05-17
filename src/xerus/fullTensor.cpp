@@ -48,6 +48,8 @@ namespace xerus {
         
     FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(std::move(_dimensions)), data(_data.release(), internal::array_deleter_vt) { }
     
+    
+    
     Tensor* FullTensor::get_copy() const {
         return new FullTensor(*this);
     }

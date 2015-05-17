@@ -21,6 +21,7 @@
 
 #include "basic.h"
 #include <string>
+#include <limits>
 #include "indexedTensorReadOnly.h"
 #include "indexedTensor.h"
 
@@ -163,7 +164,7 @@ namespace xerus {
         bool has_factor() const;
         
         /// Returns the number of non-zero entries.
-        virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const = 0;
+        virtual size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
         /// Returns an approximation of the reorder costs
         size_t reorder_costs() const;
@@ -184,10 +185,11 @@ namespace xerus {
         virtual std::string to_string() const = 0;
         
         /// Compares the Tensor entriewise to the given data.
-        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const = 0;
+        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
         /// Compares the Tensor entriewise to the given data.
-        virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const = 0;
+        virtual bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:

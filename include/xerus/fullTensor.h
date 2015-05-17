@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include "basic.h"
 #include <memory>
-
 #include "tensor.h"
 #include "misc/selectedFunctions.h"
 #include "misc/sfinae.h"
@@ -166,8 +166,6 @@ namespace xerus {
         virtual Tensor* get_moved_copy() override;
         
         /// Returns a pointer to a newly constructed order zero tensor of appropriate type with entry equals zero
-        
-        /// Returns a pointer to a newly constructed FullTensor.
         virtual Tensor* construct_new() const override;
         
         /// Returns a pointer to a newly constructed FullTensor with given dimensions and all entries set to zero.
@@ -265,7 +263,6 @@ namespace xerus {
         /// Checks whether the object is of type SparseTensor.
         virtual bool is_sparse() const override;
         
-        
         /// Returns the number of non-zero entries.
         virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const override;
         
@@ -282,11 +279,10 @@ namespace xerus {
         
         /// Compares the Tensor entriewise to the given data.
         virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const override;
-        
     };
     
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     _inline_ FullTensor operator*(const value_t _lhs, const FullTensor& _rhs) { return _rhs*_lhs; }
     
     /// Returns the frobenius norm of the given tensor
@@ -295,5 +291,3 @@ namespace xerus {
     /// Checks whether two FullTensor are approximately equal using either the frobenious norm of the difference (default) or by checking whether all entries are approximately equal.
     bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps = 1e-14, const bool pureDataCompare = false);
 }
-
-

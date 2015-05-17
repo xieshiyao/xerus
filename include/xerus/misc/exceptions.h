@@ -20,6 +20,7 @@
 #pragma once
 #include <exception>
 #include <string>
+
 #include "standard.h"
 #include "stringUtilities.h"
 

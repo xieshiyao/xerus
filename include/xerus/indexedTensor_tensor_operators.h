@@ -22,8 +22,8 @@
 #include "indexedTensorMoveable.h"
 
 namespace xerus {
-    // Defined in the IndexedTensor classes: 
-    // template<> void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs);
+    
+    //TODO move variants
     
     IndexedTensorMoveable<Tensor> operator+ (const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs);
         
@@ -35,7 +35,7 @@ namespace xerus {
 
     IndexedTensorMoveable<Tensor> operator/ (const IndexedTensorReadOnly<Tensor> & _lhs, const value_t _rhs);
     
-    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _a);
+    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A);
     
     
     
@@ -47,5 +47,5 @@ namespace xerus {
     
     IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
     
-    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b);
+    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _A, const IndexedTensorReadOnly<Tensor>& _b);
 }
