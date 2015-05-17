@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include <xerus/misc/test.h>
 
 using namespace xerus;
 
@@ -43,23 +43,20 @@ UNIT_TEST(TensorNetwork, element_access,
     
     //No Index contracted
     res(i,j,k,l) = A(i,j) * B(k,l);
-    TEST(approx_equal(res[0], 3.0));
-    TEST(approx_equal(res[1], 4.0));
+    std::vector<value_t> resX({3,4,5,6,7,8,6,8,10,12,14,16});
+    for(size_t t = 0; t < product(res.dimensions); ++t) {
+        TEST(approx_equal(res[t], resX[t]));
+    }
+    TEST(approx_equal(res[{0,1,1,1}], 14.0));
     
-    /*
-    TEST(res1.compare_to_data({3,4,5,6,7,8,6,8,10,12,14,16}));
-    res1(i,j,k,l) = A(i,k) * B(j,l);
-    TEST(res1.compare_to_data({3,4,5,6,8,10,6,7,8,12,14,16}));
-    res1(i,k,j,l) = A(i,j) * B(k,l);
-    TEST(res1.compare_to_data({3,4,5,6,8,10,6,7,8,12,14,16}));
-    
+
     //One Index contracted
-    res2(i,k) = A(i,j) * B(j,k);
-    TEST(res2.compare_to_data({15,18,21}));
-    res3(k,i) = A(i,j) * B(j,k);
-    TEST(res2.compare_to_data({15,18,21}));
-    res2(i,k) = B(j,k) * A(i,j);
-    TEST(res2.compare_to_data({15,18,21}));
-    res3(k,i) = B(j,k) * A(i,j);
-    TEST(res2.compare_to_data({15,18,21}));*/
+    res(k,i) = B(j,k) * A(i,j);
+    
+    TEST(approx_equal(res[0], 15.0));
+    TEST(approx_equal(res[1], 18.0));
+    TEST(approx_equal(res[2], 21.0));
+    TEST(approx_equal(res[{0,0}], 15.0));
+    TEST(approx_equal(res[{1,0}], 18.0));
+    TEST(approx_equal(res[{2,0}], 21.0));
 )
