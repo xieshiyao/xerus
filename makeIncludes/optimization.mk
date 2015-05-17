@@ -24,7 +24,6 @@ ifdef USE_LTO
 	ifndef USE_CLANG
 		OPTIMIZE += -flto=$(COMPILE_THREADS)	    # Use LTO at compiling using X threads
 		OPTIMIZE += -fno-fat-lto-objects	        # No none LTO code in object files
-		OPTIMIZE += -flto-compression-level=0	    # Do not compress the gimple code
 	else
 		OPTIMIZE += -flto			                # Use LTO at compiling
 	endif

@@ -98,7 +98,15 @@ namespace xerus {
             
 		TensorNetwork &operator=(TensorNetwork &&_mv);
             
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Allows read access to the entry at _position, assuming row-major ordering and a single node.
+        value_t operator[](const size_t _position) const;
+        
+        /// Allows access to the entry at _position.
+        value_t operator[](const std::vector<size_t>& _positions) const;
+        
+        
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		template<typename... args>
 		IndexedTensor<TensorNetwork> operator()(args... _args) {
 				return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
@@ -119,7 +127,9 @@ namespace xerus {
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+        
 		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+        
 		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
             
             

@@ -83,16 +83,16 @@ namespace xerus {
         } while (best < 1e32f); \
     }
 
-    GREEDY(greedy_size, n*m-(n+m)*r)
-    GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
-    GREEDY(greedy_r, -r)
-    // GREEDY(greedy_bs, r)
+    
 
-    namespace {
-    ContractionHeuristic::AddToVector g("greedy_size", greedy_size);
-    ContractionHeuristic::AddToVector s("greedy_speed", greedy_speed);
-    ContractionHeuristic::AddToVector r("greedy_r", greedy_r);
-    // ContractionHeuristic::AddToVector bs("greedy_bullshit", greedy_bs);
+    namespace internal {
+        GREEDY(greedy_size, n*m-(n+m)*r)
+        GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
+        GREEDY(greedy_r, -r)
+        
+        ContractionHeuristic::AddToVector g("greedy_size", greedy_size);
+        ContractionHeuristic::AddToVector s("greedy_speed", greedy_speed);
+        ContractionHeuristic::AddToVector r("greedy_r", greedy_r);
     }
 
 }

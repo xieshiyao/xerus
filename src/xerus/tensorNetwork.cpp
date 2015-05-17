@@ -176,6 +176,55 @@ namespace xerus {
     }
     
     
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    value_t TensorNetwork::operator[](const size_t _position) const {
+        std::vector<size_t> positions(degree());
+        size_t remains = _position;
+        for(size_t i = degree()-1; i > 0; --i) {
+            positions[i] = remains%dimensions[i];
+            remains /= dimensions[i];
+        }
+        positions[0] = remains;
+        return operator[](positions);
+    }
+    
+    value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
+        TensorNetwork copy(*this);
+        
+        // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
+        for(TensorNode& node : copy.nodes) {
+            std::vector<Index> shrinkIndices, baseIndices;
+            for(const TensorNode::Link& link : node.neighbors) {
+                if(link.external) {
+                    // Add fixed index to base
+                    baseIndices.emplace_back(_positions[link.other]);
+                } else {
+                    // Add real index to both
+                    shrinkIndices.emplace_back();
+                    baseIndices.push_back(shrinkIndices.back());
+                }
+            }
+            Tensor* tmp = node.tensorObject->construct_new();
+            (*tmp)(shrinkIndices) = (*node.tensorObject)(baseIndices);
+            node.tensorObject.reset(tmp);
+            
+            // Remove all external links, because they don't exist anymore
+            std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNode::Link& _test){return _test.external;});
+        }
+        
+        // Erase all external indices since they don't exist anymore
+        copy.externalLinks.clear();
+        
+        // Now copy is a closed network and should be contracted by sanitize
+        copy.sanitize();
+        
+        REQUIRE(copy.nodes.empty(), "Internal Error.");
+        
+        return copy.factor;
+    }
+    
+    
+    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
         return IndexedTensor<TensorNetwork>(this, _indices, false);
