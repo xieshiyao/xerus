@@ -3,7 +3,7 @@
  * @short the source code to the "getting started" tutorial
  */
 
-#include "../xerus.h"
+#include <xerus.h>
 
 int main() {
 	// constructing a simple 3x3 tensor (aka matrix)

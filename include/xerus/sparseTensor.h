@@ -133,9 +133,6 @@ namespace xerus {
         SparseTensor& operator=(const SparseTensor& _other);
         SparseTensor& operator=(SparseTensor&& _other);
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Cast to FullTensor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        operator FullTensor() const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
@@ -163,7 +160,6 @@ namespace xerus {
         
         SparseTensor& operator/=(const value_t _div);
         SparseTensor operator/(const value_t _div) const;
-        
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

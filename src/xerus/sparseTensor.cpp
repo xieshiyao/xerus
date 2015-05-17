@@ -70,29 +70,6 @@ namespace xerus {
     Tensor* SparseTensor::construct_new(      std::vector<size_t>&& _dimensions, DONT_SET_ZERO) const {
         return new SparseTensor(std::move(_dimensions));
     }
-    
-        
-        
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Cast to FullTensor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    SparseTensor::operator FullTensor() const {
-        FullTensor full(dimensions);
-        
-        value_t* const fullDataPtr = full.data.get();
-        
-        if(has_factor()) {
-            for(const std::pair<size_t, value_t>& entry : *entries) {
-                fullDataPtr[entry.first] = factor*entry.second;
-            }
-        } else {
-            for(const std::pair<size_t, value_t>& entry : *entries) {
-                fullDataPtr[entry.first] = entry.second;
-            }
-        }
-        
-        return full;
-    }
-        
         
         
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

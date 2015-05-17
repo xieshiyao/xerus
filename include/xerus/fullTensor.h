@@ -47,6 +47,9 @@ namespace xerus {
         /// Move constructor.
         implicit FullTensor(      FullTensor&& _other);
         
+        /// Constructs a FullTensor from a SparseTensor.
+        explicit FullTensor(const SparseTensor& _other);
+        
         /// Creates a tensor of given degree, with all dimensions euqals one and zero as the single entry.
         explicit FullTensor(const size_t _degree);
         
@@ -221,7 +224,6 @@ namespace xerus {
         FullTensor& operator-=(const SparseTensor& _other);
         FullTensor  operator-( const SparseTensor& _other) const;
         
-        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         virtual value_t& operator[](const size_t _position) override;
         virtual value_t operator[](const size_t _position) const override;
@@ -284,6 +286,10 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     _inline_ FullTensor operator*(const value_t _lhs, const FullTensor& _rhs) { return _rhs*_lhs; }
+    
+    _inline_ FullTensor operator+(const SparseTensor& _lhs, const FullTensor& _rhs) { return _rhs+_lhs; }
+    
+    FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
     
     /// Returns the frobenius norm of the given tensor
     _inline_ value_t frob_norm(const FullTensor& _fullTensor) { return _fullTensor.frob_norm(); }

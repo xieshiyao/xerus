@@ -29,6 +29,18 @@ namespace xerus {
     FullTensor::FullTensor(const FullTensor&  _other) : Tensor(_other), data(_other.data) { }
 
     FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)), data(_other.data) { }
+    
+    FullTensor::FullTensor(const SparseTensor& _other) : FullTensor(_other.dimensions) {
+        if(_other.has_factor()) {
+            for(const std::pair<size_t, value_t>& entry : *_other.entries) {
+                data.get()[entry.first] = _other.factor*entry.second;
+            }
+        } else {
+            for(const std::pair<size_t, value_t>& entry : *_other.entries) {
+                data.get()[entry.first] = entry.second;
+            }
+        }
+    }
 
     FullTensor::FullTensor(const size_t _degree) : FullTensor(std::vector<size_t>(_degree, 1)) { }
     
@@ -494,6 +506,14 @@ namespace xerus {
             if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }
         }
         return true;
+    }
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+    FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs) {
+        FullTensor result = _rhs-_lhs;
+        result.factor *= -1;
+        return result;
     }
 
     bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare) {

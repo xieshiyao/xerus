@@ -29,13 +29,14 @@ namespace xerus {
         
     IndexedTensorMoveable<Tensor> operator- (const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs);
     
+    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A);
+    
     IndexedTensorMoveable<Tensor> operator* (const value_t _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
 
     IndexedTensorMoveable<Tensor> operator* (const IndexedTensorReadOnly<Tensor> & _lhs, const value_t _rhs);
 
     IndexedTensorMoveable<Tensor> operator/ (const IndexedTensorReadOnly<Tensor> & _lhs, const value_t _rhs);
     
-    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A);
     
     
     
