@@ -25,6 +25,7 @@
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
+#include <algorithm>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -189,15 +190,26 @@ namespace xerus {
     }
     
     value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
-        TensorNetwork copy(*this);
+        TensorNetwork partialCopy;
+        partialCopy.factor = factor;
+        partialCopy.nodes = nodes;
+        
+//         for(TensorNode& node : partialCopy.nodes) {
+//             for(size_t i = 0; i < node.neighbors.size(); ++i) {
+//                 if(node.neighbors[i].external) {continue;}
+//                 LOG(bla, "neighbor: " << i << " / " << node.neighbors.size());
+//                 LOG(vlaues, "Other node " << node.neighbors[i].other << " / " << partialCopy.nodes.size());
+//                 LOG(vlaues, "Other Index " << node.neighbors[i].indexPosition << " / " << partialCopy.nodes[node.neighbors[i].other].neighbors.size());
+//             }
+//         }
         
         // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
-        for(TensorNode& node : copy.nodes) {
+        for(TensorNode& node : partialCopy.nodes) {
             std::vector<Index> shrinkIndices, baseIndices;
             for(const TensorNode::Link& link : node.neighbors) {
                 if(link.external) {
                     // Add fixed index to base
-                    baseIndices.emplace_back(_positions[link.other]);
+                    baseIndices.emplace_back(_positions[link.indexPosition]);
                 } else {
                     // Add real index to both
                     shrinkIndices.emplace_back();
@@ -205,22 +217,24 @@ namespace xerus {
                 }
             }
             Tensor* tmp = node.tensorObject->construct_new();
-            (*tmp)(shrinkIndices) = (*node.tensorObject)(baseIndices);
+            (*tmp)(std::move(shrinkIndices)) = (*node.tensorObject)(std::move(baseIndices));
             node.tensorObject.reset(tmp);
             
             // Remove all external links, because they don't exist anymore
-            std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNode::Link& _test){return _test.external;});
+            node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNode::Link& _test){return _test.external;}), node.neighbors.end());
+            
+            // Adjust the Links
+            for(size_t i = 0; i < node.neighbors.size(); ++i) {
+                partialCopy.nodes[node.neighbors[i].other].neighbors[node.neighbors[i].indexPosition].indexPosition = i;
+            }
         }
         
-        // Erase all external indices since they don't exist anymore
-        copy.externalLinks.clear();
+        // Contract the network (there are not external Links)
+        partialCopy.contract_unconnected_subnetworks();
         
-        // Now copy is a closed network and should be contracted by sanitize
-        copy.sanitize();
+        REQUIRE(partialCopy.nodes.empty(), "Internal Error.");
         
-        REQUIRE(copy.nodes.empty(), "Internal Error.");
-        
-        return copy.factor;
+        return partialCopy.factor;
     }
     
     
@@ -464,51 +478,60 @@ namespace xerus {
             }
         }
         
-        // fully contract TN parts that have no more external links
-        std::vector<bool> seen(base.nodes.size(), 0);
-		std::vector<size_t> expansionStack;
-		// starting at every external link
-		for (TensorNode::Link &el : base.externalLinks) {
-			// traverse the connected nodes in a depth-first manner
-			expansionStack.push_back(el.other);
-			while (!expansionStack.empty()) {
-				size_t curr = expansionStack.back();
-				expansionStack.pop_back();
-				if (!seen[curr]) {
-					seen[curr]=true;
-					// add neighbors
-					for (TensorNode::Link &n : base.nodes[curr].neighbors) {
-						if (!n.external) {
-							expansionStack.push_back(n.other);
-						}
-					}
-				}
-			}
-		}
-		
-		// Construct set of all unseen nodes...
-		std::set<size_t> toContract;
-		for (size_t i=0; i<base.nodes.size(); ++i) {
-			if (!seen[i] && !base.nodes[i].erased) {
-				toContract.insert(i);
-			}
-		}
-		
-		// ...and contract them
-		if (!toContract.empty()) {
-			size_t remaining = base.contract(toContract);
-			
-			// remove contracted degree-0 tensor
-			REQUIRE(base.nodes[remaining].degree() == 0, "Internal Error.");
-			base.factor *= (*base.nodes[remaining].tensorObject.get())[0];
-			REQUIRE(base.nodes[remaining].neighbors.empty(), "Internal Error.");
-			base.nodes[remaining].erased = true;
-		}
-		
-		// Remove all erased nodes
-		base.sanitize();
+        base.contract_unconnected_subnetworks();
 		
 		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
+    }
+    
+    // Fully contracts TN parts that are not connected to external links
+    void TensorNetwork::contract_unconnected_subnetworks() {
+        std::vector<bool> seen(nodes.size(), false);
+        std::vector<size_t> expansionStack;
+        
+        // Starting at every external link...
+        for (TensorNode::Link &el : externalLinks) {
+            if(!seen[el.other]) {
+                seen[el.other] = true;
+                expansionStack.push_back(el.other);
+            }
+        }
+        
+        
+        // ...traverse the connected nodes in a depth-first manner.
+        while (!expansionStack.empty()) {
+            const size_t curr = expansionStack.back();
+            expansionStack.pop_back();
+            
+            // Add unseen neighbors
+            for (const TensorNode::Link &n : nodes[curr].neighbors) {
+                if ( !n.external && !seen[n.other] ) {
+                    seen[n.other] = true;
+                    expansionStack.push_back(n.other);
+                }
+            }
+        }
+        
+        // Construct set of all unseen nodes...
+        std::set<size_t> toContract;
+        for (size_t i=0; i < nodes.size(); ++i) {
+            if (!seen[i] && !nodes[i].erased) {
+                toContract.insert(i);
+            }
+        }
+        
+        // ...and contract them
+        if (!toContract.empty()) {
+            size_t remaining = contract(toContract);
+            
+            // remove contracted degree-0 tensor
+            REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
+            factor *= (*nodes[remaining].tensorObject.get())[0];
+            REQUIRE(nodes[remaining].neighbors.empty(), "Internal Error.");
+            nodes[remaining].erased = true;
+        }
+        
+        // Remove all erased nodes
+        sanitize();
     }
 
 

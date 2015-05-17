@@ -145,7 +145,7 @@ namespace xerus {
                 // Calculate multDimension
                 size_t multDimension = 1;
                 if(_assignDimensions) {
-                    REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
+                    REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large: " << dimensionCount+span << " > " << tensorObjectReadOnly->dimensions.size());
                     for(size_t i = 0; i < span; ++i) {
                         multDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
                     }

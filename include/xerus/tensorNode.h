@@ -30,26 +30,42 @@ namespace xerus {
     class TensorNode {
     public:
         struct Link {
-            /// The index of the otherNode this Link links to. (Deprecated: < 0 if this is an external index (==-1) )
+            /// The index of the otherNode this Link links to.
             size_t other; 
+            
             /// IndexPosition on the other node or index of external index
             size_t indexPosition;
+            
             /// Always equals to other->tensorObject->dimensions[indexPosition]
             size_t dimension;
-            /// Flag to mark Links that correspond to external indices TODO: use this
+            
+            /// Flag to mark Links that correspond to external indices
             bool external;
             
             Link() {}
+            
+            Link(const Link& ) = default;
+            Link(      Link&&) = default;
+            
             Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) : other(_other), indexPosition(_indexPos), dimension(_dim), external(_external) {}
+            
+            
+            Link& operator=(const Link& ) = default;
+            Link& operator=(      Link&&) = default;
             
             bool links(const size_t _other) const { return !external && other == _other; }
         };
 
         std::shared_ptr<Tensor> tensorObject;
+        
         std::vector<Link> neighbors;
+        
         bool erased;
         
         explicit TensorNode();
+        
+        implicit TensorNode(const TensorNode& ) = default;
+        implicit TensorNode(      TensorNode&&) = default;
         
         explicit TensorNode(const std::shared_ptr<Tensor>&  _tensorObject);
         
@@ -59,6 +75,9 @@ namespace xerus {
         template<ADD_MOVE(std::shared_ptr<Tensor>, SPT), ADD_MOVE(std::vector<Link>, VL)>
         explicit TensorNode(SPT&& _tensorObject, VL&& _neighbors) : tensorObject(std::forward<SPT>(_tensorObject)), neighbors(std::forward<VL>(_neighbors)), erased(false) {}
         
+        TensorNode& operator=(const TensorNode& ) = default;
+        TensorNode& operator=(      TensorNode&&) = default;
+
         TensorNode strippped_copy() const;
         
         void ensure_own_tensor();
@@ -76,4 +95,3 @@ namespace xerus {
     
     std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs);
 }
-

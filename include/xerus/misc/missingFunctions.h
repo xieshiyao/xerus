@@ -148,12 +148,6 @@ START_MISC_NAMESPACE
         return product;
     }
 
-    ///@brief: Removes _item from the container _container.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    void remove(container_t<item_t, rest_t...>& _container, const item_t _item) {
-        std::remove_if(_container.begin(), _container.end(), [&_item](const item_t& _test){return _test == _item;});
-    }
-
     ///@brief: Calculates _a*_a
     template<class T>
     T sqr(const T &_a) {

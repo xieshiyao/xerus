@@ -81,6 +81,8 @@ namespace xerus {
         bool has_factor() const;
         
         virtual void apply_factor();
+        
+        void contract_unconnected_subnetworks();
 
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
