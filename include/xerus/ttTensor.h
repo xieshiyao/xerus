@@ -20,6 +20,10 @@
 #pragma once
 
 #include "contractionHeuristic.h"
+#include "fullTensor.h"
+#include "index.h"
+#include "misc/missingFunctions.h"
+#include "misc/test.h"
 
 namespace xerus {
 

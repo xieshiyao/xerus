@@ -17,36 +17,15 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/misc/timeMeasure.h>
-#include <chrono>
+#include <xerus/misc/exceptions.h>
 
 START_MISC_NAMESPACE
-
-    size_t uTime() {
-        return (size_t) std::chrono::duration_cast<std::chrono::microseconds>
-            (std::chrono::system_clock::now().time_since_epoch()).count();
-    }
-
-    size_t mTime() {
-        return (size_t) std::chrono::duration_cast<std::chrono::milliseconds>
-            (std::chrono::system_clock::now().time_since_epoch()).count();
-    }
-
-
-    TimeMeasure::TimeMeasure() : timeStart(uTime()), timeStep(timeStart) { }
-
-    size_t TimeMeasure::step() {
-        // Save old step
-        const size_t oldTime = timeStep;
+    generic_error::generic_error() {}
         
-        // Set new step
-        timeStep = uTime();
-        
-        return timeStep - oldTime;
+    generic_error::generic_error(const generic_error &_other) noexcept
+        : error_info(_other.error_info) { }
+    
+    const char* generic_error::what() const noexcept {
+        return &error_info[0];
     }
-
-    size_t TimeMeasure::get() const { return  (uTime() - timeStep); }
-
-    size_t TimeMeasure::getTotal() const { return (uTime() - timeStart); }
-
 END_MISC_NAMESPACE

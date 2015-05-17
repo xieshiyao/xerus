@@ -19,6 +19,8 @@
 
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
+#include <xerus/misc/blasLapackWrapper.h>
+#include <cstring>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -338,7 +340,7 @@ namespace xerus {
                 size_t numInsert = (newStepSize-oldStepSize);
                 _cutPos *= oldStepSize / dimensions[_n];
                 for (size_t i=0; i<blockCount; ++i) {
-                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, _cutPos*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
                     memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
                     memcpy(tmp+i*newStepSize+_cutPos+numInsert, data.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
                 }

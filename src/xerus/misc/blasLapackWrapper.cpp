@@ -20,6 +20,31 @@
 #include "../../../include/xerus/misc/blasLapackWrapper.h"
 #include "../../../include/xerus/misc/selectedFunctions.h"
 
+#include <complex.h>
+// Fix for broken complex implementation
+#undef I
+
+// Workaround for brocken Lapack
+#define lapack_complex_float    float _Complex
+#define lapack_complex_double   double _Complex
+extern "C"
+{
+    #include <cblas.h> 
+}
+#include <lapacke/lapacke.h>
+
+#include <memory>
+#include <xerus/misc/standard.h>
+#include <xerus/misc/test.h>
+ 
+#ifdef BLAS_ANALYSIS
+    #include <map>
+    #include <sstream>
+    #include "timeMeasure.h"
+    #include "stringUtilities.h"
+#endif
+
+
 START_MISC_NAMESPACE
 
 #ifdef BLAS_ANALYSIS

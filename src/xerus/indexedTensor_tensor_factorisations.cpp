@@ -22,6 +22,7 @@
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/misc/blasLapackWrapper.h>
 
 namespace xerus {
     

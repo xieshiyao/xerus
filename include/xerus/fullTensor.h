@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "tensor.h"
 #include "misc/selectedFunctions.h"
 #include "misc/sfinae.h"
