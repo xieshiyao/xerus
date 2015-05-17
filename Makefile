@@ -100,8 +100,23 @@ $(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LIB_OBJECTS)
 	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
 endif
 
+ifdef INSTALL_LIB_PATH
+ifdef INSTALL_HEADER_PATH
+install: #$(LIB_NAME_SHARED)
+	@printf "Installing libxerus.so to $(strip $(INSTALL_LIB_PATH)) and storing the header files in $(strip $(INSTALL_HEADER_PATH)).\n"
+	mkdir -p $(INSTALL_LIB_PATH)
+	mkdir -p $(INSTALL_HEADER_PATH)
+	cp $(LIB_NAME_SHARED) $(INSTALL_LIB_PATH)
+	cp include/xerus.h $(INSTALL_HEADER_PATH)
+	cp -r include/xerus $(INSTALL_HEADER_PATH)
+else
 install:
-	@printf "Sorry not yet supported\n" # TODO
+	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
+endif
+else
+install:
+	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
+endif
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_SOURCES_OBJECTS) $(TEST_OBJECTS)
 	$(CXX) -D TEST_ $(FLAGS) $(UNIT_TEST_SOURCES_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)

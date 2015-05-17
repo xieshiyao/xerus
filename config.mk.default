@@ -77,6 +77,14 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 # LOGGING += -D BLAS_ANALYSIS           # Enable BLAS/LAPACK analysis
 
 
+#=================================================================================================
+# Install paths
+#=================================================================================================
+# Set the directories to install libxerus.
+
+INSTALL_LIB_PATH = /usr/local/lib64/        # Path where to install the libxerus.so shared library.
+INSTALL_HEADER_PATH = /usr/local/include/   # Path where to install the xerus header files.
+
 
 #=================================================================================================
 # External libraries
