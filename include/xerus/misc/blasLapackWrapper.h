@@ -24,7 +24,7 @@
     
 #ifdef BLAS_ANALYSIS
     #include <map>
-    #include <pair>
+    #include <utility>
     
     START_MISC_NAMESPACE
 

@@ -40,8 +40,8 @@ extern "C"
 #ifdef BLAS_ANALYSIS
     #include <map>
     #include <sstream>
-    #include "timeMeasure.h"
-    #include "stringUtilities.h"
+    #include <xerus/misc/timeMeasure.h>
+    #include <xerus/misc/stringUtilities.h>
 #endif
 
 
