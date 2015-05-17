@@ -3,17 +3,16 @@
 ## Introduction
 
 The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and other Tensor Networks.
-The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. It thus achieves a level of 
-adaptibility that is unmatched by any other open-source tensor library available.
+The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
 
-Some key features include:
+The key features include:
 * Modern code and concepts incorporating many features of the new `c++11` standard.
 * Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
 * Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS and DMRG).
 * Capabilites to handle arbitrary Tensor Networks and the possibility for the user to define own decomposition formats.
-* Lazy evaluation of contractions featuring heuristics to find good contraction orders.
-* Fast calculations thanks to wide-spread backends on the `blas` basis (in particular `openblas` or `atlas`) and the `suiteSparse` sparse capabilities.
-* Thread-safe up to 256 threads.
+* Lazy evaluation of multiple tensor contractions featuring heuristics to find the most effective contraction order.
+* Direct integration of the `blas` and lapack, as high performance linear algebra backends, resulting in superior performance on a wide range of systems.
+* Fast sparse tensor calculation by usage of the `suiteSparse` sparse matrix capabilities.
 
 ## Version History
 

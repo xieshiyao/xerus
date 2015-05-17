@@ -23,7 +23,6 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
-#include <cstring>
 #include <memory>
 #include <limits>
 #include "standard.h"
@@ -75,7 +74,6 @@ START_MISC_NAMESPACE
     bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
         return _container.find(_item) != _container.end();
     }
-
 
 
     ///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.

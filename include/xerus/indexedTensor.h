@@ -22,7 +22,7 @@
 #include "indexedTensorWritable.h"
 
 namespace xerus {
-	template<class tensor_type, tensor_type_restrictions>
+	template<class tensor_type>
 
 	/**
 	 * usercreated indices for tensor equations, e.g. @f$ A_{i,j} = B_{i,k,l} C_{k,l,j} @f$
@@ -33,27 +33,23 @@ namespace xerus {
         IndexedTensor(const IndexedTensor &_other ) = delete;
         
         /// Move constructor
-        IndexedTensor(IndexedTensor &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
+        IndexedTensor(IndexedTensor &&_other );
         
         /// Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
-        ALLOW_MOVE(std::vector<Index>, T)
-        IndexedTensor(tensor_type* const _tensorObject, T&& _indices, const bool _takeOwnership) :
-            IndexedTensorWritable<tensor_type>(_tensorObject, std::forward<T>(_indices), _takeOwnership) {}
+        IndexedTensor(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership);
+        
+        /// Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
+        IndexedTensor(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership);
             
             
         // Assignment operators -- Used for tensor assignment WITH indices (i.e. in general the LHS and RHS indexTensors do NOT have the same indices)
         // NOTE: The following would be deleted due to move constructor
-        _inline_ void operator=(const IndexedTensor<tensor_type>& _rhs) {
-            operator=(static_cast<const IndexedTensorReadOnly<tensor_type> &>(_rhs));
-        }
+        void operator=(const IndexedTensor<tensor_type>& _rhs);
         
-        /// Assignment operators
-        void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs) {
-            static_cast<IndexedTensorWritable<tensor_type>&>(*this) = _rhs;
-        }
+        /// Assignment operator
+        void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs);
         
-        void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs) {
-            static_cast<IndexedTensorWritable<tensor_type>&>(*this) = _rhs;
-        }
+        /// Assignment operator
+        void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
     };
 }

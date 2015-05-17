@@ -17,7 +17,10 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus/index.h"
+#include <xerus/index.h>
+
+#include <xerus/misc/standard.h>
+#include <xerus/misc/test.h>
 
 namespace xerus {
     
@@ -57,6 +60,51 @@ namespace xerus {
         flags[_flag1] = _flagValue1;
         flags[_flag2] = _flagValue2;
     }
+    
+    
+    
+    bool Index::open() const {
+        REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");
+        return flags[Index::Flag::OPEN];
+    }
+    
+    void Index::open(const bool _open) {
+        flags[Flag::OPEN] = _open;
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
+    }
+    
+    size_t Index::dimension() const {
+        REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
+        return assingedDimension;
+    }
+    
+    Index Index::operator^(const size_t _span) const {
+        REQUIRE(flags.none(), "Cannot apply ^ operator to an index that has any flag set.");
+        return Index(valueId, _span);
+    }
+    
+    Index Index::operator&(const size_t _span) const {
+        REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
+        return Index(valueId, _span, Flag::INVERSE_SPAN);
+    }
+    
+    Index Index::operator/(const size_t _span) const {
+        REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
+        return Index(valueId, _span, Flag::FRACTIONAL_SPAN);
+    }
+    
+    bool Index::operator==(const Index& _other) const {
+        return valueId == _other.valueId && !fixed() && !_other.fixed();
+    }
+    
+    bool Index::operator!=(const Index& _other) const {
+        return valueId != _other.valueId || fixed() || _other.fixed();
+    }
+    
+    bool Index::operator<(const Index& _other) const {
+        return valueId < _other.valueId;
+    }
+    
     
     std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx) {
         _out << _idx.valueId << "(" << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "-" : "") << _idx.span << ")";

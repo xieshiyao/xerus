@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/sparseTensor.h>
 
 namespace xerus {
     SparseTensor::SparseTensor() : Tensor(), entries(new std::map<size_t, value_t>()) {}
@@ -25,6 +25,10 @@ namespace xerus {
     SparseTensor::SparseTensor( const SparseTensor&  _other) : Tensor(_other), entries(_other.entries) { }
     
     SparseTensor::SparseTensor(       SparseTensor&& _other) : Tensor(std::move(_other)), entries(std::move(_other.entries)) { }
+    
+    SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions), entries(new std::map<size_t, value_t>()) { }
+        
+    SparseTensor::SparseTensor(      std::vector<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
     
     SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
     

@@ -17,15 +17,15 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#pragma once
+#include <xerus/misc/exceptions.h>
 
-#include "index.h"
-
-namespace xerus {
-    struct AssignedIndices {
-        std::vector<Index> indices;
-        std::vector<size_t> indexDimensions;
-        size_t numIndices;
-        bool allIndicesOpen;
-    };
-}
+START_MISC_NAMESPACE
+    generic_error::generic_error() {}
+        
+    generic_error::generic_error(const generic_error &_other) noexcept
+        : error_info(_other.error_info) { }
+    
+    const char* generic_error::what() const noexcept {
+        return &error_info[0];
+    }
+END_MISC_NAMESPACE

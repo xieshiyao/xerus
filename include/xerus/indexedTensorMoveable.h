@@ -19,26 +19,28 @@
 
 #pragma once
 
-#include "indexedTensor.h"
+#include "indexedTensorWritable.h"
 
 namespace xerus {
     /// IndexedTensor variant that signifies, that the tensorObject is moveable. meant for internal use only (strange things happen when storing these)
-    template<class tensor_type, tensor_type_restrictions>
+    template<class tensor_type>
     class IndexedTensorMoveable final : public IndexedTensorWritable<tensor_type> {
     public:
         /// Creates an empty indexed Tensor, should only be used internally
-        IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>() { };
+        IndexedTensorMoveable();
         
         /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
         IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete;
         
         /// Move constructor
-        IndexedTensorMoveable(IndexedTensorMoveable &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
+        IndexedTensorMoveable(IndexedTensorMoveable &&_other );
         
         /// Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject
-        ALLOW_MOVE(std::vector<Index>, IdxVec)
-        IndexedTensorMoveable(tensor_type* const _tensorObject, IdxVec&& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, std::forward<IdxVec>(_indices), true) {}
-                        
+        IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices);
+        
+        /// Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject
+        IndexedTensorMoveable(tensor_type* const _tensorObject, std::vector<Index>&& _indices);
+        
         /// Allow conversions from indexed TensorNetworks to indexed Tensors
         explicit IndexedTensorMoveable(const IndexedTensorReadOnly<TensorNetwork> &  _other );
         explicit IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other );
@@ -49,6 +51,3 @@ namespace xerus {
         IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other);
     };
 }
-
-// We dont need them anymore
-#undef tensor_type_restrictions

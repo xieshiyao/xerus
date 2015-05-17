@@ -20,9 +20,16 @@
 #pragma once
 
 #include "tensorNode.h"
+#include "indexedTensor.h"
+#include <map>
+#include <set>
+
 
 namespace xerus {
-        
+    // Necessary forward declaritons
+    class FullTensor;
+    class SparseTensor;
+    
     //TODO add function do check all link and degree consistencies
     class TensorNetwork {
     public:
@@ -71,12 +78,7 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		std::vector<TensorNode::Link> init_from_dimension_array();
         
-        _inline_ bool has_factor() const {
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            return (factor != 1.0);
-            #pragma GCC diagnostic pop
-        }
+        bool has_factor() const;
         
         virtual void apply_factor();
 
@@ -107,15 +109,13 @@ namespace xerus {
 				return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
 		}
 		
-		ALLOW_MOVE(std::vector<Index>, T)
-		IndexedTensor<TensorNetwork> operator()(T&& _indices) {
-			return IndexedTensor<TensorNetwork>(this, std::forward<T>(_indices), false);
-        }
+		IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
+        
+        IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
             
-		ALLOW_MOVE(std::vector<Index>, T)
-		IndexedTensorReadOnly<TensorNetwork> operator()(T&& _indices) const {
-            return IndexedTensorReadOnly<TensorNetwork>(this, std::forward<T>(_indices));
-        }
+		IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
+        
+        IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;

@@ -23,38 +23,31 @@
 
 namespace xerus {
 
-//TODO individuelle schranken
-class ContractionHeuristic {
-public:
-	static std::vector<ContractionHeuristic> *list;
-    
-	struct AddToVector {
-		template<typename... args>
-		AddToVector(args... _args) {
-			if (!list) list = new std::vector<ContractionHeuristic>();
-			list->emplace_back(_args...);
-		}
-	};
-	
-	std::string name;
-	float score;
-	std::vector<std::pair<size_t,size_t>> contractions;
-	std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> scoreFct;
-	
-	ContractionHeuristic(std::string _name, std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct) 
-		: name(_name), scoreFct(_scoreFct) {}
-	
-	
-	float rescore(TensorNetwork _tn) { // NOTE take as value to get a deep copy instead of reference!
-		score=0;
-		contractions.clear();
-		scoreFct(score, contractions, _tn);
-		return score;
-	}
-};
-
-
-
+    //TODO individuelle schranken
+    class ContractionHeuristic {
+    public:
+        static std::vector<ContractionHeuristic> *list;
+        
+        struct AddToVector {
+            template<typename... args>
+            AddToVector(args... _args) {
+                if (!list) list = new std::vector<ContractionHeuristic>();
+                list->emplace_back(_args...);
+            }
+        };
+        
+        std::string name;
+        
+        float score;
+        
+        std::vector<std::pair<size_t,size_t>> contractions;
+        
+        std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> scoreFct;
+        
+        ContractionHeuristic(std::string _name, std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct);
+        
+        double rescore(TensorNetwork _tn); // NOTE take as value to get a deep copy instead of reference!
+    };
 
 }
 

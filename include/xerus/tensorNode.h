@@ -19,9 +19,14 @@
 
 #pragma once
 
-#include "indexedTensor_tensor_factorisations.h"
+#include "basic.h"
+#include <memory>
+#include "misc/sfinae.h"
 
 namespace xerus {
+    // Necessary forward declaritons
+    class Tensor;
+    
     class TensorNode {
     public:
         struct Link {
@@ -44,51 +49,31 @@ namespace xerus {
         std::vector<Link> neighbors;
         bool erased;
         
-        explicit TensorNode() : erased(true) { }
+        explicit TensorNode();
         
-        ALLOW_MOVE(std::shared_ptr<Tensor>, shared_tensor_ptr)
-        explicit TensorNode(shared_tensor_ptr&& _tensorObject) : tensorObject(std::forward<shared_tensor_ptr>(_tensorObject)), erased(false) {}
+        explicit TensorNode(const std::shared_ptr<Tensor>&  _tensorObject);
+        
+        explicit TensorNode(      std::shared_ptr<Tensor>&& _tensorObject);
         
         
         template<ADD_MOVE(std::shared_ptr<Tensor>, SPT), ADD_MOVE(std::vector<Link>, VL)>
         explicit TensorNode(SPT&& _tensorObject, VL&& _neighbors) : tensorObject(std::forward<SPT>(_tensorObject)), neighbors(std::forward<VL>(_neighbors)), erased(false) {}
         
-        TensorNode strippped_copy() const {
-            return TensorNode(std::shared_ptr<Tensor>(), neighbors);
-        }
+        TensorNode strippped_copy() const;
         
-        void ensure_own_tensor() {
-            if(!tensorObject.unique()) {
-                tensorObject.reset(tensorObject->get_copy());
-            }
-        }
+        void ensure_own_tensor();
         
-        void add_factor(const value_t _factor) {
-            ensure_own_tensor();
-            tensorObject->factor *= _factor;
-        }
+        void add_factor(const value_t _factor);
         
         // All getters are written without the use of tensorObject so that they also work for empty nodes
         
-        size_t size() const {
-            size_t s = 1;
-            for (const Link &l : neighbors) {
-                s *= l.dimension;
-            }
-            return s;
-        }
+        size_t size() const;
         
-        size_t degree() const {
-            return neighbors.size();
-        }
+        size_t degree() const;
         
-        void erase() {
-            erased = true;
-            neighbors.clear();
-            tensorObject.reset();
-        }
+        void erase();
     };
+    
+    std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs);
 }
-
-std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs);
 

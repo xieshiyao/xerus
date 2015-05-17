@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "indexedTensor_tensor_operators.h"
+#include "indexedTensorWritable.h"
 
 namespace xerus {
 

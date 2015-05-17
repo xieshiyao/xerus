@@ -17,7 +17,9 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/tensor.h>
+#include <xerus/misc/test.h>
+#include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -27,8 +29,79 @@ namespace xerus {
     
     Tensor::Tensor(       Tensor&& _other ) : dimensions(_other.dimensions), size(_other.size), factor(_other.factor) { }
     
+    Tensor::Tensor(const std::vector<size_t>& _dimensions, const value_t _factor) : dimensions(_dimensions), size(product(dimensions)), factor(_factor) {
+        REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+    }
+    
+    Tensor::Tensor(std::vector<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(product(dimensions)), factor(_factor) {
+        REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+    }
+    
+    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(product(dimensions)), factor(_factor) {
+        REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+    }
+    
     Tensor::~Tensor() {}
     
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+    
+    /// Indexes the tensor.
+    IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
+        return IndexedTensor<Tensor>(this, _indices, false);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
+        return IndexedTensor<Tensor>(this, std::move(_indices), false);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
+        return IndexedTensorReadOnly<Tensor>(this, _indices);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
+        return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
+    }
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+    size_t Tensor::degree() const {
+        return dimensions.size();
+    }
+    
+    bool Tensor::has_factor() const {
+        #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wfloat-equal"
+            return (factor != 1.0);
+        #pragma GCC diagnostic pop
+    }
+    
+    size_t Tensor::reorder_costs() const {
+        return is_sparse() ? 10*count_non_zero_entries() : size;
+    }
+    
+    
+    void Tensor::reinterpret_dimensions(const std::vector<size_t>& _newDimensions) {
+        REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
+        dimensions = _newDimensions;
+    }
+    
+    void Tensor::reinterpret_dimensions(      std::vector<size_t>&& _newDimensions) {
+        REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
+        dimensions = std::move(_newDimensions);
+    }
+    
+    void Tensor::reinterpret_dimensions( std::initializer_list<size_t> _newDimensions) {
+        reinterpret_dimensions(std::vector<size_t>(_newDimensions));
+    }
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
     void Tensor::assign(const Tensor& _other) {
         dimensions = _other.dimensions;
         size = _other.size;
@@ -39,5 +112,15 @@ namespace xerus {
         dimensions = std::move(_other.dimensions);
         size = _other.size;
         factor = _other.factor;
+    }
+    
+    void Tensor::change_dimensions(const std::vector<size_t>& _newDimensions) {
+        dimensions = _newDimensions;
+        size = product(dimensions);
+    }
+    
+    void Tensor::change_dimensions(      std::vector<size_t>&& _newDimensions) {
+        dimensions = std::move(_newDimensions);
+        size = product(dimensions);
     }
 }

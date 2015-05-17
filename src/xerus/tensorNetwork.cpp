@@ -17,7 +17,14 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../include/xerus.h"
+#include <xerus/tensorNetwork.h>
+#include <xerus/basic.h>
+#include <xerus/index.h>
+#include <xerus/contractionHeuristic.h>
+#include <xerus/indexedTensor_TN_operators.h>
+#include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/fullTensor.h>
+#include <xerus/sparseTensor.h>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -56,6 +63,13 @@ namespace xerus {
             newLinks.emplace_back(-1, d, dimensions[d], true);
         }
         return newLinks;
+    }
+    
+    bool TensorNetwork::has_factor() const {
+        #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wfloat-equal"
+            return (factor != 1.0);
+        #pragma GCC diagnostic pop
     }
     
     void TensorNetwork::apply_factor() {
@@ -159,6 +173,24 @@ namespace xerus {
         _mv.nodes.clear();
         _mv.externalLinks.clear();
         return *this;
+    }
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
+        return IndexedTensor<TensorNetwork>(this, _indices, false);
+    }
+    
+    IndexedTensor<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) {
+        return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
+    }
+        
+    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
+        return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
+    }
+    
+    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) const {
+        return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
     }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */

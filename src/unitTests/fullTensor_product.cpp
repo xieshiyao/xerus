@@ -21,6 +21,22 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
+
+
+#include <cstring>
+
+#include <complex.h>
+// Fix for broken complex implementation
+#undef I
+
+// Workaround for brocken Lapack
+#define lapack_complex_float    float _Complex
+#define lapack_complex_double   double _Complex
+extern "C"
+{
+    #include <cblas.h> 
+}
+
 using namespace xerus;
 
 UNIT_TEST(FullTensor, Product_Order_0,

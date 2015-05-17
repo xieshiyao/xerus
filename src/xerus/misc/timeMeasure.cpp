@@ -17,35 +17,36 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../../include/xerus/misc/timeMeasure.h"
+#include <xerus/misc/timeMeasure.h>
+#include <chrono>
 
 START_MISC_NAMESPACE
 
-size_t uTime() {
-    return (size_t) std::chrono::duration_cast<std::chrono::microseconds>
-        (std::chrono::system_clock::now().time_since_epoch()).count();
-}
+    size_t uTime() {
+        return (size_t) std::chrono::duration_cast<std::chrono::microseconds>
+            (std::chrono::system_clock::now().time_since_epoch()).count();
+    }
 
-size_t mTime() {
-    return (size_t) std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::system_clock::now().time_since_epoch()).count();
-}
+    size_t mTime() {
+        return (size_t) std::chrono::duration_cast<std::chrono::milliseconds>
+            (std::chrono::system_clock::now().time_since_epoch()).count();
+    }
 
 
-TimeMeasure::TimeMeasure() : timeStart(uTime()), timeStep(timeStart) { }
+    TimeMeasure::TimeMeasure() : timeStart(uTime()), timeStep(timeStart) { }
 
-size_t TimeMeasure::step() {
-    // Save old step
-    const size_t oldTime = timeStep;
-    
-    // Set new step
-    timeStep = uTime();
-    
-    return timeStep - oldTime;
-}
+    size_t TimeMeasure::step() {
+        // Save old step
+        const size_t oldTime = timeStep;
+        
+        // Set new step
+        timeStep = uTime();
+        
+        return timeStep - oldTime;
+    }
 
-size_t TimeMeasure::get() const { return  (uTime() - timeStep); }
+    size_t TimeMeasure::get() const { return  (uTime() - timeStep); }
 
-size_t TimeMeasure::getTotal() const { return (uTime() - timeStart); }
+    size_t TimeMeasure::getTotal() const { return (uTime() - timeStart); }
 
 END_MISC_NAMESPACE

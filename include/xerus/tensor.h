@@ -19,7 +19,10 @@
 
 #pragma once
 
-#include "indexedTensorList.h"
+#include "basic.h"
+#include <string>
+#include "indexedTensorReadOnly.h"
+#include "indexedTensor.h"
 
 namespace xerus {
 	
@@ -48,16 +51,14 @@ namespace xerus {
         implicit Tensor( Tensor&& _other );
 
         /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        explicit Tensor(Vec&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Vec>(_dimensions)), size(product(dimensions)), factor(_factor) {
-            REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-        }
+        explicit Tensor(const std::vector<size_t>& _dimensions, const value_t _factor = 1.0);
         
         /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
-        ALLOW_MOVE(std::initializer_list<size_t>, Init)
-        explicit Tensor(Init&& _dimensions, const value_t _factor = 1.0) : dimensions(std::forward<Init>(_dimensions)), size(product(dimensions)), factor(_factor) {
-            REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-        }
+        explicit Tensor(std::vector<size_t>&& _dimensions, const value_t _factor = 1.0);
+        
+        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        explicit Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor = 1.0);
+
         
         /// Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_copy() const = 0;
@@ -117,7 +118,6 @@ namespace xerus {
         /// Allows access to the entry at _position, assuming row-major ordering.
         virtual value_t operator[](const size_t _position) const = 0;
         
-        
         /// Allows access to the entry at _position.
         virtual value_t& operator[](const std::vector<size_t>& _positions) = 0;
         
@@ -140,16 +140,16 @@ namespace xerus {
         }
         
         /// Indexes the tensor.
-        ALLOW_MOVE(std::vector<Index>, T)
-        IndexedTensor<Tensor> operator()(T&&  _indices) {
-            return IndexedTensor<Tensor>(this, std::forward<T>(_indices), false);
-        }
+        IndexedTensor<Tensor> operator()(const std::vector<Index>&  _indices);
         
         /// Indexes the tensor.
-        ALLOW_MOVE(std::vector<Index>, T)
-        IndexedTensorReadOnly<Tensor> operator()(T&&  _indices) const {
-            return IndexedTensorReadOnly<Tensor>(this, std::forward<T>(_indices));
-        }
+        IndexedTensor<Tensor> operator()(      std::vector<Index>&& _indices);
+        
+        /// Indexes the tensor.
+        IndexedTensorReadOnly<Tensor> operator()(const std::vector<Index>&  _indices) const;
+        
+        /// Indexes the tensor.
+        IndexedTensorReadOnly<Tensor> operator()(      std::vector<Index>&& _indices) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
@@ -157,40 +157,28 @@ namespace xerus {
         virtual bool is_sparse() const = 0;
         
         /// Returns the degree of the tensor (==dimensions.size()).
-        _inline_ size_t degree() const {
-            return dimensions.size();
-        }
+        size_t degree() const;
         
         /// Returns whether the tensor has a non-trivial factor (i.e. factor != 1.0).
-        _inline_ bool has_factor() const {
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            return (factor != 1.0);
-            #pragma GCC diagnostic pop
-        }
+        bool has_factor() const;
         
         /// Returns the number of non-zero entries.
         virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const = 0;
         
         /// Returns an approximation of the reorder costs
-        size_t reorder_costs() const {
-            return is_sparse() ? 10*count_non_zero_entries() : size;
-        }
+        size_t reorder_costs() const;
         
         /// Calculates the frobenious norm of the tensor.
         virtual value_t frob_norm() const = 0;
 		
         /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        void reinterpret_dimensions( Vec&& _newDimensions) {
-            REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
-            dimensions = std::forward<Vec>(_newDimensions);
-        }
+        void reinterpret_dimensions(const std::vector<size_t>& _newDimensions);
         
         /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
-        _inline_ void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions) {
-            reinterpret_dimensions(std::vector<size_t>(_newDimensions));
-        }
+        void reinterpret_dimensions(      std::vector<size_t>&& _newDimensions);
+        
+        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
+        void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions);
         
         /// Returns a string representation of the tensor.
         virtual std::string to_string() const = 0;
@@ -210,10 +198,9 @@ namespace xerus {
         void assign(Tensor&& _other);
         
         /// Changes the dimensions of the tensor and recalculates the size of the tensor.
-        ALLOW_MOVE(std::vector<size_t>, Vec)
-        void change_dimensions( Vec&& _newDimensions) {
-            dimensions = std::forward<Vec>(_newDimensions);
-            size = product(dimensions);
-        }
+        void change_dimensions(const std::vector<size_t>& _newDimensions);
+        
+        /// Changes the dimensions of the tensor and recalculates the size of the tensor.
+        void change_dimensions(      std::vector<size_t>&& _newDimensions);
     };
 }

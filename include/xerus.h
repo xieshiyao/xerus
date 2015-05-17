@@ -33,35 +33,11 @@
     #include "xerus/misc/callStack.h"
     #include "xerus/misc/simpleNumerics.h"
 
-    // Additionall std stuff needed by xerus
-    #include <atomic>
-    #include <bitset> 
-
-
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"
 
-    
-    namespace xerus {
-        /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.
-        typedef double value_t;
-        
-        namespace internal {
-            /// Internal deleter function, needed because std::shared_ptr misses an array overload.
-            void array_deleter_vt(value_t* const _toDelete);
-            
-            /// Internal deleter functions, needed because std::shared_ptr misses an array overload.
-            void array_deleter_st(size_t* const _toDelete);
-        }
-        
-        /// Helper class to provide possible overloads of several Tensor constructors
-        class DONT_SET_ZERO {};
-    }
-
-
     // All the xerus headers
     #include "xerus/index.h"
-    #include "xerus/assignedIndices.h"
     #include "xerus/indexedTensorReadOnly.h"
     #include "xerus/indexedTensorWritable.h"
     #include "xerus/indexedTensor.h"
@@ -72,12 +48,10 @@
     #include "xerus/sparseTensor.h"
     #include "xerus/cs_wrapper.h"
     #include "xerus/sparseTimesFullContraction.h"
-    #include "xerus/indexedTensor_tensor.h"
     #include "xerus/indexedTensor_tensor_operators.h"
     #include "xerus/indexedTensor_tensor_factorisations.h"
     #include "xerus/tensorNode.h"
     #include "xerus/tensorNetwork.h"
-    #include "xerus/indexedTensor_TN.h"
     #include "xerus/indexedTensor_TN_operators.h"
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttTensor.h"

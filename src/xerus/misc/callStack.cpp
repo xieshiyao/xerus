@@ -30,8 +30,7 @@
 #include <memory>
 #include <map>
 #include <vector>
-#include "../../../include/xerus/misc/stringUtilities.h"
-
+#include <xerus/misc/stringUtilities.h>
 START_MISC_NAMESPACE
 
 // for the use of dladdr see also https://sourceware.org/git/?p=glibc.git;a=blob;f=debug/backtracesyms.c

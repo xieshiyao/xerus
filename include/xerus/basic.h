@@ -19,14 +19,21 @@
 
 #pragma once
 
-#include "sparseTimesFullContraction.h"
+#include "misc/standard.h"
+#include "tensorLogger.h"
 
 namespace xerus {
-    void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base);
-
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
+    /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.
+    typedef double value_t;
     
-    IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
+    namespace internal {
+        /// Internal deleter function, needed because std::shared_ptr misses an array overload.
+        void array_deleter_vt(value_t* const _toDelete);
+        
+        /// Internal deleter functions, needed because std::shared_ptr misses an array overload.
+        void array_deleter_st(size_t* const _toDelete);
+    }
     
-    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b);
+    /// Helper class to provide possible overloads of several Tensor constructors
+    class DONT_SET_ZERO {};
 }
