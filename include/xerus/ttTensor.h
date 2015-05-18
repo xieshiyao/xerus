@@ -152,6 +152,9 @@ namespace xerus {
         
         static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
         
+        /// Splits the TTNetwork into two parts, removing the node at _position.
+        std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
+        
         void round(value_t _eps);
 
         void round(size_t _maxRank);

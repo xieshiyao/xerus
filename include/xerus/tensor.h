@@ -205,4 +205,8 @@ namespace xerus {
         /// Changes the dimensions of the tensor and recalculates the size of the tensor.
         void change_dimensions(      std::vector<size_t>&& _newDimensions);
     };
+    
+    
+    /// Returns the frobenius norm of the given tensor
+    _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 }

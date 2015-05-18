@@ -80,7 +80,7 @@ help:
 	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n"
 
 
-all: $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
+all: test $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 	mkdir -p build/include/ 
 	cp include/xerus.h build/include/
 	cp -r include/xerus build/include/

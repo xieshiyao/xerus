@@ -879,6 +879,59 @@ namespace xerus {
     
     
     template<bool isOperator>
+    std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
+        const size_t N = isOperator?2:1;
+        REQUIRE(_position < degree()/N, "Can't spilt an " << degree()/N << " node TTNetwork at position " << _position);
+        TensorNetwork left, right;
+        left.factor = 1;
+        right.factor = 1;
+        LOG(bla, "Split at " << _position); 
+        
+        if(_position > 0) {
+            for(size_t i = 0; i < _position; ++i) {
+                left.dimensions.push_back(dimensions[i]);
+                left.externalLinks.push_back(externalLinks[i]);
+                left.nodes.push_back(nodes[i]);
+            }
+            left.dimensions.push_back(left.nodes.back().neighbors.back().dimension);
+            left.externalLinks.emplace_back(_position-1, _position == 1 ? N : N+1, left.nodes.back().neighbors.back().dimension , false);
+            left.nodes.back().neighbors.back().external = true;
+            left.nodes.back().neighbors.back().indexPosition = _position;
+        }
+        
+        if(_position < degree()/N-1) {
+            right.dimensions.push_back(nodes[_position+1].neighbors.front().dimension);
+            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false);
+            for(size_t i = _position+1; i < degree()/N; ++i) {
+                right.dimensions.push_back(dimensions[i]);
+                right.externalLinks.push_back(externalLinks[i]);
+                right.nodes.push_back(nodes[i]);
+            }
+            right.nodes.front().neighbors.front().external = true;
+            right.nodes.front().neighbors.front().indexPosition = _position;
+            
+            //Account for the fact that the first _position nodes do not exist
+            for(TensorNode::Link& link : right.externalLinks) {
+                link.other -= _position+1;
+            }
+            
+            for(TensorNode& node : right.nodes) {
+                for(TensorNode::Link& link : node.neighbors) {
+                    link.other -= _position+1;
+                }
+            }
+        }
+        
+        
+        REQUIRE(left.is_valid_network(), "Internal Error");
+        
+        REQUIRE(right.is_valid_network(), "Internal Error");
+        
+        return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
+    }
+    
+    
+    template<bool isOperator>
     void TTNetwork<isOperator>::round(value_t _eps) {
         cannonicalize_left();
         const size_t N = isOperator?2:1;

@@ -32,6 +32,7 @@
     #include "xerus/misc/selectedFunctions.h"
     #include "xerus/misc/callStack.h"
     #include "xerus/misc/simpleNumerics.h"
+    #include "xerus/misc/timeMeasure.h"
 
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"
@@ -48,6 +49,7 @@
     #include "xerus/sparseTensor.h"
     #include "xerus/cs_wrapper.h"
     #include "xerus/sparseTimesFullContraction.h"
+    #include "xerus/sparseTimesFullContraction.h"
     #include "xerus/indexedTensor_tensor_operators.h"
     #include "xerus/indexedTensor_tensor_factorisations.h"
     #include "xerus/tensorNode.h"
@@ -55,6 +57,6 @@
     #include "xerus/indexedTensor_TN_operators.h"
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttTensor.h"
-    #include "xerus/als.h"
+    #include "xerus/algorithms/als.h"
 
 #endif

@@ -291,8 +291,6 @@ namespace xerus {
     
     FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
     
-    /// Returns the frobenius norm of the given tensor
-    _inline_ value_t frob_norm(const FullTensor& _fullTensor) { return _fullTensor.frob_norm(); }
     
     /// Checks whether two FullTensor are approximately equal using either the frobenious norm of the difference (default) or by checking whether all entries are approximately equal.
     bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps = 1e-14, const bool pureDataCompare = false);

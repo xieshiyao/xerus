@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "ttTensor.h"
+#include "../ttTensor.h"
 
 namespace xerus {
 
