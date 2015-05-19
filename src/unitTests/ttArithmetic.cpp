@@ -123,13 +123,13 @@ UNIT_TEST(TT, difference_of_TTStacks,
     
     Index i,j,k;
 //     TODO
-//     ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
-//     LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-//     TEST(frob_norm(ttC(i&0)) < 1e-11);
-//     
-//     ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
-//     LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-//     TEST(frob_norm(ttC(i&0)) < 1e-11);
+    ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
+    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
+    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
 )
 
 UNIT_TEST(TT, special_sum_diff,
@@ -317,7 +317,7 @@ UNIT_TEST(TT, ax_b,
 		}
 	});
     
-	TTOperator A = TTOperator::construct_random({10,10,10,10,10,10}, {2,2}, rnd, dist);
+	TTOperator A(I);
 	TTTensor T(3);
 	TTTensor S(3);
     
@@ -333,36 +333,36 @@ UNIT_TEST(TT, ax_b,
 	FullTensor fX(X);
 	FullTensor fT(3);
 	fT(i^3) = fA(i^3, j^3) * fX(j^3);
-// 	TEST(frob_norm(fT(i^3) - fX(i^3))<1e-7); TODO uh?
+	TEST(frob_norm(fT(i^3) - fX(i^3))<1e-7);
 	
 	T(i^3) = A(i^3, j^3) * X(j^3);
     TEST(frob_norm(FullTensor(T) - fT) < 1e-7);
     TEST(frob_norm(FullTensor(T)(i^3) - fT(i^3)) < 1e-7);
 	
-// 	T(i^3) = A(i^3, j^3) * X(j^3);
-//     TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
+	T(i^3) = A(i^3, j^3) * X(j^3);
+    TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
     
-// 	TEST(frob_norm(T(i^3) - X(i^3))<1e-7); TODO uh?
+	TEST(frob_norm(T(i^3) - X(i^3))<1e-7);
 	T(i^3) = T(i^3) - X(i^3);
 	S(i^3) = A(i^3, j^3) * X(j^3) - X(i^3);
 	LOG(unit_test, frob_norm(T(i^3)-S(i^3)));
 	TEST(frob_norm(T(i^3)-S(i^3)) < 1e-7);
-// 	TEST(frob_norm(S(i^3)) < 1e-7); UH?????
+	TEST(frob_norm(S(i^3)) < 1e-7);
 	
 	T(i^3) = A(j^3, i^3) * X(j^3);
-// 	TEST(frob_norm(T(i^3) - X(i^3))<1e-7); TODO UHHHHHHHH?????????????
+	TEST(frob_norm(T(i^3) - X(i^3))<1e-7);
 	T(i^3) = T(i^3) - X(i^3);
 	S(i^3) = A(j^3, i^3) * X(j^3) - X(i^3);
 	LOG(unit_test, frob_norm(T(i^3)-S(i^3)));
 	TEST(frob_norm(T(i^3)-S(i^3)) < 1e-7);
-// 	TEST(frob_norm(S(i^3)) < 1e-7); TODO UUUUHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH????????????
+	TEST(frob_norm(S(i^3)) < 1e-7);
 	
 	T(i^3) = A(j^3, i^3) * B(j^3);
 	T(i^3) = T(i^3) - B(i^3);
 	S(i^3) = A(j^3, i^3) * B(j^3) - B(i^3);
 	LOG(unit_test, frob_norm(T(i^3)-S(i^3)));
 	TEST(frob_norm(T(i^3)-S(i^3)) < 1e-7);
-// 	TEST(frob_norm(S(i^3)) < 1e-7); TODO UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH????????????????????????????????????
+	TEST(frob_norm(S(i^3)) < 1e-7);
 )
 
 UNIT_TEST(TT, operator_times_tensor,
@@ -459,7 +459,7 @@ UNIT_TEST(TT, disjoint_product,
 	
 	Index i,j;
 	
-	ttC(i^2, j^2) = ttA(i&0)*ttB(j&0);
+	ttC = TTTensor::dyadic_product(ttA,ttB);
 	C(i^2,j^2) = A(i&0)*B(j&0);
 	
 	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));

@@ -278,7 +278,7 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     size_t TensorNetwork::degree() const {
-        REQUIRE(externalLinks.size() == dimensions.size(), "Internal Error");
+        REQUIRE(externalLinks.size() == dimensions.size(), "invalid network, " << externalLinks.size() << " vs " << dimensions.size());
         return dimensions.size();
     }
     

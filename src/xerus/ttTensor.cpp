@@ -799,7 +799,10 @@ namespace xerus {
     
     template<bool isOperator>
     TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-        if (_lhs.degree() == 0) {
+        REQUIRE(_lhs.is_in_expected_format(), "");
+		REQUIRE(_rhs.is_in_expected_format(), "");
+		
+		if (_lhs.degree() == 0) {
             TTNetwork result(_rhs);
             result.factor *= _lhs.factor;
             return result;
@@ -827,6 +830,7 @@ namespace xerus {
                 }
             }
         }
+        
         // add rank-1 connection between the two
         std::vector<size_t> dimensions(result.nodes[lhsNodesSize-1].tensorObject->dimensions);
         dimensions.push_back(1);
@@ -836,30 +840,46 @@ namespace xerus {
         
         dimensions.clear();
         dimensions.push_back(1);
-        dimensions.insert(dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.end());
+        dimensions.insert(dimensions.end(), result.nodes[lhsNodesSize].tensorObject->dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.end());
         result.nodes[lhsNodesSize].tensorObject->reinterpret_dimensions(dimensions);
         std::vector<TensorNode::Link> newLinks;
         newLinks.emplace_back(lhsNodesSize-1, linkPos, 1, false);
-        newLinks.insert(newLinks.begin(), result.nodes[lhsNodesSize].neighbors.begin(), result.nodes[lhsNodesSize].neighbors.end());
+        newLinks.insert(newLinks.end(), result.nodes[lhsNodesSize].neighbors.begin(), result.nodes[lhsNodesSize].neighbors.end());
         result.nodes[lhsNodesSize].neighbors = newLinks;
-        
+		// links of nodes[lhsNodesSize] changed, so change the link of lhsNodesSize+1 correspondingly
+		if (result.nodes.size()>lhsNodesSize+1) {
+			result.nodes[lhsNodesSize+1].neighbors[0].indexPosition += 1;
+		}
+
         // add all external indices of rhs
-        newLinks.clear();
-        for (size_t i=0; i<lhsNodesSize; ++i) {
-            newLinks.push_back(_lhs.externalLinks[i]);
+		result.externalLinks.clear();
+		result.dimensions.clear();
+		result.dimensions.push_back(_lhs.dimensions[0]);
+		result.externalLinks.emplace_back(0, 0, _lhs.dimensions[0], false);
+        for (size_t i=1; i<lhsNodesSize; ++i) {
+			const size_t d=_lhs.dimensions[i];
+            result.externalLinks.emplace_back(i, 1, d, false);
+			result.dimensions.push_back(d);
         }
         for (size_t i=0; i<rhsNodesSize; ++i) {
-            newLinks.push_back(_rhs.externalLinks[i]);
+            const size_t d=_rhs.dimensions[i];
+            result.externalLinks.emplace_back(lhsNodesSize+i, 1, d, false);
+			result.dimensions.push_back(d);
         }
         if (isOperator) {
-            for (size_t i=0; i<lhsNodesSize; ++i) {
-                newLinks.push_back(_lhs.externalLinks[lhsNodesSize+i]);
+			result.dimensions.push_back(_lhs.dimensions[lhsNodesSize]);
+			result.externalLinks.emplace_back(0, 1, _lhs.dimensions[lhsNodesSize], false);
+            for (size_t i=1; i<lhsNodesSize; ++i) {
+                const size_t d=_lhs.dimensions[i];
+				result.externalLinks.emplace_back(i, 2, d, false);
+				result.dimensions.push_back(d);
             }
             for (size_t i=0; i<rhsNodesSize; ++i) {
-                newLinks.push_back(_rhs.externalLinks[rhsNodesSize+i]);
+                const size_t d=_rhs.dimensions[i];
+				result.externalLinks.emplace_back(lhsNodesSize+i, 2, d, false);
+				result.dimensions.push_back(d);
             }
         }
-        result.externalLinks = newLinks;
         
         REQUIRE(result.is_valid_tt(), "ie");
         return result;
