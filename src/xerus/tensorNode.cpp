@@ -67,7 +67,13 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs) {
-        _out << "L{" << _rhs.other << " (" << _rhs.indexPosition << "), " << _rhs.dimension << "}";
+        _out << "L{";
+		if (_rhs.external) {
+			_out << "ext";
+		} else {
+			_out << _rhs.other;
+		}
+		_out << " (" << _rhs.indexPosition << "), dim " << _rhs.dimension << "}";
         return _out;
     }
 }

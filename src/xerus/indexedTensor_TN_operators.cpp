@@ -120,11 +120,11 @@ namespace xerus {
         return result;
     }
     
-//     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&  _rhs) {
-//         IndexedTensorMoveable<TensorNetwork> result(std::move(_rhs));
-//         result.tensorObject->factor *= _factor;
-//         return result;
-//     }
+    IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&  _rhs) {
+        IndexedTensorMoveable<TensorNetwork> result(std::move(_rhs));
+        result.tensorObject->factor *= _factor;
+        return result;
+    }
     
     
 
@@ -168,7 +168,21 @@ namespace xerus {
         return result;
     }
     
+    
     IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork>  & _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
         return _lhs+(-1*_rhs);
     }
+    
+    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
+		_lhs.tensorObject->factor *= -1;
+		return (-1)*operator+(std::move(_lhs), _rhs);
+	}
+    IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
+		_rhs.tensorObject->factor*=-1;
+		return operator+(std::move(_rhs), _lhs);
+	} 
+    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
+		_rhs.tensorObject->factor*=-1;
+		return operator+(std::move(_rhs), std::move(_lhs));
+	}
 }

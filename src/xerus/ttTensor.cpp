@@ -104,21 +104,21 @@ namespace xerus {
         
         // If the indices are in different order, we are lost. TODO inverse order is also ok...
         if(myIndices != otherIndices) { return false; }
-        REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both opearants to share the same dimensions");
+        REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
         
-        // If the other is not a TT tensor we are also lost
-        const TTTensor* _otherPtr = dynamic_cast<const TTTensor*>( _other.tensorObjectReadOnly);
+        // If the other is not a TT tensor (or stack) we are also lost
+        const TTNetwork* _otherPtr = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
         if(!_otherPtr) { return false; }
         
         // TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
-        // If I am in fact a TTTensorStack, we have to evaluate me to TTTensor
+        // If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
         std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
         const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
         const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
         if (movMe) {
             internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
             if (stackMe) {
-                meStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_me.degree()), myIndices, true));
+                meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
                 (*meStorage) = _me;
                 realMePtr = meStorage.get();
             }
@@ -134,7 +134,7 @@ namespace xerus {
         if (movOther) {
             internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
             if (stackOther) {
-                otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_other.degree()), otherIndices, true));
+                otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_other.degree()), otherIndices, true));
                 (*otherStorage) = _other;
                 realOtherPtr = otherStorage.get();
             }
@@ -146,7 +146,7 @@ namespace xerus {
         // Number of Nodes to create
         const size_t numNodes = realMe.degree()/N;
         
-        TTTensor* tmpPtr = new TTTensor();
+        TTNetwork* tmpPtr = new TTNetwork();
         tmpPtr->factor = 1.0;
         
         //The external dimensions are the same as the ones of the input
@@ -154,7 +154,7 @@ namespace xerus {
         REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
         
         IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
-        TTTensor& outTensor = *static_cast<TTTensor*>(tmpOut.tensorObject);
+        TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
         
         
         // Create the externalLinks first, as we know their position in advance
@@ -284,7 +284,7 @@ namespace xerus {
     template<>
     void TTNetwork<false>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
         REQUIRE(_me.tensorObject == this, "Internal Error.");
-        const std::vector<Index> myIndices = _me.get_assigned_indices();
+        const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree());
         const std::vector<Index> otherIndices = _other.get_assigned_indices();
         
         if (myIndices == otherIndices) {
@@ -801,7 +801,10 @@ namespace xerus {
     
     template<bool isOperator>
     TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-        if (_lhs.degree() == 0) {
+        REQUIRE(_lhs.is_in_expected_format(), "");
+		REQUIRE(_rhs.is_in_expected_format(), "");
+		
+		if (_lhs.degree() == 0) {
             TTNetwork result(_rhs);
             result.factor *= _lhs.factor;
             return result;
@@ -829,6 +832,7 @@ namespace xerus {
                 }
             }
         }
+        
         // add rank-1 connection between the two
         std::vector<size_t> dimensions(result.nodes[lhsNodesSize-1].tensorObject->dimensions);
         dimensions.push_back(1);
@@ -838,30 +842,46 @@ namespace xerus {
         
         dimensions.clear();
         dimensions.push_back(1);
-        dimensions.insert(dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.end());
+        dimensions.insert(dimensions.end(), result.nodes[lhsNodesSize].tensorObject->dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.end());
         result.nodes[lhsNodesSize].tensorObject->reinterpret_dimensions(dimensions);
         std::vector<TensorNode::Link> newLinks;
         newLinks.emplace_back(lhsNodesSize-1, linkPos, 1, false);
-        newLinks.insert(newLinks.begin(), result.nodes[lhsNodesSize].neighbors.begin(), result.nodes[lhsNodesSize].neighbors.end());
+        newLinks.insert(newLinks.end(), result.nodes[lhsNodesSize].neighbors.begin(), result.nodes[lhsNodesSize].neighbors.end());
         result.nodes[lhsNodesSize].neighbors = newLinks;
-        
+		// links of nodes[lhsNodesSize] changed, so change the link of lhsNodesSize+1 correspondingly
+		if (result.nodes.size()>lhsNodesSize+1) {
+			result.nodes[lhsNodesSize+1].neighbors[0].indexPosition += 1;
+		}
+
         // add all external indices of rhs
-        newLinks.clear();
-        for (size_t i=0; i<lhsNodesSize; ++i) {
-            newLinks.push_back(_lhs.externalLinks[i]);
+		result.externalLinks.clear();
+		result.dimensions.clear();
+		result.dimensions.push_back(_lhs.dimensions[0]);
+		result.externalLinks.emplace_back(0, 0, _lhs.dimensions[0], false);
+        for (size_t i=1; i<lhsNodesSize; ++i) {
+			const size_t d=_lhs.dimensions[i];
+            result.externalLinks.emplace_back(i, 1, d, false);
+			result.dimensions.push_back(d);
         }
         for (size_t i=0; i<rhsNodesSize; ++i) {
-            newLinks.push_back(_rhs.externalLinks[i]);
+            const size_t d=_rhs.dimensions[i];
+            result.externalLinks.emplace_back(lhsNodesSize+i, 1, d, false);
+			result.dimensions.push_back(d);
         }
         if (isOperator) {
-            for (size_t i=0; i<lhsNodesSize; ++i) {
-                newLinks.push_back(_lhs.externalLinks[lhsNodesSize+i]);
+			result.dimensions.push_back(_lhs.dimensions[lhsNodesSize]);
+			result.externalLinks.emplace_back(0, 1, _lhs.dimensions[lhsNodesSize], false);
+            for (size_t i=1; i<lhsNodesSize; ++i) {
+                const size_t d=_lhs.dimensions[i];
+				result.externalLinks.emplace_back(i, 2, d, false);
+				result.dimensions.push_back(d);
             }
             for (size_t i=0; i<rhsNodesSize; ++i) {
-                newLinks.push_back(_rhs.externalLinks[rhsNodesSize+i]);
+                const size_t d=_rhs.dimensions[i];
+				result.externalLinks.emplace_back(lhsNodesSize+i, 2, d, false);
+				result.dimensions.push_back(d);
             }
         }
-        result.externalLinks = newLinks;
         
         REQUIRE(result.is_valid_tt(), "ie");
         return result;
