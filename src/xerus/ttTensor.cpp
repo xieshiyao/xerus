@@ -912,7 +912,7 @@ namespace xerus {
         
         if(_position < numNodes-1) {
             right.dimensions.push_back(nodes[_position+1].neighbors.front().dimension);
-            right.externalLinks.emplace_back(_position, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE position will be corrected to 0 in the following steps
+            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE position will be corrected to 0 in the following steps
             for(size_t i = _position+1; i < numNodes; ++i) {
                 right.dimensions.push_back(dimensions[i]);
                 right.externalLinks.push_back(externalLinks[i]);
@@ -929,12 +929,16 @@ namespace xerus {
             
             // Account for the fact that the first _position nodes do not exist
             for(TensorNode::Link& link : right.externalLinks) {
-                link.other -= _position;
+                link.other -= _position+1;
             }
             
             for(TensorNode& node : right.nodes) {
                 for(TensorNode::Link& link : node.neighbors) {
-                    link.other -= _position;
+                    if(link.external) {
+                        link.indexPosition -= _position;
+                    } else {
+                        link.other -= _position+1;
+                    }
                 }
             }
         }
