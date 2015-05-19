@@ -122,14 +122,13 @@ UNIT_TEST(TT, difference_of_TTStacks,
     TTTensor ttC; 
     
     Index i,j,k;
-//     TODO
     ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
-    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    LOG(unit_testsa, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-7);
     
     ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
-    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    LOG(unit_testsa, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-7);
 )
 
 UNIT_TEST(TT, special_sum_diff,

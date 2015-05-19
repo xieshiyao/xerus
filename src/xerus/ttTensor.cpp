@@ -104,21 +104,21 @@ namespace xerus {
         
         // If the indices are in different order, we are lost. TODO inverse order is also ok...
         if(myIndices != otherIndices) { return false; }
-        REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both opearants to share the same dimensions");
+        REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
         
-        // If the other is not a TT tensor we are also lost
-        const TTTensor* _otherPtr = dynamic_cast<const TTTensor*>( _other.tensorObjectReadOnly);
+        // If the other is not a TT tensor (or stack) we are also lost
+        const TTNetwork* _otherPtr = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
         if(!_otherPtr) { return false; }
         
         // TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
-        // If I am in fact a TTTensorStack, we have to evaluate me to TTTensor
+        // If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
         std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
         const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
         const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
         if (movMe) {
             internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
             if (stackMe) {
-                meStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_me.degree()), myIndices, true));
+                meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
                 (*meStorage) = _me;
                 realMePtr = meStorage.get();
             }
@@ -134,7 +134,7 @@ namespace xerus {
         if (movOther) {
             internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
             if (stackOther) {
-                otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTTensor(_other.degree()), otherIndices, true));
+                otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_other.degree()), otherIndices, true));
                 (*otherStorage) = _other;
                 realOtherPtr = otherStorage.get();
             }
@@ -146,7 +146,7 @@ namespace xerus {
         // Number of Nodes to create
         const size_t numNodes = realMe.degree()/N;
         
-        TTTensor* tmpPtr = new TTTensor();
+        TTNetwork* tmpPtr = new TTNetwork();
         tmpPtr->factor = 1.0;
         
         //The external dimensions are the same as the ones of the input
@@ -154,7 +154,7 @@ namespace xerus {
         REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
         
         IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
-        TTTensor& outTensor = *static_cast<TTTensor*>(tmpOut.tensorObject);
+        TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
         
         
         // Create the externalLinks first, as we know their position in advance
@@ -284,7 +284,7 @@ namespace xerus {
     template<>
     void TTNetwork<false>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
         REQUIRE(_me.tensorObject == this, "Internal Error.");
-        const std::vector<Index> myIndices = _me.get_assigned_indices();
+        const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree());
         const std::vector<Index> otherIndices = _other.get_assigned_indices();
         
         if (myIndices == otherIndices) {
