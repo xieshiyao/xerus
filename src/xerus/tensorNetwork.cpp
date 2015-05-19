@@ -347,7 +347,7 @@ namespace xerus {
 			const TensorNode &other = nodes[el.other];
 			REQUIRE(other.degree() > el.indexPosition, "n=" << n);
 			REQUIRE(other.neighbors[el.indexPosition].external, "n=" << n);
-			REQUIRE(other.neighbors[el.indexPosition].indexPosition == n, "n=" << n);
+			REQUIRE(other.neighbors[el.indexPosition].indexPosition == n, "n=" << n << " We have " << other.neighbors[el.indexPosition].indexPosition << " != " << n << " and el.other =" << el.other << " and el.indexPosition = " << el.indexPosition );
 			REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
 		}
 		
