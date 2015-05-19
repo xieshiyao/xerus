@@ -149,7 +149,7 @@ namespace xerus {
         
         #ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
             REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
-            REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of SparseTensor to FullTensor not implemented and probably not useful.");
+            REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of FullTensor to SparseTensor not implemented and probably not useful.");
             
             // Check base indices
             for(size_t i = 0; i < baseIndices.size(); ++i) {

@@ -58,6 +58,7 @@ OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespa
 -include $(LIB_DEPS)
 -include $(TEST_DEPS)
 -include $(UNIT_TEST_SOURCES_DEPS)
+-include build/.preCompileHeaders/xerus.h.d
 
 # ------------------------------------------------------------------------------------------------------
 #					Make Rules      
@@ -167,5 +168,5 @@ endif
 # Build rule for the preCompileHeader
 build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ $<    $(FLAGS) -MMD -o $@
+	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
 
