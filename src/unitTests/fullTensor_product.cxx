@@ -29,7 +29,7 @@
 // Fix for broken complex implementation
 #undef I
 
-// Workaround for brocken Lapack
+// Workaround for broken Lapack
 #define lapack_complex_float    float _Complex
 #define lapack_complex_double   double _Complex
 extern "C"

@@ -385,20 +385,4 @@ UNIT_TEST(SparseTensor, Product_Many_Degree_2,
     TEST(res1.compare_to_data({20596523, 21531582, 46728183, 48849590}));
 )
 
-// UNIT_TEST(SparseTensor, Product_1000x1000,
-//     SparseTensor res({1000,1000});
-//     SparseTensor A({1000,1000}, [] (const std::vector<size_t> &_idx) { return double(_idx[0] + _idx[1]); });
-//     SparseTensor B({1000,1000}, [] (const std::vector<size_t> &_idx) { return double((1000-_idx[0]) * (1000-_idx[1])); });
-//     SparseTensor C({1000,1000});
-//     Index i, J, K;
-// 
-//     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
-//     res(i,K) = A(i,J) * B(J,K);
-//     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
-//     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
-//     res(i,K) = A(i,J) * B(K,J);
-//     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
-//     cblas_dgemm(CblasRowMajor, CblasTrans, CblasTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
-//     res(i,K) = A(J,i) * B(K,J);
-//     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
-// )
+

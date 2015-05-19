@@ -325,7 +325,7 @@ UNIT_TEST(FullTensor, Contraction_Order_3_Different_Dimensions,
     C[{1,0,1}]=35;
     C[{1,0,2}]=36;
     
-    //WARNING These results are obtained by an older version of the library and may contain errors themself!
+    //WARNING These results are obtained by an older version of the library and may contain errors themselves!
     contract(res1(i,j,k,l,m,n), A(i,j,k), B(l,m,n));
     TEST(res1.compare_to_data({7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,21,24,27,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180}));
     

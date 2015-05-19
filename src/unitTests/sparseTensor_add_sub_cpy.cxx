@@ -68,26 +68,6 @@ UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
     TEST(B.compare_to_data({12,18,18,24}));
 )
 
-/* TODO
-UNIT_TEST(SparseTensor, sum_matrix_1000x1000,
-    SparseTensor res({1024,1024});
-    SparseTensor A({1024,1024}, [](const std::vector<size_t> &_idx) {
-		return double(_idx[0] + _idx[1]);
-	});
-    SparseTensor B({1024,1024}, [](const std::vector<size_t> &_idx) {
-		return double(_idx[0] * _idx[1]);
-	});
-    SparseTensor C({1024,1024}, [](const std::vector<size_t> &_idx) {
-		return double(_idx[0] + _idx[1] + _idx[0] * _idx[1]);
-	});
-
-    Index i, J;
-    
-    res(i,J) = A(i,J) + B(i,J);
-    TEST(approx_equal(res, C, 1e-14, true));
-    res(J,i) = A(J,i) + B(i,J);
-    TEST(approx_equal(res, C, 1e-14, true));
-)*/
 
 UNIT_TEST(SparseTensor, sum_dyadic,
     SparseTensor res({2,2});
@@ -96,14 +76,7 @@ UNIT_TEST(SparseTensor, sum_dyadic,
 
     Index i, J, K;
     
-    B[{0}]=1;
-    B[{1}]=2;
-    
-    C[{0}]=5;
-    C[{1}]=9;
-    
     FAILTEST(res(i,J) = B(i) + C(J));
-//     TEST(res.compare_to_data({6,10,7,11}));
 )
 
 UNIT_TEST(SparseTensor, sum_threefold,

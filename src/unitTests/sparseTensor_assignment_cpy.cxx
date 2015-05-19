@@ -320,7 +320,6 @@ UNIT_TEST(SparseTensor, Assignment_Negatives,
     FAILTEST(A(i,j,k,l) = B(j,k,i));
     FAILTEST(C(i,j) = D(i^2));
     FAILTEST(C(i,j) = D(i^2));
-// 	FAILTEST(D(i,j) * D(j,k) = D(i,k));
 	static_assert(!std::is_assignable<decltype(D(i,j) * D(j,k)), decltype(D(i,k))>::value,"");
 )
 

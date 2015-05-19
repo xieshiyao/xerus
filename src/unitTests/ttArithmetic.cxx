@@ -322,11 +322,11 @@ UNIT_TEST(TT, ax_b,
     
 	Index i,j,k;
 	
-// 	T(i^3) = A(i^3, j^3) * X(j^3);
-// 	T(i^3) = T(i^3) - B(i^3);
-// 	S(i^3) = A(i^3, j^3) * X(j^3) - B(i^3);
-// 	LOG(unit_test, frob_norm(T(i^3)-S(i^3)));
-// 	TEST(frob_norm(T(i^3)-S(i^3)) < 1e-7);
+	T(i^3) = A(i^3, j^3) * X(j^3);
+	T(i^3) = T(i^3) - B(i^3);
+	S(i^3) = A(i^3, j^3) * X(j^3) - B(i^3);
+	LOG(unit_test, frob_norm(T(i^3)-S(i^3)));
+	TEST(frob_norm(T(i^3)-S(i^3)) < 1e-7);
 	
 	FullTensor fA(A);
 	FullTensor fX(X);
