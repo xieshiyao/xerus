@@ -35,11 +35,11 @@ Should you have any problems with the library do not hesitate to contact us at [
 
 ## Licence and Attribution
 
-The `xerus` library is published under the AGPL v3.0 public licence. With proper attribution you are thus allowed to freely use the source code but if you distribute your software including the `xerus`
+The `xerus` library is published under the AGPL v3.0. With proper attribution you are thus allowed to freely use the source code but if you distribute your software including the `xerus`
 library (or you provide a service based on this library) you have to provide the full source code under a compatible licence. 
-For more information see the [AGPL licence](http://www.gnu.org/licenses/agpl-3.0.html).
+For more information see the [AGPL](http://www.gnu.org/licenses/agpl-3.0.html).
 
-If this library proved useful in your scientific research we would be grateful for contributions to the source code and / or a citation. As there is no related article yet, a corresponding bibtex 
+If this library proved useful in your scientific research we would be grateful for any contributions to the source code and citations. As there is no related article yet, a corresponding bibtex 
 entry might look as follows
 ~~~
 @Misc{xerus,
