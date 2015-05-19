@@ -29,6 +29,7 @@
 #include "standard.h"
 #include "sfinae.h"
 #include "namedLogger.h"
+#include "test.h"
 
 // Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
 #define VLA(T, name) auto name##_store = MISC_NAMESPACE::make_unique_array(new T); auto const & name = name##_store.get();
@@ -144,7 +145,7 @@ START_MISC_NAMESPACE
     template<template<class, class...> class container_t, class item_t, class... rest_t>
     _pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
         item_t product = item_t(1);
-        for(const item_t& item : _container){ product *= item; }
+        for(const item_t& item : _container){ product *= item; REQUIRE(product >= item, "overflow in product"); }
         return product;
     }
 
