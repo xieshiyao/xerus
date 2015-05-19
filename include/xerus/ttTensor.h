@@ -37,7 +37,7 @@ namespace xerus {
         
         explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15); //TODO no magic numbers
         
-        explicit TTNetwork(const TTNetwork & _cpy);
+        implicit TTNetwork(const TTNetwork & _cpy);
         
         implicit TTNetwork(      TTNetwork&& _mov);
         

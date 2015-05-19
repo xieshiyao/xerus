@@ -885,7 +885,6 @@ namespace xerus {
         TensorNetwork left, right;
         left.factor = 1;
         right.factor = 1;
-        LOG(bla, "Split at " << _position); 
         
         if(_position > 0) {
             for(size_t i = 0; i < _position; ++i) {

@@ -318,7 +318,7 @@ namespace xerus {
         for(const std::pair<size_t, value_t>& entry : *entries) {
             norm += sqr(entry.second);
         }
-        return factor*norm;
+        return std::abs(factor)*sqrt(norm);
     }
     
     std::string SparseTensor::to_string() const {
