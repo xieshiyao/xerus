@@ -18,7 +18,7 @@ LIB_SOURCES = $(wildcard src/xerus/*.cpp)
 LIB_SOURCES += $(wildcard src/xerus/*/*.cpp)
 
 # Register all unit unit test source files 
-UNIT_TEST_SOURCES = $(wildcard src/unitTests/*.cpp)
+UNIT_TEST_SOURCES = $(wildcard src/unitTests/*.cxx)
 
 # Create lists of the corresponding objects and dependency files
 LIB_OBJECTS = $(LIB_SOURCES:%.cpp=build/.libObjects/%.o)
@@ -27,8 +27,8 @@ LIB_DEPS    = $(LIB_SOURCES:%.cpp=build/.libObjects/%.d)
 TEST_OBJECTS = $(LIB_SOURCES:%.cpp=build/.testObjects/%.o)
 TEST_DEPS    = $(LIB_SOURCES:%.cpp=build/.testObjects/%.d)
 
-UNIT_TEST_SOURCES_OBJECTS = $(UNIT_TEST_SOURCES:%.cpp=build/.unitTestObjects/%.o)
-UNIT_TEST_SOURCES_DEPS    = $(UNIT_TEST_SOURCES:%.cpp=build/.unitTestObjects/%.d)
+UNIT_TEST_SOURCES_OBJECTS = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.o)
+UNIT_TEST_SOURCES_DEPS    = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.d)
 
 # ------------------------------------------------------------------------------------------------------
 #		Load the configurations provided by the user and set up general options
@@ -156,11 +156,11 @@ build/.testObjects/%.o: %.cpp $(MINIMAL_DEPS)
 
 # Build rule for unit test objects
 ifndef USE_CLANG
-build/.unitTestObjects/%.o: %.cpp $(MINIMAL_DEPS) build/.preCompileHeaders/xerus.h.gch
+build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS) build/.preCompileHeaders/xerus.h.gch
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I build/.preCompileHeaders $< -c $(FLAGS) -MMD -o $@
 else
-build/.unitTestObjects/%.o: %.cpp $(MINIMAL_DEPS)
+build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
 endif

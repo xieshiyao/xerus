@@ -57,7 +57,7 @@ UNIT_TEST(FullTensor, triple_indices,
 	FullTensor E2(2);
 	Index i1,i2,i3,i4;
 	
-	FAILTEST(E0()   = A(i1,i1,i2)*B(i2,i2));
+	FAILTEST(E0()   = A(i1,i1,i2/3)*B(i2/2,i2));
 	FAILTEST(E1(i2) = A(i1,i1,i2)*B(i2,i2));
 	FAILTEST(E0()   = A(i1,i2,i2)*B(i2,i1));
 	FAILTEST(E1(i2) = A(i1,i2,i2)*B(i2,i1));

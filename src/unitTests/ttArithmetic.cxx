@@ -44,15 +44,15 @@ UNIT_TEST(TT, sum,
         TTTensor ttA(A); 
         TTTensor ttB(B); 
         TTTensor ttC(d);
-// 		TTOperator toA(A); 
-//         TTOperator toB(B); 
-//         TTOperator toC(d);
+		TTOperator toA(A); 
+        TTOperator toB(B); 
+        TTOperator toC(d);
         
         C(i&0) = A(i&0) + B(i&0);
         ttC(i&0) = ttA(i&0) + ttB(i&0);
-// 		toC(i&0) = toA(i&0) + toB(i&0);
+		toC(i&0) = toA(i&0) + toB(i&0);
         TEST(frob_norm(FullTensor(ttC)(i&0) - C(i&0)) < 3.1*1e-13);
-// 		TEST(frob_norm(FullTensor(toC)(i&0) - C(i&0)) < 3.1*1e-13);
+		TEST(frob_norm(FullTensor(toC)(i&0) - C(i&0)) < 3.1*1e-13);
 	
 )
 
@@ -123,11 +123,11 @@ UNIT_TEST(TT, difference_of_TTStacks,
     
     Index i,j,k;
     ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
-    LOG(unit_testsa, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 1e-7);
     
     ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
-    LOG(unit_testsa, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 1e-7);
 )
 
@@ -224,13 +224,13 @@ UNIT_TEST(TT, product,
 	LOG(unit_tests, "frob_norm " << fnorm);
 	TEST(fnorm < 10*10*10*10*1e-15);
 	
-	C(i^2,k^2) = A(j^2,i^2) * B(j^2,k^2);
-	ttC(i^2,k^2) = ttA(j^2,i^2) * ttB(j^2,k^2);
+	C(i/2,k/2) = A(j/2,i/2) * B(j/2,k/2);
+	ttC(i^2,k/2) = ttA(j^2,i/2) * ttB(j^2,k/2);
 	fnorm = frob_norm(FullTensor(ttC)(i&0) - C(i&0));
 	LOG(unit_tests, "frob_norm " << fnorm);
 	TEST(fnorm < 10*10*10*10*1e-15);
 	
-	ttC(i^2,k^2) = ttB(j^2,k^2) * ttA(j^2,i^2);
+	ttC(i^2,k/2) = ttB(j/2,k/2) * ttA(j^2,i^2);
 	fnorm = frob_norm(FullTensor(ttC)(i&0) - C(i&0));
 	LOG(unit_tests, "frob_norm " << fnorm);
 	TEST(fnorm < 10*10*10*10*1e-15);
@@ -428,20 +428,24 @@ UNIT_TEST(TT, full_contraction,
 	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
+	TTOperator toA(A); 
+	TTOperator toB(B); 
 	
 	Index i;
-	LOG(unit_test, "norm diff " << frob_norm(A(i&0)) - frob_norm(ttA(i&0)));
 	TEST(approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 1.6e-13));
-	LOG(unit_test, "norm diff " << frob_norm(B(i&0)) - frob_norm(ttB(i&0)));
+	TEST(approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 1.6e-13));
 	TEST(approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));
-	LOG(unit_test, "norm diff " << frob_norm(A(i&0)-B(i&0)) - frob_norm(ttA(i&0)-ttB(i&0)));
+	TEST(approx_equal(frob_norm(B(i&0)), frob_norm(toB(i&0)), 1e-13));
 	TEST(approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(ttA(i&0)-ttB(i&0)), 1e-12));
+	TEST(approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(toA(i&0)-toB(i&0)), 1e-12));
 	FullTensor C(0);
-	C() = A(i&0)*B(i&0);
-	FullTensor ttC(0);
+	C() = A(i/1)*B(i&0);
+	TTTensor ttC(0);
 	ttC() = ttA(i&0)*ttB(i&0);
-	LOG(unit_test, "compare diff " << C[{}] - ttC[{}]);
+	TTOperator toC(0);
+	toC() = ttA(i&0)*ttB(i&0);
 	TEST(approx_equal(C[{}], ttC[{}], 1e-12));
+	TEST(approx_equal(C[{}], toC[{}], 1e-12));
 )
 
 UNIT_TEST(TT, disjoint_product,

@@ -94,11 +94,7 @@ namespace xerus {
         std::unique_ptr<Tensor> result;
         
         if (degree() == 0) {
-            #ifndef DISABLE_RUNTIME_CHECKS_
-                for(const TensorNode& node : nodes) {
-                    REQUIRE(node.erased, "Tensor Network with degree zero must not have unerased nodes.");
-                }
-            #endif
+            REQUIRE(is_valid_network(), "");
             result.reset(new FullTensor());
             static_cast<FullTensor*>(result.get())->data.get()[0] = factor;
         } else {
@@ -179,11 +175,15 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     value_t TensorNetwork::operator[](const size_t _position) const {
+		if (degree() == 0) {
+			REQUIRE(_position == 0, "tried to access non-existing entry of TN");
+			return factor;
+		}
         std::vector<size_t> positions(degree());
         size_t remains = _position;
-        for(size_t i = degree()-1; i > 0; --i) {
-            positions[i] = remains%dimensions[i];
-            remains /= dimensions[i];
+        for(size_t i = degree(); i > 1; --i) {
+            positions[i-1] = remains%dimensions[i-1];
+            remains /= dimensions[i-1];
         }
         positions[0] = remains;
         return operator[](positions);

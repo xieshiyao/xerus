@@ -213,7 +213,8 @@ UNIT_TEST(TensorNetwork, Save_Network,
     F[{1,0}]=23;
     F[{1,1}]=24;
      
-    res1(i,l) = A(i,j) * B(j,k) * C(k,l); 
+    res2(i,l) = A(i,j) * B(j,k) * C(k,l); 
+	res1 = std::move(res2); // res2 should still be valid but not change res1 in the following
     res2(l,o) = D(l,m) * E(m,n) * F(n,o);
     res3(i,o) = res1(i,l) * res2(l,o);
     TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));

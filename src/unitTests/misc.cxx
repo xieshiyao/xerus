@@ -54,3 +54,18 @@ UNIT_TEST(Misc, romberg_integration,
 	TEST(approx_equal(npi,1.0,2e-14));
 )
 
+
+UNIT_TEST(Misc, polynomial,
+	auto weight = [](double _x){
+		return std::abs(std::sin(_x));
+	};
+	std::vector<Polynomial> base = Polynomial::build_orthogonal_base(10, weight, -1, 1);
+	for (size_t i=0; i<base.size(); ++i) {
+		TEST(base[i].terms() == i+1);
+		TEST(approx_equal(base[i].norm(weight, -1, 1), 1.0, 1e-12));
+		for (size_t j=0; j<base.size(); ++j) {
+			if (i==j) continue;
+			TEST(approx_equal(base[i].scalar_product(base[j], weight, -1, 1), 0., 1e-10));
+		}
+	}
+)
