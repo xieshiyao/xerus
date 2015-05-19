@@ -66,66 +66,41 @@ UNIT_TEST(ALS, identity,
 	LOG(unit_test, "perf: " << perfdata);
 	LOG(unit_test, "norm: " << frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)));
     TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
-    /*
-    LOG(fsda, "Perform");
-    for(FullTensor& part : ttX.representation) { memset(part.data.get(), 0, part.dataSize*sizeof(double)); }
-    performALS(ttI, ttX, ttB, 0.001);
-    LOG(fsda, "TEST");
-    TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-13);
-*/
-
 )
 
 
-// UNIT_TEST(ALS, random,
-// 	std::mt19937_64 rnd;
-//     rnd.seed(73);
-// 	std::normal_distribution<value_t> dist (0.0, 1.0);
-//     
-//     Index i,j,k,l,m,n,o,p;
-//     
-// 	FullTensor A = FullTensor::construct_random({256, 256}, rnd, dist);
-// 	A(k,l) = A(m,k)*A(m,l);
-//     FullTensor B = FullTensor::construct_random({256}, rnd, dist);
-//     TTVector X1(B);
-// 	std::vector<double> perf;
-// 	{
-// 		TTMatrix ttA(A);
-// 		TTVector ttB(B);
-// 		TEST(ALS(ttA, X1, ttB, 1e-8, &perf) < 1e-6);
-// 		LOG(unit_test, "perf " << perf);
-// 	}
-// 	FullTensor resFull(1);
-//     resFull(i) = A(i,j)*X1.representation[0](0,j,0)-B(i);
-//     LOG(sdf, "True: " << frob_norm(resFull(i)));
-//     FullTensor tmpX(X1);
-// 	A.reinterpret_dimensions(std::vector<uint>(8,4));
-// 	B.reinterpret_dimensions(std::vector<uint>(4,4));
-//     tmpX.reinterpret_dimensions(std::vector<uint>(4,4));
-//     FullTensor resFuller(4);
-//     resFuller(i^4) = A(i^4,j^4)*tmpX(j^4)-B(i^4);
-//     LOG(sdf, "Reimpertrete: " << frob_norm(resFuller(i^4)));
-//     
-// 	TTVector X2(tmpX, -1e-27);//(B);
-//     TTMatrix ttA(A, -1e-27);
-//     TTVector ttB(B, -1e-27);
-//     resFuller(i^4) = FullTensor(ttA)(i^4,j^4)*FullTensor(X2)(j^4)-FullTensor(ttB)(i^4);
-//     LOG(sdf, "TT and back: " << frob_norm(resFuller(i^4)));
-//     
-// 	{	
-// 		perf.clear();
-//         TTVector res(4);
-//         res(i^4) = ttA(i^4, j^4)*X2(j^4) - ttB(i^4);
-//         LOG(sdf, "TT: " << frob_norm(res(i^4)));
-//         LOG(sdf, "TT (anderes frob norm): " << frob_norm(FullTensor(res)(i^4)));
-//         res.round(1e-13);
-//         LOG(sdf, "TT (noch andere frob norm): " << frob_norm(res(i^4)));
-// 		TEST(performALS(ttA, X2, ttB, 1e-8, &perf));
-// 		LOG(unit_test, "perf " << perf);
-// 	}
-// 	FullTensor fX(X2);
-// 	fX.reinterpret_dimensions({256});
-// 	double fnorm = frob_norm(FullTensor(X1)(k&0)-fX(k&0));
-// 	LOG(unit_test, "norm: " << fnorm);
-// 	TEST(fnorm < 1e-4);
-// )
+UNIT_TEST(ALS, tutorial,
+	std::mt19937_64 rnd;
+	std::normal_distribution<double> dist (0.0, 1.0);
+	xerus::Index i,j,k;
+	
+	const size_t d = 5;
+
+	const std::vector<size_t> stateDims(d, 2);
+	const std::vector<size_t> operatorDims(2*d, 2);
+	
+    xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+	
+	xerus::TTOperator A = xerus::TTOperator::construct_identity(operatorDims);
+	
+	xerus::ALS(A, X, B);
+	
+	TEST(approx_equal(frob_norm(X-B), 0., 1e-12));
+	
+	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
+	
+	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
+	
+	TEST(A.ranks()==std::vector<size_t>(d-1,4));
+	
+	xerus::ALSVariant ALSb(xerus::ALS);
+	ALSb.printProgress = false;
+	
+	std::vector<double> perfdata;
+	ALSb(A, X, B, 1e-4, &perfdata);
+	
+	TEST(!approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
+	
+// 	std::cout << perfdata << std::endl;
+)
