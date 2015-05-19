@@ -38,6 +38,7 @@ namespace xerus {
     
     
     void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+        LOG(bla, "Transpose " << &_out << " from " << &_in);
         for(const std::pair<size_t, double>& entry : _in) {
             const size_t i = entry.first/_rightDim;
             const size_t j = entry.first%_rightDim;

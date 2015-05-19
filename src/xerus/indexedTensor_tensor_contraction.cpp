@@ -374,11 +374,10 @@ namespace xerus {
             
             const value_t commonFactor = _lhs.tensorObjectReadOnly->factor * _rhs.tensorObjectReadOnly->factor;
             
-            const bool lhsSparse = _lhs.tensorObjectReadOnly->is_sparse();
-            const bool rhsSparse = _rhs.tensorObjectReadOnly->is_sparse();
-            const bool resultSparse = _result.tensorObjectReadOnly->is_sparse();
+            const bool lhsSparse = actualLhs->tensorObjectReadOnly->is_sparse();
+            const bool rhsSparse = actualRhs->tensorObjectReadOnly->is_sparse();
+            const bool resultSparse = workingResult->tensorObjectReadOnly->is_sparse();
             
-//             LOG(bla, "WHAT: " << lhsSparse << rhsSparse << resultSparse);
             // Select actual case
             if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
                 blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
@@ -390,6 +389,8 @@ namespace xerus {
                 matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
                 matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+            } else {
+                LOG(fatal, "Invalid combiantion of sparse/dense tensors in contraction");
             }
             
             if(reorderResult) {

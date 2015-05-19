@@ -732,7 +732,7 @@ namespace xerus {
             REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
             REQUIRE(std::isfinite(factor), factor);
             
-            // per external link
+            // Per external link
             for (size_t n=0; n<externalLinks.size(); ++n) {
                 const TensorNode::Link &l = externalLinks[n];
                 REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
@@ -743,7 +743,8 @@ namespace xerus {
                 REQUIRE(nodes[l.other].neighbors[l.indexPosition].indexPosition == n, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].indexPosition);
                 REQUIRE(nodes[l.other].neighbors[l.indexPosition].dimension == l.dimension, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].dimension << " vs " << l.dimension);
             }
-            // per node
+            
+            // Per node
             for (size_t n=0; n<numNodes; ++n) {
                 const TensorNode &node = nodes[n];
                 REQUIRE(!node.erased, "n=" << n);
@@ -773,6 +774,7 @@ namespace xerus {
                         REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
                     }
                 }
+                
                 if (n < numNodes-1) {
                     if (node.tensorObject) {
                         REQUIRE(!node.tensorObject->has_factor(), "n="<<n);
@@ -900,8 +902,12 @@ namespace xerus {
     
     template<bool isOperator>
     std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
+        REQUIRE(is_valid_tt(), "No valdi TT.");
+        
         const size_t N = isOperator?2:1;
-        REQUIRE(_position < degree()/N, "Can't spilt an " << degree()/N << " node TTNetwork at position " << _position);
+        const size_t numNodes = degree()/N;
+        
+        REQUIRE(_position < numNodes, "Can't spilt an " << numNodes << " node TTNetwork at position " << _position);
         TensorNetwork left, right;
         left.factor = 1;
         right.factor = 1;
@@ -912,31 +918,43 @@ namespace xerus {
                 left.externalLinks.push_back(externalLinks[i]);
                 left.nodes.push_back(nodes[i]);
             }
+            if(isOperator) {
+                for(size_t i = 0; i < _position; ++i) {
+                    left.dimensions.push_back(dimensions[i+numNodes]);
+                    left.externalLinks.push_back(externalLinks[i+numNodes]);
+                }
+            }
             left.dimensions.push_back(left.nodes.back().neighbors.back().dimension);
             left.externalLinks.emplace_back(_position-1, _position == 1 ? N : N+1, left.nodes.back().neighbors.back().dimension , false);
             left.nodes.back().neighbors.back().external = true;
-            left.nodes.back().neighbors.back().indexPosition = _position;
+            left.nodes.back().neighbors.back().indexPosition = isOperator ? 2*_position-1 :_position;
         }
         
-        if(_position < degree()/N-1) {
+        if(_position < numNodes-1) {
             right.dimensions.push_back(nodes[_position+1].neighbors.front().dimension);
-            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false);
-            for(size_t i = _position+1; i < degree()/N; ++i) {
+            right.externalLinks.emplace_back(_position, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE position will be corrected to 0 in the following steps
+            for(size_t i = _position+1; i < numNodes; ++i) {
                 right.dimensions.push_back(dimensions[i]);
                 right.externalLinks.push_back(externalLinks[i]);
                 right.nodes.push_back(nodes[i]);
             }
+            if(isOperator) {
+                for(size_t i = _position+1; i < numNodes; ++i) {
+                    right.dimensions.push_back(dimensions[i+numNodes]);
+                    right.externalLinks.push_back(externalLinks[i+numNodes]);
+                }
+            }
             right.nodes.front().neighbors.front().external = true;
-            right.nodes.front().neighbors.front().indexPosition = _position;
+            right.nodes.front().neighbors.front().indexPosition = _position; // NOTE position will be corrected to 0 in the following steps
             
-            //Account for the fact that the first _position nodes do not exist
+            // Account for the fact that the first _position nodes do not exist
             for(TensorNode::Link& link : right.externalLinks) {
-                link.other -= _position+1;
+                link.other -= _position;
             }
             
             for(TensorNode& node : right.nodes) {
                 for(TensorNode::Link& link : node.neighbors) {
-                    link.other -= _position+1;
+                    link.other -= _position;
                 }
             }
         }
