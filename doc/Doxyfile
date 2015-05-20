@@ -772,8 +772,10 @@ INPUT                  = . \
                          ../tutorials/ \
                          ../include/ \
                          ../include/xerus/ \
+                         ../include/xerus/algorithms/ \
                          ../include/xerus/misc/ \
                          ../src/xerus/ \
+                         ../src/xerus/algorithms/ \
                          ../src/xerus/misc/
 
 # This tag can be used to specify the character encoding of the source files
