@@ -903,12 +903,15 @@ namespace xerus {
     
     template<bool isOperator>
     std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
-        REQUIRE(is_valid_tt(), "No valdi TT.");
+        REQUIRE(is_valid_tt(), "Invalid TT cannot be chopped.");
+        CHECK(!isOperator, warning, "Chop is not yet testet for TTOperators"); //TODO test it!
         
         const size_t N = isOperator?2:1;
         const size_t numNodes = degree()/N;
         
-        REQUIRE(_position < numNodes, "Can't spilt an " << numNodes << " node TTNetwork at position " << _position);
+        REQUIRE(_position < numNodes, "Can't spilt a " << numNodes << " node TTNetwork at position " << _position);
+        
+        // Create the resulting TNs
         TensorNetwork left, right;
         left.factor = 1;
         right.factor = 1;
@@ -933,7 +936,7 @@ namespace xerus {
         
         if(_position < numNodes-1) {
             right.dimensions.push_back(nodes[_position+1].neighbors.front().dimension);
-            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE position will be corrected to 0 in the following steps
+            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE other will be corrected to 0 in the following steps
             for(size_t i = _position+1; i < numNodes; ++i) {
                 right.dimensions.push_back(dimensions[i]);
                 right.externalLinks.push_back(externalLinks[i]);
@@ -946,9 +949,9 @@ namespace xerus {
                 }
             }
             right.nodes.front().neighbors.front().external = true;
-            right.nodes.front().neighbors.front().indexPosition = _position; // NOTE position will be corrected to 0 in the following steps
+            right.nodes.front().neighbors.front().indexPosition = _position; // NOTE indexPosition will be corrected to 0 in the following steps
             
-            // Account for the fact that the first _position nodes do not exist
+            // Account for the fact that the first _position+1 nodes do not exist
             for(TensorNode::Link& link : right.externalLinks) {
                 link.other -= _position+1;
             }
@@ -964,9 +967,7 @@ namespace xerus {
             }
         }
         
-        
         REQUIRE(left.is_valid_network(), "Internal Error");
-        
         REQUIRE(right.is_valid_network(), "Internal Error");
         
         return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
