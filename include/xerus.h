@@ -56,7 +56,7 @@
     #include "xerus/tensorNetwork.h"
     #include "xerus/indexedTensor_TN_operators.h"
     #include "xerus/contractionHeuristic.h"
-    #include "xerus/ttTensor.h"
+    #include "xerus/ttNetwork.h"
     #include "xerus/algorithms/als.h"
 
 #endif

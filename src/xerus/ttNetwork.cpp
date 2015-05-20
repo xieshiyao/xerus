@@ -17,7 +17,7 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/ttTensor.h>
+#include <xerus/ttNetwork.h>
 #include <xerus/tensorNetwork.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
