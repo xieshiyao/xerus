@@ -60,6 +60,8 @@ OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespa
 -include $(UNIT_TEST_SOURCES_DEPS)
 -include build/.preCompileHeaders/xerus.h.d
 
+
+
 # ------------------------------------------------------------------------------------------------------
 #					Make Rules      
 # ------------------------------------------------------------------------------------------------------
@@ -80,6 +82,9 @@ help:
 	\t\tbenchmark \t\t -- Build a loosly related benchmark program.\n \
 	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n"
 
+# Fake rule to create arbitary headers, to prevent errors if files are moved/renamed
+%.h: 
+	
 
 all: test $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 	mkdir -p build/include/ 
