@@ -65,7 +65,7 @@ namespace xerus {
         implicit TensorNetwork(Tensor&& _other);
         
         /// Constructs the trivial network containing the given FullTensor
-        implicit TensorNetwork(const std::shared_ptr<Tensor>& _tensor);
+        implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
         
         /// Constructs the trivial network containing non-specified size-1 fulltensor 
         implicit TensorNetwork(size_t _degree);

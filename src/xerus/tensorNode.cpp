@@ -25,22 +25,37 @@ namespace xerus {
     
     TensorNode::TensorNode() : erased(true) { }
     
-    TensorNode::TensorNode(const std::shared_ptr<Tensor>&  _tensorObject) : tensorObject(_tensorObject), erased(false) {}
+    TensorNode::TensorNode(const TensorNode&  _other) : tensorObject(_other.tensorObject ? _other.tensorObject->get_copy() : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
     
-    TensorNode::TensorNode(      std::shared_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), erased(false) {}
+    TensorNode::TensorNode(      TensorNode&& _other) : tensorObject(std::move(_other.tensorObject)), neighbors(std::move(_other.neighbors)), erased(_other.erased) { }
     
-    TensorNode TensorNode::strippped_copy() const {
-        return TensorNode(std::shared_ptr<Tensor>(), neighbors);
+    TensorNode::TensorNode(      std::unique_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), neighbors(), erased(false) {}
+    
+    TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(_neighbors), erased(false) {}
+    
+    TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(std::move(_neighbors)), erased(false) {}
+    
+    TensorNode& TensorNode::operator=(const TensorNode&  _other) {
+        if(_other.tensorObject) {
+            tensorObject.reset(_other.tensorObject->get_copy());
+        }
+        neighbors = _other.neighbors;
+        erased = _other.erased;
+        return *this;
     }
     
-    void TensorNode::ensure_own_tensor() {
-        if(!tensorObject.unique()) {
-            tensorObject.reset(tensorObject->get_copy());
-        }
+    TensorNode& TensorNode::operator=(      TensorNode&& _other) {
+        tensorObject = std::move(_other.tensorObject);
+        neighbors = std::move(_other.neighbors);
+        erased = _other.erased;
+        return *this;
+    }
+    
+    TensorNode TensorNode::strippped_copy() const {
+        return TensorNode(std::unique_ptr<Tensor>(), neighbors);
     }
     
     void TensorNode::add_factor(const value_t _factor) {
-        ensure_own_tensor();
         tensorObject->factor *= _factor;
     }
     

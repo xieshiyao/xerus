@@ -75,7 +75,7 @@ namespace xerus {
             }
             
             nodes.emplace_back(
-                std::shared_ptr<Tensor>(new FullTensor(neighbors.size())), 
+                std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
                 std::move(neighbors)
             );
         }
@@ -172,11 +172,11 @@ namespace xerus {
         
         if(realMe.degree() == N) {
             // Create the one Node
-            std::shared_ptr<Tensor> nextTensor;
+            std::unique_ptr<Tensor> nextTensor;
             if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse() && realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()) { // Both Sparse
                 nextTensor.reset(realMe.tensorObjectReadOnly->nodes[0].tensorObject->get_copy());
                 nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-                *std::static_pointer_cast<SparseTensor>(nextTensor) += realOther.tensorObjectReadOnly->factor*(*std::static_pointer_cast<SparseTensor>(realOther.tensorObjectReadOnly->nodes[0].tensorObject));
+                *static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<SparseTensor*>(realOther.tensorObjectReadOnly->nodes[0].tensorObject.get()));
             } else { // Maximal one sparse
                 if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
                     nextTensor.reset(new FullTensor(*static_cast<SparseTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
@@ -191,7 +191,7 @@ namespace xerus {
                 }
             }
             
-            outTensor.nodes.emplace_back(std::static_pointer_cast<Tensor>(nextTensor));
+            outTensor.nodes.emplace_back(std::move(nextTensor));
             outTensor.nodes.back().neighbors.emplace_back(-1, 0, outTensor.dimensions[0], true);
             if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, 1, outTensor.dimensions[1], true); }
             _out.assign(std::move(tmpOut));
@@ -218,11 +218,12 @@ namespace xerus {
             if(position != numNodes-1) {
                 nxtDimensions.emplace_back(myNode.dimensions.back()+otherNode.dimensions.back());
             }
-            std::shared_ptr<FullTensor> nxtTensor(new FullTensor(std::move(nxtDimensions)) );
+            
+            FullTensor* nxtTensor(new FullTensor(std::move(nxtDimensions)) ); // Ownership is given to the Node.
             
             
             // Create the Node
-            outTensor.nodes.emplace_back(std::static_pointer_cast<Tensor>(nxtTensor));
+            outTensor.nodes.emplace_back(std::unique_ptr<Tensor>(nxtTensor));
             if(position != 0) { outTensor.nodes.back().neighbors.emplace_back(position-1, ((position == 1) ? 0:1)+N, nxtTensor->dimensions.front(), false); }
             outTensor.nodes.back().neighbors.emplace_back(-1, position, outTensor.dimensions[position], true);
             if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, position+numNodes, outTensor.dimensions[position+numNodes], true); }
@@ -395,8 +396,8 @@ namespace xerus {
                     neighbors.emplace_back(i+1, 0, r, false);
                 }
                 
-                // construct identity
-                std::shared_ptr<Tensor> tI(new FullTensor(constructVector2, [](const std::vector<size_t> &_idx){
+                // Construct identity
+                std::unique_ptr<Tensor> tI(new FullTensor(constructVector2, [](const std::vector<size_t> &_idx){
                         if (_idx[0] == _idx[1]) {
                             return 1.0;
                         } else {
@@ -440,7 +441,7 @@ namespace xerus {
         
         // If there is only one node in the resulting train object we are already finished
         if(_A.degree() == N) {
-            _out.nodes.emplace_back(std::shared_ptr<Tensor>(new FullTensor(_A)));
+            _out.nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor(_A)));
             _out.externalLinks.emplace_back(0, 0, _A.dimensions[0], false);
             _out.nodes.back().neighbors.emplace_back(0, 0, _A.dimensions[0], true);
             if(N==2) {
@@ -463,7 +464,7 @@ namespace xerus {
         }
         
         // Needed variables
-        std::shared_ptr<FullTensor> nxtTensor;
+        std::unique_ptr<Tensor> nxtTensor;
         std::unique_ptr<value_t[]> currentU, currentS, currentVt, workingData, oldS;
         size_t leftDim, remainingDim=_A.size, maxRank, newRank, oldRank=1;
         
@@ -515,12 +516,12 @@ namespace xerus {
             } else {
                 nxtTensor.reset(new FullTensor(std::move(dimensions), DONT_SET_ZERO()) );
                 for(size_t i = 0; i < leftDim; ++i) {
-                    array_copy(nxtTensor->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
+                    array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
                 }
             }
             
             // Create a node for U
-            _out.nodes.emplace_back(std::static_pointer_cast<Tensor>(nxtTensor));
+            _out.nodes.emplace_back(std::move(nxtTensor));
             if(position > 0) { _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, ((position == 1) ? 0:1)+N, oldRank, false); }
             _out.nodes.back().neighbors.emplace_back(-1, position, _A.dimensions[position], true);
             if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, position+numNodes, _A.dimensions[position+numNodes], true); }
@@ -543,10 +544,10 @@ namespace xerus {
         } else { 
             nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1]}, DONT_SET_ZERO()) ); 
         }
-        array_copy(nxtTensor->data.get(), workingData.get(), oldRank*remainingDim);
+        array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
         
         // Create final Node for Vt
-        _out.nodes.emplace_back(std::static_pointer_cast<Tensor>(nxtTensor));
+        _out.nodes.emplace_back(std::move(nxtTensor));
         _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, (numNodes == 2 ? N : 1+N), oldRank, false);
         _out.nodes.back().neighbors.emplace_back(-1, _A.degree()/N-1, _A.dimensions[_A.degree()/N-1], true);
         if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, _A.degree()-1, _A.dimensions[_A.degree()-1], true); }
@@ -1028,7 +1029,7 @@ namespace xerus {
     void TTNetwork<isOperator>::cannonicalize_left() {
         Index i,r,j;
         FullTensor core(2);
-        for (size_t n=nodes.size()-1; n>0; --n) {
+        for (size_t n=nodes.size()-1; n > 0; --n) {
             REQUIRE(!nodes[n].erased, "ie n="<<n);
             Tensor &currTensor = *nodes[n].tensorObject;
             ( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?

@@ -107,7 +107,7 @@ namespace xerus {
                     }
                     
                     result.nodes.emplace_back(
-                        std::shared_ptr<Tensor>(new FullTensor(FullTensor::construct_random(constructVector, _rnd, _dist))), 
+                        std::unique_ptr<Tensor>(new FullTensor(FullTensor::construct_random(constructVector, _rnd, _dist))), 
                         std::move(neighbors)
                     );
                     

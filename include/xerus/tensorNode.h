@@ -21,12 +21,10 @@
 
 #include "basic.h"
 #include <memory>
+#include "tensor.h"
 #include "misc/sfinae.h"
 
 namespace xerus {
-    // Necessary forward declaritons
-    class Tensor;
-    
     class TensorNode {
     public:
         struct Link {
@@ -56,7 +54,9 @@ namespace xerus {
             bool links(const size_t _other) const { return !external && other == _other; }
         };
 
-        std::shared_ptr<Tensor> tensorObject;
+//         std::shared_ptr<Tensor> tensorObject;
+        
+        std::unique_ptr<Tensor> tensorObject;
         
         std::vector<Link> neighbors;
         
@@ -64,23 +64,18 @@ namespace xerus {
         
         explicit TensorNode();
         
-        implicit TensorNode(const TensorNode& ) = default;
-        implicit TensorNode(      TensorNode&&) = default;
+        implicit TensorNode(const TensorNode&  _other);
+        implicit TensorNode(      TensorNode&& _other);
         
-        explicit TensorNode(const std::shared_ptr<Tensor>&  _tensorObject);
+        explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
         
-        explicit TensorNode(      std::shared_ptr<Tensor>&& _tensorObject);
+        explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors);
+        explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors);
         
-        
-        template<ADD_MOVE(std::shared_ptr<Tensor>, SPT), ADD_MOVE(std::vector<Link>, VL)>
-        explicit TensorNode(SPT&& _tensorObject, VL&& _neighbors) : tensorObject(std::forward<SPT>(_tensorObject)), neighbors(std::forward<VL>(_neighbors)), erased(false) {}
-        
-        TensorNode& operator=(const TensorNode& ) = default;
-        TensorNode& operator=(      TensorNode&&) = default;
+        TensorNode& operator=(const TensorNode&  _other);
+        TensorNode& operator=(      TensorNode&& _other);
 
         TensorNode strippped_copy() const;
-        
-        void ensure_own_tensor();
         
         void add_factor(const value_t _factor);
         

@@ -36,20 +36,20 @@ namespace xerus {
     TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)), factor(_mv.factor) {}
     
     TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions), factor(1.0) {
-        nodes.emplace_back(std::shared_ptr<Tensor>(_other.get_copy()), init_from_dimension_array());
+        nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_copy()), init_from_dimension_array());
     }
     
     TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions), factor(1.0) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-        nodes.emplace_back(std::shared_ptr<Tensor>(_other.get_moved_copy()), init_from_dimension_array());
+        nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_moved_copy()), init_from_dimension_array());
     }
     
-    TensorNetwork::TensorNetwork(const std::shared_ptr<Tensor>& _tensor) : dimensions(_tensor->dimensions), factor(1.0) {
-        nodes.emplace_back(_tensor, init_from_dimension_array());
+    TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions), factor(1.0) {
+        nodes.emplace_back(std::move(_tensor), init_from_dimension_array());
     }
     
     /// Constructs the trivial network containing non-specified size-1 FullTensor
     TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree,1)), factor(1.0) {
-        nodes.emplace_back(std::shared_ptr<Tensor>(new FullTensor(_degree)), init_from_dimension_array());
+        nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor(_degree)), init_from_dimension_array());
     }
     
     TensorNetwork* TensorNetwork::get_copy() const {
@@ -583,7 +583,7 @@ namespace xerus {
         }
         
         // Construct new node
-        std::shared_ptr<Tensor> newTensor;
+        std::unique_ptr<Tensor> newTensor;
         if (node1.tensorObject) {
             REQUIRE(node2.tensorObject, "Internal Error.");
             
@@ -593,7 +593,7 @@ namespace xerus {
         } else {
             REQUIRE(!node2.tensorObject, "Internal Error.");
         } 
-        TensorNode newNode(newTensor, newLinks);
+        TensorNode newNode(std::move(newTensor), newLinks);
         
         // replace node1 and node2
         nodes[_nodeId1] = newNode;
@@ -726,7 +726,7 @@ namespace xerus {
                 }
                 // Perform the trace
                 if (nodes[id].tensorObject) {
-                    std::shared_ptr<Tensor> newTensor(nodes[id].tensorObject->construct_new());
+                    std::unique_ptr<Tensor> newTensor(nodes[id].tensorObject->construct_new());
                     (*newTensor)(idxOut) = (*nodes[id].tensorObject)(idxIn);
                     nodes[id].tensorObject = std::move(newTensor);
                     nodes[id].neighbors = std::move(newLinks);
