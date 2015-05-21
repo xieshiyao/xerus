@@ -31,6 +31,11 @@ namespace xerus {
     class TTNetwork : public TensorNetwork {
 	protected:
 		constexpr size_t N=isOperator?2:1;
+		
+		enum cannonicalization_t {
+			NONE, LEFT, RIGHT
+		};
+		cannonicalization_t cannonicalization; 
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         explicit TTNetwork() = default;

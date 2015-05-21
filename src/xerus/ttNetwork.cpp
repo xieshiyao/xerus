@@ -32,7 +32,7 @@
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork() {
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(), cannonicalization(RIGHT) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
 		factor = 0.0;
@@ -65,7 +65,7 @@ namespace xerus {
 		);
 		for (size_t i=1; i<=numComponents; ++i) {
 			neighbors.clear();
-			neighbors.emplace_back(i-1, N+1, 1, false);
+			neighbors.emplace_back(i-1, i==1?0:N+1, 1, false);
 			for (size_t j=0; j< N; ++j) { 
 				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
 			}
@@ -87,16 +87,16 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps) {
+	TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps): cannonicalization(RIGHT) {
 		construct_train_from_full(*this, _full, _eps);
 	}
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy) { }
+	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy), cannonicalization(_cpy.cannonicalization) { }
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(      TTNetwork&& _mov) : TensorNetwork(std::move(_mov)) { }
+	TTNetwork<isOperator>::TTNetwork(      TTNetwork&& _mov) : TensorNetwork(std::move(_mov)), cannonicalization(_mov.cannonicalization) { }
 
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
@@ -131,7 +131,7 @@ namespace xerus {
 			}
 			if(N == 2) {
 				for(size_t i = 1; i <= numComponents; ++i) {
-					result.externalLinks.emplace_back(i, 2, result.dimensions[numNodes+i-1], false);
+					result.externalLinks.emplace_back(i, 2, result.dimensions[numComponents+i-1], false);
 				}
 			}
 			
@@ -145,12 +145,12 @@ namespace xerus {
 			);
 			for (size_t i=1; i<=numComponents; ++i) {
 				neighbors.clear();
-				neighbors.emplace_back(i-1, N+1, 1, false);
+				neighbors.emplace_back(i-1, i==1?0:N+1, 1, false);
 				constructionVector.push_back(1);
 				for (size_t j=0; j< N; ++j) { 
 					size_t r = _dimensions[i+j*numComponents];
 					constructionVector.push_back(r);
-					neighbors.emplace_back(-1, i+j*numNodes, r, true);
+					neighbors.emplace_back(-1, i+j*numComponents, r, true);
 				}
 				neighbors.emplace_back(i+1, 0, 1, false);
 				constructionVector.push_back(1);
@@ -190,7 +190,6 @@ namespace xerus {
 		}
 		_out.factor = 1.0;
 		
-		
 		const size_t numComponents = _A.degree()/N;
 		
 		// Create the externalLinks first, as we know their position in advance
@@ -199,7 +198,7 @@ namespace xerus {
 		}
 		if (N == 2) {
 			for(size_t i = 1; i <= numComponents; ++i) {
-				_out.externalLinks.emplace_back(i, 2, _A.dimensions[numNodes+i-1], false);
+				_out.externalLinks.emplace_back(i, 2, _A.dimensions[numComponents+i-1], false);
 			}
 		}
 		
@@ -219,7 +218,7 @@ namespace xerus {
 			for(size_t i = 0; i < _A.degree(); ++i) { presentIndices.emplace_back(); }
 			for(size_t i = 0; i < numComponents; ++i) {
 				newIndices.emplace_back(presentIndices[i]);
-				newIndices.emplace_back(presentIndices[i+numNodes]);
+				newIndices.emplace_back(presentIndices[i+numComponents]);
 			}
 			tmpTensor(newIndices) = _A(presentIndices);
 			currentVt = tmpTensor.data;
@@ -228,15 +227,15 @@ namespace xerus {
 		nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})));
 		nodes.back().neighbors.emplace_back(1,0,1,false);
 		
-		for(size_t position = 0; position < numComponents-1; ++position) {
+		for(size_t position = 1; position <= numComponents-1; ++position) {
 			workingData = std::move(currentVt);
 			oldRank = newRank;
 			
 			// determine dimensions of the next matrification
-			leftDim = oldRank*_A.dimensions[position];
-			if(N == 2) { leftDim *= _A.dimensions[position+numNodes]; }
-			remainingDim /= _A.dimensions[position];
-			if(N == 2) { remainingDim /= _A.dimensions[position+numNodes]; }
+			leftDim = oldRank*_A.dimensions[position-1];
+			if(N == 2) { leftDim *= _A.dimensions[position+numComponents-1]; }
+			remainingDim /= _A.dimensions[position-1];
+			if(N == 2) { remainingDim /= _A.dimensions[position+numComponents-1]; }
 			maxRank = std::min(leftDim, remainingDim);
 			
 			// create temporary space for the results
@@ -255,8 +254,8 @@ namespace xerus {
 			// Create a FullTensor for U
 			std::vector<size_t> dimensions;
 			dimensions.emplace_back(oldRank);
-			dimensions.emplace_back(_A.dimensions[position]);
-			if (N == 2) { dimensions.emplace_back(_A.dimensions[position+numNodes]); }
+			dimensions.emplace_back(_A.dimensions[position-1]);
+			if (N == 2) { dimensions.emplace_back(_A.dimensions[position+numComponents-1]); }
 			dimensions.emplace_back(newRank);
 			if (newRank == maxRank) {
 				nxtTensor.reset(new FullTensor(std::move(dimensions), std::move(currentU)) );
@@ -269,39 +268,44 @@ namespace xerus {
 			
 			// Create a node for U
 			_out.nodes.emplace_back(std::move(nxtTensor));
-            _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, N+1, oldRank, false); // TODO N+1 is wrong for the first component tensor
-            _out.nodes.back().neighbors.emplace_back(-1, position+1, _A.dimensions[position], true);
-            if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, position+numComponents+1, _A.dimensions[position+numComponents], true); }
-            _out.nodes.back().neighbors.emplace_back(_out.nodes.size(), 0, newRank, false);
-                
-            // Calclate S*Vt by scaling the rows of Vt
-            for (size_t row = 0; row < newRank; ++row) {
-                array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
-            }
-        }
-        
-        // Create FullTensor for Vt
-        if (N==1) { 
-            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) ); 
-        } else { 
-            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) ); 
-        }
-        array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
-        
-        // Create final Node for Vt
-        _out.nodes.emplace_back(std::move(nxtTensor));
-        _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, N+1, oldRank, false);
-        _out.nodes.back().neighbors.emplace_back(-1, _A.degree()/N-1, _A.dimensions[_A.degree()/N-1], true);
-        if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, _A.degree()-1, _A.dimensions[_A.degree()-1], true); }
-        
-        REQUIRE((N==1 && remainingDim == _A.dimensions.back()) || (N==2 && remainingDim == _A.dimensions[_A.degree()/2-1]*_A.dimensions[_A.degree()-1]), "Internal Error");
-        REQUIRE(_out.is_in_expected_format(), "ie");
-    }
+			_out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, position==1?0:N+1, oldRank, false);
+			_out.nodes.back().neighbors.emplace_back(-1, position, _A.dimensions[position-1], true);
+			if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, position+numComponents, _A.dimensions[position+numComponents-1], true); }
+			_out.nodes.back().neighbors.emplace_back(_out.nodes.size(), 0, newRank, false);
+			
+			// Calclate S*Vt by scaling the rows of Vt
+			for (size_t row = 0; row < newRank; ++row) {
+				array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
+			}
+		}
+		
+		// Create FullTensor for Vt
+		if (N==1) {
+			nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) );
+		} else {
+			nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) );
+		}
+		array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
+		
+		// Create Node for Vt
+		_out.nodes.emplace_back(std::move(nxtTensor));
+		_out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, N+1, oldRank, false);
+		_out.nodes.back().neighbors.emplace_back(-1, _A.degree()/N-1, _A.dimensions[_A.degree()/N-1], true);
+		if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, _A.degree()-1, _A.dimensions[_A.degree()-1], true); }
+		_out.nodes.back().neighbors.emplace_back(numComponents+1, 0, 1, false);
+		
+		nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})));
+		nodes.back().neighbors.emplace_back(numComponents,N+1,1,false);
+		
+		cannonicalization = RIGHT;
+		
+		REQUIRE((N==1 && remainingDim == _A.dimensions.back()) || (N==2 && remainingDim == _A.dimensions[_A.degree()/2-1]*_A.dimensions[_A.degree()-1]), "Internal Error");
+		REQUIRE(_out.is_in_expected_format(), "ie");
+	}
     
     
     template<bool isOperator>
     void TTNetwork<isOperator>::round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps) {
-        const size_t N = isOperator?2:1;
         REQUIRE(_me.degree()%N==0, "Number of indicis must be even for TTOperator");
         REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
         REQUIRE(_maxRanks.size() == _me.degree()/N-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << _me.degree()/N-1 << " are given.");
