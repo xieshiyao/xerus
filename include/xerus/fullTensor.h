@@ -36,7 +36,7 @@ namespace xerus {
         /// The data is stored such that indices increase from right to left (row-major order).
         /// If the tensor is modified and not sole owner a deep copy is performed.
         std::shared_ptr<value_t> data;
-         
+        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// Empty constructor, creates an order zero tensor with zero as single entry.
         explicit FullTensor();

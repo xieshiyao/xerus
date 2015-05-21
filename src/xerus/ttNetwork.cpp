@@ -31,289 +31,266 @@
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork() : TensorNetwork() {}
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork() {
+		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
+		const size_t numComponents = _degree/N;
+		factor = 0.0;
+		
+		if (numComponents == 0) {
+			return;
+		}
+		
+		dimensions = std::vector<size_t>(_degree, 1);
+		
+		// externalLinks
+		for (size_t i = 1; i <= numComponents; ++i) {
+			externalLinks.emplace_back(i, 1, 1, false);
+		}
+		if (N == 2) {
+			for (size_t i = 1; i <= numComponents; ++i) {
+				externalLinks.emplace_back(i, 2, 1, false);
+			}
+		}
+		
+		REQUIRE(externalLinks.size() == _degree, "ie");
+		
+		std::vector<TensorNode::Link> neighbors;
+		
+		neighbors.emplace_back(1,0,1,false);
+		
+		nodes.emplace_back(
+			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
+			std::move(neighbors)
+		);
+		for (size_t i=1; i<=numComponents; ++i) {
+			neighbors.clear();
+			neighbors.emplace_back(i-1, N+1, 1, false);
+			for (size_t j=0; j< N; ++j) { 
+				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
+			}
+			neighbors.emplace_back(i+1, 0, 1, false);
+			
+			nodes.emplace_back(
+				std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
+				std::move(neighbors)
+			);
+		}
+		neighbors.clear();
+		neighbors.emplace_back(numComponents, N+1, 1, false);
+		nodes.emplace_back(
+			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
+			std::move(neighbors)
+		);
+		
+		REQUIRE(is_valid_tt(), "ie");
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps) {
+		construct_train_from_full(*this, _full, _eps);
+	}
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy) { }
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(      TTNetwork&& _mov) : TensorNetwork(std::move(_mov)) { }
 
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork() {
-        const size_t N=isOperator?2:1;
-        REQUIRE(_degree%N==0, "illegal degree for TTOperator");
-        const size_t numNodes = _degree/N;
-        dimensions = std::vector<size_t>(_degree, 1);
-        factor = 0.0;
-        
-        if (numNodes == 0) {
-            return;
-        }
-        
-        // externalLinks
-        externalLinks.emplace_back(0, 0, 1, false);
-        for(size_t i = 1; i < numNodes; ++i) {
-            externalLinks.emplace_back(i, 1, 1, false);
-        }
-        if(N == 2) {
-            externalLinks.emplace_back(0, 1, 1, false);
-            for(size_t i = 1; i < numNodes; ++i) {
-                externalLinks.emplace_back(i, 2, 1, false);
-            }
-        }
-        
-        REQUIRE(externalLinks.size() == _degree, "ie");
-        
-        std::vector<TensorNode::Link> neighbors;
-        for (size_t i=0; i<numNodes; ++i) {
-            neighbors.clear();
-            if (i!=0) {
-                neighbors.emplace_back(i-1, N+(i>=2?1:0), 1, false);
-            }
-            for (size_t j=0; j< N; ++j) { 
-                neighbors.emplace_back(-1, i+j*numNodes, 1, true);
-            }
-            if (i!=numNodes-1) {
-                neighbors.emplace_back(i+1, 0, 1, false);
-            }
-            
-            nodes.emplace_back(
-                std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
-                std::move(neighbors)
-            );
-        }
-        REQUIRE(nodes.size() == _degree/N,"ie");
-        REQUIRE(is_valid_tt(), "ie");
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps) {
-        construct_train_from_full(*this, _full, _eps);
-    }
-    
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy) { }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(      TTNetwork&& _mov) : TensorNetwork(std::move(_mov)) { }
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
+		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
+	}
 
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
-        LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
-    }
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(TensorNetwork &&_mov, double _eps) : TensorNetwork(std::move(_mov)) {
+		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::construct_identity(const std::vector<size_t>& _dimensions) {
+		REQUIRE(isOperator, "tttensor identity ill-defined");
+		#ifndef DISABLE_RUNTIME_CHECKS_
+		for (size_t d : _dimensions) {
+			REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
+		}
+		#endif
+		
+		TTNetwork result;
+		if(_dimensions.size() == 0) {
+			result.factor = 1.0; 
+		} else {
+			result.dimensions = _dimensions;
+			result.factor = 1.0;
+			
+			// externalLinks
+			size_t numComponents = _dimensions.size()/N;
+			for(size_t i = 1; i <= numComponents; ++i) {
+				result.externalLinks.emplace_back(i, 1, result.dimensions[i-1], false);
+			}
+			if(N == 2) {
+				for(size_t i = 1; i <= numComponents; ++i) {
+					result.externalLinks.emplace_back(i, 2, result.dimensions[numNodes+i-1], false);
+				}
+			}
+			
+			std::vector<size_t> constructionVector;
+			std::vector<TensorNode::Link> neighbors;
+			neighbors.emplace_back(1,0,1,false);
+			
+			nodes.emplace_back(
+				std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
+				std::move(neighbors)
+			);
+			for (size_t i=1; i<=numComponents; ++i) {
+				neighbors.clear();
+				neighbors.emplace_back(i-1, N+1, 1, false);
+				constructionVector.push_back(1);
+				for (size_t j=0; j< N; ++j) { 
+					size_t r = _dimensions[i+j*numComponents];
+					constructionVector.push_back(r);
+					neighbors.emplace_back(-1, i+j*numNodes, r, true);
+				}
+				neighbors.emplace_back(i+1, 0, 1, false);
+				constructionVector.push_back(1);
+				
+				// Construct identity
+				std::unique_ptr<Tensor> tI(new FullTensor(constructionVector, [](const std::vector<size_t> &_idx){
+					if (_idx[1] == _idx[2]) {
+						return 1.0;
+					} else {
+						return 0.0;
+					}
+				}));
+				result.nodes.emplace_back(
+					std::move(tI), 
+					std::move(neighbors)
+				);
+			}
+		}
+		result.cannonicalize_right();
+		REQUIRE(result.is_valid_tt(), "ie");
+		return result;
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(TensorNetwork &&_mov, double _eps) : TensorNetwork(std::move(_mov)) {
-        LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator> TTNetwork<isOperator>::construct_identity(const std::vector<size_t>& _dimensions) {
-        const size_t N = isOperator?2:1;
-        REQUIRE(isOperator, "tttensor identity ill-defined");
-        #ifndef DISABLE_RUNTIME_CHECKS_
-        for (size_t d : _dimensions) {
-            REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
-        }
-        #endif
-        
-        TTNetwork result;
-        if(_dimensions.size() == 0) {
-            result.factor = 1; 
-            result.dimensions.clear();
-        } else {
-            result.nodes.clear();
-            result.dimensions = _dimensions;
-            result.factor = 1.0;
-            
-            // externalLinks
-            size_t numNodes = _dimensions.size()/N;
-            result.externalLinks.emplace_back(0, 0, result.dimensions[0], false);
-            for(size_t i = 1; i < numNodes; ++i) {
-                result.externalLinks.emplace_back(i, 1, result.dimensions[i], false);
-            }
-            if(N == 2) {
-                result.externalLinks.emplace_back(0, 1, result.dimensions[numNodes], false);
-                for(size_t i = 1; i < numNodes; ++i) {
-                    result.externalLinks.emplace_back(i, 2, result.dimensions[numNodes+i], false);
-                }
-            }
-            
-            std::vector<size_t> constructVector1;
-            std::vector<size_t> constructVector2;
-            std::vector<TensorNode::Link> neighbors;
-            for (size_t i=0; i<_dimensions.size()/N; ++i) {
-                constructVector1.clear();
-                constructVector2.clear();
-                neighbors.clear();
-                if (i!=0) {
-                    size_t r = 1;
-                    constructVector1.emplace_back(r);
-                    neighbors.emplace_back(i-1, N+(i>=2?1:0), r, false);
-                }
-                for (size_t j=0; j< N; ++j) { 
-                    size_t r = _dimensions[i+j*numNodes];
-                    constructVector1.emplace_back(r);
-                    constructVector2.emplace_back(r);
-                    neighbors.emplace_back(-1, i+j*numNodes, r, true);
-                }
-                if (i!=_dimensions.size()/N-1) {
-                    size_t r = 1;
-                    constructVector1.emplace_back(r);
-                    neighbors.emplace_back(i+1, 0, r, false);
-                }
-                
-                // Construct identity
-                std::unique_ptr<Tensor> tI(new FullTensor(constructVector2, [](const std::vector<size_t> &_idx){
-                        if (_idx[0] == _idx[1]) {
-                            return 1.0;
-                        } else {
-                            return 0.0;
-                        }
-                    }));
-                tI->reinterpret_dimensions(constructVector1);
-                result.nodes.emplace_back(
-                    std::move(tI), 
-                    std::move(neighbors)
-                );
-            }
-        }
-        REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
-        result.cannonicalize_right();
-        REQUIRE(result.is_valid_tt(), "ie");
-        return result;
-    }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-    template<bool isOperator>
-    void TTNetwork<isOperator>::construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps) {
-        const size_t N = isOperator?2:1;
-        REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
-        REQUIRE(_A.degree()%N==0, "Number of indicis must be even for TTOperator");
-        
-        //The external dimensions are the same as for the FullTensor
-        _out.dimensions = _A.dimensions;
-        
-        // Number of Nodes to create
-        const size_t numNodes = _A.degree()/N;
-        
-        // If _A has degree zero we are finished
-        if(_A.degree() == 0) { 
-            _out.factor = _A.data.get()[0];
-            return; 
-        }
-        _out.factor = 1.0;
-        
-        // If there is only one node in the resulting train object we are already finished
-        if(_A.degree() == N) {
-            _out.nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor(_A)));
-            _out.externalLinks.emplace_back(0, 0, _A.dimensions[0], false);
-            _out.nodes.back().neighbors.emplace_back(0, 0, _A.dimensions[0], true);
-            if(N==2) {
-                _out.externalLinks.emplace_back(0, 1, _A.dimensions[1], false);
-                _out.nodes.back().neighbors.emplace_back(0, 1, _A.dimensions[1], true);
-            }
-            return;
-        }
-        
-        // Create the externalLinks first, as we know their position in advance
-        _out.externalLinks.emplace_back(0, 0, _A.dimensions[0], false);
-        for(size_t i = 1; i < numNodes; ++i) {
-            _out.externalLinks.emplace_back(i, 1, _A.dimensions[i], false);
-        }
-        if(N == 2) {
-            _out.externalLinks.emplace_back(0, 1, _A.dimensions[numNodes], false);
-            for(size_t i = 1; i < numNodes; ++i) {
-                _out.externalLinks.emplace_back(i, 2, _A.dimensions[numNodes+i], false);
-            }
-        }
-        
-        // Needed variables
-        std::unique_ptr<Tensor> nxtTensor;
-        std::unique_ptr<value_t[]> currentU, currentS, currentVt, workingData, oldS;
-        size_t leftDim, remainingDim=_A.size, maxRank, newRank, oldRank=1;
-        
-        // If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
-        if(N==1) {
-            workingData.reset(new value_t[_A.size]);
-            array_copy(workingData.get(), _A.data.get(), _A.size);
-        } else {
-            FullTensor tmpTensor(_A.degree());
-            std::vector<Index> presentIndices, newIndices;
-            for(size_t i = 0; i < _A.degree(); ++i) { presentIndices.emplace_back(); }
-            for(size_t i = 0; i < numNodes; ++i) {
-                newIndices.emplace_back(presentIndices[i]);
-                newIndices.emplace_back(presentIndices[i+numNodes]);
-            }
-            tmpTensor(newIndices) = _A(presentIndices);
-            workingData.reset(new value_t[tmpTensor.size]); // TODO unnecessary copy
-            array_copy(workingData.get(), tmpTensor.data.get(), tmpTensor.size);
-        }
-        
-        // This was the first step. Now automated steps until we reach the end
-        for(size_t position = 0; position < numNodes-1; ++position) {
-            // Determine Dimensions of the next matrification
-            leftDim = oldRank*_A.dimensions[position];
-            if(N == 2) { leftDim *= _A.dimensions[position+numNodes]; }
-            remainingDim /= _A.dimensions[position];
-            if(N == 2) { remainingDim /= _A.dimensions[position+numNodes]; }
-            maxRank = std::min(leftDim, remainingDim);
-            
-            // Create temporary space for the results
-            currentU.reset(new value_t[leftDim*maxRank]);
-            currentS.reset(new value_t[maxRank]);
-            currentVt.reset(new value_t[maxRank*remainingDim]);
-            
-            // Actually calculate the SVD --  We may destroy the current workingData
-            blasWrapper::svd_destructive(currentU.get(), currentS.get(), currentVt.get(), workingData.get(), leftDim, remainingDim);
-            
-            //Determine the Rank
-            for(newRank = maxRank; currentS[newRank-1] < _eps*currentS[0]; --newRank) { }
-            
-            // Create a FullTensor for U
-            std::vector<size_t> dimensions;
-            if(position != 0) { dimensions.emplace_back(oldRank); }
-            dimensions.emplace_back(_A.dimensions[position]);
-            if(N == 2) { dimensions.emplace_back(_A.dimensions[position+numNodes]); }
-            dimensions.emplace_back(newRank);
-            if(newRank == maxRank) {
-                nxtTensor.reset(new FullTensor(std::move(dimensions), std::move(currentU)) );
-            } else {
-                nxtTensor.reset(new FullTensor(std::move(dimensions), DONT_SET_ZERO()) );
-                for(size_t i = 0; i < leftDim; ++i) {
-                    array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
-                }
-            }
-            
-            // Create a node for U
-            _out.nodes.emplace_back(std::move(nxtTensor));
-            if(position > 0) { _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, ((position == 1) ? 0:1)+N, oldRank, false); }
-            _out.nodes.back().neighbors.emplace_back(-1, position, _A.dimensions[position], true);
-            if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, position+numNodes, _A.dimensions[position+numNodes], true); }
+	template<bool isOperator>
+	void TTNetwork<isOperator>::construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps) {
+		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
+		REQUIRE(_A.degree()%N==0, "Number of indicis must be even for TTOperator");
+		
+		_out.dimensions = _A.dimensions;
+		
+		if (_A.degree() == 0) { 
+			_out.factor = _A.data.get()[0];
+			return; 
+		}
+		_out.factor = 1.0;
+		
+		
+		const size_t numComponents = _A.degree()/N;
+		
+		// Create the externalLinks first, as we know their position in advance
+		for (size_t i = 1; i <= numComponents; ++i) {
+			_out.externalLinks.emplace_back(i, 1, _A.dimensions[i-1], false);
+		}
+		if (N == 2) {
+			for(size_t i = 1; i <= numComponents; ++i) {
+				_out.externalLinks.emplace_back(i, 2, _A.dimensions[numNodes+i-1], false);
+			}
+		}
+		
+		// Needed variables
+		std::unique_ptr<Tensor> nxtTensor;
+		std::unique_ptr<value_t[]> currentU, currentS;
+		std::shared_ptr<value_t> workingData, currentVt;
+		size_t leftDim=1, remainingDim=_A.size, maxRank, newRank=1, oldRank=1;
+		
+		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
+		if (N==1) {
+			currentVt.reset(new value_t[_A.size], internal::array_deleter_vt);
+			array_copy(currentVt.get(), _A.data.get(), _A.size);
+		} else {
+			FullTensor tmpTensor(_A.degree());
+			std::vector<Index> presentIndices, newIndices;
+			for(size_t i = 0; i < _A.degree(); ++i) { presentIndices.emplace_back(); }
+			for(size_t i = 0; i < numComponents; ++i) {
+				newIndices.emplace_back(presentIndices[i]);
+				newIndices.emplace_back(presentIndices[i+numNodes]);
+			}
+			tmpTensor(newIndices) = _A(presentIndices);
+			currentVt = tmpTensor.data;
+		}
+		
+		nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})));
+		nodes.back().neighbors.emplace_back(1,0,1,false);
+		
+		for(size_t position = 0; position < numComponents-1; ++position) {
+			workingData = std::move(currentVt);
+			oldRank = newRank;
+			
+			// determine dimensions of the next matrification
+			leftDim = oldRank*_A.dimensions[position];
+			if(N == 2) { leftDim *= _A.dimensions[position+numNodes]; }
+			remainingDim /= _A.dimensions[position];
+			if(N == 2) { remainingDim /= _A.dimensions[position+numNodes]; }
+			maxRank = std::min(leftDim, remainingDim);
+			
+			// create temporary space for the results
+			currentU.reset(new value_t[leftDim*maxRank]);
+			currentS.reset(new value_t[maxRank]);
+			currentVt.reset(new value_t[maxRank*remainingDim]);
+			
+			blasWrapper::svd_destructive(currentU.get(), currentS.get(), currentVt.get(), workingData.get(), leftDim, remainingDim);
+			
+			// determine the rank, keeping all singular values that are large enough
+			newRank = maxRank;
+			while (currentS[newRank-1] < _eps*currentS[0]) {
+				newRank-=1;
+			}
+			
+			// Create a FullTensor for U
+			std::vector<size_t> dimensions;
+			dimensions.emplace_back(oldRank);
+			dimensions.emplace_back(_A.dimensions[position]);
+			if (N == 2) { dimensions.emplace_back(_A.dimensions[position+numNodes]); }
+			dimensions.emplace_back(newRank);
+			if (newRank == maxRank) {
+				nxtTensor.reset(new FullTensor(std::move(dimensions), std::move(currentU)) );
+			} else {
+				nxtTensor.reset(new FullTensor(std::move(dimensions), DONT_SET_ZERO()) );
+				for (size_t i = 0; i < leftDim; ++i) {
+					array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
+				}
+			}
+			
+			// Create a node for U
+			_out.nodes.emplace_back(std::move(nxtTensor));
+            _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, N+1, oldRank, false); // TODO N+1 is wrong for the first component tensor
+            _out.nodes.back().neighbors.emplace_back(-1, position+1, _A.dimensions[position], true);
+            if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, position+numComponents+1, _A.dimensions[position+numComponents], true); }
             _out.nodes.back().neighbors.emplace_back(_out.nodes.size(), 0, newRank, false);
                 
             // Calclate S*Vt by scaling the rows of Vt
-            for(size_t row = 0; row < newRank; ++row) {
+            for (size_t row = 0; row < newRank; ++row) {
                 array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
             }
-            
-            // Save the Stuff still needed
-            workingData = std::move(currentVt);
-            oldS = std::move(currentS);
-            oldRank = newRank;
         }
         
         // Create FullTensor for Vt
-        if(N==1) { 
-            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()-1],                             }, DONT_SET_ZERO()) ); 
+        if (N==1) { 
+            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) ); 
         } else { 
-            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1]}, DONT_SET_ZERO()) ); 
+            nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1], 1}, DONT_SET_ZERO()) ); 
         }
         array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
         
         // Create final Node for Vt
         _out.nodes.emplace_back(std::move(nxtTensor));
-        _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, (numNodes == 2 ? N : 1+N), oldRank, false);
+        _out.nodes.back().neighbors.emplace_back(_out.nodes.size()-2, N+1, oldRank, false);
         _out.nodes.back().neighbors.emplace_back(-1, _A.degree()/N-1, _A.dimensions[_A.degree()/N-1], true);
         if(N == 2) { _out.nodes.back().neighbors.emplace_back(-1, _A.degree()-1, _A.dimensions[_A.degree()-1], true); }
         

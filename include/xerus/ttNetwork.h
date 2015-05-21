@@ -28,10 +28,12 @@
 namespace xerus {
 
     template<bool isOperator>
-    class TTNetwork : public TensorNetwork {    
+    class TTNetwork : public TensorNetwork {
+	protected:
+		constexpr size_t N=isOperator?2:1;
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        explicit TTNetwork();
+        explicit TTNetwork() = default;
         
         explicit TTNetwork(const size_t _degree);
         
@@ -134,14 +136,14 @@ namespace xerus {
 
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        protected:
+    protected:
         static void construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps);
         
         static void round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps);
         
         static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
             
-        /// tests whether the network resembles that of a TTTensor and checks consistency with the udnerlying tensor objects
+        /// tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects
         /// @note will not check for orthogonality
         bool is_valid_tt() const;
         
@@ -203,19 +205,15 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
         TTNetwork& operator+=(const TTNetwork& _other);
-        
         TTNetwork  operator+(const TTNetwork& _other) const;
         
         TTNetwork& operator-=(const TTNetwork& _other);
-        
         TTNetwork  operator-(const TTNetwork& _other) const;
         
         TTNetwork& operator*=(const value_t _prod);
-        
         TTNetwork  operator*(const value_t _prod) const;
         
         TTNetwork& operator/=(const value_t _div);
-        
         TTNetwork  operator/(const value_t _div) const;
         
         
