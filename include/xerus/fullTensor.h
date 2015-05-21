@@ -200,12 +200,18 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Standard assignment operator.
         FullTensor& operator=(const FullTensor&  _other);
+        
+        /// Standard move-assignment operator.
         FullTensor& operator=(      FullTensor&& _other);
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Adds other entriewise to the tensor. Requires that all dimensions conincde.
         FullTensor& operator+=(const FullTensor& _other);
+        
+        /// Performs the entriewise addition of the this tensor and other.
         FullTensor  operator+( const FullTensor& _other) const;
         
         FullTensor& operator-=(const FullTensor& _other);

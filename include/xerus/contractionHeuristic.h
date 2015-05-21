@@ -24,6 +24,8 @@
 namespace xerus {
 
     //TODO individuelle schranken
+    
+    /// Class representing used for heuristics to find good contraction orders of TensorNEtworks.
     class ContractionHeuristic {
     public:
         static std::vector<ContractionHeuristic> *list;
@@ -48,6 +50,5 @@ namespace xerus {
         
         double rescore(TensorNetwork _tn); // NOTE take as value to get a deep copy instead of reference!
     };
-
 }
 

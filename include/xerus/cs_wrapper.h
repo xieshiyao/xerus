@@ -24,9 +24,10 @@
 #include "sparseTensor.h"
 
 namespace xerus {
-    /// Unique_ptr wrapper that should always be used for the CS sparse matrix format
+    /// Unique_ptr wrapper that should always be used for the CS sparse matrix format.
     typedef std::unique_ptr<cs_di, cs_di*(*)(cs_di*)> CsUniquePtr;
     
+    /// Function that estimates whether a contraction result is sparse.
     bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries);
     
     /// Allocates a CS sparse matrix with given dimensions and number of entries
@@ -41,5 +42,6 @@ namespace xerus {
     /// Retransforms a CS sparse matrix to sparseTensor format
     SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions);
     
+    /// Prints a matrix in cs format
     void print_cs(const CsUniquePtr& _cs_format);
 }
