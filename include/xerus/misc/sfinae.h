@@ -20,10 +20,6 @@
 
 
 
-// Copyright Notice: The following macro is licenced under the CC-BY-SA licence and was created by:
-// Wikibooks contributors, "More C++ Idioms/Member Detector," Wikibooks, The Free Textbook Project,
-// http://en.wikibooks.org/w/index.php?title=More_C%2B%2B_Idioms/Member_Detector&oldid=2834755 (accessed April 13, 2015).
-
 // Macro to create checks for the existence of member functions
 #define GENERATE_HAS_MEMBER(member)                                               \
                                                                                   \
@@ -31,19 +27,14 @@ template < class T >                                                            
 class HasMember_##member                                                          \
 {                                                                                 \
 private:                                                                          \
-    using Yes = char[2];                                                          \
-    using  No = char[1];                                                          \
-                                                                                  \
-    struct Fallback { int member; };                                              \
-    struct Derived : T, Fallback { };                                             \
-                                                                                  \
-    template < class U >                                                          \
-    static No& test ( decltype(U::member)* );                                     \
-    template < typename U >                                                       \
-    static Yes& test ( U* );                                                      \
-                                                                                  \
-public:                                                                           \
-    static constexpr bool RESULT = sizeof(test<Derived>(nullptr)) == sizeof(Yes); \
+    typedef char (& yes)[1];							\
+    typedef char (& no)[2];							\
+										\
+    template <typename C> static yes check(decltype(&C::member));		\
+    template <typename> static no check(...);					\
+										\
+public: 									\
+    static constexpr bool RESULT = sizeof(check<T>(0)) == sizeof(yes);		\
 };                                                                                \
                                                                                   \
 template < class T >                                                              \
