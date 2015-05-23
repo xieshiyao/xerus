@@ -23,7 +23,7 @@ START_MISC_NAMESPACE
 
 // NOT TESTED -- NOTE -- NOT TESTED
 
-_inline_ void merge(const size_t* const _leftPositions,
+static _inline_ void merge(const size_t* const _leftPositions,
             const value_t* const _leftValues,
             const size_t _leftSize, 
             const size_t* const _rightPositions,

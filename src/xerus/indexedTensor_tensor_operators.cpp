@@ -43,7 +43,7 @@ namespace xerus {
 
     namespace internal {
         template<bool PLUS>
-        _inline_ IndexedTensorMoveable<Tensor> plus_minus(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
+        static _inline_ IndexedTensorMoveable<Tensor> plus_minus(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
             const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
             const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
             

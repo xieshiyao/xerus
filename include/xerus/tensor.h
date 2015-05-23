@@ -208,5 +208,5 @@ namespace xerus {
     
     
     /// Returns the frobenius norm of the given tensor
-    _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
+    static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 }
