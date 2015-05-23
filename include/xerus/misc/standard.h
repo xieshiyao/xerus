@@ -62,7 +62,7 @@ END_MISC_NAMESPACE
 #define unlikely(x)     (x)
 #endif
 
-// For formatting it is somethimes nice to declare constructors implicit 
+// counterpart to the explicit keyword for constructors
 #define implicit      
 
 // very thorough always_inline version

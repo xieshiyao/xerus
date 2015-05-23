@@ -50,7 +50,7 @@ void reduce(std::string& _string, const std::string& whitespace = " \t\n\r\v", c
 
 ///@brief: Converts an arbitary Object to string
 template<typename T>
-std::string to_string(const T& obj) {
+static std::string to_string(const T& obj) {
     std::stringstream stream;
     stream.precision(8);
     stream << std::fixed << obj;
@@ -109,7 +109,7 @@ _inline_ std::string to_string<std::string>(const std::string& obj){
     return obj;
 }
 
-_inline_ std::string to_string(const char * obj) {
+static _inline_ std::string to_string(const char * obj) {
 	return std::string(obj);
 }
 
