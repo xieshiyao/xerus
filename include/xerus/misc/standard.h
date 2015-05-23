@@ -62,9 +62,11 @@ END_MISC_NAMESPACE
 #define unlikely(x)     (x)
 #endif
 
+// For formatting it is somethimes nice to declare constructors implicit 
+#define implicit      
+
 // very thorough always_inline version
 // all of these can be writen like [[gnu::unused]] but kdevelop will not recognize them then
-#define implicit        
 #define _inline_  		__attribute__((always_inline, gnu_inline)) inline
 
 #define _noinline_ 		__attribute__((noinline))
