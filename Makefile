@@ -17,8 +17,11 @@ TEST_NAME = XerusTest
 LIB_SOURCES = $(wildcard src/xerus/*.cpp)
 LIB_SOURCES += $(wildcard src/xerus/*/*.cpp)
 
-# Register all unit unit test source files 
+# Register all unit test source files 
 UNIT_TEST_SOURCES = $(wildcard src/unitTests/*.cxx)
+
+# Register all tutorial source files 
+TUTORIAL_SOURCES = $(wildcard tutorials/*.cpp)
 
 # Create lists of the corresponding objects and dependency files
 LIB_OBJECTS = $(LIB_SOURCES:%.cpp=build/.libObjects/%.o)
@@ -27,8 +30,18 @@ LIB_DEPS    = $(LIB_SOURCES:%.cpp=build/.libObjects/%.d)
 TEST_OBJECTS = $(LIB_SOURCES:%.cpp=build/.testObjects/%.o)
 TEST_DEPS    = $(LIB_SOURCES:%.cpp=build/.testObjects/%.d)
 
-UNIT_TEST_SOURCES_OBJECTS = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.o)
-UNIT_TEST_SOURCES_DEPS    = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.d)
+UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.o)
+UNIT_TEST_DEPS    = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.d)
+
+TUTORIALS 	= $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%)
+TUTORIALS_EXECS = $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%)
+TUTORIAL_DEPS   = $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%.d)
+
+# Small hack to get newlines...
+define \n
+
+
+endef
 
 # ------------------------------------------------------------------------------------------------------
 #		Load the configurations provided by the user and set up general options
@@ -57,7 +70,8 @@ OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespa
 
 -include $(LIB_DEPS)
 -include $(TEST_DEPS)
--include $(UNIT_TEST_SOURCES_DEPS)
+-include $(UNIT_TEST_DEPS)
+-include $(TUTORIAL_DEPS)
 -include build/.preCompileHeaders/xerus.h.d
 
 
@@ -124,10 +138,14 @@ install:
 	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
 endif
 
-$(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_SOURCES_OBJECTS) $(TEST_OBJECTS)
-	$(CXX) -D TEST_ $(FLAGS) $(UNIT_TEST_SOURCES_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
+$(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS)
+	$(CXX) -D TEST_ $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
 
 test:  $(TEST_NAME)
+	./$(TEST_NAME) all
+	
+fullTest: $(TUTORIALS) $(TEST_NAME)
+	$(foreach x,$(TUTORIALS_EXECS),./$(x)$(\n))
 	./$(TEST_NAME) all
 
 clean:
@@ -169,6 +187,11 @@ build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
 endif
+
+# Build and execution rules for tutorials
+build/.tutorialObjects/%: %.cpp $(MINIMAL_DEPS) $(LIB_NAME_STATIC)
+	mkdir -p $(dir $@)
+	$(CXX) -I include $< $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) $(FLAGS) -MMD -o $@
 
 # Build rule for the preCompileHeader
 build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS)
