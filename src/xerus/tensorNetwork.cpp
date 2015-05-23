@@ -131,7 +131,7 @@ namespace xerus {
         if(contractedTensor->is_sparse()) {
             return FullTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
         } else {
-            return FullTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get()));
         }
     }
     
@@ -139,7 +139,7 @@ namespace xerus {
         std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
         
         if(contractedTensor->is_sparse()) {
-            return SparseTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get()));
         } else {
             LOG(error, "Casting a TensorNetwork containing FullTensors to SparseTensor. This is most likely not usefull.");
             return SparseTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));

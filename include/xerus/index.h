@@ -27,22 +27,39 @@
 
 namespace xerus {
     
-    /// The Index class is used to write indexed tensor expressen, e.g. A(i,j)*B(j,k). Here i,j,k are of type xerus::Index. 
+    /**
+     * The xerus::Index class is used to write indexed tensor expressen, e.g. A(i,j)*B(j,k).
+     * Here i,j,k are of type xerus::Index. The Index class provides numerous information used
+     * internally. As an enduser only the basic constructors and the ^, &, and / operators should
+     * of interest.
+     */
     class Index {
     public:
         #ifndef DISABLE_RUNTIME_CHECKS_
+        /// Enum defining the possible flags an Index my possess.
             enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, ASSINGED, OPEN, NUM_FLAGS};
         #else
+        /// Enum defining the possible flags an Index my possess.
             enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, OPEN, NUM_FLAGS};
         #endif
         
-            static bool all_open(const std::vector<Index>& _indices);
+        /**
+         * @brief: Checks whether all indices in _indices are open. This is naturally only usefull
+         * for assinged indices, i.e. indices returned by IndexedTensorReadOnly::get_assigned_indices.
+         * 
+         * @param _indices std::vector of indices to check. Every contained index is required to be assinged.
+         */
+        static bool all_open(const std::vector<Index>& _indices);
+        
     private:
+        /// Counter that creates a unique local ID for every thread.
         static std::atomic<size_t> idThreadInitCounter;
+        
+        /// Unqiue local ID of the thread.
         static thread_local size_t idCounter;
         
     public:
-        /// Unqiue id of the index. In case the fixed flag is set, this is the fixed position.
+        /// Unqiue ID of the index. In case the fixed flag is set, this is the fixed position.
         size_t valueId;
         
         /// The span states how many dimensions are covered by the index.
@@ -99,22 +116,31 @@ namespace xerus {
         /// Checks whether the index is open.
         bool open() const;
         
-        /// Sets whether the index is open.
+        /** @brief: Sets whether the index is open.
+         * @param _open new openness status of the index.
+         */
         void open(const bool _open);
         
         /// Returns the (mult)Dimension assinged to this index.
         size_t dimension() const;
         
-        /// Allow the creation of Indices covering more than one dimension using the power operator. E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.
+        /** @brief: Allow the creation of Indices covering more than one dimension using the power operator.
+         * E.g. A(i^2) = B(i^2) + C(i^2), defines A as the entriewise sum of the matrices B and C.
+         * @param _span The number of dimensions the index is supposed to cover.
+         */
         Index operator^(const size_t _span) const;
         
-        /** Allow the creation of Indices covering all but x dimensions using the and operator. 
-         *  E.g. A() = B(i&0) * C(i&0), defines A as the full contraction between B and C, indifferent of the order of B and C (which have to coincide however). 
+        /** @brief: Allow the creation of Indices covering all but x dimensions using the and operator. 
+         * E.g. A() = B(i&0) * C(i&0), defines A as the full contraction between B and C,
+         * indifferent of the actual degree of B and C.
+         * @param _span Number of dimensions NOT to be covered by this index.
          */
         Index operator&(const size_t _span) const;
         
-        /** Allow the creation of Indices covering an x-th fraction of the indices. 
-         *  E.g. A(i&0) = B(i/2, j/2) * C(j&0), defines A as the contraction between the symmetric matrification of B combining the vectorisation of C, indifferent of the actual order of B and C. 
+        /** @brief: Allow the creation of Indices covering an x-th fraction of the indices. 
+         * E.g. A(i&0) = B(i/2, j/2) * C(j&0), defines A as the contraction between the symmetric matrification
+         * of B and the vectorisation of C, indifferent of the actual degree of B and C.
+         * @param _span the fraction of the dimensions to be covered by this index.
          */
         Index operator/(const size_t _span) const;
         
