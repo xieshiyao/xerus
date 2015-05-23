@@ -45,19 +45,28 @@ namespace xerus {
         /// Empty constructor which creates an order zero tensor.
         implicit Tensor();
         
-        /// Copy constructor
-        implicit Tensor( const Tensor& );
+        /// Tensors are copy constructable.
+        implicit Tensor( const Tensor& _other );
         
-        /// Move constructor
+        /// Tensors are move constructable.
         implicit Tensor( Tensor&& _other );
 
-        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+         * @param _dimensions the dimensions of the new tensor.
+         * @param _factor (optional) global scaling factor.
+         */
         explicit Tensor(const std::vector<size_t>& _dimensions, const value_t _factor = 1.0);
         
-        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+         * @param _dimensions the dimensions of the new tensor.
+         * @param _factor (optional) global scaling factor.
+         */
         explicit Tensor(std::vector<size_t>&& _dimensions, const value_t _factor = 1.0);
         
-        /// Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+         * @param _dimensions the dimensions of the new tensor.
+         * @param _factor (optional) global scaling factor.
+         */
         explicit Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor = 1.0);
 
         
@@ -70,16 +79,24 @@ namespace xerus {
         /// Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
         virtual Tensor* construct_new() const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
+        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero.
+        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
+        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
-        /// Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with undefined entries.
+        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
         /// Destructor
