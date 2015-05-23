@@ -37,56 +37,60 @@ else ifdef HIGH_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	
 	# Stuff that is not enabled and might help
-	OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
-	OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory locations
+	ifndef USE_CLANG
+		OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
+		OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory locations
+	endif
 else ifdef DANGEROUS_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations
 	
 	# Stuff that is not enabled and might help
-	OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
-	OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory location
-	OPTIMIZE += -funswitch-loops			# Move branches with loop invariant conditions out of the loop
-	OPTIMIZE += -fipa-pta				# cross-procedure optimization
-	OPTIMIZE += -fbranch-target-load-optimize				
-	OPTIMIZE += -fira-loop-pressure
-	OPTIMIZE += -fsched-pressure
-	OPTIMIZE += -fsched-spec-load-dangerous
 	OPTIMIZE += -ftree-vectorize
 	OPTIMIZE += -funroll-loops
-	OPTIMIZE += -fopt-info-missed=horst.dat
-	
-	OPTIMIZE += --param max-crossjump-edges=1000
-	OPTIMIZE += --param max-grow-copy-bb-insns=10
-	OPTIMIZE += --param max-delay-slot-insn-search=1000
-	OPTIMIZE += --param max-delay-slot-live-search=1000
-	OPTIMIZE += --param max-gcse-memory=6442450
-	OPTIMIZE += --param max-pending-list-length=1000
-	OPTIMIZE += --param max-modulo-backtrack-attempts=1000
-	OPTIMIZE += --param max-inline-insns-single=4000
-	OPTIMIZE += --param max-inline-insns-auto=400
-	OPTIMIZE += --param large-function-insns=10000
-	OPTIMIZE += --param large-function-growth=200
-	OPTIMIZE += --param inline-unit-growth=100
-	OPTIMIZE += --param ipcp-unit-growth=100
-	OPTIMIZE += --param max-reload-search-insns=500
-	OPTIMIZE += --param max-cselib-memory-locations=5000
-	OPTIMIZE += --param max-sched-ready-insns=1000
-	OPTIMIZE += --param max-sched-region-blocks=100
-	OPTIMIZE += --param max-pipeline-region-blocks=150
-	OPTIMIZE += --param max-sched-region-insns=1000
-	OPTIMIZE += --param max-pipeline-region-insns=2000
-	OPTIMIZE += --param selsched-max-lookahead=500
-# 	OPTIMIZE += --param max-combine-insns=10
-	OPTIMIZE += --param max-partial-antic-length=0
-	OPTIMIZE += --param sccvn-max-scc-size=100000 
-	OPTIMIZE += --param sccvn-max-alias-queries-per-access=10000
-	OPTIMIZE += --param ira-max-loops-num=1000
-	OPTIMIZE += --param ira-max-conflict-table-size=20000
-	OPTIMIZE += --param loop-invariant-max-bbs-in-loop=100000 
-	OPTIMIZE += --param loop-max-datarefs-for-datadeps=10000
-	OPTIMIZE += --param max-vartrack-size=0
-	OPTIMIZE += --param max-vartrack-expr-depth=120
+	ifndef USE_CLANG
+		OPTIMIZE += -funswitch-loops			# Move branches with loop invariant conditions out of the loop
+		OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
+		OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory location
+		OPTIMIZE += -fipa-pta				# cross-procedure optimization
+		OPTIMIZE += -fbranch-target-load-optimize
+		OPTIMIZE += -fira-loop-pressure
+		OPTIMIZE += -fsched-pressure
+		OPTIMIZE += -fsched-spec-load-dangerous
+		OPTIMIZE += -fopt-info-missed=missed_opt.txt
+		
+		OPTIMIZE += --param max-crossjump-edges=1000
+		OPTIMIZE += --param max-grow-copy-bb-insns=10
+		OPTIMIZE += --param max-delay-slot-insn-search=1000
+		OPTIMIZE += --param max-delay-slot-live-search=1000
+		OPTIMIZE += --param max-gcse-memory=6442450
+		OPTIMIZE += --param max-pending-list-length=1000
+		OPTIMIZE += --param max-modulo-backtrack-attempts=1000
+		OPTIMIZE += --param max-inline-insns-single=4000
+		OPTIMIZE += --param max-inline-insns-auto=400
+		OPTIMIZE += --param large-function-insns=10000
+		OPTIMIZE += --param large-function-growth=200
+		OPTIMIZE += --param inline-unit-growth=100
+		OPTIMIZE += --param ipcp-unit-growth=100
+		OPTIMIZE += --param max-reload-search-insns=500
+		OPTIMIZE += --param max-cselib-memory-locations=5000
+		OPTIMIZE += --param max-sched-ready-insns=1000
+		OPTIMIZE += --param max-sched-region-blocks=100
+		OPTIMIZE += --param max-pipeline-region-blocks=150
+		OPTIMIZE += --param max-sched-region-insns=1000
+		OPTIMIZE += --param max-pipeline-region-insns=2000
+		OPTIMIZE += --param selsched-max-lookahead=500
+	# 	OPTIMIZE += --param max-combine-insns=10
+		OPTIMIZE += --param max-partial-antic-length=0
+		OPTIMIZE += --param sccvn-max-scc-size=100000 
+		OPTIMIZE += --param sccvn-max-alias-queries-per-access=10000
+		OPTIMIZE += --param ira-max-loops-num=1000
+		OPTIMIZE += --param ira-max-conflict-table-size=20000
+		OPTIMIZE += --param loop-invariant-max-bbs-in-loop=100000 
+		OPTIMIZE += --param loop-max-datarefs-for-datadeps=10000
+		OPTIMIZE += --param max-vartrack-size=0
+		OPTIMIZE += --param max-vartrack-expr-depth=120
+	endif
 	
 	#Optimizations that need Graphite
 	ifdef GRAPHITE_AVAILABLE
@@ -102,13 +106,14 @@ else ifdef DANGEROUS_OPTIMIZATION
 	
 	# Potentially VERY dangerous
 	OPTIMIZE += -fmerge-all-constants	# Attempt to merge identical constants and identical variables. 
-	OPTIMIZE += -funsafe-loop-optimizations	# This option tells the loop optimizer to assume that loop indices do not overflow, and that loops with nontrivial exit condition are not infinite. 
 	OPTIMIZE += -fno-math-errno 		# Do not set errno after calling math functions that are executed with a single instruction
 	OPTIMIZE += -funsafe-math-optimizations # Allow optimizations for floating-point arithmetic that (a) assume that arguments and results are valid and (b) may violate IEEE or ANSI standards.
 	OPTIMIZE += -ffinite-math-only		# Allow optimizations for floating-point arithmetic that assume that arguments and results are not NaNs or +-Infs. 
 	OPTIMIZE += -fno-signed-zeros		# Allow optimizations for floating-point arithmetic that ignore the signedness of zero.
 	OPTIMIZE += -fno-trapping-math		# Compile code assuming that floating-point operations cannot generate user-visible traps. These traps include division by zero, overflow, underflow, inexact result and invalid operation.
-
+	ifndef USE_CLANG
+		OPTIMIZE += -funsafe-loop-optimizations	# This option tells the loop optimizer to assume that loop indices do not overflow, and that loops with nontrivial exit condition are not infinite. 	
+	endif
 else ifdef RIDICULOUS_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations

@@ -67,7 +67,7 @@ END_MISC_NAMESPACE
 
 // very thorough always_inline version
 // all of these can be writen like [[gnu::unused]] but kdevelop will not recognize them then
-#define _inline_  		__attribute__((always_inline, gnu_inline, visibility("hidden"))) inline
+#define _inline_  		__attribute__((always_inline, gnu_inline)) inline
 
 #define _noinline_ 		__attribute__((noinline))
 #define _flatten_ 		__attribute__((flatten))
