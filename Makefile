@@ -34,7 +34,6 @@ UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.o)
 UNIT_TEST_DEPS    = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.d)
 
 TUTORIALS 	= $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%)
-TUTORIALS_EXECS = $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%)
 TUTORIAL_DEPS   = $(TUTORIAL_SOURCES:%.cpp=build/.tutorialObjects/%.d)
 
 # Small hack to get newlines...
@@ -145,7 +144,7 @@ test:  $(TEST_NAME)
 	./$(TEST_NAME) all
 	
 fullTest: $(TUTORIALS) $(TEST_NAME)
-	$(foreach x,$(TUTORIALS_EXECS),./$(x)$(\n))
+	$(foreach x,$(TUTORIALS),./$(x)$(\n))
 	./$(TEST_NAME) all
 
 clean:
