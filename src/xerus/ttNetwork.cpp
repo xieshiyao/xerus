@@ -779,85 +779,92 @@ namespace xerus {
 		
 		cannonicalization = RIGHT;
 	}
-    
-    template<bool isOperator>
-    TensorNetwork* TTNetwork<isOperator>::get_copy() const {
-        return new TTNetwork(*this);
-    }
-    
-    template<bool isOperator>
-    value_t TTNetwork<isOperator>::frob_norm() const {
-        REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
-        return nodes.back().tensorObject->frob_norm();
-    }
-    
-    template<bool isOperator>
-    bool TTNetwork<isOperator>::is_in_expected_format() const {
-        return is_valid_tt();
-    }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>& TTNetwork<isOperator>::operator+=(const TTNetwork<isOperator>& _other) {
-        Index i;
-        (*this)(i&0) = (*this)(i&0) + _other(i&0);
-        return *this;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>  TTNetwork<isOperator>::operator+(const TTNetwork<isOperator>& _other) const {
-        TTNetwork cpy(*this);
-        cpy += _other;
-        return cpy;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>& TTNetwork<isOperator>::operator-=(const TTNetwork<isOperator>& _other) {
-        Index i;
-        (*this)(i&0) = (*this)(i&0) - _other(i&0);
-        return *this;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>  TTNetwork<isOperator>::operator-(const TTNetwork<isOperator>& _other) const {
-        TTNetwork cpy(*this);
-        cpy -= _other;
-        return cpy;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>& TTNetwork<isOperator>::operator*=(const value_t _prod) {
-        factor *= _prod;
-        return *this;
-        
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>  TTNetwork<isOperator>::operator*(const value_t _prod) const {
-        TTNetwork result(*this);
-        result *= _prod;
-        return result;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>& TTNetwork<isOperator>::operator/=(const value_t _div) {
-        factor /= _div;
-        return *this;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator>  TTNetwork<isOperator>::operator/(const value_t _div) const {
-        TTNetwork result(*this);
-        result /= _div;
-        return result;
-    }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    
-    
+	
+	template<bool isOperator>
+	TensorNetwork* TTNetwork<isOperator>::get_copy() const {
+		return new TTNetwork(*this);
+	}
+	
+	template<bool isOperator>
+	value_t TTNetwork<isOperator>::frob_norm() const {
+		REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
+		switch (cannonicalization) {
+			case LEFT: return nodes.front().tensorObject->frob_norm();
+			case RIGHT: return nodes.back().tensorObject->frob_norm();
+			default:
+				Index i;
+				return (*((*this)(i&0)*(*this)(i&0)).tensorObject)[0];
+		}
+		
+	}
+	
+	template<bool isOperator>
+	bool TTNetwork<isOperator>::is_in_expected_format() const {
+		return is_valid_tt();
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>& TTNetwork<isOperator>::operator+=(const TTNetwork<isOperator>& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) + _other(i&0);
+		return *this;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>  TTNetwork<isOperator>::operator+(const TTNetwork<isOperator>& _other) const {
+		TTNetwork cpy(*this);
+		cpy += _other;
+		return cpy;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>& TTNetwork<isOperator>::operator-=(const TTNetwork<isOperator>& _other) {
+		Index i;
+		(*this)(i&0) = (*this)(i&0) - _other(i&0);
+		return *this;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>  TTNetwork<isOperator>::operator-(const TTNetwork<isOperator>& _other) const {
+		TTNetwork cpy(*this);
+		cpy -= _other;
+		return cpy;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>& TTNetwork<isOperator>::operator*=(const value_t _prod) {
+		factor *= _prod;
+		return *this;
+		
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>  TTNetwork<isOperator>::operator*(const value_t _prod) const {
+		TTNetwork result(*this);
+		result *= _prod;
+		return result;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>& TTNetwork<isOperator>::operator/=(const value_t _div) {
+		factor /= _div;
+		return *this;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>  TTNetwork<isOperator>::operator/(const value_t _div) const {
+		TTNetwork result(*this);
+		result /= _div;
+		return result;
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	
+	
     template<bool isOperator>
     bool TTNetwork<isOperator>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
         REQUIRE(!_out.tensorObject, "Internal Error.");
