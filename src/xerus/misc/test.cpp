@@ -28,12 +28,12 @@
     #include <string.h> // for strsignal
     #include <sys/stat.h>
     
-    #include "../../../include/xerus/misc/standard.h"
-    #include "../../../include/xerus/misc/exceptions.h"
+    #include <xerus/misc/standard.h>
+    #include <xerus/misc/exceptions.h>
+    #include <xerus/misc/testManager.h>
+    #include <xerus/misc/stringUtilities.h>
     
-
-    #include "../../../include/xerus/misc/testManager.h"
-    #include "../../../include/xerus/misc/stringUtilities.h"
+    // TODO put all this into xerus::misc::unitTesting (or something similar)
 
     std::map<std::string, std::map<std::string, std::function<bool ()>>> *___UnitTest::tests;
 	std::map<___RequiredTest::identifier, size_t> *___RequiredTest::tests;
@@ -136,9 +136,9 @@
 		
         if (argc < 2) {
             std::cout << "usage:" << std::endl;
-            std::cout << "  " << MISC_NAMESPACE::explode(argv[0],'/').back() << " [groupname] ..." << std::endl;
-            std::cout << "  " << MISC_NAMESPACE::explode(argv[0],'/').back() << " [groupname]:[testname] ..." << std::endl;
-            std::cout << "  " << MISC_NAMESPACE::explode(argv[0],'/').back() << " all" << std::endl << std::endl;
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname] ..." << std::endl;
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ..." << std::endl;
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all" << std::endl << std::endl;
             std::cout << "available groups:" << std::endl;
             for (const auto &p : *___UnitTest::tests) {
                 std::cout << "# " <<  p.first << std::endl;
@@ -169,7 +169,7 @@
                 break;
             }
             // explicit test inside a group?
-            std::vector<std::string> cmd = MISC_NAMESPACE::explode(grp,':');
+            std::vector<std::string> cmd = xerus::misc::explode(grp,':');
             if (cmd.size()>1) {
 				if (cmd.size()>2) {
                     std::cout << "########## \033[1;31munknown syntax '" << grp << "'\033[0m" << std::endl;
@@ -212,35 +212,35 @@
         std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << (double)totalTime/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
         std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		
-#ifdef TEST_COVERAGE_
-		// check whether all REQUIRED_TESTs were tested
-		std::map<std::string, std::pair<size_t, size_t>> perFile;
-		
-		if (___RequiredTest::tests) {
-			for (auto &t : (*___RequiredTest::tests)) {
-	// 			std::cout << MISC::demangle_cxa(t.first.functionName) << " (" << t.first.filename << ":" << t.first.lineNumber << ")" << t.second << std::endl;
-				std::string normPath = MISC::normalize_pathname(t.first.filename);
-				std::pair<size_t, size_t> &pf = perFile[normPath];
-				pf.second += 1;
-				if (t.second == 0) {
-					std::cout << "\033[1;31m missing test for function \033[0m" 
-						<< MISC::demangle_cxa(t.first.functionName) << " (" << normPath << ":" << t.first.lineNumber << ")" << std::endl;
-				} else {
-					pf.first += 1;
-				}
-			}
-			
-			for (auto &f : perFile) {
-				std::pair<size_t, size_t> &fstats = f.second;
-				if (fstats.first == fstats.second) {
-					std::cout << "file " << f.first << " :\033[1;32m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
-				} else {
-					std::cout << "file " << f.first << " :\033[1;31m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
-				}
-			}
-		}
-#endif
-		// destroy all stored tests to make memory-leak detection simpler
+        #ifdef TEST_COVERAGE_
+                // check whether all REQUIRED_TESTs were tested
+                std::map<std::string, std::pair<size_t, size_t>> perFile;
+                
+                if (___RequiredTest::tests) {
+                    for (auto &t : (*___RequiredTest::tests)) {
+                        std::string normPath = xerus::misc::normalize_pathname(t.first.filename);
+                        std::pair<size_t, size_t> &pf = perFile[normPath];
+                        pf.second += 1;
+                        if (t.second == 0) {
+                            std::cout << "\033[1;31m missing test for function \033[0m" 
+                                << xerus::misc::demangle_cxa(t.first.functionName) << " (" << normPath << ":" << t.first.lineNumber << ")" << std::endl;
+                        } else {
+                            pf.first += 1;
+                        }
+                    }
+                    
+                    for (auto &f : perFile) {
+                        std::pair<size_t, size_t> &fstats = f.second;
+                        if (fstats.first == fstats.second) {
+                            std::cout << "file " << f.first << " :\033[1;32m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
+                        } else {
+                            std::cout << "file " << f.first << " :\033[1;31m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
+                        }
+                    }
+                }
+        #endif
+        
+		// Destroy all stored tests to make memory-leak detection simpler
 		delete ___UnitTest::tests;
 		delete ___RequiredTest::tests;
         

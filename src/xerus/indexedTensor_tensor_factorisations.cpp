@@ -147,7 +147,7 @@ namespace xerus {
         }
         
         //Apply factor to the diagonal matrix 
-        array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
+        misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
         
         // Create tensor from diagonal values
         S.tensorObject->reset(std::vector<size_t>(2, rank));

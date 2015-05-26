@@ -322,10 +322,10 @@ namespace xerus {
     }
     
     std::string SparseTensor::to_string() const {
-        if (degree() == 0) return xerus::to_string(at(0));
+        if (degree() == 0) return xerus::misc::to_string(at(0));
         std::string result;
         for (size_t i=0; i<size; ++i) {
-            result += xerus::to_string(at(i)) + " ";
+            result += xerus::misc::to_string(at(i)) + " ";
             if ((i+1) % (size / dimensions[0]) == 0) {
                 result += '\n';
             } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {

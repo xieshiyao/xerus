@@ -19,15 +19,12 @@
 
 #pragma once 
 
-#include "standard.h"
 #include <string>
 #include <utility>
 
 namespace xerus {
     namespace misc {
-
         std::string get_call_stack();
-        std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name);
-
+        std::pair<uintptr_t, uintptr_t> get_range_of_section(void* _addr, std::string _name);
     }
 }

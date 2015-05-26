@@ -17,12 +17,10 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../../include/xerus/misc/callStack.h"
+#include <xerus/misc/callStack.h>
 
 #ifndef NO_FANCY_CALLSTACK
-
     #include <execinfo.h>
-    #include <signal.h>
     #include <bfd.h>
     #include <dlfcn.h>
     #include <unistd.h>
@@ -163,8 +161,6 @@
             bool bfdResolver::bfd_initialized = false;
 
 
-
-
             std::string get_call_stack() {
                 const size_t MAX_FRAMES = 100;
                 std::vector<void *> stack(MAX_FRAMES);
@@ -188,10 +184,7 @@
         }
     }
 
-
-
-#else // no fancy callstack
-
+#else // No fancy callstack
     #include <execinfo.h>
     #include <iomanip>
     #include <vector>
@@ -199,7 +192,6 @@
 
     namespace xerus {
         namespace misc {
-
             std::string get_call_stack() {
                 const size_t MAX_FRAMES = 100;
                 std::vector<void *> stack(MAX_FRAMES);

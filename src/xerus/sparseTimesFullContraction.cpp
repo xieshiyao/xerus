@@ -62,20 +62,20 @@ namespace xerus {
                                 const size_t _midDim,
                                 const double* const _B) {
         // Prepare output array
-        array_set_zero(_C, _leftDim*_rightDim);
+        misc::array_set_zero(_C, _leftDim*_rightDim);
         
         // Transposition of A only changes how i and j are calculated
         if(!_transposeA) {
             for(const std::pair<size_t, double>& entry : _A) {
                 const size_t i = entry.first/_midDim;
                 const size_t j = entry.first%_midDim;
-                array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         } else {
             for(const std::pair<size_t, double>& entry : _A) {
                 const size_t i = entry.first%_leftDim;
                 const size_t j = entry.first/_leftDim;
-                array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }
     }
@@ -124,14 +124,14 @@ namespace xerus {
                                 const double* const _B) {
         size_t currentRow = 0;
         std::unique_ptr<double[]> row(new double[_rightDim]);
-        array_set_zero(row.get(), _rightDim);
+        misc::array_set_zero(row.get(), _rightDim);
         
         for(const std::pair<size_t, double>& entry : _A) {
             const size_t i = entry.first/_midDim;
             const size_t j = entry.first%_midDim;
             
             if(i == currentRow) {
-                array_add(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::array_add(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
             } else {
                 REQUIRE(i > currentRow, "Internal Error");
                 
@@ -147,17 +147,17 @@ namespace xerus {
                 
                 // Start new row
                 currentRow = i;
-                array_scaled_copy(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::array_scaled_copy(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }
         
         // Copy the last row to _C
         for(size_t k = 0; k < _rightDim; ++k) {
             #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(row.get()[k] != 0) {
-                _C.emplace(currentRow*_rightDim + k, row.get()[k]);
-            }
+                #pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(row.get()[k] != 0) {
+                    _C.emplace(currentRow*_rightDim + k, row.get()[k]);
+                }
             #pragma GCC diagnostic pop
         }
     }

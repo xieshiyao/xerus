@@ -64,10 +64,10 @@ namespace xerus {
                                 const size_t _numDoubleIndexPairs,
                                 const size_t _numSummations,
                                 const size_t _orderedIndicesMultDim ) {
-        array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
+        misc::array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
         for(size_t k = 1; k < _numSummations; ++k) {
             increase_indices(k, _oldPosition, _numDoubleIndexPairs, _doubleSteps, _doubleMultDimensions);
-            array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
+            misc::array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
         }
     }
 
@@ -199,7 +199,7 @@ namespace xerus {
                 FullTensor& outTensor = *static_cast<FullTensor*>(_out.tensorObject);
                 value_t* const outData = outTensor.data.get();
                 outTensor.ensure_own_data_no_copy();
-                array_set_zero(outData, outTensor.size);
+                misc::array_set_zero(outData, outTensor.size);
                 for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries) {
                     outData[entry.first] = entry.second;
                 }
@@ -278,10 +278,10 @@ namespace xerus {
                 }
             } else { // We can copy/add larger blocks
                 if(totalTraceDim == 1) { // We don't need to sum any traces
-                    array_copy(newPosition, oldPosition, orderedIndexDim);
+                    misc::array_copy(newPosition, oldPosition, orderedIndexDim);
                     for(size_t i = 1; i < _out.tensorObject->size/orderedIndexDim; ++i) {
                         increase_indices(i, oldPosition, outIndices.size()-numOrderedIndices, stepSizes, outIndexDimensions.get());
-                        array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
+                        misc::array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
                     }
                 } else { // We have to add traces
                     sum_traces(newPosition, oldPosition, traceStepSizes.data(), traceDimensions.data(), traceDimensions.size(), totalTraceDim, orderedIndexDim);
@@ -354,7 +354,7 @@ namespace xerus {
             } else {
                 // Ensure that _out is empty
                 value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->data.get();
-                array_set_zero(dataPointer, _out.tensorObject->size);
+                misc::array_set_zero(dataPointer, _out.tensorObject->size);
                 
                 if(peacefullIndices) {
                     for(const std::pair<size_t, value_t>& entry : baseEntries) {

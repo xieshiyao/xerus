@@ -22,44 +22,34 @@
 #include <cstdint>
 #include <cstddef>
 
-#ifdef MISC_NAMESPACE
-    #define START_MISC_NAMESPACE namespace MISC_NAMESPACE {
-    #define END_MISC_NAMESPACE }
-    #define MISC MISC_NAMESPACE
-#else
-    #define START_MISC_NAMESPACE
-    #define END_MISC_NAMESPACE 
-    #define MISC 
-#endif
+namespace xerus {
 
-START_MISC_NAMESPACE
+    // Shorter names for unsigned types
+    typedef uint8_t byte;
+    typedef unsigned short ushort;
+    typedef unsigned int uint;
+    typedef unsigned long ulong;
 
-// Shorter names for unsigned types
-typedef uint8_t byte;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef unsigned long ulong;
+    // Shorter names for fixed width types
+    typedef int8_t int8;
+    typedef int16_t int16;
+    typedef int32_t int32;
+    typedef int64_t int64;
 
-// Shorter names for fixed width types
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
+    typedef uint8_t uint8;
+    typedef uint16_t uint16;
+    typedef uint32_t uint32;
+    typedef uint64_t uint64;
 
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
-
-END_MISC_NAMESPACE
+}
 
 //Make likely & unlikely paramters useable. (Probably totaly useless xD)
 #ifdef __GNUC__
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
+    #define likely(x)       __builtin_expect((x),1)
+    #define unlikely(x)     __builtin_expect((x),0)
 #else
-#define likely(x)       (x)
-#define unlikely(x)     (x)
+    #define likely(x)       (x)
+    #define unlikely(x)     (x)
 #endif
 
 // counterpart to the explicit keyword for constructors

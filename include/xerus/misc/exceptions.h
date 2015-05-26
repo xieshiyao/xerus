@@ -18,18 +18,17 @@
 // or contact us at contact@libXerus.org.
 
 #pragma once
-#include <exception>
-#include <string>
 
-#include "standard.h"
-#include "stringUtilities.h"
+#include <exception>
+#include <sstream>
 
 namespace xerus {
     namespace misc {
-
-        struct generic_error : public std::exception {
-            std::string error_info;
+        class generic_error : public std::exception {
+        protected:
+            std::stringstream error_info;
             
+        public:
             generic_error();
             
             generic_error(const generic_error &_other) noexcept;
@@ -38,11 +37,11 @@ namespace xerus {
             
             template<class T>
             generic_error& operator<<(const T &_info) noexcept {
-                error_info += MISC::to_string(_info);
+                error_info << _info;
                 return *this;
             }
         };
-
-        #define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")
     }
 }
+
+#define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")

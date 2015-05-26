@@ -236,7 +236,7 @@ namespace xerus {
         // If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
         if(N==1) {
             workingData.reset(new value_t[_A.size]);
-            array_copy(workingData.get(), _A.data.get(), _A.size);
+            misc::array_copy(workingData.get(), _A.data.get(), _A.size);
         } else {
             FullTensor tmpTensor(_A.degree());
             std::vector<Index> presentIndices, newIndices;
@@ -247,7 +247,7 @@ namespace xerus {
             }
             tmpTensor(newIndices) = _A(presentIndices);
             workingData.reset(new value_t[tmpTensor.size]); // TODO unnecessary copy
-            array_copy(workingData.get(), tmpTensor.data.get(), tmpTensor.size);
+            misc::array_copy(workingData.get(), tmpTensor.data.get(), tmpTensor.size);
         }
         
         // This was the first step. Now automated steps until we reach the end
@@ -281,7 +281,7 @@ namespace xerus {
             } else {
                 nxtTensor.reset(new FullTensor(std::move(dimensions), DONT_SET_ZERO()) );
                 for(size_t i = 0; i < leftDim; ++i) {
-                    array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
+                    misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
                 }
             }
             
@@ -294,7 +294,7 @@ namespace xerus {
                 
             // Calclate S*Vt by scaling the rows of Vt
             for(size_t row = 0; row < newRank; ++row) {
-                array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
+                misc::array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
             }
             
             // Save the Stuff still needed
@@ -309,7 +309,7 @@ namespace xerus {
         } else { 
             nxtTensor.reset(new FullTensor({oldRank, _A.dimensions[_A.degree()/N-1], _A.dimensions[_A.degree()-1]}, DONT_SET_ZERO()) ); 
         }
-        array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
+        misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
         
         // Create final Node for Vt
         _out.nodes.emplace_back(std::move(nxtTensor));
@@ -374,7 +374,7 @@ namespace xerus {
             
             // Calclate S*Vt by scaling the rows of Vt appropriatly
             for(size_t row = 0; row < rank; ++row) {
-                array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
+                misc::array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
             }
             
             //Multiply U and (S*Vt) back to the left and to the right
@@ -1118,7 +1118,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
                     }
                 }
             } else {
@@ -1126,7 +1126,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
                     }
                 }
             }
@@ -1137,7 +1137,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
                     }
                 }
             } else {
@@ -1145,7 +1145,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
                     }
                 }
             }
