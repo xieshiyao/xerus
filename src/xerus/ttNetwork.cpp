@@ -877,7 +877,79 @@ namespace xerus {
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    
+    
+    template<bool isOperator>
+    bool TTNetwork<isOperator>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+        REQUIRE(!_out.tensorObject, "Internal Error.");
         
+        // Only TTOperators construct stacks, so no specialized contractions for TTTensors
+        if(!isOperator) { return false; }
+        
+        const std::vector<Index> myIndices = _me.get_assigned_indices();
+        const std::vector<Index> otherIndices = _other.get_assigned_indices();
+        
+        bool otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
+        bool otherTO = !otherTT && (dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly));
+        
+        if (!otherTT && !otherTO) {
+            return false;
+        }
+        
+        // Determine my first half and second half of indices
+        auto midIndexItr = myIndices.begin();
+        size_t spanSum = 0;
+        while (spanSum < _me.degree() / 2) {
+            REQUIRE(midIndexItr != myIndices.end(), "ie");
+            spanSum += midIndexItr->span;
+            ++midIndexItr;
+        }
+        if (spanSum > _me.degree() / 2) {
+            return false; // an index spanned some links of the left and some of the right side
+        }
+        
+        if (otherTT) {
+            // ensure fitting indices
+            if (equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
+                TensorNetwork *res = new internal::TTStack<false>;
+                *res = *_me.tensorObjectReadOnly;
+                res->factor *= _other.tensorObjectReadOnly->factor;
+                _out.reset(res, myIndices, true);
+                TensorNetwork::add_network_to_network(_out, _other);
+                return true;
+            } else {
+                return false;
+            }
+        } else { // other is operator or operator stack
+            // determine other middle index
+            auto otherMidIndexItr = otherIndices.begin();
+            spanSum = 0;
+            while (spanSum < _other.degree() / 2) {
+                REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+                spanSum += otherMidIndexItr->span;
+                ++otherMidIndexItr;
+            }
+            if (spanSum > _other.degree() / 2) {
+                return false; // an index spanned some links of the left and some of the right side
+            }
+            // or indices in fitting order to contract the TTOs
+            if (   equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
+                || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
+                || equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
+                || equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
+            {
+                TensorNetwork *res = new internal::TTStack<true>;
+                *res = *_me.tensorObjectReadOnly;
+                res->factor *= _other.tensorObjectReadOnly->factor;
+                _out.reset(res, myIndices, true);
+                TensorNetwork::add_network_to_network(_out, _other);
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    
     template<bool isOperator>
     bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
         const size_t N = isOperator?2:1;
@@ -1065,194 +1137,91 @@ namespace xerus {
         return true;
     }
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - TTTensor - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-    template<>
-    bool TTNetwork<false>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out _unused_, const IndexedTensorReadOnly<TensorNetwork> &_me _unused_, const IndexedTensorReadOnly<TensorNetwork> &_other _unused_) const {
-        return false; // Operator builds stacks, not the tttensor
-    }
-
     
-
-    template<> // TODO templateize
-    void TTNetwork<false>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+    template<bool isOperator>
+    void TTNetwork<isOperator>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+        const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
+        const std::vector<Index> otherIndices = _other.get_assigned_indices();
+        const size_t numNodes = _other.degree()/(isOperator ? 2 :1);
+        
         REQUIRE(_me.tensorObject == this, "Internal Error.");
-        const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree());
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
         
-        if (myIndices == otherIndices) {
-            // special case: _other is a TTStack with same indices
-            const internal::TTStack<false> *otherTTs = dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
-            if (otherTTs) {
-                *static_cast<TensorNetwork*>(this) = *_other.tensorObjectReadOnly; // TODO haesslich
-                contract_stack(_me);
-                REQUIRE(degree() == nodes.size(), "ie");
+        // First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
+        const TTNetwork* otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
+        if(otherTTN) {
+            // Check whether the index order coincides
+            if(myIndices == otherIndices) {
+                // Assign the other to me
+                *_me.tensorObject = *otherTTN;
                 
-                dynamic_cast<TTTensor *>(_me.tensorObject)->cannonicalize_right();
+                // Check whether the other is a stack and needs to be contracted
+                const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+                if (otherTTS) {
+                    contract_stack(_me);
+                    static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+                }
                 return;
             }
             
-            // special case: _other is a TTTensor with same indices
-            // NOTE as TTTensorStack inherits from TTTensor, the order is important
-            const TTTensor *otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly);
-            if (otherTT) {
-                *this = *otherTT; // assignment of tensorNetwork is sufficient
-                return;
-            }
-        }
-        
-        // general case: not yet implemented... // TODO
-        if (_other.tensorObjectReadOnly->nodes.size() > 1) {
-            LOG(warning, "assigning a general tensor network to TTTensor not yet implemented. casting to fullTensor first");
-        }
-        // special case: _other is a fullTensor
-        FullTensor rhs(_other.degree());
-        // get _other with my index order
-        rhs(myIndices) = _other; 
-        // cast to TTTensor
-        *_me.tensorObject = TTTensor(rhs);
-    }
-    
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - TTOperator - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-    template<>
-    bool TTNetwork<true>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
-        REQUIRE(!_out.tensorObject, "Internal Error.");
-        const std::vector<Index> myIndices = _me.get_assigned_indices(); // NOTE this is necessary to remove span-0 indices (and for REQUIREs)
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
-        
-        bool otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
-        bool otherTO = !otherTT && (dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly));
-        
-        if (!otherTT && !otherTO) {
-            return false;
-        }
-    // 	LOG(info, "If indices are right I can do a specialized contraction: " << myIndices << " vs. " << otherIndices);
-        
-        // Determine my first half and second half of indices
-        auto midIndexItr = myIndices.begin();
-        size_t spanSum = 0;
-        while (spanSum < _me.degree() / 2) {
-            REQUIRE(midIndexItr != myIndices.end(), "ie");
-            spanSum += midIndexItr->span;
-            ++midIndexItr;
-        }
-        if (spanSum > _me.degree() / 2) {
-            return false; // an index spanned some links of the left and some of the right side
-        }
-        
-        if (otherTT) {
-            // ensure fitting indices
-            if (equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
-                TensorNetwork *res = new internal::TTStack<false>;
-                *res = *_me.tensorObjectReadOnly;
-                res->factor *= _other.tensorObjectReadOnly->factor;
-                _out.reset(res, myIndices, true);
-                TensorNetwork::add_network_to_network(_out, _other);
-                return true;
-            } else {
-                return false;
-            }
-        } else { // other is operator or operator stack
-            // determine other middle index
-            auto otherMidIndexItr = otherIndices.begin();
-            spanSum = 0;
-            while (spanSum < _other.degree() / 2) {
-                REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
-                spanSum += otherMidIndexItr->span;
-                ++otherMidIndexItr;
-            }
-            if (spanSum > _other.degree() / 2) {
-                return false; // an index spanned some links of the left and some of the right side
-            }
-            // or indices in fitting order to contract the TTOs
-            if (   equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
-                || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
-                || equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-                || equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
-            {
-                TensorNetwork *res = new internal::TTStack<true>;
-                *res = *_me.tensorObjectReadOnly;
-                res->factor *= _other.tensorObjectReadOnly->factor;
-                _out.reset(res, myIndices, true);
-                TensorNetwork::add_network_to_network(_out, _other);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    template<>
-    void TTNetwork<true>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
-        const std::vector<Index> myIndices = _me.get_assigned_indices();
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
-        
-        //TODO if TTTensor were a template class this would be so much simpler... TODO -> unify
-        // transposed index order
-        auto midIndexItr = myIndices.begin();
-        size_t spanSum = 0;
-        bool transposed = false;
-        while (spanSum < _me.degree() / 2) {
-            REQUIRE(midIndexItr != myIndices.end(), "ie");
-            spanSum += midIndexItr->span;
-            ++midIndexItr;
-        }
-        if (spanSum == _me.degree() / 2) {
-            // tansposition possible on my end
-            auto otherMidIndexItr = otherIndices.begin();
-            spanSum = 0;
-            while (spanSum < _other.degree() / 2) {
-                REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
-                spanSum += otherMidIndexItr->span;
-                ++otherMidIndexItr;
-            }
-            if (spanSum == _other.degree() / 2) {
-                // other tensor also transposable
-                transposed = (equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
-                            && (equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+            // For TTOperators check whether the index order is transpoed
+            if(isOperator) {
+                bool transposed = false;
                 
+                auto midIndexItr = myIndices.begin();
+                size_t spanSum = 0;
+                while (spanSum < numNodes) {
+                    REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
+                    spanSum += midIndexItr->span;
+                    ++midIndexItr;
+                }
+                if (spanSum == numNodes) {
+                    // tansposition possible on my end
+                    auto otherMidIndexItr = otherIndices.begin();
+                    spanSum = 0;
+                    while (spanSum < numNodes) {
+                        REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
+                        spanSum += otherMidIndexItr->span;
+                        ++otherMidIndexItr;
+                    }
+                    if (spanSum == numNodes) {
+                        // other tensor also transposable
+                        transposed = (equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
+                                    && (equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+                        
+                    }
+                }
+                
+                if(transposed) {
+                    // Assign the other to me
+                    *_me.tensorObject = *otherTTN;
+                    
+                    // Check whether the other is a stack and needs to be contracted
+                    const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+                    if (otherTTS) {
+                        contract_stack(_me);
+                        static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+                    }
+                    static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
+                    return;
+                }
             }
         }
-        
-        // identical index order or transposed
-        if (transposed || otherIndices == myIndices) {
-            // special case: _other is a TTStack with same indices
-            const internal::TTStack<true> *otherTTs = dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly);
-            if (otherTTs) {
-                *_me.tensorObject = *_other.tensorObjectReadOnly;
-                contract_stack(_me);
-                REQUIRE(_me.tensorObject->nodes.size() == _me.degree()/2, "ie");
-                dynamic_cast<TTOperator *>(_me.tensorObject)->cannonicalize_right();
-                if (transposed) dynamic_cast<TTOperator *>(_me.tensorObject)->transpose();
-                return;
-            }
-            
-            // special case: _other is a TTOperator with same indices
-            // NOTE as TTOperatorStack inherits from TTOperator, the order is important
-            const TTOperator *otherTT = dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly);
-            if (otherTT) {
-                *_me.tensorObject = *otherTT; // assignment of tensorNetwork is sufficient
-                if (transposed) dynamic_cast<TTOperator *>(_me.tensorObject)->transpose();
-                return;
-            }
-        }
-        
-        // general case: not yet implemented... // TODO
+         
+        // Use FullTensor fallback
         if (_other.tensorObjectReadOnly->nodes.size() > 1) {
             LOG(warning, "assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
         }
-        // special case: _other is a fullTensor
-        FullTensor rhs(_other.degree());
-        // get _other with my index order
-        rhs(myIndices) = _other; 
-        // cast to TTOperator
-        *_me.tensorObject = TTNetwork(rhs);
+        std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
+        std::unique_ptr<Tensor> otherReordered(otherFull->construct_new(otherFull->dimensions, DONT_SET_ZERO()));
+        (*otherReordered)(myIndices) = (*otherFull)(otherIndices);
+        
+        // Cast to TTNetwork
+        if(otherReordered->is_sparse()) {
+            LOG(fatal, "Not yet implemented." ); //TODO
+        } else {
+            *_me.tensorObject = TTNetwork(std::move(*static_cast<FullTensor*>(otherReordered.get())));
+        }
     }
-
-    
 
     
     // Explicit instantiation of the two template parameters that will be implemented in the xerus library

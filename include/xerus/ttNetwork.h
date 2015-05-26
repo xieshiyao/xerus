@@ -230,11 +230,11 @@ namespace xerus {
     };
 
     template<bool isOperator>
-    _inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
+    static _inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
 
     /// Returns the frobenius norm of the given tensor
     template<bool isOperator>
-    _inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
+    static _inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
 
 
     typedef TTNetwork<false> TTTensor;

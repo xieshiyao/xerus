@@ -53,8 +53,11 @@ struct bfdResolver {
 				return false;
 			}
 			bfd_check_format(newBfd->abfd.get(),bfd_object);
-			size_t storage_needed = bfd_get_symtab_upper_bound(newBfd->abfd.get());
-			newBfd->symbols.reset(reinterpret_cast<asymbol**>(new char[storage_needed]));
+			long storageNeeded = bfd_get_symtab_upper_bound(newBfd->abfd.get());
+			if (storageNeeded < 0) {
+				return false;
+			}
+			newBfd->symbols.reset(reinterpret_cast<asymbol**>(new char[(size_t)storageNeeded]));
 			/*size_t numSymbols = */bfd_canonicalize_symtab(newBfd->abfd.get(), newBfd->symbols.get());
 			
 			newBfd->offset = (intptr_t)_info.dli_fbase;
@@ -119,7 +122,7 @@ struct bfdResolver {
 		bool relative = section->vma < (uintptr_t)currBfd.offset;
 // 		std::cout << '\n' << "sections:\n";
 		while (section != nullptr) {
-			intptr_t offset = ((intptr_t)address) - (relative?currBfd.offset:0) - section->vma;
+			intptr_t offset = ((intptr_t)address) - (relative?currBfd.offset:0) - (intptr_t)section->vma;
 // 			std::cout << section->name << " " << section->id << " file: " << section->filepos << " flags: " << section->flags 
 // 						<< " vma: " << std::hex << section->vma << " - " << std::hex << (section->vma+section->size) << std::endl;
 			

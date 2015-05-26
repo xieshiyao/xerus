@@ -131,7 +131,7 @@ namespace xerus {
         if(contractedTensor->is_sparse()) {
             return FullTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
         } else {
-            return FullTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get()));
         }
     }
     
@@ -139,7 +139,7 @@ namespace xerus {
         std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
         
         if(contractedTensor->is_sparse()) {
-            return SparseTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get()));
         } else {
             LOG(error, "Casting a TensorNetwork containing FullTensors to SparseTensor. This is most likely not usefull.");
             return SparseTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));
@@ -284,7 +284,7 @@ namespace xerus {
     
     /// Eliminates all erased Nodes
     void TensorNetwork::sanitize() {
-        std::vector<size_t> idMap(nodes.size(), -1);
+        std::vector<size_t> idMap(nodes.size(), ~0ul);
         
         // Move nodes in vector
         size_t newId=0, oldId=0;
@@ -696,7 +696,7 @@ namespace xerus {
         LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
         
         // TODO this and all the heuristics still assume that all tensors are dense (as there are no sparse tensors at the time of this writing)
-        if (_ids.size() == 0) { return -1; }
+        if (_ids.size() == 0) { return ~0ul; }
         
         // trace out all single-node traces
         for (size_t id : _ids) {

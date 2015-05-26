@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Xerus. If not, see <http://www.gnu.org/licenses/>.
 //
-// For further information on Xerus visit https://libXerus.org 
+// For further information on Xerus visit https://libXerus.org
 // or contact us at contact@libXerus.org.
 
 #pragma once
@@ -24,9 +24,16 @@
 #include "sparseTensor.h"
 
 namespace xerus {
-    /// Unique_ptr wrapper that should always be used for the CS sparse matrix format
+    /// Unique_ptr wrapper that should always be used to encapsulate the CS sparse matrix format.
     typedef std::unique_ptr<cs_di, cs_di*(*)(cs_di*)> CsUniquePtr;
     
+    /** @brief: Function that estimates whether a contraction result is sparse.
+     * @param _lhsDim the first dimension of the left matrix and the result, i.e. N in an NxM * MxK contraction.
+     * @param _midDim the second dimension of the left matrix and the first dimension of the right matrix, i.e. M in an NxM * MxK contraction.
+     * @param _rhsDim the second dimension of the right matrix and the result, i.e. K in an NxM * MxK contraction.
+     * @param _lhsEntries number of non-zero entries of the left matrix.
+     * @param _rhsEntries number of non-zero entries of the right matrix.
+     */
     bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries);
     
     /// Allocates a CS sparse matrix with given dimensions and number of entries
@@ -41,5 +48,6 @@ namespace xerus {
     /// Retransforms a CS sparse matrix to sparseTensor format
     SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions);
     
+    /// Prints a matrix in cs format
     void print_cs(const CsUniquePtr& _cs_format);
 }

@@ -192,7 +192,7 @@ namespace xerus {
     };
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    _inline_ SparseTensor operator*(const value_t _lhs, const SparseTensor& _rhs) {
+    static _inline_ SparseTensor operator*(const value_t _lhs, const SparseTensor& _rhs) {
         return _rhs*_lhs;
     }
     

@@ -30,18 +30,17 @@ namespace xerus {
     class FullTensor;
     class SparseTensor;
     
-    //TODO add function do check all link and degree consistencies
     class TensorNetwork {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Dimensions of the external indices
+        /// Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
         std::vector<size_t> dimensions;
         
-        /// The order determines the ids of the nodes
+        /// The nodes constituting the network. The order determines the ids of the nodes.
 		std::vector<TensorNode> nodes;
             
-        /// The open (still unnamed) indices in order
+        /// The open links of the network in order.
         std::vector<TensorNode::Link> externalLinks;
         
         /// A single value representing a constant factor and/or the only entry of an order zero tensor
@@ -69,19 +68,23 @@ namespace xerus {
         
         /// Constructs the trivial network containing non-specified size-1 fulltensor 
         implicit TensorNetwork(size_t _degree);
-            
+        
+        /// Destructor
 		virtual ~TensorNetwork() {}
-            
+        
+        /// Returns a new copy of the network.
 		virtual TensorNetwork* get_copy() const;
             
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		std::vector<TensorNode::Link> init_from_dimension_array();
         
+        /// Checks whether there is a non-trivial global scaling factor, i.e. check factor != 1.0.
         bool has_factor() const;
         
         virtual void apply_factor();
         
+        /// Contracts all parts of the network that miss every connection to the external indices.
         void contract_unconnected_subnetworks();
 
     public:
@@ -93,11 +96,13 @@ namespace xerus {
         /// Allows explicit casts to SparseTensor
         explicit operator SparseTensor() const;
             
-        /// Returns a pointer to an Tensor (could be sparse, could be dense)
+        /// Fully contracts the network to a single tensor and returns it as a unique_ptr. Result can be both full or sparse.
         std::unique_ptr<Tensor> fully_contracted_tensor() const;
         
+        /// TensorNetworks are copy assignable.
 		TensorNetwork &operator=(const TensorNetwork &_cpy);
             
+        /// TensorNetworks are move assignable.
 		TensorNetwork &operator=(TensorNetwork &&_mv);
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

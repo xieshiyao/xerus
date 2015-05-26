@@ -27,6 +27,7 @@ ifdef USE_CLANG
 	WARNINGS += -Wno-error=return-type-c-linkage		# do not warn about c-incompatible return types in "extern-c" blocks
 else
 	WARNINGS += -Wuseless-cast 				# Warn when an expression is casted to its own type. 
+	WARNINGS += -Wno-error=useless-cast			# fails on gcc 5.1.1 otherwise
 	WARNINGS += -Wlogical-op				# Warn about suspicious uses of logical operators in expressions
 	WARNINGS += -Wtrampolines				# Warn about trampolines
 	ifdef SUGGEST_ATTRIBUTES
