@@ -256,7 +256,7 @@ namespace xerus {
 		
 		// Needed variables
 		std::unique_ptr<value_t[]> LR, RR, M, U, S, Vt, newLeft, newRight;
-		size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank, rank;
+		size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank;
 		
 		for(size_t position = 0; position < degree()/N-1; ++position) {
 			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+1].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
@@ -274,210 +274,232 @@ namespace xerus {
 			maxRank = std::min(maxLeftRank, maxRightRank);
 			
 			// Calculate QR and RQ decompositoins
-			LR.reset(new value_t[maxLeftRank*midDim], internal::array_deleter_vt);
-			RR.reset(new value_t[midDim*maxRightRank], internal::array_deleter_vt);
+			LR.reset(new value_t[maxLeftRank*midDim]);
+			RR.reset(new value_t[midDim*maxRightRank]);
 			blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
 			blasWrapper::inplace_rq(RR.get(), rightTensor.data.get(), midDim, rightDim);
 			
 			// Calculate Middle Matrix M = LR*RR
-			M.reset(new value_t[maxLeftRank*maxRightRank], internal::array_deleter_vt);
+			M.reset(new value_t[maxLeftRank*maxRightRank]);
 			blasWrapper::matrix_matrix_product(M.get(), maxLeftRank, maxRightRank, 1.0, LR.get(), false, midDim, RR.get(), false);
 			
 			// Calculate SVD of U S Vt = M -- Reuse the space allocted for LR and RR and allow destruction of M
 			U = std::move(LR);
-			S.reset(new value_t[maxRank], internal::array_deleter_vt);
+			S.reset(new value_t[maxRank]);
 			Vt = std::move(RR);
 			blasWrapper::svd_destructive(U.get(), S.get(), Vt.get(), M.get(), maxLeftRank, maxRightRank);
 			
 			// Determine the Rank
-			rank = std::min(maxRank, _maxRanks[position]);
-			for(; S[rank-1] < _eps*S[0]; --rank) { }
+			size_t currRank = std::min(maxRank, _maxRanks[position]);
+			for(; S[currRank-1] < _eps*S[0]; --currRank) { }
 			
 			// Calclate S*Vt by scaling the rows of Vt appropriatly
-			for(size_t row = 0; row < rank; ++row) {
+			for(size_t row = 0; row < currRank; ++row) {
 				array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
 			}
 			
 			// Multiply U and (S*Vt) back to the left and to the right respectively
-			newLeft.reset(new value_t[leftDim*rank], internal::array_deleter_vt);
-			newRight.reset(new value_t[rank*rightDim], internal::array_deleter_vt);
-			blasWrapper::matrix_matrix_product(newLeft.get(), leftDim, rank, 1.0, leftTensor.data.get(), maxLeftRank, false, maxLeftRank, U.get(), maxRank, false);
-			blasWrapper::matrix_matrix_product(newRight.get(), rank, rightDim, 1.0, Vt.get(), false, maxRightRank, rightTensor.data.get(), false);
+			newLeft.reset(new value_t[leftDim*currRank]);
+			newRight.reset(new value_t[currRank*rightDim]);
+			blasWrapper::matrix_matrix_product(newLeft.get(), leftDim, currRank, 1.0, leftTensor.data.get(), maxLeftRank, false, maxLeftRank, U.get(), maxRank, false);
+			blasWrapper::matrix_matrix_product(newRight.get(), currRank, rightDim, 1.0, Vt.get(), false, maxRightRank, rightTensor.data.get(), false);
 			
 			// Put the new Tensors to their place
-			set_component(position, std::move(newLeft));
-			set_component(position+1, std::move(newRight));
+			leftTensor.data.reset(newLeft.release(), internal::array_deleter_vt);
+			rightTensor.data.reset(newRight.release(), internal::array_deleter_vt);
+			leftTensor.dimensions.back() = currRank;
+			leftTensor.size = product(leftTensor.dimensions);
+			rightTensor.dimensions.front() = currRank;
+			rightTensor.size = product(rightTensor.dimensions);
+			nodes[position+1].neighbors.back().dimension  = currRank;
+			nodes[position+2].neighbors.front().dimension = currRank;
 		}
 		REQUIRE(is_in_expected_format(), "ie");
 	}
-    
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
-        REQUIRE(_me.tensorObject->is_valid_network(), "cannot contract inconsistent ttStack");
-        const size_t N = isOperator?2:1;
-        const size_t numNodes = _me.degree()/N;
-        std::set<size_t> toContract;
-        for (size_t currentNode=0; currentNode < numNodes; ++currentNode) {
-            toContract.clear();
-            for (size_t i=currentNode; i<_me.tensorObject->nodes.size(); i+=numNodes) {
-                toContract.insert(i);
-            }
-            _me.tensorObject->contract(toContract);
-        }
-        // all are contracted, reshuffle them to be in the correct order
-        // after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
-        // so modulus gives the correct wanted id
-        _me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
-        REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
-        REQUIRE(_me.tensorObject->is_valid_network(), "something went wrong in contract_stack");
-        
-        // reset to new external links
-        _me.tensorObject->externalLinks.clear();
-        _me.tensorObject->externalLinks.emplace_back(0, 0, _me.tensorObject->dimensions[0], false);
-        for(size_t i = 1; i < numNodes; ++i) {
-            _me.tensorObject->externalLinks.emplace_back(i, 1, _me.tensorObject->dimensions[i], false);
-        }
-        if(N == 2) {
-            _me.tensorObject->externalLinks.emplace_back(0, 1, _me.tensorObject->dimensions[numNodes], false);
-            for(size_t i = 1; i < numNodes; ++i) {
-                _me.tensorObject->externalLinks.emplace_back(i, 2, _me.tensorObject->dimensions[numNodes+i], false);
-            }
-        }
-        
-        // ensure right amount and order of links
-        Index ext[N];
-        size_t lastRank, externalDim[N], newRank;
-        std::vector<Index> lastIndices, lastRight;
-        std::vector<Index> oldIndices, newRight; // newLeft == lastRight
-        std::vector<Index> newIndices;
-        std::vector<size_t> newDimensions;
-        for (size_t i=0; i<numNodes; ++i) {
-            lastIndices = std::move(oldIndices); oldIndices.clear();
-            lastRight = std::move(newRight); newRight.clear();
-            lastRank = newRank; newRank=1;
-            TensorNode &n = _me.tensorObject->nodes[i];
-            for (TensorNode::Link &l : n.neighbors) {
-                if (l.external) {
-                    size_t externalNumber = 0;
-                    if (N==2) {
-                        externalNumber = l.indexPosition>=numNodes?1:0;
-                    }
-                    oldIndices.push_back(ext[externalNumber]);
-                    externalDim[externalNumber] = l.dimension;
-                } else if (i >= 1 && l.links(i-1)) {
-                    REQUIRE(lastIndices.size() > l.indexPosition, "ie " << lastIndices.size() << " " << l.indexPosition);
-                    oldIndices.push_back(lastIndices[l.indexPosition]);
-                } else if (l.links(i+1)) {
-                    oldIndices.emplace_back();
-                    newRight.push_back(oldIndices.back());
-                    newRank *= l.dimension;
-                } else  {
-                    LOG(fatal, "ie");
-                }
-            }
-            newIndices = std::move(lastRight);
-            newIndices.insert(newIndices.end(), ext, ext+N);
-            newIndices.insert(newIndices.end(), newRight.begin(), newRight.end());
-            
-            (*n.tensorObject)(newIndices) = (*n.tensorObject)(oldIndices);
-            
-            newDimensions.clear();
-            n.neighbors.clear();
-            if (i>0) {
-                n.neighbors.emplace_back(i-1,(i>1? N+1 : N),lastRank, false);
-                newDimensions.push_back(lastRank);
-            }
-            for (size_t j=0; j<N; ++j) {
-                REQUIRE(_me.tensorObject->dimensions[i+j*numNodes] == externalDim[j], "ie");
-                n.neighbors.emplace_back(0,i+j*numNodes,externalDim[j], true);
-                newDimensions.push_back(externalDim[j]);
-            }
-            if (i<numNodes-1) {
-                n.neighbors.emplace_back(i+1,0,newRank, false);
-                newDimensions.push_back(newRank);
-            }
-            n.tensorObject->reinterpret_dimensions(newDimensions);
-        }
-        
-        
-        REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
-    }
-    
-    #ifndef DISABLE_RUNTIME_CHECKS_
-        template<bool isOperator>
-        bool TTNetwork<isOperator>::is_valid_tt() const {
-            const size_t N = isOperator?2:1;
-            const size_t numNodes = degree()/N;
-            REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
-            REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
-            REQUIRE(std::isfinite(factor), factor);
-            
-            // Per external link
-            for (size_t n=0; n<externalLinks.size(); ++n) {
-                const TensorNode::Link &l = externalLinks[n];
-                REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
-                REQUIRE(!l.external, "n=" << n);
-                REQUIRE(l.other < numNodes, "n=" << n << " " << l.other << " vs " << numNodes);
-                REQUIRE(l.indexPosition < nodes[l.other].neighbors.size(), "n=" << n << " " << l.indexPosition << " vs " << nodes[l.other].neighbors.size());
-                REQUIRE(nodes[l.other].neighbors[l.indexPosition].external, "n=" << n);
-                REQUIRE(nodes[l.other].neighbors[l.indexPosition].indexPosition == n, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].indexPosition);
-                REQUIRE(nodes[l.other].neighbors[l.indexPosition].dimension == l.dimension, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].dimension << " vs " << l.dimension);
-            }
-            
-            // Per node
-            for (size_t n=0; n<numNodes; ++n) {
-                const TensorNode &node = nodes[n];
-                REQUIRE(!node.erased, "n=" << n);
-                if (n==0) { // first node (or only node)
-                    REQUIRE(node.degree() == N+(numNodes>1?1:0), "n=" << n << " " << node.degree());
-                    if (node.tensorObject) {
-                        REQUIRE(node.tensorObject->degree() == N+(numNodes>1?1:0), "n=" << n << " " << node.tensorObject->degree());
-                    }
-                    REQUIRE(node.neighbors[0].external, "n=" << n);
-                    REQUIRE(node.neighbors[0].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
-                    if (isOperator) {
-                        REQUIRE(node.neighbors[1].external, "n=" << n);
-                        REQUIRE(node.neighbors[1].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
-                    }
-                } else {
-                    REQUIRE(node.degree() == N+(n<numNodes-1?2:1), "n=" << n << " " << node.degree());
-                    if (node.tensorObject) {
-                        REQUIRE(node.tensorObject->degree() == N+(n<numNodes-1?2:1), "n=" << n << " " << node.tensorObject->degree());
-                    }
-                    REQUIRE(!node.neighbors[0].external, "n=" << n);
-                    REQUIRE(node.neighbors[0].other == n-1, "n=" << n);
-                    REQUIRE(node.neighbors[0].indexPosition == N+(n>1?1:0), "n=" << n << " " << node.neighbors[0].indexPosition);
-                    REQUIRE(node.neighbors[1].external, "n=" << n);
-                    REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
-                    if (isOperator) {
-                        REQUIRE(node.neighbors[2].external, "n=" << n);
-                        REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
-                    }
-                }
-                
-                if (n < numNodes-1) {
-                    if (node.tensorObject) {
-                        REQUIRE(!node.tensorObject->has_factor(), "n="<<n);
-                    }
-                    REQUIRE(!node.neighbors.back().external, "n=" << n);
-                    REQUIRE(node.neighbors.back().other == n+1, "n=" << n << " " << node.neighbors.back().other);
-                    REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);
-                    REQUIRE(!nodes[n+1].neighbors.empty(), "n=" << n);
-                    REQUIRE(node.neighbors.back().dimension == nodes[n+1].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
-                    
-                } 
-            }
-            
-            return true;
-        }
-    #else
-        template<bool isOperator>
-        bool TTNetwork<isOperator>::is_valid_tt() const {
-            return true;
-        }
-    #endif
-    
+	
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
+		REQUIRE(_me.tensorObject->is_valid_network(), "cannot contract inconsistent ttStack");
+		const size_t numComponents = _me.degree()/N;
+		const size_t numNodes = _me.degree()/N+2;
+		std::set<size_t> toContract;
+		for (size_t currentNode=0; currentNode < numNodes; ++currentNode) {
+			toContract.clear();
+			for (size_t i=currentNode; i<_me.tensorObject->nodes.size(); i+=numNodes) {
+				toContract.insert(i);
+			}
+			_me.tensorObject->contract(toContract);
+		}
+		// all are contracted, reshuffle them to be in the correct order
+		// after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
+		// so modulus gives the correct wanted id
+		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
+		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
+		REQUIRE(_me.tensorObject->is_valid_network(), "ie: something went wrong in contract_stack");
+		
+		// reset to new external links
+		_me.tensorObject->externalLinks.clear();
+		for(size_t i = 0; i < numComponents; ++i) {
+			_me.tensorObject->externalLinks.emplace_back(i+1, 1, _me.tensorObject->dimensions[i], false);
+		}
+		if(N == 2) {
+			for(size_t i = 0; i < numComponents; ++i) {
+				_me.tensorObject->externalLinks.emplace_back(i+1, 2, _me.tensorObject->dimensions[numNodes+i], false);
+			}
+		}
+		
+		// ensure right amount and order of links
+		Index ext[N];
+		size_t lastRank, externalDim[N], newRank;
+		std::vector<Index> lastIndices, lastRight;
+		std::vector<Index> oldIndices, newRight; // newLeft == lastRight
+		std::vector<Index> newIndices;
+		std::vector<size_t> newDimensions;
+		_me.tensorObject->nodes.front().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(1,0,1,false)});
+		_me.tensorObject->nodes.front().tensorObject->reinterpret_dimensions({1});
+		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(numComponents,0,1,false)});
+		_me.tensorObject->nodes.back().tensorObject->reinterpret_dimensions({1});
+		for (size_t i=0; i<numComponents; ++i) {
+			lastIndices = std::move(oldIndices); oldIndices.clear();
+			lastRight = std::move(newRight); newRight.clear();
+			lastRank = newRank; newRank=1;
+			TensorNode &n = _me.tensorObject->nodes[i+1];
+			for (TensorNode::Link &l : n.neighbors) {
+				if (l.external) {
+					size_t externalNumber = 0;
+					if (N==2) {
+						externalNumber = l.indexPosition>=numNodes?1:0;
+					}
+					oldIndices.push_back(ext[externalNumber]);
+					externalDim[externalNumber] = l.dimension;
+				} else if (i >= 1 && l.links(i-1)) {
+					REQUIRE(lastIndices.size() > l.indexPosition, "ie " << lastIndices.size() << " " << l.indexPosition);
+					oldIndices.push_back(lastIndices[l.indexPosition]);
+				} else if (l.links(i+1)) {
+					oldIndices.emplace_back();
+					newRight.push_back(oldIndices.back());
+					newRank *= l.dimension;
+				} else  {
+					LOG(fatal, "ie");
+				}
+			}
+			newIndices = std::move(lastRight);
+			newIndices.insert(newIndices.end(), ext, ext+N);
+			newIndices.insert(newIndices.end(), newRight.begin(), newRight.end());
+			
+			(*n.tensorObject)(newIndices) = (*n.tensorObject)(oldIndices);
+			
+			newDimensions.clear();
+			n.neighbors.clear();
+			n.neighbors.emplace_back(i, N+1,lastRank, false);
+			newDimensions.push_back(lastRank);
+			for (size_t j=0; j<N; ++j) {
+				REQUIRE(_me.tensorObject->dimensions[i+j*numComponents] == externalDim[j], "ie");
+				n.neighbors.emplace_back(0,i+j*numComponents,externalDim[j], true);
+				newDimensions.push_back(externalDim[j]);
+			}
+			n.neighbors.emplace_back(i+2,0,newRank, false);
+			newDimensions.push_back(newRank);
+			n.tensorObject->reinterpret_dimensions(newDimensions);
+		}
+		
+		
+		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
+	}
+	
+	#ifndef DISABLE_RUNTIME_CHECKS_
+		template<bool isOperator>
+		bool TTNetwork<isOperator>::is_valid_tt() const {
+			const size_t numComponents = degree()/N;
+			const size_t numNodes = degree()/N + 2;
+			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
+			REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
+			REQUIRE(std::isfinite(factor), factor);
+			
+			// per external link
+			for (size_t n=0; n<externalLinks.size(); ++n) {
+				const TensorNode::Link &l = externalLinks[n];
+				REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
+				REQUIRE(!l.external, "n=" << n);
+				REQUIRE(l.other == (n%numComponents)+1, "n=" << n << " " << l.other << " vs " << ((n%numComponents)+1));
+				REQUIRE(l.indexPosition < nodes[l.other].neighbors.size(), "n=" << n << " " << l.indexPosition << " vs " << nodes[l.other].neighbors.size());
+				REQUIRE(nodes[l.other].neighbors[l.indexPosition].external, "n=" << n);
+				REQUIRE(nodes[l.other].neighbors[l.indexPosition].indexPosition == n, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].indexPosition);
+				REQUIRE(nodes[l.other].neighbors[l.indexPosition].dimension == l.dimension, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].dimension << " vs " << l.dimension);
+			}
+			
+			// virtual nodes
+			REQUIRE(nodes.front().neighbors.size() == 1, nodes.front().neighbors.size());
+			REQUIRE(nodes.front().neighbors[0].dimension == 1, nodes.front().neighbors[0].dimension);
+			REQUIRE(nodes.front().neighbors[0].other == 1, nodes.front().neighbors[0].other);
+			REQUIRE(nodes.front().neighbors[0].indexPosition == 0, nodes.front().neighbors[0].indexPosition);
+			if (nodes.front().tensorObject) {
+				REQUIRE(nodes.front().tensorObject->dimensions == std::vector<size_t>({1}), nodes.front().tensorObject->dimensions);
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wfloat-equal"
+				REQUIRE((*nodes.front().tensorObject)[0] == 1, (*nodes.front().tensorObject)[0]);
+				#pragma GCC diagnostic pop
+				REQUIRE(!nodes.front().tensorObject->has_factor(), "");
+			}
+			
+			REQUIRE(nodes.back().neighbors.size() == 1, nodes.back().neighbors.size());
+			REQUIRE(nodes.back().neighbors[0].dimension == 1, nodes.back().neighbors[0].dimension);
+			REQUIRE(nodes.back().neighbors[0].other == numNodes-2, nodes.back().neighbors[0].other);
+			REQUIRE(nodes.back().neighbors[0].indexPosition == N+1, nodes.back().neighbors[0].indexPosition);
+			if (nodes.back().tensorObject) {
+				REQUIRE(nodes.back().tensorObject->dimensions == std::vector<size_t>({1}), nodes.back().tensorObject->dimensions);
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wfloat-equal"
+				REQUIRE((*nodes.back().tensorObject)[0] == 1, (*nodes.back().tensorObject)[0]);
+				#pragma GCC diagnostic pop
+				REQUIRE(!nodes.back().tensorObject->has_factor(), "");
+			}
+			
+			// per component
+			for (size_t n=0; n<numComponents; ++n) {
+				const TensorNode &node = nodes[n+1];
+				REQUIRE(!node.erased, "n=" << n);
+				REQUIRE(node.degree() == N+2, "n=" << n << " " << node.degree());
+				if (node.tensorObject) {
+					REQUIRE(node.tensorObject->degree() == N+2, "n=" << n << " " << node.tensorObject->degree());
+				}
+				REQUIRE(!node.neighbors[0].external, "n=" << n);
+				REQUIRE(node.neighbors[0].other == n, "n=" << n);
+				REQUIRE(node.neighbors[0].indexPosition == (n==0?0:N+1), "n=" << n << " " << node.neighbors[0].indexPosition);
+				REQUIRE(node.neighbors[1].external, "n=" << n);
+				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
+				if (isOperator) {
+					REQUIRE(node.neighbors[2].external, "n=" << n);
+					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
+				}
+				if (node.tensorObject) {
+					if (n<numComponents-1) {
+						REQUIRE(!node.tensorObject->has_factor(), "n="<<n);
+					}
+					REQUIRE(node.tensorObject->dimensions[0]==node.neighbors[0].dimension, "n=" << n);
+					REQUIRE(node.tensorObject->dimensions[1]==node.neighbors[1].dimension, "n=" << n);
+					REQUIRE(node.tensorObject->dimensions[2]==node.neighbors[2].dimension, "n=" << n);
+					if (isOperator) {
+						REQUIRE(node.tensorObject->dimensions[3]==node.neighbors[3].dimension, "n=" << n);
+					}
+				}
+				REQUIRE(!node.neighbors.back().external, "n=" << n);
+				REQUIRE(node.neighbors.back().other == n+2, "n=" << n << " " << node.neighbors.back().other);
+				REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);
+				REQUIRE(!nodes[n+1].neighbors.empty(), "n=" << n);
+				REQUIRE(node.neighbors.back().dimension == nodes[n+1].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
+			}
+			
+			return true;
+		}
+	#else
+		template<bool isOperator>
+		bool TTNetwork<isOperator>::is_valid_tt() const {
+			return true;
+		}
+	#endif
+		
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
 	template<bool isOperator>
@@ -693,20 +715,20 @@ namespace xerus {
     void TTNetwork<isOperator>::round(value_t _eps) {
         cannonicalize_left();
         const size_t N = isOperator?2:1;
-        round_train(*this, std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
+        round_train(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
     }
 
     template<bool isOperator>
     void TTNetwork<isOperator>::round(size_t _maxRank) {
         cannonicalize_left();
         const size_t N = isOperator?2:1;
-        round_train(*this, std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
+        round_train(std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
     }
 
     template<bool isOperator>
     void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
         cannonicalize_left();
-        round_train(*this, _maxRanks, 1e-15);
+        round_train(_maxRanks, 1e-15);
     }
     
     template<bool isOperator>
