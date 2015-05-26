@@ -136,9 +136,7 @@ namespace xerus {
         
         static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
         
-        //TODO does this make sense?
         TTNetwork& operator=(const TTNetwork& _other) = default;
-
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
@@ -148,18 +146,26 @@ namespace xerus {
         
         static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
             
-        /// tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects
-        /// @note will not check for orthogonality
-        bool is_valid_tt() const;
-        
-        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     public:
+		/// tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects
+        /// @note will not check for orthogonality
+        bool is_valid_tt() const;
+		
         static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
         
         static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
         
-        /// Splits the TTNetwork into two parts, removing the node at _position.
+		/// returns a reference to the component tensor at position @a _idx in [0..numComponents]
+		/// @note the first and last component tensor have virtual indices of dimension 1 added so that all components are of the same degree
+		const Tensor &get_component(size_t _idx) const;
+		
+		/// sets a single component tensor at position @a _idx to be equal to @a _T
+		/// updates meta-data but might leave the TT tensor in an illegal state. it is the callers responsibility to update the component tensors consistently
+		void set_component(size_t _idx, const Tensor &_T);
+		void set_component(size_t _idx, std::unique_ptr<Tensor> &&_T);
+		
+        /// Splits the TTNetwork into two parts by removing the node at @a _position.
         std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
         
         void round(value_t _eps);
@@ -175,9 +181,8 @@ namespace xerus {
         size_t rank(size_t _i) const;
         
         size_t datasize() const;
-
         
-        /// moves core to the left (eg. to perform a round operation that then moves it to the right)
+        /// moves core to the left
         void cannonicalize_left();
         
         /// moves core to the right
