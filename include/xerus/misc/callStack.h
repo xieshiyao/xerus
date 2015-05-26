@@ -23,9 +23,11 @@
 #include <string>
 #include <utility>
 
-START_MISC_NAMESPACE
+namespace xerus {
+    namespace misc {
 
-    std::string get_call_stack();
-    std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name);
+        std::string get_call_stack();
+        std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name);
 
-END_MISC_NAMESPACE
+    }
+}

@@ -86,7 +86,7 @@ UNIT_TEST(ALS, tutorial,
 	
 	xerus::ALS(A, X, B);
 	
-	TEST(approx_equal(frob_norm(X-B), 0., 1e-12));
+	TEST(misc::approx_equal(frob_norm(X-B), 0., 1e-12));
 	
 	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
 	
@@ -100,7 +100,7 @@ UNIT_TEST(ALS, tutorial,
 	std::vector<double> perfdata;
 	ALSb(A, X, B, 1e-4, &perfdata);
 	
-	TEST(!approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
+	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
 	
 // 	std::cout << perfdata << std::endl;
 )

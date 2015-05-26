@@ -24,24 +24,25 @@
 #include "standard.h"
 #include "stringUtilities.h"
 
-START_MISC_NAMESPACE
+namespace xerus {
+    namespace misc {
 
-    struct generic_error : public std::exception {
-        std::string error_info;
-        
-        generic_error();
-        
-        generic_error(const generic_error &_other) noexcept;
-        
-        const char* what() const noexcept override;
-        
-        template<class T>
-        generic_error& operator<<(const T &_info) noexcept {
-            error_info += MISC::to_string(_info);
-            return *this;
-        }
-    };
+        struct generic_error : public std::exception {
+            std::string error_info;
+            
+            generic_error();
+            
+            generic_error(const generic_error &_other) noexcept;
+            
+            const char* what() const noexcept override;
+            
+            template<class T>
+            generic_error& operator<<(const T &_info) noexcept {
+                error_info += MISC::to_string(_info);
+                return *this;
+            }
+        };
 
-    #define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")
-
-END_MISC_NAMESPACE
+        #define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")
+    }
+}

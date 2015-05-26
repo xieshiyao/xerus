@@ -83,7 +83,7 @@ namespace xerus {
                     }
                 }
                 
-                size_t maxDim1 = product(_dimensions);
+                size_t maxDim1 = misc::product(_dimensions);
                 size_t maxDim2 = 1;
                 std::vector<size_t> constructVector;
                 std::vector<TensorNode::Link> neighbors;

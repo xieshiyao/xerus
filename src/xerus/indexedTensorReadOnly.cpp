@@ -64,13 +64,13 @@ namespace xerus {
     
     template<class tensor_type>
     bool IndexedTensorReadOnly<tensor_type>::is_open(const Index& idx) const {
-        REQUIRE(idx.fixed() || contains(indices, idx), "Index " << idx << " not contained in indices: " << indices); // TODO would be nice to check that fixed indices are also contained...
-        return !idx.fixed() && count(indices, idx) == 1;
+        REQUIRE(idx.fixed() || misc::contains(indices, idx), "Index " << idx << " not contained in indices: " << indices); // TODO would be nice to check that fixed indices are also contained...
+        return !idx.fixed() && misc::count(indices, idx) == 1;
     }
     
     template<class tensor_type>
     bool IndexedTensorReadOnly<tensor_type>::is_contained_and_open(const Index& idx) const {
-        return !idx.fixed() && count(indices, idx) == 1;
+        return !idx.fixed() && misc::count(indices, idx) == 1;
     }
     
     template<class tensor_type>
@@ -78,7 +78,7 @@ namespace xerus {
         std::vector<size_t> evalDimensions;
         evalDimensions.reserve(_indexOrder.size());
         for(const Index& idx : _indexOrder) {
-            REQUIRE(count(indices, idx) == 1, "All indices of evaluation target must appear exactly once.");
+            REQUIRE(misc::count(indices, idx) == 1, "All indices of evaluation target must appear exactly once.");
             
             // Find index
             size_t indexPos = 0, dimCount = 0;
@@ -181,8 +181,8 @@ namespace xerus {
             for(const Index& idx : indices) {
                 REQUIRE(_allowNonOpen || !idx.fixed(), "Fixed indices are not allowed here.");
                 REQUIRE(!idx.fixed() || idx.span == 1, "Fixed index must have span == 1");
-                REQUIRE(_allowNonOpen || count(indices, idx) == 1, "Traces are not allowed here.");
-                REQUIRE(idx.fixed() || count(indices, idx) <= 2, "An index must not appere more than twice!");
+                REQUIRE(_allowNonOpen || misc::count(indices, idx) == 1, "Traces are not allowed here.");
+                REQUIRE(idx.fixed() || misc::count(indices, idx) <= 2, "An index must not appere more than twice!");
                 
                 if(idx.flags[Index::Flag::INVERSE_SPAN]) {
                     REQUIRE(idx.span <= degree(), "Index used with variable span (e.g. i&3) would have negative span " << (long)(degree() - idx.span) << "!");
@@ -219,7 +219,7 @@ namespace xerus {
         size_t degree = 0;
         for(const Index& idx : _indices) {
             REQUIRE(idx.flags[Index::Flag::ASSINGED], "Internal Error");
-            if(!idx.fixed() && count(_indices, idx) != 2) { degree += idx.span; }
+            if(!idx.fixed() && misc::count(_indices, idx) != 2) { degree += idx.span; }
         }
         return degree;
     }

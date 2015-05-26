@@ -120,20 +120,20 @@ UNIT_TEST(SparseTensor, Assignment_Const,
     res(i,j,k,l,m) = A(i,j,k,l,m);
     const SparseTensor resC1(res);
     TEST(resC1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
-    TEST(approx_equal(resC1[{0,0,0,0,0}], 1.0));
-    TEST(approx_equal(resC1[{0,1,2,0,0}], 11.0));
-    TEST(approx_equal(resC1[{1,1,2,0,0}], 23.0));
-    TEST(approx_equal(resC1.at({1,0,0,0,1}), 14.0));
-    TEST(approx_equal(resC1.at({1,0,1,0,1}), 16.0));
+    TEST(misc::approx_equal(resC1[{0,0,0,0,0}], 1.0));
+    TEST(misc::approx_equal(resC1[{0,1,2,0,0}], 11.0));
+    TEST(misc::approx_equal(resC1[{1,1,2,0,0}], 23.0));
+    TEST(misc::approx_equal(resC1.at({1,0,0,0,1}), 14.0));
+    TEST(misc::approx_equal(resC1.at({1,0,1,0,1}), 16.0));
     
     res(j,i,k,l,m) = A(i,j,k,l,m);
     const SparseTensor resC2(res);
     TEST(resC2.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
-    TEST(approx_equal(resC2[{0,0,0,0,0}], 1.0));
-    TEST(approx_equal(resC2[{0,1,2,0,0}], 17.0));
-    TEST(approx_equal(resC2[{1,1,2,0,0}], 23.0));
-    TEST(approx_equal(resC2.at({1,0,0,0,1}), 8.0));
-    TEST(approx_equal(resC2.at({1,0,1,0,1}), 10.0));
+    TEST(misc::approx_equal(resC2[{0,0,0,0,0}], 1.0));
+    TEST(misc::approx_equal(resC2[{0,1,2,0,0}], 17.0));
+    TEST(misc::approx_equal(resC2[{1,1,2,0,0}], 23.0));
+    TEST(misc::approx_equal(resC2.at({1,0,0,0,1}), 8.0));
+    TEST(misc::approx_equal(resC2.at({1,0,1,0,1}), 10.0));
 )
 
 UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,

@@ -55,7 +55,7 @@ START_MISC_NAMESPACE
             double oldIt0 = iterants[0];
             for (size_t k=0; k<iterants.size()-1; ++k) {
                 size_t i=iterants.size()-1-k;
-                iterants[i-1] = iterants[i] + (iterants[i]-iterants[i-1])/(pow(2.0, 2*(k+1))-1);
+                iterants[i-1] = iterants[i] + (iterants[i]-iterants[i-1])/(misc::pow(2.0, 2*(k+1))-1);
             }
             if (_relativeError) {
                 error = std::abs((iterants[0]-oldIt0)/oldIt0);
@@ -225,7 +225,7 @@ START_MISC_NAMESPACE
     template<class ft_type>
     ft_type ShanksTransformation<ft_type>::best_estimate() const {
         if (values.size() == 0) {
-            XERUS_THROW(generic_error() << "tried to extract limit of empty sequence"); 
+            XERUS_THROW(xerus::misc::generic_error() << "tried to extract limit of empty sequence"); // TODO remove xerus::misc
         } else {
             return values[(values.size()-1) % 2];
         }
@@ -270,7 +270,7 @@ START_MISC_NAMESPACE
     template<class ft_type>
     ft_type RichardsonExtrapolation<ft_type>::best_estimate() const {
         if (values.size() == 0) {
-            XERUS_THROW(generic_error() << "tried to extract limit of empty sequence"); 
+            XERUS_THROW(xerus::misc::generic_error() << "tried to extract limit of empty sequence"); // TODO remove xerus::misc
         } else {
             return values.front();
         }

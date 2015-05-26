@@ -52,7 +52,7 @@ namespace xerus {
         
         size_t dimensionsCount = 0;
         for(const Index& idx : AIndices) {
-            if(contains(bIndices, idx)) {
+            if(misc::contains(bIndices, idx)) {
                 orderA.push_back(idx);
                 orderB.push_back(idx);
                 for(size_t i = 0; i < idx.span; ++i) {
@@ -114,7 +114,7 @@ namespace xerus {
         
         size_t dimensionsCount = 0;
         for(const Index& idx : indicesA) {
-            if(!contains(indicesB, idx)) {
+            if(!misc::contains(indicesB, idx)) {
                 indicesX.push_back(idx);
                 for(size_t i = 0; i < idx.span; ++i) {
                     dimensionsX.push_back(_A.tensorObjectReadOnly->dimensions[dimensionsCount++]);

@@ -44,10 +44,10 @@ namespace xerus {
         size_t n = 1;
         const std::vector<Index> indices = _tensor.get_assigned_indices();
         for(size_t i = 0; i < indices.size(); ++i) {
-            if(contains(_lhsIndices, indices[i])) {
+            if(misc::contains(_lhsIndices, indices[i])) {
                 REQUIRE(indices[i].open(), "Internal Error.");
                 m *= indices[i].dimension();
-            } else if(contains(_rhsIndices, indices[i])) {
+            } else if(misc::contains(_rhsIndices, indices[i])) {
                 REQUIRE(indices[i].open(), "Internal Error.");
                 n *= indices[i].dimension();
             }   

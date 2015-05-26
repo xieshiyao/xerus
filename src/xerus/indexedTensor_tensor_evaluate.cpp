@@ -173,7 +173,7 @@ namespace xerus {
                 j = 0;
                 while(j < baseIndices.size() && (i == j || baseIndices[i] != baseIndices[j])) { ++j; }
                 REQUIRE(j < baseIndices.size(), "All indices of evalutation base must either be fixed, appear in the target or be part of a trace. Base: " << baseIndices << " Out: " << outIndices);
-                REQUIRE(count(baseIndices, baseIndices[i]) == 2, "Indices must appear at most two times. Base: " << baseIndices << " Out: " << outIndices);
+                REQUIRE(misc::count(baseIndices, baseIndices[i]) == 2, "Indices must appear at most two times. Base: " << baseIndices << " Out: " << outIndices);
                 REQUIRE(baseIndices[i].dimension() == baseIndices[j].dimension(), "The indexDimensions of two traced indices must conince.");
                 REQUIRE(baseIndices[i].span == 1 && baseIndices[j].span == 1, "The indexSpans of traced indices must be one (It is ambigious what a trace of span 2 indices is meant to be).");
             }
@@ -181,7 +181,7 @@ namespace xerus {
             // Check out indices
             for(size_t i = 0; i < outIndices.size(); ++i) {
                 REQUIRE(outIndices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation. Base: " << baseIndices << " Out: " << outIndices);
-                REQUIRE(count(baseIndices, outIndices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseIndices << " Out: " << outIndices);
+                REQUIRE(misc::count(baseIndices, outIndices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseIndices << " Out: " << outIndices);
             }
         #endif
         

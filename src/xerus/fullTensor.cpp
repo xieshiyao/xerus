@@ -382,7 +382,7 @@ namespace xerus {
         size = newsize;
         data.reset(tmp, internal::array_deleter_vt);
 
-        REQUIRE(size == product(dimensions), "");
+        REQUIRE(size == misc::product(dimensions), "");
     }
 
     void FullTensor::remove_slate(uint _indexNb, uint _pos) {

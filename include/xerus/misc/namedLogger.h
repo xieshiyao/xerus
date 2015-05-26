@@ -224,15 +224,13 @@ namespace err {
 		if (___logFlag<___log_namehash(STRINGIFY(lvl))>::flag != err::LOGGING_FULL) { \
 			___LOGSTREAM << __tmp.str() << "callstack:\n" << MISC::get_call_stack());\
 		} else { \
-			___LOGSTREAM << "callstack:\n" << MISC::get_call_stack());\
+			___LOGSTREAM << "callstack:\n" << xerus::misc::get_call_stack());\
 		} \
 	} \
 	exit(1);
 	
 #else // with xerus exceptions
-#define NAMED_LOGGER_ON_FATAL \
-	XERUS_THROW(MISC::generic_error() << __tmp.str() << "callstack:\n" << MISC::get_call_stack());
-	
+    #define NAMED_LOGGER_ON_FATAL XERUS_THROW(xerus::misc::generic_error() << __tmp.str() << "callstack:\n" << xerus::misc::get_call_stack());
 #endif
 
 

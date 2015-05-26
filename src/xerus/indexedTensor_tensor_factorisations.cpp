@@ -34,10 +34,10 @@ namespace xerus {
         
         for(const Index& idx : baseIndices) {
             if(_base.is_open(idx)) { // TODO inefficent
-                if(contains(_lhs.indices, idx)) { 
+                if(misc::contains(_lhs.indices, idx)) { 
                     lhsSpan += idx.span; 
                 } else {
-                    REQUIRE(contains(_rhs.indices, idx), "Every open index of factorisation base must be contained in one of the targets");
+                    REQUIRE(misc::contains(_rhs.indices, idx), "Every open index of factorisation base must be contained in one of the targets");
                     rhsSpan += idx.span;
                 }
             }
@@ -60,7 +60,7 @@ namespace xerus {
         
         // Work through the indices of lhs
         for(size_t i = 0; i < lhsIndices.size()-1; ++i) {
-            REQUIRE(!contains(rhsIndices, lhsIndices[i]), "Left and right part of factorization must not share common indices.");
+            REQUIRE(!misc::contains(rhsIndices, lhsIndices[i]), "Left and right part of factorization must not share common indices.");
             
             // Find index in A and get dimension offset
             size_t j, dimOffset = 0;

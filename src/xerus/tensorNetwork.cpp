@@ -402,7 +402,7 @@ namespace xerus {
             for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
                 TensorNode::Link &l = cpy.nodes[id].neighbors[i];
                 if (!l.external) { // Link was not external before
-                    if (!contains(_ids, l.other)) { // ...but is "external" to this subnet
+                    if (!misc::contains(_ids, l.other)) { // ...but is "external" to this subnet
                         l.external = true;
                         l.indexPosition = cpy.externalLinks.size();
                         cpy.dimensions.emplace_back(l.dimension);
@@ -667,7 +667,7 @@ namespace xerus {
         
         #ifndef DISABLE_RUNTIME_CHECKS_
         for (const Index &idx : _base.indices) {
-            REQUIRE(count(_base.indices, idx) < 3, "Internal Error.");
+            REQUIRE(misc::count(_base.indices, idx) < 3, "Internal Error.");
         }
         #endif
         

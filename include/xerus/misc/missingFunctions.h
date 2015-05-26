@@ -32,143 +32,145 @@
 #include "test.h"
 
 // Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
-#define VLA(T, name) auto name##_store = MISC_NAMESPACE::make_unique_array(new T); auto const & name = name##_store.get();
+#define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); auto const & name = name##_store.get();
 
-START_MISC_NAMESPACE
+namespace xerus {
+    namespace misc {
 
-    template<class T>
-    std::unique_ptr<T> make_unique(T* _ptr) {
-        return std::unique_ptr<T>(_ptr);
-    }
-
-    template<class T>
-    std::unique_ptr<T[]> make_unique_array(T* _ptr) {
-        return std::unique_ptr<T[]>(_ptr);
-    }
-
-    GENERATE_HAS_MEMBER(count)
-
-
-    ///@brief: Counts how often an element is contained in an arbitary container
-    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-    size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-        size_t count = 0;
-        for(const item_t& otherItem : _container) {
-            if(otherItem == _item) { count++; }
+        template<class T>
+        std::unique_ptr<T> make_unique(T* _ptr) {
+            return std::unique_ptr<T>(_ptr);
         }
-        return count;
-    }
 
-    ///@brief: Counts how often an element is contained in an arbitary container
-    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-    size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-        return _container.count(_item);
-    }
-
-    ///@brief: Checks whether an arbitary container contains a certain element.
-    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-    bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-        return std::find(_container.begin(), _container.end(), _item) != _container.end();
-    }
-
-    ///@brief: Checks whether an arbitary container contains a certain element.
-    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-    bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-        return _container.find(_item) != _container.end();
-    }
-
-
-    ///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
-    template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
-    bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
-        for(const item_t &item : _smallContainer) {
-            if(!contains(_largeContainer, item)) { return false; }
+        template<class T>
+        std::unique_ptr<T[]> make_unique_array(T* _ptr) {
+            return std::unique_ptr<T[]>(_ptr);
         }
-        return true;
-    }
 
-    ///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    bool disjunct(const container_t<item_t, rest_t...>& _containerA, const container_t<item_t, rest_t...>& _containerB) {
-        for(const item_t& item : _containerA) {
-            if(contains(_containerB, item)) { return false; }
+        GENERATE_HAS_MEMBER(count)
+
+
+        ///@brief: Counts how often an element is contained in an arbitary container
+        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+        size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+            size_t count = 0;
+            for(const item_t& otherItem : _container) {
+                if(otherItem == _item) { count++; }
+            }
+            return count;
         }
-        return true;
-    }
 
-
-    ///@brief: Checks whether all object in two iterator ranges coincide.
-    template< class InputIt1, class InputIt2 >
-    bool equal( InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2 ) 
-    {
-        while (first1 != last1) {
-            if (first2 == last2 || *first1 != *first2) return false;
-            ++first1; ++ first2;
+        ///@brief: Counts how often an element is contained in an arbitary container
+        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+        size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+            return _container.count(_item);
         }
-        return first2 == last2;
-    }
 
-    ///@brief: Selects the maximal element from an arbitary container.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    item_t max(const container_t<item_t, rest_t...>& _container) {
-        REQUIRE(!_container.empty(), "max must not be invoked with empty container");
-        item_t result = *_container.begin();
-        for(const item_t &item : _container) {
-            if(item > result) { result = item; }
+        ///@brief: Checks whether an arbitary container contains a certain element.
+        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+        bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+            return std::find(_container.begin(), _container.end(), _item) != _container.end();
         }
-        return result;
-    }
 
-    ///@brief: Selects the minimal element from an arbitary container.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    item_t min(const container_t<item_t, rest_t...>& _container) {
-        REQUIRE(!_container.empty(), "min must not be invoked with empty container");
-        item_t result = *_container.begin();
-        for(const item_t &item : _container) {
-            if(item < result) { result = item; }
+        ///@brief: Checks whether an arbitary container contains a certain element.
+        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+        bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+            return _container.find(_item) != _container.end();
         }
-        return result;
-    }
 
 
-    ///@brief: Calculates the sum of all entries of an arbitary container.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    _pure_ item_t sum(const container_t<item_t, rest_t...>& _container) {
-        item_t sum = item_t(0);
-        for(const item_t& item : _container){
-            sum += item;
+        ///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
+        template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
+        bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
+            for(const item_t &item : _smallContainer) {
+                if(!contains(_largeContainer, item)) { return false; }
+            }
+            return true;
         }
-        return sum;
-    }
 
-    ///@brief: Calculates the product of all entries of an arbitary container.
-    template<template<class, class...> class container_t, class item_t, class... rest_t>
-    _pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
-        item_t product = item_t(1);
-        for(const item_t& item : _container){ product *= item; REQUIRE(product >= item, "overflow in product"); }
-        return product;
-    }
+        ///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        bool disjunct(const container_t<item_t, rest_t...>& _containerA, const container_t<item_t, rest_t...>& _containerB) {
+            for(const item_t& item : _containerA) {
+                if(contains(_containerB, item)) { return false; }
+            }
+            return true;
+        }
 
-    ///@brief: Calculates _a*_a
-    template<class T>
-    T sqr(const T &_a) {
-        return _a*_a;
-    }
 
-    ///@brief: Calculates _base^_exp by binary exponentiation
-    template<class T> 
-    constexpr T pow(const T &_base, const uint64 _exp) {
-        return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
-    }
+        ///@brief: Checks whether all object in two iterator ranges coincide.
+        template< class InputIt1, class InputIt2 >
+        bool equal( InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2 ) 
+        {
+            while (first1 != last1) {
+                if (first2 == last2 || *first1 != *first2) return false;
+                ++first1; ++ first2;
+            }
+            return first2 == last2;
+        }
 
-    ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
-    template<class T>
-    bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
-        bool horst = std::abs(_a-_b) < _eps;
-        return horst;
-    }
+        ///@brief: Selects the maximal element from an arbitary container.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        item_t max(const container_t<item_t, rest_t...>& _container) {
+            REQUIRE(!_container.empty(), "max must not be invoked with empty container");
+            item_t result = *_container.begin();
+            for(const item_t &item : _container) {
+                if(item > result) { result = item; }
+            }
+            return result;
+        }
 
-END_MISC_NAMESPACE
+        ///@brief: Selects the minimal element from an arbitary container.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        item_t min(const container_t<item_t, rest_t...>& _container) {
+            REQUIRE(!_container.empty(), "min must not be invoked with empty container");
+            item_t result = *_container.begin();
+            for(const item_t &item : _container) {
+                if(item < result) { result = item; }
+            }
+            return result;
+        }
+
+
+        ///@brief: Calculates the sum of all entries of an arbitary container.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        _pure_ item_t sum(const container_t<item_t, rest_t...>& _container) {
+            item_t sum = item_t(0);
+            for(const item_t& item : _container){
+                sum += item;
+            }
+            return sum;
+        }
+
+        ///@brief: Calculates the product of all entries of an arbitary container.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        _pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
+            item_t product = item_t(1);
+            for(const item_t& item : _container){ product *= item; REQUIRE(product >= item, "overflow in product"); }
+            return product;
+        }
+
+        ///@brief: Calculates _a*_a
+        template<class T>
+        T sqr(const T &_a) {
+            return _a*_a;
+        }
+
+        ///@brief: Calculates _base^_exp by binary exponentiation
+        template<class T> 
+        constexpr T pow(const T &_base, const uint64 _exp) {
+            return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
+        }
+
+        ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
+        template<class T>
+        bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
+            bool horst = std::abs(_a-_b) < _eps;
+            return horst;
+        }
+
+    }
+}
 
 namespace std {
     /// Pipe normal containers to ostreams

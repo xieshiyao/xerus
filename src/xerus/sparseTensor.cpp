@@ -316,7 +316,7 @@ namespace xerus {
     value_t SparseTensor::frob_norm() const {
         value_t norm = 0;
         for(const std::pair<size_t, value_t>& entry : *entries) {
-            norm += sqr(entry.second);
+            norm += misc::sqr(entry.second);
         }
         return std::abs(factor)*sqrt(norm);
     }

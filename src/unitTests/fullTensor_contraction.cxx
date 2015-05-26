@@ -268,7 +268,7 @@ UNIT_TEST(FullTensor, Contraction_Order_3_Same_Dimensions,
     TEST(res2a.compare_to_data({6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     
     contract(res3(), A(i,j,k), B(i,k,j));
-    TEST(approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
+    TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
 
 UNIT_TEST(FullTensor, Contraction_Order_3_Different_Dimensions,

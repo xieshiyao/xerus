@@ -32,10 +32,10 @@ UNIT_TEST(SparseTensor, Assignment_Trivia2,
     A[{0,1,0,0,0}] = 73;
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
-    TEST(approx_equal(res[{0,1,0,0,0}], 73.0, 1e-14));
+    TEST(misc::approx_equal(res[{0,1,0,0,0}], 73.0, 1e-14));
     
     res(j,i,k,l,m) = A(i,j,k,l,m);
-    TEST(approx_equal(res[{1,0,0,0,0}], 73.0, 1e-14));
+    TEST(misc::approx_equal(res[{1,0,0,0,0}], 73.0, 1e-14));
 )
 
 UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse, 

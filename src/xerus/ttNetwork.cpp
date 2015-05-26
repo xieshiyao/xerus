@@ -387,9 +387,9 @@ namespace xerus {
             leftTensor.data.reset(newLeft.release(), internal::array_deleter_vt);
             rightTensor.data.reset(newRight.release(), internal::array_deleter_vt);
             leftTensor.dimensions.back() = rank;
-            leftTensor.size = product(leftTensor.dimensions);
+            leftTensor.size = misc::product(leftTensor.dimensions);
             rightTensor.dimensions.front() = rank;
-            rightTensor.size = product(rightTensor.dimensions);
+            rightTensor.size = misc::product(rightTensor.dimensions);
             _me.nodes[position  ].neighbors.back().dimension  = rank;
             _me.nodes[position+1].neighbors.front().dimension = rank;
         }
@@ -929,7 +929,7 @@ namespace xerus {
         
         if (otherTT) {
             // ensure fitting indices
-            if (equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
+            if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
                 TensorNetwork *res = new internal::TTStack<false>;
                 *res = *_me.tensorObjectReadOnly;
                 res->factor *= _other.tensorObjectReadOnly->factor;
@@ -952,10 +952,10 @@ namespace xerus {
                 return false; // an index spanned some links of the left and some of the right side
             }
             // or indices in fitting order to contract the TTOs
-            if (   equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
-                || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
-                || equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-                || equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
+            if (   misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
+                || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
+                || misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
+                || misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
             {
                 TensorNetwork *res = new internal::TTStack<true>;
                 *res = *_me.tensorObjectReadOnly;
@@ -1204,8 +1204,8 @@ namespace xerus {
                     }
                     if (spanSum == numNodes) {
                         // other tensor also transposable
-                        transposed = (equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
-                                    && (equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+                        transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
+                                    && (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
                         
                     }
                 }
