@@ -499,9 +499,9 @@ namespace xerus {
 			return true;
 		}
 	#endif
-		
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
 	template<bool isOperator>
 	const Tensor &TTNetwork<isOperator>::get_component(size_t _idx) const {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
@@ -537,260 +537,248 @@ namespace xerus {
 		}
 	}
 	
-    template<bool isOperator>
-    TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-        REQUIRE(_lhs.is_in_expected_format(), "");
-        REQUIRE(_rhs.is_in_expected_format(), "");
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
+		REQUIRE(_lhs.is_in_expected_format(), "");
+		REQUIRE(_rhs.is_in_expected_format(), "");
+		
+		if (_lhs.degree() == 0) {
+			TTNetwork result(_rhs);
+			result.factor *= _lhs.factor;
+			return result;
+		}
+		TTNetwork result(_lhs);
+		result.factor *= _rhs.factor;
+		if (_rhs.degree() == 0) {
+			return result;
+		}
+		
+		// add all nodes of rhs and fix neighbor relations
+		result.nodes.pop_back();
+		const size_t lhsNumComponents = _lhs.degree()/N;
+		const size_t rhsNodesSize = _rhs.nodes.size();
+		const size_t rhsNumComponents = _rhs.degree()/N;
+		for (size_t i=1; i<rhsNodesSize; ++i) {
+			const TensorNode &n = _rhs.nodes[i];
+			result.nodes.emplace_back(n);
+			for (TensorNode::Link &l : result.nodes.back().neighbors) {
+				if (l.external) {
+					if (l.indexPosition < rhsNumComponents) {
+						l.indexPosition += lhsNumComponents;
+					} else {
+						l.indexPosition += 2*lhsNumComponents;
+					}
+				} else {
+					if (l.other==0) {
+						l.indexPosition = N+1;
+					}
+					l.other += lhsNumComponents;
+				}
+			}
+		}
+		
+		// add all external indices of rhs
+		result.externalLinks.clear();
+		result.dimensions.clear();
+		for (size_t i=0; i<lhsNumComponents; ++i) {
+			const size_t d=_lhs.dimensions[i];
+			result.externalLinks.emplace_back(i+1, 1, d, false);
+			result.dimensions.push_back(d);
+		}
+		for (size_t i=0; i<rhsNumComponents; ++i) {
+			const size_t d=_rhs.dimensions[i];
+			result.externalLinks.emplace_back(lhsNumComponents+i+1, 1, d, false);
+			result.dimensions.push_back(d);
+		}
+		if (isOperator) {
+			for (size_t i=0; i<lhsNumComponents; ++i) {
+				const size_t d=_lhs.dimensions[i];
+				result.externalLinks.emplace_back(i+1, 2, d, false);
+				result.dimensions.push_back(d);
+			}
+			for (size_t i=0; i<rhsNumComponents; ++i) {
+				const size_t d=_rhs.dimensions[i];
+				result.externalLinks.emplace_back(lhsNumComponents+i+1, 2, d, false);
+				result.dimensions.push_back(d);
+			}
+		}
+		
+		REQUIRE(result.is_valid_tt(), "ie");
+		return result;
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const std::vector<std::reference_wrapper<TTNetwork<isOperator>>> &_tensors) {
+		if (_tensors.size() == 0) {
+			return TTNetwork();
+		} 
+		TTNetwork result(_tensors.front());
+		for (size_t i=0; i<_tensors.size(); ++i) {
+			REQUIRE_TEST;
+			result = dyadic_product(result, _tensors[i]);
+		}
+		return result;
+	}
+	
+	
+	template<bool isOperator>
+	std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
+		REQUIRE(is_valid_tt(), "Invalid TT cannot be chopped.");
+		
+		const size_t numComponents = degree()/N;
+		REQUIRE(_position < numComponents, "Can't split a " << numComponents << " component TTNetwork at position " << _position);
+		
+		// Create the resulting TNs
+		TensorNetwork left, right;
+		left.factor = 1.;
+		right.factor = 1.;
+		
+		left.nodes.push_back(nodes[0]);
+		for (size_t i = 0; i < _position; ++i) {
+			left.dimensions.push_back(dimensions[i]);
+			left.externalLinks.push_back(externalLinks[i]);
+			left.nodes.push_back(nodes[i+1]);
+		}
+		if(isOperator) {
+			for(size_t i = 0; i < _position; ++i) {
+				left.dimensions.push_back(dimensions[i+numComponents]);
+				left.externalLinks.push_back(externalLinks[i+numComponents]);
+			}
+		}
+		left.dimensions.push_back(left.nodes.back().neighbors.back().dimension);
+		left.externalLinks.emplace_back(_position, _position==0?0:N+1, left.nodes.back().neighbors.back().dimension , false);
+		left.nodes.back().neighbors.back().external = true;
+		left.nodes.back().neighbors.back().indexPosition = isOperator ? 2*_position-1 : _position;
         
-        if (_lhs.degree() == 0) {
-            TTNetwork result(_rhs);
-            result.factor *= _lhs.factor;
-            return result;
-        }
-        TTNetwork result(_lhs);
-        result.factor *= _rhs.factor;
-        if (_rhs.degree() == 0) {
-            return result;
-        }
-        
-        // add all nodes of rhs and fix neighbor relations
-        const size_t lhsNodesSize = _lhs.nodes.size();
-        const size_t rhsNodesSize = _rhs.nodes.size();
-        for (const TensorNode &n : _rhs.nodes) {
-            result.nodes.emplace_back(n);
-            for (TensorNode::Link &l : result.nodes.back().neighbors) {
-                if (l.external) {
-                    if (l.indexPosition < rhsNodesSize) {
-                        l.indexPosition += lhsNodesSize;
-                    } else {
-                        l.indexPosition += 2*lhsNodesSize;
-                    }
-                } else {
-                    l.other += lhsNodesSize;
-                }
-            }
-        }
-        
-        // add rank-1 connection between the two
-        std::vector<size_t> dimensions(result.nodes[lhsNodesSize-1].tensorObject->dimensions);
-        dimensions.push_back(1);
-        result.nodes[lhsNodesSize-1].tensorObject->reinterpret_dimensions(dimensions);
-        result.nodes[lhsNodesSize-1].neighbors.emplace_back(lhsNodesSize, 0, 1, false);
-        const size_t linkPos = dimensions.size()-1;
-        
-        dimensions.clear();
-        dimensions.push_back(1);
-        dimensions.insert(dimensions.end(), result.nodes[lhsNodesSize].tensorObject->dimensions.begin(), result.nodes[lhsNodesSize].tensorObject->dimensions.end());
-        result.nodes[lhsNodesSize].tensorObject->reinterpret_dimensions(dimensions);
-        std::vector<TensorNode::Link> newLinks;
-        newLinks.emplace_back(lhsNodesSize-1, linkPos, 1, false);
-        newLinks.insert(newLinks.end(), result.nodes[lhsNodesSize].neighbors.begin(), result.nodes[lhsNodesSize].neighbors.end());
-        result.nodes[lhsNodesSize].neighbors = newLinks;
-        // links of nodes[lhsNodesSize] changed, so change the link of lhsNodesSize+1 correspondingly
-        if (result.nodes.size()>lhsNodesSize+1) {
-            result.nodes[lhsNodesSize+1].neighbors[0].indexPosition += 1;
-        }
+		right.dimensions.push_back(nodes[_position+2].neighbors.front().dimension);
+		right.externalLinks.emplace_back(_position+2, 0, nodes[_position+2].neighbors.front().dimension , false); // NOTE other will be corrected to 0 in the following steps
+		for(size_t i = _position+1; i < numComponents+1; ++i) {
+			right.dimensions.push_back(dimensions[i]);
+			right.externalLinks.push_back(externalLinks[i]);
+			right.nodes.push_back(nodes[i+1]);
+		}
+		if(isOperator) {
+			for(size_t i = _position+1; i < numComponents+1; ++i) {
+				right.dimensions.push_back(dimensions[i+numComponents]);
+				right.externalLinks.push_back(externalLinks[i+numComponents]);
+			}
+		}
+		right.nodes.front().neighbors.front().external = true;
+		right.nodes.front().neighbors.front().indexPosition = _position; // NOTE indexPosition will be corrected to 0 in the following steps
+		
+		// Account for the fact that the first _position+2 nodes do not exist
+		for(TensorNode::Link& link : right.externalLinks) {
+			link.other -= _position+2;
+		}
+		
+		for(TensorNode& node : right.nodes) {
+			for(TensorNode::Link& link : node.neighbors) {
+				if(link.external) {
+					link.indexPosition -= _position+1;
+				} else {
+					link.other -= _position+2;
+				}
+			}
+		}
+		
+		REQUIRE(left.is_valid_network(), "Internal Error");
+		REQUIRE(right.is_valid_network(), "Internal Error");
+		
+		return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
+	}
+	
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(value_t _eps) {
+		cannonicalize_left();
+		round_train(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
+	}
 
-        // add all external indices of rhs
-        result.externalLinks.clear();
-        result.dimensions.clear();
-        result.dimensions.push_back(_lhs.dimensions[0]);
-        result.externalLinks.emplace_back(0, 0, _lhs.dimensions[0], false);
-        for (size_t i=1; i<lhsNodesSize; ++i) {
-            const size_t d=_lhs.dimensions[i];
-            result.externalLinks.emplace_back(i, 1, d, false);
-            result.dimensions.push_back(d);
-        }
-        for (size_t i=0; i<rhsNodesSize; ++i) {
-            const size_t d=_rhs.dimensions[i];
-            result.externalLinks.emplace_back(lhsNodesSize+i, 1, d, false);
-            result.dimensions.push_back(d);
-        }
-        if (isOperator) {
-            result.dimensions.push_back(_lhs.dimensions[lhsNodesSize]);
-            result.externalLinks.emplace_back(0, 1, _lhs.dimensions[lhsNodesSize], false);
-            for (size_t i=1; i<lhsNodesSize; ++i) {
-                const size_t d=_lhs.dimensions[i];
-                result.externalLinks.emplace_back(i, 2, d, false);
-                result.dimensions.push_back(d);
-            }
-            for (size_t i=0; i<rhsNodesSize; ++i) {
-                const size_t d=_rhs.dimensions[i];
-                result.externalLinks.emplace_back(lhsNodesSize+i, 2, d, false);
-                result.dimensions.push_back(d);
-            }
-        }
-        
-        REQUIRE(result.is_valid_tt(), "ie");
-        return result;
-    }
-    
-    template<bool isOperator>
-    TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const std::vector<std::reference_wrapper<TTNetwork<isOperator>>> &_tensors) {
-        if (_tensors.size() == 0) {
-            return TTNetwork();
-        } 
-        TTNetwork result(_tensors.front());
-        for (size_t i=0; i<_tensors.size(); ++i) {
-            dyadic_product(result, _tensors[i]);
-        }
-        return result;
-    }
-    
-    
-    template<bool isOperator>
-    std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
-        REQUIRE(is_valid_tt(), "Invalid TT cannot be chopped.");
-        CHECK(!isOperator, warning, "Chop is not yet testet for TTOperators"); //TODO test it!
-        
-        const size_t N = isOperator?2:1;
-        const size_t numNodes = degree()/N;
-        
-        REQUIRE(_position < numNodes, "Can't spilt a " << numNodes << " node TTNetwork at position " << _position);
-        
-        // Create the resulting TNs
-        TensorNetwork left, right;
-        left.factor = 1;
-        right.factor = 1;
-        
-        if(_position > 0) {
-            for(size_t i = 0; i < _position; ++i) {
-                left.dimensions.push_back(dimensions[i]);
-                left.externalLinks.push_back(externalLinks[i]);
-                left.nodes.push_back(nodes[i]);
-            }
-            if(isOperator) {
-                for(size_t i = 0; i < _position; ++i) {
-                    left.dimensions.push_back(dimensions[i+numNodes]);
-                    left.externalLinks.push_back(externalLinks[i+numNodes]);
-                }
-            }
-            left.dimensions.push_back(left.nodes.back().neighbors.back().dimension);
-            left.externalLinks.emplace_back(_position-1, _position == 1 ? N : N+1, left.nodes.back().neighbors.back().dimension , false);
-            left.nodes.back().neighbors.back().external = true;
-            left.nodes.back().neighbors.back().indexPosition = isOperator ? 2*_position-1 :_position;
-        }
-        
-        if(_position < numNodes-1) {
-            right.dimensions.push_back(nodes[_position+1].neighbors.front().dimension);
-            right.externalLinks.emplace_back(_position+1, 0, nodes[_position+1].neighbors.front().dimension , false); // NOTE other will be corrected to 0 in the following steps
-            for(size_t i = _position+1; i < numNodes; ++i) {
-                right.dimensions.push_back(dimensions[i]);
-                right.externalLinks.push_back(externalLinks[i]);
-                right.nodes.push_back(nodes[i]);
-            }
-            if(isOperator) {
-                for(size_t i = _position+1; i < numNodes; ++i) {
-                    right.dimensions.push_back(dimensions[i+numNodes]);
-                    right.externalLinks.push_back(externalLinks[i+numNodes]);
-                }
-            }
-            right.nodes.front().neighbors.front().external = true;
-            right.nodes.front().neighbors.front().indexPosition = _position; // NOTE indexPosition will be corrected to 0 in the following steps
-            
-            // Account for the fact that the first _position+1 nodes do not exist
-            for(TensorNode::Link& link : right.externalLinks) {
-                link.other -= _position+1;
-            }
-            
-            for(TensorNode& node : right.nodes) {
-                for(TensorNode::Link& link : node.neighbors) {
-                    if(link.external) {
-                        link.indexPosition -= _position;
-                    } else {
-                        link.other -= _position+1;
-                    }
-                }
-            }
-        }
-        
-        REQUIRE(left.is_valid_network(), "Internal Error");
-        REQUIRE(right.is_valid_network(), "Internal Error");
-        
-        return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
-    }
-    
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::round(value_t _eps) {
-        cannonicalize_left();
-        const size_t N = isOperator?2:1;
-        round_train(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
-    }
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(size_t _maxRank) {
+		cannonicalize_left();
+		round_train(std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
+	}
 
-    template<bool isOperator>
-    void TTNetwork<isOperator>::round(size_t _maxRank) {
-        cannonicalize_left();
-        const size_t N = isOperator?2:1;
-        round_train(std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
-    }
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
+		cannonicalize_left();
+		round_train(_maxRanks, 1e-15);
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(int _maxRank) {
+		REQUIRE( _maxRank > 0, "MaxRank must be positive");
+		round(size_t(_maxRank));
+	}
 
-    template<bool isOperator>
-    void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
-        cannonicalize_left();
-        round_train(_maxRanks, 1e-15);
-    }
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::round(int _maxRank) {
-        REQUIRE( _maxRank > 0, "MaxRank must be positive");
-        round(size_t(_maxRank));
-    }
-
-    template<bool isOperator>
-    std::vector<size_t> TTNetwork<isOperator>::ranks() const {
-        std::vector<size_t> res;
-        for (size_t n=0; n<nodes.size()-1; ++n) {
-            res.push_back(nodes[n].neighbors.back().dimension);
-        }
-        return res;
-    }
-    
-    template<bool isOperator>
-    size_t TTNetwork<isOperator>::rank(size_t _i) const {
-        REQUIRE(_i < nodes.size()-1, "requested illegal rank");
-        return nodes[_i].neighbors.back().dimension;
-    }
-    
-    template<bool isOperator>
-    size_t TTNetwork<isOperator>::datasize() const {
-        size_t result = 0;
-        for (const TensorNode &n : nodes) {
-            result += n.tensorObject->size;
-        }
-        return result;
-    }
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::cannonicalize_left() {
-        Index i,r,j;
-        FullTensor core(2);
-        for (size_t n=nodes.size()-1; n > 0; --n) {
-            REQUIRE(!nodes[n].erased, "ie n="<<n);
-            Tensor &currTensor = *nodes[n].tensorObject;
-            ( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?
-            Tensor &nextTensor = *nodes[n-1].tensorObject;
-            nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
-            if (currTensor.dimensions[0] != nodes[n].neighbors.front().dimension) {
-                nodes[n].neighbors.front().dimension = nodes[n-1].neighbors.back().dimension = currTensor.dimensions[0];
-            }
-        }
-    }
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::cannonicalize_right() {
-        Index i,r,j;
-        FullTensor core(2);
-        for (size_t n=0; n<nodes.size()-1; ++n) {
-            Tensor &currTensor = *nodes[n].tensorObject;
-            ( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j)); //TODO we want a rank-detecting QR at this point?
-            Tensor &nextTensor = *nodes[n+1].tensorObject;
-            nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
-            if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
-                nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = nextTensor.dimensions[0];
-            }
-        }
-    }
+	template<bool isOperator>
+	std::vector<size_t> TTNetwork<isOperator>::ranks() const {
+		std::vector<size_t> res;
+		for (size_t n=1; n<nodes.size()-2; ++n) {
+			res.push_back(nodes[n].neighbors.back().dimension);
+		}
+		return res;
+	}
+	
+	template<bool isOperator>
+	size_t TTNetwork<isOperator>::rank(size_t _i) const {
+		REQUIRE(_i+2 < nodes.size(), "requested illegal rank");
+		return nodes[_i+1].neighbors.back().dimension;
+	}
+	
+	template<bool isOperator>
+	size_t TTNetwork<isOperator>::datasize() const {
+		size_t result = 0;
+		for (const TensorNode &n : nodes) {
+			result += n.tensorObject->size;
+		}
+		return result;
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::cannonicalize_left() {
+		REQUIRE(is_valid_tt(), "cannot round invalid TT");
+		if (degree() == 0) {
+			cannonicalization = LEFT;
+			return;
+		}
+		Index i,r,j;
+		FullTensor core(2);
+		for (size_t n=nodes.size()-2; n > 1; --n) {
+			Tensor &currTensor = *nodes[n].tensorObject;
+			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?
+			Tensor &nextTensor = *nodes[n-1].tensorObject;
+			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
+			if (currTensor.dimensions[0] != nodes[n].neighbors.front().dimension) {
+				nodes[n].neighbors.front().dimension = nodes[n-1].neighbors.back().dimension = currTensor.dimensions[0];
+			}
+		}
+		
+		cannonicalization = LEFT;
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::cannonicalize_right() {
+		REQUIRE(is_valid_tt(), "cannot round invalid TT");
+		if (degree() == 0) {
+			cannonicalization = RIGHT;
+			return;
+		}
+		Index i,r,j;
+		FullTensor core(2);
+		for (size_t n=1; n+2<nodes.size(); ++n) {
+			Tensor &currTensor = *nodes[n].tensorObject;
+			( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j)); //TODO we want a rank-detecting QR at this point?
+			Tensor &nextTensor = *nodes[n+1].tensorObject;
+			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
+			if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
+				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = nextTensor.dimensions[0];
+			}
+		}
+		
+		cannonicalization = RIGHT;
+	}
     
     template<bool isOperator>
     TensorNetwork* TTNetwork<isOperator>::get_copy() const {

@@ -94,7 +94,7 @@
 	#define main(...) ___horst_main_will_not_be_called( __VA_ARGS__ )
 
 #else
-
+	#define REQUIRE_TEST (void)0
 	#define UNIT_TEST(grp, name, ...)
 
 #endif
