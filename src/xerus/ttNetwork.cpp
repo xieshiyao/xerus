@@ -148,15 +148,15 @@ namespace xerus {
 			}
 			
 			// Create a FullTensor for U
-			std::vector<size_t> dimensions;
-			dimensions.emplace_back(oldRank);
-			dimensions.emplace_back(dimensions[position-1]);
-			if (N == 2) { dimensions.emplace_back(dimensions[position+numComponents-1]); }
-			dimensions.emplace_back(newRank);
+			std::vector<size_t> constructionDim;
+			constructionDim.emplace_back(oldRank);
+			constructionDim.emplace_back(dimensions[position-1]);
+			if (N == 2) { constructionDim.emplace_back(dimensions[position+numComponents-1]); }
+			constructionDim.emplace_back(newRank);
 			if (newRank == maxRank) {
-				nxtTensor.reset(new FullTensor(std::move(dimensions), std::move(currentU)) );
+				nxtTensor.reset(new FullTensor(std::move(constructionDim), std::move(currentU)) );
 			} else {
-				nxtTensor.reset(new FullTensor(std::move(dimensions), DONT_SET_ZERO()) );
+				nxtTensor.reset(new FullTensor(std::move(constructionDim), DONT_SET_ZERO()) );
 				for (size_t i = 0; i < leftDim; ++i) {
 					array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
 				}
@@ -184,8 +184,8 @@ namespace xerus {
 		
 		cannonicalization = RIGHT;
 		
-		REQUIRE((N==1 && remainingDim == _A.dimensions.back()) || (N==2 && remainingDim == _A.dimensions[_A.degree()/2-1]*_A.dimensions[_A.degree()-1]), "Internal Error");
-		REQUIRE(_out.is_in_expected_format(), "ie");
+		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
+		REQUIRE(is_in_expected_format(), "ie");
 	}
 	
 	
@@ -228,7 +228,7 @@ namespace xerus {
 				constructionVector.push_back(_dimensions[i+j*numComponents]);
 			}
 			constructionVector.push_back(1);
-			set_component(i, std::unique_ptr<Tensor>(new FullTensor(constructionVector, [](const std::vector<size_t> &_idx){
+			result.set_component(i, std::unique_ptr<Tensor>(new FullTensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
 				} else {
@@ -244,78 +244,72 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    template<bool isOperator>
-    void TTNetwork<isOperator>::round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps) {
-        REQUIRE(_me.degree()%N==0, "Number of indicis must be even for TTOperator");
-        REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
-        REQUIRE(_maxRanks.size() == _me.degree()/N-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << _me.degree()/N-1 << " are given.");
-        
-        // If there is no or only one node in the train object we are already finished as there is no rank that can be rounded
-        if(_me.degree() <= N) { return; }
-        
-        // Needed variables
-        std::unique_ptr<value_t[]> LR, RR, M, U, S, Vt, newLeft, newRight;
-        size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank, rank;
-        
-        for(size_t position = 0; position < _me.degree()/N-1; ++position) {
-            REQUIRE(dynamic_cast<FullTensor*>(_me.nodes[position].tensorObject.get()), "Tensor Train nodes are required to be FullTensors");
-            REQUIRE(dynamic_cast<FullTensor*>(_me.nodes[position+1].tensorObject.get()), "Tensor Train nodes are required to be FullTensors");
-            
-            FullTensor& leftTensor = *static_cast<FullTensor*>(_me.nodes[position].tensorObject.get());
-            FullTensor& rightTensor = *static_cast<FullTensor*>(_me.nodes[position+1].tensorObject.get());
-            
-            // Determine the dimensions of the next matrifications
-            REQUIRE(leftTensor.dimensions.back() == rightTensor.dimensions.front(), "Internal Error");
-            midDim   = leftTensor.dimensions.back();
-            leftDim  = leftTensor.size/midDim;
-            rightDim = rightTensor.size/midDim;
-            maxLeftRank = std::min(leftDim, midDim);
-            maxRightRank = std::min(midDim, rightDim);
-            maxRank = std::min(maxLeftRank, maxRightRank);
-            
-            // Calculate QR and RQ decompositoins
-            LR.reset(new value_t[maxLeftRank*midDim]);
-            RR.reset(new value_t[midDim*maxRightRank]);
-            blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
-            blasWrapper::inplace_rq(RR.get(), rightTensor.data.get(), midDim, rightDim);
-            
-            // Calculate Middle Matrix M = LR*RR
-            M.reset(new value_t[maxLeftRank*maxRightRank]);
-            blasWrapper::matrix_matrix_product(M.get(), maxLeftRank, maxRightRank, 1.0, LR.get(), false, midDim, RR.get(), false);
-            
-            // Calculate SVD of U S Vt = M -- Reuse the space allocted for LR and RR and allow destruction of M
-            U = std::move(LR);
-            S.reset(new value_t[maxRank]);
-            Vt = std::move(RR);
-            blasWrapper::svd_destructive(U.get(), S.get(), Vt.get(), M.get(), maxLeftRank, maxRightRank);
-            
-            //Determine the Rank
-            for(rank = maxRank; S[rank-1] < _eps*S[0]; --rank) { }
-            rank = std::min(rank, _maxRanks[position]);
-            
-            // Calclate S*Vt by scaling the rows of Vt appropriatly
-            for(size_t row = 0; row < rank; ++row) {
-                array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
-            }
-            
-            //Multiply U and (S*Vt) back to the left and to the right
-            newLeft.reset(new value_t[leftDim*rank]);
-            newRight.reset(new value_t[rank*rightDim]);
-            blasWrapper::matrix_matrix_product(newLeft.get(), leftDim, rank, 1.0, leftTensor.data.get(), maxLeftRank, false, maxLeftRank, U.get(), maxRank, false);
-            blasWrapper::matrix_matrix_product(newRight.get(), rank, rightDim, 1.0, Vt.get(), false, maxRightRank, rightTensor.data.get(), false);
-            
-            // Put the new Tensors to their place
-            leftTensor.data.reset(newLeft.release(), internal::array_deleter_vt);
-            rightTensor.data.reset(newRight.release(), internal::array_deleter_vt);
-            leftTensor.dimensions.back() = rank;
-            leftTensor.size = product(leftTensor.dimensions);
-            rightTensor.dimensions.front() = rank;
-            rightTensor.size = product(rightTensor.dimensions);
-            _me.nodes[position  ].neighbors.back().dimension  = rank;
-            _me.nodes[position+1].neighbors.front().dimension = rank;
-        }
-        REQUIRE(_me.is_in_expected_format(), "ie");
-    }
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round_train(const std::vector<size_t>& _maxRanks, const double _eps) {
+		REQUIRE(degree()%N==0, "Number of indicis must be even for TTOperator");
+		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
+		REQUIRE(_maxRanks.size() == degree()/N-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << degree()/N-1 << " are given.");
+		REQUIRE(is_in_expected_format(), "round called on illegal TT tensor");
+		
+		// If there is no or only one node in the train object we are already finished as there is no rank that can be rounded
+		if(degree() <= N) { return; }
+		
+		// Needed variables
+		std::unique_ptr<value_t[]> LR, RR, M, U, S, Vt, newLeft, newRight;
+		size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank, rank;
+		
+		for(size_t position = 0; position < degree()/N-1; ++position) {
+			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+1].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
+			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+2].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
+			
+			FullTensor& leftTensor = *static_cast<FullTensor*>(nodes[position+1].tensorObject.get());
+			FullTensor& rightTensor = *static_cast<FullTensor*>(nodes[position+2].tensorObject.get());
+			
+			// Determine the dimensions of the next matrifications
+			midDim   = leftTensor.dimensions.back();
+			leftDim  = leftTensor.size/midDim;
+			rightDim = rightTensor.size/midDim;
+			maxLeftRank = std::min(leftDim, midDim);
+			maxRightRank = std::min(midDim, rightDim);
+			maxRank = std::min(maxLeftRank, maxRightRank);
+			
+			// Calculate QR and RQ decompositoins
+			LR.reset(new value_t[maxLeftRank*midDim], internal::array_deleter_vt);
+			RR.reset(new value_t[midDim*maxRightRank], internal::array_deleter_vt);
+			blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
+			blasWrapper::inplace_rq(RR.get(), rightTensor.data.get(), midDim, rightDim);
+			
+			// Calculate Middle Matrix M = LR*RR
+			M.reset(new value_t[maxLeftRank*maxRightRank], internal::array_deleter_vt);
+			blasWrapper::matrix_matrix_product(M.get(), maxLeftRank, maxRightRank, 1.0, LR.get(), false, midDim, RR.get(), false);
+			
+			// Calculate SVD of U S Vt = M -- Reuse the space allocted for LR and RR and allow destruction of M
+			U = std::move(LR);
+			S.reset(new value_t[maxRank], internal::array_deleter_vt);
+			Vt = std::move(RR);
+			blasWrapper::svd_destructive(U.get(), S.get(), Vt.get(), M.get(), maxLeftRank, maxRightRank);
+			
+			// Determine the Rank
+			rank = std::min(maxRank, _maxRanks[position]);
+			for(; S[rank-1] < _eps*S[0]; --rank) { }
+			
+			// Calclate S*Vt by scaling the rows of Vt appropriatly
+			for(size_t row = 0; row < rank; ++row) {
+				array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
+			}
+			
+			// Multiply U and (S*Vt) back to the left and to the right respectively
+			newLeft.reset(new value_t[leftDim*rank], internal::array_deleter_vt);
+			newRight.reset(new value_t[rank*rightDim], internal::array_deleter_vt);
+			blasWrapper::matrix_matrix_product(newLeft.get(), leftDim, rank, 1.0, leftTensor.data.get(), maxLeftRank, false, maxLeftRank, U.get(), maxRank, false);
+			blasWrapper::matrix_matrix_product(newRight.get(), rank, rightDim, 1.0, Vt.get(), false, maxRightRank, rightTensor.data.get(), false);
+			
+			// Put the new Tensors to their place
+			set_component(position, std::move(newLeft));
+			set_component(position+1, std::move(newRight));
+		}
+		REQUIRE(is_in_expected_format(), "ie");
+	}
     
     
     template<bool isOperator>
@@ -487,14 +481,14 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
 	template<bool isOperator>
-	const Tensor &TTNetwork::get_component(size_t _idx) const {
+	const Tensor &TTNetwork<isOperator>::get_component(size_t _idx) const {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
 		return *nodes[_idx].tensorObject;
 	}
 	
 	
 	template<bool isOperator>
-	void TTNetwork::set_component(size_t _idx, const Tensor &_T) {
+	void TTNetwork<isOperator>::set_component(size_t _idx, const Tensor &_T) {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::set_component");
 		TensorNode &currNode = nodes[_idx+1];
 		REQUIRE(_T.degree() == currNode.degree(), "degree of _T does not match component tensors degree");
@@ -508,11 +502,11 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork::set_component(size_t _idx, std::unique_ptr<Tensor> &&_T) {
+	void TTNetwork<isOperator>::set_component(size_t _idx, std::unique_ptr<Tensor> &&_T) {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::set_component");
 		TensorNode &currNode = nodes[_idx+1];
-		REQUIRE(_T.degree() == currNode.degree(), "degree of _T does not match component tensors degree");
-		currNode.tensorObject.reset(std::move(_T));
+		REQUIRE(_T->degree() == currNode.degree(), "degree of _T does not match component tensors degree");
+		currNode.tensorObject = std::move(_T);
 		for (size_t i=0; i<currNode.degree(); ++i) {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
 			if (currNode.neighbors[i].external) {

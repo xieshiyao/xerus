@@ -30,7 +30,7 @@ namespace xerus {
     template<bool isOperator>
     class TTNetwork : public TensorNetwork {
 	protected:
-		constexpr size_t N=isOperator?2:1;
+		static constexpr size_t N=isOperator?2:1;
 		
 		enum cannonicalization_t {
 			NONE, LEFT, RIGHT
@@ -140,9 +140,7 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
-        static void construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps);
-        
-        static void round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps);
+        void round_train(const std::vector<size_t>& _maxRanks, const double _eps);
         
         static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
             
