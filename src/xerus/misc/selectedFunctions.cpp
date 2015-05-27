@@ -30,7 +30,15 @@ extern "C"
 {
     #include <cblas.h> 
 }
-#include <lapacke/lapacke.h>
+#ifdef __has_include
+    #if __has_include(<lapacke.h>)
+        #include <lapacke.h>
+    #else
+        #include <lapacke/lapacke.h>
+    #endif
+#else
+    #include <lapacke.h>
+#endif
 
 #include <memory>
 #include <cstring>

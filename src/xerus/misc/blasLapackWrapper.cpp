@@ -17,21 +17,30 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../../include/xerus/misc/blasLapackWrapper.h"
-#include "../../../include/xerus/misc/selectedFunctions.h"
+#include <xerus/misc/blasLapackWrapper.h>
+#include <xerus/misc/selectedFunctions.h>
 
 #include <complex.h>
 // Fix for broken complex implementation
 #undef I
 
-// Workaround for brocken Lapack
+// Workaround for broken Lapack
 #define lapack_complex_float    float _Complex
 #define lapack_complex_double   double _Complex
 extern "C"
 {
     #include <cblas.h> 
 }
-#include <lapacke/lapacke.h>
+#ifdef __has_include
+    #if __has_include(<lapacke.h>)
+        #include <lapacke.h>
+    #else
+        #include <lapacke/lapacke.h>
+    #endif
+#else
+    #include <lapacke.h>
+#endif
+
 
 #include <memory>
 #include <xerus/misc/standard.h>
