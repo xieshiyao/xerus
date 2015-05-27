@@ -131,7 +131,7 @@ namespace xerus {
         if(contractedTensor->is_sparse()) {
             return FullTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
         } else {
-            return FullTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get()));
         }
     }
     
@@ -139,7 +139,7 @@ namespace xerus {
         std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
         
         if(contractedTensor->is_sparse()) {
-            return SparseTensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
+            return std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get()));
         } else {
             LOG(error, "Casting a TensorNetwork containing FullTensors to SparseTensor. This is most likely not usefull.");
             return SparseTensor(std::move(*static_cast<FullTensor*>(fully_contracted_tensor().get())));
@@ -284,7 +284,7 @@ namespace xerus {
     
     /// Eliminates all erased Nodes
     void TensorNetwork::sanitize() {
-        std::vector<size_t> idMap(nodes.size(), -1);
+        std::vector<size_t> idMap(nodes.size(), ~0ul);
         
         // Move nodes in vector
         size_t newId=0, oldId=0;
@@ -402,7 +402,7 @@ namespace xerus {
             for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
                 TensorNode::Link &l = cpy.nodes[id].neighbors[i];
                 if (!l.external) { // Link was not external before
-                    if (!contains(_ids, l.other)) { // ...but is "external" to this subnet
+                    if (!misc::contains(_ids, l.other)) { // ...but is "external" to this subnet
                         l.external = true;
                         l.indexPosition = cpy.externalLinks.size();
                         cpy.dimensions.emplace_back(l.dimension);
@@ -667,7 +667,7 @@ namespace xerus {
         
         #ifndef DISABLE_RUNTIME_CHECKS_
         for (const Index &idx : _base.indices) {
-            REQUIRE(count(_base.indices, idx) < 3, "Internal Error.");
+            REQUIRE(misc::count(_base.indices, idx) < 3, "Internal Error.");
         }
         #endif
         
@@ -696,7 +696,7 @@ namespace xerus {
         LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
         
         // TODO this and all the heuristics still assume that all tensors are dense (as there are no sparse tensors at the time of this writing)
-        if (_ids.size() == 0) { return -1; }
+        if (_ids.size() == 0) { return ~0ul; }
         
         // trace out all single-node traces
         for (size_t id : _ids) {
@@ -746,34 +746,34 @@ namespace xerus {
             size_t a=*idItr; TensorNode &na = nodes[a]; ++idItr;
             size_t b=*idItr; TensorNode &nb = nodes[b]; ++idItr;
             size_t c=*idItr; TensorNode &nc = nodes[c];
-            float sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
-            float sab=1, sbc=1, sac=1; // link dimensions
+            double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
+            double sab=1, sbc=1, sac=1; // link dimensions
             for (size_t d=0; d<na.degree(); ++d) {
                 if (na.neighbors[d].links(b)) {
-                    sab *= (float)na.neighbors[d].dimension;
+                    sab *= (double)na.neighbors[d].dimension;
                 } else if (na.neighbors[d].links(c)) {
-                    sac *= (float)na.neighbors[d].dimension;
+                    sac *= (double)na.neighbors[d].dimension;
                 } else {
-                    sa *= (float)na.neighbors[d].dimension;
+                    sa *= (double)na.neighbors[d].dimension;
                 }
             }
             for (size_t d=0; d<nb.degree(); ++d) {
                 if (nb.neighbors[d].links(c)) {
-                    sbc *= (float) nb.neighbors[d].dimension;
+                    sbc *= (double) nb.neighbors[d].dimension;
                 } else if (!nb.neighbors[d].links(a)) {
-                    sb *= (float) nb.neighbors[d].dimension;
+                    sb *= (double) nb.neighbors[d].dimension;
                 }
             }
             for (size_t d=0; d<nc.degree(); ++d) {
 //                 size_t other = nc.neighbors[d].other;
                 if (!nc.neighbors[d].links(a) && !nc.neighbors[d].links(b)) {
-                    sc *= (float)nc.neighbors[d].dimension;
+                    sc *= (double)nc.neighbors[d].dimension;
                 }
             }
             // cost of contraction a-b first etc.
-            float costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
-            float costAC = sa*sc*sab*sbc*(sac+sb); 
-            float costBC = sb*sc*sab*sac*(sbc+sa);
+            double costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
+            double costAC = sa*sc*sab*sbc*(sac+sb); 
+            double costBC = sb*sc*sab*sac*(sbc+sa);
             if (costAB < costAC && costAB < costBC) {
                 LOG(TNContract, "contraction of ab first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
                 contract(a,b); contract(a,c); return a;
@@ -788,7 +788,7 @@ namespace xerus {
         
         
         TensorNetwork stripped = stripped_subnet(_ids); 
-        float bestScore=1e32f;
+        double bestScore=1e32f;
         std::vector<std::pair<size_t, size_t>> *bestOrder=nullptr;
         
         // ask heuristics

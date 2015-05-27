@@ -130,26 +130,26 @@ namespace xerus {
         // Unfortunaly all ALLOW_MOVE construcotrs based on vectors have to be copied for initializer_list
         
         /// Creates a tensor with the given dimensions and undefined entries.
-        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : FullTensor(std::vector<size_t>(_dimensions), DONT_SET_ZERO()) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : FullTensor(std::vector<size_t>(_dimensions), DONT_SET_ZERO()) {}
         
         /// Creates a tensor with the given dimensions and all entries equals zero.
-        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions) : FullTensor(std::vector<size_t>(_dimensions)) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions) : FullTensor(std::vector<size_t>(_dimensions)) {}
         
         /// Creates a tensor with the given dimensions and uses the given data as entries.
         ALLOW_MOVE(std::shared_ptr<value_t>, SPtr)
-        _inline_ FullTensor(std::initializer_list<size_t>&& _dimensions, SPtr&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::forward<SPtr>(_data)) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, SPtr&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::forward<SPtr>(_data)) {}
         
         /// Creates a tensor with the given dimensions and uses the given data as entries.
-        _inline_ FullTensor(std::initializer_list<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::move(_data)) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::move(_data)) {}
         
         /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
-        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t()>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t()>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
         
         /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
-        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::vector<size_t>(_dimensions), _f) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::vector<size_t>(_dimensions), _f) {}
             
         /// Creates a FullTensor with the given dimensions and uses the given function to assign the values to the entries.
-        _inline_ explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
+        explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
         
         /// Creates a tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
         template<class generator, class distribution>
@@ -200,12 +200,18 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Standard assignment operator.
         FullTensor& operator=(const FullTensor&  _other);
+        
+        /// Standard move-assignment operator.
         FullTensor& operator=(      FullTensor&& _other);
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Adds other entriewise to the tensor. Requires that all dimensions conincde.
         FullTensor& operator+=(const FullTensor& _other);
+        
+        /// Performs the entriewise addition of the this tensor and other.
         FullTensor  operator+( const FullTensor& _other) const;
         
         FullTensor& operator-=(const FullTensor& _other);
@@ -285,9 +291,9 @@ namespace xerus {
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    _inline_ FullTensor operator*(const value_t _lhs, const FullTensor& _rhs) { return _rhs*_lhs; }
+    static _inline_ FullTensor operator*(const value_t _lhs, const FullTensor& _rhs) { return _rhs*_lhs; }
     
-    _inline_ FullTensor operator+(const SparseTensor& _lhs, const FullTensor& _rhs) { return _rhs+_lhs; }
+    static _inline_ FullTensor operator+(const SparseTensor& _lhs, const FullTensor& _rhs) { return _rhs+_lhs; }
     
     FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
     

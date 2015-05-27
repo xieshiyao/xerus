@@ -45,7 +45,7 @@ namespace xerus {
                     REQUIRE(_resultIndices[i].span == _lhsIndices[j].span, "Span of indices in result and lhs must conincide.");
                     REQUIRE(_resultIndices[i].dimension() == _lhsIndices[j].dimension(), "Dimensions of indices in result and lhs must conincide.");
                     REQUIRE(_lhsIndices[j].open(), "Index appearing in result of contraction must be open in lhs.");
-                    REQUIRE(!contains(_rhsIndices, _resultIndices[i]), "Index appearing in result of contraction must not appear in lhs AND rhs.");
+                    REQUIRE(!misc::contains(_rhsIndices, _resultIndices[i]), "Index appearing in result of contraction must not appear in lhs AND rhs.");
                     break;
                 }
             }
@@ -68,7 +68,7 @@ namespace xerus {
         // Check that every index in lhs is either non-open, appears in rhs with right span and dimension, or is contained in result
         for(size_t i = 0; i < _lhsIndices.size(); ++i) {
             if(!_lhsIndices[i].open()) {
-                REQUIRE(_lhsIndices[i].fixed() || !contains(_rhsIndices, _lhsIndices[i]), "Index that part of a trace in lhs, must not appear in rhs");
+                REQUIRE(_lhsIndices[i].fixed() || !misc::contains(_rhsIndices, _lhsIndices[i]), "Index that part of a trace in lhs, must not appear in rhs");
                 // It cannot be contained in result because of previous checks
                 continue;
             }
@@ -84,12 +84,12 @@ namespace xerus {
                 }
             }
             
-            REQUIRE(j < _rhsIndices.size() || contains(_resultIndices, _lhsIndices[i]), "Index appearing in the lhs of contraction must appear on either rhs or result.");
+            REQUIRE(j < _rhsIndices.size() || misc::contains(_resultIndices, _lhsIndices[i]), "Index appearing in the lhs of contraction must appear on either rhs or result.");
         }
         
         // Check that every index in rhs is either non-open, or appears in lhs or result
         for(size_t i = 0; i < _rhsIndices.size(); ++i) {
-            REQUIRE(!_rhsIndices[i].open() || contains(_lhsIndices, _rhsIndices[i]) || contains(_resultIndices, _rhsIndices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
+            REQUIRE(!_rhsIndices[i].open() || misc::contains(_lhsIndices, _rhsIndices[i]) || misc::contains(_resultIndices, _rhsIndices[i]), "Every index appearing open in rhs of contraction must either appear in lhs or result.");
         }
         
         LOG(ContractionDebug, "Input indices look alright.");
@@ -107,7 +107,7 @@ namespace xerus {
         _needsReshuffle = false;
         _isOrdered = true;
         size_t resultStartIndex = 0;
-        if(contains(_other, _candidate[0])) { // First index is common
+        if(misc::contains(_other, _candidate[0])) { // First index is common
             bool switched = false;
             
             // Find the position of the first index in the other tensor
@@ -115,7 +115,7 @@ namespace xerus {
             
             // Iterate over all _candidate indices and check for correct order
             for(size_t i=1; i < _candidate.size(); ++i) {
-                if(!contains(_other, _candidate[i])) {
+                if(!misc::contains(_other, _candidate[i])) {
                     switched = true; 
                 } else if(switched) { // We are not seperated -> everything is lost.
                     _needsReshuffle = true; 
@@ -128,7 +128,7 @@ namespace xerus {
         } else { // First index is un-common
             bool openIndexFound = false;
             for(size_t i=1; i < _candidate.size(); ++i){
-                if(contains(_other, _candidate[i]) ) {
+                if(misc::contains(_other, _candidate[i]) ) {
                     if(!openIndexFound) {
                         openIndexFound = true;
                         while(_other[resultStartIndex] != _candidate[i]) {  // Find this first common index in the result tensor
@@ -156,10 +156,10 @@ namespace xerus {
         bool bothSidesAreCompatible = true;
         std::vector<Index>::const_iterator lhsItr = _lhsAssIndices.begin();
         std::vector<Index>::const_iterator rhsItr = _rhsAssIndices.begin();
-        while (lhsItr != _lhsAssIndices.end() && contains(_resultAssIndices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
-        while (rhsItr != _rhsAssIndices.end() && contains(_resultAssIndices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
+        while (lhsItr != _lhsAssIndices.end() && misc::contains(_resultAssIndices, *lhsItr)) { lhsItr++; } // skip open indices (lhs)
+        while (rhsItr != _rhsAssIndices.end() && misc::contains(_resultAssIndices, *rhsItr)) { rhsItr++; } // skip open indices (rhs)
         // Note that indices are separated at this point
-        while (lhsItr != _lhsAssIndices.end() && rhsItr != _rhsAssIndices.end() && !contains(_resultAssIndices, *lhsItr)) {
+        while (lhsItr != _lhsAssIndices.end() && rhsItr != _rhsAssIndices.end() && !misc::contains(_resultAssIndices, *lhsItr)) {
             if(*lhsItr != *rhsItr) {
                 LOG(ContractionDebug, "Common index order does not coincide => Not compatible.");
                 bothSidesAreCompatible = false;
@@ -176,9 +176,9 @@ namespace xerus {
         LOG(ContractionDebug, "Checking whether a perfect order is possible...");
         if(!_lhs.empty() && !_rhs.empty() && !_result.empty()) { // If any index set is empty perfect order is always possible
             bool switched = false;
-            if(contains(_lhs, _result[0])){ // First index is contained in LHS
+            if(misc::contains(_lhs, _result[0])){ // First index is contained in LHS
                 for(size_t i=1; i< _result.size(); ++i) {
-                    if(!contains(_lhs, _result[i])) {
+                    if(!misc::contains(_lhs, _result[i])) {
                         switched = true;
                     } else if(switched) {
                         return false;
@@ -186,7 +186,7 @@ namespace xerus {
                 }
             } else { // == first index is contained in RHS
                 for(size_t i=1; i< _result.size(); ++i) {
-                    if(!contains(_rhs, _result[i])) {
+                    if(!misc::contains(_rhs, _result[i])) {
                         switched = true;
                     } else if(switched) {
                         return false;
@@ -255,7 +255,7 @@ namespace xerus {
         if(lhsNeedsReshuffle) {
             // Add open indices in the order as they appear in the result
             for(const Index& idx : resultIndices) {
-                if(contains(_lhsIndices, idx)) {
+                if(misc::contains(_lhsIndices, idx)) {
                     lhsOpenIndices.push_back(idx);
                     leftDim *= idx.dimension();
                 }
@@ -263,7 +263,7 @@ namespace xerus {
             
             // Add common indices in the order as they appear in RHS
             for(const Index& idx : _rhsIndices) {
-                if(contains(_lhsIndices, idx)) {
+                if(misc::contains(_lhsIndices, idx)) {
                     commonIndices.push_back(idx);
                     midDim *= idx.dimension();
                 }
@@ -271,10 +271,10 @@ namespace xerus {
         } else {
             // Add indices in the order they also appear in LHS
             for(const Index& idx : _lhsIndices) {
-                if(contains(resultIndices, idx)) {
+                if(misc::contains(resultIndices, idx)) {
                     lhsOpenIndices.push_back(idx);
                     leftDim *= idx.dimension();
-                } else if(contains(_rhsIndices, idx)) {
+                } else if(misc::contains(_rhsIndices, idx)) {
                     commonIndices.push_back(idx);
                     midDim *= idx.dimension();
                 }
@@ -285,7 +285,7 @@ namespace xerus {
         if(rhsNeedsReshuffle) {
             // Add open indices in the order as they appear in the result
             for(const Index& idx : resultIndices) {
-                if(contains(_rhsIndices, idx)) {
+                if(misc::contains(_rhsIndices, idx)) {
                     rhsOpenIndices.push_back(idx);
                     rightDim *= idx.dimension();
                 }
@@ -293,7 +293,7 @@ namespace xerus {
         } else {
             // Add indices in the order they also appear in RHS
             for(const Index& idx : _rhsIndices) {
-                if(contains(resultIndices, idx)) {
+                if(misc::contains(resultIndices, idx)) {
                     rhsOpenIndices.push_back(idx);
                     rightDim *= idx.dimension();
                 }
@@ -360,15 +360,15 @@ namespace xerus {
                 _result.tensorObject->ensure_own_data_no_copy();
                 
                 // Check whether both sides have to be swaped to achieve perfect order
-                if(!_result.indices.empty() && !contains(_lhsIndices, resultIndices[0])) {
+                if(!_result.indices.empty() && !misc::contains(_lhsIndices, resultIndices[0])) {
                     std::swap(actualLhs, actualRhs);
                     std::swap(leftDim, rightDim);
                 }
             }
             
             // Check if Matrices have to be transposed
-            const bool lhsTrans = !(actualLhs->indices.empty() || contains(resultIndices, actualLhs->indices[0]));
-            const bool rhsTrans = !(actualRhs->indices.empty() || !contains(resultIndices, actualRhs->indices[0]));
+            const bool lhsTrans = !(actualLhs->indices.empty() || misc::contains(resultIndices, actualLhs->indices[0]));
+            const bool rhsTrans = !(actualRhs->indices.empty() || !misc::contains(resultIndices, actualRhs->indices[0]));
             
             LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
             
@@ -414,7 +414,7 @@ namespace xerus {
         size_t lhsOpenDim = 1, rhsOpenDim = 1;
         size_t dimensionCount = 0;
         for(const Index& idx : lhsIndices) {
-            if(idx.open() && !contains(rhsIndices, idx)) {
+            if(idx.open() && !misc::contains(rhsIndices, idx)) {
                 outIndices.emplace_back(idx);
                 for(size_t i=0; i < idx.span; ++i) {
                     lhsOpenDim *= _lhs.tensorObjectReadOnly->dimensions[dimensionCount];
@@ -428,7 +428,7 @@ namespace xerus {
         
         dimensionCount = 0;
         for(const Index& idx : rhsIndices) {
-            if(idx.open() && !contains(lhsIndices, idx)) {
+            if(idx.open() && !misc::contains(lhsIndices, idx)) {
                 outIndices.emplace_back(idx);
                 for(size_t i=0; i < idx.span; ++i) {
                     rhsOpenDim *= _rhs.tensorObjectReadOnly->dimensions[dimensionCount];

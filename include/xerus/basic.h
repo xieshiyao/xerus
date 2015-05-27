@@ -30,10 +30,10 @@ namespace xerus {
         /// Internal deleter function, needed because std::shared_ptr misses an array overload.
         void array_deleter_vt(value_t* const _toDelete);
         
-        /// Internal deleter functions, needed because std::shared_ptr misses an array overload.
+        /// Internal deleter function, needed because std::shared_ptr misses an array overload.
         void array_deleter_st(size_t* const _toDelete);
     }
     
-    /// Helper class to provide possible overloads of several Tensor constructors
+    /// Helper class to provide possible overloads of several Tensor constructors.
     class DONT_SET_ZERO {};
 }

@@ -21,34 +21,36 @@
 
 #include "standard.h"
 
-START_MISC_NAMESPACE
+namespace xerus {
+    namespace misc {
 
-    ///@brief: Returns the time since epoche in microseconds.
-    size_t uTime();
+        ///@brief: Returns the time since epoche in microseconds.
+        size_t uTime();
 
-    ///@brief: Returns the time since epoche in milliseconds.
-    size_t mTime();
+        ///@brief: Returns the time since epoche in milliseconds.
+        size_t mTime();
 
-    class TimeMeasure
-    {
-        public:
-            /// Creation time.
-            const size_t timeStart;
-            
-            /// Time of last step.
-            size_t timeStep;
-            
-            /// Constructor.
-            TimeMeasure();
-            
-            /// Sets new step & returns time since last Step in microseconds.
-            size_t step();
-            
-            /// Returns time since last step  in microseconds.
-            size_t get() const;
-            
-            /// Returns the total time since creation of the TimeMeasure  in microseconds.
-            size_t getTotal() const;
-    }; 
+        class TimeMeasure
+        {
+            public:
+                /// Creation time.
+                const size_t timeStart;
+                
+                /// Time of last step.
+                size_t timeStep;
+                
+                /// Constructor.
+                TimeMeasure();
+                
+                /// Sets new step & returns time since last Step in microseconds.
+                size_t step();
+                
+                /// Returns time since last step  in microseconds.
+                size_t get() const;
+                
+                /// Returns the total time since creation of the TimeMeasure  in microseconds.
+                size_t getTotal() const;
+        }; 
 
-END_MISC_NAMESPACE
+    }
+}

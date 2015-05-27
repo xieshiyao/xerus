@@ -25,33 +25,33 @@ using namespace xerus;
 
 UNIT_TEST(Misc, romberg_integration, 
 	double npi;
-	npi = 2*integrate([](double x){ return std::sqrt(1-x*x); }, -1, 1, 1e-16);
+	npi = 2*misc::integrate([](double x){ return std::sqrt(1-x*x); }, -1, 1, 1e-16);
 	LOG(unit_test, npi << " err: " << std::abs(npi - M_PI));
-	TEST(approx_equal(npi,M_PI,2e-15));
+	TEST(misc::approx_equal(npi,M_PI,2e-15));
 	
-	npi = 2*integrate([](double x){ return -std::sqrt(1-x*x); }, -1, 1, 1e-16);
+	npi = 2*misc::integrate([](double x){ return -std::sqrt(1-x*x); }, -1, 1, 1e-16);
 	LOG(unit_test, npi << " err: " << std::abs(npi + M_PI));
-	TEST(approx_equal(npi,-M_PI,2e-15));
+	TEST(misc::approx_equal(npi,-M_PI,2e-15));
 	
-	npi = integrate([](double x){ return (1-x); }, -1, 1, 1e-14);
+	npi = misc::integrate([](double x){ return (1-x); }, -1, 1, 1e-14);
 	LOG(unit_test, std::abs(npi - 2));
-	TEST(approx_equal(npi,2.0,2e-14));
+	TEST(misc::approx_equal(npi,2.0,2e-14));
 	
-	npi = integrate([](double x){ return (x*x*x+1e-14); }, -1, 1, 1e-14);
+	npi = misc::integrate([](double x){ return (x*x*x+1e-14); }, -1, 1, 1e-14);
 	LOG(unit_test, std::abs(npi - 2e-14));
-	TEST(approx_equal(npi,2e-14,2e-14));
+	TEST(misc::approx_equal(npi,2e-14,2e-14));
 	
-	npi = integrate([](double x){ return std::cos(x); }, 0, 1, 1e-14);
+	npi = misc::integrate([](double x){ return std::cos(x); }, 0, 1, 1e-14);
 	LOG(unit_test, npi << " " << std::sin(1) << " " << std::abs(npi - std::sin(1)));
-	TEST(approx_equal(npi,std::sin(1),2e-14));
+	TEST(misc::approx_equal(npi,std::sin(1),2e-14));
 	
-	npi = integrate([](double x){ return (x>0&&x<=1?1:0); }, -2, 2, 1e-14, 3);
+	npi = misc::integrate([](double x){ return (x>0&&x<=1?1:0); }, -2, 2, 1e-14, 3);
 	LOG(unit_test, npi << " " << 1 << " " << std::abs(npi-1));
-	TEST(approx_equal(npi,1.0,2e-14));
+	TEST(misc::approx_equal(npi,1.0,2e-14));
 	
-	npi = integrate([](double x){ return (x>0&&x<=1?1:0); }, -2, 2, 1e-14, 3);
+	npi = misc::integrate([](double x){ return (x>0&&x<=1?1:0); }, -2, 2, 1e-14, 3);
 	LOG(unit_test, npi << " " << 1 << " " << std::abs(npi-1));
-	TEST(approx_equal(npi,1.0,2e-14));
+	TEST(misc::approx_equal(npi,1.0,2e-14));
 )
 
 
@@ -59,13 +59,13 @@ UNIT_TEST(Misc, polynomial,
 	auto weight = [](double _x){
 		return std::abs(std::sin(_x));
 	};
-	std::vector<Polynomial> base = Polynomial::build_orthogonal_base(10, weight, -1, 1);
+	std::vector<misc::Polynomial> base = misc::Polynomial::build_orthogonal_base(10, weight, -1, 1);
 	for (size_t i=0; i<base.size(); ++i) {
 		TEST(base[i].terms() == i+1);
-		TEST(approx_equal(base[i].norm(weight, -1, 1), 1.0, 1e-12));
+		TEST(misc::approx_equal(base[i].norm(weight, -1, 1), 1.0, 1e-12));
 		for (size_t j=0; j<base.size(); ++j) {
 			if (i==j) continue;
-			TEST(approx_equal(base[i].scalar_product(base[j], weight, -1, 1), 0., 1e-10));
+			TEST(misc::approx_equal(base[i].scalar_product(base[j], weight, -1, 1), 0., 1e-10));
 		}
 	}
 )

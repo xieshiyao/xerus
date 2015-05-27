@@ -50,7 +50,9 @@ namespace xerus {
         flags[_flag1] = _flagValue1;
     }
     
-    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), assingedDimension(_dimension) {}
+    Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
+        IF_CHECK( flags[Flag::ASSINGED] = true; )
+    }
     
     Index::Index(const size_t _valueId, const size_t _span, const size_t _dimension, const Flag _flag1, const bool _flagValue1) : valueId(_valueId), span(_span), assingedDimension(_dimension) {
         IF_CHECK( flags[Flag::ASSINGED] = true; )

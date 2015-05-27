@@ -21,10 +21,10 @@
 
 #include "misc/namedLogger.h"
 
-SET_LOGGING(ContractionDebug, err::LOGGING_ON_ERROR)
-SET_LOGGING(TNContract, err::LOGGING_ON_ERROR)
-SET_LOGGING(TensorAssignment, err::LOGGING_ON_ERROR)
-SET_LOGGING(ALS, err::LOGGING_ON_ERROR)
-SET_LOGGING(unit_test, err::LOGGING_ON_ERROR)
-SET_LOGGING(unit_tests, err::LOGGING_ON_ERROR)
+SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
+SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
+SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
+SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
+SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
+SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
 /* */

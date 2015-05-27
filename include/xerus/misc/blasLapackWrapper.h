@@ -26,29 +26,30 @@
     #include <map>
     #include <utility>
     
-    START_MISC_NAMESPACE
+    namespace xerus {
 
-    class CallCounter {
-    public:
-        std::map<std::string, std::pair<size_t, size_t>> calls;
-        size_t totalTime;
-        size_t totalCalls;
-    };
+        class CallCounter {
+        public:
+            std::map<std::string, std::pair<size_t, size_t>> calls;
+            size_t totalTime;
+            size_t totalCalls;
+        };
 
-    extern std::map<std::string, CallCounter> callCounter;
-    
-    void add_blas_call(const std::string& _callName, const std::string& _callParameter, const size_t _startTime);
-    
-    END_MISC_NAMESPACE
+        extern std::map<std::string, CallCounter> callCounter;
+        
+        void add_blas_call(const std::string& _callName, const std::string& _callParameter, const size_t _startTime);
+        
+    }
 #endif
 
-START_MISC_NAMESPACE
+namespace xerus {
 
     std::string print_blas_analysis();
 
     size_t total_blas_time();
 
     namespace blasWrapper {
+        
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
         
         ///@brief: Computes the two norm =||x||
@@ -81,7 +82,7 @@ START_MISC_NAMESPACE
                                     const bool _transposeB);
         
         ///@brief: Performs the Matrix-Matrix product C = alpha*OP(A) * OP(B)
-        _inline_ void matrix_matrix_product( double* const _C,
+        static _inline_ void matrix_matrix_product( double* const _C,
                                     const size_t _leftDim,
                                     const size_t _rightDim,
                                     const double _alpha,
@@ -146,4 +147,4 @@ START_MISC_NAMESPACE
         void inverse( double* const _B, const double* const _A, const size_t _m, const size_t _n);
     }
 
-END_MISC_NAMESPACE
+}

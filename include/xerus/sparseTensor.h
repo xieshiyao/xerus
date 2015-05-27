@@ -68,7 +68,7 @@ namespace xerus {
             for (size_t i=0; i < _N; ++i) {
                 std::pair<size_t, value_t> entry = _f(i, size);
                 REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
-                REQUIRE(!contains(*entries, entry.first), "Allready contained " << entry.first);
+                REQUIRE(!misc::contains(*entries, entry.first), "Allready contained " << entry.first);
                 entries->insert(std::move(entry));
             } 
             
@@ -192,7 +192,7 @@ namespace xerus {
     };
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    _inline_ SparseTensor operator*(const value_t _lhs, const SparseTensor& _rhs) {
+    static _inline_ SparseTensor operator*(const value_t _lhs, const SparseTensor& _rhs) {
         return _rhs*_lhs;
     }
     

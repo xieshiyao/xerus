@@ -3,7 +3,7 @@
  * @short the source code to the "TTTensors" tutorial
  */
 
-#include "../include/xerus.h"
+#include <xerus.h>
 
 int main() {
 	std::mt19937_64 rnd;
@@ -23,8 +23,8 @@ int main() {
 	
 	// and set the TTOperator A to be the identity
 	xerus::TTOperator A = xerus::TTOperator::construct_identity(operatorDims);
-	
-	// solve the system A*X = B with the ALS (this should give us X == B)
+
+    // solve the system A*X = B with the ALS (this should give us X == B)
 	xerus::ALS(A, X, B);
 	
 	// verify that X is indeed equal to B by calculating the Frobenius Norm of the difference

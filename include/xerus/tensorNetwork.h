@@ -30,18 +30,18 @@ namespace xerus {
     class FullTensor;
     class SparseTensor;
     
-    //TODO add function do check all link and degree consistencies
+	/// Very general class used to represent arbitary tensor networks. Used as a basis for tensor decompositions like the TTNetwork but also used for the lazy evaluation of Tensor contractions.
     class TensorNetwork {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Dimensions of the external indices
+        /// Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
         std::vector<size_t> dimensions;
         
-        /// The order determines the ids of the nodes
+        /// The nodes constituting the network. The order determines the ids of the nodes.
 		std::vector<TensorNode> nodes;
             
-        /// The open (still unnamed) indices in order
+        /// The open links of the network in order.
         std::vector<TensorNode::Link> externalLinks;
         
         /// A single value representing a constant factor and/or the only entry of an order zero tensor
@@ -69,19 +69,23 @@ namespace xerus {
         
         /// Constructs the trivial network containing non-specified size-1 fulltensor 
         implicit TensorNetwork(size_t _degree);
-            
+        
+        /// Destructor
 		virtual ~TensorNetwork() {}
-            
+        
+        /// Returns a new copy of the network.
 		virtual TensorNetwork* get_copy() const;
             
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		std::vector<TensorNode::Link> init_from_dimension_array();
         
+        /// Checks whether there is a non-trivial global scaling factor, i.e. check factor != 1.0.
         bool has_factor() const;
         
         virtual void apply_factor();
         
+        /// Contracts all parts of the network that miss every connection to the external indices.
         void contract_unconnected_subnetworks();
 
     public:
@@ -93,11 +97,13 @@ namespace xerus {
         /// Allows explicit casts to SparseTensor
         explicit operator SparseTensor() const;
             
-        /// Returns a pointer to an Tensor (could be sparse, could be dense)
+        /// Fully contracts the network to a single tensor and returns it as a unique_ptr. Result can be both full or sparse.
         std::unique_ptr<Tensor> fully_contracted_tensor() const;
         
+        /// TensorNetworks are copy assignable.
 		TensorNetwork &operator=(const TensorNetwork &_cpy);
             
+        /// TensorNetworks are move assignable.
 		TensorNetwork &operator=(TensorNetwork &&_mv);
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -128,14 +134,19 @@ namespace xerus {
         IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+        /// Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
+        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
         
+        /// Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
         
+        /// Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
             
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+        /// Returns the degree of the tensor network , i.e. the number of externalLinks.
         size_t degree() const;
         
         /// Eleminates all erased Nodes
@@ -153,13 +164,18 @@ namespace xerus {
         /// Creates a copy of a subnet that only contains nullptr as data pointers
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
         
+        
+        // TODO describtion
         void swap_external_links(const size_t _i, const size_t _j);
         
         /// shuffles the external links of _lhs according to the indices of the indexedTensors
         /// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
 		static void shuffle_indices(std::vector<Index> &_currentIndices, const IndexedTensorWritable<TensorNetwork> &_lhs);
 		
+        // TODO describtion
 		static void add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert);
+        
+        // TODO describtion
 		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
 	
 		/**
@@ -168,6 +184,7 @@ namespace xerus {
 		*/
 		void contract(size_t _nodeId1, size_t _nodeId2);
 		
+        // TODO describtion
 		double contraction_cost(size_t _nodeId1, size_t _nodeId2);
 		
 		
@@ -178,6 +195,7 @@ namespace xerus {
 		*/
 		size_t contract(std::set<size_t> _ids);
 		
+        /// Calculates the frobenious norm of the tensor represented by the tensor network.
 		virtual value_t frob_norm() const;
 		
 		/**

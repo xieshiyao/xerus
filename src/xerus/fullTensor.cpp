@@ -49,11 +49,11 @@ namespace xerus {
     FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : Tensor(std::move(_dimensions)), data(new value_t[size], internal::array_deleter_vt) { }
     
     FullTensor::FullTensor(const std::vector<size_t>&  _dimensions) : FullTensor(_dimensions, DONT_SET_ZERO()) {
-        array_set_zero(data.get(), size);
+        misc::array_set_zero(data.get(), size);
     }
     
     FullTensor::FullTensor(      std::vector<size_t>&& _dimensions) : FullTensor(std::move(_dimensions), DONT_SET_ZERO()) {
-        array_set_zero(data.get(), size);
+        misc::array_set_zero(data.get(), size);
     }
     
     FullTensor::FullTensor(const std::vector<size_t> & _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(_dimensions), data(_data.release(), internal::array_deleter_vt) { }
@@ -96,7 +96,7 @@ namespace xerus {
         if(!data.unique()) {
             value_t* const oldDataPtr = data.get();
             data.reset(new value_t[size], internal::array_deleter_vt);
-            array_copy(data.get(), oldDataPtr, size);
+            misc::array_copy(data.get(), oldDataPtr, size);
         }
     }
 
@@ -110,7 +110,7 @@ namespace xerus {
     void FullTensor::apply_factor() {
         if(has_factor()) {
             ensure_own_data();
-            array_scale(data.get(), factor, size);
+            misc::array_scale(data.get(), factor, size);
             factor = 1.0;
         }
     }
@@ -118,7 +118,7 @@ namespace xerus {
     void FullTensor::ensure_own_data_and_apply_factor() {
         ensure_own_data();
         if(has_factor()) {
-            array_scale(data.get(), factor, size);
+            misc::array_scale(data.get(), factor, size);
             factor = 1.0;
         }
     }
@@ -145,10 +145,10 @@ namespace xerus {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor sum the dimensions must conincde");
         ensure_own_data();
         if(has_factor()) {
-            array_scale_add(factor, data.get(), _other.factor, _other.data.get(), size);
+            misc::array_scale_add(factor, data.get(), _other.factor, _other.data.get(), size);
             factor = 1.0;
         } else {
-            array_add(data.get(), _other.factor, _other.data.get(), size);
+            misc::array_add(data.get(), _other.factor, _other.data.get(), size);
         }
         return *this;
     }
@@ -163,10 +163,10 @@ namespace xerus {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor subtraction the dimensions must conincde");
         ensure_own_data();
         if(has_factor()) {
-            array_scale_add(factor, data.get(), -1.0*_other.factor, _other.data.get(), size);
+            misc::array_scale_add(factor, data.get(), -1.0*_other.factor, _other.data.get(), size);
             factor = 1.0;
         } else {
-            array_add(data.get(), -1.0*_other.factor, _other.data.get(), size);
+            misc::array_add(data.get(), -1.0*_other.factor, _other.data.get(), size);
         }
         return *this;
     }
@@ -382,7 +382,7 @@ namespace xerus {
         size = newsize;
         data.reset(tmp, internal::array_deleter_vt);
 
-        REQUIRE(size == product(dimensions), "");
+        REQUIRE(size == misc::product(dimensions), "");
     }
 
     void FullTensor::remove_slate(uint _indexNb, uint _pos) {
@@ -477,10 +477,10 @@ namespace xerus {
     }
 
     std::string FullTensor::to_string() const {
-        if (degree() == 0) return xerus::to_string(data.get()[0]);
+        if (degree() == 0) return xerus::misc::to_string(data.get()[0]);
         std::string result;
         for (size_t i=0; i<size; ++i) {
-            result += xerus::to_string(factor*data.get()[i]) + " ";
+            result += xerus::misc::to_string(factor*data.get()[i]) + " ";
             if ((i+1) % (size / dimensions[0]) == 0) {
                 result += '\n';
             } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {

@@ -64,10 +64,10 @@ namespace xerus {
                                 const size_t _numDoubleIndexPairs,
                                 const size_t _numSummations,
                                 const size_t _orderedIndicesMultDim ) {
-        array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
+        misc::array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
         for(size_t k = 1; k < _numSummations; ++k) {
             increase_indices(k, _oldPosition, _numDoubleIndexPairs, _doubleSteps, _doubleMultDimensions);
-            array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
+            misc::array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
         }
     }
 
@@ -173,7 +173,7 @@ namespace xerus {
                 j = 0;
                 while(j < baseIndices.size() && (i == j || baseIndices[i] != baseIndices[j])) { ++j; }
                 REQUIRE(j < baseIndices.size(), "All indices of evalutation base must either be fixed, appear in the target or be part of a trace. Base: " << baseIndices << " Out: " << outIndices);
-                REQUIRE(count(baseIndices, baseIndices[i]) == 2, "Indices must appear at most two times. Base: " << baseIndices << " Out: " << outIndices);
+                REQUIRE(misc::count(baseIndices, baseIndices[i]) == 2, "Indices must appear at most two times. Base: " << baseIndices << " Out: " << outIndices);
                 REQUIRE(baseIndices[i].dimension() == baseIndices[j].dimension(), "The indexDimensions of two traced indices must conince.");
                 REQUIRE(baseIndices[i].span == 1 && baseIndices[j].span == 1, "The indexSpans of traced indices must be one (It is ambigious what a trace of span 2 indices is meant to be).");
             }
@@ -181,7 +181,7 @@ namespace xerus {
             // Check out indices
             for(size_t i = 0; i < outIndices.size(); ++i) {
                 REQUIRE(outIndices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation. Base: " << baseIndices << " Out: " << outIndices);
-                REQUIRE(count(baseIndices, outIndices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseIndices << " Out: " << outIndices);
+                REQUIRE(misc::count(baseIndices, outIndices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseIndices << " Out: " << outIndices);
             }
         #endif
         
@@ -199,7 +199,7 @@ namespace xerus {
                 FullTensor& outTensor = *static_cast<FullTensor*>(_out.tensorObject);
                 value_t* const outData = outTensor.data.get();
                 outTensor.ensure_own_data_no_copy();
-                array_set_zero(outData, outTensor.size);
+                misc::array_set_zero(outData, outTensor.size);
                 for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries) {
                     outData[entry.first] = entry.second;
                 }
@@ -278,10 +278,10 @@ namespace xerus {
                 }
             } else { // We can copy/add larger blocks
                 if(totalTraceDim == 1) { // We don't need to sum any traces
-                    array_copy(newPosition, oldPosition, orderedIndexDim);
+                    misc::array_copy(newPosition, oldPosition, orderedIndexDim);
                     for(size_t i = 1; i < _out.tensorObject->size/orderedIndexDim; ++i) {
                         increase_indices(i, oldPosition, outIndices.size()-numOrderedIndices, stepSizes, outIndexDimensions.get());
-                        array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
+                        misc::array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
                     }
                 } else { // We have to add traces
                     sum_traces(newPosition, oldPosition, traceStepSizes.data(), traceDimensions.data(), traceDimensions.size(), totalTraceDim, orderedIndexDim);
@@ -354,7 +354,7 @@ namespace xerus {
             } else {
                 // Ensure that _out is empty
                 value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->data.get();
-                array_set_zero(dataPointer, _out.tensorObject->size);
+                misc::array_set_zero(dataPointer, _out.tensorObject->size);
                 
                 if(peacefullIndices) {
                     for(const std::pair<size_t, value_t>& entry : baseEntries) {
