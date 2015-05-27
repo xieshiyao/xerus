@@ -35,83 +35,86 @@
     
     // TODO put all this into xerus::misc::unitTesting (or something similar)
 
-    std::map<std::string, std::map<std::string, std::function<bool ()>>> *___UnitTest::tests;
-	std::map<___RequiredTest::identifier, size_t> *___RequiredTest::tests;
+    namespace xerus { namespace misc { namespace internal {
+				
+		std::map<std::string, std::map<std::string, std::function<bool ()>>> *xerus::misc::internal::UnitTest::tests;
+		std::map<RequiredTest::identifier, size_t> *RequiredTest::tests;
 
-    bool ___test(const std::pair<std::string, std::function<bool ()>> &_t) {
-        bool passed = false;
-        
-        std::cout << "| " << _t.first << " starting: "  << std::flush;
-        
-        std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-        try {
-            passed = _t.second(); // executes the test
-        } catch (const xerus::misc::generic_error &e) {
-            std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
-            std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
-            std::cerr << e.what() << std::endl;
-            passed = false;
-        } catch (const std::exception &e) {
-            std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
-            std::cerr << "| Test has thrown an uncaught std::exception:" << std::endl;
-            std::cerr << e.what() << std::endl;
-            passed = false;
-        } catch (...) {
-            std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
-            std::cerr << "| Test has thrown an uncaught unknown exception..." << std::endl;
-            passed = false;
-        }
-        std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-        
-        if (passed) { 
-            std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
-        } else {
-            std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
-        }
-        
-        return passed;
-    }
+		bool test(const std::pair<std::string, std::function<bool ()>> &_t) {
+			bool passed = false;
+			
+			std::cout << "| " << _t.first << " starting: "  << std::flush;
+			
+			std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+			try {
+				passed = _t.second(); // executes the test
+			} catch (const xerus::misc::generic_error &e) {
+				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
+				std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
+				std::cerr << e.what() << std::endl;
+				passed = false;
+			} catch (const std::exception &e) {
+				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
+				std::cerr << "| Test has thrown an uncaught std::exception:" << std::endl;
+				std::cerr << e.what() << std::endl;
+				passed = false;
+			} catch (...) {
+				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
+				std::cerr << "| Test has thrown an uncaught unknown exception..." << std::endl;
+				passed = false;
+			}
+			std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+			
+			if (passed) { 
+				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
+			} else {
+				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
+			}
+			
+			return passed;
+		}
 
-    void ___print_group_name(std::string _g) {
-        int a = (77-(int)_g.size())/2; if (a<0) a=0;
-        int b = 77-(77+(int)_g.size())/2; if (b<0) b=0;
-        std::cout << "-------------------------------------------------------------------------------" << std::endl;
-        std::cout << "|" << std::string((size_t)a, ' ') << "\033[1m" << _g << "\033[0m" << std::string((size_t)b, ' ')  << ' ' << std::endl;
-        std::cout << "|" << std::endl;
-        //std::cout << "-------------------------------------------------------------------------------" << std::endl;
-    }
+		void print_group_name(std::string _g) {
+			int a = (77-(int)_g.size())/2; if (a<0) a=0;
+			int b = 77-(77+(int)_g.size())/2; if (b<0) b=0;
+			std::cout << "-------------------------------------------------------------------------------" << std::endl;
+			std::cout << "|" << std::string((size_t)a, ' ') << "\033[1m" << _g << "\033[0m" << std::string((size_t)b, ' ')  << ' ' << std::endl;
+			std::cout << "|" << std::endl;
+			//std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		}
 
-    void ___print_group_summary(std::string _g, unsigned _passes, unsigned _total) {
-        std::stringstream ts;
-        ts.str(""); ts.clear();
-        ts << _g << " summary " << (_passes == _total?"\033[1;32m":"\033[1;31m") << _passes << " of " << _total << " passed\033[0m";
-        int a = (77-((int)ts.str().size()-11))/2; if (a<0) a=0;
-        int b = 77-(77+((int)ts.str().size()-11))/2; if (b<0) b=0;
-        //std::cout << "-------------------------------------------------------------------------------" << std::endl;
-        std::cout << "|" << std::endl;
-        std::cout << "|" << std::string((size_t)a, ' ') << ts.str() << std::string((size_t)b, ' ')  << ' ' << std::endl;
-        std::cout << "-------------------------------------------------------------------------------" << std::endl;
-    }
+		void print_group_summary(std::string _g, unsigned _passes, unsigned _total) {
+			std::stringstream ts;
+			ts.str(""); ts.clear();
+			ts << _g << " summary " << (_passes == _total?"\033[1;32m":"\033[1;31m") << _passes << " of " << _total << " passed\033[0m";
+			int a = (77-((int)ts.str().size()-11))/2; if (a<0) a=0;
+			int b = 77-(77+((int)ts.str().size()-11))/2; if (b<0) b=0;
+			//std::cout << "-------------------------------------------------------------------------------" << std::endl;
+			std::cout << "|" << std::endl;
+			std::cout << "|" << std::string((size_t)a, ' ') << ts.str() << std::string((size_t)b, ' ')  << ' ' << std::endl;
+			std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		}
 
-    _noreturn_ void ___catch_signals(int _sig)  {
-        XERUS_THROW(xerus::misc::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << xerus::misc::get_call_stack());
-    }
-
-    typedef void (*required_test_t)(void);
-    
+		_noreturn_ void catch_signals(int _sig)  {
+			XERUS_THROW(xerus::misc::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << xerus::misc::get_call_stack());
+		}
+	}}}
+	
     #undef main
     int main(int argc, char* argv[]) {
-    // 	signal(SIGINT, ___catch_signals); // users ctrl+c should actually terminate the program
-    // 	signal(SIGTERM, ___catch_signals);
-    // 	signal(SIGHUP, ___catch_signals);
-        //signal(SIGABRT,___catch_signals); // common source of abort is "double free or corurption" in which case we cannot continue
-        signal(SIGFPE,___catch_signals);
-        signal(SIGILL,___catch_signals);
-        signal(SIGSEGV,___catch_signals);
+		typedef void (*required_test_t)(void);
+		
+    // 	signal(SIGINT, xerus::misc::internal::catch_signals); // users ctrl+c should actually terminate the program
+    // 	signal(SIGTERM, xerus::misc::internal::catch_signals);
+    // 	signal(SIGHUP, xerus::misc::internal::catch_signals);
+        //signal(SIGABRT,xerus::misc::internal::catch_signals); // common source of abort is "double free or corurption" in which case we cannot continue
+        signal(SIGFPE,xerus::misc::internal::catch_signals);
+        signal(SIGILL,xerus::misc::internal::catch_signals);
+        signal(SIGSEGV,xerus::misc::internal::catch_signals);
         
 		// perform required_test initializations
-		// pass address of ___catch_signals as the address of main cannot be taken as by ISO c++...
-		std::pair<uintptr_t, uintptr_t> requiredTestRange = xerus::misc::get_range_of_section(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(&___catch_signals)), "required_tests");
+		// pass address of xerus::misc::internal::catch_signals as the address of main cannot be taken as by ISO c++...
+		std::pair<uintptr_t, uintptr_t> requiredTestRange = xerus::misc::get_range_of_section(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(&xerus::misc::internal::catch_signals)), "required_tests");
 		for (required_test_t *p = (required_test_t *)requiredTestRange.first; p < (required_test_t *)requiredTestRange.second; p += 1) {
 			try {
 				(*p)();
@@ -128,7 +131,7 @@
         std::cout << "#                                unit-testing                                 #" << std::endl;
         std::cout << "###############################################################################" << std::endl;
 		// no unittests defined (ie. the map tests does not exist!)
-		if (!___UnitTest::tests) {
+		if (!xerus::misc::internal::UnitTest::tests) {
 			std::cout << "no unittests defined." << std::endl;
 			std::cout << "use the macro UNIT_TEST(group, testname, ...) to define unittests inside the sourcecode." << std::endl;
 			return 0;
@@ -140,7 +143,7 @@
             std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ..." << std::endl;
             std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all" << std::endl << std::endl;
             std::cout << "available groups:" << std::endl;
-            for (const auto &p : *___UnitTest::tests) {
+            for (const auto &p : *xerus::misc::internal::UnitTest::tests) {
                 std::cout << "# " <<  p.first << std::endl;
             }
             return 0;
@@ -154,17 +157,17 @@
             std::string grp = argv[currArg];
             // do all unit tests
             if (grp == "all") {
-                for (const auto &p : *___UnitTest::tests) {
-                    ___print_group_name(p.first);
+                for (const auto &p : *xerus::misc::internal::UnitTest::tests) {
+                    xerus::misc::internal::print_group_name(p.first);
                     passCount=0;
                     for (const auto &t : p.second) {
                         totalCount += 1;
-                        if (___test(t)) {
+                        if (xerus::misc::internal::test(t)) {
                             passCount += 1;
                             totalPassCount += 1;
                         }
                     }
-                    ___print_group_summary(p.first, passCount, (unsigned)p.second.size());
+                    xerus::misc::internal::print_group_summary(p.first, passCount, (unsigned)p.second.size());
                 }
                 break;
             }
@@ -175,38 +178,38 @@
                     std::cout << "########## \033[1;31munknown syntax '" << grp << "'\033[0m" << std::endl;
                     continue;
                 }
-                if (!___UnitTest::tests->count(cmd[0]) || (*___UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
+                if (!xerus::misc::internal::UnitTest::tests->count(cmd[0]) || (*xerus::misc::internal::UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
                     std::cout << "########## \033[1;31munknown unittest '" << cmd[0] << ":" << cmd[1] << "'\033[0m" << std::endl;
                     continue;
                 }
                 totalCount += 1;
-                if (___test({grp, (*___UnitTest::tests)[cmd[0]][cmd[1]]}) ) {
+                if (xerus::misc::internal::test({grp, (*xerus::misc::internal::UnitTest::tests)[cmd[0]][cmd[1]]}) ) {
                     totalPassCount += 1;
                 }
             } else {
                 // unknown group
-                if (___UnitTest::tests->count(grp) == 0) {
+                if (xerus::misc::internal::UnitTest::tests->count(grp) == 0) {
                     std::cout << "########## \033[1;31munknown group or unittest '" << grp << "'\033[0m" << std::endl;
                     continue;
                 }
                 // one (whole) group
-                ___print_group_name(grp);
+                xerus::misc::internal::print_group_name(grp);
                 passCount=0; 
-                for (const auto &t : (*___UnitTest::tests)[grp]) {
+                for (const auto &t : (*xerus::misc::internal::UnitTest::tests)[grp]) {
                     totalCount += 1;
-                    if (___test(t)) {
+                    if (xerus::misc::internal::test(t)) {
                         passCount += 1;
                         totalPassCount += 1;
                     }
                 }
-                ___print_group_summary(grp, passCount, (unsigned)(*___UnitTest::tests)[grp].size());
+                xerus::misc::internal::print_group_summary(grp, passCount, (unsigned)(*xerus::misc::internal::UnitTest::tests)[grp].size());
             }
         }
         
         //Calc total elapsed time
         std::chrono::microseconds::rep totalTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - startTime).count();
         
-        ___print_group_summary("total", totalPassCount, totalCount);
+        xerus::misc::internal::print_group_summary("total", totalPassCount, totalCount);
         
         std::cout << "|" << std::endl;
         std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << (double)totalTime/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
@@ -216,8 +219,8 @@
                 // check whether all REQUIRED_TESTs were tested
                 std::map<std::string, std::pair<size_t, size_t>> perFile;
                 
-                if (___RequiredTest::tests) {
-                    for (auto &t : (*___RequiredTest::tests)) {
+                if (xerus::misc::internal::RequiredTest::tests) {
+                    for (auto &t : (*xerus::misc::internal::RequiredTest::tests)) {
                         std::string normPath = xerus::misc::normalize_pathname(t.first.filename);
                         std::pair<size_t, size_t> &pf = perFile[normPath];
                         pf.second += 1;
@@ -241,11 +244,10 @@
         #endif
         
 		// Destroy all stored tests to make memory-leak detection simpler
-		delete ___UnitTest::tests;
-		delete ___RequiredTest::tests;
+		delete xerus::misc::internal::UnitTest::tests;
+		delete xerus::misc::internal::RequiredTest::tests;
         
         return totalPassCount != totalCount;
     }
 
-    #define main(...) ___horst_main_will_not_be_called( __VA_ARGS__ )
 #endif

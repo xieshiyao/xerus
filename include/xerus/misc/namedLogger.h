@@ -194,16 +194,7 @@ namespace xerus {
 #ifndef NO_XERUS_EXCEPTIONS
 	#include "exceptions.h"
 #endif
-    
-    
-#define ___LOG_TIME std::right << (1900+__ltm->tm_year) << '-' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_mon \
-				<< '-' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_mday \
-				<< ' ' << std::setw(2) << std::setfill('0') << __ltm->tm_hour \
-				<< ':' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_min \
-				<< ':' <<std::setw(2) << std::setfill('0') <<  __ltm->tm_sec << " " \
-				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ":" \
-				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
-				<< std::setfill(' ') << std::setw(12) << std::left
+
     
 #define COMPILE_TIME_EVAL(e) (std::integral_constant<decltype(e), e>::value)
 
@@ -245,8 +236,17 @@ namespace xerus {
 #define LOG(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        time_t __t=std::time(0); tm *__ltm = localtime(&__t); \
-        tmpStream << ___LOG_TIME << std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
+        time_t xerus_err_t=std::time(0); tm *xerus_err_ltm = localtime(&xerus_err_t); \
+        tmpStream \
+				<< std::right << (1900+xerus_err_ltm->tm_year) << '-' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mon \
+				<< '-' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday \
+				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour \
+				<< ':' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min \
+				<< ':' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << " " \
+				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ":" \
+				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
+				<< std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
         if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
             XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
@@ -265,13 +265,3 @@ namespace xerus {
 
     
 SET_LOGGING_DEFAULT(xerus::misc::internal::LOGGING_FULL)
-
-// /*---------------------- Get name of current object -----------------*/ TODO needed?
-// #define OBJECT_NAME GET_OBJECT_NAME(this)
-// 
-// template<typename T>
-// std::string GET_OBJECT_NAME(const T* const) {
-//     std::string name = typeid(T).name();
-//     return xerus::misc::demangle_cxa(name);
-// }
-
