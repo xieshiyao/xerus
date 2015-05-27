@@ -23,7 +23,7 @@
 
 namespace xerus {
 
-    // Helper class for IndexedTensorLists
+    /// Helper class to allow an intuitive syntax for SVD calculation. E.g. the simplest example is (U(i,k), S(k,l), Vt(l,j)) = SVD(A(i,j)) to calculate the SVD of A.
     class SVD {
     public:
         const IndexedTensorReadOnly<Tensor>& input;
@@ -33,6 +33,7 @@ namespace xerus {
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const ;
     };
 
+    /// Helper class to allow an intuitive syntax for QR calculation. E.g. the simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR factorisation of A.
     class QR {
     public:
         const IndexedTensorReadOnly<Tensor>* input;
@@ -41,6 +42,7 @@ namespace xerus {
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
     };
 
+    /// Helper class to allow an intuitive syntax for RQ factorisations. E.g. the simplest example is (R(i,k), Q(k,j)) = QR(A(i,j)) to calculate the RQ factorisation of A.
     class RQ {
     public:
         const IndexedTensorReadOnly<Tensor>* input;

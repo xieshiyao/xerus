@@ -24,7 +24,7 @@
 
 namespace xerus {
     namespace misc {
-        namespace err {
+        namespace internal {
             //Look if Log shall be streamed into a file
             #ifdef LOGFILE_
                 std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);

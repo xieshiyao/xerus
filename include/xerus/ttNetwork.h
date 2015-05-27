@@ -28,23 +28,32 @@
 namespace xerus {
 
     template<bool isOperator>
+    /// The TTNetwork class is used to represent TTTensor and TToperators (depending on the template argument) and is a special kind of TensorNetwork.
     class TTNetwork : public TensorNetwork {    
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        /// Constructs an order zero TTNetwork.
         explicit TTNetwork();
-        
+		
+        /// Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one. Naturally for TTOperators the degree must be even.
         explicit TTNetwork(const size_t _degree);
         
+		/// Constructs a TTNetwork from the given FullTensor, using the higher order SVD algorithm. Opionally an accuracy can be given.
         explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15); //TODO no magic numbers
         
+		/// Copy constructor for TTNetworks.
         implicit TTNetwork(const TTNetwork & _cpy);
         
+		/// Move constructor for TTNetworks.
         implicit TTNetwork(      TTNetwork&& _mov);
         
+		/// Transforms a given TensorNetwork to a TTNetwork. NOTE this is not yet implemented different from casting to FullTensor and then using a HOSVD.
         explicit TTNetwork(const TensorNetwork &_cpy, double _eps=1e-14);
         
+		/// Transforms a given TensorNetwork to a TTNetwork. NOTE this is not yet implemented different from casting to FullTensor and then using a HOSVD.
         explicit TTNetwork(TensorNetwork &&_mov, double _eps=1e-14);
         
+		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
         template<class generator, class distribution>
         static TTNetwork construct_random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
             const size_t N = isOperator?2:1;
@@ -121,12 +130,14 @@ namespace xerus {
             return result;
         }
         
+		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
         template<class generator, class distribution>
         static TTNetwork construct_random(const std::vector<size_t>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
             const size_t N = isOperator?2:1;
             return construct_random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
         }
         
+        /// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
         static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
         
         //TODO does this make sense?
@@ -134,7 +145,7 @@ namespace xerus {
 
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        protected:
+	protected:
         static void construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps);
         
         static void round_train(TensorNetwork& _me, const std::vector<size_t>& _maxRanks, const double _eps);
@@ -240,6 +251,7 @@ namespace xerus {
     namespace internal {
 
         template<bool isOperator>
+        /// Internal class used to represent stacks consiting of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
         class TTStack : public TTNetwork<isOperator> {
         public:
             /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */

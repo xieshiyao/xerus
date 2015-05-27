@@ -76,9 +76,9 @@
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		#define FAILTEST(test) \
-            xerus::misc::err::logFilePrefix = "failtest/"; xerus::misc::err::silenced = true; \
+            xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
             try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
-            xerus::misc::err::logFilePrefix.clear();  xerus::misc::err::silenced = false;  \
+            xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
             void(0)
 	#else
 		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")

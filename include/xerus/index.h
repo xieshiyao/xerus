@@ -25,6 +25,7 @@
 #include <bitset>
 #include <vector>
 
+/// With very few exceptions all classes, functions and variables declared by the xerus are placed in the xerus:: namespace.
 namespace xerus {
     
     /**

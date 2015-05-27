@@ -38,7 +38,7 @@ namespace xerus {
     template<bool isOperator>
     TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork() {
         const size_t N=isOperator?2:1;
-        REQUIRE(_degree%N==0, "illegal degree for TTOperator");
+        REQUIRE(_degree%N==0, "Illegal degree for TTOperator");
         const size_t numNodes = _degree/N;
         dimensions = std::vector<size_t>(_degree, 1);
         factor = 0.0;

@@ -30,6 +30,7 @@ namespace xerus {
     class FullTensor;
     class SparseTensor;
     
+	/// Very general class used to represent arbitary tensor networks. Used as a basis for tensor decompositions like the TTNetwork but also used for the lazy evaluation of Tensor contractions.
     class TensorNetwork {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -133,14 +134,19 @@ namespace xerus {
         IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+        /// Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
+        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
         
+        /// Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
         
+        /// Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
             
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+        /// Returns the degree of the tensor network , i.e. the number of externalLinks.
         size_t degree() const;
         
         /// Eleminates all erased Nodes
@@ -158,13 +164,18 @@ namespace xerus {
         /// Creates a copy of a subnet that only contains nullptr as data pointers
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
         
+        
+        // TODO describtion
         void swap_external_links(const size_t _i, const size_t _j);
         
         /// shuffles the external links of _lhs according to the indices of the indexedTensors
         /// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
 		static void shuffle_indices(std::vector<Index> &_currentIndices, const IndexedTensorWritable<TensorNetwork> &_lhs);
 		
+        // TODO describtion
 		static void add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert);
+        
+        // TODO describtion
 		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
 	
 		/**
@@ -173,6 +184,7 @@ namespace xerus {
 		*/
 		void contract(size_t _nodeId1, size_t _nodeId2);
 		
+        // TODO describtion
 		double contraction_cost(size_t _nodeId1, size_t _nodeId2);
 		
 		
@@ -183,6 +195,7 @@ namespace xerus {
 		*/
 		size_t contract(std::set<size_t> _ids);
 		
+        /// Calculates the frobenious norm of the tensor represented by the tensor network.
 		virtual value_t frob_norm() const;
 		
 		/**

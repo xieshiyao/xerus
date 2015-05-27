@@ -746,34 +746,34 @@ namespace xerus {
             size_t a=*idItr; TensorNode &na = nodes[a]; ++idItr;
             size_t b=*idItr; TensorNode &nb = nodes[b]; ++idItr;
             size_t c=*idItr; TensorNode &nc = nodes[c];
-            float sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
-            float sab=1, sbc=1, sac=1; // link dimensions
+            double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
+            double sab=1, sbc=1, sac=1; // link dimensions
             for (size_t d=0; d<na.degree(); ++d) {
                 if (na.neighbors[d].links(b)) {
-                    sab *= (float)na.neighbors[d].dimension;
+                    sab *= (double)na.neighbors[d].dimension;
                 } else if (na.neighbors[d].links(c)) {
-                    sac *= (float)na.neighbors[d].dimension;
+                    sac *= (double)na.neighbors[d].dimension;
                 } else {
-                    sa *= (float)na.neighbors[d].dimension;
+                    sa *= (double)na.neighbors[d].dimension;
                 }
             }
             for (size_t d=0; d<nb.degree(); ++d) {
                 if (nb.neighbors[d].links(c)) {
-                    sbc *= (float) nb.neighbors[d].dimension;
+                    sbc *= (double) nb.neighbors[d].dimension;
                 } else if (!nb.neighbors[d].links(a)) {
-                    sb *= (float) nb.neighbors[d].dimension;
+                    sb *= (double) nb.neighbors[d].dimension;
                 }
             }
             for (size_t d=0; d<nc.degree(); ++d) {
 //                 size_t other = nc.neighbors[d].other;
                 if (!nc.neighbors[d].links(a) && !nc.neighbors[d].links(b)) {
-                    sc *= (float)nc.neighbors[d].dimension;
+                    sc *= (double)nc.neighbors[d].dimension;
                 }
             }
             // cost of contraction a-b first etc.
-            float costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
-            float costAC = sa*sc*sab*sbc*(sac+sb); 
-            float costBC = sb*sc*sab*sac*(sbc+sa);
+            double costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
+            double costAC = sa*sc*sab*sbc*(sac+sb); 
+            double costBC = sb*sc*sab*sac*(sbc+sa);
             if (costAB < costAC && costAB < costBC) {
                 LOG(TNContract, "contraction of ab first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
                 contract(a,b); contract(a,c); return a;
@@ -788,7 +788,7 @@ namespace xerus {
         
         
         TensorNetwork stripped = stripped_subnet(_ids); 
-        float bestScore=1e32f;
+        double bestScore=1e32f;
         std::vector<std::pair<size_t, size_t>> *bestOrder=nullptr;
         
         // ask heuristics
