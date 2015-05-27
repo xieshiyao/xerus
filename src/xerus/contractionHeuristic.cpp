@@ -76,7 +76,7 @@ namespace xerus {
                 } \
             } \
             if (best < 1e32f) { \
-                _score += (double)_tn.contraction_cost(bestId1,bestId2); \
+                _score += _tn.contraction_cost(bestId1,bestId2); \
                 _contractions.emplace_back(bestId1,bestId2); \
                 _tn.contract(bestId1,bestId2); \
             } \

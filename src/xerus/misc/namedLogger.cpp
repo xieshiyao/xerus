@@ -55,12 +55,12 @@ namespace xerus {
                     out << std::endl << std::endl;
                     
                     // output namedLogger
-                    err::bufferStreams.curr->flush();
-                    err::bufferStreams.old->flush();
+                    bufferStreams.curr->flush();
+                    bufferStreams.old->flush();
                     out << "-------------------------------------------------------------------------------" << std::endl 
-                        << "  last " << (err::bufferStreams.curr->str().size() + err::bufferStreams.old->str().size()) << " bytes of log:" << std::endl
+                        << "  last " << (bufferStreams.curr->str().size() + bufferStreams.old->str().size()) << " bytes of log:" << std::endl
                         << "-------------------------------------------------------------------------------" << std::endl 
-                        << err::bufferStreams.curr->str() << err::bufferStreams.old->str() << "horst" << std::endl; 
+                        << bufferStreams.curr->str() << bufferStreams.old->str() << "horst" << std::endl; 
                     out.close();
                 }
             #endif
