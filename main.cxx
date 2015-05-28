@@ -55,15 +55,16 @@ void swap_endianness(size_t *n) {
 
 int main() {
 	std::ifstream in("cgv_013.bin", std::ios::binary);
-	xerus::FullTensor velocity({25,27,25,3});
+	xerus::FullTensor velocity({3,25,27,25});
 	velocity.factor = 1.0;
+	xerus::Index i1,i2,i3,i4;
 // 	for(size_t i = 0; i < 25*27*25*3; ++i) {
 // 		in.read(reinterpret_cast<char*>(velocity.data.get()+i), sizeof(double));
 // 		REQUIRE(!in.fail(), "");
 // 	}
 	in.read(reinterpret_cast<char*>(velocity.data.get()), 25*27*25*3*sizeof(double));
 	in.close();
-	std::cout << velocity[0] << ' ' << velocity[1] << std::endl;
+	velocity(i1,i2,i3,i4) = velocity(i4,i3,i2,i1);
 	velocity.reinterpret_dimensions(std::vector<size_t>({5,5,3,9,5,5,3}));
 	
 	storeVeloData(velocity, "channel_full");
@@ -74,12 +75,14 @@ int main() {
 	xerus::value_t velo_norm = xerus::frob_norm(velocity);
 	std::ofstream out("channel_ttapprox.dat");
 	xerus::TTTensor ttvOpt(ttv);
-	for (r=20; r>0; --r) {
+	for (; r>0; --r) {
 		std::cout << r << '\r' << std::flush;
 		ttv.round(r);
 		std::cout << r << " als" << '\r' << std::flush;
-// 		std::vector<double> perf;
-// 		xerus::ALS(I, ttv, ttvOpt, 1e-4, &perf);
+		std::vector<double> perf;
+		xerus::ALSVariant alsb(xerus::ALS);
+		alsb.printProgress = true;
+		alsb(I, ttv, ttvOpt, 1e-4, &perf);
 		xerus::FullTensor approx(ttv);
 		out << r << " " 
 		    << xerus::frob_norm(approx-velocity)/velo_norm << " " 
