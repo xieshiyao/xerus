@@ -18,7 +18,7 @@
 // or contact us at contact@libXerus.org.
 
 #include <xerus/tensor.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
 
 namespace xerus {

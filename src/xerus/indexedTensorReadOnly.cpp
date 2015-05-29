@@ -21,7 +21,7 @@
 
 #include <xerus/index.h>
 #include <xerus/misc/missingFunctions.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 

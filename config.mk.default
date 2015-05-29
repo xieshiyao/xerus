@@ -20,6 +20,7 @@
 
 # Additionally Link Time Optimization support can be build into the library by uncommenting the following line.
 # USE_LTO = TRUE                    # Activates -ftlo
+COMPILE_THREADS = 8					# Number of threads to use during link time optimization.
 
 #=================================================================================================
 # Debug and Logging   

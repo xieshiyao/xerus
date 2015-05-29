@@ -22,7 +22,7 @@
 #include <xerus/index.h>
 #include <xerus/fullTensor.h>
 #include <xerus/tensorNetwork.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
 
 namespace xerus {

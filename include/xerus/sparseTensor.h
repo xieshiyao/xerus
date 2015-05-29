@@ -20,7 +20,7 @@
 #pragma once
 
 #include "fullTensor.h"
-#include "misc/test.h"
+#include "misc/check.h"
 #include "misc/missingFunctions.h"
 #include "misc/performanceAnalysis.h"
 

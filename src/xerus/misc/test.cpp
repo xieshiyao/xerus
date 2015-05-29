@@ -17,8 +17,9 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#ifdef TEST_
+#include <xerus/misc/test.h>
 
+#ifdef TEST_
     #include <iostream>
     #include <iomanip>
     #include <chrono>
@@ -30,7 +31,6 @@
     
     #include <xerus/misc/standard.h>
     #include <xerus/misc/exceptions.h>
-    #include <xerus/misc/testManager.h>
     #include <xerus/misc/stringUtilities.h>
     
     // TODO put all this into xerus::misc::unitTesting (or something similar)
@@ -38,8 +38,55 @@
     namespace xerus { namespace misc { namespace internal {
 				
 		std::map<std::string, std::map<std::string, std::function<bool ()>>> *xerus::misc::internal::UnitTest::tests;
-		std::map<RequiredTest::identifier, size_t> *RequiredTest::tests;
-
+			
+		UnitTest::UnitTest(std::string _group, std::string _name, std::function<bool ()> _f) {
+			if (!tests) {
+				tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
+			}
+			if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
+				LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
+			}
+			(*tests)[_group][_name] = _f;
+		}
+		
+		#ifdef TEST_COVERAGE_
+			std::map<RequiredTest::Identifier, size_t> *RequiredTest::tests;
+			
+			RequiredTest::Identifier::Identifier(std::string _func, std::string _file, size_t _line) : functionName(_func), filename(_file), lineNumber(_line) {}
+					
+			bool RequiredTest::Identifier::operator<(const Identifier &_rhs) const {
+				if (functionName < _rhs.functionName) {
+					return true;
+				} else if (functionName == _rhs.functionName && lineNumber < _rhs.lineNumber) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		
+			void RequiredTest::register_test(std::string _functionName, std::string _fileName, size_t _lineNb)  {
+				if (!tests) {
+					tests = new std::map<Identifier, size_t>();
+				}
+				Identifier key = Identifier(_functionName, _fileName, _lineNb);
+		// 		std::cout << "registered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
+				if (tests->count(key) == 0) {
+					(*tests)[key] = 0;
+				}
+			}
+				
+			void RequiredTest::increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb) {
+				if (!tests) {
+					// this can happen if some function in the init section (ie. before main) use REQUIREs
+					tests = new std::map<Identifier, size_t>();
+				}
+				Identifier key = Identifier(_functionName, _fileName, _lineNb);
+		// 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
+				(*tests)[key] += 1;
+			}
+				
+		#endif
+			
 		bool test(const std::pair<std::string, std::function<bool ()>> &_t) {
 			bool passed = false;
 			
@@ -245,9 +292,10 @@
         
 		// Destroy all stored tests to make memory-leak detection simpler
 		delete xerus::misc::internal::UnitTest::tests;
-		delete xerus::misc::internal::RequiredTest::tests;
+		#ifdef TEST_COVERAGE_
+			delete xerus::misc::internal::RequiredTest::tests;
+		#endif
         
         return totalPassCount != totalCount;
     }
-
 #endif
