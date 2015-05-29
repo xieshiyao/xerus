@@ -104,6 +104,9 @@ namespace xerus {
     
     
     CsUniquePtr matrix_matrix_product(const CsUniquePtr& _lhs, const CsUniquePtr& _rhs) {
+		PA_START;
+		CsUniquePtr result(cs_multiply(_lhs.get(), _rhs.get()), &cs_spfree);
+		PA_END("Sparse BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_lhs->m)+"x"+misc::to_string(_lhs->n)+" * "+misc::to_string(_rhs->m)+"x"+misc::to_string(_rhs->n));
         return CsUniquePtr(cs_multiply(_lhs.get(), _rhs.get()), &cs_spfree);
     }
     

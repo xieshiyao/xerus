@@ -24,6 +24,7 @@
 #include "tensor.h"
 #include "misc/selectedFunctions.h"
 #include "misc/sfinae.h"
+#include "misc/performanceAnalysis.h"
 
 namespace xerus {
     class SparseTensor;
@@ -120,9 +121,11 @@ namespace xerus {
         template<class generator, class distribution, ADD_MOVE(std::vector<size_t>, Vec)>
         static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
+			PA_START;
             for(size_t i=0; i < result.size; ++i) {
                 result.data.get()[i] = _dist(_rnd);
             }
+			PA_END("Random construction", "FullTensor", misc::to_string(result.size));
             return result;
         }
         

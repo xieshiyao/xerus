@@ -45,81 +45,11 @@ extern "C"
 
 #include <memory>
 #include <xerus/misc/standard.h>
+#include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/test.h>
- 
-#ifdef BLAS_ANALYSIS
-    #include <map>
-    #include <sstream>
-    #include <xerus/misc/timeMeasure.h>
-    #include <xerus/misc/stringUtilities.h>
-#endif
 
 
 namespace xerus {
-
-    #ifdef BLAS_ANALYSIS
-        std::map<std::string, CallCounter> callCounter;
-        
-        std::string print_blas_analysis() {
-            std::stringstream ss;
-            ss << "| " << std::endl;
-            ss << "| " << std::endl;
-            for(const std::pair<std::string, CallCounter>& call : callCounter) {
-                ss << "| ======================== " << call.first << " =======================" << std::endl;
-                ss << "| Total time " << call.second.totalTime/1000 << " ms in " << call.second.totalCalls << " calls. In detail (showing only calls that contribute more than 1 ms in total)" << std::endl;
-                for(const std::pair<std::string, std::pair<size_t, size_t>>& subCall : call.second.calls) {
-                    if(subCall.second.second/1000 >= 1) {
-                        ss << "| | " << std::setfill (' ') << std::setw(5) << subCall.second.first 
-                        << " calls to  " << std::setfill (' ') << std::setw(25) << subCall.first 
-                        << " taking " << std::setfill (' ') << std::setw(8) << subCall.second.second/1000 
-                        << " ms. In average that is " << std::setfill (' ') << std::setw(6) << subCall.second.second/(1000*subCall.second.first) << " ms per call" << std::endl;
-                    }
-                }
-                ss << "| " << std::endl;
-            }
-
-            ss << "| " << std::endl;
-            ss << "| " << std::endl;
-            ss << "| Total Blas / Lapack time: " << total_blas_time() << " ms " << std::endl;
-            ss << "| " << std::endl;
-            ss << "| ";
-            return ss.str();
-        }
-        
-        size_t total_blas_time() {
-            size_t totalTime = 0;
-            for(const std::pair<std::string, CallCounter>& call : callCounter) {
-                totalTime += call.second.totalTime;
-            }
-            return totalTime/1000;
-        }
-        
-        #define START_TIME size_t startTime = misc::uTime()
-        
-        #define ADD_CALL(name, parameter) add_blas_call(name, parameter, startTime)
-        
-        void add_blas_call(const std::string& _callName, const std::string& _callParameter, const size_t _startTime) {
-            size_t passedTime = misc::uTime()-_startTime;
-            CallCounter& call = callCounter[_callName];
-            call.totalCalls++;
-            call.totalTime += passedTime;
-            call.calls[_callParameter].first++;
-            call.calls[_callParameter].second += passedTime;
-        }
-    #else 
-        std::string print_blas_analysis() {
-                return "Blas Analysis is deaktivated";
-        }
-        
-        size_t total_blas_time() {
-            return 1;
-        }
-        
-        #define START_TIME void()
-        
-        #define ADD_CALL(name, parameter) void()
-    #endif
-
     namespace blasWrapper {
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
@@ -127,11 +57,11 @@ namespace xerus {
         double two_norm(const double* const _x, const size_t _n) {
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             
             double result = cblas_dnrm2((int) _n, _x, 1);
             
-            ADD_CALL("Two Norm", misc::to_string(_n));
+			PA_END("Dense BLAS", "Two Norm", misc::to_string(_n));
             
             return result;
         }
@@ -139,11 +69,11 @@ namespace xerus {
         double dot_product(const double* const _x, const size_t _n, const double* const _y) {
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             
             double result = cblas_ddot((int) _n, _x, 1, _y, 1);
             
-            ADD_CALL("Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
+			PA_END("Dense BLAS", "Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
             
             return result;
         }
@@ -158,28 +88,28 @@ namespace xerus {
             REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             if(!_transposed) {
                 cblas_dgemv(CblasRowMajor, CblasNoTrans, (int)_m, (int)_n, _alpha, _A, (int)_n, _y, 1, 0.0, _x, 1);
             } else {
                 cblas_dgemv(CblasRowMajor, CblasTrans, (int)_n, (int)_m, _alpha, _A, (int)_m , _y, 1, 0.0, _x, 1);
             }
             
-            ADD_CALL("Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
+			PA_END("Dense BLAS", "Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
         }
         
         void dyadic_vector_product(double* _A, const size_t _m, const size_t _n, const double _alpha, const double*const  _x, const double* const _y) {
             REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             
             //Blas wants to add the product to A, but we don't
             misc::array_set_zero(_A, _m*_n);
             
             cblas_dger(CblasRowMajor, (int)_m, (int)_n, _alpha, _x, 1, _y, 1, _A, (int)_n);
             
-            ADD_CALL("Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
+			PA_END("Dense BLAS", "Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
         }
         
         
@@ -211,7 +141,7 @@ namespace xerus {
                 REQUIRE(_lda <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
                 REQUIRE(_ldb <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
                 
-                START_TIME;
+                PA_START;
                 
                 cblas_dgemm(    CblasRowMajor,                                  // Array storage format
                                 _transposeA ? CblasTrans : CblasNoTrans,        // LHS transposed?
@@ -229,7 +159,7 @@ namespace xerus {
                                 (int) _rightDim                                 // LDC
                         );
                 
-                ADD_CALL("Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
+				PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
             }
         }
         
@@ -249,12 +179,12 @@ namespace xerus {
             REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             
             int lapackAnswer = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', (int) _m, (int) _n, _A, (int) _n, _S, _U, (int) std::min(_m, _n), _Vt, (int) _n);
             CHECK(lapackAnswer == 0, error, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
             
-            ADD_CALL("Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
+			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
         
         
@@ -281,7 +211,7 @@ namespace xerus {
             REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: Q:" << _Q << " R: " << _R << " A: " << _A);
             REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
             
-            START_TIME;
+            PA_START;
             
             // Maximal rank is used by Lapacke
             const size_t rank = std::min(_m, _n); 
@@ -316,7 +246,7 @@ namespace xerus {
                 }
             }
             
-            ADD_CALL("QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
         
         
@@ -344,7 +274,7 @@ namespace xerus {
             REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: R " << _R << " Q: " << _Q << " A: " << _A);
             REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
             
-            START_TIME;
+            PA_START;
             
             // Maximal rank is used by Lapacke
             const size_t rank = std::min(_m, _n); 
@@ -376,7 +306,7 @@ namespace xerus {
                 misc::array_copy(_Q, _A+(_m-rank)*_n, rank*_n);
             }
             
-            ADD_CALL("RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
         
         
@@ -428,7 +358,7 @@ namespace xerus {
             REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
-            START_TIME;
+            PA_START;
             
             std::unique_ptr<int[]> pivot(new int[_n]);
             misc::array_set_zero(pivot.get(), _n);
@@ -460,7 +390,7 @@ namespace xerus {
                 misc::array_copy(_x, bOrX, _m);
             }
             
-            ADD_CALL("Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
+			PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
         
     }
