@@ -76,14 +76,17 @@ int main() {
 	std::ofstream out("channel_ttapprox.dat");
 	xerus::TTTensor ttvOpt(ttv);
 	for (; r>0; --r) {
-		std::cout << r << '\r' << std::flush;
+		std::cout << r << '\n' << std::flush;
 		ttv.round(r);
 		std::cout << r << " als" << '\r' << std::flush;
-		std::vector<double> perf;
-		xerus::ALSVariant alsb(xerus::ALS);
-		alsb.printProgress = true;
-		alsb(I, ttv, ttvOpt, 1e-4, &perf);
+        if(r < 20) {
+            std::vector<double> perf;
+            xerus::ALSVariant alsb(xerus::ALS);
+            alsb.printProgress = true;
+            alsb(I, ttv, ttvOpt, 1e-4, &perf);
+        }
 		xerus::FullTensor approx(ttv);
+        std::cout << "Current residual: " << xerus::frob_norm(approx-velocity)/velo_norm << std::endl;
 		out << r << " " 
 		    << xerus::frob_norm(approx-velocity)/velo_norm << " " 
  			<< ttv.datasize() << std::endl;
