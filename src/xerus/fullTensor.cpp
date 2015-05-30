@@ -143,6 +143,7 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator+=(const FullTensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor sum the dimensions must conincde");
+		PA_START;
         ensure_own_data();
         if(has_factor()) {
             misc::array_scale_add(factor, data.get(), _other.factor, _other.data.get(), size);
@@ -150,6 +151,7 @@ namespace xerus {
         } else {
             misc::array_add(data.get(), _other.factor, _other.data.get(), size);
         }
+        PA_END("ADD/SUB", "FullTensor ADD/SUB FullTensor", misc::to_string(size));
         return *this;
     }
 
@@ -161,13 +163,15 @@ namespace xerus {
 
     FullTensor& FullTensor::operator-=(const FullTensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor subtraction the dimensions must conincde");
-        ensure_own_data();
+        PA_START;
+		ensure_own_data();
         if(has_factor()) {
             misc::array_scale_add(factor, data.get(), -1.0*_other.factor, _other.data.get(), size);
             factor = 1.0;
         } else {
             misc::array_add(data.get(), -1.0*_other.factor, _other.data.get(), size);
         }
+        PA_END("ADD/SUB", "FullTensor ADD/SUB FullTensor", misc::to_string(size));
         return *this;
     }
 
@@ -202,7 +206,8 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics with SparseTensors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator+=(const SparseTensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor/SparseTensor subtraction the dimensions must conincde");
-        ensure_own_data();
+        PA_START;
+		ensure_own_data();
         value_t* const dataPtr = data.get();
         
         if(has_factor() || _other.has_factor()) {
@@ -215,6 +220,7 @@ namespace xerus {
                 dataPtr[entry.first] += entry.second;
             }
         }
+        PA_END("ADD/SUB", "FullTensor ADD/SUB SparseTensor", misc::to_string(size));
         return *this;
     }
     
@@ -226,7 +232,8 @@ namespace xerus {
     
     FullTensor& FullTensor::operator-=(const SparseTensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor/SparseTensor subtraction the dimensions must conincde");
-        ensure_own_data();
+        PA_START;
+		ensure_own_data();
         value_t* const dataPtr = data.get();
         
         if(has_factor() || _other.has_factor()) {
@@ -239,6 +246,7 @@ namespace xerus {
                 dataPtr[entry.first] -= entry.second;
             }
         }
+        PA_END("ADD/SUB", "FullTensor ADD/SUB SparseTensor", misc::to_string(size));
         return *this;
     }
     
