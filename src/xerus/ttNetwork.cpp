@@ -31,7 +31,7 @@
 #include <xerus/misc/selectedFunctions.h>
 
 namespace xerus {
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(), cannonicalization(RIGHT) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
@@ -194,7 +194,7 @@ namespace xerus {
 	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy), cannonicalization(_cpy.cannonicalization) { }
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(      TTNetwork&& _mov) : TensorNetwork(std::move(_mov)), cannonicalization(_mov.cannonicalization) { }
+	TTNetwork<isOperator>::TTNetwork(	  TTNetwork&& _mov) : TensorNetwork(std::move(_mov)), cannonicalization(_mov.cannonicalization) { }
 
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
@@ -650,7 +650,7 @@ namespace xerus {
 		left.externalLinks.emplace_back(_position, _position==0?0:N+1, left.nodes.back().neighbors.back().dimension , false);
 		left.nodes.back().neighbors.back().external = true;
 		left.nodes.back().neighbors.back().indexPosition = isOperator ? 2*_position-1 : _position;
-        
+		
 		right.dimensions.push_back(nodes[_position+2].neighbors.front().dimension);
 		right.externalLinks.emplace_back(_position+2, 0, nodes[_position+2].neighbors.front().dimension , false); // NOTE other will be corrected to 0 in the following steps
 		for(size_t i = _position+1; i < numComponents+1; ++i) {
@@ -866,352 +866,352 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	
 	
-    template<bool isOperator>
-    bool TTNetwork<isOperator>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
-        REQUIRE(!_out.tensorObject, "Internal Error.");
-        
-        // Only TTOperators construct stacks, so no specialized contractions for TTTensors
-        if(!isOperator) { return false; }
-        
-        const std::vector<Index> myIndices = _me.get_assigned_indices();
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
-        
-        bool otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
-        bool otherTO = !otherTT && (dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly));
-        
-        if (!otherTT && !otherTO) {
-            return false;
-        }
-        
-        // Determine my first half and second half of indices
-        auto midIndexItr = myIndices.begin();
-        size_t spanSum = 0;
-        while (spanSum < _me.degree() / 2) {
-            REQUIRE(midIndexItr != myIndices.end(), "ie");
-            spanSum += midIndexItr->span;
-            ++midIndexItr;
-        }
-        if (spanSum > _me.degree() / 2) {
-            return false; // an index spanned some links of the left and some of the right side
-        }
-        
-        if (otherTT) {
-            // ensure fitting indices
-            if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
-                TensorNetwork *res = new internal::TTStack<false>;
-                *res = *_me.tensorObjectReadOnly;
-                res->factor *= _other.tensorObjectReadOnly->factor;
-                _out.reset(res, myIndices, true);
-                TensorNetwork::add_network_to_network(_out, _other);
-                return true;
-            } else {
-                return false;
-            }
-        } else { // other is operator or operator stack
-            // determine other middle index
-            auto otherMidIndexItr = otherIndices.begin();
-            spanSum = 0;
-            while (spanSum < _other.degree() / 2) {
-                REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
-                spanSum += otherMidIndexItr->span;
-                ++otherMidIndexItr;
-            }
-            if (spanSum > _other.degree() / 2) {
-                return false; // an index spanned some links of the left and some of the right side
-            }
-            // or indices in fitting order to contract the TTOs
-            if (   misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
-                || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
-                || misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-                || misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
-            {
-                TensorNetwork *res = new internal::TTStack<true>;
-                *res = *_me.tensorObjectReadOnly;
-                res->factor *= _other.tensorObjectReadOnly->factor;
-                _out.reset(res, myIndices, true);
-                TensorNetwork::add_network_to_network(_out, _other);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-    
-    template<bool isOperator>
-    bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
-        const size_t N = isOperator?2:1;
-        
-        const std::vector<Index> myIndices = _me.get_assigned_indices();
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
-        
-        // If the indices are in different order, we are lost. TODO inverse order is also ok...
-        if(myIndices != otherIndices) { return false; }
-        REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
-        
-        // If the other is not a TT tensor (or stack) we are also lost
-        const TTNetwork* _otherPtr = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
-        if(!_otherPtr) { return false; }
-        
-        // TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
-        // If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
-        std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
-        const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
-        const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
-        if (movMe) {
-            internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
-            if (stackMe) {
-                meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
-                (*meStorage) = _me;
-                realMePtr = meStorage.get();
-            }
-        } else {
-            REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
-        }
-        const IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
-        
-        // If other is in fact a TTTensorStack, we have to evaluate it to tttensor
-        std::unique_ptr<IndexedTensor<TensorNetwork>> otherStorage;
-        const IndexedTensorReadOnly<TensorNetwork> *realOtherPtr = &_other;
-        const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
-        if (movOther) {
-            internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
-            if (stackOther) {
-                otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_other.degree()), otherIndices, true));
-                (*otherStorage) = _other;
-                realOtherPtr = otherStorage.get();
-            }
-        } else {
-            REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
-        }
-        const IndexedTensorReadOnly<TensorNetwork> &realOther = *realOtherPtr;
-        
-        // Number of Nodes to create
-        const size_t numNodes = realMe.degree()/N;
-        
-        TTNetwork* tmpPtr = new TTNetwork();
-        tmpPtr->factor = 1.0;
-        
-        //The external dimensions are the same as the ones of the input
-        tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
-        REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
-        
-        IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
-        TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
-        
-        
-        // Create the externalLinks first, as we know their position in advance
-        outTensor.externalLinks.emplace_back(0, 0, outTensor.dimensions[0], false);
-        for(size_t i = 1; i < numNodes; ++i) {
-            outTensor.externalLinks.emplace_back(i, 1, outTensor.dimensions[i], false);
-        }
-        if(N == 2) {
-            outTensor.externalLinks.emplace_back(0, 1, outTensor.dimensions[numNodes], false);
-            for(size_t i = 1; i < numNodes; ++i) {
-                outTensor.externalLinks.emplace_back(i, 2, outTensor.dimensions[numNodes+i], false);
-            }
-        }
-        
-        
-        if(realMe.degree() == N) {
-            // Create the one Node
-            std::unique_ptr<Tensor> nextTensor;
-            if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse() && realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()) { // Both Sparse
-                nextTensor.reset(realMe.tensorObjectReadOnly->nodes[0].tensorObject->get_copy());
-                nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-                *static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<SparseTensor*>(realOther.tensorObjectReadOnly->nodes[0].tensorObject.get()));
-            } else { // Maximal one sparse
-                if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
-                    nextTensor.reset(new FullTensor(*static_cast<SparseTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
-                } else {
-                    nextTensor.reset(new FullTensor(*static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
-                }
-                nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-                if(realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
-                    *static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<SparseTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
-                } else {
-                    *static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<FullTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
-                }
-            }
-            
-            outTensor.nodes.emplace_back(std::move(nextTensor));
-            outTensor.nodes.back().neighbors.emplace_back(-1, 0, outTensor.dimensions[0], true);
-            if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, 1, outTensor.dimensions[1], true); }
-            _out.assign(std::move(tmpOut));
-            return true;
-        }
-        
-        for(size_t position = 0; position < numNodes; ++position) {
-            // Get current input nodes
-            // TODO sparse
-            FullTensor &myNode = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position].tensorObject.get());
-            FullTensor &otherNode = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position].tensorObject.get());
-            
-            // Structure has to be (for degree 4)
-            // (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
-            //           ( 0  R2 )   ( 0  R3 )   ( R4 )
-            
-            // Create a FullTensor for Node
-            std::vector<size_t> nxtDimensions;
-            if(position != 0) { 
-                nxtDimensions.emplace_back(myNode.dimensions.front()+otherNode.dimensions.front());
-            }
-            nxtDimensions.emplace_back(outTensor.dimensions[position]);
-            if(N == 2) { nxtDimensions.emplace_back(outTensor.dimensions[position+numNodes]); }
-            if(position != numNodes-1) {
-                nxtDimensions.emplace_back(myNode.dimensions.back()+otherNode.dimensions.back());
-            }
-            
-            FullTensor* nxtTensor(new FullTensor(std::move(nxtDimensions)) ); // Ownership is given to the Node.
-            
-            
-            // Create the Node
-            outTensor.nodes.emplace_back(std::unique_ptr<Tensor>(nxtTensor));
-            if(position != 0) { outTensor.nodes.back().neighbors.emplace_back(position-1, ((position == 1) ? 0:1)+N, nxtTensor->dimensions.front(), false); }
-            outTensor.nodes.back().neighbors.emplace_back(-1, position, outTensor.dimensions[position], true);
-            if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, position+numNodes, outTensor.dimensions[position+numNodes], true); }
-            if(position != numNodes-1 ) { outTensor.nodes.back().neighbors.emplace_back(position+1, 0, nxtTensor->dimensions.back(), false); }
+	template<bool isOperator>
+	bool TTNetwork<isOperator>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+		REQUIRE(!_out.tensorObject, "Internal Error.");
+		
+		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
+		if(!isOperator) { return false; }
+		
+		const std::vector<Index> myIndices = _me.get_assigned_indices();
+		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		
+		bool otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
+		bool otherTO = !otherTT && (dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly));
+		
+		if (!otherTT && !otherTO) {
+			return false;
+		}
+		
+		// Determine my first half and second half of indices
+		auto midIndexItr = myIndices.begin();
+		size_t spanSum = 0;
+		while (spanSum < _me.degree() / 2) {
+			REQUIRE(midIndexItr != myIndices.end(), "ie");
+			spanSum += midIndexItr->span;
+			++midIndexItr;
+		}
+		if (spanSum > _me.degree() / 2) {
+			return false; // an index spanned some links of the left and some of the right side
+		}
+		
+		if (otherTT) {
+			// ensure fitting indices
+			if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
+				TensorNetwork *res = new internal::TTStack<false>;
+				*res = *_me.tensorObjectReadOnly;
+				res->factor *= _other.tensorObjectReadOnly->factor;
+				_out.reset(res, myIndices, true);
+				TensorNetwork::add_network_to_network(_out, _other);
+				return true;
+			} else {
+				return false;
+			}
+		} else { // other is operator or operator stack
+			// determine other middle index
+			auto otherMidIndexItr = otherIndices.begin();
+			spanSum = 0;
+			while (spanSum < _other.degree() / 2) {
+				REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+				spanSum += otherMidIndexItr->span;
+				++otherMidIndexItr;
+			}
+			if (spanSum > _other.degree() / 2) {
+				return false; // an index spanned some links of the left and some of the right side
+			}
+			// or indices in fitting order to contract the TTOs
+			if (   misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
+				|| misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
+				|| misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
+				|| misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())	) 
+			{
+				TensorNetwork *res = new internal::TTStack<true>;
+				*res = *_me.tensorObjectReadOnly;
+				res->factor *= _other.tensorObjectReadOnly->factor;
+				_out.reset(res, myIndices, true);
+				TensorNetwork::add_network_to_network(_out, _other);
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+	
+	template<bool isOperator>
+	bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+		const size_t N = isOperator?2:1;
+		
+		const std::vector<Index> myIndices = _me.get_assigned_indices();
+		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		
+		// If the indices are in different order, we are lost. TODO inverse order is also ok...
+		if(myIndices != otherIndices) { return false; }
+		REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
+		
+		// If the other is not a TT tensor (or stack) we are also lost
+		const TTNetwork* _otherPtr = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
+		if(!_otherPtr) { return false; }
+		
+		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
+		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
+		std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
+		const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
+		const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
+		if (movMe) {
+			internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
+			if (stackMe) {
+				meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
+				(*meStorage) = _me;
+				realMePtr = meStorage.get();
+			}
+		} else {
+			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+		}
+		const IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
+		
+		// If other is in fact a TTTensorStack, we have to evaluate it to tttensor
+		std::unique_ptr<IndexedTensor<TensorNetwork>> otherStorage;
+		const IndexedTensorReadOnly<TensorNetwork> *realOtherPtr = &_other;
+		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
+		if (movOther) {
+			internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
+			if (stackOther) {
+				otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_other.degree()), otherIndices, true));
+				(*otherStorage) = _other;
+				realOtherPtr = otherStorage.get();
+			}
+		} else {
+			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+		}
+		const IndexedTensorReadOnly<TensorNetwork> &realOther = *realOtherPtr;
+		
+		// Number of Nodes to create
+		const size_t numNodes = realMe.degree()/N;
+		
+		TTNetwork* tmpPtr = new TTNetwork();
+		tmpPtr->factor = 1.0;
+		
+		//The external dimensions are the same as the ones of the input
+		tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
+		REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
+		
+		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
+		TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
+		
+		
+		// Create the externalLinks first, as we know their position in advance
+		outTensor.externalLinks.emplace_back(0, 0, outTensor.dimensions[0], false);
+		for(size_t i = 1; i < numNodes; ++i) {
+			outTensor.externalLinks.emplace_back(i, 1, outTensor.dimensions[i], false);
+		}
+		if(N == 2) {
+			outTensor.externalLinks.emplace_back(0, 1, outTensor.dimensions[numNodes], false);
+			for(size_t i = 1; i < numNodes; ++i) {
+				outTensor.externalLinks.emplace_back(i, 2, outTensor.dimensions[numNodes+i], false);
+			}
+		}
+		
+		
+		if(realMe.degree() == N) {
+			// Create the one Node
+			std::unique_ptr<Tensor> nextTensor;
+			if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse() && realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()) { // Both Sparse
+				nextTensor.reset(realMe.tensorObjectReadOnly->nodes[0].tensorObject->get_copy());
+				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
+				*static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<SparseTensor*>(realOther.tensorObjectReadOnly->nodes[0].tensorObject.get()));
+			} else { // Maximal one sparse
+				if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
+					nextTensor.reset(new FullTensor(*static_cast<SparseTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
+				} else {
+					nextTensor.reset(new FullTensor(*static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
+				}
+				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
+				if(realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<SparseTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
+				} else {
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<FullTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
+				}
+			}
+			
+			outTensor.nodes.emplace_back(std::move(nextTensor));
+			outTensor.nodes.back().neighbors.emplace_back(-1, 0, outTensor.dimensions[0], true);
+			if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, 1, outTensor.dimensions[1], true); }
+			_out.assign(std::move(tmpOut));
+			return true;
+		}
+		
+		for(size_t position = 0; position < numNodes; ++position) {
+			// Get current input nodes
+			// TODO sparse
+			FullTensor &myNode = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position].tensorObject.get());
+			FullTensor &otherNode = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position].tensorObject.get());
+			
+			// Structure has to be (for degree 4)
+			// (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
+			// 			 ( 0  R2 )   ( 0  R3 )   ( R4 )
+			
+			// Create a FullTensor for Node
+			std::vector<size_t> nxtDimensions;
+			if(position != 0) { 
+				nxtDimensions.emplace_back(myNode.dimensions.front()+otherNode.dimensions.front());
+			}
+			nxtDimensions.emplace_back(outTensor.dimensions[position]);
+			if(N == 2) { nxtDimensions.emplace_back(outTensor.dimensions[position+numNodes]); }
+			if(position != numNodes-1) {
+				nxtDimensions.emplace_back(myNode.dimensions.back()+otherNode.dimensions.back());
+			}
+			
+			FullTensor* nxtTensor(new FullTensor(std::move(nxtDimensions)) ); // Ownership is given to the Node.
+			
+			
+			// Create the Node
+			outTensor.nodes.emplace_back(std::unique_ptr<Tensor>(nxtTensor));
+			if(position != 0) { outTensor.nodes.back().neighbors.emplace_back(position-1, ((position == 1) ? 0:1)+N, nxtTensor->dimensions.front(), false); }
+			outTensor.nodes.back().neighbors.emplace_back(-1, position, outTensor.dimensions[position], true);
+			if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, position+numNodes, outTensor.dimensions[position+numNodes], true); }
+			if(position != numNodes-1 ) { outTensor.nodes.back().neighbors.emplace_back(position+1, 0, nxtTensor->dimensions.back(), false); }
 
-            const size_t leftIdxOffset = nxtTensor->size/nxtTensor->dimensions.front();
-            const size_t extIdxOffset = nxtTensor->dimensions.back();
-            const size_t myLeftIdxOffset = myNode.size/myNode.dimensions.front();
-            const size_t myExtIdxOffset = myNode.dimensions.back();
-            const size_t otherLeftIdxOffset = otherNode.size/otherNode.dimensions.front();
-            const size_t otherExtIdxOffset = otherNode.dimensions.back();
-            const size_t otherGeneralOffset = (position == 0 ? 0 : myNode.dimensions.front()*leftIdxOffset) + (position == numNodes-1 ? 0 : myNode.dimensions.back());
-            
-            
-            
-            // Copy own Tensor into place
-            if(position == numNodes-1) {
-                for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
-                    for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
-                        // RightIdx can be copied as one piece
-                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
-                    }
-                }
-            } else {
-                REQUIRE(!myNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
-                for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
-                    for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
-                        // RightIdx can be copied as one piece
-                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
-                    }
-                }
-            }
-            
-            
-            // Copy other Tensor into place
-            if(position == numNodes-1) {
-                for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
-                    for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
-                        // RightIdx can be copied as one piece
-                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
-                    }
-                }
-            } else {
-                REQUIRE(!otherNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
-                for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
-                    for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
-                        // RightIdx can be copied as one piece
-                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
-                    }
-                }
-            }
-        }
-        
-        outTensor.cannonicalize_right();
-        _out.assign(std::move(tmpOut));
-        return true;
-    }
-    
-    
-    template<bool isOperator>
-    void TTNetwork<isOperator>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
-        const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
-        const std::vector<Index> otherIndices = _other.get_assigned_indices();
-        const size_t numNodes = _other.degree()/(isOperator ? 2 :1);
-        
-        REQUIRE(_me.tensorObject == this, "Internal Error.");
-        
-        // First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
-        const TTNetwork* otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
-        if(otherTTN) {
-            // Check whether the index order coincides
-            if(myIndices == otherIndices) {
-                // Assign the other to me
-                *_me.tensorObject = *otherTTN;
-                
-                // Check whether the other is a stack and needs to be contracted
-                const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
-                if (otherTTS) {
-                    contract_stack(_me);
-                    static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
-                }
-                return;
-            }
-            
-            // For TTOperators check whether the index order is transpoed
-            if(isOperator) {
-                bool transposed = false;
-                
-                auto midIndexItr = myIndices.begin();
-                size_t spanSum = 0;
-                while (spanSum < numNodes) {
-                    REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
-                    spanSum += midIndexItr->span;
-                    ++midIndexItr;
-                }
-                if (spanSum == numNodes) {
-                    // tansposition possible on my end
-                    auto otherMidIndexItr = otherIndices.begin();
-                    spanSum = 0;
-                    while (spanSum < numNodes) {
-                        REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
-                        spanSum += otherMidIndexItr->span;
-                        ++otherMidIndexItr;
-                    }
-                    if (spanSum == numNodes) {
-                        // other tensor also transposable
-                        transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
-                                    && (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
-                        
-                    }
-                }
-                
-                if(transposed) {
-                    // Assign the other to me
-                    *_me.tensorObject = *otherTTN;
-                    
-                    // Check whether the other is a stack and needs to be contracted
-                    const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
-                    if (otherTTS) {
-                        contract_stack(_me);
-                        static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
-                    }
-                    static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
-                    return;
-                }
-            }
-        }
-         
-        // Use FullTensor fallback
-        if (_other.tensorObjectReadOnly->nodes.size() > 1) {
-            LOG(warning, "assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
-        }
-        std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
-        std::unique_ptr<Tensor> otherReordered(otherFull->construct_new(otherFull->dimensions, DONT_SET_ZERO()));
-        (*otherReordered)(myIndices) = (*otherFull)(otherIndices);
-        
-        // Cast to TTNetwork
-        if(otherReordered->is_sparse()) {
-            LOG(fatal, "Not yet implemented." ); //TODO
-        } else {
-            *_me.tensorObject = TTNetwork(std::move(*static_cast<FullTensor*>(otherReordered.get())));
-        }
-    }
+			const size_t leftIdxOffset = nxtTensor->size/nxtTensor->dimensions.front();
+			const size_t extIdxOffset = nxtTensor->dimensions.back();
+			const size_t myLeftIdxOffset = myNode.size/myNode.dimensions.front();
+			const size_t myExtIdxOffset = myNode.dimensions.back();
+			const size_t otherLeftIdxOffset = otherNode.size/otherNode.dimensions.front();
+			const size_t otherExtIdxOffset = otherNode.dimensions.back();
+			const size_t otherGeneralOffset = (position == 0 ? 0 : myNode.dimensions.front()*leftIdxOffset) + (position == numNodes-1 ? 0 : myNode.dimensions.back());
+			
+			
+			
+			// Copy own Tensor into place
+			if(position == numNodes-1) {
+				for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
+						// RightIdx can be copied as one piece
+						misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+					}
+				}
+			} else {
+				REQUIRE(!myNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
+				for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
+						// RightIdx can be copied as one piece
+						misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+					}
+				}
+			}
+			
+			
+			// Copy other Tensor into place
+			if(position == numNodes-1) {
+				for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
+						// RightIdx can be copied as one piece
+						misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+					}
+				}
+			} else {
+				REQUIRE(!otherNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
+				for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
+						// RightIdx can be copied as one piece
+						misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+					}
+				}
+			}
+		}
+		
+		outTensor.cannonicalize_right();
+		_out.assign(std::move(tmpOut));
+		return true;
+	}
+	
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
+		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		const size_t numNodes = _other.degree()/(isOperator ? 2 :1);
+		
+		REQUIRE(_me.tensorObject == this, "Internal Error.");
+		
+		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
+		const TTNetwork* otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
+		if(otherTTN) {
+			// Check whether the index order coincides
+			if(myIndices == otherIndices) {
+				// Assign the other to me
+				*_me.tensorObject = *otherTTN;
+				
+				// Check whether the other is a stack and needs to be contracted
+				const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+				if (otherTTS) {
+					contract_stack(_me);
+					static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+				}
+				return;
+			}
+			
+			// For TTOperators check whether the index order is transpoed
+			if(isOperator) {
+				bool transposed = false;
+				
+				auto midIndexItr = myIndices.begin();
+				size_t spanSum = 0;
+				while (spanSum < numNodes) {
+					REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
+					spanSum += midIndexItr->span;
+					++midIndexItr;
+				}
+				if (spanSum == numNodes) {
+					// tansposition possible on my end
+					auto otherMidIndexItr = otherIndices.begin();
+					spanSum = 0;
+					while (spanSum < numNodes) {
+						REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
+						spanSum += otherMidIndexItr->span;
+						++otherMidIndexItr;
+					}
+					if (spanSum == numNodes) {
+						// other tensor also transposable
+						transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
+									&& (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+						
+					}
+				}
+				
+				if(transposed) {
+					// Assign the other to me
+					*_me.tensorObject = *otherTTN;
+					
+					// Check whether the other is a stack and needs to be contracted
+					const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+					if (otherTTS) {
+						contract_stack(_me);
+						static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+					}
+					static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
+					return;
+				}
+			}
+		}
+		 
+		// Use FullTensor fallback
+		if (_other.tensorObjectReadOnly->nodes.size() > 1) {
+			LOG(warning, "assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
+		}
+		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
+		std::unique_ptr<Tensor> otherReordered(otherFull->construct_new(otherFull->dimensions, DONT_SET_ZERO()));
+		(*otherReordered)(myIndices) = (*otherFull)(otherIndices);
+		
+		// Cast to TTNetwork
+		if(otherReordered->is_sparse()) {
+			LOG(fatal, "Not yet implemented." ); //TODO
+		} else {
+			*_me.tensorObject = TTNetwork(std::move(*static_cast<FullTensor*>(otherReordered.get())));
+		}
+	}
 
-    
-    // Explicit instantiation of the two template parameters that will be implemented in the xerus library
-    template class TTNetwork<false>;
-    template class TTNetwork<true>;
+	
+	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
+	template class TTNetwork<false>;
+	template class TTNetwork<true>;
 }
