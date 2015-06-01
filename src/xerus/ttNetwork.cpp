@@ -373,15 +373,15 @@ namespace xerus {
 			for (TensorNode::Link &l : n.neighbors) {
 				if (l.external) {
 					size_t externalNumber = 0;
-					if (N==2) {
+					if (isOperator) {
 						externalNumber = l.indexPosition>=numNodes?1:0;
 					}
 					oldIndices.push_back(ext[externalNumber]);
 					externalDim[externalNumber] = l.dimension;
-				} else if (i >= 1 && l.links(i-1)) {
+				} else if (l.links(i)) {
 					REQUIRE(lastIndices.size() > l.indexPosition, "ie " << lastIndices.size() << " " << l.indexPosition);
 					oldIndices.push_back(lastIndices[l.indexPosition]);
-				} else if (l.links(i+1)) {
+				} else if (l.links(i+2)) {
 					oldIndices.emplace_back();
 					newRight.push_back(oldIndices.back());
 					newRank *= l.dimension;
