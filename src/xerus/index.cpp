@@ -65,7 +65,35 @@ namespace xerus {
         flags[_flag2] = _flagValue2;
     }
     
-    
+	size_t Index::actual_span(const size_t _degree) const {
+		if(flags[Flag::INVERSE_SPAN]) {
+			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have inverse span."); 
+			REQUIRE(span <= _degree, "Index with inverse span would have negative actual span. Tensor degree: " << _degree << ", inverse span " << span);
+			return _degree-span;
+		} else if( flags[Flag::FRACTIONAL_SPAN] ) {
+			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have fractional span.");
+			REQUIRE(_degree%span == 0, "Fractional span must divide the tensor degree. Here tensor degree = " << _degree << ", span = " << span);
+			return _degree/span;
+		} else {
+			REQUIRE(!flags[Flag::FIXED] || span == 1, "Fixed indices must have span one.");
+			return span;
+		}
+	}
+	
+	bool Index::fixed() const {
+		#ifndef DISABLE_RUNTIME_CHECKS_
+			if(flags[Index::Flag::FIXED]) {
+				REQUIRE(!flags[Flag::INVERSE_SPAN], "Fixed indices must not have inverse span."); 
+				REQUIRE(!flags[Flag::FRACTIONAL_SPAN], "Fixed indices must not have fractional span.");
+				REQUIRE(span == 1, "Fixed indices must have span one.");
+				return true;
+			} else {
+				return false;
+			}
+		#else
+			return flags[Index::Flag::FIXED];
+		#endif
+	}
     
     bool Index::open() const {
         REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");

@@ -109,10 +109,11 @@ namespace xerus {
         /// Indices are default moveable.
         Index& operator=(Index&&) = default;
         
+		/// Returns the span this index actually represents in a tensor of given order.
+		size_t actual_span(const size_t _degree) const;
+		
         /// Checks whether the Index represents a fixed number.
-        bool fixed() const {
-            return flags[Index::Flag::FIXED];
-        }
+        bool fixed() const;
         
         /// Checks whether the index is open.
         bool open() const;

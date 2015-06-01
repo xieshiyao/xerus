@@ -33,7 +33,7 @@ namespace xerus {
         size_t lhsSpan = 1, rhsSpan = 1; // Start with 1 because there is a new dimension introduced in the split. 
         
         for(const Index& idx : baseIndices) {
-            if(_base.is_open(idx)) { // TODO inefficent
+            if(idx.open()) { // TODO inefficent
                 if(misc::contains(_lhs.indices, idx)) { 
                     lhsSpan += idx.span; 
                 } else {

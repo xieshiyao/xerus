@@ -52,7 +52,7 @@ namespace xerus {
             std::vector<Index> lhsOpen;
             size_t lhsOpenDim = 0;
             for(size_t i = 0; i < lhsIndices.size(); ++i) {
-                if(_lhs.is_open(lhsIndices[i])) {
+                if(lhsIndices[i].open()) {
                     lhsOpen.emplace_back(lhsIndices[i]);
                     lhsOpenDim += lhsIndices[i].span;
                     if(!misc::contains(rhsIndices, lhsIndices[i])) {
@@ -66,7 +66,7 @@ namespace xerus {
             std::vector<Index> rhsOpen;
             size_t rhsOpenDim = 0;
             for(size_t i = 0; i < rhsIndices.size(); ++i) {
-                if(_rhs.is_open(rhsIndices[i])) {
+                if(rhsIndices[i].open()) {
                     rhsOpen.emplace_back(rhsIndices[i]);
                     rhsOpenDim += rhsIndices[i].span;
                     if(!misc::contains(lhsIndices, rhsIndices[i])) {
