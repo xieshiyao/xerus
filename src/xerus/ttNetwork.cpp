@@ -64,13 +64,13 @@ namespace xerus {
 			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
 			std::move(neighbors)
 		);
-		for (size_t i=1; i<=numComponents; ++i) {
+		for (size_t i=0; i<numComponents; ++i) {
 			neighbors.clear();
-			neighbors.emplace_back(i-1, i==1?0:N+1, 1, false);
+			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
 			for (size_t j=0; j< N; ++j) { 
 				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
 			}
-			neighbors.emplace_back(i+1, 0, 1, false);
+			neighbors.emplace_back(i+2, 0, 1, false);
 			
 			nodes.emplace_back(
 				std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
@@ -475,10 +475,10 @@ namespace xerus {
 				REQUIRE(node.neighbors[0].other == n, "n=" << n);
 				REQUIRE(node.neighbors[0].indexPosition == (n==0?0:N+1), "n=" << n << " " << node.neighbors[0].indexPosition);
 				REQUIRE(node.neighbors[1].external, "n=" << n);
-				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
+				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[1].indexPosition);
 				if (isOperator) {
 					REQUIRE(node.neighbors[2].external, "n=" << n);
-					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
+					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[2].indexPosition << " vs " << numNodes+n);
 				}
 				if (node.tensorObject) {
 					if (n<numComponents-1) {

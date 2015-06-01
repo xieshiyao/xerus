@@ -24,10 +24,10 @@ namespace xerus {
         generic_error::generic_error() {}
             
         generic_error::generic_error(const generic_error &_other) noexcept
-            : error_info(_other.error_info.str()) { }
+            : error_info(_other.error_info) { }
         
         const char* generic_error::what() const noexcept {
-            return error_info.str().c_str();
+            return error_info.c_str();
         }
         
     }
