@@ -921,7 +921,7 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+	bool TTNetwork<isOperator>::specialized_contraction_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
 		REQUIRE(!_out.tensorObject, "Internal Error.");
 		
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
@@ -930,11 +930,45 @@ namespace xerus {
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
 		
-		bool otherTT = dynamic_cast<const TTTensor *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<false> *>(_other.tensorObjectReadOnly);
-		bool otherTO = !otherTT && (dynamic_cast<const TTOperator *>(_other.tensorObjectReadOnly) || dynamic_cast<const internal::TTStack<true> *>(_other.tensorObjectReadOnly));
+		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
+		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
+		REQUIRE(meTT || meTTStack, "ie");
 		
-		if (!otherTT && !otherTO) {
+		const TTTensor* const otherTT = dynamic_cast<const TTTensor*>(_other.tensorObjectReadOnly);
+		const internal::TTStack<false>* const otherTTStack = dynamic_cast<const internal::TTStack<false>*>(_other.tensorObjectReadOnly);
+		const TTOperator* const otherTTO = dynamic_cast<const TTOperator*>(_other.tensorObjectReadOnly);
+		const internal::TTStack<true>* const otherTTOStack = dynamic_cast<const internal::TTStack<true>*>(_other.tensorObjectReadOnly);
+		
+		if (!otherTT && !otherTTStack && !otherTTO && !otherTTOStack) {
 			return false;
+		}
+		
+		bool cannoAtTheEnd = false;
+		size_t coreAtTheEnd = 0;
+		if (meTT) {
+			cannoAtTheEnd = meTT->cannonicalized;
+			coreAtTheEnd = meTT->corePosition;
+		} else {
+			cannoAtTheEnd = meTTStack->cannonicalization_required;
+			coreAtTheEnd = meTTStack->futureCorePosition;
+		}
+		
+		if (otherTT) {
+			if (!otherTT->cannonicalized || coreAtTheEnd != otherTT->corePosition) {
+				cannoAtTheEnd = false;
+			}
+		} else if (otherTTO) {
+			if (!otherTTO->cannonicalized || coreAtTheEnd != otherTTO->corePosition) {
+				cannoAtTheEnd = false;
+			}
+		} else if (otherTTStack) {
+			if (!otherTTStack->cannonicalization_required || coreAtTheEnd != otherTTStack->futureCorePosition) {
+				cannoAtTheEnd = true;
+			}
+		} else if (otherTTOStack) {
+			if (!otherTTOStack->cannonicalization_required || coreAtTheEnd != otherTTOStack->futureCorePosition) {
+				cannoAtTheEnd = true;
+			}
 		}
 		
 		// Determine my first half and second half of indices
@@ -952,7 +986,7 @@ namespace xerus {
 		if (otherTT) {
 			// ensure fitting indices
 			if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
-				TensorNetwork *res = new internal::TTStack<false>;
+				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
 				res->factor *= _other.tensorObjectReadOnly->factor;
 				_out.reset(res, myIndices, true);
@@ -979,7 +1013,7 @@ namespace xerus {
 				|| misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
 				|| misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())	) 
 			{
-				TensorNetwork *res = new internal::TTStack<true>;
+				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
 				res->factor *= _other.tensorObjectReadOnly->factor;
 				_out.reset(res, myIndices, true);
@@ -992,17 +1026,18 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
 		
 		// If the indices are in different order, we are lost. TODO inverse order is also ok...
-		if(myIndices != otherIndices) { return false; }
+		if (myIndices != otherIndices) { return false; }
 		REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
 		
 		// If the other is not a TT tensor (or stack) we are also lost
-		const TTNetwork* _otherPtr = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
-		if(!_otherPtr) { return false; }
+		const TTNetwork* otherTT = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
+		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
+		if (!otherTT && !otherTTStack) { return false; }
 		
 		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
 		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
@@ -1202,23 +1237,30 @@ namespace xerus {
 		
 		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
 		const TTNetwork* const otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
-		if(otherTTN) {
+		TTNetwork* const meTTN = dynamic_cast<TTNetwork*>(_me.tensorObject);
+		REQUIRE(meTTN, "ie");
+		const internal::TTStack<isOperator>* const otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
+		if (otherTTStack) {
+			REQUIRE(movOther, "not moveable TTStack encountered...");
+			contract_stack(*movOther);
+		}
+		if(otherTTN || otherTTStack) {
 			// Check whether the index order coincides
-			if(myIndices == otherIndices) {
-				// Assign the other to me
-				*_me.tensorObject = *otherTTN;
-				
-				// Check whether the other is a stack and needs to be contracted
-				const internal::TTStack<isOperator>* const otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
-				if (otherTTS) {
-					contract_stack(_me);
-					static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_left(); // TODO cannonicalize_right should be called by contract_stack
+			if (myIndices == otherIndices) {
+				if (otherTTN) {
+					*_me.tensorObject = *otherTTN;
+				} else {
+					static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
+					if (otherTTStack->cannonicalization_required) {
+						meTTN->move_core(otherTTStack->futureCorePosition);
+					}
 				}
 				return;
 			}
 			
-			// For TTOperators also check whether the index order is transpoed
-			if(isOperator) {
+			// For TTOperators also check whether the index order is transposed
+			if (isOperator) {
 				bool transposed = false;
 				
 				auto midIndexItr = myIndices.begin();
@@ -1244,18 +1286,17 @@ namespace xerus {
 					}
 				}
 				
-				if(transposed) {
-					// Assign the other to me
-					*_me.tensorObject = *otherTTN;
-					
-					// Check whether the other is a stack and needs to be contracted
-					const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
-					if (otherTTS) {
-						contract_stack(_me);
-						static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_left(); // TODO cannonicalize_right should be called by contract_stack
+				if (transposed) {
+					if (otherTTN) {
+						*_me.tensorObject = *otherTTN;
+					} else {
+						static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
+						if (otherTTStack->cannonicalization_required) {
+							meTTN->move_core(otherTTStack->futureCorePosition);
+						}
 					}
 					REQUIRE(is_valid_tt(), "Internal Error.");
-					static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
+					dynamic_cast<TTOperator*>(_me.tensorObject)->transpose(); // NOTE will never be called if !isOperator
 					return;
 				}
 			}

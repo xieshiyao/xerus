@@ -191,8 +191,14 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
-        virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override;
+		static bool specialized_contraction_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
+		static bool specialized_sum_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
+        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
+			return specialized_contraction_f(_out, _me, _other);
+		}
+        virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
+			return specialized_sum_f(_out, _me, _other);
+		}
         virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) override;
         
     };
@@ -210,13 +216,24 @@ namespace xerus {
 
     namespace internal {
         template<bool isOperator>
-        /// Internal class used to represent stacks consiting of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
-        class TTStack : public TTNetwork<isOperator> {
+        /// Internal class used to represent stacks of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
+        class TTStack : public TensorNetwork {
         public:
+			bool cannonicalization_required;
+			size_t futureCorePosition;
+			
+			explicit TTStack(bool _canno, size_t _corePos=0) : cannonicalization_required(_canno), futureCorePosition(_corePos) {};
+			
             /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
             virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me _unused_ , const IndexedTensorReadOnly<TensorNetwork> &_other _unused_) override {
                 LOG(fatal, "TTStack not supported as a storing type");
             }
+            virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
+				return TTNetwork<isOperator>::specialized_contraction_f(_out, _me, _other);
+			}
+			virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
+				return TTNetwork<isOperator>::specialized_sum_f(_out, _me, _other);
+			}
             
             virtual TensorNetwork* get_copy() const override {
                 LOG(fatal, "Forbidden");
