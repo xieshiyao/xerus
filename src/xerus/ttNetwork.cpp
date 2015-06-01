@@ -1127,14 +1127,14 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
-		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
-		const std::vector<Index> otherIndices = _other.get_assigned_indices();
-		const size_t numNodes = _other.degree()/(isOperator ? 2 :1);
-		
 		REQUIRE(_me.tensorObject == this, "Internal Error.");
 		
+		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
+		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		const size_t numComponents = _other.degree()/N;
+		
 		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
-		const TTNetwork* otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
+		const TTNetwork* const otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
 		if(otherTTN) {
 			// Check whether the index order coincides
 			if(myIndices == otherIndices) {
@@ -1142,7 +1142,7 @@ namespace xerus {
 				*_me.tensorObject = *otherTTN;
 				
 				// Check whether the other is a stack and needs to be contracted
-				const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
+				const internal::TTStack<isOperator>* const otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
 				if (otherTTS) {
 					contract_stack(_me);
 					static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
@@ -1150,31 +1150,30 @@ namespace xerus {
 				return;
 			}
 			
-			// For TTOperators check whether the index order is transpoed
+			// For TTOperators also check whether the index order is transpoed
 			if(isOperator) {
 				bool transposed = false;
 				
 				auto midIndexItr = myIndices.begin();
 				size_t spanSum = 0;
-				while (spanSum < numNodes) {
+				while (spanSum < numComponents) {
 					REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
 					spanSum += midIndexItr->span;
 					++midIndexItr;
 				}
-				if (spanSum == numNodes) {
-					// tansposition possible on my end
+				if (spanSum == numComponents) {
+					// Transposition possible on my end
 					auto otherMidIndexItr = otherIndices.begin();
 					spanSum = 0;
-					while (spanSum < numNodes) {
+					while (spanSum < numComponents) {
 						REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
 						spanSum += otherMidIndexItr->span;
 						++otherMidIndexItr;
 					}
-					if (spanSum == numNodes) {
-						// other tensor also transposable
+					if (spanSum == numComponents) {
+						// Other tensor also transposable
 						transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
 									&& (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
-						
 					}
 				}
 				
@@ -1195,11 +1194,9 @@ namespace xerus {
 		}
 		 
 		// Use FullTensor fallback
-		if (_other.tensorObjectReadOnly->nodes.size() > 1) {
-			LOG(warning, "assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
-		}
+		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
 		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
-		std::unique_ptr<Tensor> otherReordered(otherFull->construct_new(otherFull->dimensions, DONT_SET_ZERO()));
+		std::unique_ptr<Tensor> otherReordered(otherFull->construct_new());
 		(*otherReordered)(myIndices) = (*otherFull)(otherIndices);
 		
 		// Cast to TTNetwork
@@ -1209,7 +1206,6 @@ namespace xerus {
 			*_me.tensorObject = TTNetwork(std::move(*static_cast<FullTensor*>(otherReordered.get())));
 		}
 	}
-
 	
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 	template class TTNetwork<false>;

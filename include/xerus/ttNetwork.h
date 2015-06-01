@@ -31,12 +31,13 @@ namespace xerus {
 	/// The TTNetwork class is used to represent TTTensor and TToperators (depending on the template argument) and is a special kind of TensorNetwork.
     class TTNetwork : public TensorNetwork {
 	protected:
-		static constexpr size_t N=isOperator?2:1;
+		static constexpr const size_t N=isOperator?2:1;
 		
 		enum cannonicalization_t {
 			NONE, LEFT, RIGHT
 		};
-		cannonicalization_t cannonicalization; 
+		cannonicalization_t cannonicalization;
+		
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// Constructs an order zero TTNetwork.
