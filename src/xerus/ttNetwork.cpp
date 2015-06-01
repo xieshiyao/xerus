@@ -33,7 +33,7 @@
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(), cannonicalization(RIGHT) {
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(), cannonicalized(true), corePosition(0) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
 		factor = 0.0;
@@ -64,13 +64,13 @@ namespace xerus {
 			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
 			std::move(neighbors)
 		);
-		for (size_t i=1; i<=numComponents; ++i) {
+		for (size_t i=0; i<numComponents; ++i) {
 			neighbors.clear();
-			neighbors.emplace_back(i-1, i==1?0:N+1, 1, false);
+			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
 			for (size_t j=0; j< N; ++j) { 
 				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
 			}
-			neighbors.emplace_back(i+1, 0, 1, false);
+			neighbors.emplace_back(i+2, 0, 1, false);
 			
 			nodes.emplace_back(
 				std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
@@ -123,6 +123,7 @@ namespace xerus {
 			tmpTensor(newIndices) = _full(presentIndices);
 			currentVt = tmpTensor.data;
 		}
+		workingData = currentVt;
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
 			workingData = std::move(currentVt);
@@ -183,7 +184,7 @@ namespace xerus {
 		// set last component tensor to Vt
 		set_component(numComponents-1, std::move(nxtTensor));
 		
-		cannonicalization = RIGHT;
+		move_core(0); // TODO create with correct cannonicalization in the first place
 		
 		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
 		REQUIRE(is_in_expected_format(), "ie");
@@ -191,10 +192,14 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) : TensorNetwork(_cpy), cannonicalization(_cpy.cannonicalization) { }
+	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) 
+		: TensorNetwork(_cpy), cannonicalized(_cpy.cannonicalized), corePosition(_cpy.corePosition)
+	{ }
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(	  TTNetwork&& _mov) : TensorNetwork(std::move(_mov)), cannonicalization(_mov.cannonicalization) { }
+	TTNetwork<isOperator>::TTNetwork(TTNetwork&& _mov) 
+		: TensorNetwork(std::move(_mov)), cannonicalized(_mov.cannonicalized), corePosition(_mov.corePosition) 
+	{ }
 
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
@@ -239,7 +244,7 @@ namespace xerus {
 		}
 		
 		REQUIRE(result.is_valid_tt(), "ie");
-		result.cannonicalize_right();
+		result.cannonicalize_left();
 		return result;
 	}
 	
@@ -405,6 +410,7 @@ namespace xerus {
 			n.tensorObject->reinterpret_dimensions(newDimensions);
 		}
 		
+		// TODO set core position according to information in TTStack
 		
 		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
 	}
@@ -417,6 +423,7 @@ namespace xerus {
 			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
 			REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
 			REQUIRE(std::isfinite(factor), factor);
+			REQUIRE(!cannonicalized || corePosition < numComponents, corePosition << " vs " << numComponents);
 			
 			// per external link
 			for (size_t n=0; n<externalLinks.size(); ++n) {
@@ -469,10 +476,10 @@ namespace xerus {
 				REQUIRE(node.neighbors[0].other == n, "n=" << n);
 				REQUIRE(node.neighbors[0].indexPosition == (n==0?0:N+1), "n=" << n << " " << node.neighbors[0].indexPosition);
 				REQUIRE(node.neighbors[1].external, "n=" << n);
-				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[0].indexPosition);
+				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[1].indexPosition);
 				if (isOperator) {
 					REQUIRE(node.neighbors[2].external, "n=" << n);
-					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[1].indexPosition << " vs " << numNodes+n);
+					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[2].indexPosition << " vs " << numNodes+n);
 				}
 				if (node.tensorObject) {
 					if (n<numComponents-1) {
@@ -522,6 +529,9 @@ namespace xerus {
 				externalLinks[currNode.neighbors[i].indexPosition].dimension = currNode.tensorObject->dimensions[i];
 			}
 		}
+		if (cannonicalized && corePosition != _idx) {
+			cannonicalized = false;
+		}
 	}
 	
 	template<bool isOperator>
@@ -535,6 +545,9 @@ namespace xerus {
 			if (currNode.neighbors[i].external) {
 				externalLinks[currNode.neighbors[i].indexPosition].dimension = currNode.tensorObject->dimensions[i];
 			}
+		}
+		if (cannonicalized && corePosition != _idx) {
+			cannonicalized = false;
 		}
 	}
 	
@@ -604,6 +617,21 @@ namespace xerus {
 			}
 		}
 		
+		if (_lhs.cannonicalized && _rhs.cannonicalized) {
+			if (_lhs.corePosition == 0 && _rhs.corePosition == 0) {
+				result.cannonicalized = true;
+				result.corePosition = lhsNumComponents;
+				result.move_core(0);
+			}
+			if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
+				result.cannonicalized = true;
+				result.corePosition = lhsNumComponents-1;
+				result.move_core(lhsNumComponents + rhsNumComponents -1);
+			}
+		} else {
+			result.cannonicalized = false;
+		}
+		
 		REQUIRE(result.is_valid_tt(), "ie");
 		return result;
 	}
@@ -613,10 +641,11 @@ namespace xerus {
 		if (_tensors.size() == 0) {
 			return TTNetwork();
 		} 
-		TTNetwork result(_tensors.front());
-		for (size_t i=0; i<_tensors.size(); ++i) {
+		TTNetwork result(_tensors.back());
+		// construct dyadic products right to left as default cannonicalization is left
+		for (size_t i=_tensors.size()-1; i>0; --i) {
 			REQUIRE_TEST;
-			result = dyadic_product(result, _tensors[i]);
+			result = dyadic_product(_tensors[i-1], result);
 		}
 		return result;
 	}
@@ -691,20 +720,35 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::round(value_t _eps) {
-		cannonicalize_left();
+		const bool oldCannon = cannonicalized;
+		const size_t oldCorePos = corePosition;
+		move_core(0);
 		round_train(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
+		if (oldCannon) {
+			move_core(oldCorePos);
+		}
 	}
 
 	template<bool isOperator>
 	void TTNetwork<isOperator>::round(size_t _maxRank) {
-		cannonicalize_left();
-		round_train(std::vector<size_t>(degree()/N-1 ,_maxRank), 1e-15);
+		const bool oldCannon = cannonicalized;
+		const size_t oldCorePos = corePosition;
+		move_core(0);
+		round_train(std::vector<size_t>(degree()/N-1, _maxRank), 1e-15);
+		if (oldCannon) {
+			move_core(oldCorePos);
+		}
 	}
 
 	template<bool isOperator>
 	void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
-		cannonicalize_left();
+		const bool oldCannon = cannonicalized;
+		const size_t oldCorePos = corePosition;
+		move_core(0);
 		round_train(_maxRanks, 1e-15);
+		if (oldCannon) {
+			move_core(oldCorePos);
+		}
 	}
 	
 	template<bool isOperator>
@@ -738,47 +782,45 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::cannonicalize_left() {
-		REQUIRE(is_valid_tt(), "cannot round invalid TT");
-		if (degree() == 0) {
-			cannonicalization = LEFT;
-			return;
-		}
+	void TTNetwork<isOperator>::move_core(size_t _position) {
+		REQUIRE(is_valid_tt(), "cannot cannonicalize invalid TT");
+		const size_t numComponents = degree()/N;
+		REQUIRE(_position < numComponents, "illegal position for core chosen");
 		Index i,r,j;
 		FullTensor core(2);
-		for (size_t n=nodes.size()-2; n > 1; --n) {
-			Tensor &currTensor = *nodes[n].tensorObject;
-			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?
-			Tensor &nextTensor = *nodes[n-1].tensorObject;
-			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
-			if (currTensor.dimensions[0] != nodes[n].neighbors.front().dimension) {
-				nodes[n].neighbors.front().dimension = nodes[n-1].neighbors.back().dimension = currTensor.dimensions[0];
+		const size_t fromLeft = cannonicalized? corePosition : 0;
+		const size_t fromRight = cannonicalized? corePosition : (numComponents - 1);
+		// move right?
+		for (size_t n=fromLeft; n<_position; ++n) {
+			Tensor &currTensor = *nodes[n+1].tensorObject;
+			( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j)); //TODO we want a rank-detecting QR at this point?
+			Tensor &nextTensor = *nodes[n+2].tensorObject;
+			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
+			if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
+				nodes[n+2].neighbors.front().dimension = nodes[n+1].neighbors.back().dimension = nextTensor.dimensions[0];
 			}
 		}
-		
-		cannonicalization = LEFT;
+		for (size_t n=fromRight; n > _position; --n) {
+			Tensor &currTensor = *nodes[n+1].tensorObject;
+			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));  //TODO we want a rank-detecting QR at this point?
+			Tensor &nextTensor = *nodes[n].tensorObject;
+			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
+			if (currTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
+				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = currTensor.dimensions[0];
+			}
+		}
+		cannonicalized = true;
+		corePosition = _position;
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::cannonicalize_left() {
+		move_core(0);
 	}
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::cannonicalize_right() {
-		REQUIRE(is_valid_tt(), "cannot round invalid TT");
-		if (degree() == 0) {
-			cannonicalization = RIGHT;
-			return;
-		}
-		Index i,r,j;
-		FullTensor core(2);
-		for (size_t n=1; n+2<nodes.size(); ++n) {
-			Tensor &currTensor = *nodes[n].tensorObject;
-			( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j)); //TODO we want a rank-detecting QR at this point?
-			Tensor &nextTensor = *nodes[n+1].tensorObject;
-			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
-			if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
-				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = nextTensor.dimensions[0];
-			}
-		}
-		
-		cannonicalization = RIGHT;
+		move_core(degree()/N-1);
 	}
 	
 	template<bool isOperator>
@@ -789,14 +831,12 @@ namespace xerus {
 	template<bool isOperator>
 	value_t TTNetwork<isOperator>::frob_norm() const {
 		REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
-		switch (cannonicalization) {
-			case LEFT: return nodes.front().tensorObject->frob_norm();
-			case RIGHT: return nodes.back().tensorObject->frob_norm();
-			default:
-				Index i;
-				return (*((*this)(i&0)*(*this)(i&0)).tensorObject)[0];
+		if (cannonicalized) {
+			return get_component(corePosition).frob_norm();
+		} else {
+			Index i;
+			return (*((*this)(i&0)*(*this)(i&0)).tensorObject)[0];
 		}
-		
 	}
 	
 	template<bool isOperator>
@@ -939,8 +979,6 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
-		const size_t N = isOperator?2:1;
-		
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
 		
@@ -985,10 +1023,10 @@ namespace xerus {
 		}
 		const IndexedTensorReadOnly<TensorNetwork> &realOther = *realOtherPtr;
 		
-		// Number of Nodes to create
-		const size_t numNodes = realMe.degree()/N;
+		// Number of components to create
+		const size_t numComponents = realMe.degree()/N;
 		
-		TTNetwork* tmpPtr = new TTNetwork();
+		TTNetwork* tmpPtr = new TTNetwork(realMe.degree());
 		tmpPtr->factor = 1.0;
 		
 		//The external dimensions are the same as the ones of the input
@@ -998,53 +1036,55 @@ namespace xerus {
 		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
 		TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
 		
-		
-		// Create the externalLinks first, as we know their position in advance
-		outTensor.externalLinks.emplace_back(0, 0, outTensor.dimensions[0], false);
-		for(size_t i = 1; i < numNodes; ++i) {
-			outTensor.externalLinks.emplace_back(i, 1, outTensor.dimensions[i], false);
-		}
-		if(N == 2) {
-			outTensor.externalLinks.emplace_back(0, 1, outTensor.dimensions[numNodes], false);
-			for(size_t i = 1; i < numNodes; ++i) {
-				outTensor.externalLinks.emplace_back(i, 2, outTensor.dimensions[numNodes+i], false);
-			}
+		if (numComponents == 0) {
+			outTensor.factor = _me.tensorObjectReadOnly->factor + _other.tensorObjectReadOnly->factor;
+			return true;
 		}
 		
-		
-		if(realMe.degree() == N) {
+		if(numComponents == 1) {
 			// Create the one Node
 			std::unique_ptr<Tensor> nextTensor;
-			if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse() && realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()) { // Both Sparse
-				nextTensor.reset(realMe.tensorObjectReadOnly->nodes[0].tensorObject->get_copy());
+			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[0].tensorObject.get();
+			const Tensor &otherComponent = *realOther.tensorObjectReadOnly->nodes[0].tensorObject.get();
+			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
+				nextTensor.reset(myComponent.get_copy());
 				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-				*static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<SparseTensor*>(realOther.tensorObjectReadOnly->nodes[0].tensorObject.get()));
-			} else { // Maximal one sparse
-				if(realMe.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
-					nextTensor.reset(new FullTensor(*static_cast<SparseTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
+				*static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<const SparseTensor*>(&otherComponent));
+			} else { // at most one sparse
+				if(myComponent.is_sparse()){
+					nextTensor.reset(new FullTensor(*static_cast<const SparseTensor*>(&myComponent)));
 				} else {
-					nextTensor.reset(new FullTensor(*static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[0].tensorObject.get())));
+					nextTensor.reset(new FullTensor(*static_cast<const FullTensor*>(&myComponent)));
 				}
 				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-				if(realOther.tensorObjectReadOnly->nodes[0].tensorObject->is_sparse()){
-					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<SparseTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
+				if(otherComponent.is_sparse()){
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<const SparseTensor&>(otherComponent);
 				} else {
-					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<FullTensor&>(*realOther.tensorObjectReadOnly->nodes[0].tensorObject.get());
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<const FullTensor&>(otherComponent);
 				}
 			}
 			
-			outTensor.nodes.emplace_back(std::move(nextTensor));
-			outTensor.nodes.back().neighbors.emplace_back(-1, 0, outTensor.dimensions[0], true);
-			if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, 1, outTensor.dimensions[1], true); }
+			outTensor.set_component(0, std::move(nextTensor));
 			_out.assign(std::move(tmpOut));
 			return true;
 		}
 		
-		for(size_t position = 0; position < numNodes; ++position) {
+		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
+		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOther.tensorObjectReadOnly);
+		
+		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition != ttOther->corePosition) {
+			LOG(warning, "Adding TTTensors of different cannonicalizations. This is usually ill-conditioned! (result will have no single core)");
+		}
+		if ((ttMe->cannonicalized && !ttOther->cannonicalized) || (!ttMe->cannonicalized && ttOther->cannonicalized)) {
+			LOG(info, "Adding TTTensors without cannonicalization to TTTensor with defined core position. "
+					  "The sum is usually better conditioned if the same core position is enforced for both TTTensors beforehand");
+		}
+		
+		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current input nodes
 			// TODO sparse
-			FullTensor &myNode = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position].tensorObject.get());
-			FullTensor &otherNode = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position].tensorObject.get());
+			FullTensor &myComponent = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
+			FullTensor &otherComponent = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
 			
 			// Structure has to be (for degree 4)
 			// (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
@@ -1052,74 +1092,87 @@ namespace xerus {
 			
 			// Create a FullTensor for Node
 			std::vector<size_t> nxtDimensions;
-			if(position != 0) { 
-				nxtDimensions.emplace_back(myNode.dimensions.front()+otherNode.dimensions.front());
+			if (position == 0) { 
+				nxtDimensions.emplace_back(1);
+			} else {
+				nxtDimensions.emplace_back(myComponent.dimensions.front()+otherComponent.dimensions.front());
 			}
 			nxtDimensions.emplace_back(outTensor.dimensions[position]);
-			if(N == 2) { nxtDimensions.emplace_back(outTensor.dimensions[position+numNodes]); }
-			if(position != numNodes-1) {
-				nxtDimensions.emplace_back(myNode.dimensions.back()+otherNode.dimensions.back());
+			if (isOperator) { nxtDimensions.emplace_back(outTensor.dimensions[position+numComponents]); }
+			if (position == numComponents-1) {
+				nxtDimensions.emplace_back(1);
+			} else {
+				nxtDimensions.emplace_back(myComponent.dimensions.back()+otherComponent.dimensions.back());
 			}
 			
-			FullTensor* nxtTensor(new FullTensor(std::move(nxtDimensions)) ); // Ownership is given to the Node.
+			std::unique_ptr<Tensor> newComponent(new FullTensor(std::move(nxtDimensions)) );
+			value_t * const componentData = static_cast<FullTensor*>(newComponent.get())->data.get();
 			
 			
-			// Create the Node
-			outTensor.nodes.emplace_back(std::unique_ptr<Tensor>(nxtTensor));
-			if(position != 0) { outTensor.nodes.back().neighbors.emplace_back(position-1, ((position == 1) ? 0:1)+N, nxtTensor->dimensions.front(), false); }
-			outTensor.nodes.back().neighbors.emplace_back(-1, position, outTensor.dimensions[position], true);
-			if(N == 2) { outTensor.nodes.back().neighbors.emplace_back(-1, position+numNodes, outTensor.dimensions[position+numNodes], true); }
-			if(position != numNodes-1 ) { outTensor.nodes.back().neighbors.emplace_back(position+1, 0, nxtTensor->dimensions.back(), false); }
-
-			const size_t leftIdxOffset = nxtTensor->size/nxtTensor->dimensions.front();
-			const size_t extIdxOffset = nxtTensor->dimensions.back();
-			const size_t myLeftIdxOffset = myNode.size/myNode.dimensions.front();
-			const size_t myExtIdxOffset = myNode.dimensions.back();
-			const size_t otherLeftIdxOffset = otherNode.size/otherNode.dimensions.front();
-			const size_t otherExtIdxOffset = otherNode.dimensions.back();
-			const size_t otherGeneralOffset = (position == 0 ? 0 : myNode.dimensions.front()*leftIdxOffset) + (position == numNodes-1 ? 0 : myNode.dimensions.back());
-			
-			
+			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();
+			const size_t extIdxOffset = newComponent->dimensions.back();
+			const size_t myLeftIdxOffset = myComponent.size/myComponent.dimensions.front();
+			const size_t myExtIdxOffset = myComponent.dimensions.back();
+			const size_t otherLeftIdxOffset = otherComponent.size/otherComponent.dimensions.front();
+			const size_t otherExtIdxOffset = otherComponent.dimensions.back();
+			const size_t otherGeneralOffset = (position == 0 ? 0 : myComponent.dimensions.front()*leftIdxOffset) + (position == numComponents-1 ? 0 : myComponent.dimensions.back());
+			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[1] : 1);
 			
 			// Copy own Tensor into place
-			if(position == numNodes-1) {
-				for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+			if (!cannonicalized || position == corePosition) {
+				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
+						// RightIdx can be copied in one piece
+						misc::array_scaled_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
+												myComponent.factor*realMe.tensorObjectReadOnly->factor, 
+												myComponent.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
+												myComponent.dimensions.back());
 					}
 				}
 			} else {
-				REQUIRE(!myNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
+				REQUIRE(!myComponent.has_factor(), "Only Core node is allowed to have a factor");
+				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
-						misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
+										 myComponent.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
+										 myComponent.dimensions.back());
 					}
 				}
 			}
 			
 			
 			// Copy other Tensor into place
-			if(position == numNodes-1) {
-				for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
+			if(!cannonicalized || position == corePosition) {
+				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
-						misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+						misc::array_scaled_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
+												otherComponent.factor*realOther.tensorObjectReadOnly->factor, 
+												otherComponent.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
+												otherComponent.dimensions.back());
 					}
 				}
 			} else {
-				REQUIRE(!otherNode.has_factor(), "Only Core node, which has to be the last node, is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
+				REQUIRE(!otherComponent.has_factor(), "Only Core node is allowed to have a factor");
+				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
+					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
-						misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
+										 otherComponent.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
+										 otherComponent.dimensions.back());
 					}
 				}
 			}
+			
+			outTensor.set_component(position, std::move(newComponent));
 		}
 		
-		outTensor.cannonicalize_right();
+		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition == ttOther->corePosition) {
+			outTensor.move_core(ttMe->corePosition);
+		}
+		
+		REQUIRE(outTensor.is_valid_tt(), "ie");
 		_out.assign(std::move(tmpOut));
 		return true;
 	}

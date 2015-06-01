@@ -21,12 +21,13 @@
 
 #include <exception>
 #include <sstream>
+#include "stringUtilities.h"
 
 namespace xerus {
     namespace misc {
         class generic_error : public std::exception {
         protected:
-            std::stringstream error_info;
+            std::string error_info;
             
         public:
             generic_error();
@@ -37,7 +38,7 @@ namespace xerus {
             
             template<class T>
             generic_error& operator<<(const T &_info) noexcept {
-                error_info << _info;
+                error_info += to_string(_info);
                 return *this;
             }
         };
