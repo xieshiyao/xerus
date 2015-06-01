@@ -28,64 +28,70 @@
     #include "namedLogger.h"
     #include "stringUtilities.h"
 
+    namespace xerus {
+		namespace misc {
+			namespace internal {
 
-    struct ___UnitTest final {
-        // order of contruction of global objects is random so the first one has to create the map
-        static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
-        
-        ___UnitTest(std::string _group, std::string _name, std::function<bool ()> _f) {
-            if (!tests) {
-                tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
-            }
-            if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
-                LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
-            }
-            (*tests)[_group][_name] = _f;
-        }
-    };
+				struct UnitTest final {
+					// order of contruction of global objects is random so the first one has to create the map
+					static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
+					
+					UnitTest(std::string _group, std::string _name, std::function<bool ()> _f) {
+						if (!tests) {
+							tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
+						}
+						if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
+							LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
+						}
+						(*tests)[_group][_name] = _f;
+					}
+				};
 
-    struct ___RequiredTest {
-        struct identifier {
-            std::string functionName;
-            std::string filename;
-            size_t lineNumber;
-            identifier(std::string _func, std::string _file, size_t _line) 
-                : functionName(_func), filename(_file), lineNumber(_line) {}
-            bool operator<(const identifier &_rhs) const {
-                if (functionName < _rhs.functionName) {
-                    return true;
-                } else if (functionName == _rhs.functionName && lineNumber < _rhs.lineNumber) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        };
-        
-        // order of construction of global objects is random so the first one has to create the map
-        static std::map<identifier, size_t> *tests;
-        
-        static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb) 
-        {
-            if (!tests) {
-                tests = new std::map<identifier, size_t>();
-            }
-            identifier key = identifier(_functionName, _fileName, _lineNb);
-    // 		std::cout << "registered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
-            if (tests->count(key) == 0) {
-                (*tests)[key] = 0;
-            }
-        }
-        
-        static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb) {
-            if (!tests) {
-                // this can happen if some function in the init section (ie. before main) use REQUIREs
-                tests = new std::map<identifier, size_t>();
-            }
-            identifier key = identifier(_functionName, _fileName, _lineNb);
-    // 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
-            (*tests)[key] += 1;
-        }
-    };
+				struct RequiredTest {
+					struct identifier {
+						std::string functionName;
+						std::string filename;
+						size_t lineNumber;
+						identifier(std::string _func, std::string _file, size_t _line) 
+							: functionName(_func), filename(_file), lineNumber(_line) {}
+						bool operator<(const identifier &_rhs) const {
+							if (functionName < _rhs.functionName) {
+								return true;
+							} else if (functionName == _rhs.functionName && lineNumber < _rhs.lineNumber) {
+								return true;
+							} else {
+								return false;
+							}
+						}
+					};
+					
+					// order of construction of global objects is random so the first one has to create the map
+					static std::map<identifier, size_t> *tests;
+					
+					static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb) 
+					{
+						if (!tests) {
+							tests = new std::map<identifier, size_t>();
+						}
+						identifier key = identifier(_functionName, _fileName, _lineNb);
+				// 		std::cout << "registered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
+						if (tests->count(key) == 0) {
+							(*tests)[key] = 0;
+						}
+					}
+					
+					static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb) {
+						if (!tests) {
+							// this can happen if some function in the init section (ie. before main) use REQUIREs
+							tests = new std::map<identifier, size_t>();
+						}
+						identifier key = identifier(_functionName, _fileName, _lineNb);
+				// 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
+						(*tests)[key] += 1;
+					}
+				};
+			}
+		}
+	}
 #endif
 

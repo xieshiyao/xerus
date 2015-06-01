@@ -44,19 +44,19 @@ UNIT_TEST(TensorNetwork, element_access,
     //No Index contracted
     res(i,j,k,l) = A(i,j) * B(k,l);
     std::vector<value_t> resX({3,4,5,6,7,8,6,8,10,12,14,16});
-    for(size_t t = 0; t < product(res.dimensions); ++t) {
-        TEST(approx_equal(res[t], resX[t]));
+    for(size_t t = 0; t < misc::product(res.dimensions); ++t) {
+        TEST(misc::approx_equal(res[t], resX[t]));
     }
-    TEST(approx_equal(res[{0,1,1,1}], 14.0));
+    TEST(misc::approx_equal(res[{0,1,1,1}], 14.0));
     
 
     //One Index contracted
     res(k,i) = B(j,k) * A(i,j);
     
-    TEST(approx_equal(res[0], 15.0));
-    TEST(approx_equal(res[1], 18.0));
-    TEST(approx_equal(res[2], 21.0));
-    TEST(approx_equal(res[{0,0}], 15.0));
-    TEST(approx_equal(res[{1,0}], 18.0));
-    TEST(approx_equal(res[{2,0}], 21.0));
+    TEST(misc::approx_equal(res[0], 15.0));
+    TEST(misc::approx_equal(res[1], 18.0));
+    TEST(misc::approx_equal(res[2], 21.0));
+    TEST(misc::approx_equal(res[{0,0}], 15.0));
+    TEST(misc::approx_equal(res[{1,0}], 18.0));
+    TEST(misc::approx_equal(res[{2,0}], 21.0));
 )

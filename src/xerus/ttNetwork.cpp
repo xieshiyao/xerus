@@ -28,6 +28,7 @@
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/misc/blasLapackWrapper.h>
+#include <xerus/misc/selectedFunctions.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -110,7 +111,7 @@ namespace xerus {
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
 		if (N==1) {
 			currentVt.reset(new value_t[_full.size], internal::array_deleter_vt);
-			array_copy(currentVt.get(), _full.data.get(), _full.size);
+			misc::array_copy(currentVt.get(), _full.data.get(), _full.size);
 		} else {
 			FullTensor tmpTensor(degree());
 			std::vector<Index> presentIndices, newIndices;
@@ -158,7 +159,7 @@ namespace xerus {
 			} else {
 				nxtTensor.reset(new FullTensor(std::move(constructionDim), DONT_SET_ZERO()) );
 				for (size_t i = 0; i < leftDim; ++i) {
-					array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
+					misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get()+i*newRank, currentU.get()+i*maxRank, newRank);
 				}
 			}
 			
@@ -167,7 +168,7 @@ namespace xerus {
 			
 			// Calclate S*Vt by scaling the rows of Vt
 			for (size_t row = 0; row < newRank; ++row) {
-				array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
+				misc::array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
 			}
 		}
 		
@@ -177,7 +178,7 @@ namespace xerus {
 		} else {
 			nxtTensor.reset(new FullTensor({oldRank, dimensions[degree()/N-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
 		}
-		array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
+		misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
 		
 		// set last component tensor to Vt
 		set_component(numComponents-1, std::move(nxtTensor));
@@ -295,7 +296,7 @@ namespace xerus {
 			
 			// Calclate S*Vt by scaling the rows of Vt appropriatly
 			for(size_t row = 0; row < currRank; ++row) {
-				array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
+				misc::array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
 			}
 			
 			// Multiply U and (S*Vt) back to the left and to the right respectively
@@ -308,9 +309,9 @@ namespace xerus {
 			leftTensor.data.reset(newLeft.release(), internal::array_deleter_vt);
 			rightTensor.data.reset(newRight.release(), internal::array_deleter_vt);
 			leftTensor.dimensions.back() = currRank;
-			leftTensor.size = product(leftTensor.dimensions);
+			leftTensor.size = misc::product(leftTensor.dimensions);
 			rightTensor.dimensions.front() = currRank;
-			rightTensor.size = product(rightTensor.dimensions);
+			rightTensor.size = misc::product(rightTensor.dimensions);
 			nodes[position+1].neighbors.back().dimension  = currRank;
 			nodes[position+2].neighbors.front().dimension = currRank;
 		}
@@ -896,7 +897,7 @@ namespace xerus {
         
         if (otherTT) {
             // ensure fitting indices
-            if (equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
+            if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
                 TensorNetwork *res = new internal::TTStack<false>;
                 *res = *_me.tensorObjectReadOnly;
                 res->factor *= _other.tensorObjectReadOnly->factor;
@@ -919,10 +920,10 @@ namespace xerus {
                 return false; // an index spanned some links of the left and some of the right side
             }
             // or indices in fitting order to contract the TTOs
-            if (   equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
-                || equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
-                || equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-                || equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
+            if (   misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
+                || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
+                || misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
+                || misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())    ) 
             {
                 TensorNetwork *res = new internal::TTStack<true>;
                 *res = *_me.tensorObjectReadOnly;
@@ -1085,7 +1086,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.factor*realMe.tensorObjectReadOnly->factor, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
                     }
                 }
             } else {
@@ -1093,7 +1094,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < myNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < myNode.size/(myNode.dimensions.front()*myNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
+                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset, myNode.data.get() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, myNode.dimensions.back());
                     }
                 }
             }
@@ -1104,7 +1105,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+                        misc::array_scaled_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.factor*realOther.tensorObjectReadOnly->factor, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
                     }
                 }
             } else {
@@ -1112,7 +1113,7 @@ namespace xerus {
                 for(size_t leftIdx = 0; leftIdx < otherNode.dimensions.front(); ++leftIdx) {
                     for(size_t extIdx = 0; extIdx < otherNode.size/(otherNode.dimensions.front()*otherNode.dimensions.back()); ++extIdx) {
                         // RightIdx can be copied as one piece
-                        array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
+                        misc::array_copy(nxtTensor->data.get() + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, otherNode.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, otherNode.dimensions.back());
                     }
                 }
             }
@@ -1171,8 +1172,8 @@ namespace xerus {
                     }
                     if (spanSum == numNodes) {
                         // other tensor also transposable
-                        transposed = (equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
-                                    && (equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+                        transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
+                                    && (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
                         
                     }
                 }

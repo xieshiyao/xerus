@@ -19,13 +19,16 @@
 
 #include <xerus/misc/exceptions.h>
 
-START_MISC_NAMESPACE
-    generic_error::generic_error() {}
+namespace xerus {
+    namespace misc {
+        generic_error::generic_error() {}
+            
+        generic_error::generic_error(const generic_error &_other) noexcept
+            : error_info(_other.error_info.str()) { }
         
-    generic_error::generic_error(const generic_error &_other) noexcept
-        : error_info(_other.error_info) { }
-    
-    const char* generic_error::what() const noexcept {
-        return &error_info[0];
+        const char* generic_error::what() const noexcept {
+            return error_info.str().c_str();
+        }
+        
     }
-END_MISC_NAMESPACE
+}

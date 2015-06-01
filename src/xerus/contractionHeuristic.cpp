@@ -20,7 +20,7 @@
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {
-    ContractionHeuristic::ContractionHeuristic(std::string _name, std::function<void(float &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct) 
+    ContractionHeuristic::ContractionHeuristic(std::string _name, std::function<void(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct) 
         : name(_name), scoreFct(_scoreFct) {}
     
     double ContractionHeuristic::rescore(TensorNetwork _tn) { // NOTE take as value to get a deep copy instead of reference!
@@ -41,8 +41,8 @@ namespace xerus {
 
 	//TODO non-quadratic
     #define GREEDY(name, alg) \
-        void name(float &_score, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork &_tn) { \
-        float best = 1e32f; \
+        void name(double &_score, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork &_tn) { \
+        double best = 1e32f; \
         size_t bestId1, bestId2; \
         do { \
             best = 1e32f; \
@@ -54,20 +54,20 @@ namespace xerus {
                     TensorNode &nj = _tn.nodes[j]; \
                     /* possible candidate (i.e. link to a later node) */\
                     /* calculate n,m,r */ \
-                    float m=1,n=1,r=1; \
+                    double m=1,n=1,r=1; \
                     for (size_t d=0; d<ni.degree(); ++d) { \
                         if (ni.neighbors[d].other == j) { \
-                            r *= (float)ni.neighbors[d].dimension; \
+                            r *= (double)ni.neighbors[d].dimension; \
                         } else { \
-                            m *= (float)ni.neighbors[d].dimension; \
+                            m *= (double)ni.neighbors[d].dimension; \
                         } \
                     } \
                     for (size_t d=0; d<nj.degree(); ++d) { \
                         if (nj.neighbors[d].other != i) { \
-                            n *= (float)nj.neighbors[d].dimension; \
+                            n *= (double)nj.neighbors[d].dimension; \
                         } \
                     } \
-                    float tmpscore = alg; \
+                    double tmpscore = alg; \
                     if (tmpscore < best) { \
                         best = tmpscore; \
                         bestId1 = i; \
@@ -76,7 +76,7 @@ namespace xerus {
                 } \
             } \
             if (best < 1e32f) { \
-                _score += (float)_tn.contraction_cost(bestId1,bestId2); \
+                _score += _tn.contraction_cost(bestId1,bestId2); \
                 _contractions.emplace_back(bestId1,bestId2); \
                 _tn.contract(bestId1,bestId2); \
             } \
@@ -90,9 +90,9 @@ namespace xerus {
         GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
         GREEDY(greedy_r, -r)
         
-        static ContractionHeuristic::AddToVector g("greedy_size", greedy_size);
-        static ContractionHeuristic::AddToVector s("greedy_speed", greedy_speed);
-        static ContractionHeuristic::AddToVector r("greedy_r", greedy_r);
+        static ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
+        static ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
+        static ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
     }
 
 }

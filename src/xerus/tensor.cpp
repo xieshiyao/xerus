@@ -29,15 +29,15 @@ namespace xerus {
     
     Tensor::Tensor(       Tensor&& _other ) : dimensions(_other.dimensions), size(_other.size), factor(_other.factor) { }
     
-    Tensor::Tensor(const std::vector<size_t>& _dimensions, const value_t _factor) : dimensions(_dimensions), size(product(dimensions)), factor(_factor) {
+    Tensor::Tensor(const std::vector<size_t>& _dimensions, const value_t _factor) : dimensions(_dimensions), size(misc::product(dimensions)), factor(_factor) {
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
     }
     
-    Tensor::Tensor(std::vector<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(product(dimensions)), factor(_factor) {
+    Tensor::Tensor(std::vector<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(misc::product(dimensions)), factor(_factor) {
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
     }
     
-    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(product(dimensions)), factor(_factor) {
+    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(misc::product(dimensions)), factor(_factor) {
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
     }
     
@@ -86,12 +86,12 @@ namespace xerus {
     
     
     void Tensor::reinterpret_dimensions(const std::vector<size_t>& _newDimensions) {
-        REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
+        REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
         dimensions = _newDimensions;
     }
     
     void Tensor::reinterpret_dimensions(      std::vector<size_t>&& _newDimensions) {
-        REQUIRE(product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << product(_newDimensions) << " != " << size);
+        REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
         dimensions = std::move(_newDimensions);
     }
     
@@ -116,11 +116,11 @@ namespace xerus {
     
     void Tensor::change_dimensions(const std::vector<size_t>& _newDimensions) {
         dimensions = _newDimensions;
-        size = product(dimensions);
+        size = misc::product(dimensions);
     }
     
     void Tensor::change_dimensions(      std::vector<size_t>&& _newDimensions) {
         dimensions = std::move(_newDimensions);
-        size = product(dimensions);
+        size = misc::product(dimensions);
     }
 }

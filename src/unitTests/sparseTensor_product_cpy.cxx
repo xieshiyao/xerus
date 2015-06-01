@@ -260,7 +260,7 @@ UNIT_TEST(SparseTensor, Product_Order_3_Same_Dimensions,
     res2(i,j) = A(l,m,j) * B(m,i,l);
     TEST(res2.compare_to_data({5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     res3() = A(i,j,k) * B(i,k,j);
-    TEST(approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
+    TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
 
 UNIT_TEST(SparseTensor, Product_Multiindices, 
@@ -295,9 +295,9 @@ UNIT_TEST(SparseTensor, Product_Multiindices,
     res2(i,j, k&2) = B(l,m,j, k^0) * C(m,i,l, k&3);
     TEST(res2.compare_to_data({5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     res3(j&0) = B(i&0) * C(i^3);
-    TEST(approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
+    TEST(misc::approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
     res3(j^0) = B(i&0) * C(i^3);
-    TEST(approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
+    TEST(misc::approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
 )
 
 UNIT_TEST(SparseTensor, Product_Threefold, 

@@ -19,48 +19,51 @@
 
 #include <time.h>
 #include <unistd.h>
-#include <fstream>
 
-#include "../../../include/xerus/misc/namedLogger.h"
+#include <xerus/misc/namedLogger.h>
 
-namespace err {
-//Look if Log shall be streamed into a file
-#ifdef LOGFILE_
-    std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
-#endif
-    
-    std::mutex namedLoggerMutex;
-    std::string logFilePrefix;
-	bool silenced = false;
-    
-#ifdef LOG_BUFFER_
-	BufferStreams bufferStreams;
-	
-    void dump_log_buffer(std::string _comment)  {
-        std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(0)) + ".txt";
-        std::ofstream out(name, std::ofstream::out);
-        out << "Error: " << _comment << std::endl << std::endl;
+namespace xerus {
+    namespace misc {
+        namespace internal {
+            //Look if Log shall be streamed into a file
+            #ifdef LOGFILE_
+                std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
+            #endif
+                
+                std::mutex namedLoggerMutex;
+                std::string logFilePrefix;
+                bool silenced = false;
+                
+            #ifdef LOG_BUFFER_
+                BufferStreams bufferStreams;
+                
+                void dump_log_buffer(std::string _comment)  {
+                    std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(0)) + ".txt";
+                    std::ofstream out(name, std::ofstream::out);
+                    out << "Error: " << _comment << std::endl << std::endl;
 
-        // get callstack
-        out << "-------------------------------------------------------------------------------" << std::endl 
-            << "  Callstack : " << std::endl
-            << "-------------------------------------------------------------------------------" << std::endl;
-        out.close();
-        // gdb /proc/6345/exe 6345 -batch -ex 'thread apply all backtrace' -q >> errors/138344543.txt
-        std::stringstream tmp;
-        tmp << "gdb /proc/" << getpid() << "/exe " << getpid() << " -batch -ex 'thread apply all backtrace' -q >> " << name << " 2>&1";
-        system(tmp.str().c_str());
-        out.open(name, std::ofstream::out | std::ofstream::app);
-        out << std::endl << std::endl;
-        
-        // output namedLogger
-        err::bufferStreams.curr->flush();
-        err::bufferStreams.old->flush();
-        out << "-------------------------------------------------------------------------------" << std::endl 
-            << "  last " << (err::bufferStreams.curr->str().size() + err::bufferStreams.old->str().size()) << " bytes of log:" << std::endl
-            << "-------------------------------------------------------------------------------" << std::endl 
-            << err::bufferStreams.curr->str() << err::bufferStreams.old->str() << "horst" << std::endl; 
-        out.close();
+                    // get callstack
+                    out << "-------------------------------------------------------------------------------" << std::endl 
+                        << "  Callstack : " << std::endl
+                        << "-------------------------------------------------------------------------------" << std::endl;
+                    out.close();
+                    // gdb /proc/6345/exe 6345 -batch -ex 'thread apply all backtrace' -q >> errors/138344543.txt
+                    std::stringstream tmp;
+                    tmp << "gdb /proc/" << getpid() << "/exe " << getpid() << " -batch -ex 'thread apply all backtrace' -q >> " << name << " 2>&1";
+                    system(tmp.str().c_str());
+                    out.open(name, std::ofstream::out | std::ofstream::app);
+                    out << std::endl << std::endl;
+                    
+                    // output namedLogger
+                    bufferStreams.curr->flush();
+                    bufferStreams.old->flush();
+                    out << "-------------------------------------------------------------------------------" << std::endl 
+                        << "  last " << (bufferStreams.curr->str().size() + bufferStreams.old->str().size()) << " bytes of log:" << std::endl
+                        << "-------------------------------------------------------------------------------" << std::endl 
+                        << bufferStreams.curr->str() << bufferStreams.old->str() << "horst" << std::endl; 
+                    out.close();
+                }
+            #endif
+        }
     }
-#endif
 }

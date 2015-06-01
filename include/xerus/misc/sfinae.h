@@ -3,20 +3,20 @@
 #include <type_traits>
 
 // Adds a template argument to a function which can be of only one specified class, but allows & and && types.
-#define ALLOW_MOVE(__type, __newTypeName) template<ADD_MOVE(__type, __newTypeName)>
+#define ALLOW_MOVE(oldTypeName, newTypeName) template<ADD_MOVE(oldTypeName, newTypeName)>
 
 // Adds two template arguments to a function which can each be of only one specified class, but allows & and && types.
-#define ALLOW_MOVE_TWO(__newTypeName, __allowedType1, __allowedType2) \
-    template<class __newTypeName, \
+#define ALLOW_MOVE_TWO(newTypeName, allowedType1, allowedType2) \
+    template<class newTypeName, \
         typename std::enable_if<\
-               std::is_base_of<__allowedType1, typename std::decay<__newTypeName>::type>{} \
-            || std::is_base_of<__allowedType2, typename std::decay<__newTypeName>::type>{}, \
+               std::is_base_of<allowedType1, typename std::decay<newTypeName>::type>{} \
+            || std::is_base_of<allowedType2, typename std::decay<newTypeName>::type>{}, \
             int> \
         ::type = 0 \
     >
 
 // Adds a template arguments whithin an existing template argument list, which can be of only one specified class, but allows & and && types.
-#define ADD_MOVE(__type, __newTypeName) class __newTypeName, typename std::enable_if<std::is_base_of<__type, typename std::decay<__newTypeName>::type>{}, int>::type = 0
+#define ADD_MOVE(oldTypeName, newTypeName) class newTypeName, typename std::enable_if<std::is_base_of<oldTypeName, typename std::decay<newTypeName>::type>{}, int>::type = 0
 
 
 

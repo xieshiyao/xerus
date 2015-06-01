@@ -25,8 +25,12 @@
 #include "misc/sfinae.h"
 
 namespace xerus {
+	
+	/// The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
     class TensorNode {
     public:
+		
+		/// The Link class is used by the class TensorNode to store the links the represented component tensor has to other nodes of a TensorNetwork.
         struct Link {
             /// The index of the otherNode this Link links to.
             size_t other; 

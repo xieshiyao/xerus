@@ -432,20 +432,20 @@ UNIT_TEST(TT, full_contraction,
 	TTOperator toB(B); 
 	
 	Index i;
-	TEST(approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 1.6e-13));
-	TEST(approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 1.6e-13));
-	TEST(approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));
-	TEST(approx_equal(frob_norm(B(i&0)), frob_norm(toB(i&0)), 1e-13));
-	TEST(approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(ttA(i&0)-ttB(i&0)), 1e-12));
-	TEST(approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(toA(i&0)-toB(i&0)), 1e-12));
+	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 1.6e-13));
+	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 1.6e-13));
+	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));
+	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(toB(i&0)), 1e-13));
+	TEST(misc::approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(ttA(i&0)-ttB(i&0)), 1e-12));
+	TEST(misc::approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(toA(i&0)-toB(i&0)), 1e-12));
 	FullTensor C(0);
 	C() = A(i/1)*B(i&0);
 	TTTensor ttC(0);
 	ttC() = ttA(i&0)*ttB(i&0);
 	TTOperator toC(0);
 	toC() = ttA(i&0)*ttB(i&0);
-	TEST(approx_equal(C[{}], ttC[{}], 1e-12));
-	TEST(approx_equal(C[{}], toC[{}], 1e-12));
+	TEST(misc::approx_equal(C[{}], ttC[{}], 1e-12));
+	TEST(misc::approx_equal(C[{}], toC[{}], 1e-12));
 )
 
 UNIT_TEST(TT, disjoint_product,

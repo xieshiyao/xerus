@@ -61,14 +61,14 @@
 	#ifdef TEST_COVERAGE_
 		#define REQUIRE_TEST \
 			do { \
-				static const char * ___fname = __PRETTY_FUNCTION__;\
-				struct ___a{ static void rt() {\
-					___RequiredTest::register_test(___fname, __FILE__, __LINE__);\
+				static const char * xerus_test_fname = __PRETTY_FUNCTION__;\
+				struct xerus_test_a{ static void rt() {\
+					xerus::misc::internal::RequiredTest::register_test(xerus_test_fname, __FILE__, __LINE__);\
 				} };\
-				typedef void (*___t)();\
-				static ___t ___rtp __attribute__((section(".init_array"))) = &___a::rt; \
-				(void)___rtp; \
-				___RequiredTest::increase_counter(___fname, __FILE__, __LINE__); \
+				typedef void (*xerus_test_t)();\
+				static xerus_test_t xerus_test_rtp __attribute__((section(".init_array"))) = &xerus_test_a::rt; \
+				(void)xerus_test_rtp; \
+				xerus::misc::internal::RequiredTest::increase_counter(xerus_test_fname, __FILE__, __LINE__); \
 			} while(false)
 	#else
 		#define REQUIRE_TEST (void)0
@@ -76,22 +76,22 @@
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		#define FAILTEST(test) \
-			err::logFilePrefix = "failtest/"; err::silenced = true; \
-			try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
-			err::logFilePrefix.clear();  err::silenced = false;  \
-			void(0)
+            xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
+            try { test; PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } catch (...) {PRINTCHECK;} \
+            xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
+            void(0)
 	#else
 		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")
 	#endif
 	
 	#define UNIT_TEST(grp, name, ...) \
-		___UnitTest PASTE(grp,name)(#grp, #name, []()->bool{\
+		xerus::misc::internal::UnitTest PASTE(grp,name)(#grp, #name, []()->bool{\
 				bool passed = true;\
 				__VA_ARGS__\
 				return passed;\
 			});
 			
-	#define main(...) ___horst_main_will_not_be_called( __VA_ARGS__ )
+	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
 
 #else
 	#define REQUIRE_TEST (void)0

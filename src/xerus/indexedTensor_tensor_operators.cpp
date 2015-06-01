@@ -55,7 +55,7 @@ namespace xerus {
                 if(_lhs.is_open(lhsIndices[i])) {
                     lhsOpen.emplace_back(lhsIndices[i]);
                     lhsOpenDim += lhsIndices[i].span;
-                    if(!contains(rhsIndices, lhsIndices[i])) {
+                    if(!misc::contains(rhsIndices, lhsIndices[i])) {
                         lhsNotRhs.emplace_back(lhsIndices[i]);
                     }
                 }
@@ -69,7 +69,7 @@ namespace xerus {
                 if(_rhs.is_open(rhsIndices[i])) {
                     rhsOpen.emplace_back(rhsIndices[i]);
                     rhsOpenDim += rhsIndices[i].span;
-                    if(!contains(lhsIndices, rhsIndices[i])) {
+                    if(!misc::contains(lhsIndices, rhsIndices[i])) {
                         rhsNotLhs.emplace_back(rhsIndices[i]);
                     }
                 }

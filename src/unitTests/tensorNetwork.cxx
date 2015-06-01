@@ -40,11 +40,11 @@ UNIT_TEST(TensorNetwork, contractions_of_4_to_degree_0,
 	E() = B(i3,i4) * C(i3,i4);
 	double a2 = E[{}];
 	E() = A(i1,i2) * B(i3,i2) * C(i3,i4) * D(i1,i4);
-	TEST(approx_equal(E[{}], a1 * a2, 1e-20));
+	TEST(misc::approx_equal(E[{}], a1 * a2, 1e-20));
 	E() = B(i3,i2) * C(i3,i4) * D(i1,i4) * A(i1,i2);
-	TEST(approx_equal(E[{}], a1 * a2, 1e-20));
+	TEST(misc::approx_equal(E[{}], a1 * a2, 1e-20));
 	E() = B(i3,i2) * D(i1,i4) * C(i3,i4) * A(i1,i2);
-	TEST(approx_equal(E[{}], a1 * a2, 1e-20));
+	TEST(misc::approx_equal(E[{}], a1 * a2, 1e-20));
 )
 
 UNIT_TEST(TensorNetwork, contractions_of_3_to_degree_0,
@@ -65,8 +65,8 @@ UNIT_TEST(TensorNetwork, contractions_of_3_to_degree_0,
 	E() = C(i3,i1) * B(i2,i3) * A(i1,i2);
 	double a3 = E[{}];
 	LOG(unit_test, a1 << " " << a2 << " " << a3 << " " << a1-a2 << " " << a2-a3);
-	TEST(approx_equal(a1, a2, 1e-20*a1)); // effectively ==
-	TEST(approx_equal(a2, a3, 1e-20*a2));
+	TEST(misc::approx_equal(a1, a2, 1e-20*a1)); // effectively ==
+	TEST(misc::approx_equal(a2, a3, 1e-20*a2));
 )
 
 UNIT_TEST(TensorNetwork, contraction_single_node_trace,

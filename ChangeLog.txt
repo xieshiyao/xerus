@@ -1,7 +1,0 @@
-2015-05-20 v1.0.1
-	* fixed a major bug with the handling of shared resources in TensorNetworks
-	* added TTTensor/TTOperator::chop() function
-	* some minor fixes
-
-2015-05-19 v1.0
-	* first stable release
