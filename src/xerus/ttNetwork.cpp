@@ -1132,6 +1132,7 @@ namespace xerus {
 					  "The sum is usually better conditioned if the same core position is enforced for both TTTensors beforehand");
 		}
 		
+		PA_START;
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current input nodes
 			// TODO sparse
@@ -1219,6 +1220,8 @@ namespace xerus {
 			
 			outTensor.set_component(position, std::move(newComponent));
 		}
+		
+		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(outTensor.dimensions)+" Ranks: "+misc::to_string(outTensor.ranks()));
 		
 		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition == ttOther->corePosition) {
 			outTensor.move_core(ttMe->corePosition);
