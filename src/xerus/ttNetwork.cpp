@@ -44,7 +44,7 @@ namespace xerus {
 		
 		dimensions = std::vector<size_t>(_degree, 1);
 		
-		// externalLinks
+		// ExternalLinks
 		for (size_t i = 1; i <= numComponents; ++i) {
 			externalLinks.emplace_back(i, 1, 1, false);
 		}
@@ -54,7 +54,7 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(externalLinks.size() == _degree, "ie");
+		REQUIRE(externalLinks.size() == _degree, "Internal Error.");
 		
 		std::vector<TensorNode::Link> neighbors;
 		
@@ -64,6 +64,7 @@ namespace xerus {
 			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
 			std::move(neighbors)
 		);
+		
 		for (size_t i=0; i<numComponents; ++i) {
 			neighbors.clear();
 			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
@@ -77,6 +78,7 @@ namespace xerus {
 				std::move(neighbors)
 			);
 		}
+		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
 		nodes.emplace_back(
@@ -125,7 +127,7 @@ namespace xerus {
 		}
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
-			// determine dimensions of the next matrification
+			// Determine the dimensions of the next matrification
 			leftDim = oldRank*dimensions[position];
 			if (isOperator) { leftDim *= dimensions[position+numComponents]; }
 			remainingDim /= dimensions[position];
@@ -135,11 +137,11 @@ namespace xerus {
 			// create temporary space for the results
 			currentU.reset(new value_t[leftDim*maxRank]);
 			currentS.reset(new value_t[maxRank]);
-			currentVt.reset(new value_t[maxRank*remainingDim]);
+			currentVt.reset(new value_t[maxRank*remainingDim], &internal::array_deleter_vt);
 			
 			blasWrapper::svd_destructive(currentU.get(), currentS.get(), currentVt.get(), workingData.get(), leftDim, remainingDim);
 			
-			// determine the rank, keeping all singular values that are large enough
+			// Determine the rank, keeping all singular values that are large enough
 			newRank = maxRank;
 			while (currentS[newRank-1] < _eps*currentS[0]) {
 				newRank-=1;
@@ -160,7 +162,7 @@ namespace xerus {
 				}
 			}
 			
-			// update component tensor to U
+			// Update component tensor to U
 			set_component(position, std::move(nxtTensor));
 			
 			// Calclate S*Vt by scaling the rows of Vt
@@ -174,9 +176,9 @@ namespace xerus {
 		
 		// Create FullTensor for Vt
 		if (!isOperator) {
-			nxtTensor.reset(new FullTensor({oldRank, dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
+			nxtTensor.reset(new FullTensor({oldRank, dimensions[numComponents-1], 1}, DONT_SET_ZERO()) );
 		} else {
-			nxtTensor.reset(new FullTensor({oldRank, dimensions[degree()/N-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
+			nxtTensor.reset(new FullTensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
 		}
 		misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->data.get(), workingData.get(), oldRank*remainingDim);
 		
@@ -212,24 +214,24 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::construct_identity(const std::vector<size_t>& _dimensions) {
-		REQUIRE(isOperator, "tttensor identity ill-defined");
-		REQUIRE(_dimensions.size()%2==0, "illegal number of dimensions for ttOperator");
+		REQUIRE(isOperator, "TTTensor identity ill-defined"); // TODO enable if
+		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
 		#ifndef DISABLE_RUNTIME_CHECKS_
-		for (size_t d : _dimensions) {
-			REQUIRE(d > 0, "trying to construct TTOperator with dimension 0");
-		}
+			for (size_t d : _dimensions) {
+				REQUIRE(d > 0, "trying to construct TTOperator with dimension 0");
+			}
 		#endif
 		
 		TTNetwork result(_dimensions.size());
 		result.factor = 1.0;
 		
-		size_t numComponents = _dimensions.size()/N;
+		const size_t numComponents = _dimensions.size()/N;
 		
-		std::vector<size_t> constructionVector;
+		
 		for (size_t i=0; i<numComponents; ++i) {
-			constructionVector.clear();
+			std::vector<size_t> constructionVector;
 			constructionVector.push_back(1);
-			for (size_t j=0; j< N; ++j) { 
+			for (size_t j=0; j < N; ++j) { 
 				constructionVector.push_back(_dimensions[i+j*numComponents]);
 			}
 			constructionVector.push_back(1);
@@ -242,7 +244,7 @@ namespace xerus {
 			})));
 		}
 		
-		REQUIRE(result.is_valid_tt(), "ie");
+		REQUIRE(result.is_valid_tt(), "Internal Error.");
 		result.cannonicalize_left();
 		return result;
 	}
@@ -783,9 +785,9 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::move_core(size_t _position) {
-		REQUIRE(is_valid_tt(), "cannot cannonicalize invalid TT");
+		REQUIRE(is_valid_tt(), "Cannot cannonicalize invalid TT");
 		const size_t numComponents = degree()/N;
-		REQUIRE(_position < numComponents, "illegal position for core chosen");
+		REQUIRE(_position < numComponents, "Illegal position for core chosen");
 		Index i,r,j;
 		FullTensor core(2);
 		const size_t fromLeft = cannonicalized? corePosition : 0;
