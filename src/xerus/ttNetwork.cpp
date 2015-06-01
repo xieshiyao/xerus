@@ -227,7 +227,6 @@ namespace xerus {
 		
 		const size_t numComponents = _dimensions.size()/N;
 		
-		
 		for (size_t i=0; i<numComponents; ++i) {
 			std::vector<size_t> constructionVector;
 			constructionVector.push_back(1);
@@ -535,7 +534,7 @@ namespace xerus {
 				dimensions[currNode.neighbors[i].indexPosition] = currNode.tensorObject->dimensions[i];
 			}
 		}
-		if (cannonicalized && corePosition != _idx) {
+		if (corePosition != _idx) {
 			cannonicalized = false;
 		}
 	}
@@ -550,9 +549,10 @@ namespace xerus {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
 			if (currNode.neighbors[i].external) {
 				externalLinks[currNode.neighbors[i].indexPosition].dimension = currNode.tensorObject->dimensions[i];
+				dimensions[currNode.neighbors[i].indexPosition] = currNode.tensorObject->dimensions[i];
 			}
 		}
-		if (cannonicalized && corePosition != _idx) {
+		if (corePosition != _idx) {
 			cannonicalized = false;
 		}
 	}
