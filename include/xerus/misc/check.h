@@ -19,13 +19,17 @@
 
 #pragma once
 
+#ifdef TEST_COVERAGE_
+	#include "test.h"
+#else
+	#define REQUIRE_TEST (void)0
+#endif
+
 // Only do anything if the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
 #ifndef DISABLE_RUNTIME_CHECKS_
 	#include "namedLogger.h"
 
 	#ifdef TEST_COVERAGE_
-		#include "test.h"
-		
 		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
 	#else
 		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
@@ -37,5 +41,5 @@
 #else
 	#define CHECK(condition, level, message) void(0)
 	#define REQUIRE(condition, message) void(0)
-    #define IF_CHECK(expression)  
+    #define IF_CHECK(expression)
 #endif

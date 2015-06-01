@@ -29,6 +29,7 @@
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/misc/blasLapackWrapper.h>
 #include <xerus/misc/selectedFunctions.h>
+#include <xerus/misc/check.h>
 
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
