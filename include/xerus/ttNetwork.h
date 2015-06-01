@@ -30,15 +30,12 @@ namespace xerus {
     template<bool isOperator>
 	/// The TTNetwork class is used to represent TTTensor and TToperators (depending on the template argument) and is a special kind of TensorNetwork.
     class TTNetwork : public TensorNetwork {
-	protected:
+	public:
 		static constexpr const size_t N=isOperator?2:1;
 		
-		enum cannonicalization_t {
-			NONE, LEFT, RIGHT
-		};
-		cannonicalization_t cannonicalization;
+		bool cannonicalized;
+		size_t corePosition;		
 		
-    public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// Constructs an order zero TTNetwork.
         explicit TTNetwork() = default;
@@ -147,6 +144,10 @@ namespace xerus {
         
         size_t datasize() const;
         
+		/// @brief moves the core to @a _position
+		/// all components left of @a _position will be left-orthogonal, those to the right will be right-orthogonal
+		void move_core(size_t _position);
+		
         /// moves core to the left
         void cannonicalize_left();
         
