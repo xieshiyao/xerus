@@ -352,7 +352,7 @@ namespace xerus {
 		}
 		if(N == 2) {
 			for(size_t i = 0; i < numComponents; ++i) {
-				_me.tensorObject->externalLinks.emplace_back(i+1, 2, _me.tensorObject->dimensions[numNodes+i], false);
+				_me.tensorObject->externalLinks.emplace_back(i+1, 2, _me.tensorObject->dimensions[numComponents+i], false);
 			}
 		}
 		
@@ -375,15 +375,19 @@ namespace xerus {
 			for (TensorNode::Link &l : n.neighbors) {
 				if (l.external) {
 					size_t externalNumber = 0;
-					if (N==2) {
-						externalNumber = l.indexPosition>=numNodes?1:0;
+					if (isOperator) {
+						externalNumber = l.indexPosition>=numComponents?1:0;
 					}
 					oldIndices.push_back(ext[externalNumber]);
 					externalDim[externalNumber] = l.dimension;
-				} else if (i >= 1 && l.links(i-1)) {
-					REQUIRE(lastIndices.size() > l.indexPosition, "ie " << lastIndices.size() << " " << l.indexPosition);
-					oldIndices.push_back(lastIndices[l.indexPosition]);
-				} else if (l.links(i+1)) {
+				} else if (l.links(i)) {
+					if (i==0) {
+						oldIndices.emplace_back();
+					} else {
+						REQUIRE(lastIndices.size() > l.indexPosition, "ie " << i << " " << lastIndices.size() << " " << l.indexPosition);
+						oldIndices.push_back(lastIndices[l.indexPosition]);
+					}
+				} else if (l.links(i+2)) {
 					oldIndices.emplace_back();
 					newRight.push_back(oldIndices.back());
 					newRank *= l.dimension;
