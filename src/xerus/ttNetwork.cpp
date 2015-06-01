@@ -526,7 +526,7 @@ namespace xerus {
 	void TTNetwork<isOperator>::set_component(size_t _idx, const Tensor &_T) {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::set_component");
 		TensorNode &currNode = nodes[_idx+1];
-		REQUIRE(_T.degree() == currNode.degree(), "degree of _T does not match component tensors degree");
+		REQUIRE(_T.degree() == currNode.degree(), "Degree of _T does not match component tensors degree");
 		currNode.tensorObject.reset(_T.get_copy());
 		for (size_t i=0; i<currNode.degree(); ++i) {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];

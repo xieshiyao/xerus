@@ -78,10 +78,14 @@ namespace xerus {
 			
 			for(size_t i = 0; i < numComponents; ++i) {
 				size_t oldMaxDim = std::min(maxDim1, maxDim2);
-				maxDim1 *= _dimensions[i];
-				maxDim2 /= _dimensions[i];
+				maxDim1 *= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
+				maxDim2 /= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
 				size_t maxDim = std::min(maxDim1, maxDim2);
-				result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+				if(isOperator) {
+					result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], _dimensions[numComponents+i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+				} else {
+					result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+				}
 			}
             result.cannonicalize_right();
             REQUIRE(result.is_valid_tt(), "Internal Error.");
