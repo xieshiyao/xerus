@@ -357,14 +357,14 @@ namespace xerus {
 		
 		// ensure right amount and order of links
 		Index ext[N];
-		size_t lastRank, externalDim[N], newRank;
+		size_t lastRank, externalDim[N], newRank=1;
 		std::vector<Index> lastIndices, lastRight;
 		std::vector<Index> oldIndices, newRight; // newLeft == lastRight
 		std::vector<Index> newIndices;
 		std::vector<size_t> newDimensions;
 		_me.tensorObject->nodes.front().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(1,0,1,false)});
 		_me.tensorObject->nodes.front().tensorObject->reinterpret_dimensions({1});
-		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(numComponents,0,1,false)});
+		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(numComponents,N+1,1,false)});
 		_me.tensorObject->nodes.back().tensorObject->reinterpret_dimensions({1});
 		for (size_t i=0; i<numComponents; ++i) {
 			lastIndices = std::move(oldIndices); oldIndices.clear();
@@ -403,7 +403,7 @@ namespace xerus {
 			
 			newDimensions.clear();
 			n.neighbors.clear();
-			n.neighbors.emplace_back(i, N+1,lastRank, false);
+			n.neighbors.emplace_back(i, i==0?0:N+1,lastRank, false);
 			newDimensions.push_back(lastRank);
 			for (size_t j=0; j<N; ++j) {
 				REQUIRE(_me.tensorObject->dimensions[i+j*numComponents] == externalDim[j], "ie");
@@ -1205,7 +1205,7 @@ namespace xerus {
 				const internal::TTStack<isOperator>* const otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
 				if (otherTTS) {
 					contract_stack(_me);
-					static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+					static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_left(); // TODO cannonicalize_right should be called by contract_stack
 				}
 				return;
 			}
@@ -1245,7 +1245,7 @@ namespace xerus {
 					const internal::TTStack<isOperator> *otherTTS = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
 					if (otherTTS) {
 						contract_stack(_me);
-						static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_right(); // TODO cannonicalize_right should be called by contract_stack
+						static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_left(); // TODO cannonicalize_right should be called by contract_stack
 					}
 					static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
 					return;

@@ -83,7 +83,7 @@ namespace xerus {
 				size_t maxDim = std::min(maxDim1, maxDim2);
 				result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
 			}
-            result.cannonicalize_right();
+            result.cannonicalize_left();
             REQUIRE(result.is_valid_tt(), "Internal Error.");
             return result;
         }
