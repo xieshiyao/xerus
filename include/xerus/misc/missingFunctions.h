@@ -29,7 +29,7 @@
 #include "standard.h"
 #include "sfinae.h"
 #include "namedLogger.h"
-#include "test.h"
+#include "check.h"
 
 // Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); auto const & name = name##_store.get();

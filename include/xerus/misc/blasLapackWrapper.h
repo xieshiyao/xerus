@@ -21,33 +21,9 @@
 
 #include "standard.h"
 #include <string>
-    
-#ifdef BLAS_ANALYSIS
-    #include <map>
-    #include <utility>
-    
-    namespace xerus {
 
-        class CallCounter {
-        public:
-            std::map<std::string, std::pair<size_t, size_t>> calls;
-            size_t totalTime;
-            size_t totalCalls;
-        };
-
-        extern std::map<std::string, CallCounter> callCounter;
-        
-        void add_blas_call(const std::string& _callName, const std::string& _callParameter, const size_t _startTime);
-        
-    }
-#endif
 
 namespace xerus {
-
-    std::string print_blas_analysis();
-
-    size_t total_blas_time();
-
     namespace blasWrapper {
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------

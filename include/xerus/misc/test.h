@@ -19,37 +19,13 @@
 
 #pragma once
 
-#include "namedLogger.h"
-#include "testManager.h"
-
-// Only define the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
-#ifndef DISABLE_RUNTIME_CHECKS_
-
-	#define PCHECK(precondition, condition, level, message) if(IS_LOGGING(level)) { precondition; if(condition) { LOG(level, #condition << " failed msg: " << message); }} else void(0)
-
-	#ifdef TEST_
-		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
-	#else
-		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
-	#endif
-
-	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
-	
-    #define IF_CHECK(expression) expression
-
-#else
-
-	#define PCHECK(precondition, condition, level, message) void(0)
-
-	#define CHECK(condition, level, message) void(0)
-
-	#define REQUIRE(condition, message) void(0)
-	
-    #define IF_CHECK(expression)  
-
-#endif
- 
 #ifdef TEST_
+	#include "namedLogger.h"
+	
+	#include <map>
+    #include <string>
+    #include <functional>
+
     #define PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
     #define PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
 
@@ -93,9 +69,34 @@
 			
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
 
+    namespace xerus { namespace misc { namespace internal {
+		struct UnitTest final {
+			// order of contruction of global objects is random so the first one has to create the map
+			static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
+			
+			UnitTest(std::string _group, std::string _name, std::function<bool ()> _f);
+		};
+
+		#ifdef TEST_COVERAGE_
+			struct RequiredTest {
+				struct Identifier {
+					std::string functionName;
+					std::string filename;
+					size_t lineNumber;
+					Identifier(std::string _func, std::string _file, size_t _line);
+					bool operator<(const Identifier &_rhs) const;
+				};
+				
+				// order of construction of global objects is random so the first one has to create the map
+				static std::map<Identifier, size_t> *tests;
+				
+				static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb);
+				
+				static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb);
+			};
+		#endif
+	}}}
 #else
-	#define REQUIRE_TEST (void)0
 	#define UNIT_TEST(grp, name, ...)
-
+	#define REQUIRE_TEST (void)0
 #endif
-

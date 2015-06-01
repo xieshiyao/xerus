@@ -23,9 +23,9 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-#ifdef BLAS_ANALYSIS
-    UNIT_TEST(X_BlasAnalysis_X, Analysis,
-        std::cout << print_blas_analysis();
+#ifdef PERFORMANCE_ANALYSIS
+    UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
+        std::cout << misc::performanceAnalysis::get_analysis();
         LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
     )
 #endif
