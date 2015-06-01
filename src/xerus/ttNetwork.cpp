@@ -33,6 +33,10 @@
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork() : TensorNetwork(), cannonicalized(false) {}
+	
+	
+	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(), cannonicalized(true), corePosition(0) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
@@ -320,6 +324,9 @@ namespace xerus {
 			nodes[position+1].neighbors.back().dimension  = currRank;
 			nodes[position+2].neighbors.front().dimension = currRank;
 		}
+		
+		cannonicalized = true;
+		corePosition = degree()/N-1;
 		REQUIRE(is_in_expected_format(), "ie");
 	}
 	
@@ -518,7 +525,7 @@ namespace xerus {
 	template<bool isOperator>
 	const Tensor &TTNetwork<isOperator>::get_component(size_t _idx) const {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
-		return *nodes[_idx].tensorObject;
+		return *nodes[_idx+1].tensorObject;
 	}
 	
 	
@@ -1126,7 +1133,7 @@ namespace xerus {
 			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[1] : 1);
 			
 			// Copy own Tensor into place
-			if (!cannonicalized || position == corePosition) {
+			if (!ttMe->cannonicalized || position == ttMe->corePosition) {
 				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied in one piece
@@ -1150,7 +1157,7 @@ namespace xerus {
 			
 			
 			// Copy other Tensor into place
-			if(!cannonicalized || position == corePosition) {
+			if(!ttOther->cannonicalized || position == ttOther->corePosition) {
 				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
@@ -1247,6 +1254,7 @@ namespace xerus {
 						contract_stack(_me);
 						static_cast<TTNetwork*>(_me.tensorObject)->cannonicalize_left(); // TODO cannonicalize_right should be called by contract_stack
 					}
+					REQUIRE(is_valid_tt(), "Internal Error.");
 					static_cast<TTNetwork<true>*>(_me.tensorObject)->transpose(); // NOTE: This cast is never called if isOperator is false.
 					return;
 				}

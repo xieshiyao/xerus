@@ -87,7 +87,7 @@ namespace xerus {
             // Calculate span
             size_t span = indices[indexPos].flags[Index::Flag::INVERSE_SPAN] ? degree()-indices[indexPos].span : indices[indexPos].span;
             
-            REQUIRE(dimCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large.");
+            REQUIRE(dimCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large. Tensor has " << tensorObjectReadOnly->dimensions.size() << " indices at least " << dimCount+span);
             
             // Insert dimensions
             for(size_t i = 0; i < span; ++i) {

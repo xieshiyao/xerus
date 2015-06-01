@@ -38,7 +38,7 @@ namespace xerus {
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// Constructs an order zero TTNetwork.
-        explicit TTNetwork() = default;
+        explicit TTNetwork();
         
         /// Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one. Naturally for TTOperators the degree must be even.
         explicit TTNetwork(const size_t _degree);
@@ -162,8 +162,8 @@ namespace xerus {
         template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         void transpose() {
             Index i,r,l,j;
-            for (size_t n=0; n < degree(); ++n) {
-				std::unique_ptr<Tensor> At(nodes[n].tensorObject->construct_new());
+            for (size_t n=0; n < degree()/N; ++n) {
+				std::unique_ptr<Tensor> At(nodes[n+1].tensorObject->construct_new());
                 (*At)(l,j,i,r) = get_component(n)(l,i,j,r);
 				set_component(n, std::move(At));
             }

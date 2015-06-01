@@ -119,7 +119,7 @@ UNIT_TEST(TT, difference_of_TTStacks,
     TTOperator ttO = TTOperator::construct_random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
     TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
     TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
-    TTTensor ttC; 
+    TTTensor ttC;
     
     Index i,j,k;
     ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
