@@ -110,8 +110,8 @@ namespace xerus {
 		
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
 		if (N==1) {
-			currentVt.reset(new value_t[_full.size], internal::array_deleter_vt);
-			misc::array_copy(currentVt.get(), _full.data.get(), _full.size);
+			workingData.reset(new value_t[_full.size], internal::array_deleter_vt);
+			misc::array_copy(workingData.get(), _full.data.get(), _full.size);
 		} else {
 			FullTensor tmpTensor(degree());
 			std::vector<Index> presentIndices, newIndices;
@@ -121,19 +121,15 @@ namespace xerus {
 				newIndices.emplace_back(presentIndices[i+numComponents]);
 			}
 			tmpTensor(newIndices) = _full(presentIndices);
-			currentVt = tmpTensor.data;
+			workingData = tmpTensor.data;
 		}
-		workingData = currentVt;
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
-			workingData = std::move(currentVt);
-			oldRank = newRank;
-			
 			// determine dimensions of the next matrification
-			leftDim = oldRank*dimensions[position-1];
-			if(N == 2) { leftDim *= dimensions[position+numComponents-1]; }
-			remainingDim /= dimensions[position-1];
-			if(N == 2) { remainingDim /= dimensions[position+numComponents-1]; }
+			leftDim = oldRank*dimensions[position];
+			if(N == 2) { leftDim *= dimensions[position+numComponents]; }
+			remainingDim /= dimensions[position];
+			if(N == 2) { remainingDim /= dimensions[position+numComponents]; }
 			maxRank = std::min(leftDim, remainingDim);
 			
 			// create temporary space for the results
@@ -152,8 +148,8 @@ namespace xerus {
 			// Create a FullTensor for U
 			std::vector<size_t> constructionDim;
 			constructionDim.emplace_back(oldRank);
-			constructionDim.emplace_back(dimensions[position-1]);
-			if (N == 2) { constructionDim.emplace_back(dimensions[position+numComponents-1]); }
+			constructionDim.emplace_back(dimensions[position]);
+			if (N == 2) { constructionDim.emplace_back(dimensions[position+numComponents]); }
 			constructionDim.emplace_back(newRank);
 			if (newRank == maxRank) {
 				nxtTensor.reset(new FullTensor(std::move(constructionDim), std::move(currentU)) );
@@ -171,6 +167,9 @@ namespace xerus {
 			for (size_t row = 0; row < newRank; ++row) {
 				misc::array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
 			}
+			
+			workingData = std::move(currentVt);
+			oldRank = newRank;
 		}
 		
 		// Create FullTensor for Vt
@@ -527,6 +526,7 @@ namespace xerus {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
 			if (currNode.neighbors[i].external) {
 				externalLinks[currNode.neighbors[i].indexPosition].dimension = currNode.tensorObject->dimensions[i];
+				dimensions[currNode.neighbors[i].indexPosition] = currNode.tensorObject->dimensions[i];
 			}
 		}
 		if (cannonicalized && corePosition != _idx) {
