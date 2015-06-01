@@ -63,77 +63,30 @@ namespace xerus {
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
         template<class generator, class distribution>
         static TTNetwork construct_random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
-            const size_t N = isOperator?2:1;
-            REQUIRE(_ranks.size() == _dimensions.size()/N-1,"non-matching amount of ranks given to TTNetwork::construct_random");
+            REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::construct_random");
             #ifndef DISABLE_RUNTIME_CHECKS_
-                for (size_t d : _dimensions) {
-                    REQUIRE(d > 0, "trying to construct random TTTensor with dimension 0");
+                for (const size_t d : _dimensions) {
+                    REQUIRE(d > 0, "Trying to construct random TTTensor with dimension 0 is illegal.");
                 }
-                for (size_t d : _ranks) {
-                    REQUIRE(d > 0, "trying to construct random TTTensor with rank 0");
+                for (const size_t d : _ranks) {
+                    REQUIRE(d > 0, "Trying to construct random TTTensor with rank 0 is illegal.");
                 }
             #endif
             
-            TTNetwork result;
-            if(_dimensions.size() == 0) {
-    // 			std::shared_ptr<Tensor> newT(new FullTensor(0));
-    // 			newT->data.get()[0] = dis(rnd);
-    // 			result.nodes.emplace_back(std::move(newT));
-                result.factor = _dist(_rnd); //TODO create testcase for degree-0 TTtensors
-                result.dimensions.clear();
-            } else {
-                result.nodes.clear();
-                result.dimensions = _dimensions;
-                result.factor = 1.0;
-                
-                // externalLinks
-                size_t numNodes = _dimensions.size()/N;
-                result.externalLinks.emplace_back(0, 0, result.dimensions[0], false);
-                for(size_t i = 1; i < numNodes; ++i) {
-                    result.externalLinks.emplace_back(i, 1, result.dimensions[i], false);
-                }
-                if(N == 2) {
-                    result.externalLinks.emplace_back(0, 1, result.dimensions[numNodes], false);
-                    for(size_t i = 1; i < numNodes; ++i) {
-                        result.externalLinks.emplace_back(i, 2, result.dimensions[numNodes+i], false);
-                    }
-                }
-                
-                size_t maxDim1 = misc::product(_dimensions);
-                size_t maxDim2 = 1;
-                std::vector<size_t> constructVector;
-                std::vector<TensorNode::Link> neighbors;
-                for (size_t i=0; i<_dimensions.size()/N; ++i) {
-                    constructVector.clear();
-                    neighbors.clear();
-                    if (i!=0) {
-                        size_t r = std::min(_ranks[i-1],std::min(maxDim1, maxDim2));
-                        constructVector.emplace_back(r);
-                        neighbors.emplace_back(i-1, N+(i>=2?1:0), r, false);
-                    }
-                    for (size_t j=0; j< N; ++j) { 
-                        size_t r = _dimensions[i+j*numNodes];
-                        constructVector.emplace_back(r); 
-                        neighbors.emplace_back(-1, i+j*numNodes, r, true);
-                    }
-                    if (i!=_dimensions.size()/N-1) {
-                        size_t r = std::min(_ranks[i],std::min(maxDim1/_dimensions[i], maxDim2*_dimensions[i]));
-                        constructVector.emplace_back(r);
-                        neighbors.emplace_back(i+1, 0, r, false);
-                    }
-                    
-                    result.nodes.emplace_back(
-                        std::unique_ptr<Tensor>(new FullTensor(FullTensor::construct_random(constructVector, _rnd, _dist))), 
-                        std::move(neighbors)
-                    );
-                    
-                    maxDim1 /= _dimensions[i];
-                    maxDim2 *= _dimensions[i];
-                }
-            }
-            REQUIRE(result.nodes.size() == _dimensions.size()/N,"ie");
+            TTNetwork result(_dimensions.size());
+			const size_t numComponents = _dimensions.size()/N;
+			size_t maxDim1 = 1;
+			size_t maxDim2 = misc::product(_dimensions);
+			
+			for(size_t i = 0; i < numComponents; ++i) {
+				size_t oldMaxDim = std::min(maxDim1, maxDim2);
+				maxDim1 *= _dimensions[i];
+				maxDim2 /= _dimensions[i];
+				size_t maxDim = std::min(maxDim1, maxDim2);
+				result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+			}
             result.cannonicalize_right();
-            REQUIRE(result.is_valid_tt(), "ie");
+            REQUIRE(result.is_valid_tt(), "Internal Error.");
             return result;
         }
         
@@ -203,17 +156,10 @@ namespace xerus {
         template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         void transpose() {
             Index i,r,l,j;
-            for (size_t n=0; n<nodes.size(); ++n) {
-                size_t ld = n==0?0:1;
-                size_t rd = n==nodes.size()-1?0:1;
-                REQUIRE(nodes[n].neighbors.size() == ld + rd + 2, "ie " << ld << " " << rd << " " << nodes[n].neighbors.size() << " n= " << n);
-                (*nodes[n].tensorObject)(l^ld,j,i,r^rd) = (*nodes[n].tensorObject)(l^ld,i,j,r^rd);
-                TensorNode::Link &l1 = nodes[n].neighbors[ld];
-                TensorNode::Link &l2 = nodes[n].neighbors[ld+1];
-                REQUIRE(l1.external, "ie "<< l1.other << " " << ld << " " << n << " " << nodes[n].neighbors.size() << " " << nodes.size());
-                REQUIRE(l2.external, "ie "<< l2.other);
-                std::swap(externalLinks[l1.indexPosition].dimension, externalLinks[l2.indexPosition].dimension);
-                std::swap(l1.dimension, l2.dimension);
+            for (size_t n=0; n < degree(); ++n) {
+				std::unique_ptr<Tensor> At(nodes[n].tensorObject->construct_new());
+                (*At)(l,j,i,r) = get_component(n)(l,i,j,r);
+				set_component(n, std::move(At));
             }
         }
         
@@ -257,7 +203,6 @@ namespace xerus {
     typedef TTNetwork<true> TTOperator;
 
     namespace internal {
-
         template<bool isOperator>
         /// Internal class used to represent stacks consiting of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
         class TTStack : public TTNetwork<isOperator> {
@@ -268,7 +213,7 @@ namespace xerus {
             }
             
             virtual TensorNetwork* get_copy() const override {
-                LOG(fatal, "forbidden");
+                LOG(fatal, "Forbidden");
                 return nullptr;
             }
             
