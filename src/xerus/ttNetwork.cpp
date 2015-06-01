@@ -1058,8 +1058,8 @@ namespace xerus {
 		if(numComponents == 1) {
 			// Create the one Node
 			std::unique_ptr<Tensor> nextTensor;
-			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[0].tensorObject.get();
-			const Tensor &otherComponent = *realOther.tensorObjectReadOnly->nodes[0].tensorObject.get();
+			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[1].tensorObject.get();
+			const Tensor &otherComponent = *realOther.tensorObjectReadOnly->nodes[1].tensorObject.get();
 			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
 				nextTensor.reset(myComponent.get_copy());
 				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;

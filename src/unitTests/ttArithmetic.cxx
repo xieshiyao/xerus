@@ -219,7 +219,7 @@ UNIT_TEST(TT, product,
 	
 	C(i^2,k^2) = A(i^2,j^2) * B(j^2,k^2);
 	ttC(i^2,k^2) = ttA(i^2,j^2) * ttB(j^2,k^2);
-	TEST(ttC.nodes.size() == 2);
+	TEST(ttC.nodes.size() == 4);
 	fnorm = frob_norm(FullTensor(ttC)(i&0) - C(i&0));
 	LOG(unit_tests, "frob_norm " << fnorm);
 	TEST(fnorm < 10*10*10*10*1e-15);
