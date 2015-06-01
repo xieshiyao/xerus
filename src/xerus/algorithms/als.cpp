@@ -75,10 +75,10 @@ namespace xerus {
 		bxR.emplace_back(tmpB);
 		
         for (size_t i = _x.degree()-1; i > sites-1; --i) {
-			tmpA(r1, r2, r3) = tmpA(cr1, cr2, cr3) * _x.get_component(i)(r1, n1, cr1) * _A.get_component(i)(r2, n1, n2, cr2) * _x.get_component(i)(r3, n2, cr3);
-			tmpB(r1, r2) = tmpB(cr1, cr2) * _b.get_component(i)(r1, n1, cr1) * _x.get_component(i)(r2, n1, cr2);
-            xAxR.emplace_back(tmpA);
-            bxR.emplace_back(tmpB);
+			tmpA(r1, r2, r3) = xAxR.back()(cr1, cr2, cr3) * _x.get_component(i)(r1, n1, cr1) * _A.get_component(i)(r2, n1, n2, cr2) * _x.get_component(i)(r3, n2, cr3);
+			tmpB(r1, r2) = bxR.back()(cr1, cr2) * _b.get_component(i)(r1, n1, cr1) * _x.get_component(i)(r2, n1, cr2);
+            xAxR.emplace_back(std::move(tmpA));
+            bxR.emplace_back(std::move(tmpB));
         }
         
         // Calculate initial residual
@@ -97,9 +97,6 @@ namespace xerus {
         size_t currIndex = 0;
         while (true) {
 			LOG(ALS, "Starting to optimize index " << currIndex);
-			
-			// Move core into position
-			_x.move_core(currIndex);
 			
 			// Calculate Atilde and Btilde
 			ATilde(r1,n1,cr1, r3,n2,cr3) = xAxL.back()(r1,r2,r3) * _A.get_component(currIndex)(r2, n1, n2, cr2) * xAxR.back()(cr1, cr2, cr3);
@@ -149,7 +146,11 @@ namespace xerus {
                 LOG(ALS, "Start sweep " << (walkingRight?"right":"left"));
             }
             
+            
             if (walkingRight) {
+				// Move core to next position
+				_x.move_core(currIndex+1);
+				
                 // Move one site to the right
                 xAxR.pop_back();
                 bxR.pop_back();
@@ -163,6 +164,9 @@ namespace xerus {
                 bxL.emplace_back(std::move(tmpB));
                 currIndex++;;
             } else {
+				// Move core to next position
+				_x.move_core(currIndex-1);
+			
                 // move one site to the left
                 xAxL.pop_back();
                 bxL.pop_back();
