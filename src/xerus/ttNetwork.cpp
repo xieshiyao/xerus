@@ -382,7 +382,8 @@ namespace xerus {
 					externalDim[externalNumber] = l.dimension;
 				} else if (l.links(i)) {
 					if (i==0) {
-						oldIndices.emplace_back();
+						lastRight.emplace_back();
+						oldIndices.push_back(lastRight.back());
 					} else {
 						REQUIRE(lastIndices.size() > l.indexPosition, "ie " << i << " " << lastIndices.size() << " " << l.indexPosition);
 						oldIndices.push_back(lastIndices[l.indexPosition]);
