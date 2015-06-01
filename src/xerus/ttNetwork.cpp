@@ -1123,7 +1123,7 @@ namespace xerus {
 			const size_t otherLeftIdxOffset = otherComponent.size/otherComponent.dimensions.front();
 			const size_t otherExtIdxOffset = otherComponent.dimensions.back();
 			const size_t otherGeneralOffset = (position == 0 ? 0 : myComponent.dimensions.front()*leftIdxOffset) + (position == numComponents-1 ? 0 : myComponent.dimensions.back());
-			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[1] : 1);
+			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[2] : 1);
 			
 			// Copy own Tensor into place
 			if (!cannonicalized || position == corePosition) {
