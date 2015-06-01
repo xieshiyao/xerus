@@ -29,11 +29,10 @@
 namespace xerus {
 
     void ALSVariant::lapack_solver(const TensorNetwork &_A, Tensor &_x, const Tensor &_b) {
-        const size_t d = _x.degree();
         FullTensor A(_A);
         Index i,j;
-        _x(i^d) = _b(j^d) / A(j^d, i^d);
-        REQUIRE(d <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
+        _x(i&0) = _b(j&0) / A(j/2, i/2);
+        REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
     }
 
     double ALSVariant::operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const {

@@ -32,6 +32,7 @@ namespace xerus {
         
         const std::vector<Index> AIndices = _a.get_assigned_indices();
         const std::vector<Index> bIndices = _b.get_assigned_indices();
+		
         IF_CHECK( _x.check_indices(false); )
         
         REQUIRE(!_x.tensorObjectReadOnly->is_sparse() && !_b.tensorObjectReadOnly->is_sparse(), "At the moment we only allow FullTensors in solve.");
@@ -123,7 +124,6 @@ namespace xerus {
                 dimensionsCount += idx.span;
             }
         }
-        
         IndexedTensorMoveable<Tensor> tmpX(new FullTensor(std::move(dimensionsX), DONT_SET_ZERO()), std::move(indicesX));
         
         solve(tmpX, _A, _b);
