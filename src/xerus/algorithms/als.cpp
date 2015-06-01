@@ -107,7 +107,7 @@ namespace xerus {
 			BTilde(r2,n1,cr2) = bxL.back()(r1,r2) * _b.get_component(currIndex)(r1, n1, cr1) * bxR.back()(cr1,cr2);
 			
 			// Change component tensor if the local residual is large enough
-			if (minimumLocalResidual <= 0 || frob_norm(IndexedTensorMoveable<Tensor>(ATilde(r1^3, r2^3)*X(currIndex)(r2^3)) - BTilde(r1^3)) > minimumLocalResidual) {
+			if (minimumLocalResidual <= 0 || frob_norm(IndexedTensorMoveable<Tensor>(ATilde(r1^3, r2^3)*_x.get_component(currIndex)(r2^3)) - BTilde(r1^3)) > minimumLocalResidual) {
 				FullTensor tmpX;
 				localSolver(ATilde, tmpX, BTilde);
 				_x.set_component(currIndex, tmpX);
