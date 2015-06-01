@@ -44,7 +44,7 @@ extern "C"
 #include <memory>
 #include <cstring>
 #include <xerus/misc/standard.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 
 namespace xerus {
     namespace misc {

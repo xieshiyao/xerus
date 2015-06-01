@@ -20,8 +20,9 @@
 #pragma once
 
 #include "fullTensor.h"
-#include "misc/test.h"
+#include "misc/check.h"
 #include "misc/missingFunctions.h"
+#include "misc/performanceAnalysis.h"
 
 namespace xerus {
     
@@ -82,9 +83,11 @@ namespace xerus {
             REQUIRE(_n < result.size, " Cannot create " << _n << " non zero entries in a tensor with only " << result.size << " total entries!");
             
             std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
+			PA_START;
             while(result.entries->size() < _n) {
                 result.entries->emplace(entryDist(_rnd), _dist(_rnd));
             }
+			PA_END("Random construction", "SparseTensor", misc::to_string(_n)+"/"+misc::to_string(result.size));
 
             return result;
         }

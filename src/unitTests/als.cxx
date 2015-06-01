@@ -68,6 +68,7 @@ UNIT_TEST(ALS, identity,
     TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
 )
 
+#include <iomanip>
 
 UNIT_TEST(ALS, tutorial,
 	std::mt19937_64 rnd;
@@ -93,14 +94,24 @@ UNIT_TEST(ALS, tutorial,
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
+
+	// TODO should also be in the tutorial
+	TTTensor C;
+	C(i&0) = A(i/2, j/2) * B(j&0);
+	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
 	ALSb.printProgress = false;
-	
 	std::vector<double> perfdata;
+	
+	ALSb(A, X, C, 1e-10, &perfdata);
+	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-8));
+// 	std::cout << "Residual " << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
+// 	std::cout << std::scientific << perfdata << std::endl;
+	
+	
+	perfdata.clear();
 	ALSb(A, X, B, 1e-4, &perfdata);
-	
 	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
-	
 // 	std::cout << perfdata << std::endl;
 )

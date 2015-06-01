@@ -17,15 +17,29 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+#pragma once
 
-#include<xerus.h>
+#ifdef TEST_COVERAGE_
+	#include "test.h"
+#else
+	#define REQUIRE_TEST (void)0
+#endif
 
-#include "../../include/xerus/misc/test.h"
-using namespace xerus;
+// Only do anything if the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
+#ifndef DISABLE_RUNTIME_CHECKS_
+	#include "namedLogger.h"
 
-#ifdef BLAS_ANALYSIS
-    UNIT_TEST(X_BlasAnalysis_X, Analysis,
-        std::cout << print_blas_analysis();
-        LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
-    )
+	#ifdef TEST_COVERAGE_
+		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#else
+		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#endif
+
+	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
+	
+    #define IF_CHECK(expression) expression
+#else
+	#define CHECK(condition, level, message) void(0)
+	#define REQUIRE(condition, message) void(0)
+    #define IF_CHECK(expression)
 #endif

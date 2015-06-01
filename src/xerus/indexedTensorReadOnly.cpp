@@ -21,7 +21,7 @@
 
 #include <xerus/index.h>
 #include <xerus/misc/missingFunctions.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 
@@ -77,15 +77,32 @@ namespace xerus {
     std::vector<size_t> IndexedTensorReadOnly<tensor_type>::get_evaluated_dimensions(const std::vector<Index>& _indexOrder) const {
         std::vector<size_t> evalDimensions;
         evalDimensions.reserve(_indexOrder.size());
+		
         for(const Index& idx : _indexOrder) {
             REQUIRE(misc::count(indices, idx) == 1, "All indices of evaluation target must appear exactly once.");
             
             // Find index
             size_t indexPos = 0, dimCount = 0;
-            while(indices[indexPos] != idx) { dimCount += indices[indexPos].flags[Index::Flag::INVERSE_SPAN] ? degree()-indices[indexPos].span : indices[indexPos].span; ++indexPos; }
+            while(indices[indexPos] != idx) {
+				if(indices[indexPos].flags[Index::Flag::INVERSE_SPAN]) {
+					dimCount += degree()-indices[indexPos].span; 
+				} else if( indices[indexPos].flags[Index::Flag::FRACTIONAL_SPAN] ) {
+					dimCount += degree()/indices[indexPos].span;
+				} else {
+					dimCount += indices[indexPos].span;
+				}
+				 ++indexPos;
+			}
             
             // Calculate span
-            size_t span = indices[indexPos].flags[Index::Flag::INVERSE_SPAN] ? degree()-indices[indexPos].span : indices[indexPos].span;
+            size_t span;
+            if(indices[indexPos].flags[Index::Flag::INVERSE_SPAN]) {
+				span = degree()-indices[indexPos].span; 
+			} else if( indices[indexPos].flags[Index::Flag::FRACTIONAL_SPAN] ) {
+				span = degree()/indices[indexPos].span;
+			} else {
+				span = indices[indexPos].span;
+			}
             
             REQUIRE(dimCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large. Tensor has " << tensorObjectReadOnly->dimensions.size() << " indices at least " << dimCount+span);
             
@@ -109,10 +126,11 @@ namespace xerus {
         
         size_t dimensionCount = 0;
         for(const Index& idx : indices) {
+			REQUIRE(!idx.flags[Index::Flag::FRACTIONAL_SPAN] || _futureDegree%idx.span == 0, "Fractional span must divide the tensor degree.");
+			
             // We don't look at span zero indices
             if((   !idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == 0) 
-                || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree) 
-                || (idx.flags[Index::Flag::FRACTIONAL_SPAN] && _futureDegree/idx.span == 0)) 
+                || (idx.flags[Index::Flag::INVERSE_SPAN] && idx.span == _futureDegree)) 
             {
                 REQUIRE(!idx.fixed(), "Fixed index must have span == 1");
                 continue;
@@ -189,7 +207,7 @@ namespace xerus {
                     REQUIRE(!idx.fixed(), "Fixed index must not have inverse span");
                     dimensionCount += degree()-idx.span;
                 } else if(idx.flags[Index::Flag::FRACTIONAL_SPAN]) {
-                    CHECK(degree()%idx.span == 0, warning, "Fractional span used in tensor with an degree that is not divisable by the given fraction.");
+                    REQUIRE(degree()%idx.span == 0, "Fractional span used in tensor with an degree that is not divisable by the given fraction.");
                     dimensionCount += degree()/idx.span;
                 } else {
                     dimensionCount += idx.span;

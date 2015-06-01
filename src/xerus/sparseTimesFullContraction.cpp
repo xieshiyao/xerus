@@ -18,6 +18,7 @@
 // or contact us at contact@libXerus.org.
 
 #include <xerus/sparseTimesFullContraction.h>
+#include <xerus/misc/performanceAnalysis.h>
 
 namespace xerus {
     
@@ -61,6 +62,8 @@ namespace xerus {
                                 const bool _transposeA,
                                 const size_t _midDim,
                                 const double* const _B) {
+		PA_START;
+		
         // Prepare output array
         misc::array_set_zero(_C, _leftDim*_rightDim);
         
@@ -78,6 +81,8 @@ namespace xerus {
                 misc::array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }
+        
+		PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Full", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
     }
     
     void matrix_matrix_product( double* const _C,
@@ -122,6 +127,8 @@ namespace xerus {
                                 const std::map<size_t, double>& _A,
                                 const size_t _midDim,
                                 const double* const _B) {
+		PA_START;
+		
         size_t currentRow = 0;
         std::unique_ptr<double[]> row(new double[_rightDim]);
         misc::array_set_zero(row.get(), _rightDim);
@@ -160,6 +167,8 @@ namespace xerus {
                 }
             #pragma GCC diagnostic pop
         }
+        
+		PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Sparse", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
     }
     
     void matrix_matrix_product( std::map<size_t, double>& _C,

@@ -23,7 +23,7 @@
 #include "fullTensor.h"
 #include "index.h"
 #include "misc/missingFunctions.h"
-#include "misc/test.h"
+#include "misc/check.h"
 
 namespace xerus {
 
@@ -72,6 +72,7 @@ namespace xerus {
             #endif
             
             TTNetwork result(_dimensions.size());
+			result.factor = 1.0;
 			const size_t numComponents = _dimensions.size()/N;
 			size_t maxDim1 = 1;
 			size_t maxDim2 = misc::product(_dimensions);
