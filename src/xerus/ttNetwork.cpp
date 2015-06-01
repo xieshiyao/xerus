@@ -109,7 +109,7 @@ namespace xerus {
 		size_t leftDim=1, remainingDim=_full.size, maxRank, newRank=1, oldRank=1;
 		
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
-		if (N==1) {
+		if (!isOperator) {
 			workingData.reset(new value_t[_full.size], internal::array_deleter_vt);
 			misc::array_copy(workingData.get(), _full.data.get(), _full.size);
 		} else {
@@ -121,15 +121,15 @@ namespace xerus {
 				newIndices.emplace_back(presentIndices[i+numComponents]);
 			}
 			tmpTensor(newIndices) = _full(presentIndices);
-			workingData = tmpTensor.data;
+			workingData = std::move(tmpTensor.data);
 		}
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
 			// determine dimensions of the next matrification
 			leftDim = oldRank*dimensions[position];
-			if(N == 2) { leftDim *= dimensions[position+numComponents]; }
+			if (isOperator) { leftDim *= dimensions[position+numComponents]; }
 			remainingDim /= dimensions[position];
-			if(N == 2) { remainingDim /= dimensions[position+numComponents]; }
+			if (isOperator) { remainingDim /= dimensions[position+numComponents]; }
 			maxRank = std::min(leftDim, remainingDim);
 			
 			// create temporary space for the results
@@ -149,7 +149,7 @@ namespace xerus {
 			std::vector<size_t> constructionDim;
 			constructionDim.emplace_back(oldRank);
 			constructionDim.emplace_back(dimensions[position]);
-			if (N == 2) { constructionDim.emplace_back(dimensions[position+numComponents]); }
+			if (isOperator) { constructionDim.emplace_back(dimensions[position+numComponents]); }
 			constructionDim.emplace_back(newRank);
 			if (newRank == maxRank) {
 				nxtTensor.reset(new FullTensor(std::move(constructionDim), std::move(currentU)) );
@@ -173,7 +173,7 @@ namespace xerus {
 		}
 		
 		// Create FullTensor for Vt
-		if (N==1) {
+		if (!isOperator) {
 			nxtTensor.reset(new FullTensor({oldRank, dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
 		} else {
 			nxtTensor.reset(new FullTensor({oldRank, dimensions[degree()/N-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
@@ -478,10 +478,10 @@ namespace xerus {
 				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[1].indexPosition);
 				if (isOperator) {
 					REQUIRE(node.neighbors[2].external, "n=" << n);
-					REQUIRE(node.neighbors[2].indexPosition == numNodes+n, "n=" << n << " " << node.neighbors[2].indexPosition << " vs " << numNodes+n);
+					REQUIRE(node.neighbors[2].indexPosition == numComponents+n, "n=" << n << " " << node.neighbors[2].indexPosition << " vs " << numComponents+n);
 				}
 				if (node.tensorObject) {
-					if (n<numComponents-1) {
+					if (cannonicalized && n!=corePosition) {
 						REQUIRE(!node.tensorObject->has_factor(), "n="<<n);
 					}
 					REQUIRE(node.tensorObject->dimensions[0]==node.neighbors[0].dimension, "n=" << n);
@@ -494,8 +494,8 @@ namespace xerus {
 				REQUIRE(!node.neighbors.back().external, "n=" << n);
 				REQUIRE(node.neighbors.back().other == n+2, "n=" << n << " " << node.neighbors.back().other);
 				REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);
-				REQUIRE(!nodes[n+1].neighbors.empty(), "n=" << n);
-				REQUIRE(node.neighbors.back().dimension == nodes[n+1].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
+				REQUIRE(!nodes[n+2].neighbors.empty(), "n=" << n);
+				REQUIRE(node.neighbors.back().dimension == nodes[n+2].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
 			}
 			
 			return true;
