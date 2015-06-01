@@ -123,6 +123,7 @@ namespace xerus {
 			tmpTensor(newIndices) = _full(presentIndices);
 			currentVt = tmpTensor.data;
 		}
+		workingData = currentVt;
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
 			workingData = std::move(currentVt);
