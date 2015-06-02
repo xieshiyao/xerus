@@ -134,7 +134,7 @@ install:
 endif
 else
 install:
-	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
+	@printf "INSTALL_LIB_PATH not set correctly. Cannot install xerus.\n"
 endif
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS)
