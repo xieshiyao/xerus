@@ -70,7 +70,6 @@ int main() {
 	storeVeloData(velocity, "channel_full");
 	
 	xerus::TTTensor ttv(velocity);
-	xerus::TTOperator I(xerus::TTOperator::construct_identity({5,5,3,9,5,5,3,  5,5,3,9,5,5,3}));
 	size_t r = xerus::misc::max(ttv.ranks())-1;
 	xerus::value_t velo_norm = xerus::frob_norm(velocity);
 	std::ofstream out("channel_ttapprox.dat");
@@ -81,9 +80,9 @@ int main() {
 		std::cout << r << " als" << '\r' << std::flush;
         if(r < 20) {
             std::vector<double> perf;
-            xerus::ALSVariant alsb(xerus::ALS);
-            alsb.printProgress = true;
-            alsb(I, ttv, ttvOpt, 1e-4, &perf);
+            xerus::ProjectionALSVariant::ALSVariant pALS(xerus::ProjectionALS);
+            pALS.printProgress = true; pALS.preserveCore = false;
+            pALS(ttv, ttvOpt, 1e-4, &perf);
         }
 		xerus::FullTensor approx(ttv);
         std::cout << "Current residual: " << xerus::frob_norm(approx-velocity)/velo_norm << std::endl;

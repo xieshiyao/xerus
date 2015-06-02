@@ -182,4 +182,116 @@ namespace xerus {
             }
         }
     }
+	
+	
+	
+	
+	double ProjectionALSVariant::solve(TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const {
+		LOG(ALS, "pALS("<< _numHalfSweeps << ", " << _convergenceEpsilon <<") called");
+		REQUIRE(_x.degree() > 0, "");
+		REQUIRE(_x.dimensions == _b.dimensions, "");
+		
+		const size_t d = _x.degree();
+		Index cr1, cr2, r1, r2, n1;
+		
+		std::vector<FullTensor> bxL, bxR;
+		
+		bool cannoAtTheEnd = _x.cannonicalized;
+		size_t corePosAtTheEnd = _x.corePosition;
+		
+		_x.cannonicalize_left();
+
+		// Create stack of contracted network-parts
+		FullTensor tmp({1,1}, [](){return 1.0;});
+		bxL.emplace_back(tmp);
+		bxR.emplace_back(tmp);
+		
+		for (size_t i = _x.degree()-1; i > 0; --i) {
+			tmp(r1, r2) = bxR.back()(cr1, cr2) * _b.get_component(i)(r1, n1, cr1) * _x.get_component(i)(r2, n1, cr2);
+			bxR.emplace_back(std::move(tmp));
+		}
+		
+		// Calculate initial residual
+		if (_perfData != nullptr) {
+			_perfData->push_back(frob_norm(_x(n1&0) - _b(n1&0)));
+			LOG(ALS, "calculated residual for perfData: " << _perfData->back());
+		}
+		
+		FullTensor BTilde;
+		value_t lastEnergy2 = 1e102;
+		value_t lastEnergy = 1e101;
+		value_t energy = 1e100;
+		bool walkingRight = true;
+		size_t currIndex = 0;
+		size_t halfSweepCount = 0;
+		while (true) {
+			LOG(ALS, "Starting to optimize index " << currIndex);
+			
+			// Calculate Atilde and Btilde
+			BTilde(r2,n1,cr2) = bxL.back()(r1,r2) * _b.get_component(currIndex)(r1, n1, cr1) * bxR.back()(cr1,cr2);
+			
+			_x.set_component(currIndex, std::move(BTilde));
+			
+			if (_perfData != nullptr) {
+				_perfData->push_back(frob_norm(_x(n1&0) - _b(n1&0)));
+				LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << _perfData->back() << " ( " << std::abs(_perfData->back() - energy) << " vs " << _convergenceEpsilon << " ) ");
+				if (printProgress) {
+					std::cout << "optimized tensor "<< currIndex << ": " << _perfData->back() << " ( \t" << std::abs(_perfData->back() - energy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+				}
+			}
+			
+			// Are we done with the sweep?
+			if ((!walkingRight && currIndex==0) || (walkingRight && currIndex==d-1)) {
+				LOG(ALS, "Sweep Done");
+				halfSweepCount += 1;
+				
+				lastEnergy2 = lastEnergy;
+				lastEnergy = energy;
+				if (_perfData != nullptr) {
+					energy = _perfData->back(); // Energy already calculated
+				} else {
+					LOG(ALS, "Calculating energy for loop condition");
+					energy = frob_norm(_x(n1&0) - _b(n1&0));
+				}
+				
+				// Conditions for loop termination
+				if (halfSweepCount == _numHalfSweeps || std::abs(lastEnergy-energy) < _convergenceEpsilon || std::abs(lastEnergy2-energy) < _convergenceEpsilon || d<=1) {
+					// we are done! yay
+					LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
+					if (preserveCorePosition && cannoAtTheEnd) {
+						_x.move_core(corePosAtTheEnd);
+					}
+					return energy; 
+				}
+				
+				walkingRight = !walkingRight;
+				LOG(ALS, "Start sweep " << (walkingRight?"right":"left"));
+			}
+			
+			
+			if (walkingRight) {
+				// Move core to next position
+				_x.move_core(currIndex+1);
+				
+				// Move one site to the right
+				bxR.pop_back();
+				
+				LOG(ALS, "Calc BxL");
+				tmp(r1,r2) = bxL.back()(cr1,cr2) * _b.get_component(currIndex)(cr1, n1, r1) * _x.get_component(currIndex)(cr2, n1, r2);
+				bxL.emplace_back(std::move(tmp));
+				currIndex++;;
+			} else {
+				// Move core to next position
+				_x.move_core(currIndex-1);
+			
+				// move one site to the left
+				bxL.pop_back();
+				
+				LOG(ALS, "Calc bxR");
+				tmp(r1,r2) = bxR.back()(cr1,cr2) * _b.get_component(currIndex)(r1, n1, cr1) * _x.get_component(currIndex)(r2, n1, cr2);
+				bxR.emplace_back(std::move(tmp));
+				currIndex--;
+			}
+		}
+	}
 }

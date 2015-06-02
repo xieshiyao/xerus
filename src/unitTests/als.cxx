@@ -68,6 +68,27 @@ UNIT_TEST(ALS, identity,
     TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
 )
 
+
+UNIT_TEST(ALS, projectionALS,
+    //Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(0x5EED);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+    
+    Index k,l,m,n,o,p;
+    
+	TTTensor B = TTTensor::construct_random({10,10,10,10,10}, {10,40,40,10}, rnd, dist);
+	TTTensor X = B;
+	for (size_t r = 20; r > 0; --r) {
+		X.round(r);
+		value_t roundNorm = frob_norm(X-B);
+		ProjectionALS(X,B,1e-4);
+		value_t projNorm = frob_norm(X-B);
+		LOG(unit_test, roundNorm << " > " << projNorm);
+		TEST(projNorm < roundNorm);
+	}
+)
+
 #include <iomanip>
 
 UNIT_TEST(ALS, tutorial,
@@ -104,8 +125,8 @@ UNIT_TEST(ALS, tutorial,
 	ALSb.printProgress = false;
 	std::vector<double> perfdata;
 	
-	ALSb(A, X, C, 1e-10, &perfdata);
-	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-8));
+	ALSb(A, X, C, 1e-5, &perfdata);
+	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
 // 	std::cout << "Residual " << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
 // 	std::cout << std::scientific << perfdata << std::endl;
 	
