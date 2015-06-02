@@ -50,11 +50,19 @@ namespace xerus {
                 return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*1099511628211ul : 14695981039346656037ul;
             }
             
+#ifdef LOG_BUFFER_
             enum {
                 NOT_LOGGING = 0,
                 LOGGING_ON_ERROR,
                 LOGGING_FULL
             };
+#else
+            enum {
+                NOT_LOGGING = 0,
+                LOGGING_FULL
+            };
+            static const auto LOGGING_ON_ERROR = NOT_LOGGING;
+#endif
             
             extern std::mutex namedLoggerMutex;
             extern std::string logFilePrefix;
