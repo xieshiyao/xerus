@@ -298,7 +298,7 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
 		 * @brief Adds the @a _other Tensor entrywise to this one.
-		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
 		 * @param _other the Tensor to be added to this one.
 		 * @return a reference to this FullTensor.
 		 */
@@ -306,7 +306,7 @@ namespace xerus {
         
 		/** 
 		 * @brief Calculates the entrywise sum of this FullTensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
 		 * @param _other the second summand.
 		 * @return the sum.
 		 */
@@ -314,7 +314,7 @@ namespace xerus {
         
 		/** 
 		 * @brief Subtracts the @a _other FullTensor entrywise from this one.
-		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
 		 * @param _other the Tensor to be subtracted to this one.
 		 * @return a reference to this FullTensor.
 		 */
