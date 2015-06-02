@@ -78,13 +78,15 @@ UNIT_TEST(ALS, projectionALS,
     Index k,l,m,n,o,p;
     
 	TTTensor B = TTTensor::construct_random({10,10,10,10,10}, {10,40,40,10}, rnd, dist);
-	TTTensor X = B;
 	for (size_t r = 20; r > 0; --r) {
+		TTTensor X = B;
+		LOG(norm, frob_norm(B));
 		X.round(r);
+		LOG(norm, frob_norm(B));
 		value_t roundNorm = frob_norm(X-B);
 		ProjectionALS(X,B,1e-4);
 		value_t projNorm = frob_norm(X-B);
-		LOG(unit_test, roundNorm << " > " << projNorm);
+		LOG(unit_testk, r << " : " << roundNorm << " > " << projNorm);
 		TEST(projNorm < roundNorm);
 	}
 )

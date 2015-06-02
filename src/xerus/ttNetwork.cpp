@@ -966,11 +966,11 @@ namespace xerus {
 			}
 		} else if (otherTTStack) {
 			if (!otherTTStack->cannonicalization_required || coreAtTheEnd != otherTTStack->futureCorePosition) {
-				cannoAtTheEnd = true;
+				cannoAtTheEnd = false;
 			}
 		} else if (otherTTOStack) {
 			if (!otherTTOStack->cannonicalization_required || coreAtTheEnd != otherTTOStack->futureCorePosition) {
-				cannoAtTheEnd = true;
+				cannoAtTheEnd = false;
 			}
 		}
 		
@@ -1255,7 +1255,7 @@ namespace xerus {
 			// Check whether the index order coincides
 			if (myIndices == otherIndices) {
 				if (otherTTN) {
-					*_me.tensorObject = *otherTTN;
+					*meTTN = *otherTTN;
 				} else {
 					static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
 					if (otherTTStack->cannonicalization_required) {
@@ -1294,7 +1294,7 @@ namespace xerus {
 				
 				if (transposed) {
 					if (otherTTN) {
-						*_me.tensorObject = *otherTTN;
+						*meTTN = *otherTTN;
 					} else {
 						static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
 						if (otherTTStack->cannonicalization_required) {
