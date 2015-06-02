@@ -96,12 +96,14 @@ namespace xerus {
         
         /** 
 		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
         /** 
 		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
