@@ -70,13 +70,13 @@ namespace xerus {
         explicit Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor = 1.0);
 
         
-        /// Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
+        /// @brief Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_copy() const = 0;
         
-        /// Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
+        /// @brief Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
         virtual Tensor* get_moved_copy() = 0;
         
-        /// Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
+        /// @brief Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
         virtual Tensor* construct_new() const = 0;
         
         /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
@@ -99,23 +99,26 @@ namespace xerus {
          */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
-        /// Destructor
+        /// @brief Destructor
         virtual ~Tensor();
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
+        /// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
         virtual void ensure_own_data() = 0;
         
-        /// Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
+        /// @brief Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
         virtual void ensure_own_data_no_copy() = 0;
         
-        /// Checks whether there is a non-trivial scaling factor and applies it if nessecary.
+        /// @brief Checks whether there is a non-trivial scaling factor and applies it if nessecary.
         virtual void apply_factor() = 0;
         
-        /// Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
+        /// @brief Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
         virtual void ensure_own_data_and_apply_factor() = 0;
         
-        /// Resets the tensor with the given dimensions and undefined entries.
+        /** @brief Resets the tensor with the given dimensions and undefined entries.
+		 * The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
+		 * @param _newDim the new dimensions the tensor shall have
+		 */
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) = 0;
         
         /// Resets the tensor with the given dimensions and undefined entries.

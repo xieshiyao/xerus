@@ -285,6 +285,8 @@ namespace xerus {
 			maxRank = std::min(maxLeftRank, maxRightRank);
 			
 			// Calculate QR and RQ decompositoins
+			leftTensor.ensure_own_data();
+			rightTensor.ensure_own_data();
 			LR.reset(new value_t[maxLeftRank*midDim]);
 			RR.reset(new value_t[midDim*maxRightRank]);
 			blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
@@ -1123,6 +1125,8 @@ namespace xerus {
 		
 		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
 		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOther.tensorObjectReadOnly);
+		
+		LOG(cannonicalization, "Other " << ttOther->cannonicalized << "(" << ttOther->corePosition << ") Me " << ttMe->cannonicalized << "("<< ttMe->corePosition << ")");
 		
 		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition != ttOther->corePosition) {
 			LOG(warning, "Adding TTTensors of different cannonicalizations. This is usually ill-conditioned! (result will have no single core)");
