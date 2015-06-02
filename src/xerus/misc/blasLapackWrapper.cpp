@@ -46,6 +46,7 @@ extern "C"
 #include <xerus/misc/standard.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/missingFunctions.h>
 
 
 namespace xerus {
@@ -185,6 +186,75 @@ namespace xerus {
             
 			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
+        
+        
+        
+		void rank_revealing_split(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
+			REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
+			
+			REQUIRE(_n > 0, "Dimension n must be larger than zero");
+			REQUIRE(_m > 0, "Dimension m must be larger than zero");
+			
+			PA_START;
+			
+			// Maximal rank is used by Lapacke
+			const size_t maxRank = std::min(_m, _n); 
+			
+			// Tmp Array for Lapacke
+			const std::unique_ptr<double[]> tau(new double[maxRank]);
+			const std::unique_ptr<int[]> permutation(new int[_n]());
+			
+			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+            misc::array_copy(tmpA.get(), _A, _m*_n);
+			
+			// Calculate QR factorisations with column pivoting
+			int lapackAnswer = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
+			CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
+			
+			// Copy the upper triangular Matrix R (rank x _n) into position
+			size_t rank = maxRank-1;
+			while (rank > 0 && misc::approx_equal(_A[rank*(_n+1)], 0.0, 1e-15)) {
+				std::cout << std::scientific << _A[rank*(_n+1)] << " ";
+				rank -= 1;
+			}
+			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
+			rank += 1;
+			_r = rank;
+			
+			_C.reset(new double[rank*_n]);
+			
+			for (size_t col = 0; col < _n; ++col) {
+				size_t targetCol = size_t(permutation[col]);
+				REQUIRE(targetCol > 0, "ie");
+				targetCol -= 1;
+				REQUIRE(targetCol < _n, "ie " << targetCol << " vs " << _n);
+				size_t row = 0;
+				for (; row < rank && row < col+1; ++row) {
+					_C[row*_n + targetCol] = _A[row*_n + col];
+				}
+				for (; row < rank; ++row) {
+					_C[row*_n + targetCol] = 0.0;
+				}
+			}
+			
+			// Create orthogonal matrix Q
+			LOG(lkj, _m << " " << _n << " " << rank);
+			lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, tmpA.get(), (int) _n, tau.get());
+			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
+			
+			_Q.reset(new double[_m*rank]);
+// 			if(rank == _n) {
+				misc::array_copy(_Q.get(), tmpA.get(), _m*rank);
+// 			} else {
+// 				for(size_t row = 0; row < _m; ++row) {
+// 					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
+// 				}
+// 			}
+			
+			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
+		}
+        
         
         
         

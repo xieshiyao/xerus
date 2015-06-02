@@ -137,7 +137,7 @@ UNIT_TEST(TT, special_sum_diff,
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A({10,10,10,10});
+	FullTensor A({10,10,10,10}); // NOTE that this is the 0 tensor
 	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
 	FullTensor C(4);
 	TTTensor ttA(A); 

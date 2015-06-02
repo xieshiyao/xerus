@@ -50,6 +50,13 @@ namespace xerus {
         
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
     };
-    
-    // TODO Split Core
+	
+	/// wrapper for the rank revealing orthogonal split. A=QC with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A
+	class OrthogonalSplit {
+	public:
+		const IndexedTensorReadOnly<Tensor>* input;
+		OrthogonalSplit(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
+		
+		void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
+	};
 }

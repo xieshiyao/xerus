@@ -32,8 +32,8 @@ namespace xerus {
         // Calculate future spans of lhs and rhs.
         size_t lhsSpan = 1, rhsSpan = 1; // Start with 1 because there is a new dimension introduced in the split. 
         
-        for(const Index& idx : baseIndices) {
-            if(idx.open()) { // TODO inefficent
+        for (const Index& idx : baseIndices) {
+            if (idx.open()) { // TODO inefficent
                 if(misc::contains(_lhs.indices, idx)) { 
                     lhsSpan += idx.span; 
                 } else {
@@ -59,6 +59,7 @@ namespace xerus {
         
         
         // Work through the indices of lhs
+		
         for(size_t i = 0; i < lhsIndices.size()-1; ++i) {
             REQUIRE(!misc::contains(rhsIndices, lhsIndices[i]), "Left and right part of factorization must not share common indices.");
             
@@ -207,5 +208,38 @@ namespace xerus {
         R.tensorObject->factor = reorderedBaseTensor->factor;
         
         blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->data.get(), static_cast<FullTensor*>(Q.tensorObject)->data.get(), static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), lhsSize, rhsSize);
+    }
+    
+    
+    void OrthogonalSplit::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+        REQUIRE(_output.size() == 2, "OrthogonalSplit factorisation requires two output tensors, not " << _output.size());
+        const IndexedTensorReadOnly<Tensor>& A = *input;
+        const IndexedTensorWritable<Tensor>& Q = *_output[0];
+        const IndexedTensorWritable<Tensor>& C = *_output[1];
+        
+        REQUIRE(Q.indices.back() == C.indices[0], "The last index of Q must coincide with the first index of C in QC factorization.");
+        REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be FullTensors, as they are definitely not sparse.");
+        
+        size_t lhsSize, rhsSize, rank;
+        
+        std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, A, Q, C);
+        
+        // C has to carry the constant factor
+        C.tensorObject->factor = reorderedBaseTensor->factor;
+        
+        if(reorderedBaseTensor->is_sparse()){
+            LOG(fatal, "Sparse QC not yet implemented.");
+        } else {
+			std::unique_ptr<double[]> Qt, Ct;
+            blasWrapper::rank_revealing_split(Qt, Ct, 
+											  static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), 
+											  lhsSize, rhsSize, rank);
+			static_cast<FullTensor*>(Q.tensorObject)->data.reset(Qt.release());
+			Q.tensorObject->dimensions.back() = rank;
+			Q.tensorObject->size = misc::product(Q.tensorObject->dimensions);
+			static_cast<FullTensor*>(C.tensorObject)->data.reset(Ct.release());
+			C.tensorObject->dimensions.front() = rank;
+			C.tensorObject->size = misc::product(C.tensorObject->dimensions);
+        }
     }
 }

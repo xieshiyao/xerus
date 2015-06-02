@@ -49,21 +49,21 @@ namespace xerus {
 							for(const std::pair<std::string, std::pair<size_t, size_t>>& subCall : call.second) {
 								totalGroupCalls += subCall.second.first; totalCallCalls += subCall.second.first;
 								totalGroupTime += subCall.second.second; totalCallTime += subCall.second.second;
-								if(1000*subCall.second.second > totalTime) {
+								if(100000*subCall.second.second > totalTime) {
 									callStream << "| | " << std::setfill (' ') << std::setw(10) << subCall.second.second/1000
 									<< " ms ( " << std::setw(3) << (100*subCall.second.second)/totalTime << "% ) in " << std::setfill (' ') << std::setw(10) << subCall.second.first 
 									<< " calls (" << std::setfill (' ') << std::setw(8) << subCall.second.second/(1000*subCall.second.first)
 									<< " ms in average) for " << subCall.first << std::endl;
 								}
 							}
-							if(1000*totalCallTime > totalTime) {
+							if(100000*totalCallTime > totalTime) {
 								groupStream << std::endl;
 								groupStream << "| --------------------------- " << std::left << std::setfill (' ') << std::setw(26) << call.first << " ---------------------------" << std::endl;
 								groupStream << "| ------- Total time " << std::setw(14) << std::right << totalCallTime/1000 << " ms (" << std::setw(3) << (100*totalCallTime)/totalTime << "% ) in " << std::setw(10) << totalCallCalls << " calls -------" << std::endl;
 								groupStream << callStream.str();
 							}
 						}
-						if(1000*totalGroupTime > totalTime) {
+						if(100000*totalGroupTime > totalTime) {
 							mainStream << std::endl;
 							mainStream << "| ============================== " << std::left << std::setfill (' ') << std::setw(20) << group.first << " ==============================" << std::endl;
 							mainStream << "| ============ Total time " << std::setw(14) << std::right << totalGroupTime/1000 << " ms (" << std::setw(3) << (100*totalGroupTime)/totalTime << "% ) in " << std::setw(10) << totalGroupCalls << " calls ============" << std::endl;

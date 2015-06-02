@@ -21,6 +21,7 @@
 
 #include "standard.h"
 #include <string>
+#include <memory>
 
 
 namespace xerus {
@@ -79,11 +80,14 @@ namespace xerus {
         ///@brief: Performs (U,S,V) = SVD(A). Destroys A
         void svd_destructive( double* const _U, double* const _S, double* const _Vt, double* const _A, const size_t _m, const size_t _n);
         
+		
+		///@brief: splits A = Q*R, with @a _R an rxn matrix (where r is the rank of @a _A) and @a _Q orthogonal
+        void rank_revealing_split(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r);
         
         
         ///@brief: Performs (Q,R) = QR(A)
         void qr( double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n);
-        
+		
         ///@brief: Performs (AtoQ,R) = QR(AtoQ)
         void inplace_qr(double* const _AtoQ, double* const _R, const size_t _m, const size_t _n);
         
