@@ -27,43 +27,46 @@
 
 namespace xerus {
 	
-    /// Abstract class which defines the common functionalities of the actual tensor classes FullTensor and SparseTensor.
+    /// @brief Abstract class which defines the common functionalities of the actual tensor classes FullTensor and SparseTensor.
     class Tensor {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Vector containing the individual dimensions of the tensor.
+        /// @brief Vector containing the individual dimensions of the tensor.
         std::vector<size_t> dimensions;
         
-        /// Size of the Tensor -- always equal to the product of the dimensions.
+        /// @brief Size of the Tensor -- always equal to the product of the dimensions.
         size_t size;
         
-        /// Single value representing a constant scaling factor.
+        /// @brief Single value representing a constant scaling factor.
         value_t factor;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Empty constructor which creates an order zero tensor.
+        /// @brief Empty constructor which creates an order zero tensor.
         implicit Tensor();
         
-        /// Tensors are copy constructable.
+        /// @brief Tensors are copy constructable.
         implicit Tensor( const Tensor& _other );
         
-        /// Tensors are move constructable.
+        /// @brief Tensors are move constructable.
         implicit Tensor( Tensor&& _other );
 
-        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** 
+		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
          * @param _dimensions the dimensions of the new tensor.
          * @param _factor (optional) global scaling factor.
          */
         explicit Tensor(const std::vector<size_t>& _dimensions, const value_t _factor = 1.0);
         
-        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** 
+		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
          * @param _dimensions the dimensions of the new tensor.
          * @param _factor (optional) global scaling factor.
          */
         explicit Tensor(std::vector<size_t>&& _dimensions, const value_t _factor = 1.0);
         
-        /** @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+        /** 
+		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
          * @param _dimensions the dimensions of the new tensor.
          * @param _factor (optional) global scaling factor.
          */
@@ -79,22 +82,26 @@ namespace xerus {
         /// @brief Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
         virtual Tensor* construct_new() const = 0;
         
-        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+        /** 
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const = 0;
         
-        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+        /** 
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const = 0;
         
-        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+        /** 
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
         
-        /** @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+        /** 
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
@@ -115,118 +122,237 @@ namespace xerus {
         /// @brief Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
         virtual void ensure_own_data_and_apply_factor() = 0;
         
-        /** @brief Resets the tensor with the given dimensions and undefined entries.
-		 * The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
+        /** 
+		 * @brief Resets the tensor to the given dimensions and undefined entries.
+		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) = 0;
         
-        /// Resets the tensor with the given dimensions and undefined entries.
+		/** 
+		 * @brief Resets the tensor to the given dimensions and undefined entries.
+		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
+		 * @param _newDim the new dimensions the tensor shall have
+		 */
         virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) = 0;
         
-        /// Resets the tensor with the given dimensions and all entries equals zero.
+		/** 
+		 * @brief Resets the tensor to the given dimensions and all entries equals zero.
+		 * @param _newDim the new dimensions the tensor shall have
+		 */
         virtual void reset(const std::vector<size_t>&  _newDim) = 0;
         
-        /// Resets the tensor with the given dimensions and all entries equals zero.
+		/** 
+		 * @brief Resets the tensor to the given dimensions and all entries equals zero.
+		 * @param _newDim the new dimensions the tensor shall have
+		 */
         virtual void reset(      std::vector<size_t>&& _newDim) = 0;
     
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Allows access to the entry at _position, assuming row-major ordering.
+        /** 
+		 * @brief Read/Write access a single entry.
+		 * @param _position the position of the desired entry, assuming row-major ordering.
+		 * @return a reference to the selected entry.
+		 */
         virtual value_t& operator[](const size_t _position) = 0;
         
-        /// Allows access to the entry at _position, assuming row-major ordering.
+		/** 
+		 * @brief Read access a single entry.
+		 * @param _position the position of the desired entry, assuming row-major ordering.
+		 * @return the selected entry.
+		 */
         virtual value_t operator[](const size_t _position) const = 0;
         
-        /// Allows access to the entry at _position.
+		/** 
+		 * @brief Read/Write access a single entry.
+		 * @param _position the position of the desired entry.
+		 * @return a reference to the selected entry.
+		 */
         virtual value_t& operator[](const std::vector<size_t>& _positions) = 0;
         
-        /// Allows access to the entry at _position.
+		/** 
+		 * @brief Read access a single entry.
+		 * @param _position the position of the desired entry.
+		 * @return the selected entry.
+		 */
         virtual value_t operator[](const std::vector<size_t>& _positions) const = 0;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Indexes the tensor.
+        /** 
+		 * @brief Indexes the tensor for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
         template<typename... args>
         IndexedTensor<Tensor> operator()(args... _args) {
             return IndexedTensor<Tensor>(this, std::vector<Index>({_args...}), false);
         }
         
-        /// Indexes the tensor.
+        
+        /** 
+		 * @brief Indexes the tensor for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
         template<typename... args>
         IndexedTensorReadOnly<Tensor> operator()(args... _args) const {
             return IndexedTensorReadOnly<Tensor>(this, std::vector<Index>({_args...}));
         }
         
-        /// Indexes the tensor.
+        
+        /** 
+		 * @brief Indexes the tensor for read/write use.
+		 * @param _indices several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
         IndexedTensor<Tensor> operator()(const std::vector<Index>&  _indices);
         
-        /// Indexes the tensor.
+		
+		/** 
+		 * @brief Indexes the tensor for read/write use.
+		 * @param _indices several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
         IndexedTensor<Tensor> operator()(      std::vector<Index>&& _indices);
+
+		
+		/** 
+		 * @brief Indexes the tensor for read only use.
+		 * @param _indices several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
+		IndexedTensorReadOnly<Tensor> operator()(const std::vector<Index>&  _indices) const;
         
-        /// Indexes the tensor.
-        IndexedTensorReadOnly<Tensor> operator()(const std::vector<Index>&  _indices) const;
-        
-        /// Indexes the tensor.
+		
+		/** 
+		 * @brief Indexes the tensor for read only use.
+		 * @param _indices Several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor.
+		 */
         IndexedTensorReadOnly<Tensor> operator()(      std::vector<Index>&& _indices) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        /// Checks whether the object is of type SparseTensor.
+        /** 
+		 * @brief Checks whether the object is of type SparseTensor.
+		 * @return true is sparse, false if not.
+		 */
         virtual bool is_sparse() const = 0;
         
-        /// Returns the degree of the tensor (==dimensions.size()).
+		
+		/** 
+		 * @brief Returns the degree of the tensor.
+		 * @details The degree is always equals to dimensions.size()
+		 * @return the degree of the tensor
+		 */
         size_t degree() const;
         
         /// Returns whether the tensor has a non-trivial factor (i.e. factor != 1.0).
+		/** 
+		 * @brief Checks whether the tensor has a non-trivial global scaling factor.
+		 * @return true if there is a non-trivial factor, false if not.
+		 */
         bool has_factor() const;
         
-        /// Returns the number of non-zero entries.
+		/** 
+		 * @brief Determines the number of non-zero entries.
+		 * @param _eps (optional) epsilon detrmining the maximal value, that is still assumed to be zero.
+		 * @return the number of non-zero entries found.
+		 */
         virtual size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
-        /// Returns an approximation of the reorder costs
+		/** 
+		 * @brief Approximates the cost to reorder the tensor.
+		 * @return the approximated costs.
+		 */
         size_t reorder_costs() const;
-        
-        /// Calculates the frobenious norm of the tensor.
+
+		
+		/** 
+		 * @brief Calculates the frobenious norm of the tensor.
+		 * @return the frobenious norm.
+		 */
         virtual value_t frob_norm() const = 0;
 		
-        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
+		/** 
+		 * @brief Reinterprets the dimensions of the tensor.
+		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
+		 * required use change_dimensions() instead.
+		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
+		 */
         void reinterpret_dimensions(const std::vector<size_t>& _newDimensions);
         
-        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
-        void reinterpret_dimensions(      std::vector<size_t>&& _newDimensions);
+
+		/** 
+		 * @brief Reinterprets the dimensions of the tensor.
+		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
+		 * required use change_dimensions() instead.
+		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
+		 */
+		void reinterpret_dimensions(      std::vector<size_t>&& _newDimensions);
         
-        /// Reinterprets the dimensions of the tensor. Opposed to change_dimensions() it is assumed that the underlying data and the size are NOT changed.
+		
+        /** 
+		 * @brief Reinterprets the dimensions of the tensor.
+		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
+		 * required use change_dimensions() instead.
+		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
+		 */
         void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions);
         
-        /// Returns a string representation of the tensor.
+		
+		/** 
+		 * @brief Creates a string representation of the Tensor.
+		 * @param _newDimensions the string representation. 
+		 */
         virtual std::string to_string() const = 0;
         
-        /// Compares the Tensor entriewise to the given data.
+		
+		/** 
+		 * @brief Compares the Tensor entriewise to the given data.
+		 * @param _values data to compare to, must be of the same size as the Tensor has entries (i.e. size).
+		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
+		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
+		 */
         virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
-        /// Compares the Tensor entriewise to the given data.
-        virtual bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+		
+		/** 
+		 * @brief Compares the Tensor entriewise to the given data.
+		 * @param _values data to compare to, must be of the same size as the Tensor has entries (i.e. size).
+		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
+		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
+		 */
+		virtual bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
-        /// Assigns all member variables of tensor.
+        /// Internal: Assigns all member variables of tensor.
         void assign(const Tensor& _other);
         
-        /// Move assigns all member variables of tensor.
+        /// Internal: Move assigns all member variables of tensor.
         void assign(Tensor&& _other);
         
-        /// Changes the dimensions of the tensor and recalculates the size of the tensor.
+        /// Internal: Changes the dimensions of the tensor and recalculates the size of the tensor.
         void change_dimensions(const std::vector<size_t>& _newDimensions);
         
-        /// Changes the dimensions of the tensor and recalculates the size of the tensor.
+        /// Internal: Changes the dimensions of the tensor and recalculates the size of the tensor.
         void change_dimensions(      std::vector<size_t>&& _newDimensions);
     };
     
     
-    /// Returns the frobenius norm of the given tensor
+	/** 
+		 * @brief Calculates the frobenius norm of the given tensor
+		 * @param _tensor the Tensor of which the frobenious norm shall be calculated.
+		 * @return the frobenius norm .
+		 */
     static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 }
