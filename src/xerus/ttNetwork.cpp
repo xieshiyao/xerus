@@ -1126,16 +1126,6 @@ namespace xerus {
 		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
 		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOther.tensorObjectReadOnly);
 		
-		LOG(cannonicalization, "Other " << ttOther->cannonicalized << "(" << ttOther->corePosition << ") Me " << ttMe->cannonicalized << "("<< ttMe->corePosition << ")");
-		
-		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition != ttOther->corePosition) {
-			LOG(warning, "Adding TTTensors of different cannonicalizations. This is usually ill-conditioned! (result will have no single core)");
-		}
-		if ((ttMe->cannonicalized && !ttOther->cannonicalized) || (!ttMe->cannonicalized && ttOther->cannonicalized)) {
-			LOG(info, "Adding TTTensors without cannonicalization to TTTensor with defined core position. "
-					  "The sum is usually better conditioned if the same core position is enforced for both TTTensors beforehand");
-		}
-		
 		PA_START;
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current input nodes
@@ -1228,6 +1218,7 @@ namespace xerus {
 		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(outTensor.dimensions)+" Ranks: "+misc::to_string(outTensor.ranks()));
 		
 		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition == ttOther->corePosition) {
+			REQUIRE(!outTensor.cannonicalized, "ie");
 			outTensor.move_core(ttMe->corePosition);
 		}
 		
@@ -1264,6 +1255,8 @@ namespace xerus {
 					static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
 					if (otherTTStack->cannonicalization_required) {
 						meTTN->move_core(otherTTStack->futureCorePosition);
+					} else {
+						meTTN->cannonicalized = false;
 					}
 				}
 				return;
@@ -1303,6 +1296,8 @@ namespace xerus {
 						static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
 						if (otherTTStack->cannonicalization_required) {
 							meTTN->move_core(otherTTStack->futureCorePosition);
+						} else {
+							meTTN->cannonicalized = false;
 						}
 					}
 					REQUIRE(is_valid_tt(), "Internal Error.");

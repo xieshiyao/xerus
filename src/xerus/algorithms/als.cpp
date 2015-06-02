@@ -55,23 +55,17 @@ namespace xerus {
         std::vector<FullTensor> xAxL, xAxR;
         std::vector<FullTensor> bxL, bxR;
         
+		bool cannoAtTheEnd = _x.cannonicalized;
+		size_t corePosAtTheEnd = _x.corePosition;
         _x.cannonicalize_left();
 
-        // Create stack of contracted network-parts left part
-		FullTensor tmpA;
-		FullTensor tmpB;
+        // Create stack of contracted network-parts
+		FullTensor tmpA({1,1,1}, [](){return 1.0;});
+		FullTensor tmpB({1,1}, [](){return 1.0;});
 		
-        tmpA(r1, r2, r3) = (*_x.nodes[0].tensorObject)(r1) * (*_A.nodes[0].tensorObject)(r2) * (*_x.nodes[0].tensorObject)(r3);
 		xAxL.emplace_back(tmpA);
-		
-		tmpB(r1, r2) = (*_b.nodes[0].tensorObject)(r1) * (*_x.nodes[0].tensorObject)(r2);
 		bxL.emplace_back(tmpB);
-		
-        // Create stack of contracted network-parts right part
-        tmpA(r1, r2, r3) = (*_x.nodes[d+1].tensorObject)(r1) * (*_A.nodes[d+1].tensorObject)(r2) * (*_x.nodes[d+1].tensorObject)(r3);
 		xAxR.emplace_back(tmpA);
-		
-		tmpB(r1, r2) = (*_b.nodes[d+1].tensorObject)(r1) * (*_x.nodes[d+1].tensorObject)(r2);
 		bxR.emplace_back(tmpB);
 		
         for (size_t i = _x.degree()-1; i > sites-1; --i) {
@@ -81,12 +75,6 @@ namespace xerus {
             bxR.emplace_back(std::move(tmpB));
         }
         
-        // Calculate initial residual
-        if (_perfData != nullptr) {
-            _perfData->push_back(frob_norm(_A(n1/2,n2/2)*_x(n2&0) - _b(n1&0)));
-            LOG(ALS, "calculated residual for perfData: " << _perfData->back());
-        }
-        
         TensorNetwork ATilde;
         FullTensor BTilde;
         value_t lastEnergy2 = 1e102;
@@ -94,7 +82,35 @@ namespace xerus {
         value_t energy = 1e100;
         bool walkingRight = true;
         bool changedSmth = false;
+		bool done = false;
         size_t currIndex = 0;
+		
+		std::function<value_t()> energy_f;
+		if (useResidualForEndCriterion) {
+			energy_f = [&](){
+				return frob_norm(_A(n1/2,n2/2)*_x(n2&0) - _b(n1&0));
+			};
+		} else {
+			energy_f = [&](){
+				FullTensor res;
+				// 0.5*<x,Ax> - <x,b>
+				res() = 0.5*xAxR.back()(cr1, cr2, cr3) 
+				          * _x.get_component(currIndex)(r1, n1, cr1) * _A.get_component(currIndex)(r2, n1, n2, cr2) * _x.get_component(currIndex)(r3, n2, cr3) 
+						  * xAxL.back()(r1, r2, r3)
+						- bxR.back()(cr1, cr2) 
+						  * _b.get_component(currIndex)(r1, n1, cr1) * _x.get_component(currIndex)(r2, n1, cr2)
+						  * bxL.back()(r1, r2);
+				return res[0];
+			};
+		}
+        
+        // Calculate initial residual
+        if (_perfData != nullptr) {
+			energy = energy_f();
+			_perfData->push_back(energy);
+			LOG(ALS, "calculated residual for perfData: " << energy);
+        }
+		
         while (true) {
 			LOG(ALS, "Starting to optimize index " << currIndex);
 			
@@ -111,24 +127,27 @@ namespace xerus {
 			}
 			
             if (_perfData != nullptr) {
-                _perfData->push_back(frob_norm(_A(n1/2,n2/2)*_x(n2&0) - _b(n1&0)));
-                LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << _perfData->back() << " ( " << std::abs(_perfData->back() - energy) << " vs " << _convergenceEpsilon << " ) ");
+                energy = energy_f();
+				_perfData->push_back(energy);
+                LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
                 if (printProgress) {
-                    std::cout << "optimized tensor "<< currIndex << ": " << _perfData->back() << " ( \t" << std::abs(_perfData->back() - energy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+                    std::cout << "optimized tensor "<< currIndex << ": " << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
                 }
             }
+			if (done && corePosAtTheEnd == currIndex+1) {
+				if (!_perfData) {
+					energy = energy_f();
+				}
+				return energy;
+			}
             
             // Are we done with the sweep?
             if ((!walkingRight && currIndex==0) || (walkingRight && currIndex==d-sites)) {
                 LOG(ALS, "Sweep Done");
                 
-                lastEnergy2 = lastEnergy;
-                lastEnergy = energy;
-                if (_perfData != nullptr) {
-                    energy = _perfData->back(); // Energy already calculated
-                } else {
+                if (!_perfData) {
                     LOG(ALS, "Calculating energy for loop condition");
-                    energy = frob_norm(_A(n1/2,n2/2)*_x(n2&0) - _b(n1&0));
+                    energy = energy_f();
                 }
                 
                 LOG(ALS, "Stats: " << xAxL.size() << " " << xAxR.size() << " " << bxL.size() << " " << bxR.size() << " energy: " << energy << " deltas: " << (1-lastEnergy/energy) << " " << (1-lastEnergy2/energy));
@@ -137,10 +156,16 @@ namespace xerus {
                 if (!changedSmth || std::abs(lastEnergy-energy) < _convergenceEpsilon || std::abs(lastEnergy2-energy) < _convergenceEpsilon || d<=sites) {
                     // we are done! yay
                     LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
-					_x.cannonicalize_left();
-                    return energy; 
+// 					if (cannoAtTheEnd) {
+// 						_x.move_core(corePosAtTheEnd);
+// 					}
+//                     return energy; 
+					if (!cannoAtTheEnd || _x.corePosition == corePosAtTheEnd) return energy;
+					done = true;
                 }
                 
+                lastEnergy2 = lastEnergy;
+                lastEnergy = energy;
                 walkingRight = !walkingRight;
                 changedSmth = false;
                 LOG(ALS, "Start sweep " << (walkingRight?"right":"left"));
@@ -211,12 +236,6 @@ namespace xerus {
 			bxR.emplace_back(std::move(tmp));
 		}
 		
-		// Calculate initial residual
-		if (_perfData != nullptr) {
-			_perfData->push_back(frob_norm(_x(n1&0) - _b(n1&0)));
-			LOG(ALS, "calculated residual for perfData: " << _perfData->back());
-		}
-		
 		FullTensor BTilde;
 		value_t lastEnergy2 = 1e102;
 		value_t lastEnergy = 1e101;
@@ -224,6 +243,31 @@ namespace xerus {
 		bool walkingRight = true;
 		size_t currIndex = 0;
 		size_t halfSweepCount = 0;
+		
+		std::function<value_t()> energy_f;
+		if (useResidualForEndCriterion) {
+			energy_f = [&](){
+				return frob_norm(_x(n1&0) - _b(n1&0));
+			};
+		} else {
+			energy_f = [&](){
+				FullTensor res;
+				// 0.5*<x,Ax> - <x,b> = 0.5*|x_i|^2 - <x,b>
+				res() = 0.5*_x.get_component(currIndex)(r1, n1, cr1) * _x.get_component(currIndex)(r1, n1, cr1) 
+						- bxR.back()(cr1, cr2) 
+						  * _b.get_component(currIndex)(r1, n1, cr1) * _x.get_component(currIndex)(r2, n1, cr2)
+						  * bxL.back()(r1, r2);
+				return res[0];
+			};
+		}
+        
+        // Calculate initial residual
+        if (_perfData != nullptr) {
+			energy = energy_f();
+			_perfData->push_back(energy);
+			LOG(ALS, "calculated residual for perfData: " << energy);
+        }
+		
 		while (true) {
 			LOG(ALS, "Starting to optimize index " << currIndex);
 			
@@ -233,10 +277,11 @@ namespace xerus {
 			_x.set_component(currIndex, std::move(BTilde));
 			
 			if (_perfData != nullptr) {
-				_perfData->push_back(frob_norm(_x(n1&0) - _b(n1&0)));
-				LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << _perfData->back() << " ( " << std::abs(_perfData->back() - energy) << " vs " << _convergenceEpsilon << " ) ");
+				energy = energy_f();
+				_perfData->push_back(energy);
+				LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
 				if (printProgress) {
-					std::cout << "optimized tensor "<< currIndex << ": " << _perfData->back() << " ( \t" << std::abs(_perfData->back() - energy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+					std::cout << "optimized tensor "<< currIndex << ": " << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
 				}
 			}
 			
@@ -245,13 +290,9 @@ namespace xerus {
 				LOG(ALS, "Sweep Done");
 				halfSweepCount += 1;
 				
-				lastEnergy2 = lastEnergy;
-				lastEnergy = energy;
-				if (_perfData != nullptr) {
-					energy = _perfData->back(); // Energy already calculated
-				} else {
+				if (!_perfData) {
 					LOG(ALS, "Calculating energy for loop condition");
-					energy = frob_norm(_x(n1&0) - _b(n1&0));
+					energy = energy_f();
 				}
 				
 				// Conditions for loop termination
@@ -264,6 +305,8 @@ namespace xerus {
 					return energy; 
 				}
 				
+				lastEnergy2 = lastEnergy;
+				lastEnergy = energy;
 				walkingRight = !walkingRight;
 				LOG(ALS, "Start sweep " << (walkingRight?"right":"left"));
 			}

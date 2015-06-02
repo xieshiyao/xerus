@@ -77,18 +77,18 @@ UNIT_TEST(ALS, projectionALS,
     
     Index k,l,m,n,o,p;
     
-	TTTensor B = TTTensor::construct_random({10,10,10,10,10}, {10,40,40,10}, rnd, dist);
-	for (size_t r = 20; r > 0; --r) {
-		TTTensor X = B;
-		LOG(norm, frob_norm(B));
+	TTTensor B = TTTensor::construct_random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
+	value_t normB = frob_norm(B);
+	TTTensor X = B;
+	for (size_t r = 7; r > 0; --r) {
 		X.round(r);
-		LOG(norm, frob_norm(B));
 		value_t roundNorm = frob_norm(X-B);
 		ProjectionALS(X,B,1e-4);
 		value_t projNorm = frob_norm(X-B);
-		LOG(unit_testk, r << " : " << roundNorm << " > " << projNorm);
+		LOG(unit_test, r << " : " << roundNorm << " > " << projNorm);
 		TEST(projNorm < roundNorm);
 	}
+	TEST(misc::approx_equal(frob_norm(B), normB, 0.));
 )
 
 #include <iomanip>
@@ -127,9 +127,9 @@ UNIT_TEST(ALS, tutorial,
 	ALSb.printProgress = false;
 	std::vector<double> perfdata;
 	
-	ALSb(A, X, C, 1e-5, &perfdata);
+	ALSb(A, X, C, 1e-12, &perfdata);
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
-// 	std::cout << "Residual " << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
+// 	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
 // 	std::cout << std::scientific << perfdata << std::endl;
 	
 	

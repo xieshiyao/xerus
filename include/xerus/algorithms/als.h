@@ -38,8 +38,8 @@ namespace xerus {
         uint sites; ///< the number of sites that are simultaneously optimized
         value_t minimumLocalResidual; ///< below this bound for the local residual, no local solver will be called.
         bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
+        bool useResidualForEndCriterion; ///< calculates the residual to decide if the ALS converged. recommended if _perfdata is given
         // TODO printProgressToFile;
-        // TODO bool useEnergyFunctional;
         // TODO std::function endCriterion
         // TODO all arguments should be tensorNetworks to allow efficient CG (esp. in the dmrg case)
         
@@ -53,7 +53,7 @@ namespace xerus {
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
         ALSVariant(uint _sites, value_t _minimumLocalResidual, std::function<void(const TensorNetwork &, Tensor &, const Tensor &)> _localSolver) 
-                : sites(_sites), minimumLocalResidual(_minimumLocalResidual), printProgress(false), localSolver(_localSolver) {
+                : sites(_sites), minimumLocalResidual(_minimumLocalResidual), printProgress(false), useResidualForEndCriterion(false), localSolver(_localSolver) {
             REQUIRE(_sites>0, "");
             REQUIRE(_minimumLocalResidual>=0, "");
         }
@@ -83,13 +83,14 @@ namespace xerus {
         size_t numHalfSweeps; ///< maximum number of sweeps to perform. set to 0 for infinite
         value_t convergenceEpsilon; ///< default value for the change in residual at which the als assumes it is converged
         bool preserveCorePosition; ///< if true the core will be moved to its original position at the end
+        bool useResidualForEndCriterion; ///< calculates the residual to decide if the ALS converged. recommended if _perfdata is given
         // TODO printProgressToFile;
         // TODO std::function endCriterion
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
         ProjectionALSVariant(size_t _numHalfSweeps, value_t _convergenceEpsilon) 
                 : printProgress(false), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(_convergenceEpsilon),
-				  preserveCorePosition(true) {
+				  preserveCorePosition(true), useResidualForEndCriterion(false) {
         }
         
         /**
