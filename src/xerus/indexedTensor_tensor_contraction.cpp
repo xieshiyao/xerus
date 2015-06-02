@@ -201,7 +201,7 @@ namespace xerus {
     * precondition: compatible indices for _result = _lhs * _rhs; and correct dimensions in result tensorObject
     * postcondition: _result.tensorObject updated to correcly contain the product
     */
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const std::vector<Index> _lhsIndices, const IndexedTensorReadOnly<Tensor>& _rhs, const std::vector<Index> _rhsIndices) {
+    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const std::vector<Index>& _lhsIndices, const IndexedTensorReadOnly<Tensor>& _rhs, const std::vector<Index>& _rhsIndices) {
         // Get the assigned indices for result (we assume that result is already of the right dimensions)
         const std::vector<Index> resultIndices = _result.get_assigned_indices();
 
