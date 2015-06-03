@@ -108,6 +108,9 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
     TEST(approx_equal(res4, A, 1e-12));
+	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
+	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
+	TEST(misc::approx_equal(frob_norm(res4), 0.0, 1e-12));
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
@@ -142,5 +145,74 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));
     res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
     TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
+)
+
+
+UNIT_TEST(FullTensor, OrthogonalSplit,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 10.0);
+
+    FullTensor A = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
+    FullTensor Q(4);
+    FullTensor R(4);
+    FullTensor Q2(3);
+    FullTensor R2(5);
+    FullTensor Q3(5);
+    FullTensor R3(3);
+    FullTensor Q4(4);
+    FullTensor res4(6);
+    
+    Index i, j, k, l, m, n, o, p, q, r;
+
+    
+    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
+	LOG(lkjasd, frob_norm(res4 - A));
+    TEST(approx_equal(res4, A, 1e-12));
+	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
+	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
+	TEST(misc::approx_equal(frob_norm(res4), 0.0, 1e-12));
+	
+	(Q(i,l), R(l,j,k,m,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q(i,o)*R(o,j,k,m,n,r);
+	LOG(lkjasd, frob_norm(res4 - A));
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,n,k,m,j,r));
+    res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
+	LOG(lkjasd, frob_norm(res4 - A));
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    (Q2(i,k,l), R2(l,m,j,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
+	LOG(lkjasd, frob_norm(res4 - A));
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    (Q3(i,m,j,k,l), R3(l,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
+	LOG(lkjasd, frob_norm(res4 - A));
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    
+//     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,j,k,m,n,r));
+//     res4(i,j,k,m,n,r) = R(i,j,k,o)*Q(o,m,n,r);
+//     TEST(approx_equal(res4, A, 1e-12));
+//     
+//     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,n,k,m,j,r));
+//     res4(i,n,k,m,j,r) = R(i,j,k,o)*Q(o,m,n,r);
+//     TEST(approx_equal(res4, A, 1e-12));
+//     
+//     (R2(i,m,j,k,l), Q2(l,n,r)) = RQ(A(i,j,k,m,n,r));
+//     res4(i,j,k,m,n,r) = R2(i,m,j,k,l)*Q2(l,n,r);
+//     TEST(approx_equal(res4, A, 1e-12));
+//     
+//     (R3(i,k,l), Q3(l,m,j,n,r)) = RQ(A(i,j,k,m,n,r));
+//     res4(i,j,k,m,n,r) = R3(i,k,o)*Q3(o,m,j,n,r);
+//     TEST(approx_equal(res4, A, 1e-12));
+//     
+//     
+//     (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));
+//     res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
+//     TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
 )
 

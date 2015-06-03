@@ -821,11 +821,11 @@ namespace xerus {
 		}
 		for (size_t n=fromRight; n > _position; --n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
-			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
+// 			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
 			
-// 			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
-// 			currTensor(r, i&1) = currTensor(i&1, r);
-// 			core(j,r) = core(r,j);
+			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
+			currTensor(r, i&1) = currTensor(i&1, r);
+			core(j,r) = core(r,j);
 			Tensor &nextTensor = *nodes[n].tensorObject;
 			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
 			if (currTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {

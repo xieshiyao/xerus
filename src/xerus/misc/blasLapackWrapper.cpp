@@ -240,17 +240,17 @@ namespace xerus {
 			
 			// Create orthogonal matrix Q
 			LOG(lkj, _m << " " << _n << " " << rank);
-			lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, tmpA.get(), (int) _n, tau.get());
+			lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) maxRank, (int) maxRank, tmpA.get(), (int) _n, tau.get());
 			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			
 			_Q.reset(new double[_m*rank]);
-// 			if(rank == _n) {
+			if(rank == maxRank) {
 				misc::array_copy(_Q.get(), tmpA.get(), _m*rank);
-// 			} else {
-// 				for(size_t row = 0; row < _m; ++row) {
-// 					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
-// 				}
-// 			}
+			} else {
+				for(size_t row = 0; row < _m; ++row) {
+					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
+				}
+			}
 			
 			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
 		}
