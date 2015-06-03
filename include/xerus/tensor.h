@@ -149,7 +149,26 @@ namespace xerus {
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(      std::vector<size_t>&& _newDim) = 0;
+        
+        
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
+        /** 
+         * @brief Performs the entrywise multiplication with a constant @a _factor.
+         * @details Internally this only results in a change in the global factor.
+         * @param _factor the factor,
+         * @return a reference to this Tensor.
+         */
+        Tensor& operator*=(const value_t _factor);
+        
+        
+        /** 
+         * @brief Performs the entrywise divison by a constant @a _divisor.
+         * @details Internally this only results in a change in the global factor.
+         * @param _divisor the divisor,
+         * @return a reference to this Tensor.
+         */ 
+        Tensor& operator/=(const value_t _divisor);
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
@@ -357,4 +376,24 @@ namespace xerus {
 		 * @return the frobenius norm .
 		 */
     static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
+    
+    /** 
+    * @brief Checks whether two Tensors are approximately equal.
+    * @details Check whether ||@a _a - @a _b ||/(||@a a || + ||@a _b || < _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
+    * @param _a the first test candidate.
+    * @param _b the second test candidate
+    * @param _eps the maximal relative difference between @a _a and @a _b.
+    * @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
+    */
+    bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = 1e-14);
+    
+    /** 
+    * @brief Checks whether two Tensors are approximately entrywise equal.
+    * @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < _eps is fullfilled for all i.
+    * @param _a the first test candidate.
+    * @param _b the second test candidate
+    * @param _eps the maximal relative difference between the entries of @a _a and @a _b.
+    * @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
+    */
+    bool approx_entrywise_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = 1e-14);
 }

@@ -55,15 +55,15 @@ UNIT_TEST(FullTensor, SVD_Random_512x512,
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-14));
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(l,k,m,i,j,n));
     res4(l,k,m,i,j,n) =  res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-14));
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(l,i,m,k,j,n));
     res4(k,i,m,l,j,n) =  res1(i,j,l,o)*res2(o,p)*res3(p,k,m,n);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-14));
 )
 
 UNIT_TEST(FullTensor, SVD_Random_Order_Six,
@@ -81,11 +81,11 @@ UNIT_TEST(FullTensor, SVD_Random_Order_Six,
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-14));
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(m,j,k,l,i,n));
     res4(m,j,k,l,i,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-14));
 )
 
 UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
@@ -107,39 +107,39 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
 	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
 	TEST(misc::approx_equal(frob_norm(res4), 0.0, 1e-12));
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     (Q2(i,k,l), R2(l,m,j,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     (Q3(i,m,j,k,l), R3(l,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R(i,j,k,o)*Q(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = R(i,j,k,o)*Q(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     (R2(i,m,j,k,l), Q2(l,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R2(i,m,j,k,l)*Q2(l,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     (R3(i,k,l), Q3(l,m,j,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R3(i,k,o)*Q3(o,m,j,n,r);
-    TEST(approx_equal(res4, A, 1e-12));
+    TEST(approx_equal(res4, A, 1e-15));
     
     
     (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));

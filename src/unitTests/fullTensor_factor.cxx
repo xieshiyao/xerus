@@ -50,6 +50,7 @@ UNIT_TEST(FullTensor, Factors,
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(3*A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = 3.7*res1(i,j,k,o)*(res2(o,p)/3.7)*res3(p,l,m,n);
     TEST(approx_equal(res4, A3, 1e-12));
+    LOG(bla, frob_norm(res4-A3));
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(B7(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = (Q(i,j,k,o)/12.5)*(12.5*R(o,m,n,r)/7);

@@ -33,74 +33,74 @@ UNIT_TEST(TT, TTTensor_Rounding,
     FullTensor B1(1);
     TTTensor TTA1(A1, 1e-14);
     B1(i) = TTA1(i);
-    TEST(approx_equal(B1,A1, 1e-12));
+    TEST(approx_equal(B1,A1, 1e-14));
     
     TTA1.round(1e-14);
     B1(i) = TTA1(i);
-    TEST(approx_equal(B1,A1, 1e-12));
+    TEST(approx_equal(B1,A1, 1e-14));
     
     TTA1.round(1);
     B1(i) = TTA1(i);
-    TEST(approx_equal(B1,A1, 1e-12));
+    TEST(approx_equal(B1,A1, 1e-14));
     
     
     FullTensor A2 = FullTensor::construct_random({2,2}, rnd, dist);
     FullTensor B2(2);
     TTTensor TTA2(A2, 1e-14);
     B2(j,i) = TTA2(j,i);
-    TEST(approx_equal(B2,A2, 1e-12));
+    TEST(approx_equal(B2,A2, 1e-14));
     
     TTA2.round(1e-14);
     B2(j,i) = TTA2(j,i);
-    TEST(approx_equal(B2,A2, 1e-12));
+    TEST(approx_equal(B2,A2, 1e-14));
     
     TTA2.round(2);
     B2(j,i) = TTA2(j,i);
-    TEST(approx_equal(B2,A2, 1e-12));
+    TEST(approx_equal(B2,A2, 1e-14));
     
     
     FullTensor A3 = FullTensor::construct_random({2,7}, rnd, dist);
     FullTensor B3(2);
     TTTensor TTA3(A3, 1e-14);
     B3(j,i) = TTA3(j,i);
-    TEST(approx_equal(B3,A3, 1e-12));
+    TEST(approx_equal(B3,A3, 1e-14));
     
     TTA3.round(1e-14);
     B3(j,i) = TTA3(j,i);
-    TEST(approx_equal(B3,A3, 1e-12));
+    TEST(approx_equal(B3,A3, 1e-14));
     
     TTA3.round(2);
     B3(j,i) = TTA3(j,i);
-    TEST(approx_equal(B3,A3, 1e-12));
+    TEST(approx_equal(B3,A3, 1e-14));
     
     
     FullTensor A4 = FullTensor::construct_random({2,2,2,2,2,2,2,2}, rnd, dist);
     FullTensor B4(8);
     TTTensor TTA4(A4, 1e-14);
     B4(j,i^7) = TTA4(j,i^7);
-    TEST(approx_equal(B4,A4, 1e-12));
+    TEST(approx_equal(B4,A4, 1e-14));
     
     TTA4.round(1e-14);
     B4(j,i^7) = TTA4(j,i^7);
-    TEST(approx_equal(B4,A4, 1e-12));
+    TEST(approx_equal(B4,A4, 1e-14));
     
     TTA4.round(512);
     B4(j,i^7) = TTA4(j,i^7);
-    TEST(approx_equal(B4,A4, 1e-12));
+    TEST(approx_equal(B4,A4, 1e-14));
     
     
     FullTensor A5 = FullTensor::construct_random({5,6,3,1,4,2,8,1}, rnd, dist);
     FullTensor B5(8);
     TTTensor TTA5(A5, 1e-14);
     B5(j,i^7) = TTA5(j,i^7);
-    TEST(approx_equal(B5,A5, 1e-12));
+    TEST(approx_equal(B5,A5, 1e-14));
     
     TTA5.round(1e-14);
     B5(j,i^7) = TTA5(j,i^7);
-    TEST(approx_equal(B5,A5, 1e-12));
+    TEST(approx_equal(B5,A5, 1e-14));
     
     TTA5.round(576);
     B5(j,i^7) = TTA5(j,i^7);
-    TEST(approx_equal(B5,A5, 1e-12));
+    TEST(approx_equal(B5,A5, 1e-14));
 )
 

@@ -20,6 +20,8 @@
 #include <xerus/tensor.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/fullTensor.h>
+#include <xerus/sparseTensor.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -42,6 +44,20 @@ namespace xerus {
     }
     
     Tensor::~Tensor() {}
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+    Tensor& Tensor::operator*=(const value_t _factor) {
+        factor *= _factor;
+        return *this;
+    }
+    
+
+    Tensor& Tensor::operator/=(const value_t _divisor) {
+        factor /= _divisor;
+        return *this;
+    }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
@@ -122,5 +138,48 @@ namespace xerus {
     void Tensor::change_dimensions(      std::vector<size_t>&& _newDimensions) {
         dimensions = std::move(_newDimensions);
         size = misc::product(dimensions);
+    }
+    
+    bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps) {
+        REQUIRE(_a.dimensions == _b.dimensions, 
+                "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
+        
+        
+        if (!_a.is_sparse() && !_b.is_sparse()) { // Special treatment for two fullTensors because blas has better accuracy
+            return frob_norm(static_cast<const FullTensor&>(_a) - static_cast<const FullTensor&>(_b))/(_a.frob_norm() + _b.frob_norm()) < _eps;
+        } else if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
+            return frob_norm(static_cast<const SparseTensor&>(_a) - static_cast<const SparseTensor&>(_b))/(_a.frob_norm() + _b.frob_norm()) < _eps;
+        } else {
+            PA_START;
+            double sqrNorm = 0;
+            for(size_t i=0; i < _a.size; ++i) {
+                sqrNorm += misc::sqr(_a[i]-_b[i]);
+            }
+            PA_END("Mixed Norm calculation", "", misc::to_string(_a.size));
+            return sqrt(sqrNorm)/(_a.frob_norm() + _b.frob_norm()) < _eps;
+        }
+    }
+    
+bool approx_entrywise_equal(const Tensor& _a, const Tensor& _b, const value_t _eps) {
+        REQUIRE(_a.dimensions == _b.dimensions, 
+                "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
+        
+        PA_START;
+        if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
+            const SparseTensor& A = static_cast<const SparseTensor&>(_a);
+            const SparseTensor& B = static_cast<const SparseTensor&>(_b);
+            const SparseTensor C = A-B;
+            const double factorizedEps = _eps/std::abs(C.factor);
+            
+            for(const std::pair<size_t, value_t>& entry : *C.entries) {
+                if(std::abs(entry.second)/(std::abs(A[entry.first])+std::abs(B[entry.first])) > factorizedEps) { return false; }
+            }
+        } else {
+            for(size_t i=0; i < _a.size; ++i) {
+                if(std::abs(_a[i]-_b[i])/(std::abs(_a[i])+std::abs(_b[i])) > _eps) { return false; }
+            }
+        }
+        PA_END("Approx entrywise equal", "", misc::to_string(_a.size));
+        return true;
     }
 }
