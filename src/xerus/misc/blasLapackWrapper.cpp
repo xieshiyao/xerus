@@ -47,6 +47,7 @@ extern "C"
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/misc/stringUtilities.h>
 
 
 namespace xerus {
