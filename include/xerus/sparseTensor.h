@@ -269,25 +269,21 @@ namespace xerus {
 		 */
         SparseTensor operator-(const SparseTensor& _other) const;
         
-        SparseTensor& operator*=(const value_t _prod);
-		
 		/** 
 		 * @brief Calculates the entrywise multiplication of this SparseTensor with a constant @a _factor.
 		 * @details Internally this only results in a change in the global factor.
 		 * @param _factor the factor,
 		 * @return the resulting scaled SparseTensor.
 		 */
-        SparseTensor operator*(const value_t _prod) const;
+        SparseTensor operator*(const value_t _factor) const;
         
-        SparseTensor& operator/=(const value_t _div);
-		
 		/** 
 		 * @brief Calculates the entrywise divison of this SparseTensor by a constant @a _divisor.
 		 * @details Internally this only results in a change in the global factor.
 		 * @param _divisor the divisor,
 		 * @return the resulting scaled SparseTensor.
 		 */
-        SparseTensor operator/(const value_t _div) const;
+        SparseTensor operator/(const value_t _divisor) const;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -325,8 +321,4 @@ namespace xerus {
         return _rhs*_lhs;
     }
     
-    
-    bool approx_equal(const xerus::SparseTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
-	
-    bool approx_equal(const xerus::FullTensor& _a, const xerus::SparseTensor& _b, const xerus::value_t _eps, const bool pureDataCompare = false);
 } 

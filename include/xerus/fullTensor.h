@@ -328,13 +328,6 @@ namespace xerus {
 		 */
         FullTensor  operator-( const Tensor& _other) const;
         
-		/** 
-		 * @brief Performs the entrywise multiplication with a constant @a _factor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _factor the factor,
-		 * @return a reference to this FullTensor.
-		 */
-        FullTensor& operator*=(const value_t _factor);
 		
 		/** 
 		 * @brief Calculates the entrywise multiplication of this FullTensor with a constant @a _factor.
@@ -344,13 +337,6 @@ namespace xerus {
 		 */
         FullTensor  operator*( const value_t _factor) const;
         
-		/** 
-		 * @brief Performs the entrywise divison by a constant @a _divisor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _divisor the factor,
-		 * @return a reference to this FullTensor.
-		 */ 
-        FullTensor& operator/=(const value_t _divisor);
 		
 		/** 
 		 * @brief Calculates the entrywise divison of this FullTensor by a constant @a _divisor.
@@ -473,16 +459,4 @@ namespace xerus {
 	* @return the difference as a FullTensor.
 	*/
     FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
-    
-    
-	/** 
-	* @brief Checks whether two FullTensor are approximately equal.
-	* @details The function uses either the frobenious norm of the difference (default) or entrywise checking to determine whether @a _a and @a _b are approximately equal.
-	* @param _a the first test candidate.
-	* @param _b the second test candidate
-	* @param _eps the maximal difference between @a _a and @a _b, i.e. either the maximal allowed frobenious norm of the difference or the maximal allowed entrywise difference.
-	* @param pureDataCompare if TRUE @a _a and @a _b are compared entrywise, if FALSE the frobenious norm of the difference is used.
-	* @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
-	*/
-    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps = 1e-14, const bool pureDataCompare = false);
 }

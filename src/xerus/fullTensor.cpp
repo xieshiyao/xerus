@@ -211,25 +211,15 @@ namespace xerus {
         return result;
     }
 
-    FullTensor& FullTensor::operator*=(const value_t _factor) {
-        factor *= _factor;
-        return *this;
-    }
-
     FullTensor FullTensor::operator*(const value_t _factor) const {
         FullTensor result(*this);
-        result.factor *= _factor;
+        result *= _factor;
         return result;
-    }
-
-    FullTensor& FullTensor::operator/=(const value_t _divisor) {
-        factor /= _divisor;
-        return *this;
     }
 
     FullTensor FullTensor::operator/(const value_t _divisor) const {
         FullTensor result(*this);
-        result.factor /= _divisor;
+        result /= _divisor;
         return result;
     }
 
@@ -501,14 +491,6 @@ namespace xerus {
         FullTensor result = _rhs-_lhs;
         result.factor *= -1;
         return result;
-    }
-
-    bool approx_equal(const xerus::FullTensor& _a, const xerus::FullTensor& _b, const xerus::value_t _eps, const bool pureDataCompare) {
-        REQUIRE((pureDataCompare || _a.dimensions == _b.dimensions) &&  _a.size == _b.size, "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
-        for(size_t i=0; i < _a.size; ++i) {
-            if(std::abs(_a.factor*_a.data.get()[i]-_b.factor*_b.data.get()[i]) > _eps) { return false; }
-        }
-        return true;
     }
 }
 

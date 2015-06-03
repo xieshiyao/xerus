@@ -239,22 +239,14 @@ namespace xerus {
         ret -= _other;
         return ret;
     }
-    
-    SparseTensor& SparseTensor::operator*=(const value_t _prod) {
-        factor *= _prod;
-        return *this;
-    }
+
     
     SparseTensor SparseTensor::operator*(const value_t _prod) const {
         SparseTensor ret(*this);
         ret.factor *= _prod;
         return ret;
     }
-    
-    SparseTensor& SparseTensor::operator/=(const value_t _div) {
-        factor /= _div;
-        return *this;
-    }
+
     
     SparseTensor SparseTensor::operator/(const value_t _div) const {
         SparseTensor ret(*this);
@@ -355,19 +347,5 @@ namespace xerus {
             if(std::abs(at(i)-_values[i]) > _eps) { return false; }
         }
         return true;
-    }
-    
-    bool approx_equal(const xerus::SparseTensor& _sparse, const xerus::FullTensor& _full, const xerus::value_t _eps, const bool pureDataCompare) {
-        REQUIRE(pureDataCompare || _sparse.dimensions == _full.dimensions, "The dimensions of the compared tensors don't match: " << _sparse.dimensions <<" vs. " << _full.dimensions);
-        
-        for(size_t i=0; i < _full.size; ++i) {
-            if(std::abs(_full[i]-_sparse.at(i)) > _eps) { LOG(aha, "At " << i << " mismatch " << _full[i] << " vs " << _sparse.at(i) << " Difference " << _full[i]-_sparse.at(i));  return false; }
-        }
-        
-        return true;
-    }
-
-    bool approx_equal(const xerus::FullTensor& _full, const xerus::SparseTensor& _sparse, const xerus::value_t _eps, const bool pureDataCompare) {
-        return approx_equal(_sparse, _full, _eps, pureDataCompare);
     }
 }

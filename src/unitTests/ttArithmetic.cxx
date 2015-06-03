@@ -268,22 +268,22 @@ UNIT_TEST(TT, identities,
 	ttC(i^2,k^2) = ttI(i^2,j^2) * ttI(j^2,k^2);
 	C(i^2,k^2) = I(i^2,j^2) * I(j^2,k^2);
 	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
-	TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+	TEST(approx_equal(C, FullTensor(ttC), 1e-15));
 	
 	ttC(k^2,i^2) = ttI(i^2,j^2) * ttI(j^2,k^2);
 	C(k^2,i^2) = I(i^2,j^2) * I(j^2,k^2);
 	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
-	TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+	TEST(approx_equal(C, FullTensor(ttC), 1e-15));
 	
 	ttC(i^2,k^2) = ttI(i^2,j^2) * ttI(k^2,j^2);
 	C(i^2,k^2) = I(i^2,j^2) * I(k^2,j^2);
 	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
-	TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+	TEST(approx_equal(C, FullTensor(ttC), 1e-15));
 	
 	ttC(k^2,i^2) = ttI(i^2,j^2) * ttI(k^2,j^2);
 	C(k^2,i^2) = I(i^2,j^2) * I(k^2,j^2);
 	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
-	TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+	TEST(approx_equal(C, FullTensor(ttC), 1e-15));
 )
 
 UNIT_TEST(TT, transpose,
@@ -298,7 +298,7 @@ UNIT_TEST(TT, transpose,
 	B(i^2,j^2) = A(j^2,i^2);
 	ttA.transpose();
 	LOG(unit_test, frob_norm(B(i&0) - FullTensor(ttA)(i&0)));
-	TEST(approx_equal(B, FullTensor(ttA), 1e-13));
+	TEST(approx_equal(B, FullTensor(ttA), 1e-14));
 )
 
 UNIT_TEST(TT, ax_b,
@@ -386,37 +386,37 @@ UNIT_TEST(TT, operator_times_tensor,
 	ttD(i^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(j^2,k^2) * C(k^2);
 	LOG(unit_test, frob_norm(D(i&0) - FullTensor(ttD)(i&0)));
-	TEST(approx_equal(D, FullTensor(ttD), 1e-13));
+	TEST(approx_equal(D, FullTensor(ttD), 1e-15));
 	
 	ttD(i^2) = ttA(i^2,j^2) * ttB(k^2,j^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(k^2,j^2) * C(k^2);
 	LOG(unit_test, frob_norm(D(i&0) - FullTensor(ttD)(i&0)));
-	TEST(approx_equal(D, FullTensor(ttD), 1e-13));
+	TEST(approx_equal(D, FullTensor(ttD), 1e-15));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttB(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * B(j^2,k^2);
 	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-13));
+	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttA(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * A(j^2,k^2);
 	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-13));
+	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttA(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * A(l^2,k^2);
 	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-13));
+	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2);
 	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-13));
+	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
 	
 	ttDo(i^2,m^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2) * ttA(l^2,m^2);
 	Do(i^2,m^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2) * A(l^2,m^2);
 	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-13));
+	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
 )
 
 UNIT_TEST(TT, full_contraction,
@@ -432,7 +432,7 @@ UNIT_TEST(TT, full_contraction,
 	TTOperator toB(B); 
 	
 	Index i;
-	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 1.6e-13));
+	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 2e-13));
 	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 1.6e-13));
 	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));
 	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(toB(i&0)), 1e-13));

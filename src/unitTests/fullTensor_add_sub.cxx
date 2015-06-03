@@ -86,9 +86,9 @@ UNIT_TEST(FullTensor, sum_matrix_1000x1000,
     Index i, J;
     
     res(i,J) = A(i,J) + B(i,J);
-    TEST(approx_equal(res, C, 1e-14, true));
+    TEST(approx_entrywise_equal(res, C, 1e-14));
     res(J,i) = A(J,i) + B(i,J);
-    TEST(approx_equal(res, C, 1e-14, true));
+    TEST(approx_entrywise_equal(res, C, 1e-14));
 )
 
 UNIT_TEST(FullTensor, sum_dyadic,
