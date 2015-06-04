@@ -812,7 +812,9 @@ namespace xerus {
 		// move right?
 		for (size_t n=fromLeft; n<_position; ++n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
-			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
+// 			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
+			( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j));
+			
 			Tensor &nextTensor = *nodes[n+2].tensorObject;
 			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
 			if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {

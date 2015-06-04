@@ -23,12 +23,12 @@
 
 void storeVeloData(xerus::FullTensor &_v, std::string _fname) {
 	std::vector<size_t> oldDim = _v.dimensions;
-	_v.reinterpret_dimensions(std::vector<size_t>({25,27,25,3}));
+	_v.reinterpret_dimensions(std::vector<size_t>({600,242,600,3}));
 	std::ofstream outX(_fname+"_vx.dat");
 	std::ofstream outY(_fname+"_vy.dat");
 	std::ofstream outZ(_fname+"_vz.dat");
-	for (size_t x=0; x<25; x+=1) {
-		for (size_t y=0; y<27; y+=1) {
+	for (size_t x=0; x<600; x+=1) {
+		for (size_t y=0; y<242; y+=1) {
 			outX << _v[{x,y,10,0}] << " ";
 			outY << _v[{x,y,10,1}] << " ";
 			outZ << _v[{x,y,10,2}] << " ";
@@ -54,42 +54,42 @@ void swap_endianness(size_t *n) {
 }
 
 int main() {
-	std::ifstream in("cgv_013.bin", std::ios::binary);
-	xerus::FullTensor velocity({3,25,27,25});
-	velocity.factor = 1.0;
+	std::ifstream in("data/fgv_013.bin", std::ios::binary);
+	xerus::FullTensor velocity({3,600,242,600});
 	xerus::Index i1,i2,i3,i4;
-// 	for(size_t i = 0; i < 25*27*25*3; ++i) {
-// 		in.read(reinterpret_cast<char*>(velocity.data.get()+i), sizeof(double));
-// 		REQUIRE(!in.fail(), "");
-// 	}
-	in.read(reinterpret_cast<char*>(velocity.data.get()), 25*27*25*3*sizeof(double));
+	in.read(reinterpret_cast<char*>(velocity.data.get()), 600*242*600*3*sizeof(double));
 	in.close();
 	velocity(i1,i2,i3,i4) = velocity(i4,i3,i2,i1);
-	velocity.reinterpret_dimensions(std::vector<size_t>({5,5,3,9,5,5,3}));
+	velocity(i1,i2,i3) = velocity(i1,i2,i3, 0);
+	velocity.reinterpret_dimensions(std::vector<size_t>({3,2,5,2,5,2, 11,2,11, 3,2,5,2,5,2, 3}));
 	
-	storeVeloData(velocity, "channel_full");
+	
+	storeVeloData(velocity, "channels/channel_full");
 	
 	xerus::TTTensor ttv(velocity);
+	
 	size_t r = xerus::misc::max(ttv.ranks())-1;
+	
 	xerus::value_t velo_norm = xerus::frob_norm(velocity);
-	std::ofstream out("channel_ttapprox.dat");
+	
+	std::ofstream out("channels/channel_ttapprox.dat");
+	
 	xerus::TTTensor ttvOpt(ttv);
-	for (; r>0; --r) {
+	
+	for (; r > 0; --r) {
 		std::cout << r << '\n' << std::flush;
 		ttv.round(r);
-		std::cout << r << " als" << '\r' << std::flush;
-        if(r < 20) {
-            std::vector<double> perf;
-            xerus::ProjectionALSVariant::ALSVariant pALS(xerus::ProjectionALS);
-            pALS.printProgress = true; pALS.preserveCore = false;
-            pALS(ttv, ttvOpt, 1e-4, &perf);
-        }
+		std::cout << r << " ALS" << '\r' << std::flush;
+		std::vector<double> perf;
+		xerus::ProjectionALSVariant pALS(xerus::ProjectionALS);
+		pALS.printProgress = true; pALS.preserveCorePosition = false;
+		pALS(ttv, ttvOpt, 1e-4, &perf);
 		xerus::FullTensor approx(ttv);
         std::cout << "Current residual: " << xerus::frob_norm(approx-velocity)/velo_norm << std::endl;
 		out << r << " " 
 		    << xerus::frob_norm(approx-velocity)/velo_norm << " " 
  			<< ttv.datasize() << std::endl;
-		storeVeloData(approx, "channel_r"+std::to_string(r));
+		storeVeloData(approx, "channels/channel_r"+std::to_string(r));
 	}
 	out.close();
 	
