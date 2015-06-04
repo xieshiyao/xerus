@@ -216,10 +216,10 @@ namespace xerus {
 			// Copy the upper triangular Matrix R (rank x _n) into position
 			size_t rank = maxRank-1;
 			while (rank > 0 && misc::approx_equal(_A[rank*(_n+1)], 0.0, 1e-15)) {
-				std::cout << std::scientific << _A[rank*(_n+1)] << " ";
+// 				std::cout << std::scientific << _A[rank*(_n+1)] << " ";
 				rank -= 1;
 			}
-			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
+// 			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
 			rank += 1;
 			_r = rank;
 			
@@ -240,7 +240,7 @@ namespace xerus {
 			}
 			
 			// Create orthogonal matrix Q
-			LOG(lkj, _m << " " << _n << " " << rank);
+// 			LOG(lkj, _m << " " << _n << " " << rank);
 			lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, tmpA.get(), (int) _n, tau.get());
 			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			

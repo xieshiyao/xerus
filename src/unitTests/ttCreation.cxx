@@ -33,31 +33,31 @@ UNIT_TEST(TT, TTTensor_Creation,
     TTTensor TTA1(A1, 1e-14);
     FullTensor B1(1);
     B1(i) = TTA1(i);
-    TEST(approx_equal(B1,A1, 1e-12));
+    TEST(approx_equal(B1,A1, 1e-14));
     
     FullTensor A2 = FullTensor::construct_random({2,2}, rnd, dist);
     TTTensor TTA2(A2, 1e-14);
     FullTensor B2(2);
     B2(j,i) = TTA2(j,i);
-    TEST(approx_equal(B2,A2, 1e-12));
+    TEST(approx_equal(B2,A2, 1e-14));
     
     FullTensor A3 = FullTensor::construct_random({2,7}, rnd, dist);
     TTTensor TTA3(A3, 1e-14);
     FullTensor B3(2);
     B3(j,i) = TTA3(j,i);
-    TEST(approx_equal(B3,A3, 1e-12));
+    TEST(approx_equal(B3,A3, 1e-14));
     
     FullTensor A4 = FullTensor::construct_random({2,2,2,2,2,2,2,2}, rnd, dist);
     TTTensor TTA4(A4, 1e-14);
     FullTensor B4(8);
     B4(j,i^7) = TTA4(j,i^7);
-    TEST(approx_equal(B4,A4, 1e-12));
+    TEST(approx_equal(B4,A4, 1e-14));
     
     FullTensor A5 = FullTensor::construct_random({7,5,3,1,4,2,8,1}, rnd, dist);
     TTTensor TTA5(A5, 1e-14);
     FullTensor B5(8);
     B5(j,i^7) = TTA5(j,i&1);
-    TEST(approx_equal(B5,A5, 1e-12));
+    TEST(approx_equal(B5,A5, 1e-14));
 )
 
 
@@ -71,31 +71,31 @@ UNIT_TEST(TT, TTOperator_Creation,
     TTOperator TTA1(A1, 1e-14);
     FullTensor B1(2);
     B1(i^2) = TTA1(i^2);
-    TEST(approx_equal(B1,A1, 1e-12));
+    TEST(approx_equal(B1,A1, 1e-14));
     
     FullTensor A2 = FullTensor::construct_random({2,7}, rnd, dist);
     TTOperator TTA2(A2, 1e-14);
     FullTensor B2(2);
     B2(j,i) = TTA2(j,i);
-    TEST(approx_equal(B2,A2, 1e-12));
+    TEST(approx_equal(B2,A2, 1e-14));
     
     FullTensor A3 = FullTensor::construct_random({2,7,3,1}, rnd, dist);
     TTOperator TTA3(A3, 1e-14);
     FullTensor B3(4);
     B3(j,i^3) = TTA3(j,i^3);
-    TEST(approx_equal(B3,A3, 1e-12));
+    TEST(approx_equal(B3,A3, 1e-14));
     
     FullTensor A4 = FullTensor::construct_random({2,2,2,2,2,2,2,2}, rnd, dist);
     TTOperator TTA4(A4, 1e-14);
     FullTensor B4(8);
     B4(j,i^7) = TTA4(j,i&1);
-    TEST(approx_equal(B4,A4, 1e-12));
+    TEST(approx_equal(B4,A4, 1e-14));
     
     FullTensor A5 = FullTensor::construct_random({7,5,6,3,1,4,2,1}, rnd, dist); 
     TTOperator TTA5(A5, 1e-14);
     FullTensor B5(8);
     B5(j,i^7) = TTA5(j,i^7);
-    TEST(approx_equal(B5,A5, 1e-12));
+    TEST(approx_equal(B5,A5, 1e-14));
 )
 
 
@@ -131,7 +131,7 @@ UNIT_TEST(TT, creation_from_fullTensor_5x5x5x5,
 	
 	Index i;
 	
-	TEST(approx_equal(A,B, 1e-12));
+	TEST(approx_equal(A,B, 1e-14));
 	TEST(frob_norm(A(i&0)-B(i&0)) < 1e-13*5*5*5*5);
 )
 

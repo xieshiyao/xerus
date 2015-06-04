@@ -234,10 +234,11 @@ namespace xerus {
             blasWrapper::rank_revealing_split(Qt, Ct, 
 											  static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), 
 											  lhsSize, rhsSize, rank);
-			static_cast<FullTensor*>(Q.tensorObject)->data.reset(Qt.release());
-			Q.tensorObject->dimensions.back() = rank;
+            // TODO there should be a reset function to use instead of directly accesing those values.
+			static_cast<FullTensor*>(Q.tensorObject)->data.reset(Qt.release(), &internal::array_deleter_vt);
+			Q.tensorObject->dimensions.back() = rank; 
 			Q.tensorObject->size = misc::product(Q.tensorObject->dimensions);
-			static_cast<FullTensor*>(C.tensorObject)->data.reset(Ct.release());
+			static_cast<FullTensor*>(C.tensorObject)->data.reset(Ct.release(), &internal::array_deleter_vt);
 			C.tensorObject->dimensions.front() = rank;
 			C.tensorObject->size = misc::product(C.tensorObject->dimensions);
         }
