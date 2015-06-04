@@ -386,7 +386,7 @@ UNIT_TEST(TT, operator_times_tensor,
 	ttD(i^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(j^2,k^2) * C(k^2);
 	LOG(unit_test, frob_norm(D(i&0) - FullTensor(ttD)(i&0)));
-	TEST(approx_equal(D, FullTensor(ttD), 1e-15));
+	TEST(approx_equal(D, FullTensor(ttD), 2e-15));
 	
 	ttD(i^2) = ttA(i^2,j^2) * ttB(k^2,j^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(k^2,j^2) * C(k^2);
@@ -432,9 +432,9 @@ UNIT_TEST(TT, full_contraction,
 	TTOperator toB(B); 
 	
 	Index i;
-	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 2e-13));
-	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 1.6e-13));
-	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 1e-13));
+	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(ttA(i&0)), 3e-13));
+	TEST(misc::approx_equal(frob_norm(A(i&0)), frob_norm(toA(i&0)), 2e-13));
+	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(ttB(i&0)), 2e-13));
 	TEST(misc::approx_equal(frob_norm(B(i&0)), frob_norm(toB(i&0)), 1e-13));
 	TEST(misc::approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(ttA(i&0)-ttB(i&0)), 1e-12));
 	TEST(misc::approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(toA(i&0)-toB(i&0)), 1e-12));
