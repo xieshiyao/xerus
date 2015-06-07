@@ -231,7 +231,7 @@ namespace xerus {
 				REQUIRE(targetCol < _n, "ie " << targetCol << " vs " << _n);
 				size_t row = 0;
 				for (; row < rank && row < col+1; ++row) {
-					_C[row*_n + targetCol] = _A[row*_n + col];
+					_C[row*_n + targetCol] = tmpA[row*_n + col];
 				}
 				for (; row < rank; ++row) {
 					_C[row*_n + targetCol] = 0.0;
@@ -244,13 +244,13 @@ namespace xerus {
 			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			
 			_Q.reset(new double[_m*rank]);
-// 			if(rank == _n) {
+			if(rank == _n) {
 				misc::array_copy(_Q.get(), tmpA.get(), _m*rank);
-// 			} else {
-// 				for(size_t row = 0; row < _m; ++row) {
-// 					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
-// 				}
-// 			}
+			} else {
+				for(size_t row = 0; row < _m; ++row) {
+					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
+				}
+			}
 			
 			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
 		}

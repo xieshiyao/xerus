@@ -144,3 +144,62 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
 )
 
+
+UNIT_TEST(FullTensor, OrthogonalSplit,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+
+    FullTensor A = FullTensor::construct_random({2,2,2,2,2,2}, rnd, dist);
+	FullTensor B({2,3}, [](size_t i){return double(i);});
+    FullTensor Q(4);
+    FullTensor R(4);
+    FullTensor Q2(3);
+    FullTensor R2(5);
+    FullTensor Q3(5);
+    FullTensor R3(3);
+    FullTensor Q4(4);
+    FullTensor res4(6);
+    
+    Index i, j, k, l, m, n, o, p, q, r;
+
+	
+	(Q(i,j), R(j,k)) = OrthogonalSplit(B(i,k));
+    
+    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,n,k,m,j,r));
+    res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    (Q2(i,k,l), R2(l,m,j,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    (Q3(i,m,j,k,l), R3(l,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    /*
+    (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = R(i,j,k,o)*Q(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,n,k,m,j,r));
+    res4(i,n,k,m,j,r) = R(i,j,k,o)*Q(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    (R2(i,m,j,k,l), Q2(l,n,r)) = RQ(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = R2(i,m,j,k,l)*Q2(l,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    (R3(i,k,l), Q3(l,m,j,n,r)) = RQ(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = R3(i,k,o)*Q3(o,m,j,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+    
+    
+    (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));
+    res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
+    TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);*/
+)
