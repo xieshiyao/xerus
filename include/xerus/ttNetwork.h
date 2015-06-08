@@ -150,7 +150,7 @@ namespace xerus {
         
 		/// @brief moves the core to @a _position
 		/// all components left of @a _position will be left-orthogonal, those to the right will be right-orthogonal
-		void move_core(size_t _position);
+		void move_core(size_t _position, bool _keepRank=false);
 		
         /// moves core to the left
         void cannonicalize_left();
