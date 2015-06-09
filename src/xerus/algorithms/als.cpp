@@ -57,7 +57,7 @@ namespace xerus {
         
 		bool cannoAtTheEnd = _x.cannonicalized;
 		size_t corePosAtTheEnd = _x.corePosition;
-        _x.cannonicalize_left();
+        _x.move_core(0, true);
 
         // Create stack of contracted network-parts
 		FullTensor tmpA({1,1,1}, [](){return 1.0;});
@@ -174,7 +174,7 @@ namespace xerus {
             
             if (walkingRight) {
 				// Move core to next position
-				_x.move_core(currIndex+1);
+				_x.move_core(currIndex+1, true);
 				
                 // Move one site to the right
                 xAxR.pop_back();
@@ -190,7 +190,7 @@ namespace xerus {
                 currIndex++;;
             } else {
 				// Move core to next position
-				_x.move_core(currIndex-1);
+				_x.move_core(currIndex-1, true);
 			
                 // move one site to the left
                 xAxL.pop_back();
@@ -224,7 +224,7 @@ namespace xerus {
 		bool cannoAtTheEnd = _x.cannonicalized;
 		size_t corePosAtTheEnd = _x.corePosition;
 		
-		_x.cannonicalize_left();
+		_x.move_core(0, true);
 
 		// Create stack of contracted network-parts
 		FullTensor tmp({1,1}, [](){return 1.0;});
@@ -281,7 +281,7 @@ namespace xerus {
 				_perfData->push_back(energy);
 				LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
 				if (printProgress) {
-					std::cout << "optimized tensor "<< currIndex << ": " << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+					std::cout << "optimized tensor "<< currIndex << ": " << std::scientific << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
 				}
 			}
 			
@@ -300,7 +300,7 @@ namespace xerus {
 					// we are done! yay
 					LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
 					if (preserveCorePosition && cannoAtTheEnd) {
-						_x.move_core(corePosAtTheEnd);
+						_x.move_core(corePosAtTheEnd, true);
 					}
 					return energy; 
 				}
@@ -314,7 +314,7 @@ namespace xerus {
 			
 			if (walkingRight) {
 				// Move core to next position
-				_x.move_core(currIndex+1);
+				_x.move_core(currIndex+1, true);
 				
 				// Move one site to the right
 				bxR.pop_back();
@@ -325,7 +325,7 @@ namespace xerus {
 				currIndex++;;
 			} else {
 				// Move core to next position
-				_x.move_core(currIndex-1);
+				_x.move_core(currIndex-1, true);
 			
 				// move one site to the left
 				bxL.pop_back();

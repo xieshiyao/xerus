@@ -801,7 +801,7 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::move_core(size_t _position) {
+	void TTNetwork<isOperator>::move_core(size_t _position, bool _keepRank) {
 		REQUIRE(is_valid_tt(), "Cannot cannonicalize invalid TT");
 		const size_t numComponents = degree()/N;
 		REQUIRE(_position < numComponents, "Illegal position for core chosen");
@@ -812,8 +812,11 @@ namespace xerus {
 		// move right?
 		for (size_t n=fromLeft; n<_position; ++n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
-// 			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
-			( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j));
+			if (_keepRank) {
+				( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j));
+			} else {
+				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
+			}
 			
 			Tensor &nextTensor = *nodes[n+2].tensorObject;
 			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
@@ -823,11 +826,14 @@ namespace xerus {
 		}
 		for (size_t n=fromRight; n > _position; --n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
-			( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
+// 			if (_keepRank) {
+				( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
+// 			} else {
+// 				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
+// 				currTensor(r, i&1) = currTensor(i&1, r);
+// 				core(j,r) = core(r,j);
+// 			}
 			
-// 			( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
-// 			currTensor(r, i&1) = currTensor(i&1, r);
-// 			core(j,r) = core(r,j);
 			Tensor &nextTensor = *nodes[n].tensorObject;
 			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
 			if (currTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
