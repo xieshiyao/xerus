@@ -826,13 +826,13 @@ namespace xerus {
 		}
 		for (size_t n=fromRight; n > _position; --n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
-// 			if (_keepRank) {
+			if (_keepRank) {
 				( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
-// 			} else {
-// 				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
-// 				currTensor(r, i&1) = currTensor(i&1, r);
-// 				core(j,r) = core(r,j);
-// 			}
+			} else {
+				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
+				currTensor(r, i&1) = currTensor(i&1, r);
+				core(j,r) = core(r,j);
+			}
 			
 			Tensor &nextTensor = *nodes[n].tensorObject;
 			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);

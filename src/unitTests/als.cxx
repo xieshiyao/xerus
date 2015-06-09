@@ -80,18 +80,12 @@ UNIT_TEST(ALS, projectionALS,
 	TTTensor B = TTTensor::construct_random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
 	value_t normB = frob_norm(B);
 	TTTensor X = B;
-	ProjectionALSVariant pALS(ProjectionALS);
-	pALS.printProgress = true;
-	std::vector<value_t> perfdata;
-	LOG(ranks, B.ranks() << X.ranks());
 	for (size_t r = 7; r > 0; --r) {
 		X.round(r);
-// 		LOG(ranks, B.ranks() << X.ranks());
 		value_t roundNorm = frob_norm(X-B);
-		pALS(X,B,1e-4, &perfdata);
-// 		LOG(ranks, B.ranks() << X.ranks());
+		ProjectionALS(X,B,1e-4);
 		value_t projNorm = frob_norm(X-B);
-		LOG(unit_testkk, r << " : " << roundNorm << " > " << projNorm);
+		LOG(unit_test, r << " : " << roundNorm << " > " << projNorm);
 		TEST(projNorm < roundNorm);
 	}
 	TEST(misc::approx_equal(frob_norm(B), normB, 0.));
