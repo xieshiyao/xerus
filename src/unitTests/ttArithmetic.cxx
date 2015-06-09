@@ -101,6 +101,10 @@ UNIT_TEST(TT, real_difference,
     LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 1e-11);
     
+	ttC(i&0) = (ttA(i&0) + ttB(i&0));
+	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
+	ttC(i&0) = (ttB(i&0) + ttA(i&0));
+	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
     ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
     LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 1e-11);
@@ -108,6 +112,28 @@ UNIT_TEST(TT, real_difference,
     ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
     LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 5e-10);
+	
+	ttA = TTTensor::construct_random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
+	ttC(i&0) = ttA(i&0) - ttA(i&0);
+    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = ttB(i&0) - ttB(i&0);
+    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
+    LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
+    LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    
+    ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
+    LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
+    TEST(frob_norm(ttC(i&0)) < 5e-10);
+	
 )
 
 UNIT_TEST(TT, difference_of_TTStacks,

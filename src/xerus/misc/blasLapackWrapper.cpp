@@ -214,8 +214,15 @@ namespace xerus {
 			
 			// Copy the upper triangular Matrix R (rank x _n) into position
 			size_t rank = maxRank-1;
-			while (rank > 0 && misc::approx_equal(_A[rank*(_n+1)], 0.0, 1e-15)) {
-// 				std::cout << std::scientific << _A[rank*(_n+1)] << " ";
+			bool done = false;
+			while (rank > 0) {
+				for (size_t pos = rank*(_n+1); pos < (rank+1)*_n; ++pos) {
+					if (!misc::approx_equal(tmpA[pos] / tmpA[0], 0.0, 1e-15)) {
+						done = true;
+						break;
+					}
+				}
+				if (done) break;
 				rank -= 1;
 			}
 // 			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
