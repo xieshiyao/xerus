@@ -103,14 +103,26 @@ namespace xerus {
             
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		//TODO describtion
 		std::vector<TensorNode::Link> init_from_dimension_array();
         
-        /// Checks whether there is a non-trivial global scaling factor, i.e. check factor != 1.0.
+		/** 
+		* @brief Checks whether there is a non-trivial global scaling factor.
+		* @details That is it checks whether factor != 1.0
+		* @return True is there is a non trivial factor, FALSE otherwise.
+		*/
         bool has_factor() const;
         
+		/** 
+		* @brief Applies the factor to the network.
+		* @details If there is a non trivial global scaling factor, it is apllied to one node.
+		* In case of special decompositions, e.g. TTTensor the canonicalisation is conservered.
+		*/
         virtual void apply_factor();
         
-        /// Contracts all parts of the network that miss every connection to the external indices.
+		/** 
+		* @brief Contracts all nodes that are not connected to any external links.
+		*/
         void contract_unconnected_subnetworks();
 
     public:
