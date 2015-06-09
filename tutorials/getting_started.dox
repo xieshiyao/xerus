@@ -56,7 +56,7 @@ or to calculate the contraction @f$ D_{l,m,n} = \sum_{i,j,k} X_{i,j,k} A_{i,l} B
 \code{.cpp}
     xerus::Index l,m,n;
     
-    D(i,k) = X(i,j,k)*A(i,l)*B(j,m)*C(k,n);
+    D(l,m,n) = X(i,j,k)*A(i,l)*B(j,m)*C(k,n);
 \endcode
 The library will automatically choose a sensable order of contracting these four tensors.
 
