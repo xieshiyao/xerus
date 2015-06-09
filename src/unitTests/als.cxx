@@ -69,6 +69,30 @@ UNIT_TEST(ALS, identity,
 )
 
 
+UNIT_TEST(ALS, projectionALS,
+    //Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(0x5EED);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+    
+    Index k,l,m,n,o,p;
+    
+	TTTensor B = TTTensor::construct_random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
+	value_t normB = frob_norm(B);
+	TTTensor X = B;
+	for (size_t r = 7; r > 0; --r) {
+		X.round(r);
+		value_t roundNorm = frob_norm(X-B);
+		ProjectionALS(X,B,1e-4);
+		value_t projNorm = frob_norm(X-B);
+		LOG(unit_test, r << " : " << roundNorm << " > " << projNorm);
+		TEST(projNorm < roundNorm);
+	}
+	TEST(misc::approx_equal(frob_norm(B), normB, 0.));
+)
+
+#include <iomanip>
+
 UNIT_TEST(ALS, tutorial,
 	std::mt19937_64 rnd;
 	std::normal_distribution<double> dist (0.0, 1.0);
@@ -93,14 +117,24 @@ UNIT_TEST(ALS, tutorial,
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
+
+	// TODO should also be in the tutorial
+	TTTensor C;
+	C(i&0) = A(i/2, j/2) * B(j&0);
+	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
 	ALSb.printProgress = false;
-	
 	std::vector<double> perfdata;
+	
+	ALSb(A, X, C, 1e-12, &perfdata);
+	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
+// 	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
+// 	std::cout << std::scientific << perfdata << std::endl;
+	
+	
+	perfdata.clear();
 	ALSb(A, X, B, 1e-4, &perfdata);
-	
 	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
-	
 // 	std::cout << perfdata << std::endl;
 )

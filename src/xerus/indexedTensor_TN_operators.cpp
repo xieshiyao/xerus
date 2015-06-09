@@ -22,7 +22,7 @@
 #include <xerus/index.h>
 #include <xerus/fullTensor.h>
 #include <xerus/tensorNetwork.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
@@ -161,7 +161,7 @@ namespace xerus {
     IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork>  &  _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
         if(!_lhs.tensorObjectReadOnly->specialized_sum(result, _lhs, _rhs) && !_rhs.tensorObjectReadOnly->specialized_sum(result, _rhs, _lhs)) {
-            LOG(warning, "Using FullTensor fallback for TensorNetwork sum!");
+//             LOG(warning, "Using FullTensor fallback for TensorNetwork sum!");
             std::unique_ptr<FullTensor> tmpResult(new FullTensor(_lhs.degree())); //TODO sparse
             (*tmpResult)(_lhs.indices) = IndexedTensorMoveable<Tensor>(_lhs) + IndexedTensorMoveable<Tensor>(_rhs);
             result.assign(IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(std::move(tmpResult)), _lhs.indices));

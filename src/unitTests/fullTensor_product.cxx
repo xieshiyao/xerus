@@ -22,20 +22,7 @@
 
 #include "../../include/xerus/misc/test.h"
 
-
 #include <cstring>
-
-#include <complex.h>
-// Fix for broken complex implementation
-#undef I
-
-// Workaround for broken Lapack
-#define lapack_complex_float    float _Complex
-#define lapack_complex_double   double _Complex
-extern "C"
-{
-    #include <cblas.h> 
-}
 
 using namespace xerus;
 
@@ -417,13 +404,15 @@ UNIT_TEST(FullTensor, Product_1000x1000,
     FullTensor C({1000,1000});
     Index i, J, K;
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
+    blasWrapper::matrix_matrix_product(&C[0], 1000, 1000, 1.0, &A[0], false, 1000, &B[0], false);
     res(i,K) = A(i,J) * B(J,K);
     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
+    
+    blasWrapper::matrix_matrix_product(&C[0], 1000, 1000, 1.0, &A[0], false, 1000, &B[0], true);
     res(i,K) = A(i,J) * B(K,J);
     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
-    cblas_dgemm(CblasRowMajor, CblasTrans, CblasTrans, 1000, 1000, 1000, 1.0, &A[0], 1000, &B[0], 1000, 0.0, &C[0], 1000);
+    
+    blasWrapper::matrix_matrix_product(&C[0], 1000, 1000, 1.0, &A[0], true, 1000, &B[0], true);
     res(i,K) = A(J,i) * B(K,J);
     TEST(memcmp(res.data.get(), C.data.get(), sizeof(value_t)*1000*1000)==0);
 )

@@ -17,18 +17,15 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/misc/exceptions.h>
 
-namespace xerus {
-    namespace misc {
-        generic_error::generic_error() {}
-            
-        generic_error::generic_error(const generic_error &_other) noexcept
-            : error_info(_other.error_info) { }
-        
-        const char* generic_error::what() const noexcept {
-            return error_info.c_str();
-        }
-        
-    }
-}
+#include<xerus.h>
+
+#include "../../include/xerus/misc/test.h"
+using namespace xerus;
+
+#ifdef PERFORMANCE_ANALYSIS
+    UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
+        std::cout << misc::performanceAnalysis::get_analysis();
+        LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
+    )
+#endif

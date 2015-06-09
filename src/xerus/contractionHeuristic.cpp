@@ -90,9 +90,9 @@ namespace xerus {
         GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
         GREEDY(greedy_r, -r)
         
-        ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
-        ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
-        ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
+        static ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
+        static ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
+        static ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
     }
 
 }

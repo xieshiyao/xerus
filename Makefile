@@ -106,7 +106,7 @@ all: test $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES)
 	mkdir -p $(dir $@)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(BLAS_LIBRARIES) $(LAPACK_LIBRARIES) $(SUITESPARSE) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
 
 # Support non lto build for outdated systems
 ifdef USE_LTO
@@ -134,7 +134,7 @@ install:
 endif
 else
 install:
-	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
+	@printf "INSTALL_LIB_PATH not set correctly. Cannot install xerus.\n"
 endif
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS)

@@ -29,7 +29,7 @@
 #include "standard.h"
 #include "sfinae.h"
 #include "namedLogger.h"
-#include "test.h"
+#include "check.h"
 
 // Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); auto const & name = name##_store.get();
@@ -165,7 +165,7 @@ namespace xerus {
         ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
         template<class T>
         bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
-            bool horst = std::abs(_a-_b) < _eps;
+            bool horst = std::abs(_a-_b) <= _eps;
             return horst;
         }
 

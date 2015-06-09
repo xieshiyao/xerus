@@ -195,6 +195,7 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     SparseTensor& SparseTensor::operator+=(const SparseTensor& _other) {
+		PA_START;
         // We want a*x+b*y and turn it into b*((a/b)*x+y)
         factor /= _other.factor;
         ensure_own_data_and_apply_factor();
@@ -206,6 +207,7 @@ namespace xerus {
                 result.first->second += entry.second;
             }
         }
+        PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));
         return *this;
     }
     
@@ -216,6 +218,7 @@ namespace xerus {
     }
     
     SparseTensor& SparseTensor::operator-=(const SparseTensor& _other) {
+		PA_START;
         // We want a*x-b*y and turn it into -b*((-a/b)*x+y)
         factor /= -_other.factor;
         ensure_own_data_and_apply_factor();
@@ -227,6 +230,7 @@ namespace xerus {
                 result.first->second += entry.second;
             }
         }
+        PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));
         return *this;
     }
     

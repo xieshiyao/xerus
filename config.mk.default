@@ -20,6 +20,7 @@
 
 # Additionally Link Time Optimization support can be build into the library by uncommenting the following line.
 # USE_LTO = TRUE                    # Activates -ftlo
+COMPILE_THREADS = 8					# Number of threads to use during link time optimization.
 
 #=================================================================================================
 # Debug and Logging   
@@ -73,8 +74,8 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 # Note that this can significatly slow down the library.
 # LOGGING += -D LOG_BUFFER_            # Activate the log buffer
 
-# Add time measurments for all Blas and Lapack calls. This allow to use print_blas_analysis() to get a listing on all called blas/lapack fucntions the time spend on them.
-# LOGGING += -D BLAS_ANALYSIS           # Enable BLAS/LAPACK analysis
+# Add time measurments for the relevant low level function calls. This allow to use get_analysis() to get a listing on all called low level fucntions and the time spend on them.
+# LOGGING += -D PERFORMANCE_ANALYSIS           # Enable performance analysis
 
 
 #=================================================================================================

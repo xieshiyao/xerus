@@ -33,6 +33,7 @@
     #include "xerus/misc/callStack.h"
     #include "xerus/misc/simpleNumerics.h"
     #include "xerus/misc/timeMeasure.h"
+    #include "xerus/misc/performanceAnalysis.h"
 
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"

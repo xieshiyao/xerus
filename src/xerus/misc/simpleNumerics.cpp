@@ -21,7 +21,7 @@
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/exceptions.h>
 #include <xerus/misc/namedLogger.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 
 namespace xerus {
     namespace misc {

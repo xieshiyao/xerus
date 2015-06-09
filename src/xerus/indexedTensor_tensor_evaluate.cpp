@@ -20,12 +20,13 @@
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
-#include <xerus/misc/test.h>
+#include <xerus/misc/check.h>
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <memory>
 #include <xerus/misc/selectedFunctions.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/misc/performanceAnalysis.h>
 
 namespace xerus {
 
@@ -214,6 +215,9 @@ namespace xerus {
         // In every case we have to ensure that _out has its own data, since we gonna rewrite it.
         _out.tensorObject->ensure_own_data_no_copy();
         
+		// Start performance analysis for low level part
+		PA_START;
+		
         //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Full => Full   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if(!_out.tensorObjectReadOnly->is_sparse() && !_base.tensorObjectReadOnly->is_sparse()) {
             // Extract out index dimensions
@@ -291,6 +295,7 @@ namespace xerus {
                     }
                 }
             }
+            PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
         }
         //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Both  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         else if(_base.tensorObjectReadOnly->is_sparse()) {
@@ -351,6 +356,7 @@ namespace xerus {
                         }
                     }
                 }
+                PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
             } else {
                 // Ensure that _out is empty
                 value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->data.get();
@@ -368,6 +374,7 @@ namespace xerus {
                         }
                     }
                 }
+                PA_END("Evaluation", "Sparse->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
             }
         }
     }
