@@ -30,50 +30,75 @@ namespace xerus {
     class FullTensor;
     class SparseTensor;
     
-	/// Very general class used to represent arbitary tensor networks. Used as a basis for tensor decompositions like the TTNetwork but also used for the lazy evaluation of Tensor contractions.
-    class TensorNetwork {
+	/** 
+	* @brief Very general class used to represent arbitary tensor networks.
+	* @details Used as a basis for tensor decompositions like the TTNetwork but also used for the lazy evaluation of Tensor contractions.
+	*/
+	class TensorNetwork {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
+        ///@brief Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
         std::vector<size_t> dimensions;
         
-        /// The nodes constituting the network. The order determines the ids of the nodes.
+        ///@brief The nodes constituting the network. The order determines the ids of the nodes.
 		std::vector<TensorNode> nodes;
             
-        /// The open links of the network in order.
+        ///@brief The open links of the network in order.
         std::vector<TensorNode::Link> externalLinks;
         
-        /// A single value representing a constant factor and/or the only entry of an order zero tensor
+        ///@brief A single value representing a constant factor and/or the only entry of an order zero tensor
         value_t factor;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Constructs an empty tensor network
+        /** 
+		* @brief Constructs an empty TensorNetwork.
+		* @details The order of an empty TN is zero. The network will contain no nodes 
+		* and the global factor, which also determines the only entry, is set to zero.
+		*/
 		explicit TensorNetwork();
         
-        /// Copy Constructor
+        ///@brief Copy Constructor
         implicit TensorNetwork(const TensorNetwork& _cpy);
         
-        /// Move Constructor
+        ///@brief Move Constructor
         implicit TensorNetwork(TensorNetwork&& _mv);
         
-        /// Constructs the trivial network containing the given Tensor as single node
+		/** 
+		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
+		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
+		*/
         implicit TensorNetwork(const Tensor& _other);
         
-        /// Constructs the trivial network containing the given Tensor as single node
+		/** 
+		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
+		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
+		*/
         implicit TensorNetwork(Tensor&& _other);
         
-        /// Constructs the trivial network containing the given FullTensor
+		/** 
+		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
+		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
+		* The TN takes the ownership of the pointer.
+		*/
         implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
         
-        /// Constructs the trivial network containing non-specified size-1 fulltensor 
+		/** 
+		* @brief Constructs the trivial TensorNetwork containing a FullTensor with the given degree.
+		* @details All dimensions are set equals one, the global factor of the TN is one and the only entry 
+		* of the tensor is zero.
+		*/
         implicit TensorNetwork(size_t _degree);
         
-        /// Destructor
+        ///@brief Destructor
 		virtual ~TensorNetwork() {}
         
-        /// Returns a new copy of the network.
+        /** 
+		* @brief Returns a new copy of the network.
+		* @details All dimensions are set equals one, the global factor of the TN is one and the only entry 
+		* of the tensor is zero.
+		*/
 		virtual TensorNetwork* get_copy() const;
             
     private:

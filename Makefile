@@ -80,7 +80,7 @@ OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespa
 # ------------------------------------------------------------------------------------------------------
 
 # Convinience variables
-FLAGS = $(strip $(LOGGING) $(DEBUG) $(WARNINGS) $(OPTIMIZE) $(ADDITIONAL_INCLUDE) $(OTHER))
+FLAGS = $(strip $(WARNINGS) $(OPTIMIZE) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER))
 MINIMAL_DEPS = Makefile makeIncludes/general.mk makeIncludes/warnings.mk makeIncludes/optimization.mk config.mk
 
 help:
