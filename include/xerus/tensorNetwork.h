@@ -128,46 +128,98 @@ namespace xerus {
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Allows explicit casts to FullTensor
+        /** 
+		* @brief Explicit cast to FullTensor
+		* @details Contracts the complete network into a single FullTensor
+		*/
         explicit operator FullTensor() const;
         
-        /// Allows explicit casts to SparseTensor
+		/** 
+		* @brief Explicit cast to SparseTensor
+		* @details Contracts the complete network into a single SparseTensor
+		*/
         explicit operator SparseTensor() const;
             
-        /// Fully contracts the network to a single tensor and returns it as a unique_ptr. Result can be both full or sparse.
-        std::unique_ptr<Tensor> fully_contracted_tensor() const;
+        /** 
+		* @brief Fully contract the TensorNetwork
+		* @details The complete TensorNetwork is contracted. The result can be both full or sparse.
+		* @returns a pointer to the resulting single Tensor.
+		*/
+		std::unique_ptr<Tensor> fully_contracted_tensor() const;
         
-        /// TensorNetworks are copy assignable.
-		TensorNetwork &operator=(const TensorNetwork &_cpy);
+        ///@brief TensorNetworks are copy assignable.
+		TensorNetwork& operator=(const TensorNetwork &_cpy);
             
-        /// TensorNetworks are move assignable.
-		TensorNetwork &operator=(TensorNetwork &&_mv);
+        ///@brief TensorNetworks are move assignable.
+		TensorNetwork& operator=(TensorNetwork &&_mv);
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Allows read access to the entry at _position, assuming row-major ordering and a single node.
+        /** 
+		* @brief Read the value at a specific position.
+		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
+		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* @param _position the position of the entry to be read assuming row-major ordering and a single node.
+		* @returns the calculated value (NO reference)
+		*/
         value_t operator[](const size_t _position) const;
         
-        /// Allows access to the entry at _position.
+		/** 
+		* @brief Read the value at a specific position.
+		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
+		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* @param _position the position of the entry to be read assuming a single node.
+		* @returns the calculated value (NO reference)
+		*/
         value_t operator[](const std::vector<size_t>& _positions) const;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		template<typename... args>
 		IndexedTensor<TensorNetwork> operator()(args... _args) {
 				return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
 		}
 		
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		template<typename... args>
 		IndexedTensorReadOnly<TensorNetwork> operator()(args... _args) const {
 				return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
 		}
 		
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
         
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
         IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
             
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
         
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
         IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -183,7 +235,12 @@ namespace xerus {
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-        /// Returns the degree of the tensor network , i.e. the number of externalLinks.
+        /** 
+		 * @brief Gets the degree of the TensorNetwork.
+		 * @details The degree is always equals to the number of dimensions (i.e. dimensions.size()) 
+		 * and externalLinks (i.e. externalLinks.size()).
+		 * @return the degree.
+		 */
         size_t degree() const;
         
         /// Eleminates all erased Nodes
