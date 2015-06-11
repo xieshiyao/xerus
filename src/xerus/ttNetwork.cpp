@@ -286,6 +286,7 @@ namespace xerus {
 			leftDim  = leftTensor.size/midDim;
 			rightDim = rightTensor.size/midDim;
 			maxLeftRank = std::min(leftDim, midDim);
+			// blasWrapper::rank_revealing_split(leftTensor.data, LR, leftTensor.data.get(), leftDim, midDim, maxLeftRank);
 			maxRightRank = std::min(midDim, rightDim);
 			maxRank = std::min(maxLeftRank, maxRightRank);
 			
@@ -301,13 +302,13 @@ namespace xerus {
 			M.reset(new value_t[maxLeftRank*maxRightRank]);
 			blasWrapper::matrix_matrix_product(M.get(), maxLeftRank, maxRightRank, 1.0, LR.get(), false, midDim, RR.get(), false);
 			
-			// Calculate SVD of U S Vt = M -- Reuse the space allocted for LR and RR and allow destruction of M
+			// Calculate SVD of M = U S Vt -- Reuse the space allocted for LR and RR and allow destruction of M
 			U = std::move(LR);
 			S.reset(new value_t[maxRank]);
 			Vt = std::move(RR);
 			blasWrapper::svd_destructive(U.get(), S.get(), Vt.get(), M.get(), maxLeftRank, maxRightRank);
 			
-			// Determine the Rank
+			// Determine the Rank NOTE: this terminates as _eps is required to be < 1
 			size_t currRank = std::min(maxRank, _maxRanks[position]);
 			for(; S[currRank-1] < _eps*S[0]; --currRank) { }
 			
@@ -430,7 +431,7 @@ namespace xerus {
 			n.tensorObject->reinterpret_dimensions(newDimensions);
 		}
 		
-		// TODO set core position according to information in TTStack
+		// NOTE core position according to information in TTStack is set in evaluation
 		
 		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
 	}

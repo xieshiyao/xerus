@@ -83,7 +83,7 @@ UNIT_TEST(ALS, projectionALS,
 	for (size_t r = 7; r > 0; --r) {
 		X.round(r);
 		value_t roundNorm = frob_norm(X-B);
-		ProjectionALS(X,B,1e-4);
+		ALS(X,B,1e-4);
 		value_t projNorm = frob_norm(X-B);
 		LOG(unit_test, r << " : " << roundNorm << " > " << projNorm);
 		TEST(projNorm < roundNorm);
