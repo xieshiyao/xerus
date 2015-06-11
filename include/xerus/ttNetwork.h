@@ -29,19 +29,34 @@ namespace xerus {
 
     template<bool isOperator>
 	/// The TTNetwork class is used to represent TTTensor and TToperators (depending on the template argument) and is a special kind of TensorNetwork.
-    class TTNetwork : public TensorNetwork {
+    class TTNetwork final : public TensorNetwork {
 	public:
+		///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
 		static constexpr const size_t N=isOperator?2:1;
 		
+		/// @brief Flag indicating whether the TTNetwork is cannonicalized.
 		bool cannonicalized;
+		
+		/**
+		 * @brief The position of the core.
+		 * @details If cannonicalized is TRUE, corePosition gives the position of the core tensor. All components
+		 * with smaller index are then left-orthogonalized and all components with larger index right-orthogonalized.
+		 */
 		size_t corePosition;		
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		/// Constructs an order zero TTNetwork.
+		/** 
+		 * @brief Constructs an order zero TTNetwork.
+		 * @details This is a TensorNetwork with no entries. The global factor (which is the only entry of the tensor)
+		 * is set to zero.
+		 */
         explicit TTNetwork();
         
-        /// Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one. Naturally for TTOperators the degree must be even.
-        explicit TTNetwork(const size_t _degree);
+        /** 
+		 * @brief Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one.
+		 * @details Naturally for TTOperators the degree must be even.
+		 */
+		explicit TTNetwork(const size_t _degree);
         
 		/// Constructs a TTNetwork from the given FullTensor, using the higher order SVD algorithm. Opionally an accuracy can be given.
         explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15); //TODO no magic numbers
@@ -102,6 +117,7 @@ namespace xerus {
         /// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
         static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
         
+		
         TTNetwork& operator=(const TTNetwork& _other) = default;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -134,18 +150,43 @@ namespace xerus {
         /// Splits the TTNetwork into two parts by removing the node at @a _position.
         std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
         
+		/** 
+		 * @brief Reduce all ranks up to a given accuracy.
+		 * @param _eps the accuracy to use for truncation in the individual SVDs.
+		 */
         void round(value_t _eps);
 
+		/** 
+		 * @brief Reduce all ranks to the given number.
+		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
+		 */
         void round(size_t _maxRank);
 
+		/** 
+		 * @brief Reduce all ranks to the given numbers.
+		 * @param _maxRanks maximal allowed ranks. All current ranks that are larger than the given ones are reduced by truncation.
+		 */
         void round(const std::vector<size_t> &_maxRanks);
         
+		/** 
+		 * @brief Reduce all ranks to the given number.
+		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
+		 */
         void round(int _maxRank);
 
+		/** 
+		 * @brief Gets the ranks of the TTNetwork.
+		 * @return A vector containing the current ranks.
+		 */
         std::vector<size_t> ranks() const;
         
+		// TODO describtion
         size_t rank(size_t _i) const;
         
+		/** 
+		 * @brief Calculates the storage requirement of the current representation.
+		 * @return The datasize in sizeof(value_t).
+		 */
         size_t datasize() const;
         
 		/// @brief moves the core to @a _position
@@ -206,10 +247,6 @@ namespace xerus {
     template<bool isOperator>
     static _inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
 
-    /// Returns the frobenius norm of the given tensor
-    template<bool isOperator>
-    static _inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
-
 
     typedef TTNetwork<false> TTTensor;
     typedef TTNetwork<true> TTOperator;
@@ -217,7 +254,7 @@ namespace xerus {
     namespace internal {
         template<bool isOperator>
         /// Internal class used to represent stacks of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
-        class TTStack : public TensorNetwork {
+        class TTStack final : public TensorNetwork {
         public:
 			bool cannonicalization_required;
 			size_t futureCorePosition;
