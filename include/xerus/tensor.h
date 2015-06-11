@@ -204,7 +204,7 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /** 
-		 * @brief Indexes the tensor for read/write use.
+		 * @brief Indexes the Tensor for read/write use.
 		 * @param _args several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
@@ -215,7 +215,7 @@ namespace xerus {
         
         
         /** 
-		 * @brief Indexes the tensor for read only use.
+		 * @brief Indexes the Tensor for read only use.
 		 * @param _args several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */

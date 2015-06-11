@@ -282,32 +282,6 @@ namespace xerus {
         return dimensions.size();
     }
     
-    /// Eliminates all erased Nodes
-    void TensorNetwork::sanitize() {
-        std::vector<size_t> idMap(nodes.size(), ~0ul);
-        
-        // Move nodes in vector
-        size_t newId=0, oldId=0;
-        for (; oldId < nodes.size(); ++oldId) {
-            if (nodes[oldId].erased) { continue; }
-            idMap[oldId] = newId;
-            if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
-            newId++;
-        }
-        
-        // Update links
-        nodes.resize(newId);
-        for (TensorNode &n : nodes) {
-            for (TensorNode::Link &l : n.neighbors) {
-                if (!l.external) l.other = idMap[l.other];
-            }
-        }
-        
-        // Update external links
-        for (TensorNode::Link &l : externalLinks) {
-            l.other = idMap[l.other];
-        }
-    }
     
     void TensorNetwork::reshuffle_nodes(const std::map<size_t, size_t> &_map) {
 		reshuffle_nodes([&](size_t i){return _map.at(i);});
@@ -534,7 +508,29 @@ namespace xerus {
         }
         
         // Remove all erased nodes
-        sanitize();
+        std::vector<size_t> idMap(nodes.size(), ~0ul);
+        
+        // Move nodes in vector
+        size_t newId=0, oldId=0;
+        for (; oldId < nodes.size(); ++oldId) {
+            if (nodes[oldId].erased) { continue; }
+            idMap[oldId] = newId;
+            if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
+            newId++;
+        }
+        
+        // Update links
+        nodes.resize(newId);
+        for (TensorNode &n : nodes) {
+            for (TensorNode::Link &l : n.neighbors) {
+                if (!l.external) l.other = idMap[l.other];
+            }
+        }
+        
+        // Update external links
+        for (TensorNode::Link &l : externalLinks) {
+            l.other = idMap[l.other];
+        }
     }
 
 
@@ -813,9 +809,8 @@ namespace xerus {
 
     value_t TensorNetwork::frob_norm() const {
         Index i;
-        FullTensor res(0);
+        FullTensor res;
         res() = (*this)(i&0) * (*this)(i&0);
         return res.data.get()[0];
     }
-
 }

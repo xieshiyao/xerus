@@ -24,7 +24,6 @@
 #include <map>
 #include <set>
 
-
 namespace xerus {
     // Necessary forward declaritons
     class FullTensor;
@@ -103,63 +102,127 @@ namespace xerus {
             
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		//TODO describtion
 		std::vector<TensorNode::Link> init_from_dimension_array();
         
-        /// Checks whether there is a non-trivial global scaling factor, i.e. check factor != 1.0.
+		/** 
+		* @brief Checks whether there is a non-trivial global scaling factor.
+		* @details That is it checks whether factor != 1.0
+		* @return True is there is a non trivial factor, FALSE otherwise.
+		*/
         bool has_factor() const;
         
+		/** 
+		* @brief Applies the factor to the network.
+		* @details If there is a non trivial global scaling factor, it is apllied to one node.
+		* In case of special decompositions, e.g. TTTensor the canonicalisation is conservered.
+		*/
         virtual void apply_factor();
         
-        /// Contracts all parts of the network that miss every connection to the external indices.
+		/** 
+		* @brief Contracts all nodes that are not connected to any external links.
+		*/
         void contract_unconnected_subnetworks();
 
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
-        /// Allows explicit casts to FullTensor
+        /** 
+		* @brief Explicit cast to FullTensor
+		* @details Contracts the complete network into a single FullTensor
+		*/
         explicit operator FullTensor() const;
         
-        /// Allows explicit casts to SparseTensor
+		/** 
+		* @brief Explicit cast to SparseTensor
+		* @details Contracts the complete network into a single SparseTensor
+		*/
         explicit operator SparseTensor() const;
             
-        /// Fully contracts the network to a single tensor and returns it as a unique_ptr. Result can be both full or sparse.
-        std::unique_ptr<Tensor> fully_contracted_tensor() const;
+        /** 
+		* @brief Fully contract the TensorNetwork
+		* @details The complete TensorNetwork is contracted. The result can be both full or sparse.
+		* @returns a pointer to the resulting single Tensor.
+		*/
+		std::unique_ptr<Tensor> fully_contracted_tensor() const;
         
-        /// TensorNetworks are copy assignable.
-		TensorNetwork &operator=(const TensorNetwork &_cpy);
+        ///@brief TensorNetworks are copy assignable.
+		TensorNetwork& operator=(const TensorNetwork &_cpy);
             
-        /// TensorNetworks are move assignable.
-		TensorNetwork &operator=(TensorNetwork &&_mv);
+        ///@brief TensorNetworks are move assignable.
+		TensorNetwork& operator=(TensorNetwork &&_mv);
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /// Allows read access to the entry at _position, assuming row-major ordering and a single node.
+        /** 
+		* @brief Read the value at a specific position.
+		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
+		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* @param _position the position of the entry to be read assuming row-major ordering and a single node.
+		* @returns the calculated value (NO reference)
+		*/
         value_t operator[](const size_t _position) const;
         
-        /// Allows access to the entry at _position.
+		/** 
+		* @brief Read the value at a specific position.
+		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
+		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* @param _position the position of the entry to be read assuming a single node.
+		* @returns the calculated value (NO reference)
+		*/
         value_t operator[](const std::vector<size_t>& _positions) const;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		template<typename... args>
 		IndexedTensor<TensorNetwork> operator()(args... _args) {
 				return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
 		}
 		
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		template<typename... args>
 		IndexedTensorReadOnly<TensorNetwork> operator()(args... _args) const {
 				return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
 		}
 		
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
         
+		/** 
+		 * @brief Indexes the TensorNetwork for read/write use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
         IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
             
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
 		IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
         
+		/** 
+		 * @brief Indexes the TensorNetwork for read only use.
+		 * @param _args several [indices](@ref Index) determining the desired index order.
+		 * @return an internal representation of an IndexedTensor(Network).
+		 */
         IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-        /// Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
+		/// Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
         virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
         
         /// Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
@@ -168,25 +231,39 @@ namespace xerus {
         /// Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
             
-            
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-        /// Returns the degree of the tensor network , i.e. the number of externalLinks.
+        /** 
+		 * @brief Gets the degree of the TensorNetwork.
+		 * @details The degree is defined as the number of dimensions (i.e. dimensions.size()) 
+		 * and is always equal to the number of externalLinks (i.e. externalLinks.size()).
+		 * @return the degree.
+		 */
         size_t degree() const;
-        
-        /// Eleminates all erased Nodes
-        void sanitize();
-            
-		/// reshuffled the nodes according to the given (from, to) map
+           
+		/// @brief reshuffled the nodes according to the given (from, to) map
 		void reshuffle_nodes(const std::map<size_t, size_t> &_map);
 		
-		/// reshuffled the nodes according to the given function
+		/// @brief reshuffled the nodes according to the given function
 		void reshuffle_nodes(std::function<size_t(size_t)> _f);
 		
-		/// check whether all links in the network are set consistently and matching the underlying tensor objects
+		/** 
+		 * @brief Sanity check for the network.
+		 * @details Checks whether all links in the network are set consistently and matching the 
+		 * underlying tensor objects. Note that this only checks whether the TensorNetwork is valid
+		 * not whether the additional constrains of a specific format are fullfilled. For this purpose
+		 * use is_in_expected_format().
+		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
+		 */
 		bool is_valid_network() const;
         
-        /// Creates a copy of a subnet that only contains nullptr as data pointers
+		/** 
+		 * @brief Creates a dataless copy of a subnet.
+		 * @details Creates a copy of this TensorNetwork containing the specified nodes,
+		 * but do not propagate the data but use the nullptr as data for all nodes
+		 * @param _ids the indices of the nodes to be copied. 
+		 * @return the new TensorNetwork.
+		 */
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
         
         
@@ -220,13 +297,26 @@ namespace xerus {
 		*/
 		size_t contract(std::set<size_t> _ids);
 		
-        /// Calculates the frobenious norm of the tensor represented by the tensor network.
+		/** 
+		 * @brief Calculates the frobenious norm of the TensorNetwork.
+		 * @return the frobenious norm of the TensorNetwork.
+		 */
 		virtual value_t frob_norm() const;
 		
-		/**
-		 * checks whether the given TensorNetwork adheres to the format definition it expects according to its other virtual overloads
-		 * eg. calls is_valid_tt for tt tensors and is_valid_network by default
+		/** 
+		 * @brief Sanity check for the TensorNetwork and if applicable for the specific format.
+		 * @details Checks whether all links in the network are set consistently and matching the 
+		 * underlying tensor objects. This also checks whether the additional constrains of the specific 
+		 * format (if any) are fullfilled.
+		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
 		 */
 		virtual bool is_in_expected_format() const;
     };
+	
+	/** 
+	* @brief Calculates the frobenious norm of the given TensorNetwork.
+	* @param _network the TensorNetwork of which the frobenious norm shall be calculated.
+	* @return the frobenious norm.
+	*/
+    static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
 }
