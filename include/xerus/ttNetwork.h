@@ -152,6 +152,15 @@ namespace xerus {
 		/// all components left of @a _position will be left-orthogonal, those to the right will be right-orthogonal
 		void move_core(size_t _position, bool _keepRank=false);
 		
+		/// @brief stores @a _pos as the current core position without verifying of ensuring that this is the case
+		/// @details this is particularly useful after constructing an own TT tensor with set_component calls
+		/// as these will assume that all orthogonalities are destroyed
+		void assume_core_position(size_t _pos) {
+			REQUIRE(_pos < degree() / N, "invalid core position");
+			corePosition = _pos;
+			cannonicalized = true;
+		}
+		
         /// moves core to the left
         void cannonicalize_left();
         
