@@ -60,5 +60,4 @@
     #include "xerus/ttNetwork.h"
     #include "xerus/algorithms/als.h"
 
-	
 #endif

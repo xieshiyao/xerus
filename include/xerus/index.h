@@ -25,15 +25,16 @@
 #include <bitset>
 #include <vector>
 
-/// With very few exceptions all classes, functions and variables declared by the xerus are placed in the xerus:: namespace.
 namespace xerus {
     
-    /**
-     * The xerus::Index class is used to write indexed tensor expressen, e.g. A(i,j)*B(j,k).
+	/** 
+	* @brief Class used to represent indices that can be used to write tensor calculations
+	* in index notation.
+	* @details The xerus::Index class is used to write indexed tensor expressen, e.g. A(i,j)*B(j,k).
      * Here i,j,k are of type xerus::Index. The Index class provides numerous information used
      * internally. As an enduser only the basic constructors and the ^, &, and / operators should
      * of interest.
-     */
+	*/
     class Index {
     public:
         #ifndef DISABLE_RUNTIME_CHECKS_
@@ -46,33 +47,32 @@ namespace xerus {
         
         /**
          * @brief: Checks whether all indices in _indices are open. This is naturally only usefull
-         * for assinged indices, i.e. indices returned by IndexedTensorReadOnly::get_assigned_indices.
-         * 
+         * for assinged indices, i.e. indices returned by IndexedTensorReadOnly::get_assigned_indices().
          * @param _indices std::vector of indices to check. Every contained index is required to be assinged.
          */
         static bool all_open(const std::vector<Index>& _indices);
         
     private:
-        /// Counter that creates a unique local ID for every thread.
+        /// @brief Counter that creates a unique local ID for every thread.
         static std::atomic<size_t> idThreadInitCounter;
         
-        /// Unqiue local ID of the thread.
+        /// @brief Unqiue local ID of the thread.
         static thread_local size_t idCounter;
         
     public:
-        /// Unqiue ID of the index. In case the fixed flag is set, this is the fixed position.
+        /// @brief Unqiue ID of the index. In case the fixed flag is set, this is the fixed position.
         size_t valueId;
         
-        /// The span states how many dimensions are covered by the index.
+        /// @brief The span states how many dimensions are covered by the index.
         size_t span;
         
-        /// The product of the external dimensions this index correstponds to. Only set for assinged indices
+        /// @brief The product of the external dimensions this index correstponds to. Only set for assinged indices.
         size_t assingedDimension;
         
-        /// Bitset of all possible flags the index may possess.
+        /// @brief Bitset of all possible flags the index may possess.
         std::bitset<NUM_FLAGS> flags;
         
-        /// Empty constructor that creates a new Index with new ID. Use this to create indices.
+        /// @brief Empty constructor that creates a new Index with new ID. Use this to create indices.
         Index();
         
         /// Indices are default copy constructable.

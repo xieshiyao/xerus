@@ -58,8 +58,13 @@ namespace xerus {
 		 */
 		explicit TTNetwork(const size_t _degree);
         
-		/// Constructs a TTNetwork from the given FullTensor, using the higher order SVD algorithm. Opionally an accuracy can be given.
-        explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15); //TODO no magic numbers
+        /** 
+		* @brief Constructs a TTNetwork from the given FullTensor.
+		* @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
+		* @param _tensor The Tensor to decompose.
+		* @param _eps the accuracy to be used in the decomposition.
+		*/
+		explicit TTNetwork(const Tensor& _tensor, const double _eps=1e-15); //TODO no magic numbers
         
 		/// Copy constructor for TTNetworks.
         implicit TTNetwork(const TTNetwork & _cpy);
@@ -189,17 +194,32 @@ namespace xerus {
 		 */
         size_t datasize() const;
         
-		/// @brief moves the core to @a _position
-		/// all components left of @a _position will be left-orthogonal, those to the right will be right-orthogonal
+		/** 
+		 * @brief Move the core to a new position.
+		 * @details The core is moved to @a _position and the nodes between the old and the new position are orthogonalized
+		 * accordingly. If the TTNetwork is not yet cannonicalized it will be with @a _position as new corePosition.
+		 * @param _position the new core position.
+		 * @param _keepRank by default a rank revealing QR decomposition is used to move the core and the ranks are reduced
+		 * accordingly. If @a _keepRank is set the rank is not reduced, this is need e.g. in the ALS.
+		 */
 		void move_core(size_t _position, bool _keepRank=false);
 		
-        /// moves core to the left
+		/** 
+		 * @brief Move the core to the left.
+		 * @details Basically calls move_core() with _position = 0
+		 */
         void cannonicalize_left();
         
-        /// moves core to the right
+		/** 
+		 * @brief Move the core to the left.
+		 * @details Basically calls move_core() with _position = degree()-1
+		 */
         void cannonicalize_right();
             
-        /// swaps all external indices to create the transposed operator
+		/** 
+		 * @brief Transpose the TTOperator
+		 * @details Swaps all external indices to create the transposed operator.
+		 */
         template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         void transpose() {
             Index i,r,l,j;

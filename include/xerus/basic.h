@@ -22,18 +22,32 @@
 #include "misc/standard.h"
 #include "tensorLogger.h"
 
+/**
+* @brief The main namespace of xerus.
+* @details With very few exceptions all classes, functions and variables declared by the xerus are placed in this namespace.
+*/
 namespace xerus {
-    /// The type of values to be used by xerus. In future versions this should be allowed to be float, double, or complex.
-    typedef double value_t;
+    /**
+	 * @brief The type of values to be used by xerus.
+	 * @details In future versions this should be allowed to be float, double, or complex.
+	 * In the current version however this is fixed to double.
+	 */
+	typedef double value_t;
     
+	/**
+	* @brief Namespace for function and classes designated only for internal use.
+	* @details End users should never be required to know or explicitly use classes or functions from this
+	* namespace. If you want to do so nevertheless be aware of the minimalistic documentation and in some cases 
+	* quite unexpected behavior.
+	*/
     namespace internal {
-        /// Internal deleter function, needed because std::shared_ptr misses an array overload.
+        /// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
         void array_deleter_vt(value_t* const _toDelete);
         
-        /// Internal deleter function, needed because std::shared_ptr misses an array overload.
+        /// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
         void array_deleter_st(size_t* const _toDelete);
     }
     
-    /// Helper class to provide possible overloads of several Tensor constructors.
+    /// @brief Helper class to provide possible overloads of several Tensor constructors.
     class DONT_SET_ZERO {};
 }

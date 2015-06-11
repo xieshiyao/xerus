@@ -95,14 +95,14 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const FullTensor& _full, const double _eps): TTNetwork(_full.degree()) {
+	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps): TTNetwork(_tensor.degree()) {
 		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
-		REQUIRE(_full.degree()%N==0, "Number of indicis must be even for TTOperator");
+		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		
-		dimensions = _full.dimensions;
+		dimensions = _tensor.dimensions;
 		
-		if (_full.degree() == 0) { 
-			factor = _full.data.get()[0];
+		if (_tensor.degree() == 0) { 
+			factor = _tensor[0];
 			return; 
 		}
 		factor = 1.0;
@@ -113,12 +113,17 @@ namespace xerus {
 		std::unique_ptr<Tensor> nxtTensor;
 		std::unique_ptr<value_t[]> currentU, currentS;
 		std::shared_ptr<value_t> workingData, currentVt;
-		size_t leftDim=1, remainingDim=_full.size, maxRank, newRank=1, oldRank=1;
+		size_t leftDim=1, remainingDim=_tensor.size, maxRank, newRank=1, oldRank=1;
 		
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
 		if (!isOperator) {
-			workingData.reset(new value_t[_full.size], internal::array_deleter_vt);
-			misc::array_copy(workingData.get(), _full.data.get(), _full.size);
+			if(_tensor.is_sparse()) {
+				FullTensor tmpTensor(static_cast<const SparseTensor&>(_tensor));
+				workingData = std::move(tmpTensor.data);
+			} else {
+				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
+				misc::array_copy(workingData.get(), static_cast<const FullTensor&>(_tensor).data.get(), _tensor.size);
+			}
 		} else {
 			FullTensor tmpTensor(degree());
 			std::vector<Index> presentIndices, newIndices;
@@ -127,7 +132,7 @@ namespace xerus {
 				newIndices.emplace_back(presentIndices[i]);
 				newIndices.emplace_back(presentIndices[i+numComponents]);
 			}
-			tmpTensor(newIndices) = _full(presentIndices);
+			tmpTensor(newIndices) = _tensor(presentIndices);
 			workingData = std::move(tmpTensor.data);
 		}
 		
