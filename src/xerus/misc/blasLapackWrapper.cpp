@@ -48,6 +48,7 @@ extern "C"
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/stringUtilities.h>
+#include <xerus/basic.h>
 
 
 namespace xerus {
@@ -459,7 +460,7 @@ namespace xerus {
                 bOrX,       // On input b, on output x
                 1,          // LDB, here always one
                 pivot.get(),// Pivot, entries must be zero to allow pivoting
-                1e-12,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+                xerus::EPSILON,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
                 &rank);     // Outputs the rank of A
             CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer);
             

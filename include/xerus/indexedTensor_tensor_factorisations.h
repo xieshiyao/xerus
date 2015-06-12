@@ -32,7 +32,7 @@ namespace xerus {
     public:
         const IndexedTensorReadOnly<Tensor>& input;
         const double epsilon;
-        SVD(const IndexedTensorReadOnly<Tensor>& _input, const double _epsilon = 1e-14) : input(_input), epsilon(_epsilon) { }
+        SVD(const IndexedTensorReadOnly<Tensor>& _input, const double _epsilon = EPSILON) : input(_input), epsilon(_epsilon) { }
         
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const ;
     };

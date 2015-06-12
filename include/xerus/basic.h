@@ -33,6 +33,13 @@ namespace xerus {
 	 * In the current version however this is fixed to double.
 	 */
 	typedef double value_t;
+	
+	/**
+	 * @brief The default epsilon value in xerus.
+	 * @details This value is used as a default value by all xerus routines that work up to a certain accuracy,
+	 * e.g. the singluar value decompostion or the ALS algorithm.
+	 */
+	const double EPSILON = 1e-14;
     
 	/**
 	* @brief Namespace for function and classes designated only for internal use.

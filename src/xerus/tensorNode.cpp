@@ -78,17 +78,4 @@ namespace xerus {
         tensorObject.reset();
     }
     
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    std::ostream &operator<<(std::ostream &_out, const xerus::TensorNetwork::Link &_rhs) {
-        _out << "L{";
-		if (_rhs.external) {
-			_out << "ext";
-		} else {
-			_out << _rhs.other;
-		}
-		_out << " (" << _rhs.indexPosition << "), dim " << _rhs.dimension << "}";
-        return _out;
-    }
 }

@@ -81,7 +81,7 @@ namespace xerus {
 		* @param _network The network to transform.
 		* @param _eps the accuracy to be used in the transformation.
 		*/
-		explicit TTNetwork(const TensorNetwork &_network, double _eps=1e-14);
+		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
         
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
         template<class generator, class distribution>

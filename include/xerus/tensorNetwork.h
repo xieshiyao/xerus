@@ -37,33 +37,37 @@ namespace xerus {
     public:
 		
 		/**
-		* @brief The Link class is used by the class TensorNode to store the links the represented component tensor has to other nodes of a TensorNetwork.
+		* @brief Class representing a link from a TensorNode to another node or an external index.
 		*/
-		struct Link {
-			/// The index of the otherNode this Link links to.
+		class Link {
+		public:
+			///@brief The index of the otherNode this Link links to.
 			size_t other; 
 			
-			/// IndexPosition on the other node or index of external index
+			///@brief IndexPosition on the other node or index of external index.
 			size_t indexPosition;
 			
-			/// Always equals to other->tensorObject->dimensions[indexPosition]
+			///@brief dimension of the link, always equals to other->tensorObject->dimensions[indexPosition].
 			size_t dimension;
 			
-			/// Flag to mark Links that correspond to external indices
+			///@brief Flag indicating whether this link correspond to an external index.
 			bool external;
 			
-			Link() {}
-			
+			Link() = default;
 			Link(const Link& ) = default;
 			Link(      Link&&) = default;
 			
-			Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) : other(_other), indexPosition(_indexPos), dimension(_dim), external(_external) {}
-			
+			Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external);
 			
 			Link& operator=(const Link& ) = default;
 			Link& operator=(      Link&&) = default;
 			
-			bool links(const size_t _other) const { return !external && other == _other; }
+			/**
+			 * @brief Checks whether this links links to a particular node
+			 * @param _other the other node for which the linkage shall be checked
+			 * @return TRUE if _other the target of this Link, FALSE otherwise.
+			 */
+			bool links(const size_t _other) const;
 		};
 			
 		/**
@@ -71,11 +75,14 @@ namespace xerus {
 		*/
 		class TensorNode {
 		public:
+			///@brief Save slot for the tensorObject associated with this node.
 			std::unique_ptr<Tensor> tensorObject;
 			
+			///@brief Vector of links defining the connection of this node to the network.
 			std::vector<Link> neighbors;
 			
-			bool erased;
+			///@brief Internal Flag
+			bool erased; // TODO kann das nicht mal weg?
 			
 			explicit TensorNode();
 			
@@ -397,5 +404,4 @@ namespace xerus {
     
     
     std::ostream &operator<<(std::ostream &_out, const TensorNetwork::Link &_rhs);
-    
 }

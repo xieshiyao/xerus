@@ -418,7 +418,7 @@ namespace xerus {
         
         virtual bool is_sparse() const override;
         
-        virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const override;
+        virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
         
         virtual value_t frob_norm() const override;
 		
@@ -426,9 +426,9 @@ namespace xerus {
         
         virtual std::string to_string() const override;
         
-        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const override;
+        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = EPSILON) const override;
         
-        virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const override;
+        virtual bool compare_to_data(const value_t* _values, const double _eps = EPSILON) const override;
     };
     
     
