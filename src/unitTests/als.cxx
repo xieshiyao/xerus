@@ -100,10 +100,10 @@ UNIT_TEST(ALS, tutorial,
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
-	const size_t d = 7;
+	const size_t d = 10;
 
-	const std::vector<size_t> stateDims(d, 2);
-	const std::vector<size_t> operatorDims(2*d, 2);
+	const std::vector<size_t> stateDims(d, 4);
+	const std::vector<size_t> operatorDims(2*d, 4);
 	
     xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
@@ -122,24 +122,31 @@ UNIT_TEST(ALS, tutorial,
 
 	// TODO should also be in the tutorial
 	
+	value_t max = std::max(A.get_component(0)[0],A.get_component(0)[1]);
+	max = std::max(A.get_component(0)[2], std::max(A.get_component(0)[3], max));
+	A.set_component(0, static_cast<const FullTensor&>(A.get_component(0))/max);
+	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);
 	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
-	ALSb.printProgress = false;
+	ALSb.printProgress = true;
 	ALSb.useResidualForEndCriterion = true;
 	std::vector<double> perfdata;
 	
 	ALSb(A, X, C, 1e-12, &perfdata);
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
 // 	LOG(HierKommenDieDaten, perfdata);
-// 	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
-// 	std::cout << std::scientific << perfdata << std::endl;
+	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << "     " << std::endl;
+// 	for (value_t &e : perfdata) {
+// 		e-=perfdata.back();
+// 	}
+	std::cout << std::scientific << perfdata << std::endl;
 	
 	
-	perfdata.clear();
-	ALSb(A, X, B, 1e-4, &perfdata);
-	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
+// 	perfdata.clear();
+// 	ALSb(A, X, B, 1e-4, &perfdata);
+// 	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
 // 	std::cout << perfdata << std::endl;
 )

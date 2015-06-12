@@ -244,12 +244,13 @@ namespace xerus {
 				_x.set_component(currIndex, std::move(BTilde));
 			}
 			
-            if (_perfData != nullptr) {
+            if (_perfData) {
                 energy = energy_f();
 				_perfData->push_back(energy);
                 LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
                 if (printProgress) {
-                    std::cout << "optimized tensor "<< currIndex << ": " << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+					std::cout << "                                                                      \r";
+                    std::cout << "optimized tensor "<< currIndex << ": " << std::scientific << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
                 }
             }
 			if (done && (corePosAtTheEnd == currIndex 

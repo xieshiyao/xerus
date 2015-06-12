@@ -972,23 +972,8 @@ namespace xerus {
 			coreAtTheEnd = meTTStack->futureCorePosition;
 		}
 		
-		if (otherTT) {
-			if (!otherTT->cannonicalized || coreAtTheEnd != otherTT->corePosition) {
-				cannoAtTheEnd = false;
-			}
-		} else if (otherTTO) {
-			if (!otherTTO->cannonicalized || coreAtTheEnd != otherTTO->corePosition) {
-				cannoAtTheEnd = false;
-			}
-		} else if (otherTTStack) {
-			if (!otherTTStack->cannonicalization_required || coreAtTheEnd != otherTTStack->futureCorePosition) {
-				cannoAtTheEnd = false;
-			}
-		} else if (otherTTOStack) {
-			if (!otherTTOStack->cannonicalization_required || coreAtTheEnd != otherTTOStack->futureCorePosition) {
-				cannoAtTheEnd = false;
-			}
-		}
+		
+		// TODO profiler should warn if other->corePosition is not identical to coreAtTheEnd
 		
 		// Determine my first half and second half of indices
 		auto midIndexItr = myIndices.begin();
@@ -1231,7 +1216,9 @@ namespace xerus {
 		
 		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(outTensor.dimensions)+" Ranks: "+misc::to_string(outTensor.ranks()));
 		
-		if (ttMe->cannonicalized && ttOther->cannonicalized && ttMe->corePosition == ttOther->corePosition) {
+		// TODO profiler should warn if other->corePos differs
+		
+		if (ttMe->cannonicalized) {
 			REQUIRE(!outTensor.cannonicalized, "ie");
 			outTensor.move_core(ttMe->corePosition);
 		}
