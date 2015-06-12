@@ -26,6 +26,7 @@
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <algorithm>
+#include <fstream>
 
 namespace xerus {    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -813,4 +814,47 @@ namespace xerus {
         res() = (*this)(i&0) * (*this)(i&0);
         return res.data.get()[0];
     }
+    
+    
+	void TensorNetwork::draw(const std::string& _filename) const {
+		std::fstream graphLayout("/tmp/graph.dot", std::fstream::out);
+		graphLayout << "graph G {" << std::endl;
+		graphLayout << "graph [mclimit=10000, maxiter=10000, overlap = false, splines = true]" << std::endl;
+		 
+		for(size_t i = 0; i < nodes.size(); ++i) {
+			// Create the Nodes
+			graphLayout << "\tN"<<i<<" [label=\"";
+			for(size_t k=0; k < nodes[i].degree()-1; ++k) {
+				if(nodes[i].degree()/2 == k) {
+					if(nodes[i].degree()%2 == 0) {
+					graphLayout << "<i"<<k<<"> "<<i<<"| ";
+					} else {
+						graphLayout << "<i"<<k<<"> N"<<i<<"| ";
+					}
+				} else if(nodes[i].degree()%2 == 0 && nodes[i].degree()/2 == k+1) {
+					graphLayout << "<i"<<k<<"> N| "; 
+				} else {
+					graphLayout << "<i"<<k<<"> | ";
+				}
+			}
+			if(nodes[i].degree() <= 2) {
+				graphLayout << "<i"<<nodes[i].degree()-1<<"> N"<<i<<"\", shape=record, fixedsize=shape, height=0.45, style=\"rounded,filled\"];" << std::endl;
+			} else {
+				graphLayout << "<i"<<nodes[i].degree()-1<<">\", shape=record, fixedsize=shape, height=0.45, style=\"rounded,filled\"];" << std::endl;
+			}
+			
+			// Add all links to nodes with smaller index and externals
+			for(size_t j = 0; j < nodes[i].neighbors.size(); ++j) {
+				if(nodes[i].neighbors[j].external) {
+					graphLayout << "\t"<<nodes[i].neighbors[j].indexPosition<<" [shape=diamond, fixedsize=shape, height=0.38, width=0.38, style=filled];" << std::endl;
+					graphLayout << "\tN"<<i<<":i"<<j<<" -- " << nodes[i].neighbors[j].indexPosition << " [len=1, label=\""<<nodes[i].neighbors[j].dimension<<"\"];" << std::endl;
+				} else if(nodes[i].neighbors[j].other < i) {
+					graphLayout << "\tN"<<i<<":i"<<j<<" -- " << "N"<<nodes[i].neighbors[j].other << ":i"<< nodes[i].neighbors[j].indexPosition<<" [label=\""<<nodes[i].neighbors[j].dimension<<"\"];" << std::endl;
+				}
+			}
+		}
+	graphLayout << "}" << std::endl;
+	graphLayout.close();
+	misc::exec(std::string("dot -Tpdf /tmp/graph.dot > ") + _filename+".pdf");
+	}
 }

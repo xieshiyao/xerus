@@ -48,6 +48,13 @@ namespace xerus {
         }
 
         GENERATE_HAS_MEMBER(count)
+		
+		/**
+		 * @brief Execute a given command.
+		 * @param _cmd the command to execute
+		 * @return the cout return of the command.
+		 */
+		std::string exec(const std::string _cmd);
 
 
         ///@brief: Counts how often an element is contained in an arbitary container

@@ -311,6 +311,13 @@ namespace xerus {
 		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
 		 */
 		virtual bool is_in_expected_format() const;
+		
+		/**
+		 * @brief Draws a graph representation of the TensorNetwork.
+		 * @details The drawing is realized by a system call to "dot" which plots the graph structure.
+		 * @param _filename path and name of the file where to save the image.
+		 */
+		void draw(const std::string& _filename) const;
     };
 	
 	/** 
