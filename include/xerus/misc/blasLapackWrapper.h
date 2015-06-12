@@ -25,6 +25,11 @@
 
 
 namespace xerus {
+	/**
+	 * @brief In this namespace the minimal wrappers for the BLAS and LAPACK functions are collected.
+	 * @details As an end user of xerus it should never be nessecary to call any of these functions, unless
+	 * a seriously low level implementation of a critical part of an algorithm is required.
+	 */
     namespace blasWrapper {
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------

@@ -28,7 +28,9 @@ namespace xerus {
 
     
 	/**
-	 * Class representing any Tensor or TensorNetwork object equipped with an Index order, that can at least be read (i.e. is not nessecarily writeable)
+	 * @brief Internal representation of an readable indexed Tensor or TensorNetwork.
+	 * @details This class appears inplicitly by indexing any Tensor or TensorNetwork. It is not recommended to use
+	 * it explicitly or to store variables of this type (unless you really know what you are doing).
 	 */
     template<class tensor_type>
     class IndexedTensorReadOnly {

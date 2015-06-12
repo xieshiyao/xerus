@@ -213,14 +213,10 @@ namespace xerus {
 	{ }
 
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_cpy, double _eps) : TensorNetwork(_cpy) {
+	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TensorNetwork(_network) {
 		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
 	}
 
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(TensorNetwork &&_mov, double _eps) : TensorNetwork(std::move(_mov)) {
-		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
-	}
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::construct_identity(const std::vector<size_t>& _dimensions) {

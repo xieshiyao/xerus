@@ -76,6 +76,8 @@ UNIT_TEST(ALS, projectionALS,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
     
     Index k,l,m,n,o,p;
+	
+	
     
 	TTTensor B = TTTensor::construct_random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
 	value_t normB = frob_norm(B);
@@ -98,7 +100,7 @@ UNIT_TEST(ALS, tutorial,
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
-	const size_t d = 5;
+	const size_t d = 7;
 
 	const std::vector<size_t> stateDims(d, 2);
 	const std::vector<size_t> operatorDims(2*d, 2);
@@ -119,16 +121,19 @@ UNIT_TEST(ALS, tutorial,
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
 
 	// TODO should also be in the tutorial
+	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);
 	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
 	ALSb.printProgress = false;
+	ALSb.useResidualForEndCriterion = true;
 	std::vector<double> perfdata;
 	
 	ALSb(A, X, C, 1e-12, &perfdata);
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
+// 	LOG(HierKommenDieDaten, perfdata);
 // 	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << std::endl;
 // 	std::cout << std::scientific << perfdata << std::endl;
 	

@@ -23,8 +23,12 @@
 
 namespace xerus {
 
-    /// Helper class to allow an intuitive syntax for SVD calculation. E.g. the simplest example is (U(i,k), S(k,l), Vt(l,j)) = SVD(A(i,j)) to calculate the SVD of A.
-    class SVD {
+    /**
+	 * @brief Helper class to allow an intuitive syntax for SVD factorisations.
+	 * @details The simplest example is (U(i,r1), S(r1,r2), Vt(r2,j)) = SVD(A(i,j)) to calculate the SVD of A. However A, U, S and Vt can
+	 *  also be a higher order Tensors. In order to calculate the SVD however a matrification imposed by the index order is used.
+	 */
+	class SVD {
     public:
         const IndexedTensorReadOnly<Tensor>& input;
         const double epsilon;
@@ -33,7 +37,11 @@ namespace xerus {
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const ;
     };
 
-    /// Helper class to allow an intuitive syntax for QR calculation. E.g. the simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR factorisation of A.
+	/**
+	 * @brief Helper class to allow an intuitive syntax for QR factorisations.
+	 * @details The simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR of A. However A, Q and R can
+	 *  also be a higher order Tensors. In order to calculate the QR however a matrification imposed by the index order is used.
+	 */
     class QR {
     public:
         const IndexedTensorReadOnly<Tensor>* input;
@@ -42,8 +50,12 @@ namespace xerus {
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
     };
 
-    /// Helper class to allow an intuitive syntax for RQ factorisations. E.g. the simplest example is (R(i,k), Q(k,j)) = QR(A(i,j)) to calculate the RQ factorisation of A.
-    class RQ {
+    /**
+	 * @brief Helper class to allow an intuitive syntax for RQ factorisations.
+	 * @details The simplest example is (R(i,k), Q(k,j)) = RQ(A(i,j)) to calculate the RQ of A. However A, Q and R can
+	 *  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
+	 */
+	class RQ {
     public:
         const IndexedTensorReadOnly<Tensor>* input;
         RQ(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
@@ -51,7 +63,12 @@ namespace xerus {
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
     };
 	
-	/// wrapper for the rank revealing orthogonal split. A=QC with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A
+	/**
+	 * @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
+	 * @details This calculates a factorisation QC=A with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A.
+	 * The simplest example is (Q(i,k), C(k,j)) = OrthogonalSplit(A(i,j)) to calculate the orthogonal split of A. However A, Q and R can
+	 *  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
+	 */
 	class OrthogonalSplit {
 	public:
 		const IndexedTensorReadOnly<Tensor>* input;

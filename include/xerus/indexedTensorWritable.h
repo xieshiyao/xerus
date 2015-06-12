@@ -26,6 +26,10 @@ namespace xerus {
     class Tensor;
     class TensorNetwork;
     
+	/**
+	 * @brief Abstract internal representation of an read and writeable indexed Tensor or TensorNetwork.
+	 * @details This class (without specialization) should not appear or be used anywhere.
+	 */
     template<class tensor_type>
     class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
     public:
@@ -39,7 +43,6 @@ namespace xerus {
     protected:
         IndexedTensorWritable();
         
-    public:
         /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
         IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
         
@@ -52,6 +55,7 @@ namespace xerus {
         /// Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested
         IndexedTensorWritable(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership);
         
+    public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         virtual ~IndexedTensorWritable();

@@ -319,4 +319,5 @@ namespace xerus {
 	* @return the frobenious norm.
 	*/
     static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
+    
 }

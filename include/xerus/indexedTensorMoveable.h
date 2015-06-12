@@ -22,8 +22,12 @@
 #include "indexedTensorWritable.h"
 
 namespace xerus {
-    /// IndexedTensor variant that signifies, that the tensorObject is moveable. meant for internal use only (strange things happen when storing these)
-    template<class tensor_type>
+	/**
+	 * @brief Internal representation of an read and write and moveable indexed Tensor or TensorNetwork.
+	 * @details This class appears inplicitly by indexing any Tensor or TensorNetwork. It is not recommended to use
+	 * it explicitly or to store variables of this type (unless you really know what you are doing).
+	 */
+	template<class tensor_type>
     class IndexedTensorMoveable final : public IndexedTensorWritable<tensor_type> {
     public:
         /// Creates an empty indexed Tensor, should only be used internally

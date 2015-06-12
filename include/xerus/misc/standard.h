@@ -23,6 +23,13 @@
 #include <cstddef>
 
 namespace xerus {
+	/**
+	 * @brief Collection of classes and functions that provide elementary functionality that is not special to xerus as a tensor library.
+	 */
+	namespace misc {
+		/// @brief Namespace for function and classes designated only for internal use.
+		namespace internal {}
+	}
 
     // Shorter names for unsigned types
     typedef uint8_t byte;

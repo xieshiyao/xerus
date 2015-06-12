@@ -26,12 +26,16 @@
 
 namespace xerus {
 	
-	/// The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
-    class TensorNode {
+    /**
+	 * @brief The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
+	 */
+	class TensorNode {
     public:
 		
-		/// The Link class is used by the class TensorNode to store the links the represented component tensor has to other nodes of a TensorNetwork.
-        struct Link {
+        /**
+		 * @brief The Link class is used by the class TensorNode to store the links the represented component tensor has to other nodes of a TensorNetwork.
+		 */
+		struct Link {
             /// The index of the otherNode this Link links to.
             size_t other; 
             
@@ -58,8 +62,6 @@ namespace xerus {
             bool links(const size_t _other) const { return !external && other == _other; }
         };
 
-//         std::shared_ptr<Tensor> tensorObject;
-        
         std::unique_ptr<Tensor> tensorObject;
         
         std::vector<Link> neighbors;

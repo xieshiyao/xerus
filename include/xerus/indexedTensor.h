@@ -23,9 +23,10 @@
 
 namespace xerus {
 	template<class tensor_type>
-
 	/**
-	 * usercreated indices for tensor equations, e.g. @f$ A_{i,j} = B_{i,k,l} C_{k,l,j} @f$
+	 * @brief Internal representation of an readable and writeable indexed Tensor or TensorNetwork.
+	 * @details This class appears inplicitly by indexing any Tensor or TensorNetwork. It is not recommended to use
+	 * it explicitly or to store variables of this type (unless you really know what you are doing).
 	 */
     class IndexedTensor final : public IndexedTensorWritable<tensor_type> {
     public:     
