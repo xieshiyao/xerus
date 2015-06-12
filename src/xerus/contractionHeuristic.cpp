@@ -48,10 +48,10 @@ namespace xerus {
             best = 1e32f; \
             for (size_t i=0; i<_tn.nodes.size(); ++i) { \
                 if (_tn.nodes[i].erased) continue; \
-                TensorNode &ni = _tn.nodes[i]; \
+                TensorNetwork::TensorNode &ni = _tn.nodes[i]; \
                 for (size_t j=i+1; j<_tn.nodes.size(); ++j) { \
                     if (_tn.nodes[j].erased) continue; \
-                    TensorNode &nj = _tn.nodes[j]; \
+                    TensorNetwork::TensorNode &nj = _tn.nodes[j]; \
                     /* possible candidate (i.e. link to a later node) */\
                     /* calculate n,m,r */ \
                     double m=1,n=1,r=1; \

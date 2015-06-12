@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "tensorNode.h"
 #include "indexedTensor.h"
+#include "tensor.h"
 #include <map>
 #include <set>
 
@@ -35,6 +35,74 @@ namespace xerus {
 	*/
 	class TensorNetwork {
     public:
+		
+		/**
+		* @brief The Link class is used by the class TensorNode to store the links the represented component tensor has to other nodes of a TensorNetwork.
+		*/
+		struct Link {
+			/// The index of the otherNode this Link links to.
+			size_t other; 
+			
+			/// IndexPosition on the other node or index of external index
+			size_t indexPosition;
+			
+			/// Always equals to other->tensorObject->dimensions[indexPosition]
+			size_t dimension;
+			
+			/// Flag to mark Links that correspond to external indices
+			bool external;
+			
+			Link() {}
+			
+			Link(const Link& ) = default;
+			Link(      Link&&) = default;
+			
+			Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) : other(_other), indexPosition(_indexPos), dimension(_dim), external(_external) {}
+			
+			
+			Link& operator=(const Link& ) = default;
+			Link& operator=(      Link&&) = default;
+			
+			bool links(const size_t _other) const { return !external && other == _other; }
+		};
+			
+		/**
+		* @brief The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
+		*/
+		class TensorNode {
+		public:
+			std::unique_ptr<Tensor> tensorObject;
+			
+			std::vector<Link> neighbors;
+			
+			bool erased;
+			
+			explicit TensorNode();
+			
+			implicit TensorNode(const TensorNode&  _other);
+			implicit TensorNode(      TensorNode&& _other);
+			
+			explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
+			
+			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors);
+			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors);
+			
+			TensorNode& operator=(const TensorNode&  _other);
+			TensorNode& operator=(      TensorNode&& _other);
+
+			TensorNode strippped_copy() const;
+			
+			void add_factor(const value_t _factor);
+			
+			// All getters are written without the use of tensorObject so that they also work for empty nodes
+			
+			size_t size() const;
+			
+			size_t degree() const;
+			
+			void erase();
+		};
+
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
         ///@brief Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
@@ -44,7 +112,7 @@ namespace xerus {
 		std::vector<TensorNode> nodes;
             
         ///@brief The open links of the network in order.
-        std::vector<TensorNode::Link> externalLinks;
+        std::vector<Link> externalLinks;
         
         ///@brief A single value representing a constant factor and/or the only entry of an order zero tensor
         value_t factor;
@@ -103,7 +171,7 @@ namespace xerus {
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		//TODO describtion
-		std::vector<TensorNode::Link> init_from_dimension_array();
+		std::vector<Link> init_from_dimension_array();
         
 		/** 
 		* @brief Checks whether there is a non-trivial global scaling factor.
@@ -326,5 +394,8 @@ namespace xerus {
 	* @return the frobenious norm.
 	*/
     static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
+    
+    
+    std::ostream &operator<<(std::ostream &_out, const TensorNetwork::Link &_rhs);
     
 }

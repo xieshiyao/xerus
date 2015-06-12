@@ -30,8 +30,7 @@ namespace xerus {
 
 	/**
 	 * @brief wrapper class for all ALS variants (dmrg etc.)
-	 * 
-	 * By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
+	 * @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
 	 * The local solver will be ignored for all calls to the x=b variants (ie. without operator A)
 	 */
     class ALSVariant {

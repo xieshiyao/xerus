@@ -58,8 +58,8 @@ namespace xerus {
 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    std::vector<TensorNode::Link> TensorNetwork::init_from_dimension_array() {
-        std::vector<TensorNode::Link> newLinks;
+    std::vector<TensorNetwork::Link> TensorNetwork::init_from_dimension_array() {
+        std::vector<TensorNetwork::Link> newLinks;
         for (size_t d=0; d<dimensions.size(); ++d) {
             externalLinks.emplace_back(0, d, dimensions[d], false);
             newLinks.emplace_back(-1, d, dimensions[d], true);
@@ -113,7 +113,7 @@ namespace xerus {
             for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
             
             std::vector<Index> internalOrder;
-            for(const TensorNode::Link& link: cpy.nodes[res].neighbors) {
+            for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
                 REQUIRE(link.external, "Internal Error");
                 internalOrder.emplace_back(externalOrder[link.indexPosition]);
             }
@@ -207,7 +207,7 @@ namespace xerus {
         // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
         for(TensorNode& node : partialCopy.nodes) {
             std::vector<Index> shrinkIndices, baseIndices;
-            for(const TensorNode::Link& link : node.neighbors) {
+            for(const TensorNetwork::Link& link : node.neighbors) {
                 if(link.external) {
                     // Add fixed index to base
                     baseIndices.emplace_back(_positions[link.indexPosition]);
@@ -222,7 +222,7 @@ namespace xerus {
             node.tensorObject.reset(tmp);
             
             // Remove all external links, because they don't exist anymore
-            node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNode::Link& _test){return _test.external;}), node.neighbors.end());
+            node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNetwork::Link& _test){return _test.external;}), node.neighbors.end());
             
             // Adjust the Links
             for(size_t i = 0; i < node.neighbors.size(); ++i) {
@@ -298,7 +298,7 @@ namespace xerus {
 			TensorNode &newNode = newOrder[ newIndex];
 			REQUIRE(newNode.erased, "tried to shuffle two nodes to the same new position " << newIndex << " i= " << i);
 			newNode = nodes[i];
-			for (TensorNode::Link &l : newNode.neighbors) {
+			for (TensorNetwork::Link &l : newNode.neighbors) {
 				if (!l.external) { l.other = _f(l.other); }
 			}
 		}
@@ -313,7 +313,7 @@ namespace xerus {
         
 		// Per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
-			const TensorNode::Link &el = externalLinks[n];
+			const TensorNetwork::Link &el = externalLinks[n];
 			REQUIRE(el.other < nodes.size(), "n=" << n);
             REQUIRE(el.dimension > 0, "n=" << n);
             REQUIRE(el.dimension == dimensions[n], "n=" << n);
@@ -335,7 +335,7 @@ namespace xerus {
 			}
 			// per neighbor
 			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
-				const TensorNode::Link &el = currNode.neighbors[i];
+				const TensorNetwork::Link &el = currNode.neighbors[i];
 				REQUIRE(el.dimension > 0, "n=" << n << " i=" << i);
 				if (currNode.tensorObject) {
 					REQUIRE(el.dimension==currNode.tensorObject->dimensions[i],  "n=" << n << " i=" << i << " " << el.dimension << " vs " << currNode.tensorObject->dimensions[i]);
@@ -375,7 +375,7 @@ namespace xerus {
         for (size_t id : _ids) {
             cpy.nodes[id] = nodes[id].strippped_copy();
             for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
-                TensorNode::Link &l = cpy.nodes[id].neighbors[i];
+                TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
                 if (!l.external) { // Link was not external before
                     if (!misc::contains(_ids, l.other)) { // ...but is "external" to this subnet
                         l.external = true;
@@ -390,8 +390,8 @@ namespace xerus {
     }
     
     void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
-        TensorNode::Link &li = externalLinks[_i];
-        TensorNode::Link &lj = externalLinks[_j];
+        TensorNetwork::Link &li = externalLinks[_i];
+        TensorNetwork::Link &lj = externalLinks[_j];
         nodes[li.other].neighbors[li.indexPosition].indexPosition = _j;
         nodes[lj.other].neighbors[lj.indexPosition].indexPosition = _i;
         std::swap(externalLinks[_i], externalLinks[_j]);
@@ -426,8 +426,8 @@ namespace xerus {
                 REQUIRE(k<_modifiedIndices.size(), "ie " << _modifiedIndices << " k " << k << " j " << j << " ij " << ij << " contained and open? " << _base.is_contained_and_open(ij));
                 
                 for (size_t n=0; n<ij.span; ++n) {
-                    TensorNode::Link &link1 = base.externalLinks[spanSumJ];
-                    TensorNode::Link &link2 = base.externalLinks[spanSumK-n];
+                    TensorNetwork::Link &link1 = base.externalLinks[spanSumJ];
+                    TensorNetwork::Link &link2 = base.externalLinks[spanSumK-n];
                     base.nodes[link1.other].neighbors[link1.indexPosition] = link2;
                     base.nodes[link2.other].neighbors[link2.indexPosition] = link1;
                     
@@ -467,7 +467,7 @@ namespace xerus {
         std::vector<size_t> expansionStack;
         
         // Starting at every external link...
-        for (TensorNode::Link &el : externalLinks) {
+        for (TensorNetwork::Link &el : externalLinks) {
             if(!seen[el.other]) {
                 seen[el.other] = true;
                 expansionStack.push_back(el.other);
@@ -481,7 +481,7 @@ namespace xerus {
             expansionStack.pop_back();
             
             // Add unseen neighbors
-            for (const TensorNode::Link &n : nodes[curr].neighbors) {
+            for (const TensorNetwork::Link &n : nodes[curr].neighbors) {
                 if ( !n.external && !seen[n.other] ) {
                     seen[n.other] = true;
                     expansionStack.push_back(n.other);
@@ -523,13 +523,13 @@ namespace xerus {
         // Update links
         nodes.resize(newId);
         for (TensorNode &n : nodes) {
-            for (TensorNode::Link &l : n.neighbors) {
+            for (TensorNetwork::Link &l : n.neighbors) {
                 if (!l.external) l.other = idMap[l.other];
             }
         }
         
         // Update external links
-        for (TensorNode::Link &l : externalLinks) {
+        for (TensorNetwork::Link &l : externalLinks) {
             l.other = idMap[l.other];
         }
     }
@@ -551,7 +551,7 @@ namespace xerus {
         LOG(TNContract, "contraction of " << _nodeId1 << " and " << _nodeId2 << " size " << nodes.size());
         
         std::vector<Index> i1, i2, ri;
-        std::vector<TensorNode::Link> newLinks;
+        std::vector<TensorNetwork::Link> newLinks;
         for (size_t d=0; d<node1.degree(); ++d) {
             // self-link?
             if (node1.neighbors[d].links(_nodeId1) && d > node1.neighbors[d].indexPosition) {
@@ -598,7 +598,7 @@ namespace xerus {
         
         // fix indices of other nodes // note that the indices that were previously part of node1 might also have changed
         for (size_t d=0; d<newLinks.size(); ++d) {
-            TensorNode::Link *nn;
+            TensorNetwork::Link *nn;
             if (newLinks[d].external) {
                 nn = &externalLinks[newLinks[d].indexPosition];
             } else {
@@ -653,7 +653,7 @@ namespace xerus {
         size_t firstNewExternal = base.externalLinks.size();
         
         // enlarge externalLinks vector by _rhs links
-        for (const TensorNode::Link &l : toInsert.externalLinks) {
+        for (const TensorNetwork::Link &l : toInsert.externalLinks) {
             base.externalLinks.emplace_back(l);
             base.externalLinks.back().other += firstNew;
         }
@@ -671,7 +671,7 @@ namespace xerus {
         // Add network (treating all external links as new external links)
         for (size_t i=0; i<toInsert.nodes.size(); ++i) {
             base.nodes.emplace_back(toInsert.nodes[i]);
-            for(TensorNode::Link &l : base.nodes.back().neighbors) {
+            for(TensorNetwork::Link &l : base.nodes.back().neighbors) {
                 if (!l.external) { // Link inside the added network
                     l.other += firstNew;
                 } else { // External link
@@ -699,7 +699,7 @@ namespace xerus {
         for (size_t id : _ids) {
             REQUIRE(!nodes[id].erased, "tried to contract erased node");
             bool traceNeeded=false;
-            for (const TensorNode::Link &l : nodes[id].neighbors) {
+            for (const TensorNetwork::Link &l : nodes[id].neighbors) {
                 if (l.links(id)) {
                     traceNeeded = true;
                     break;
@@ -708,9 +708,9 @@ namespace xerus {
             if (traceNeeded) {
                 LOG(TNContract, "single-node trace of id " << id);
                 std::vector<Index> idxIn, idxOut;
-                std::vector<TensorNode::Link> newLinks;
+                std::vector<TensorNetwork::Link> newLinks;
                 for (size_t i=0; i<nodes[id].neighbors.size(); ++i) {
-                    const TensorNode::Link &l = nodes[id].neighbors[i];
+                    const TensorNetwork::Link &l = nodes[id].neighbors[i];
                     if (!l.links(id)) {
                         idxIn.emplace_back();
                         idxOut.emplace_back(idxIn.back());

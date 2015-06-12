@@ -61,7 +61,7 @@ namespace xerus {
 		
 		REQUIRE(externalLinks.size() == _degree, "Internal Error.");
 		
-		std::vector<TensorNode::Link> neighbors;
+		std::vector<TensorNetwork::Link> neighbors;
 		
 		neighbors.emplace_back(1,0,1,false);
 		
@@ -374,16 +374,16 @@ namespace xerus {
 		std::vector<Index> oldIndices, newRight; // newLeft == lastRight
 		std::vector<Index> newIndices;
 		std::vector<size_t> newDimensions;
-		_me.tensorObject->nodes.front().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(1,0,1,false)});
+		_me.tensorObject->nodes.front().neighbors = std::vector<TensorNetwork::Link>({TensorNetwork::Link(1,0,1,false)});
 		_me.tensorObject->nodes.front().tensorObject->reinterpret_dimensions({1});
-		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNode::Link>({TensorNode::Link(numComponents,N+1,1,false)});
+		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNetwork::Link>({TensorNetwork::Link(numComponents,N+1,1,false)});
 		_me.tensorObject->nodes.back().tensorObject->reinterpret_dimensions({1});
 		for (size_t i=0; i<numComponents; ++i) {
 			lastIndices = std::move(oldIndices); oldIndices.clear();
 			lastRight = std::move(newRight); newRight.clear();
 			lastRank = newRank; newRank=1;
 			TensorNode &n = _me.tensorObject->nodes[i+1];
-			for (TensorNode::Link &l : n.neighbors) {
+			for (TensorNetwork::Link &l : n.neighbors) {
 				if (l.external) {
 					size_t externalNumber = 0;
 					if (isOperator) {
@@ -444,7 +444,7 @@ namespace xerus {
 			
 			// per external link
 			for (size_t n=0; n<externalLinks.size(); ++n) {
-				const TensorNode::Link &l = externalLinks[n];
+				const TensorNetwork::Link &l = externalLinks[n];
 				REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
 				REQUIRE(!l.external, "n=" << n);
 				REQUIRE(l.other == (n%numComponents)+1, "n=" << n << " " << l.other << " vs " << ((n%numComponents)+1));
@@ -596,7 +596,7 @@ namespace xerus {
 		for (size_t i=1; i<rhsNodesSize; ++i) {
 			const TensorNode &n = _rhs.nodes[i];
 			result.nodes.emplace_back(n);
-			for (TensorNode::Link &l : result.nodes.back().neighbors) {
+			for (TensorNetwork::Link &l : result.nodes.back().neighbors) {
 				if (l.external) {
 					if (l.indexPosition < rhsNumComponents) {
 						l.indexPosition += lhsNumComponents;
@@ -718,12 +718,12 @@ namespace xerus {
 		right.nodes.front().neighbors.front().indexPosition = _position; // NOTE indexPosition will be corrected to 0 in the following steps
 		
 		// Account for the fact that the first _position+2 nodes do not exist
-		for(TensorNode::Link& link : right.externalLinks) {
+		for(TensorNetwork::Link& link : right.externalLinks) {
 			link.other -= _position+2;
 		}
 		
 		for(TensorNode& node : right.nodes) {
-			for(TensorNode::Link& link : node.neighbors) {
+			for(TensorNetwork::Link& link : node.neighbors) {
 				if(link.external) {
 					link.indexPosition -= _position+1;
 				} else {
