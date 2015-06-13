@@ -1037,14 +1037,30 @@ namespace xerus {
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
 		
-		// If the indices are in different order, we are lost. TODO inverse order is also ok...
-		if (myIndices != otherIndices) { return false; }
-		REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
-		
-		// If the other is not a TT tensor (or stack) we are also lost
+		// If the other is not a TT tensor (or stack) fall back to default summation (ie return false)
 		const TTNetwork* otherTT = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
 		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
 		if (!otherTT && !otherTTStack) { return false; }
+		
+		// find index mid-points to compare the halves separately
+		auto midIndexItr = myIndices.begin();
+		size_t spanSum = 0;
+		while (spanSum < _me.degree() / 2) {
+			REQUIRE(midIndexItr != myIndices.end(), "ie");
+			spanSum += midIndexItr->span;
+			++midIndexItr;
+		}
+		auto otherMidIndexItr = otherIndices.begin();
+		spanSum = 0;
+		while (spanSum < _other.degree() / 2) {
+			REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+			spanSum += otherMidIndexItr->span;
+			++otherMidIndexItr;
+		}
+		
+		
+		if (myIndices != otherIndices) { return false; }
+		REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
 		
 		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
 		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork

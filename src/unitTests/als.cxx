@@ -101,7 +101,7 @@ UNIT_TEST(ALS, tutorial,
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
-	const size_t d = 10;
+	const size_t d = 7;
 
 	const std::vector<size_t> stateDims(d, 2);
 	const std::vector<size_t> operatorDims(2*d, 2);
@@ -119,9 +119,10 @@ UNIT_TEST(ALS, tutorial,
 	
 	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
 	
-	LOG(skd, frob_norm(A) << ' ' << A.ranks());
-	A(i^d, j^d) = A(i^d, j^d) + A(j^d, i^d);
-	LOG(skd, frob_norm(A) << ' ' << A.ranks());
+// 	LOG(skd, frob_norm(A) << ' ' << A.ranks());
+// 	A(i^d, j^d) = A(i^d, j^d) + A(j^d, i^d);
+	A(i^d, j^d) = A(i^d, k^d) * A(j^d, k^d);
+// 	LOG(skd, frob_norm(A) << ' ' << A.ranks());
 	
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
 
