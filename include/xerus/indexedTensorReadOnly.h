@@ -25,6 +25,7 @@
 namespace xerus {
     // Necessary forward declaritons
     class Index;
+	template<class tensor_type> class IndexedTensorMoveable;
 
     
 	/**
@@ -64,6 +65,12 @@ namespace xerus {
         
         /// Destructor must be virtual
         virtual ~IndexedTensorReadOnly();
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+		IndexedTensorMoveable<tensor_type> operator*(const value_t _factor) const;
+		
+		IndexedTensorMoveable<tensor_type> operator/(const value_t _divisor) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         bool uses_tensor(const tensor_type *otherTensor) const;
@@ -88,4 +95,8 @@ namespace xerus {
     value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
     
     size_t get_eval_degree(const std::vector<Index>& _indices);
+	
+	
+    template<class tensor_type>
+    static _inline_ IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, const IndexedTensorReadOnly<tensor_type>& _iTensor) {return _iTensor*_factor; }
 }

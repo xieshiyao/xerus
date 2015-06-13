@@ -125,18 +125,5 @@ namespace xerus {
     IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
         return internal::plus_minus<false>(_lhs, _rhs);
     }
-    
-    IndexedTensorMoveable<Tensor> operator*(const value_t _lhs, const IndexedTensorReadOnly<Tensor>& _rhs) {
-        IndexedTensorMoveable<Tensor> result(_rhs);
-        result.tensorObject->factor *= _lhs;
-        return result;
-    }
 
-    IndexedTensorMoveable<Tensor> operator*(const IndexedTensorReadOnly<Tensor> & _lhs, const value_t _rhs) {
-        return _rhs * _lhs;
-    }
-
-    IndexedTensorMoveable<Tensor> operator/(const IndexedTensorReadOnly<Tensor> & _lhs, const value_t _rhs) {
-        return (1/_rhs)*_lhs;
-    }
 }
