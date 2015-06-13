@@ -49,7 +49,7 @@ int main() {
 	
 	// calculate the residual of the just solved system to evaluate its accuracy
 	// here i^9 denotes a multiindex named i of dimension 9 (ie. spanning 9 indices of the respective tensors)
-	double residual = frob_norm(ttA(i^9,j^9)*ttx(j^9) - ttb(i^9));
+	double residual = frob_norm( ttA(i^9,j^9)*ttx(j^9) - ttb(i^9) );
 	std::cout << "residual: " << residual << std::endl;
 	
 	// as an comparison solve the system exactly using the FullTensor / operator
