@@ -25,6 +25,7 @@
 
 # However we really want to ignore
 lapacke/*
+build/*
 doc/latex/*
 doc/html/*
 config.mk
