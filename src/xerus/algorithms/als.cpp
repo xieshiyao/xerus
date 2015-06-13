@@ -17,7 +17,6 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-// #include <xerus.h>
 #include <xerus/algorithms/als.h>
 #include <xerus/basic.h>
 #include <xerus/indexedTensorList.h>

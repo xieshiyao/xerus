@@ -528,16 +528,21 @@ namespace xerus {
 	#endif
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	template<bool isOperator>
-	const Tensor &TTNetwork<isOperator>::get_component(size_t _idx) const {
+	Tensor &TTNetwork<isOperator>::component(const size_t _idx) {
+		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
+		return *nodes[_idx+1].tensorObject;
+	}
+		
+	template<bool isOperator>
+	const Tensor &TTNetwork<isOperator>::get_component(const size_t _idx) const {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
 		return *nodes[_idx+1].tensorObject;
 	}
 	
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::set_component(size_t _idx, const Tensor &_T) {
+	void TTNetwork<isOperator>::set_component(const size_t _idx, const Tensor &_T) {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::set_component");
 		TensorNode &currNode = nodes[_idx+1];
 		REQUIRE(_T.degree() == N+2, "Component must have degree 3 (TTTensor) or 4 (TTOperator). Given: " << _T.degree());
@@ -683,8 +688,8 @@ namespace xerus {
 		
 		// Create the resulting TNs
 		TensorNetwork left, right;
-		left.factor = 1.;
-		right.factor = 1.;
+		left.factor = factor;
+		right.factor = 1.0;
 		
 		left.nodes.push_back(nodes[0]);
 		for (size_t i = 0; i < _position; ++i) {
@@ -705,7 +710,8 @@ namespace xerus {
 		
 		right.dimensions.push_back(nodes[_position+2].neighbors.front().dimension);
 		right.externalLinks.emplace_back(_position+2, 0, nodes[_position+2].neighbors.front().dimension , false); // NOTE other will be corrected to 0 in the following steps
-		for(size_t i = _position+1; i < numComponents+1; ++i) {
+
+		for(size_t i = _position+1; i < numComponents; ++i) {
 			right.dimensions.push_back(dimensions[i]);
 			right.externalLinks.push_back(externalLinks[i]);
 			right.nodes.push_back(nodes[i+1]);
@@ -716,6 +722,9 @@ namespace xerus {
 				right.externalLinks.push_back(externalLinks[i+numComponents]);
 			}
 		}
+		// The last node
+		right.nodes.push_back(nodes.back());
+		
 		right.nodes.front().neighbors.front().external = true;
 		right.nodes.front().neighbors.front().indexPosition = _position; // NOTE indexPosition will be corrected to 0 in the following steps
 		
@@ -727,7 +736,7 @@ namespace xerus {
 		for(TensorNode& node : right.nodes) {
 			for(TensorNetwork::Link& link : node.neighbors) {
 				if(link.external) {
-					link.indexPosition -= _position+1;
+					link.indexPosition -= _position;
 				} else {
 					link.other -= _position+2;
 				}
@@ -820,13 +829,13 @@ namespace xerus {
 				( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j));
 			} else {
 				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
+				nodes[n+2].neighbors.front().dimension = nodes[n+1].neighbors.back().dimension = currTensor.dimensions.back();
 			}
 			
 			Tensor &nextTensor = *nodes[n+2].tensorObject;
 			nextTensor(i,j&1) = core(i,r) * nextTensor(r,j&1);
-			if (nextTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
-				nodes[n+2].neighbors.front().dimension = nodes[n+1].neighbors.back().dimension = nextTensor.dimensions[0];
-			}
+			
+			
 		}
 		for (size_t n=fromRight; n > _position; --n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
@@ -836,16 +845,16 @@ namespace xerus {
 				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
 				currTensor(r, i&1) = currTensor(i&1, r);
 				core(j,r) = core(r,j);
+				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = currTensor.dimensions.front();
 			}
 			
 			Tensor &nextTensor = *nodes[n].tensorObject;
 			nextTensor(j&1,i) = nextTensor(j&1,r) * core(r,i);
-			if (currTensor.dimensions[0] != nodes[n+1].neighbors.front().dimension) {
-				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = currTensor.dimensions[0];
-			}
 		}
 		cannonicalized = true;
 		corePosition = _position;
+		
+		REQUIRE(is_valid_tt(), "Core movement failed!");
 	}
 	
 	template<bool isOperator>

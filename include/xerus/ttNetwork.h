@@ -164,6 +164,14 @@ namespace xerus {
         static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
         
 		/** 
+		* @brief Complete access to a specific component of the TT decomposition.
+		* @details This function gives complete access to the components, only intended for internal use.
+		* @param _idx index of the component to access.
+		* @returns a reference to the requested component.
+		*/
+		Tensor& component(const size_t _idx);
+		
+		/** 
 		* @brief Read access to a specific component of the TT decomposition.
 		* @details This function should be used to access from the components, instead of direct access via
 		* nodes[...], because the implementation e.g. does not store the first componend in nodes[0] but as
@@ -172,7 +180,7 @@ namespace xerus {
 		* @param _idx index of the component to access.
 		* @returns a const reference to the requested component.
 		*/
-		const Tensor &get_component(size_t _idx) const;
+		const Tensor &get_component(const size_t _idx) const;
 		
 		/** 
 		* @brief Sets a specific component of the TT decomposition.
@@ -183,7 +191,7 @@ namespace xerus {
 		* @param _idx index of the component to set.
 		* @param _T Tensor to use as the new component tensor.
 		*/
-		void set_component(size_t _idx, const Tensor &_T);
+		void set_component(const size_t _idx, const Tensor &_T);
 		
 		/** 
 		* @brief Sets a specific component of the TT decomposition.

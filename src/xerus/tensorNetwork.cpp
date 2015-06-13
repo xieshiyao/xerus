@@ -322,7 +322,8 @@ namespace xerus {
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
     bool TensorNetwork::is_valid_network() const {
 		REQUIRE(std::isfinite(factor), "factor = " << factor);
-        
+        REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
+		
 		// Per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
 			const TensorNetwork::Link &el = externalLinks[n];
