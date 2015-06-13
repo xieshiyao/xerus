@@ -1,0 +1,31 @@
+/** @example "Quick-Start"
+
+This quick-start guide will introduce some basic functionality of the `xerus` library. 
+It demonstrates the general layout and is enough for very basic applications but it is recommended to also have a look
+at the more detailed guides for all classes one wishes to use - or even have a look at the class documentation for details on all functions.
+
+It is assumed that you have already obtained and compiled the library itself as well as know how to link against it.
+If this is not the case, please refer to the [building xerus](@ref md_building_xerus) page.
+
+In the following we will solve a FEM equation arising from the heat equation using a QTT decomposition and the ALS algorithm.
+
+To start we create the stiffness matrix as a full (ie. not sparse or decomposed) tensor.
+To define the entries we pass a lambda function to the constructor of the `FullTensor` object that will be
+called for every entry with a vector of size_t integers defining the indices of the current entry.
+As it is simpler to think of the stiffness matrix in its original form rather than the QTT form we will 
+set the dimensions to `{512,512}`, ie. create it as a 512x512 tensor.
+
+\dontinclude quickStart.cpp
+\skip FullTensor
+\until });
+
+To account for the @f$ h^2 @f$ factor that we have ignored to far we simply multipy the operator by @f$ N^2 @f$.
+
+\skipline *=
+
+
+
+
+The full source code thus looks as follows ([tutorials/fulltensor.cpp](@ref tutorials/quickStart.cpp) )
+\include quickStart.cpp
+*/

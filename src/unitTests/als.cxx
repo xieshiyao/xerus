@@ -94,16 +94,17 @@ UNIT_TEST(ALS, projectionALS,
 )
 
 #include <iomanip>
+#include <fstream>
 
 UNIT_TEST(ALS, tutorial,
-	std::mt19937_64 rnd;
+	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
 	const size_t d = 10;
 
-	const std::vector<size_t> stateDims(d, 4);
-	const std::vector<size_t> operatorDims(2*d, 4);
+	const std::vector<size_t> stateDims(d, 2);
+	const std::vector<size_t> operatorDims(2*d, 2);
 	
     xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
@@ -112,11 +113,15 @@ UNIT_TEST(ALS, tutorial,
 	
 	xerus::ALS(A, X, B);
 	
+	LOG(asd, frob_norm(X-B));
+	
 	TEST(misc::approx_equal(frob_norm(X-B), 0., 1e-12));
 	
 	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
 	
-	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
+	LOG(skd, frob_norm(A) << ' ' << A.ranks());
+	A(i^d, j^d) = A(i^d, j^d) + A(j^d, i^d);
+	LOG(skd, frob_norm(A) << ' ' << A.ranks());
 	
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
 
@@ -142,10 +147,13 @@ UNIT_TEST(ALS, tutorial,
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
 // 	LOG(HierKommenDieDaten, perfdata);
 	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << "     " << std::endl;
-// 	for (value_t &e : perfdata) {
+	std::ofstream out("test.dat");
+	for (value_t &e : perfdata) {
+		out << e << std::endl;
 // 		e-=perfdata.back();
-// 	}
-	std::cout << std::scientific << perfdata << std::endl;
+	}
+	out.close();
+// 	std::cout << std::scientific << perfdata << std::endl;
 	
 	
 // 	perfdata.clear();
