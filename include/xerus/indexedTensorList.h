@@ -33,17 +33,27 @@ namespace xerus {
 	 */
     class IndexedTensorList {
     public:
+		///@brief Collection of pointers to the Tensor objects referenced by the tuple.
         std::vector<const IndexedTensorWritable<Tensor>*> tensors;
         
+		///@brief No default construction is intended.
         IndexedTensorList() = delete;
+		
+		///@brief No copy construction is intended.
         IndexedTensorList(const IndexedTensorList& _old) = delete;
         
+        ///@brief Move constructor.
         IndexedTensorList(IndexedTensorList&& _old);
         
+		/**
+		 * @brief constructor initializing an IndexedTensorList with two initial Tensor refrences.
+		 */
         IndexedTensorList(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second);
         
-        // Generic =operator 
-        void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const;
+        /**
+		 * @brief Generic assignment operator that takes any std::function object which is in then invoked to perform the assignment.
+		 */
+		void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const;
     };
 
 	/**
