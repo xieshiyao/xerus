@@ -65,19 +65,6 @@ namespace xerus {
     }
     
     template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::copy_assign(const IndexedTensorWritable&  _other) {
-        if(_other.deleteTensorObject) {
-            LOG(fatal, "TODO");
-//             tensorObject = _other.tensorObject->deep_copy(); TODO
-        } else {
-            tensorObject = _other.tensorObject;
-        }
-        this->tensorObjectReadOnly = tensorObject;
-        this->indices = _other.indices;
-        this->deleteTensorObject = _other.deleteTensorObject;
-    }
-    
-    template<class tensor_type>
     void IndexedTensorWritable<tensor_type>::assign(      IndexedTensorWritable&& _other) {
         this->tensorObject = _other.tensorObject;
         this->tensorObjectReadOnly = _other.tensorObjectReadOnly;

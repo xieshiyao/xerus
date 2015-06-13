@@ -30,27 +30,33 @@ namespace xerus {
 	 */
     class IndexedTensor final : public IndexedTensorWritable<tensor_type> {
     public:     
-        /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
+        ///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
         IndexedTensor(const IndexedTensor &_other ) = delete;
         
-        /// Move constructor
+        ///@brief Move constructor
         IndexedTensor(IndexedTensor &&_other );
         
-        /// Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
-        IndexedTensor(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership);
+        ///@brief Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
+        IndexedTensor(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);
         
-        /// Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
-        IndexedTensor(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership);
+        ///@brief Constructs an IndexedTensor with the given tensor and indices and if ordered to do so takes owership of the tensorObject
+        IndexedTensor(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership);
             
-            
-        // Assignment operators -- Used for tensor assignment WITH indices (i.e. in general the LHS and RHS indexTensors do NOT have the same indices)
-        // NOTE: The following would be deleted due to move constructor
-        void operator=(const IndexedTensor<tensor_type>& _rhs);
-        
-        /// Assignment operator
+		/**
+		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
+		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
+		 * the assignment.
+		 */
         void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs);
         
-        /// Assignment operator
+		/**
+		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
+		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
+		 * the assignment.
+		 */
         void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
+		
+		///@brief The following would be deleted due to move constructor and is therefore implemented here, calls the IndexedTensorReadOnly version. 
+        void operator=(const IndexedTensor<tensor_type>& _rhs);
     };
 }
