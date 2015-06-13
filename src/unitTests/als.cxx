@@ -134,27 +134,15 @@ UNIT_TEST(ALS, tutorial,
 	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);
-	TensorNetwork Wuhu;
-	Wuhu(k&0) = A(k/2,i/2) * A(i/2, j/2) * B(j&0);
-	Wuhu.draw("test");
 	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
 	ALSb.printProgress = true;
 	ALSb.useResidualForEndCriterion = true;
-	std::vector<double> perfdata;
+	std::vector<value_t> perfdata;
 	
 	ALSb(A, X, C, 1e-12, &perfdata);
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
-// 	LOG(HierKommenDieDaten, perfdata);
-	std::cout << "Residual " << std::scientific << frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) << "     " << std::endl;
-	std::ofstream out("test.dat");
-	for (value_t &e : perfdata) {
-		out << e << std::endl;
-// 		e-=perfdata.back();
-	}
-	out.close();
-// 	std::cout << std::scientific << perfdata << std::endl;
 	
 	
 // 	perfdata.clear();

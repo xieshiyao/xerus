@@ -1034,6 +1034,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+		REQUIRE(_me.degree() == _other.degree(), "");
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
 		
@@ -1042,25 +1043,41 @@ namespace xerus {
 		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
 		if (!otherTT && !otherTTStack) { return false; }
 		
-		// find index mid-points to compare the halves separately
-		auto midIndexItr = myIndices.begin();
-		size_t spanSum = 0;
-		while (spanSum < _me.degree() / 2) {
-			REQUIRE(midIndexItr != myIndices.end(), "ie");
-			spanSum += midIndexItr->span;
-			++midIndexItr;
+		bool transposeRHS = false;
+		if (!isOperator && myIndices != otherIndices) {
+			return false; //TODO we could do inverse order...
+		} else if (isOperator) {
+			// find index mid-points to compare the halves separately
+			auto midIndexItr = myIndices.begin();
+			size_t spanSum = 0;
+			while (spanSum < _me.degree() / 2) {
+				REQUIRE(midIndexItr != myIndices.end(), "ie");
+				spanSum += midIndexItr->span;
+				++midIndexItr;
+			}
+			auto otherMidIndexItr = otherIndices.begin();
+			spanSum = 0;
+			while (spanSum < _other.degree() / 2) {
+				REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+				spanSum += otherMidIndexItr->span;
+				++otherMidIndexItr;
+			}
+			
+			if (myIndices == otherIndices) { 
+				REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
+			} else {
+				if (   !misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
+					|| !misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)) 
+				{
+					return false;
+				}
+				// other is transposed compared to me
+				for (size_t d=0; d<_me.degree(); ++d) {
+					REQUIRE(_me.tensorObjectReadOnly->dimensions[d] == _other.tensorObjectReadOnly->dimensions[(d+_me.degree()/2)%_me.degree()], "sum requires identical dimensions");
+				}
+				transposeRHS = true;
+			}
 		}
-		auto otherMidIndexItr = otherIndices.begin();
-		spanSum = 0;
-		while (spanSum < _other.degree() / 2) {
-			REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
-			spanSum += otherMidIndexItr->span;
-			++otherMidIndexItr;
-		}
-		
-		
-		if (myIndices != otherIndices) { return false; }
-		REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
 		
 		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
 		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
@@ -1080,20 +1097,33 @@ namespace xerus {
 		const IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
 		
 		// If other is in fact a TTTensorStack, we have to evaluate it to tttensor
-		std::unique_ptr<IndexedTensor<TensorNetwork>> otherStorage;
-		const IndexedTensorReadOnly<TensorNetwork> *realOtherPtr = &_other;
+		std::unique_ptr<TTNetwork> otherStorage;
+		const TensorNetwork *realOtherPtr = _other.tensorObjectReadOnly;
 		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
 		if (movOther) {
 			internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
 			if (stackOther) {
-				otherStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_other.degree()), otherIndices, true));
-				(*otherStorage) = _other;
+				otherStorage.reset(new TTNetwork());
+				(*otherStorage)(otherIndices) = _other;
+				if (transposeRHS) {
+					//NOTE will only be called in the operator case and is thus a nop
+					reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
+					transposeRHS = false;
+				}
 				realOtherPtr = otherStorage.get();
 			}
 		} else {
 			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
 		}
-		const IndexedTensorReadOnly<TensorNetwork> &realOther = *realOtherPtr;
+		if (transposeRHS) {
+			otherStorage.reset(new TTNetwork());
+			(*otherStorage)(otherIndices) = _other;
+			//NOTE will only be called in the operator case and is thus a nop
+			reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
+			transposeRHS = false;
+			realOtherPtr = otherStorage.get();
+		}
+		const TensorNetwork &realOther = *realOtherPtr;
 		
 		// Number of components to create
 		const size_t numComponents = realMe.degree()/N;
@@ -1103,7 +1133,7 @@ namespace xerus {
 		
 		//The external dimensions are the same as the ones of the input
 		tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
-		REQUIRE(realOther.tensorObjectReadOnly->dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
+		REQUIRE(realOther.dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
 		
 		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
 		TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
@@ -1117,11 +1147,11 @@ namespace xerus {
 			// Create the one Node
 			std::unique_ptr<Tensor> nextTensor;
 			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[1].tensorObject.get();
-			const Tensor &otherComponent = *realOther.tensorObjectReadOnly->nodes[1].tensorObject.get();
+			const Tensor &otherComponent = *realOther.nodes[1].tensorObject.get();
 			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
 				nextTensor.reset(myComponent.get_copy());
 				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
-				*static_cast<SparseTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*(*static_cast<const SparseTensor*>(&otherComponent));
+				*static_cast<SparseTensor*>(nextTensor.get()) += realOther.factor*(*static_cast<const SparseTensor*>(&otherComponent));
 			} else { // at most one sparse
 				if(myComponent.is_sparse()){
 					nextTensor.reset(new FullTensor(*static_cast<const SparseTensor*>(&myComponent)));
@@ -1130,9 +1160,9 @@ namespace xerus {
 				}
 				nextTensor->factor *= realMe.tensorObjectReadOnly->factor;
 				if(otherComponent.is_sparse()){
-					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<const SparseTensor&>(otherComponent);
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.factor*static_cast<const SparseTensor&>(otherComponent);
 				} else {
-					*static_cast<FullTensor*>(nextTensor.get()) += realOther.tensorObjectReadOnly->factor*static_cast<const FullTensor&>(otherComponent);
+					*static_cast<FullTensor*>(nextTensor.get()) += realOther.factor*static_cast<const FullTensor&>(otherComponent);
 				}
 			}
 			
@@ -1142,14 +1172,14 @@ namespace xerus {
 		}
 		
 		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
-		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOther.tensorObjectReadOnly);
+		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOtherPtr);
 		
 		PA_START;
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current input nodes
 			// TODO sparse
 			FullTensor &myComponent = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
-			FullTensor &otherComponent = *static_cast<FullTensor*>(realOther.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
+			FullTensor &otherComponent = *static_cast<FullTensor*>(realOther.nodes[position+1].tensorObject.get());
 			
 			// Structure has to be (for degree 4)
 			// (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
@@ -1213,7 +1243,7 @@ namespace xerus {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
 						misc::array_scaled_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-												otherComponent.factor*realOther.tensorObjectReadOnly->factor, 
+												otherComponent.factor*realOther.factor, 
 												otherComponent.data.get() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
 												otherComponent.dimensions.back());
 					}
