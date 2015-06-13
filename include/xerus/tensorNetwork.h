@@ -82,7 +82,7 @@ namespace xerus {
 			std::vector<Link> neighbors;
 			
 			///@brief Internal Flag
-			bool erased; // TODO kann das nicht mal weg?
+			bool erased;
 			
 			explicit TensorNode();
 			

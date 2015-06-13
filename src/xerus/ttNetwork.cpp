@@ -120,9 +120,11 @@ namespace xerus {
 			if(_tensor.is_sparse()) {
 				FullTensor tmpTensor(static_cast<const SparseTensor&>(_tensor));
 				workingData = std::move(tmpTensor.data);
+				factor = tmpTensor.factor;
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
 				misc::array_copy(workingData.get(), static_cast<const FullTensor&>(_tensor).data.get(), _tensor.size);
+				factor = _tensor.factor;
 			}
 		} else {
 			FullTensor tmpTensor(degree());
@@ -134,6 +136,7 @@ namespace xerus {
 			}
 			tmpTensor(newIndices) = _tensor(presentIndices);
 			workingData = std::move(tmpTensor.data);
+			factor = tmpTensor.factor;
 		}
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {

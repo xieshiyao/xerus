@@ -111,6 +111,10 @@ namespace xerus {
 			
 			_x.move_core(firstOptimizedIndex, true);
 		}
+		// as we will access the nodes individually in the algorithm, make sure there is no global factor
+		(*_x.nodes[firstOptimizedIndex].tensorObject) *= _x.factor;
+		_x.factor = 1.0;
+		
 		return std::pair<size_t, size_t>(firstOptimizedIndex, firstNotOptimizedIndex);
 	}
 
@@ -120,10 +124,10 @@ namespace xerus {
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			REQUIRE(_x.degree() > 0, "");
 			REQUIRE(_x.dimensions == _b.dimensions, "");
-			REQUIRE(!_Ap || _A.dimensions.size() == _b.dimensions.size()*2, "");
-			REQUIRE(sites == 1, "DMRG and n-site-dmrg not yet implemented!"); // TODO release critical?
+			REQUIRE(sites == 1, "DMRG and n-site-dmrg not yet implemented!"); // TODO
 			
 			if (_Ap) {
+				REQUIRE(_A.dimensions.size() == _b.dimensions.size()*2, "");
 				for (size_t i=0; i<_x.dimensions.size(); ++i) {
 					REQUIRE(_A.dimensions[i] == _x.dimensions[i], "");
 					REQUIRE(_A.dimensions[i+_A.degree()/2] == _x.dimensions[i], "");
@@ -148,6 +152,11 @@ namespace xerus {
 		
 		xAxL.emplace_back(tmpA);
 		bxL.emplace_back(tmpB);
+		// as we access all the nodes manualy we have to take care of the global factors in _A and _b outselves
+		if (_Ap) {
+			tmpA *= _A.factor;
+		}
+		tmpB *= _b.factor;
 		xAxR.emplace_back(tmpA);
 		bxR.emplace_back(tmpB);
 		
