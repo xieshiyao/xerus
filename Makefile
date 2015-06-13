@@ -86,8 +86,8 @@ MINIMAL_DEPS = Makefile makeIncludes/general.mk makeIncludes/warnings.mk makeInc
 help:
 	@printf "Possible make targets are:\n \
 	\t\tall \t\t\t -- Build xerus both as a shared and a static library.\n \
-	\t\t$(LIB_NAME_SHARED) \t\t -- Build xerus as a shared library.\n \
-	\t\t$(LIB_NAME_STATIC) \t\t -- Build xerus as a static library.\n \
+	\t\tshared \t\t -- Build xerus as a shared library.\n \
+	\t\tstatic \t\t -- Build xerus as a static library.\n \
 	\t\ttest \t\t\t -- Build and run the xerus unit tests.\n \
 	\t\tinstall \t\t -- Install the shared library and header files (may require root).\n \
 	\t\t$(TEST_NAME) \t\t -- Only build the xerus unit tests.\n \
@@ -104,9 +104,13 @@ all: test $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
 	cp include/xerus.h build/include/
 	cp -r include/xerus build/include/
 
+shared: $(LIB_NAME_SHARED)
+
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES)
 	mkdir -p $(dir $@)
 	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
+
+static: $(LIB_NAME_STATIC)
 
 # Support non lto build for outdated systems
 ifdef USE_LTO

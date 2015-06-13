@@ -23,6 +23,17 @@ To account for the @f$ h^2 @f$ factor that we have ignored to far we simply mult
 
 \skipline *=
 
+By reinterpreting the dimension and thus effectively treating the tensor as a @f$ 2^{18} @f$ instead of a @f$ 512^2 @f$ tensor,
+the decomposition into a `TTTensor` will give us the stiffness matrix in a QTT format.
+
+\skip reinterpret_dimensions
+\until ttA
+
+As the Laplace operator is representable exactly in a low-rank QTT format, the rank of this `ttA` should be low after this construction.
+We can verify this by printing the ranks:
+
+\skipline cout
+
 
 
 
