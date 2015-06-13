@@ -125,6 +125,7 @@ namespace xerus {
         }
         
         /// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
+        template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
         
 		

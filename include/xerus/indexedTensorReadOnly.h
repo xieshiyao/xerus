@@ -71,6 +71,11 @@ namespace xerus {
 		IndexedTensorMoveable<tensor_type> operator*(const value_t _factor) const;
 		
 		IndexedTensorMoveable<tensor_type> operator/(const value_t _divisor) const;
+		
+		// TODO use these and implement specialized sum for Tensor
+// 		IndexedTensorMoveable<tensor_type> operator+(const IndexedTensorReadOnly& _other) const;
+		
+// 		IndexedTensorMoveable<tensor_type> operator+(IndexedTensorMoveable<tensor_type>&& _other) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         bool uses_tensor(const tensor_type *otherTensor) const;

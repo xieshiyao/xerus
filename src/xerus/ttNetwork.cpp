@@ -221,9 +221,8 @@ namespace xerus {
 	}
 
 	
-	template<bool isOperator>
-	TTNetwork<isOperator> TTNetwork<isOperator>::construct_identity(const std::vector<size_t>& _dimensions) {
-		REQUIRE(isOperator, "TTTensor identity ill-defined"); // TODO enable if
+	template<> template<>
+	TTNetwork<true> TTNetwork<true>::construct_identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			for (size_t d : _dimensions) {
