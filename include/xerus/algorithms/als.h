@@ -36,7 +36,8 @@ namespace xerus {
     class ALSVariant {
 	protected:
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const;
-    public:
+    
+	public:
         uint sites; ///< the number of sites that are simultaneously optimized
         size_t numHalfSweeps; ///< maximum number of sweeps to perform. set to 0 for infinite
         value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
