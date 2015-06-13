@@ -247,6 +247,26 @@ namespace xerus {
         value_t operator[](const std::vector<size_t>& _positions) const;
         
         
+        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+        /** 
+         * @brief Performs the entrywise multiplication with a constant @a _factor.
+         * @details Internally this only results in a change in the global factor.
+         * @param _factor the factor,
+         * @return a reference to this TensorNetwork.
+         */
+        TensorNetwork& operator*=(const value_t _factor);  // TODO implement!
+        
+        
+        /** 
+         * @brief Performs the entrywise divison by a constant @a _divisor.
+         * @details Internally this only results in a change in the global factor.
+         * @param _divisor the divisor,
+         * @return a reference to this TensorNetwork.
+         */ 
+        TensorNetwork& operator/=(const value_t _divisor); // TODO implement!
+        
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
 		 * @brief Indexes the TensorNetwork for read/write use.

@@ -37,20 +37,27 @@ namespace xerus {
     template<class tensor_type>
     IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, std::vector<Index>&& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, std::move(_indices), true) {}
 
-    
-    template<>
+    template<class tensor_type>
+    IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(const IndexedTensorReadOnly<tensor_type> &  _other) :
+		IndexedTensorWritable<tensor_type>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
+	
+	template<class tensor_type>
+    IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(      IndexedTensorReadOnly<tensor_type>&&  _other) :
+		IndexedTensorWritable<tensor_type>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }
+	
+    template<>template<>
     IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
         IndexedTensorWritable<TensorNetwork>(new TensorNetwork(*_other.tensorObjectReadOnly), _other.indices, true) { }
     
-    template<>
+    template<>template<>
     IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
         IndexedTensorWritable<TensorNetwork>(new TensorNetwork(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
     
-    template<>
+    template<>template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<TensorNetwork> &  _other ) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), _other.indices, true) { }
 
-    template<>
+    template<>template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other ) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), std::move(_other.indices), true) { }
         

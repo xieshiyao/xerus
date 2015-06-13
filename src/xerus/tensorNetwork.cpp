@@ -238,6 +238,18 @@ namespace xerus {
         return partialCopy.factor;
     }
     
+
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+	TensorNetwork& TensorNetwork::operator*=(const value_t _factor) {
+		factor *= _factor;
+		return *this;
+	}
+	
+	TensorNetwork& TensorNetwork::operator/=(const value_t _divisor) {
+		factor /= _divisor;
+		return *this;
+	}
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

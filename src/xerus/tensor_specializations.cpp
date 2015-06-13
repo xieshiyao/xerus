@@ -21,12 +21,12 @@
 #include <xerus/tensor.h>
 
 namespace xerus {
-    
-    template<>
+    /*
+    template<>template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
     
-    template<>
+    template<>template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }
+        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
 }

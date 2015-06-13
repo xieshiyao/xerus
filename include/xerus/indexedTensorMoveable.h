@@ -21,6 +21,8 @@
 
 #include "indexedTensorWritable.h"
 
+#include <type_traits>
+
 namespace xerus {
 	/**
 	 * @brief Internal representation of an read and write and moveable indexed Tensor or TensorNetwork.
@@ -34,7 +36,7 @@ namespace xerus {
         IndexedTensorMoveable();
         
         /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
-        IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete;
+        IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete; // TODO actually not for 
         
         /// Move constructor
         IndexedTensorMoveable(IndexedTensorMoveable &&_other );
@@ -45,13 +47,24 @@ namespace xerus {
         /// Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject
         IndexedTensorMoveable(tensor_type* const _tensorObject, std::vector<Index>&& _indices);
         
+		/// Allow explicit cast to from IndexedTensorReadOnly.
+		explicit IndexedTensorMoveable(const IndexedTensorReadOnly<tensor_type> &  _other);
+		
+		/// Allow explicit cast to from IndexedTensorReadOnly.
+		explicit IndexedTensorMoveable(      IndexedTensorReadOnly<tensor_type>&&  _other);
+		
         /// Allow conversions from indexed TensorNetworks to indexed Tensors
+		template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
         explicit IndexedTensorMoveable(const IndexedTensorReadOnly<TensorNetwork> &  _other );
+		
+		template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
         explicit IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other );
         
-        //TODO do we want implicit conversions from IndexedTensorReadOnly<Tensor> to IndexedTensorMoveable<Tensor> ?
         /// Allow implicit conversions from indexed Tensors to indexed TensorNetworks
+		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
         IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other);
+		
+		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
         IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other);
     };
 }
