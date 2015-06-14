@@ -98,6 +98,7 @@ namespace xerus {
         static ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
         static ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
 		static ContractionHeuristic::AddToVector greedy_littlestep_heuristic("greedy_littlestep", greedy_littlestep);
+		static ContractionHeuristic::AddToVector greedy_bit_tensor_heuristic("greedy_bit_tensor", greedy_bit_tensor);
     }
 
 }
