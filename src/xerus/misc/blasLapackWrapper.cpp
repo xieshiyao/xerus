@@ -46,7 +46,7 @@ extern "C"
 
 #include <memory>
 #include <xerus/misc/standard.h>
-#include <xerus/misc/lapack.h>
+// #include <xerus/misc/lapack.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
@@ -177,6 +177,17 @@ namespace xerus {
         
         //----------------------------------------------- LAPACK ----------------------------------------------------------------
 
+//         static std::unique_ptr<double[]> transposed_copy(const double* const _A, size_t _m, size_t _n) {
+// 			std::unique_ptr<double[]> res(new double[_m*_n]);
+// 			// NOTE read should happen in the order of memory alignment
+// 			for (size_t y=0; y<_n; ++y) {
+// 				for (size_t x=0; x<_m; ++x) {
+// 					res[x*_n + y] = _A[y*_m + x];
+// 				}
+// 			}
+// 			return res;
+// 		}
+        
         void svd( double* const _U, double* const _S, double* const _Vt, const double* const _A, const size_t _m, const size_t _n) {
             //Create copy of A
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
