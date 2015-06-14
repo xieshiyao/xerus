@@ -23,6 +23,7 @@
 #include "tensor.h"
 #include <map>
 #include <set>
+#include <memory>
 
 namespace xerus {
     // Necessary forward declaritons

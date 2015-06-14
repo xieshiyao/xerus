@@ -62,12 +62,22 @@ namespace xerus {
 		explicit TTNetwork(const size_t _degree);
         
         /** 
-		* @brief Constructs a TTNetwork from the given FullTensor.
-		* @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
-		* @param _tensor The Tensor to decompose.
-		* @param _eps the accuracy to be used in the decomposition.
-		*/
-		explicit TTNetwork(const Tensor& _tensor, const double _eps=1e-15); //TODO no magic numbers
+        * @brief Constructs a TTNetwork from the given FullTensor.
+        * @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
+        * @param _tensor The Tensor to decompose.
+        * @param _eps the accuracy to be used in the decomposition.
+        * @param _maxRank the maximal allowed rank (applies to all positions).
+        */
+        explicit TTNetwork(const Tensor& _tensor, const double _eps=EPSILON, const size_t _maxRank=std::numeric_limits<size_t>::max());
+        
+        /** 
+        * @brief Constructs a TTNetwork from the given FullTensor.
+        * @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
+        * @param _tensor The Tensor to decompose.
+        * @param _eps the accuracy to be used in the decomposition.
+        * @param _maxRanks maximal ranks to be used
+        */
+        explicit TTNetwork(const Tensor& _tensor, const double _eps, const std::vector<size_t>& _maxRanks);
         
 		///@brief Copy constructor for TTNetworks.
         implicit TTNetwork(const TTNetwork & _cpy);

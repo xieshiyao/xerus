@@ -66,22 +66,18 @@ int main() {
 	
 	storeVeloData(velocity, "channels/channel_full");
 	
-	xerus::TTTensor ttv(velocity);
-	
-	size_t r = xerus::misc::max(ttv.ranks())-1;
+	xerus::TTTensor ttv(velocity, 1e-10, 250);
 	
 	xerus::value_t velo_norm = xerus::frob_norm(velocity);
 	
 	std::ofstream out("channels/channel_ttapprox.dat");
 	
-	xerus::TTTensor ttvOpt(ttv);
-	
-	for (; r > 0; --r) {
+	for (size_t r = 250; r > 0; r -= 5) {
 		std::cout << r << '\n' << std::flush;
 		ttv.round(r);
 		std::cout << r << " ALS" << '\r' << std::flush;
 		
-		xerus::decomposition_als(ttv, velocity, 1e-5, 3);
+		xerus::decomposition_als(ttv, velocity, 1e-5, 2);
 		/*
 		std::vector<double> perf;
 		xerus::ProjectionALSVariant pALS(xerus::ProjectionALS);

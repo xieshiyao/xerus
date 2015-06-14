@@ -94,9 +94,19 @@ namespace xerus {
 		REQUIRE(is_valid_tt(), "ie");
 	}
 	
+	
+    template<bool isOperator>
+    TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
+        TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
+	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps): TTNetwork(_tensor.degree()) {
-		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
+	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const std::vector<size_t>& _maxRanks): TTNetwork(_tensor.degree()) {
+        const size_t numComponents = degree()/N;
+        
+		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
+        REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
+            << (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
+        IF_CHECK(for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); } );
 		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		
 		dimensions = _tensor.dimensions;
@@ -106,8 +116,6 @@ namespace xerus {
 			return; 
 		}
 		factor = 1.0;
-		
-		const size_t numComponents = degree()/N;
 		
 		// Needed variables
 		std::unique_ptr<Tensor> nxtTensor;
@@ -146,6 +154,8 @@ namespace xerus {
 			remainingDim /= dimensions[position];
 			if (isOperator) { remainingDim /= dimensions[position+numComponents]; }
 			maxRank = std::min(leftDim, remainingDim);
+            
+//             LOG(bla, "Calculate SVD for position " << position << " dimensions are " << leftDim <<"x" << remainingDim);
 			
 			// create temporary space for the results
 			currentU.reset(new value_t[leftDim*maxRank]);
@@ -155,7 +165,7 @@ namespace xerus {
 			blasWrapper::svd_destructive(currentU.get(), currentS.get(), currentVt.get(), workingData.get(), leftDim, remainingDim);
 			
 			// Determine the rank, keeping all singular values that are large enough
-			newRank = maxRank;
+			newRank = std::min(maxRank, _maxRanks[position]);
 			while (currentS[newRank-1] < _eps*currentS[0]) {
 				newRank-=1;
 			}

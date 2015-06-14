@@ -42,10 +42,10 @@ namespace xerus {
 	//TODO non-quadratic
     #define GREEDY(name, alg) \
         void name(double &_score, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork &_tn) { \
-        double best = 1e32f; \
+        double best = std::numeric_limits<double>::max(); \
         size_t bestId1, bestId2; \
         do { \
-            best = 1e32f; \
+            best = std::numeric_limits<double>::max(); \
             for (size_t i=0; i<_tn.nodes.size(); ++i) { \
                 if (_tn.nodes[i].erased) continue; \
                 TensorNetwork::TensorNode &ni = _tn.nodes[i]; \
@@ -75,12 +75,12 @@ namespace xerus {
                     } \
                 } \
             } \
-            if (best < 1e32f) { \
+            if (best < std::numeric_limits<double>::max()) { \
                 _score += _tn.contraction_cost(bestId1,bestId2); \
                 _contractions.emplace_back(bestId1,bestId2); \
                 _tn.contract(bestId1,bestId2); \
             } \
-        } while (best < 1e32f); \
+        } while (best < std::numeric_limits<double>::max()); \
     }
 
     
