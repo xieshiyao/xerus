@@ -86,8 +86,8 @@ namespace xerus {
         void svd_destructive( double* const _U, double* const _S, double* const _Vt, double* const _A, const size_t _m, const size_t _n);
         
 		
-		///@brief: splits A = Q*R, with @a _R an rxn matrix (where r is the rank of @a _A) and @a _Q orthogonal
-        void rank_revealing_split(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r);
+		///@brief: splits A = Q*C, with @a _C an rxn matrix (where r is the rank of @a _A) and @a _Q orthogonal
+        void qc(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r);
         
         
         ///@brief: Performs (Q,R) = QR(A)
