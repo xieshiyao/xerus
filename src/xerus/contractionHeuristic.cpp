@@ -91,6 +91,7 @@ namespace xerus {
         GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
         GREEDY(greedy_r, -r)
 		GREEDY(greedy_littlestep, (n*m<(n+m)*r? -1e10 + n*m*r : n*m-(n+m)*r))
+		GREEDY(greedy_bit_tensor, (n*m<(n+m)*r? -std::max(n,m)*r : n*m-(n+m)*r))
         
         static ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
 		static ContractionHeuristic::AddToVector greedy_nm_heuristic("greedy_nm", greedy_nm);
