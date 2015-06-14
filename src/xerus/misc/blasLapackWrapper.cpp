@@ -21,10 +21,10 @@
 #include <xerus/misc/selectedFunctions.h>
 
 #include <complex.h>
-// Fix for broken complex implementation
+// fix for non standard-conform complex implementation
 #undef I
 
-// Workaround for broken Lapack
+// workaround for broken Lapack
 #define lapack_complex_float    float _Complex
 #define lapack_complex_double   double _Complex
 extern "C"
@@ -34,8 +34,10 @@ extern "C"
 #ifdef __has_include
     #if __has_include(<lapacke.h>)
         #include <lapacke.h>
-    #else
+    #elif __has_include(<lapacke/lapacke.h>)
         #include <lapacke/lapacke.h>
+	#else
+		#pragma error no lapacke found
     #endif
 #else
     #include <lapacke.h>
@@ -44,6 +46,7 @@ extern "C"
 
 #include <memory>
 #include <xerus/misc/standard.h>
+#include <xerus/misc/lapack.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
@@ -53,6 +56,11 @@ extern "C"
 
 namespace xerus {
     namespace blasWrapper {
+		// the following routines use a work array as temporary storage
+		// to avoid the overhead of repeated reallocation for many small calls, every thread pre-allocates a small scratch-space
+		static const size_t DEFAULT_WORKSPACE_SIZE = 1024*1024;
+		thread_local value_t defaultWorkspace[DEFAULT_WORKSPACE_SIZE];
+		
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
         
@@ -191,7 +199,7 @@ namespace xerus {
         
         
         
-		void rank_revealing_split(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
+		void qc(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
 			REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
 			
@@ -212,9 +220,9 @@ namespace xerus {
 			
 			// Calculate QR factorisations with column pivoting
 			int lapackAnswer = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
-			CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
+			CHECK(lapackAnswer == 0, error, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
 			
-			// Copy the upper triangular Matrix R (rank x _n) into position
+			// Copy the upper triangular Matrix C (rank x _n) into position
 			size_t rank = maxRank-1;
 			bool done = false;
 			while (rank > 0) {

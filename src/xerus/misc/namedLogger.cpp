@@ -33,6 +33,10 @@ namespace xerus {
                 std::mutex namedLoggerMutex;
                 std::string logFilePrefix;
                 bool silenced = false;
+				std::chrono::system_clock::time_point programStartTime;
+				static void __attribute__((constructor)) initTime() {
+					programStartTime = std::chrono::system_clock::now();
+				}
                 
             #ifdef LOG_BUFFER_
                 BufferStreams bufferStreams;

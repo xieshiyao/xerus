@@ -23,7 +23,8 @@
 #include <type_traits>
 #include <iomanip>
 #include <mutex>
-#include <time.h>
+#include <ctime>
+#include <chrono>
 #include <sstream>
 
 #include "stringUtilities.h"
@@ -67,6 +68,7 @@ namespace xerus {
             extern std::mutex namedLoggerMutex;
             extern std::string logFilePrefix;
             extern bool silenced;
+			extern std::chrono::system_clock::time_point programStartTime;
             
             #ifdef LOGFILE_
                 extern std::ofstream fileStream;
@@ -240,17 +242,27 @@ namespace xerus {
     #define NAMED_LOGGER_LOGBUFFER
 #endif
 
+#ifdef LOG_ABSOLUTE_TIME
+	#define XERUS_LOGGER_TIMESTAMP \
+		std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); \
+		tmpStream \
+				<< std::put_time(std::localtime(&xerus_err_t), "%F %T") << " "
+#else
+	#define XERUS_LOGGER_TIMESTAMP \
+		std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();\
+		auto xerus_err_timediff = std::chrono::duration_cast<std::chrono::milliseconds>(xerus_err_t - xerus::misc::internal::programStartTime).count(); \
+		tmpStream \
+				<< std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000) \
+				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60) \
+				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60) \
+				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << " "
+#endif
+
 
 #define LOG(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        time_t xerus_err_t=std::time(0); tm *xerus_err_ltm = localtime(&xerus_err_t); \
-        tmpStream \
-				<< std::right << (1900+xerus_err_ltm->tm_year) << '-' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mon \
-				<< '-' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday \
-				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour \
-				<< ':' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min \
-				<< ':' <<std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << " " \
+        XERUS_LOGGER_TIMESTAMP \
 				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ":" \
 				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
 				<< std::setfill(' ') << std::setw(12) << std::left \

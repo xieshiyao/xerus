@@ -231,9 +231,9 @@ namespace xerus {
             LOG(fatal, "Sparse QC not yet implemented.");
         } else {
 			std::unique_ptr<double[]> Qt, Ct;
-            blasWrapper::rank_revealing_split(Qt, Ct, 
-											  static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), 
-											  lhsSize, rhsSize, rank);
+            blasWrapper::qc(Qt, Ct, 
+							static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), 
+							lhsSize, rhsSize, rank);
             // TODO there should be a reset function to use instead of directly accesing those values.
 			static_cast<FullTensor*>(Q.tensorObject)->data.reset(Qt.release(), &internal::array_deleter_vt);
 			Q.tensorObject->dimensions.back() = rank; 
