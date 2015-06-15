@@ -723,20 +723,20 @@ namespace xerus {
 				size_t N = componentB.dimensions.back();
 				for (size_t r1=0; r1<componentA.dimensions.front(); ++r1) {
 					for (size_t s1=0; s1<componentB.dimensions.front(); ++s1) {
-// 						offsetA = r1 * externalDim * componentA.dimensions.back();
+						offsetA = r1 * externalDim * componentA.dimensions.back();
 						for (size_t n=0; n<externalDim; ++n) {
 							for (size_t r2=0; r2<componentA.dimensions.back(); ++r2) {
-								offsetA = r2 + (n + r1 * externalDim) * componentA.dimensions.back();
-								offsetB =      (n + s1 * externalDim) * componentB.dimensions.back();
-								offsetResult = (((r1 * componentB.dimensions.front() + s1) * externalDim +n) * componentA.dimensions.back() + r2) * N;
+// 								offsetA = r2 + (n + r1 * externalDim) * componentA.dimensions.back();
+// 								offsetB =      (n + s1 * externalDim) * componentB.dimensions.back();
+// 								offsetResult = (((r1 * componentB.dimensions.front() + s1) * externalDim +n) * componentA.dimensions.back() + r2) * N;
 								misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentA.data.get()[offsetA], componentB.data.get()+offsetB, N);
-// 								offsetResult += N;
-// 								offsetA += 1;
+								offsetResult += N;
+								offsetA += 1;
 							}
-// 							offsetB += N;
+							offsetB += N;
 						}
 					}
-// 					offsetB = 0;
+					offsetB = 0;
 				}
 				result.set_component(i, std::move(newComponent));
 			}
