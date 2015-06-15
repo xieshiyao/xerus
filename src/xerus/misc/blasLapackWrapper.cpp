@@ -236,7 +236,7 @@ namespace xerus {
 			
 			// Calculate QR factorisations with column pivoting
 			int lapackAnswer = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
-			CHECK(lapackAnswer == 0, error, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
+			REQUIRE(lapackAnswer == 0, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
 			
 			// Copy the upper triangular Matrix C (rank x _n) into position
 			size_t rank = maxRank-1;

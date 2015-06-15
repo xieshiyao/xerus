@@ -418,6 +418,12 @@ namespace xerus {
 		 * @param _f the function to call to modify each entry.
 		 */
         void modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f);
+		
+		
+		/**
+		 * @brief calculates the entrywise product of two FullTensors
+		 */
+		static FullTensor entrywise_product(const FullTensor &_A, const FullTensor &_B);
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         

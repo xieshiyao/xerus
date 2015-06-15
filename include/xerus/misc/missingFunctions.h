@@ -64,7 +64,6 @@ namespace xerus {
 		 */
 		std::string exec(const std::string _cmd);
 
-
         ///@brief: Counts how often an element is contained in an arbitary container
         template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
         size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
@@ -177,13 +176,12 @@ namespace xerus {
             return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
         }
 
-        ///@brief: Checks whether the absolute difference between _a and _b is smaller than _eps.
+        ///@brief: Checks whether the absolute difference between @a _a and @a _b is smaller than @a _eps.
         template<class T>
         bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
             bool horst = std::abs(_a-_b) <= _eps;
             return horst;
         }
-
     }
 }
 

@@ -695,6 +695,58 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
+			REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
+			TTNetwork result(_A.degree());
+			const size_t numComponents = _A.degree() / N;
+			std::unique_ptr<FullTensor> newComponent;
+			// TODO degree 0 TTs
+			for (size_t i=0; i<numComponents; ++i) {
+				//TODO sparse TT
+				const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
+				const FullTensor &componentB = static_cast<const FullTensor &>(_B.get_component(i));
+				size_t externalDim;
+				if (isOperator) {
+					newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+												componentA.dimensions[1], componentA.dimensions[2], 
+												componentA.dimensions.back()*componentB.dimensions.back()   }));
+					externalDim = componentA.dimensions[1] * componentA.dimensions[2];
+				} else {
+					newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+												componentA.dimensions[1], 
+												componentA.dimensions.back()*componentB.dimensions.back()   }));
+					externalDim = componentA.dimensions[1];
+				}
+				size_t offsetA=0, offsetB=0, offsetResult=0;
+				size_t N = componentB.dimensions.back();
+				for (size_t r1=0; r1<componentA.dimensions.front(); ++r1) {
+					for (size_t s1=0; s1<componentB.dimensions.front(); ++s1) {
+// 						offsetA = r1 * externalDim * componentA.dimensions.back();
+						for (size_t n=0; n<externalDim; ++n) {
+							for (size_t r2=0; r2<componentA.dimensions.back(); ++r2) {
+								offsetA = r2 + (n + r1 * externalDim) * componentA.dimensions.back();
+								offsetB =      (n + s1 * externalDim) * componentB.dimensions.back();
+								offsetResult = (((r1 * componentB.dimensions.front() + s1) * externalDim +n) * componentA.dimensions.back() + r2) * N;
+								misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentA.data.get()[offsetA], componentB.data.get()+offsetB, N);
+// 								offsetResult += N;
+// 								offsetA += 1;
+							}
+// 							offsetB += N;
+						}
+					}
+// 					offsetB = 0;
+				}
+				result.set_component(i, std::move(newComponent));
+			}
+			REQUIRE(result.is_valid_tt(), "ie");
+			REQUIRE(result.is_valid_network(), "ie");
+			if (_A.cannonicalized) {
+				result.move_core(_A.corePosition);
+			}
+			return result;
+		}
+	
+	template<bool isOperator>
 	std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
 		REQUIRE(is_valid_tt(), "Invalid TT cannot be chopped.");
 		

@@ -434,6 +434,14 @@ namespace xerus {
     #endif
 
 
+    FullTensor FullTensor::entrywise_product(const FullTensor &_A, const FullTensor &_B) {
+		REQUIRE(_A.dimensions == _B.dimensions, "entrywise product ill-defined for non-equal dimensions");
+		FullTensor result(_A);
+		for (size_t i=0; i<result.size; ++i) {
+			result[i] *= _B[i];
+		}
+		return result;
+	}
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 

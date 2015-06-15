@@ -161,25 +161,32 @@ namespace xerus {
 		* @details Note that this will NOT check for orthogonality of cannonicalized TTNetworks.
 		* @return TRUE if the check is passed, otherwise an exception is thrown and the function does not return.
 		*/
-        bool is_valid_tt() const;
+		bool is_valid_tt() const;
 		
 		/** 
 		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
 		* @details This function is currently needed to keep the resulting network in the TTNetwork class.
-		*Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
+		* Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
 		* @returns the dyadic product as a TTNetwork.
 		*/
-        static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
-        
+		static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
+		
 		/** 
-		* @brief Computes the dyadic product of all given TTNetworks. 
-		* @details This is nothing but the repeted application of dyadic_product() for the given TTNetworks.
-		* @returns the dyadic product as a TTNetwork.
-		*/
-        static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
-        
+		 * @brief Computes the dyadic product of all given TTNetworks. 
+		 * @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
+		 * @returns the dyadic product as a TTNetwork.
+		 */
+		static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
+		
+		/**
+		 * @brief Calculates the componentwise product of two tensors given in the TT format.
+		 * @details Usually the resulting rank = rank(A)*rank(B). Retains the core position of @a _A
+		 */
+		static TTNetwork entrywise_product(const TTNetwork &_A, const TTNetwork &_B);
+		
 		/** 
 		* @brief Complete access to a specific component of the TT decomposition.
+		* @note This function will not update rank and external dimension informations if it is used to set a component.
 		* @details This function gives complete access to the components, only intended for internal use.
 		* @param _idx index of the component to access.
 		* @returns a reference to the requested component.
@@ -188,9 +195,9 @@ namespace xerus {
 		
 		/** 
 		* @brief Read access to a specific component of the TT decomposition.
-		* @details This function should be used to access from the components, instead of direct access via
-		* nodes[...], because the implementation e.g. does not store the first componend in nodes[0] but as
-		* nodes[1]. nodes[0] is an order one node with dimension one only used to allow the first component
+		* @details This function should be used to access the components, instead of direct access via
+		* nodes[...], because the implementation does not store the first component in nodes[0] but rather as
+		* nodes[1] etc. nodes[0] is an order one node with dimension one only used to allow the first component
 		* to be an order three tensor.
 		* @param _idx index of the component to access.
 		* @returns a const reference to the requested component.
