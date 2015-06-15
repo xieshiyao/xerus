@@ -1,12 +1,19 @@
 ## Changelog
 
+* 2015-06-15 v1.2.0
+ * Rank revealing QR decomposition in TTNetwork:move_core. 
+ * ALS performance improvement by skipping full-rank nodes.
+ * Added TensorNetwork::draw to get a graphical representation of a given tensor network.
+ * Added algorithm DecompositionALS to approximate a FullTensor by a TTTensor.
+ * New Quick-Start guide.
+ * Several bugfixes, more consistent operator availability and much more documentation.
+
 * 2015-06-02 v1.1.1
  * Complete documentation for Tensor, FullTensor and SparseTensor
  * Added implementation of the projection ALS
  * Fixed performance bug in logging system
  * ALS now uses energy functional for convergence testing
  * Several minor fixes
-
 
 * 2015-06-01 v1.1.0
  * New representation for the TT tensors: all component tensors are now of degree 3 / 4 (operators).

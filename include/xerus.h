@@ -53,12 +53,11 @@
     #include "xerus/sparseTimesFullContraction.h"
     #include "xerus/indexedTensor_tensor_operators.h"
     #include "xerus/indexedTensor_tensor_factorisations.h"
-    #include "xerus/tensorNode.h"
     #include "xerus/tensorNetwork.h"
     #include "xerus/indexedTensor_TN_operators.h"
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttNetwork.h"
     #include "xerus/algorithms/als.h"
+    #include "xerus/algorithms/decompositionAls.h"
 
-	
 #endif

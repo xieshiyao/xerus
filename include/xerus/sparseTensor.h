@@ -72,7 +72,7 @@ namespace xerus {
 		 * @param _full the FullTensor to be used.
 		 * @param _eps (optional) the epsilon to be used to truncate the entries.
 		 */
-        explicit SparseTensor(const FullTensor & _full, const double _eps = 1e-14);
+        explicit SparseTensor(const FullTensor & _full, const double _eps = EPSILON);
         
 		/** 
 		 * @brief Constructs a SparseTensor with the given dimensions and uses the given function @a _f to create @a _N non zero entries.
@@ -298,15 +298,15 @@ namespace xerus {
         
         virtual bool is_sparse() const;
         
-        virtual size_t count_non_zero_entries(const value_t _eps = 1e-14) const override;
+        virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
         
         virtual value_t frob_norm() const;
         
         virtual std::string to_string() const override;
         
-        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = 1e-14) const override;
+        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = EPSILON) const override;
         
-        virtual bool compare_to_data(const value_t* _values, const double _eps = 1e-14) const override;
+        virtual bool compare_to_data(const value_t* _values, const double _eps = EPSILON) const override;
     };
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

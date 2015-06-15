@@ -17,16 +17,21 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/indexedTensorMoveable.h>
-#include <xerus/tensor.h>
+#include "../../../include/xerus/misc/missingFunctions.h"
 
 namespace xerus {
-    /*
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
-    
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
+    namespace misc {
+		std::string exec(const std::string _cmd) {
+			FILE* pipe = popen(_cmd.c_str(), "r");
+			if (!pipe) return "ERROR";
+			char buffer[128];
+			std::string result = "";
+			while(!feof(pipe)) {
+				if(fgets(buffer, 128, pipe) != NULL)
+					result += buffer;
+			}
+			pclose(pipe);
+			return result;
+		}
+	}
 }

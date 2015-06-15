@@ -38,57 +38,57 @@ else ifdef HIGH_OPTIMIZATION
 	
 	# Stuff that is not enabled and might help
 	ifndef USE_CLANG
-		OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
-		OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory locations
+		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
+		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
+		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.
+#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
+		OPTIMIZE += -fira-loop-pressure			# Use IRA to evaluate register pressure in loops for decisions to move loop invariants.
+		OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
+		OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
+		OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
+		OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
+		OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+# 		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
+		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
+		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
+		OPTIMIZE += -fomit-frame-pointer		# Don't keep the frame pointer in a register for functions that don't need one.
+		OPTIMIZE += -fsched-pressure			# Enable register pressure sensitive insn scheduling before register allocation. 
+		OPTIMIZE += -fsched-spec-load			# Allow speculative motion of some load instructions. 
+		OPTIMIZE += -fsched2-use-superblocks		# When scheduling after register allocation, use superblock scheduling.
+		OPTIMIZE += -ftree-loop-distribution		# Perform loop distribution.
+		OPTIMIZE += -ftree-vectorize			# Perform vectorization on trees.
 	endif
 else ifdef DANGEROUS_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations
 	
 	# Stuff that is not enabled and might help
-	OPTIMIZE += -ftree-vectorize
-	OPTIMIZE += -funroll-loops
 	ifndef USE_CLANG
-		OPTIMIZE += -funswitch-loops			# Move branches with loop invariant conditions out of the loop
-		OPTIMIZE += -fgcse-sm				# attempts to move stores out of loops
-		OPTIMIZE += -fgcse-las				# eliminates redundant loads that come after stores to the same memory location
-		OPTIMIZE += -fipa-pta				# cross-procedure optimization
-		OPTIMIZE += -fbranch-target-load-optimize
-		OPTIMIZE += -fira-loop-pressure
-		OPTIMIZE += -fsched-pressure
-		OPTIMIZE += -fsched-spec-load-dangerous
-		OPTIMIZE += -fopt-info-missed=missed_opt.txt
+		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
+		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
+		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.
+#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
+		OPTIMIZE += -fira-loop-pressure			# Use IRA to evaluate register pressure in loops for decisions to move loop invariants.
+		OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
+		OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
+		OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
+		OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
+		OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
+		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
+		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
+		OPTIMIZE += -fomit-frame-pointer		# Don't keep the frame pointer in a register for functions that don't need one.
+		OPTIMIZE += -fsched-pressure			# Enable register pressure sensitive insn scheduling before register allocation. 
+		OPTIMIZE += -fsched-spec-load			# Allow speculative motion of some load instructions. 
+		OPTIMIZE += -fsched2-use-superblocks		# When scheduling after register allocation, use superblock scheduling.
+		OPTIMIZE += -ftree-loop-distribution		# Perform loop distribution.
+		OPTIMIZE += -ftree-vectorize			# Perform vectorization on trees.
 		
-		OPTIMIZE += --param max-crossjump-edges=1000
-		OPTIMIZE += --param max-grow-copy-bb-insns=10
-		OPTIMIZE += --param max-delay-slot-insn-search=1000
-		OPTIMIZE += --param max-delay-slot-live-search=1000
-		OPTIMIZE += --param max-gcse-memory=6442450
-		OPTIMIZE += --param max-pending-list-length=1000
-		OPTIMIZE += --param max-modulo-backtrack-attempts=1000
-		OPTIMIZE += --param max-inline-insns-single=4000
-		OPTIMIZE += --param max-inline-insns-auto=400
-		OPTIMIZE += --param large-function-insns=10000
-		OPTIMIZE += --param large-function-growth=200
-		OPTIMIZE += --param inline-unit-growth=100
-		OPTIMIZE += --param ipcp-unit-growth=100
-		OPTIMIZE += --param max-reload-search-insns=500
-		OPTIMIZE += --param max-cselib-memory-locations=5000
-		OPTIMIZE += --param max-sched-ready-insns=1000
-		OPTIMIZE += --param max-sched-region-blocks=100
-		OPTIMIZE += --param max-pipeline-region-blocks=150
-		OPTIMIZE += --param max-sched-region-insns=1000
-		OPTIMIZE += --param max-pipeline-region-insns=2000
-		OPTIMIZE += --param selsched-max-lookahead=500
-	# 	OPTIMIZE += --param max-combine-insns=10
-		OPTIMIZE += --param max-partial-antic-length=0
-		OPTIMIZE += --param sccvn-max-scc-size=100000 
-		OPTIMIZE += --param sccvn-max-alias-queries-per-access=10000
-		OPTIMIZE += --param ira-max-loops-num=1000
-		OPTIMIZE += --param ira-max-conflict-table-size=20000
-		OPTIMIZE += --param loop-invariant-max-bbs-in-loop=100000 
-		OPTIMIZE += --param loop-max-datarefs-for-datadeps=10000
-		OPTIMIZE += --param max-vartrack-size=0
+		
+		OPTIMIZE += -fcx-fortran-rules			# Complex multiplication and division follow Fortran rules.
+		OPTIMIZE += -fsched-spec-load-dangerous 	# Allow speculative motion of more load instructions.
+		OPTIMIZE += -funsafe-loop-optimizations 	# This option tells the loop optimizer to assume that loop indices do not overflow, and that loops with nontrivial exit condition are not infinite. 
+
 		OPTIMIZE += --param max-vartrack-expr-depth=120
 	endif
 	

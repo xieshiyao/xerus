@@ -49,7 +49,7 @@ namespace xerus {
 			for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
 			
 			std::vector<Index> internalOrder;
-			for(const TensorNode::Link& link: cpy.nodes[res].neighbors) {
+			for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
 				REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
 				internalOrder.emplace_back(externalOrder[link.indexPosition]);
 			}

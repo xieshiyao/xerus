@@ -204,7 +204,7 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         /** 
-		 * @brief Indexes the tensor for read/write use.
+		 * @brief Indexes the Tensor for read/write use.
 		 * @param _args several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
@@ -215,7 +215,7 @@ namespace xerus {
         
         
         /** 
-		 * @brief Indexes the tensor for read only use.
+		 * @brief Indexes the Tensor for read only use.
 		 * @param _args several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
@@ -385,7 +385,7 @@ namespace xerus {
     * @param _eps the maximal relative difference between @a _a and @a _b.
     * @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
     */
-    bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = 1e-14);
+    bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = EPSILON);
     
     /** 
     * @brief Checks whether two Tensors are approximately entrywise equal.
@@ -395,5 +395,5 @@ namespace xerus {
     * @param _eps the maximal relative difference between the entries of @a _a and @a _b.
     * @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
     */
-    bool approx_entrywise_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = 1e-14);
+    bool approx_entrywise_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = EPSILON);
 }

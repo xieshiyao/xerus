@@ -21,10 +21,10 @@
 #include <xerus/misc/selectedFunctions.h>
 
 #include <complex.h>
-// Fix for broken complex implementation
+// fix for non standard-conform complex implementation
 #undef I
 
-// Workaround for broken Lapack
+// workaround for broken Lapack
 #define lapack_complex_float    float _Complex
 #define lapack_complex_double   double _Complex
 extern "C"
@@ -34,8 +34,10 @@ extern "C"
 #ifdef __has_include
     #if __has_include(<lapacke.h>)
         #include <lapacke.h>
-    #else
+    #elif __has_include(<lapacke/lapacke.h>)
         #include <lapacke/lapacke.h>
+	#else
+		#pragma error no lapacke found
     #endif
 #else
     #include <lapacke.h>
@@ -44,13 +46,21 @@ extern "C"
 
 #include <memory>
 #include <xerus/misc/standard.h>
+// #include <xerus/misc/lapack.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/misc/stringUtilities.h>
+#include <xerus/basic.h>
 
 
 namespace xerus {
     namespace blasWrapper {
+		// the following routines use a work array as temporary storage
+		// to avoid the overhead of repeated reallocation for many small calls, every thread pre-allocates a small scratch-space
+		static const size_t DEFAULT_WORKSPACE_SIZE = 1024*1024;
+		thread_local value_t defaultWorkspace[DEFAULT_WORKSPACE_SIZE];
+		
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
         
@@ -167,6 +177,17 @@ namespace xerus {
         
         //----------------------------------------------- LAPACK ----------------------------------------------------------------
 
+//         static std::unique_ptr<double[]> transposed_copy(const double* const _A, size_t _m, size_t _n) {
+// 			std::unique_ptr<double[]> res(new double[_m*_n]);
+// 			// NOTE read should happen in the order of memory alignment
+// 			for (size_t y=0; y<_n; ++y) {
+// 				for (size_t x=0; x<_m; ++x) {
+// 					res[x*_n + y] = _A[y*_m + x];
+// 				}
+// 			}
+// 			return res;
+// 		}
+        
         void svd( double* const _U, double* const _S, double* const _Vt, const double* const _A, const size_t _m, const size_t _n) {
             //Create copy of A
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
@@ -189,7 +210,7 @@ namespace xerus {
         
         
         
-		void rank_revealing_split(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
+		void qc(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
 			REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
 			
@@ -210,12 +231,19 @@ namespace xerus {
 			
 			// Calculate QR factorisations with column pivoting
 			int lapackAnswer = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
-			CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
+			CHECK(lapackAnswer == 0, error, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
 			
-			// Copy the upper triangular Matrix R (rank x _n) into position
+			// Copy the upper triangular Matrix C (rank x _n) into position
 			size_t rank = maxRank-1;
-			while (rank > 0 && misc::approx_equal(_A[rank*(_n+1)], 0.0, 1e-15)) {
-// 				std::cout << std::scientific << _A[rank*(_n+1)] << " ";
+			bool done = false;
+			while (rank > 0) {
+				for (size_t pos = rank*(_n+1); pos < (rank+1)*_n; ++pos) {
+					if (!misc::approx_equal(tmpA[pos] / tmpA[0], 0.0, 1e-15)) {
+						done = true;
+						break;
+					}
+				}
+				if (done) break;
 				rank -= 1;
 			}
 // 			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
@@ -231,7 +259,7 @@ namespace xerus {
 				REQUIRE(targetCol < _n, "ie " << targetCol << " vs " << _n);
 				size_t row = 0;
 				for (; row < rank && row < col+1; ++row) {
-					_C[row*_n + targetCol] = _A[row*_n + col];
+					_C[row*_n + targetCol] = tmpA[row*_n + col];
 				}
 				for (; row < rank; ++row) {
 					_C[row*_n + targetCol] = 0.0;
@@ -243,7 +271,7 @@ namespace xerus {
 			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			
 			_Q.reset(new double[_m*rank]);
-			if(rank == maxRank) {
+			if(rank == _n) {
 				misc::array_copy(_Q.get(), tmpA.get(), _m*rank);
 			} else {
 				for(size_t row = 0; row < _m; ++row) {
@@ -450,7 +478,7 @@ namespace xerus {
                 bOrX,       // On input b, on output x
                 1,          // LDB, here always one
                 pivot.get(),// Pivot, entries must be zero to allow pivoting
-                1e-12,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+                xerus::EPSILON,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
                 &rank);     // Outputs the rank of A
             CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer);
             

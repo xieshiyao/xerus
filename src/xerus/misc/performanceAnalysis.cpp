@@ -59,8 +59,8 @@ namespace xerus {
 							if(1000*totalCallTime > totalTime) {
 								groupStream << std::endl;
 								groupStream << "| --------------------------- " << std::left << std::setfill (' ') << std::setw(26) << call.first << " ---------------------------" << std::endl;
-								groupStream << "| ------- Total time " << std::setw(14) << std::right << totalCallTime/1000 << " ms (" << std::setw(3) << (100*totalCallTime)/totalTime << "% ) in " << std::setw(10) << totalCallCalls << " calls -------" << std::endl;
 								groupStream << callStream.str();
+								groupStream << "| Together " << std::setw(10) << std::right << totalCallTime/1000 << " ms (" << std::setw(3) << (100*totalCallTime)/totalTime << "% ) in " << std::setw(8) << totalCallCalls << " calls." << std::endl;
 							}
 						}
 						if(1000*totalGroupTime > totalTime) {

@@ -29,7 +29,9 @@ namespace xerus {
     class ContractionHeuristic {
     public:
         static std::vector<ContractionHeuristic> *list;
-        
+		
+		// TODO get rid of this
+		/// @brief Internal Wrapper Class
         struct AddToVector {
             template<typename... args>
             AddToVector(args... _args) {

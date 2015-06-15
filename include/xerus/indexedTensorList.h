@@ -26,23 +26,49 @@ namespace xerus {
     // Necessary forward declaritons
     template<class tensor_type> class IndexedTensorWritable;
     class Tensor;
-        
+	
+	/**
+	 * @brief Internal representation of a tuple of writeable indexed Tensors.
+	 * @details This class appears inplicitly by using expressiong like (Q(i,r), R(r,j)) and is particulary used for a convinient syntax for Tensor factorisations.
+	 */
     class IndexedTensorList {
     public:
+		///@brief Collection of pointers to the Tensor objects referenced by the tuple.
         std::vector<const IndexedTensorWritable<Tensor>*> tensors;
         
+		///@brief No default construction is intended.
         IndexedTensorList() = delete;
+		
+		///@brief No copy construction is intended.
         IndexedTensorList(const IndexedTensorList& _old) = delete;
         
+        ///@brief Move constructor.
         IndexedTensorList(IndexedTensorList&& _old);
         
+		/**
+		 * @brief constructor initializing an IndexedTensorList with two initial Tensor refrences.
+		 */
         IndexedTensorList(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second);
         
-        // Generic =operator 
-        void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const;
+        /**
+		 * @brief Generic assignment operator that takes any std::function object which is in then invoked to perform the assignment.
+		 */
+		void operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const;
     };
 
+	/**
+	 * @brief Using the "," operator tuples of writeable indexed tensor can be created.
+	 * @param _first the first element of the tuple.
+	 * @param _second the second element of the tuple.
+	 * @returns an IndexedTensorList representing the desired 2-tuple.
+	 */
     IndexedTensorList operator,(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second);
 
+	/**
+	 * @brief Using the "," operator tuples of writeable indexed tensor can be created.
+	 * @param _first an existing tuple of writeable indexed tensor.
+	 * @param _second a further writeable indexed tensor that shall be appended to the existing tuple.
+	 * @returns an IndexedTensorList representing the desired (n+1)-tuple.
+	 */
     IndexedTensorList operator,(IndexedTensorList &&_first, const IndexedTensorWritable<Tensor> &_second);
 }

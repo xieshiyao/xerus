@@ -17,16 +17,25 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/indexedTensorMoveable.h>
+#include <xerus/tensorNetwork.h>
 #include <xerus/tensor.h>
 
+
 namespace xerus {
-    /*
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
+	TensorNetwork::Link::Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) : other(_other), indexPosition(_indexPos), dimension(_dim), external(_external) {}
+	
+	bool TensorNetwork::Link::links(const size_t _other) const { return !external && other == _other; }
+		
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
+    std::ostream &operator<<(std::ostream &_out, const xerus::TensorNetwork::Link &_rhs) {
+        _out << "L{";
+		if (_rhs.external) {
+			_out << "ext";
+		} else {
+			_out << _rhs.other;
+		}
+		_out << " (" << _rhs.indexPosition << "), dim " << _rhs.dimension << "}";
+        return _out;
+    }
 }

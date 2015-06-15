@@ -70,6 +70,9 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 # Per default the logs are printed to cerr. Uncomment the following line to print the log messages to the file error.log instead.
 # LOGGING += -D LOGFILE_                # Use error file instead of cerr
 
+# print absolute times instead of relative to program time
+# LOGGING += -D LOG_ABSOLUTE_TIME
+
 # Uncomment the following line to save the last Logs in a circular buffer (without printing them) to allow detailed reports in case of errors.
 # Note that this can significatly slow down the library.
 # LOGGING += -D LOG_BUFFER_            # Activate the log buffer

@@ -25,10 +25,13 @@
 namespace xerus {
     // Necessary forward declaritons
     class Index;
+	template<class tensor_type> class IndexedTensorMoveable;
 
     
 	/**
-	 * Class representing any Tensor or TensorNetwork object equipped with an Index order, that can at least be read (i.e. is not nessecarily writeable)
+	 * @brief Internal representation of an readable indexed Tensor or TensorNetwork.
+	 * @details This class appears inplicitly by indexing any Tensor or TensorNetwork. It is not recommended to use
+	 * it explicitly or to store variables of this type (unless you really know what you are doing).
 	 */
     template<class tensor_type>
     class IndexedTensorReadOnly {
@@ -62,6 +65,17 @@ namespace xerus {
         
         /// Destructor must be virtual
         virtual ~IndexedTensorReadOnly();
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+        
+		IndexedTensorMoveable<tensor_type> operator*(const value_t _factor) const;
+		
+		IndexedTensorMoveable<tensor_type> operator/(const value_t _divisor) const;
+		
+		// TODO use these and implement specialized sum for Tensor
+// 		IndexedTensorMoveable<tensor_type> operator+(const IndexedTensorReadOnly& _other) const;
+		
+// 		IndexedTensorMoveable<tensor_type> operator+(IndexedTensorMoveable<tensor_type>&& _other) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         bool uses_tensor(const tensor_type *otherTensor) const;
@@ -86,4 +100,8 @@ namespace xerus {
     value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
     
     size_t get_eval_degree(const std::vector<Index>& _indices);
+	
+	
+    template<class tensor_type>
+    static _inline_ IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, const IndexedTensorReadOnly<tensor_type>& _iTensor) {return _iTensor*_factor; }
 }

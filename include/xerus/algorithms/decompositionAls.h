@@ -17,16 +17,16 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/indexedTensorMoveable.h>
-#include <xerus/tensor.h>
+/**
+ * @file
+ * Header file for the ALS algorithm and its variants.
+ */
+
+#pragma once
+
+#include "../ttNetwork.h"
 
 namespace xerus {
-    /*
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
-    
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
+	void decomposition_als(TTTensor& _x, const Tensor& _b, const double _eps = EPSILON, const size_t _maxIterations = 1000);
 }
+

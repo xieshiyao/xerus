@@ -17,16 +17,36 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/indexedTensorMoveable.h>
-#include <xerus/tensor.h>
 
-namespace xerus {
-    /*
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), _other.indices, true) { }
-    
-    template<>template<>
-    IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
-        IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
-}
+#include<xerus.h>
+
+#include "../../include/xerus/misc/test.h"
+
+#include <iomanip>
+#include <fstream>
+
+using namespace xerus;
+
+UNIT_TEST(ALS, decomposition_als,
+	std::mt19937_64 rnd(0xC0CAC01A);
+	std::normal_distribution<double> dist (0.0, 1.0);
+	xerus::Index i,j,k;
+	
+	const size_t d = 10;
+	const size_t n = 2;
+
+	const std::vector<size_t> stateDims(d, n);
+	
+    xerus::TTTensor TTB = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
+	FullTensor B(TTB);
+	
+	xerus::TTTensor HOSVDB(TTB);
+	HOSVDB.round(11);
+// 	LOG(HOSVD, frob_norm(FullTensor(TTB) - FullTensor(HOSVDB)));
+	
+	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
+	
+	xerus::decomposition_als(X, B);
+	
+	TEST(misc::approx_equal(frob_norm(X(i&0)-B(i&0)), 0., 1e-8));
+)

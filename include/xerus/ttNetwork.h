@@ -27,36 +27,71 @@
 
 namespace xerus {
 
+	/**
+	 * @brief Specialized TensorNetwork class used to represent TTTensor and TToperators.
+	 * @details TTTensors correspond to isOperator=FALSE and TTOperators correspond to isOperator=FALSE.
+	 */
     template<bool isOperator>
-	/// The TTNetwork class is used to represent TTTensor and TToperators (depending on the template argument) and is a special kind of TensorNetwork.
-    class TTNetwork : public TensorNetwork {
+    class TTNetwork final : public TensorNetwork {
 	public:
+		///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
 		static constexpr const size_t N=isOperator?2:1;
 		
+		/// @brief Flag indicating whether the TTNetwork is cannonicalized.
 		bool cannonicalized;
+		
+		/**
+		 * @brief The position of the core.
+		 * @details If cannonicalized is TRUE, corePosition gives the position of the core tensor. All components
+		 * with smaller index are then left-orthogonalized and all components with larger index right-orthogonalized.
+		 */
 		size_t corePosition;		
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		/// Constructs an order zero TTNetwork.
+		/** 
+		 * @brief Constructs an order zero TTNetwork.
+		 * @details This is a TensorNetwork with no entries. The global factor (which is the only entry of the tensor)
+		 * is set to zero.
+		 */
         explicit TTNetwork();
         
-        /// Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one. Naturally for TTOperators the degree must be even.
-        explicit TTNetwork(const size_t _degree);
+        /** 
+		 * @brief Constructs an zero initialized TTNetwork with the given degree and ranks all equal to one.
+		 * @details Naturally for TTOperators the degree must be even.
+		 */
+		explicit TTNetwork(const size_t _degree);
         
-		/// Constructs a TTNetwork from the given FullTensor, using the higher order SVD algorithm. Opionally an accuracy can be given.
-        explicit TTNetwork(const FullTensor& _full, const double _eps=1e-15); //TODO no magic numbers
+        /** 
+        * @brief Constructs a TTNetwork from the given FullTensor.
+        * @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
+        * @param _tensor The Tensor to decompose.
+        * @param _eps the accuracy to be used in the decomposition.
+        * @param _maxRank the maximal allowed rank (applies to all positions).
+        */
+        explicit TTNetwork(const Tensor& _tensor, const double _eps=EPSILON, const size_t _maxRank=std::numeric_limits<size_t>::max());
         
-		/// Copy constructor for TTNetworks.
+        /** 
+        * @brief Constructs a TTNetwork from the given FullTensor.
+        * @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
+        * @param _tensor The Tensor to decompose.
+        * @param _eps the accuracy to be used in the decomposition.
+        * @param _maxRanks maximal ranks to be used
+        */
+        explicit TTNetwork(const Tensor& _tensor, const double _eps, const std::vector<size_t>& _maxRanks);
+        
+		///@brief Copy constructor for TTNetworks.
         implicit TTNetwork(const TTNetwork & _cpy);
         
-		/// Move constructor for TTNetworks.
+		///@brief Move constructor for TTNetworks.
         implicit TTNetwork(      TTNetwork&& _mov);
         
-		/// Transforms a given TensorNetwork to a TTNetwork. NOTE this is not yet implemented different from casting to FullTensor and then using a HOSVD.
-        explicit TTNetwork(const TensorNetwork &_cpy, double _eps=1e-14);
-        
-		/// Transforms a given TensorNetwork to a TTNetwork. NOTE this is not yet implemented different from casting to FullTensor and then using a HOSVD.
-        explicit TTNetwork(TensorNetwork &&_mov, double _eps=1e-14);
+        /** 
+		* @brief Transforms a given TensorNetwork to a TTNetwork.
+		* @details This is not yet implemented different from casting to FullTensor and then using a HOSVD.
+		* @param _network The network to transform.
+		* @param _eps the accuracy to be used in the transformation.
+		*/
+		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
         
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
         template<class generator, class distribution>
@@ -100,8 +135,10 @@ namespace xerus {
         }
         
         /// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
+        template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
         
+		
         TTNetwork& operator=(const TTNetwork& _other) = default;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -114,51 +151,153 @@ namespace xerus {
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     public:
-		/// tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects
-        /// @note will not check for orthogonality
+        /** 
+		* @brief Tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects.
+		* @details Note that this will NOT check for orthogonality of cannonicalized TTNetworks.
+		* @return TRUE if the check is passed, otherwise an exception is thrown and the function does not return.
+		*/
         bool is_valid_tt() const;
 		
+		/** 
+		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
+		* @details This function is currently needed to keep the resulting network in the TTNetwork class.
+		*Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
+		* @returns the dyadic product as a TTNetwork.
+		*/
         static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
         
+		/** 
+		* @brief Computes the dyadic product of all given TTNetworks. 
+		* @details This is nothing but the repeted application of dyadic_product() for the given TTNetworks.
+		* @returns the dyadic product as a TTNetwork.
+		*/
         static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
         
-		/// returns a reference to the component tensor at position @a _idx in [0..numComponents]
-		/// @note the first and last component tensor have virtual indices of dimension 1 added so that all components are of the same degree
-		const Tensor &get_component(size_t _idx) const;
+		/** 
+		* @brief Complete access to a specific component of the TT decomposition.
+		* @details This function gives complete access to the components, only intended for internal use.
+		* @param _idx index of the component to access.
+		* @returns a reference to the requested component.
+		*/
+		Tensor& component(const size_t _idx);
 		
-		/// sets a single component tensor at position @a _idx to be equal to @a _T
-		/// updates meta-data but might leave the TT tensor in an illegal state. it is the callers responsibility to update the component tensors consistently
-		void set_component(size_t _idx, const Tensor &_T);
+		/** 
+		* @brief Read access to a specific component of the TT decomposition.
+		* @details This function should be used to access from the components, instead of direct access via
+		* nodes[...], because the implementation e.g. does not store the first componend in nodes[0] but as
+		* nodes[1]. nodes[0] is an order one node with dimension one only used to allow the first component
+		* to be an order three tensor.
+		* @param _idx index of the component to access.
+		* @returns a const reference to the requested component.
+		*/
+		const Tensor &get_component(const size_t _idx) const;
+		
+		/** 
+		* @brief Sets a specific component of the TT decomposition.
+		* @details This function also takes care of adjusting the corresponding link dimensions and external dimensions
+		* if needed. However this might still leave the TTNetwork in an invalid if the rank is changed. In this case it
+		* is the callers responsibility to also update the other component tensors consistently to account for that rank
+		* change.
+		* @param _idx index of the component to set.
+		* @param _T Tensor to use as the new component tensor.
+		*/
+		void set_component(const size_t _idx, const Tensor &_T);
+		
+		/** 
+		* @brief Sets a specific component of the TT decomposition.
+		* @details This function also takes care of adjusting the corresponding link dimensions and external dimensions
+		* if needed. However this might still leave the TTNetwork in an invalid if the rank is changed. In this case it
+		* is the callers responsibility to also update the other component tensors consistently to account for that rank
+		* change.
+		* @param _idx index of the component to set.
+		* @param _T Tensor to use as the new component tensor.
+		*/
 		void set_component(size_t _idx, std::unique_ptr<Tensor> &&_T);
 		
-        /// Splits the TTNetwork into two parts by removing the node at @a _position.
+		/** 
+		* @brief Splits the TTNetwork into two parts by removing the node.
+		* @param _position index of the component to be removed, thereby also defining the position 
+		*of the split.
+		* @return a std::pair containing the two remaining parts as TensorNetworks.
+		*/
         std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
         
+		/** 
+		 * @brief Reduce all ranks up to a given accuracy.
+		 * @param _eps the accuracy to use for truncation in the individual SVDs.
+		 */
         void round(value_t _eps);
 
+		/** 
+		 * @brief Reduce all ranks to the given number.
+		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
+		 */
         void round(size_t _maxRank);
 
+		/** 
+		 * @brief Reduce all ranks to the given numbers.
+		 * @param _maxRanks maximal allowed ranks. All current ranks that are larger than the given ones are reduced by truncation.
+		 */
         void round(const std::vector<size_t> &_maxRanks);
         
+		/** 
+		 * @brief Reduce all ranks to the given number.
+		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
+		 */
         void round(int _maxRank);
 
+		/** 
+		 * @brief Gets the ranks of the TTNetwork.
+		 * @return A vector containing the current ranks.
+		 */
         std::vector<size_t> ranks() const;
         
+		// TODO describtion
         size_t rank(size_t _i) const;
         
+		/** 
+		 * @brief Calculates the storage requirement of the current representation.
+		 * @return The datasize in sizeof(value_t).
+		 */
         size_t datasize() const;
         
-		/// @brief moves the core to @a _position
-		/// all components left of @a _position will be left-orthogonal, those to the right will be right-orthogonal
-		void move_core(size_t _position);
+		/** 
+		 * @brief Move the core to a new position.
+		 * @details The core is moved to @a _position and the nodes between the old and the new position are orthogonalized
+		 * accordingly. If the TTNetwork is not yet cannonicalized it will be with @a _position as new corePosition.
+		 * @param _position the new core position.
+		 * @param _keepRank by default a rank revealing QR decomposition is used to move the core and the ranks are reduced
+		 * accordingly. If @a _keepRank is set the rank is not reduced, this is need e.g. in the ALS.
+		 */
+		void move_core(size_t _position, bool _keepRank=false);
 		
-        /// moves core to the left
+		/**
+		 * @brief stores @a _pos as the current core position without verifying of ensuring that this is the case
+		 * @details this is particularly useful after constructing an own TT tensor with set_component calls
+		 * as these will assume that all orthogonalities are destroyed
+		 */
+		void assume_core_position(size_t _pos) {
+			REQUIRE(_pos < degree() / N, "invalid core position");
+			corePosition = _pos;
+			cannonicalized = true;
+		}
+		
+		/** 
+		 * @brief Move the core to the left.
+		 * @details Basically calls move_core() with _position = 0
+		 */
         void cannonicalize_left();
         
-        /// moves core to the right
+		/** 
+		 * @brief Move the core to the left.
+		 * @details Basically calls move_core() with _position = degree()-1
+		 */
         void cannonicalize_right();
             
-        /// swaps all external indices to create the transposed operator
+		/** 
+		 * @brief Transpose the TTOperator
+		 * @details Swaps all external indices to create the transposed operator.
+		 */
         template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
         void transpose() {
             Index i,r,l,j;
@@ -177,16 +316,62 @@ namespace xerus {
         virtual bool is_in_expected_format() const override;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
-        TTNetwork& operator+=(const TTNetwork& _other);
+        /** 
+		 * @brief Adds a given TTNetwork to this one.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
+		 * The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
+		 * @param _other the TTNetwork to add.
+		 * @return reference to this TTNetwork.
+		 */
+		TTNetwork& operator+=(const TTNetwork& _other);
+		
+		/** 
+		 * @brief Calculates the entrywise sum of this TTNetwork and @a _other.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
+		 * The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
+		 * @param _other the second summand.
+		 * @return the sum.
+		 */
         TTNetwork  operator+(const TTNetwork& _other) const;
         
+		/** 
+		 * @brief Subtracts the @a _other TTNetwork entrywise from this one.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
+		 * The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
+		 * @param _other the Tensor to be subtracted to this one.
+		 * @return a reference to this TTNetwork.
+		 */
         TTNetwork& operator-=(const TTNetwork& _other);
+		
+		/** 
+		 * @brief Calculates the entrywise difference between this TTNetwork and @a _other.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
+		 * The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
+		 * @param _other the subtrahend,
+		 * @return the difference.
+		 */
         TTNetwork  operator-(const TTNetwork& _other) const;
         
+		
         TTNetwork& operator*=(const value_t _prod);
+		
+		
+		/** 
+		 * @brief Calculates the entrywise multiplication of this TensorNetwork with a constant @a _factor.
+		 * @details Internally this only results in a change in the global factor.
+		 * @param _factor the factor,
+		 * @return the resulting scaled TensorNetwork.
+		 */
         TTNetwork  operator*(const value_t _prod) const;
         
         TTNetwork& operator/=(const value_t _div);
+		
+		/** 
+		 * @brief Calculates the entrywise divison of this TensorNetwork by a constant @a _divisor.
+		 * @details Internally this only results in a change in the global factor.
+		 * @param _divisor the divisor,
+		 * @return the resulting scaled TensorNetwork.
+		 */
         TTNetwork  operator/(const value_t _div) const;
         
         
@@ -206,10 +391,6 @@ namespace xerus {
     template<bool isOperator>
     static _inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
 
-    /// Returns the frobenius norm of the given tensor
-    template<bool isOperator>
-    static _inline_ value_t frob_norm(const TTNetwork<isOperator>& _tensor) { return _tensor.frob_norm(); }
-
 
     typedef TTNetwork<false> TTTensor;
     typedef TTNetwork<true> TTOperator;
@@ -217,7 +398,7 @@ namespace xerus {
     namespace internal {
         template<bool isOperator>
         /// Internal class used to represent stacks of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
-        class TTStack : public TensorNetwork {
+        class TTStack final : public TensorNetwork {
         public:
 			bool cannonicalization_required;
 			size_t futureCorePosition;

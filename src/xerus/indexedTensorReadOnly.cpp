@@ -18,6 +18,7 @@
 // or contact us at contact@libXerus.org.
 
 #include <xerus/indexedTensorReadOnly.h>
+#include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>
 #include <xerus/misc/missingFunctions.h>
@@ -51,6 +52,22 @@ namespace xerus {
     template<class tensor_type>
     IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
     
+    
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    template<class tensor_type>
+    IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator*(const value_t _factor) const {
+		IndexedTensorMoveable<tensor_type> result(*this);
+        *result.tensorObject *= _factor;
+        return result;
+	}
+	
+	template<class tensor_type>
+    IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator/(const value_t _divisor) const {
+		IndexedTensorMoveable<tensor_type> result(*this);
+        *result.tensorObject /= _divisor;
+        return result;
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     template<class tensor_type>
     bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
@@ -174,7 +191,6 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-    
     template<class tensor_type>
     value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor) {
         return _idxTensor.tensorObjectReadOnly->frob_norm(); 
@@ -191,4 +207,5 @@ namespace xerus {
         }
         return degree;
     }
+    
 }

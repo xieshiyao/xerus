@@ -17,25 +17,25 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include <xerus/tensorNode.h>
+#include <xerus/tensorNetwork.h>
 #include <xerus/tensor.h>
 
 
 namespace xerus {
     
-    TensorNode::TensorNode() : erased(true) { }
+    TensorNetwork::TensorNode::TensorNode() : erased(true) { }
     
-    TensorNode::TensorNode(const TensorNode&  _other) : tensorObject(_other.tensorObject ? _other.tensorObject->get_copy() : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
+    TensorNetwork::TensorNode::TensorNode(const TensorNetwork::TensorNode&  _other) : tensorObject(_other.tensorObject ? _other.tensorObject->get_copy() : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
     
-    TensorNode::TensorNode(      TensorNode&& _other) : tensorObject(std::move(_other.tensorObject)), neighbors(std::move(_other.neighbors)), erased(_other.erased) { }
+    TensorNetwork::TensorNode::TensorNode(      TensorNetwork::TensorNode&& _other) : tensorObject(std::move(_other.tensorObject)), neighbors(std::move(_other.neighbors)), erased(_other.erased) { }
     
-    TensorNode::TensorNode(      std::unique_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), neighbors(), erased(false) {}
+    TensorNetwork::TensorNode::TensorNode(      std::unique_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), neighbors(), erased(false) {}
     
-    TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(_neighbors), erased(false) {}
+    TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(_neighbors), erased(false) {}
     
-    TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(std::move(_neighbors)), erased(false) {}
+    TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(std::move(_neighbors)), erased(false) {}
     
-    TensorNode& TensorNode::operator=(const TensorNode&  _other) {
+    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(const TensorNetwork::TensorNode&  _other) {
         if(_other.tensorObject) {
             tensorObject.reset(_other.tensorObject->get_copy());
         }
@@ -44,23 +44,23 @@ namespace xerus {
         return *this;
     }
     
-    TensorNode& TensorNode::operator=(      TensorNode&& _other) {
+    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(      TensorNetwork::TensorNode&& _other) {
         tensorObject = std::move(_other.tensorObject);
         neighbors = std::move(_other.neighbors);
         erased = _other.erased;
         return *this;
     }
     
-    TensorNode TensorNode::strippped_copy() const {
-        return TensorNode(std::unique_ptr<Tensor>(), neighbors);
+    TensorNetwork::TensorNode TensorNetwork::TensorNode::strippped_copy() const {
+        return TensorNetwork::TensorNode(std::unique_ptr<Tensor>(), neighbors);
     }
     
-    void TensorNode::add_factor(const value_t _factor) {
+    void TensorNetwork::TensorNode::add_factor(const value_t _factor) {
         tensorObject->factor *= _factor;
     }
     
     
-    size_t TensorNode::size() const {
+    size_t TensorNetwork::TensorNode::size() const {
         size_t s = 1;
         for (const Link &l : neighbors) {
             s *= l.dimension;
@@ -68,27 +68,14 @@ namespace xerus {
         return s;
     }
     
-    size_t TensorNode::degree() const {
+    size_t TensorNetwork::TensorNode::degree() const {
         return neighbors.size();
     }
     
-    void TensorNode::erase() {
+    void TensorNetwork::TensorNode::erase() {
         erased = true;
         neighbors.clear();
         tensorObject.reset();
     }
     
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    std::ostream &operator<<(std::ostream &_out, const xerus::TensorNode::Link &_rhs) {
-        _out << "L{";
-		if (_rhs.external) {
-			_out << "ext";
-		} else {
-			_out << _rhs.other;
-		}
-		_out << " (" << _rhs.indexPosition << "), dim " << _rhs.dimension << "}";
-        return _out;
-    }
 }

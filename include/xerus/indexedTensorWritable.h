@@ -26,60 +26,75 @@ namespace xerus {
     class Tensor;
     class TensorNetwork;
     
+	/**
+	 * @brief Abstract internal representation of an read and writeable indexed Tensor or TensorNetwork.
+	 * @details This class (without specialization) should not appear or be used anywhere.
+	 */
     template<class tensor_type>
     class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
     public:
-        // Non-const pointer to the tensor object. Must always coincide with tensorObject
+        /**
+		 * @brief Non-const pointer to the tensor object. 
+		 * @details This must always coincide with tensorObjectReadOnly.
+		 * */
         tensor_type* tensorObject;
         
-        /// Flag indicating, that the indexedTensor is the owner of the tensor object
+        ///@brief Flag indicating, whether the IndexedTensorWritable is the owner of the tensorObject.
         bool deleteTensorObject;
         
-        /// Creates an empty indexed Tensor, should only be used internally
     protected:
+        ///@brief Creates an empty indexed Tensor, should only be used internally.
         IndexedTensorWritable();
         
-    public:
-        /// There is no usefull copy constructor, because the handling of the tensorObject is unclear
+        ///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
         IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
         
-        /// Move constructor
+        ///@brief Move constructor.
         IndexedTensorWritable(IndexedTensorWritable &&_other );
         
-        /// Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested
-        IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership);
+        ///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
+        IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);
         
-        /// Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested
-        IndexedTensorWritable(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership);
+        ///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
+        IndexedTensorWritable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership);
         
+    public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
         virtual ~IndexedTensorWritable();
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
+		///@brief Check whether the IndexedTensorWritable has ownership of the tensor object.
         bool is_owner() const;
         
+		///@brief Deletes the tensor object if this is the owner.
         void delete_if_owner();
         
-        /// Replacement for the original = operator
-        void copy_assign(const IndexedTensorWritable&  _other);
-        
-        /// Replacement for the original = operator
+        ///@brief Replacement for the original = operator
         void assign(      IndexedTensorWritable&& _other);
         
-        /// Resets the IndexedTensorWritable
-        void reset(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership = false);
+        ///@brief Resets the IndexedTensorWritable
+        void reset(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership = false);
         
-        /// Resets the IndexedTensorWritable
-        void reset(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership = false);
+        ///@brief Resets the IndexedTensorWritable
+        void reset(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership = false);
         
-        // Assignment operators -- Used for tensor assignment WITH indices (i.e. in general the LHS and RHS indexTensors do NOT have the same indices)
-        // Implementation is provided in the corresponding *_specialization.hpp files
-        void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs);
+        /**
+		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
+		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
+		 * the assignment.
+		 */
+		void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs);
+		
+		/**
+		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
+		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
+		 * the assignment.
+		 */
         void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
         
-        // NOTE: The following would be deleted due to move constructor and is therefore implemented here
+        ///@brief The following would be deleted due to move constructor and is therefore implemented here, calls the IndexedTensorReadOnly version. 
         void operator=(const IndexedTensorWritable<tensor_type>& _rhs);
+		
     };
 }
