@@ -4,6 +4,7 @@
  * Rank revealing QR decomposition in TTNetwork:move_core. 
  * ALS performance improvement by skipping full-rank nodes.
  * Added TensorNetwork::draw to get a graphical representation of a given tensor network.
+ * Added algorithm DecompositionALS to approximate a FullTensor by a TTTensor.
  * New Quick-Start guide.
  * Several bugfixes, more consistent operator availability and much more documentation.
 

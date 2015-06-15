@@ -42,7 +42,7 @@ UNIT_TEST(ALS, decomposition_als,
 	
 	xerus::TTTensor HOSVDB(TTB);
 	HOSVDB.round(11);
-	LOG(HOSVD, frob_norm(FullTensor(TTB) - FullTensor(HOSVDB)));
+// 	LOG(HOSVD, frob_norm(FullTensor(TTB) - FullTensor(HOSVDB)));
 	
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
 	

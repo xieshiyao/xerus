@@ -33,12 +33,12 @@ namespace xerus {
 		FullTensor newXi;
 		
 		double lastResidual = frob_norm(FullTensor(_x) - _b);
-        LOG(bla, "Initial residual " << lastResidual);
+//         LOG(bla, "Initial residual " << lastResidual);
 		
 		for(size_t iteration = 0; iteration < _maxIterations; ++iteration) {
 			// Move right
 			for(size_t pos = 0; pos < _x.degree(); ++pos) {
-                LOG(bla, "Optimizing position " << pos);
+//                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);
 				_x.component(pos)(rU, iX, rL) = split.first(iU&1, rU)*split.second(rL, iL&1)*_b(iU^pos, iX, iL&(pos+1));
@@ -46,14 +46,14 @@ namespace xerus {
 			
 			// Move left
 			for(size_t pos = _x.degree()-2; pos > 0; --pos) {
-                LOG(bla, "Optimizing position " << pos);
+//                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);
 				_x.component(pos)(rU, iX, rL) = split.first(iU&1, rU)*split.second(rL, iL&1)*_b(iU^pos, iX, iL&(pos+1));
 			}
 			
 			double residual = frob_norm(FullTensor(_x) - _b);
-			LOG(bla, "New residual " << residual << ", residual change " << (lastResidual-residual)/residual);
+// 			LOG(bla, "New residual " << residual << ", residual change " << (lastResidual-residual)/residual);
 			if(residual < EPSILON || (lastResidual-residual)/residual < _eps) { return; }
 			lastResidual = residual;
 		}

@@ -113,21 +113,16 @@ UNIT_TEST(ALS, tutorial,
 	
 	xerus::ALS(A, X, B);
 	
-	LOG(asd, frob_norm(X-B));
+// 	LOG(asd, frob_norm(X-B));
 	
 	TEST(misc::approx_equal(frob_norm(X-B), 0., 1e-12));
 	
 	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
 	
-// 	LOG(skd, frob_norm(A) << ' ' << A.ranks());
-// 	A(i^d, j^d) = A(i^d, j^d) + A(j^d, i^d);
 	A(i^d, j^d) = A(i^d, k^d) * A(j^d, k^d);
-// 	LOG(skd, frob_norm(A) << ' ' << A.ranks());
 	
 	TEST(A.ranks()==std::vector<size_t>(d-1,4));
 
-	// TODO should also be in the tutorial
-	
 	value_t max = std::max(A.get_component(0)[0],A.get_component(0)[1]);
 	max = std::max(A.get_component(0)[2], std::max(A.get_component(0)[3], max));
 	A.set_component(0, static_cast<const FullTensor&>(A.get_component(0))/max);
@@ -137,11 +132,11 @@ UNIT_TEST(ALS, tutorial,
 	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
-	ALSb.printProgress = true;
-	ALSb.useResidualForEndCriterion = true;
-	std::vector<value_t> perfdata;
+// 	ALSb.printProgress = true;
+// 	ALSb.useResidualForEndCriterion = true;
+// 	std::vector<value_t> perfdata;
 	
-	ALSb(A, X, C, 1e-12, &perfdata);
+	ALSb(A, X, C, 1e-12);
 	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
 	
 	
