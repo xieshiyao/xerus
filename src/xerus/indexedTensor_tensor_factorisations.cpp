@@ -216,8 +216,8 @@ namespace xerus {
     }
     
     
-    void OrthogonalSplit::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
-        REQUIRE(_output.size() == 2, "OrthogonalSplit factorisation requires two output tensors, not " << _output.size());
+    void QC::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+        REQUIRE(_output.size() == 2, "QC factorisation requires two output tensors, not " << _output.size());
         const IndexedTensorReadOnly<Tensor>& A = *input;
         const IndexedTensorWritable<Tensor>& Q = *_output[0];
         const IndexedTensorWritable<Tensor>& C = *_output[1];

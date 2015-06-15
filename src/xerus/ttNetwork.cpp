@@ -58,7 +58,7 @@ namespace xerus {
 		for (size_t i = 1; i <= numComponents; ++i) {
 			externalLinks.emplace_back(i, 1, 1, false);
 		}
-		if (N == 2) {
+		if (isOperator) {
 			for (size_t i = 1; i <= numComponents; ++i) {
 				externalLinks.emplace_back(i, 2, 1, false);
 			}
@@ -843,7 +843,7 @@ namespace xerus {
 			if (_keepRank) {
 				( currTensor(i&1,r), core(r,j) ) = QR(currTensor(i&1,j));
 			} else {
-				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(i&1,j));
+				( currTensor(i&1,r), core(r,j) ) = QC(currTensor(i&1,j));
 				nodes[n+2].neighbors.front().dimension = nodes[n+1].neighbors.back().dimension = currTensor.dimensions.back();
 			}
 			
@@ -857,7 +857,7 @@ namespace xerus {
 			if (_keepRank) {
 				( core(j,r), currTensor(r,i&1) ) = RQ(currTensor(j,i&1));
 			} else {
-				( currTensor(i&1,r), core(r,j) ) = OrthogonalSplit(currTensor(j,i&1));
+				( currTensor(i&1,r), core(r,j) ) = QC(currTensor(j,i&1));
 				currTensor(r, i&1) = currTensor(i&1, r);
 				core(j,r) = core(r,j);
 				nodes[n+1].neighbors.front().dimension = nodes[n].neighbors.back().dimension = currTensor.dimensions.front();

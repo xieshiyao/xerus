@@ -148,7 +148,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 )
 
 
-UNIT_TEST(FullTensor, OrthogonalSplit,
+UNIT_TEST(FullTensor, QC,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -165,21 +165,21 @@ UNIT_TEST(FullTensor, OrthogonalSplit,
     
     Index i, j, k, l, m, n, o, p, q, r;
 	
-	(Q(i,j), R(j,k)) = OrthogonalSplit(B(i,k));
+	(Q(i,j), R(j,k)) = QC(B(i,k));
     
-    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    (Q(i,j,k,l), R(l,m,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
     TEST(approx_equal(res4, A, 1e-15));
     
-    (Q(i,j,k,l), R(l,m,n,r)) = OrthogonalSplit(A(i,n,k,m,j,r));
+    (Q(i,j,k,l), R(l,m,n,r)) = QC(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
     TEST(approx_equal(res4, A, 1e-15));
     
-    (Q2(i,k,l), R2(l,m,j,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    (Q2(i,k,l), R2(l,m,j,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
     TEST(approx_equal(res4, A, 1e-12));
     
-    (Q3(i,m,j,k,l), R3(l,n,r)) = OrthogonalSplit(A(i,j,k,m,n,r));
+    (Q3(i,m,j,k,l), R3(l,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
     TEST(approx_equal(res4, A, 1e-15));
     

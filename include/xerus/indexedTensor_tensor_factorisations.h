@@ -71,13 +71,13 @@ namespace xerus {
 	/**
 	 * @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
 	 * @details This calculates a factorisation QC=A with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A.
-	 * The simplest example is (Q(i,k), C(k,j)) = OrthogonalSplit(A(i,j)) to calculate the orthogonal split of A. However A, Q and R can
-	 *  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
+	 * The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and R can
+	 *  also be a higher order Tensors.
 	 */
-	class OrthogonalSplit {
+	class QC {
 	public:
 		const IndexedTensorReadOnly<Tensor>* input;
-		OrthogonalSplit(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
+		QC(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
 		
 		void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
 	};
