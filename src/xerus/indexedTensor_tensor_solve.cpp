@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the indexed tensor / operator.
+ */
+
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/fullTensor.h>

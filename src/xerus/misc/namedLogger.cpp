@@ -17,10 +17,16 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the log-buffer functionality and declaration of global logging objects.
+ */
+
 #include <time.h>
 #include <unistd.h>
 
 #include <xerus/misc/namedLogger.h>
+#include <xerus/misc/callStack.h>
 
 namespace xerus {
     namespace misc {
@@ -49,15 +55,8 @@ namespace xerus {
                     // get callstack
                     out << "-------------------------------------------------------------------------------" << std::endl 
                         << "  Callstack : " << std::endl
-                        << "-------------------------------------------------------------------------------" << std::endl;
-                    out.close();
-                    // gdb /proc/6345/exe 6345 -batch -ex 'thread apply all backtrace' -q >> errors/138344543.txt
-                    std::stringstream tmp;
-                    tmp << "gdb /proc/" << getpid() << "/exe " << getpid() << " -batch -ex 'thread apply all backtrace' -q >> " << name << " 2>&1";
-                    system(tmp.str().c_str());
-                    out.open(name, std::ofstream::out | std::ofstream::app);
-                    out << std::endl << std::endl;
-                    
+                        << "-------------------------------------------------------------------------------" << std::endl
+                        << get_call_stack() << std::endl;
                     // output namedLogger
                     bufferStreams.curr->flush();
                     bufferStreams.old->flush();

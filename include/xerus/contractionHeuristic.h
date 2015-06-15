@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for the class managing the contraction heuristics.
+ */
+
 #pragma once
 
 #include "tensorNetwork.h"
@@ -25,7 +30,7 @@ namespace xerus {
 
     //TODO individuelle schranken
     
-    /// Class representing heuristics used to find good contraction orders of TensorNetworks.
+    /// @brief Class representing heuristics used to find good contraction orders of TensorNetworks.
     class ContractionHeuristic {
     public:
         static std::vector<ContractionHeuristic> *list;

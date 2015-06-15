@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the TTNetwork class (and thus TTTensor and TTOperator).
+ */
+
 #include <xerus/ttNetwork.h>
 #include <xerus/tensorNetwork.h>
 #include <xerus/basic.h>

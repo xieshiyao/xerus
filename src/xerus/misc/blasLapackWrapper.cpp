@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the blas and lapack wrapper functions.
+ */
+
 #include <xerus/misc/blasLapackWrapper.h>
 #include <xerus/misc/selectedFunctions.h>
 

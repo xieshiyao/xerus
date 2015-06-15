@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for xerus::misc::generic_error exception class.
+ */
+
 #pragma once
 
 #include <exception>
@@ -38,7 +43,7 @@ namespace xerus {
 			/// @brief: Normal constructor without preset error_info.
             generic_error();
             
-			/// @brief standard copy constructor
+			/// @brief Standard copy constructor.
             generic_error(const generic_error &_other) noexcept;
             
             const char* what() const noexcept override;
@@ -53,4 +58,8 @@ namespace xerus {
     }
 }
 
+/**
+ * @def XERUS_THROW(...)
+ * @brief Helper macro to throw a generic_error (or derived exception) with some additional information included (function name, file name and line number).
+ */
 #define XERUS_THROW(...) throw (__VA_ARGS__ << "\nexception thrown in function: " << (__func__) << " (" << (__FILE__) <<" : " << (__LINE__) << ")\n")

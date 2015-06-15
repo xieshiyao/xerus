@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the suitesparse wrapper functions.
+ */
+
 #include <xerus/cs_wrapper.h>
 #include <xerus/index.h>
 

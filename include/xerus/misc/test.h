@@ -17,7 +17,24 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for unit test and code-coverage helper classes.
+ */
+
 #pragma once
+
+/**
+ * @def UNIT_TEST(grp, name, code)
+ * @brief Defines a unit test of name @a name in the group @a grp dat performs the source code @a code.
+ * @details Will automatically be performed if it is part of the executable and the application was built with -D TEST_.
+ */
+
+/**
+ * @def REQUIRE_TEST
+ * @brief Marked position for the code-coverage test. Any not passed REQUIRE_TEST macro will result in a warning.
+ * REQUIRE_TEST is implied by any REQUIRE(...) macro if test coverage is enabled.
+ */
 
 #ifdef TEST_
 	#include "namedLogger.h"

@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for the call-stack functionality.
+ */
+
 #pragma once 
 
 #include <string>
@@ -24,7 +29,17 @@
 
 namespace xerus {
     namespace misc {
+		/**
+		 * @brief Returns a string representation of the current call-stack (excluding the function itself).
+		 * @details Per default this uses the binutils library to get the following information:
+		 * [address .section] filename:line (function)
+		 * if all of these are available. 
+		 */
         std::string get_call_stack();
+		
+		/**
+		 * @brief Returns the address range of the elf-section names @a _name as part of the executable / so file that contained @a _addr.
+		 */
         std::pair<uintptr_t, uintptr_t> get_range_of_section(void* _addr, std::string _name);
     }
 }

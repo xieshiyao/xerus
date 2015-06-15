@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of some basic greedy contraction heuristics.
+ */
+
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {

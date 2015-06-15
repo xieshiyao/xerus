@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for all logging macros and log-buffer functionality.
+ */
+
 #pragma once
 
 #include <cmath>
@@ -45,8 +50,10 @@
 namespace xerus {
     namespace misc {
         namespace internal {
-            // Hash the given name (so that we can use an int as template argument, strings are not possible!)
-            // using FNV-1a standard hash
+			/**
+			 * @brief Hashes a given c-string using the FNV-1a standard hash.
+			 * @details This is used eg. to use strings as template arguments.
+			 */
             constexpr uint64_t log_namehash(const char* x) {
                 return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*1099511628211ul : 14695981039346656037ul;
             }
@@ -110,9 +117,18 @@ namespace xerus {
 #define PASTE2( a, b) a##b
 #define PASTE( a, b) PASTE2( a, b)
 
-#define SET_LOGGING(name, value) \
-    template<> struct XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(name))>{ static const int flag = value; };
-    
+/**
+ * @def SET_LOGGING(lvl, value)
+ * @brief set the logging behaviour of severity level @a lvl to @a value (either NOT_LOGGING, LOGGING_ON_ERROR or LOGGING_FULL)
+ * @details this definition must not be repeated and must be define din a global header that is included before any msg is logged with that lvl
+ */
+#define SET_LOGGING(lvl, value) \
+    template<> struct XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>{ static const int flag = value; };
+
+/**
+ * @def SET_LOGGING_DEFAULT(value)
+ * @brief sets the logging behaviour of all levels that are not otherwise specified to @a value
+ */
 #define SET_LOGGING_DEFAULT(value) \
     template<uint64_t lvl> struct XERUS_logFlag { static const int flag = value; }; \
     SET_DEFAULT_LOG_LEVELS
@@ -205,7 +221,10 @@ namespace xerus {
 	#include "exceptions.h"
 #endif
 
-    
+/**
+ * @def COMPILE_TIME_EVAL(e)
+ * @brief forces the compiler to evaluate @a e during compilation
+ */
 #define COMPILE_TIME_EVAL(e) (std::integral_constant<decltype(e), e>::value)
 
 
@@ -259,6 +278,12 @@ namespace xerus {
 #endif
 
 
+/**
+ * @def LOG(lvl, msg)
+ * @brief logs the message @a msg with severity level @a lvl
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
+ */
 #define LOG(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
@@ -279,7 +304,10 @@ namespace xerus {
     } else \
         (void)0
 
-        
+/**
+ * @def IS_LOGGING(lvl)
+ * @brief evaluates to true if @a lvl is begin logged (either to cerr or into a file on error) in the current configuration 
+ */
 #define IS_LOGGING(lvl) \
     (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING)
 

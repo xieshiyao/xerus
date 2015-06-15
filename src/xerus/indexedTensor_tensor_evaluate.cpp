@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the (indexed) FullTensor evaluation (ie. generlized transpositions).
+ */
+
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
@@ -30,10 +35,11 @@
 
 namespace xerus {
 
-    /** "increases" the imaginary indices that lead to the current pointer position of oldPosition to match the index i
-    * precondition: oldPosition corresponding to index (i-1)
-    * postcondition: oldPosition corresponding to index i
-    */
+    /** 
+	 * "increases" the imaginary indices that lead to the current pointer position of oldPosition to match the index i
+     * precondition: oldPosition corresponding to index (i-1)
+     * postcondition: oldPosition corresponding to index i
+     */
     void increase_indices(const size_t _i, const value_t*& _oldPosition, const size_t _numIndices, const size_t* const _steps, const size_t* const _multDimensions) {
         size_t index = _numIndices-1;
         _oldPosition += _steps[index];

@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of code coverage functions and the main routine for the unit-test executable.
+ */
+
 #include <xerus/misc/test.h>
 
 #ifdef TEST_

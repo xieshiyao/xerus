@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the Romberg integration, polynomial class and limit extractors.
+ */
+
 #include <xerus/misc/simpleNumerics.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/exceptions.h>

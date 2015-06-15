@@ -19,7 +19,7 @@
 
 /**
  * @file
- * Header file for the ALS algorithm and its variants.
+ * @brief Header file for the decomposition ALS algorithm. This is likely temporary.
  */
 
 #pragma once

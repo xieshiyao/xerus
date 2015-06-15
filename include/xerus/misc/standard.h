@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for global shorthand notations of elementary integer types and attribute lists.
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -32,7 +37,7 @@ namespace xerus {
 	}
 
     // Shorter names for unsigned types
-    typedef uint8_t byte;
+    typedef uint8_t byte; ///< unsigned int type of exactly 8 bit
     typedef unsigned short ushort;
     typedef unsigned int uint;
     typedef unsigned long ulong;
@@ -60,10 +65,17 @@ namespace xerus {
 #endif
 
 // counterpart to the explicit keyword for constructors
+/**
+ * @def implicit
+ * @brief Counterpart to explicit keyword. has no effect as 'implicit' is always implied as per c++11.
+ */
 #define implicit      
 
-// very thorough always_inline version
 // all of these can be writen like [[gnu::unused]] but kdevelop will not recognize them then
+/** 
+ * @def _inline_ 
+ * @brief Collection of attributes to force gcc to inline a specific function.
+ */
 #define _inline_  		__attribute__((always_inline, gnu_inline)) inline
 
 #define _noinline_ 		__attribute__((noinline))

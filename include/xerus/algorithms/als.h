@@ -19,7 +19,7 @@
 
 /**
  * @file
- * Header file for the ALS algorithm and its variants.
+ * @brief Header file for the ALS algorithm and its variants.
  */
 
 #pragma once

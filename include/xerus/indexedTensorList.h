@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file defining lists of indexed tensors.
+ */
+
 #pragma once
 
 #include <vector>
