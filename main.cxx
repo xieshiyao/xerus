@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <fstream>
 
+#include <openblas/cblas.h>
+
 void storeVeloData(xerus::FullTensor &_v, std::string _fname) {
 	std::vector<size_t> oldDim = _v.dimensions;
 	_v.reinterpret_dimensions(std::vector<size_t>({600,242,600,3}));
@@ -55,6 +57,8 @@ void swap_endianness(size_t *n) {
 
 //g++ -std=c++11 -Ofast -march=native -flto -I include/ main.cxx build/lib/libxerus.a -lcxsparse -llapacke -llapack -lopenblasp -lgfortran -lbfd -liberty -lz -ldl
 int main() {
+	openblas_set_num_threads(4);
+	
 	std::ifstream in("data/fgv_013.bin", std::ios::binary);
 	xerus::FullTensor velocity({3,600,242,600});
 	xerus::Index i1,i2,i3,i4;
@@ -66,18 +70,18 @@ int main() {
 	
 	storeVeloData(velocity, "channels/channel_full");
 	
-	xerus::TTTensor ttv(velocity, 1e-10, 250);
+	xerus::TTTensor ttv(velocity, 1e-10, 1000);
 	
 	xerus::value_t velo_norm = xerus::frob_norm(velocity);
 	
 	std::ofstream out("channels/channel_ttapprox.dat");
 	
-	for (size_t r = 250; r > 0; r -= 5) {
+	for (size_t r = 1000; r > 0; r -= 10) {
 		std::cout << r << '\n' << std::flush;
 		ttv.round(r);
 		std::cout << r << " ALS" << '\r' << std::flush;
 		
-		xerus::decomposition_als(ttv, velocity, 1e-5, 2);
+// 		xerus::decomposition_als(ttv, velocity, 1e-5, 2);
 		/*
 		std::vector<double> perf;
 		xerus::ProjectionALSVariant pALS(xerus::ProjectionALS);

@@ -814,14 +814,14 @@ namespace xerus {
         
         REQUIRE(bestScore < 1e32f && bestOrder, "Internal Error.");
         // perform contractions
-        size_t numContraction = 0;
+//         size_t numContraction = 0;
 //         misc::exec("rm contractions/*");
 // 		LOG(contractionOrderX, "Starting contraction ");
 //         draw(std::string("contractions/after_")+misc::to_string(numContraction++)+"_steps");
         for (const std::pair<size_t,size_t> &c : *bestOrder) {
 // 			LOG(contractionOrderX, "Going to contract: " << c.first << " and " << c.second);
-//             contract(c.first, c.second);
-            draw(std::string("contractions/after_")+misc::to_string(numContraction++)+"_steps");
+            contract(c.first, c.second);
+//             draw(std::string("contractions/after_")+misc::to_string(numContraction++)+"_steps");
         }
         
         // note: no sanitization as eg. TTStacks require the indices not to change after calling this function
