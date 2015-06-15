@@ -34,11 +34,12 @@ namespace xerus {
         REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
     }
     
-    /// @brief finds the range of notes that need to be optimized and orthogonalizes @a _x properly
+    /// @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
     /// @details finds full-rank nodes (these can wlog be set to identity and need not be optimized)
     std::pair<size_t, size_t> prepare_x_for_als(TTTensor &_x) {
 		bool cannoAtTheEnd = _x.cannonicalized;
 		size_t corePosAtTheEnd = _x.corePosition;
+		
 		const size_t d = _x.degree();
 		Index r1,r2,n1,cr1;
 		
@@ -50,9 +51,13 @@ namespace xerus {
 			if (_x.rank(firstOptimizedIndex) < newDimensionProd) {
 				break;
 			}
-			//TODO sparse
-			std::unique_ptr<Tensor> tmp(new FullTensor(static_cast<const FullTensor &>(_x.get_component(firstOptimizedIndex))));
 			
+			Tensor& curComponent = _x.component(firstOptimizedIndex);
+			curComponent.reinterpret_dimensions({curComponent.dimensions[0]*curComponent.dimensions[1], curComponent.dimensions[2]});
+			curComponent(r1,n1,r2) = curComponent(r1,cr1) * _x.get_component(firstOptimizedIndex+1)(cr1,n1,r2);
+			_x.set_component(firstOptimizedIndex+1, std::move(curComponent));
+			
+			//TODO sparse
 			_x.set_component(firstOptimizedIndex, FullTensor(
 				{dimensionProd, localDim, newDimensionProd},
 				[&](const std::vector<size_t> &_idx){
@@ -63,14 +68,13 @@ namespace xerus {
 					}
 				})
 			);
-			tmp->reinterpret_dimensions({tmp->dimensions[0]*tmp->dimensions[1], tmp->dimensions[2]});
-			(*tmp)(r1,n1,r2) = (*tmp)(r1,cr1) * _x.get_component(firstOptimizedIndex+1)(cr1,n1,r2);
-			_x.set_component(firstOptimizedIndex+1, std::move(tmp));
+			
 			REQUIRE(_x.is_in_expected_format(), "ie");
 			
 			firstOptimizedIndex += 1;
 			dimensionProd = newDimensionProd;
 		}
+		
 		size_t firstNotOptimizedIndex = d;
 		dimensionProd = 1;
 		while (firstNotOptimizedIndex > firstOptimizedIndex+1) {
@@ -79,22 +83,24 @@ namespace xerus {
 			if (_x.rank(firstNotOptimizedIndex-2) < newDimensionProd) {
 				break;
 			}
-			//TODO sparse
-			std::unique_ptr<Tensor> tmp(new FullTensor(static_cast<const FullTensor &>(_x.get_component(firstNotOptimizedIndex-1))));
 			
+			Tensor& curComponent = _x.component(firstNotOptimizedIndex-1);
+			curComponent.reinterpret_dimensions({curComponent.dimensions[0], curComponent.dimensions[1] * curComponent.dimensions[2]});
+			curComponent(r1,n1,r2) = _x.get_component(firstNotOptimizedIndex-2)(r1,n1,cr1) * curComponent(cr1,r2);
+			_x.set_component(firstNotOptimizedIndex-2, std::move(curComponent));
+			
+			//TODO sparse
 			_x.set_component(firstNotOptimizedIndex-1, FullTensor(
 				{newDimensionProd, localDim, dimensionProd},
 				[&](const std::vector<size_t> &_idx){
-					if (_idx[0] == _idx[1] + _idx[2]*localDim) {
+					if (_idx[0] == _idx[1]*dimensionProd + _idx[2]) {
 						return 1.0;
 					} else {
 						return 0.0;
 					}
 				})
 			);
-			tmp->reinterpret_dimensions({tmp->dimensions[0], tmp->dimensions[1] * tmp->dimensions[2]});
-			(*tmp)(r1,n1,r2) = _x.get_component(firstNotOptimizedIndex-2)(r1,n1,cr1) * (*tmp)(cr1,r2);
-			_x.set_component(firstNotOptimizedIndex-2, std::move(tmp));
+
 			REQUIRE(_x.is_in_expected_format(), "ie");
 			
 			firstNotOptimizedIndex -= 1;
@@ -110,9 +116,6 @@ namespace xerus {
 			
 			_x.move_core(firstOptimizedIndex, true);
 		}
-		// as we will access the nodes individually in the algorithm, make sure there is no global factor
-		(*_x.nodes[firstOptimizedIndex].tensorObject) *= _x.factor;
-		_x.factor = 1.0;
 		
 		return std::pair<size_t, size_t>(firstOptimizedIndex, firstNotOptimizedIndex);
 	}
@@ -151,11 +154,6 @@ namespace xerus {
 		
 		xAxL.emplace_back(tmpA);
 		bxL.emplace_back(tmpB);
-		// as we access all the nodes manualy we have to take care of the global factors in _A and _b outselves
-		if (_Ap) {
-			tmpA *= _A.factor;
-		}
-		tmpB *= _b.factor;
 		xAxR.emplace_back(tmpA);
 		bxR.emplace_back(tmpB);
 		

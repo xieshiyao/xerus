@@ -56,6 +56,17 @@ namespace xerus {
 		 */
 		std::string exec(const std::string _cmd);
 
+		/**
+		 * @brief Wrapper class to disallow implicit cast (e.g. from everything to bool).
+		 */
+		template<class T>
+		struct NoCast{ 
+			const T value;
+			
+			NoCast(const T _value) : value(_value) {}
+			
+			operator T() const{ return value; }
+		};
 
         ///@brief: Counts how often an element is contained in an arbitary container
         template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>

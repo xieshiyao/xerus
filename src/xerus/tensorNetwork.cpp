@@ -29,28 +29,36 @@
 #include <algorithm>
 #include <fstream>
 
-namespace xerus {    
+namespace xerus {
+	const misc::NoCast<bool> TensorNetwork::NoZeroNode(false);
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    TensorNetwork::TensorNetwork() : factor(0.0) {}
+    TensorNetwork::TensorNetwork(const misc::NoCast<bool> _addZeroNode) {
+		if(_addZeroNode) {
+			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new FullTensor())));
+		}
+	}
     
-    TensorNetwork::TensorNetwork(const TensorNetwork& _cpy) : dimensions(_cpy.dimensions), nodes(_cpy.nodes), externalLinks(_cpy.externalLinks), factor(_cpy.factor) {}
+    TensorNetwork::TensorNetwork(const TensorNetwork& _cpy) : dimensions(_cpy.dimensions), nodes(_cpy.nodes), externalLinks(_cpy.externalLinks) {}
     
-    TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)), factor(_mv.factor) {}
+    TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)){
+		_mv = TensorNetwork();
+	}
     
-    TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions), factor(1.0) {
+    TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
         nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_copy()), init_from_dimension_array());
     }
     
-    TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions), factor(1.0) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
+    TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
         nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_moved_copy()), init_from_dimension_array());
     }
     
-    TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions), factor(1.0) {
+    TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
         nodes.emplace_back(std::move(_tensor), init_from_dimension_array());
     }
     
     /// Constructs the trivial network containing non-specified size-1 FullTensor
-    TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree,1)), factor(1.0) {
+    TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree,1)) {
         nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor(_degree)), init_from_dimension_array());
     }
     
@@ -68,61 +76,31 @@ namespace xerus {
         return newLinks;
     }
     
-    bool TensorNetwork::has_factor() const {
-        #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            return (factor != 1.0);
-        #pragma GCC diagnostic pop
-    }
-    
-    void TensorNetwork::apply_factor() {
-        REQUIRE(is_valid_network(), "Cannot apply factor to inconsistent network.");
-        if(has_factor()) {
-            // Find an unerased node to apply factor to. If there is none, then the factor stays
-            for(TensorNode& node : nodes) {
-                if(!node.erased) {
-                    node.add_factor(factor);
-                    factor = 1.0;
-                    break;
-                }
-            }
-        }
-    }
-    
-    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
 		REQUIRE(is_valid_network(), "Cannot fully contract inconsistent network.");
         std::unique_ptr<Tensor> result;
         
-        if (degree() == 0) {
-            REQUIRE(is_valid_network(), "");
-            result.reset(new FullTensor());
-            static_cast<FullTensor*>(result.get())->data.get()[0] = factor;
-        } else {
-            std::set<size_t> all;
-            TensorNetwork cpy(*this);
-            
-            cpy.apply_factor();
-            
-            for (size_t i=0; i < nodes.size(); ++i) {
-                if (!nodes[i].erased) all.insert(i);
-            }
-            size_t res = cpy.contract(all);
-            
-            std::vector<Index> externalOrder;
-            for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
-            
-            std::vector<Index> internalOrder;
-            for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
-                REQUIRE(link.external, "Internal Error");
-                internalOrder.emplace_back(externalOrder[link.indexPosition]);
-            }
-            
-            result.reset(cpy.nodes[res].tensorObject->construct_new());
-            
-            (*result)(externalOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
-        }
+		std::set<size_t> all;
+		TensorNetwork cpy(*this);
+		
+		for (size_t i=0; i < nodes.size(); ++i) {
+			if (!nodes[i].erased) all.insert(i);
+		}
+		size_t res = cpy.contract(all);
+		
+		std::vector<Index> externalOrder;
+		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
+		
+		std::vector<Index> internalOrder;
+		for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
+			REQUIRE(link.external, "Internal Error");
+			internalOrder.emplace_back(externalOrder[link.indexPosition]);
+		}
+		
+		result.reset(cpy.nodes[res].tensorObject->construct_new());
+		
+		(*result)(externalOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
         
         return result;
     }
@@ -155,7 +133,6 @@ namespace xerus {
         dimensions = _other.dimensions;
         nodes = _other.nodes;
         externalLinks = _other.externalLinks;
-        factor = _other.factor;
         return *this;
     }
     
@@ -165,7 +142,6 @@ namespace xerus {
         dimensions = std::move(_mv.dimensions);
         nodes = std::move(_mv.nodes);
         externalLinks = std::move(_mv.externalLinks);
-        factor = _mv.factor;
         
         // Ensure that _mv is in a legal state (ugly because _mv is usually deleted directly after move assignement...)
         _mv.dimensions.clear();
@@ -177,9 +153,13 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     value_t TensorNetwork::operator[](const size_t _position) const {
+		REQUIRE(is_valid_network(), "Invalid Network");
+		REQUIRE(nodes.size() > 0, "There must always be at least one node");
 		if (degree() == 0) {
-			REQUIRE(_position == 0, "tried to access non-existing entry of TN");
-			return factor;
+			REQUIRE(_position == 0, "Tried to access non-existing entry of TN");
+			REQUIRE(nodes.size() == 1, "Internal Error");
+			LOG(myNodeHasXXX, (*nodes[0].tensorObject).to_string());
+			return (*nodes[0].tensorObject)[0];
 		}
         std::vector<size_t> positions(degree());
         size_t remains = _position;
@@ -192,18 +172,11 @@ namespace xerus {
     }
     
     value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
+		REQUIRE(is_valid_network(), "Invalid Network");
+		REQUIRE(nodes.size() > 0, "There must always be at least one node");
         TensorNetwork partialCopy;
-        partialCopy.factor = factor;
         partialCopy.nodes = nodes;
         
-//         for(TensorNode& node : partialCopy.nodes) {
-//             for(size_t i = 0; i < node.neighbors.size(); ++i) {
-//                 if(node.neighbors[i].external) {continue;}
-//                 LOG(bla, "neighbor: " << i << " / " << node.neighbors.size());
-//                 LOG(vlaues, "Other node " << node.neighbors[i].other << " / " << partialCopy.nodes.size());
-//                 LOG(vlaues, "Other Index " << node.neighbors[i].indexPosition << " / " << partialCopy.nodes[node.neighbors[i].other].neighbors.size());
-//             }
-//         }
         
         // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
         for(TensorNode& node : partialCopy.nodes) {
@@ -231,27 +204,26 @@ namespace xerus {
             }
         }
         
-        // Contract the network (there are not external Links)
+        // Contract the complete network (there are not external Links)
         partialCopy.contract_unconnected_subnetworks();
         
-        REQUIRE(partialCopy.nodes.empty(), "Internal Error.");
+        REQUIRE(partialCopy.nodes.size() == 1, "Internal Error.");
         
-        return partialCopy.factor;
+        return (*partialCopy.nodes[0].tensorObject)[0];
     }
     
 
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-	TensorNetwork& TensorNetwork::operator*=(const value_t _factor) {
-		factor *= _factor;
-		return *this;
+	void TensorNetwork::operator*=(const value_t _factor) {
+		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		*nodes[0].tensorObject *= _factor;
 	}
 	
-	TensorNetwork& TensorNetwork::operator/=(const value_t _divisor) {
-		factor /= _divisor;
-		return *this;
+	void TensorNetwork::operator/=(const value_t _divisor) {
+		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		*nodes[0].tensorObject /= _divisor;
 	}
-    
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
@@ -322,8 +294,8 @@ namespace xerus {
 #ifndef DISABLE_RUNTIME_CHECKS_
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
     bool TensorNetwork::is_valid_network() const {
-		REQUIRE(std::isfinite(factor), "factor = " << factor);
         REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
+		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
 		// Per external link
 		for (size_t n=0; n<externalLinks.size(); ++n) {
@@ -382,7 +354,7 @@ namespace xerus {
     
     /// Creates a copy of a subnet that only contains nullptr as data pointers
     TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
-        TensorNetwork cpy;
+        TensorNetwork cpy(NoZeroNode);
         cpy.nodes.resize(nodes.size());
         cpy.dimensions = dimensions;
         cpy.externalLinks = externalLinks;
@@ -475,8 +447,8 @@ namespace xerus {
 		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
     }
     
-    // Fully contracts TN parts that are not connected to external links
     void TensorNetwork::contract_unconnected_subnetworks() {
+		REQUIRE(is_valid_network(), "Invalid TensorNetwork");
         std::vector<bool> seen(nodes.size(), false);
         std::vector<size_t> expansionStack;
         
@@ -506,10 +478,12 @@ namespace xerus {
         // Construct set of all unseen nodes...
         std::set<size_t> toContract;
         for (size_t i=0; i < nodes.size(); ++i) {
-            if (!seen[i] && !nodes[i].erased) {
+            if (!seen[i]) {
                 toContract.insert(i);
             }
         }
+        
+        const bool keepFinalNode = degree() == 0;
         
         // ...and contract them
         if (!toContract.empty()) {
@@ -517,9 +491,17 @@ namespace xerus {
             
             // remove contracted degree-0 tensor
             REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
-            factor *= (*nodes[remaining].tensorObject.get())[0];
             REQUIRE(nodes[remaining].neighbors.empty(), "Internal Error.");
-            nodes[remaining].erased = true;
+			if(!keepFinalNode) {
+				for(size_t i =0; i < nodes.size(); ++i) {
+					if(i != remaining && !nodes[i].erased) {
+						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject.get())[0];
+						break;
+					}
+					REQUIRE(i < nodes.size()-1, "Internal Error.");
+				}
+				nodes[remaining].erased = true;
+			}
         }
         
         // Remove all erased nodes
@@ -546,6 +528,9 @@ namespace xerus {
         for (TensorNetwork::Link &l : externalLinks) {
             l.other = idMap[l.other];
         }
+        
+        REQUIRE(nodes.size() > 0, "Internal error");
+		REQUIRE(!keepFinalNode || nodes.size() == 1, "internal error!");
     }
 
 
@@ -656,9 +641,6 @@ namespace xerus {
     void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert) {
         const std::vector<Index> toInsertIndices = _toInsert.get_assigned_indices();
         
-        // Any factor has to be propageded
-        _base.tensorObject->factor *= _toInsert.tensorObjectReadOnly->factor;
-        
         // TODO after trace ensure connectedness (to external indices)
         TensorNetwork &base = *_base.tensorObject;
         const TensorNetwork &toInsert = *_toInsert.tensorObjectReadOnly;
@@ -711,7 +693,6 @@ namespace xerus {
         
         // trace out all single-node traces
         for (size_t id : _ids) {
-            REQUIRE(!nodes[id].erased, "tried to contract erased node");
             bool traceNeeded=false;
             for (const TensorNetwork::Link &l : nodes[id].neighbors) {
                 if (l.links(id)) {
@@ -832,7 +813,7 @@ namespace xerus {
         Index i;
         FullTensor res;
         res() = (*this)(i&0) * (*this)(i&0);
-        return res.data.get()[0];
+        return std::sqrt(res.data.get()[0]);
     }
     
     
