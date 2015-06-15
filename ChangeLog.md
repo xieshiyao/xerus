@@ -1,5 +1,9 @@
 ## Changelog
 
+* 2015-06-15 v1.2.1
+ * entrywise_product for FullTensor and TTNetwork.
+ * TensorNetworks now without extraneous factor.
+
 * 2015-06-15 v1.2.0
  * Rank revealing QR decomposition in TTNetwork:move_core. 
  * ALS performance improvement by skipping full-rank nodes.
