@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file that defines the logging behaviour of the internal debug log-levels used in the library.
+ */
+
 #pragma once
 
 #include "misc/namedLogger.h"

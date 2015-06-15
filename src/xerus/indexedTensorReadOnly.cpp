@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the IndexedTensorReadOnly class.
+ */
+
 #include <xerus/indexedTensorReadOnly.h>
 #include <xerus/indexedTensorMoveable.h>
 

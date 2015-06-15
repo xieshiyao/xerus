@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for a large number of helper functions that should either be part of the standard library or are too small to warrant a new compilation unit.
+ */
+
 #pragma once
 #include <vector>
 #include <set>
@@ -31,7 +36,10 @@
 #include "namedLogger.h"
 #include "check.h"
 
-// Define for variable length arrays that can be used as gnu++ VLAs but are created on the heap
+/**
+ * @def VLA(T, name)
+ * @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but are created on the heap
+ */
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); auto const & name = name##_store.get();
 
 namespace xerus {

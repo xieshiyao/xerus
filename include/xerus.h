@@ -17,6 +17,12 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Default include file for the xerus library.
+ */
+
+// NOTE must not be "pragma once" as that keyword is not supported in precompiled headers
 #ifndef XERUS_H
 #define XERUS_H
 

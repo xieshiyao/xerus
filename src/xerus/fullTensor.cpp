@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the FullTensor class.
+ */
+
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/misc/blasLapackWrapper.h>

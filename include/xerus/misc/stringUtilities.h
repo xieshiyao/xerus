@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
  
+/**
+ * @file
+ * @brief Header file for some elementary string manipulation routines.
+ */
+
 #pragma once
 
 #include <string>
@@ -30,10 +35,10 @@
 namespace xerus {
     namespace misc {
 
-        /// demangles the function and class names created by gcc into a more readable format
+        /// @brief Demangles the function and class names created by gcc into a more readable format.
         std::string demangle_cxa(const std::string &_cxa);
 
-        /// resolves 'folder/..' occurences in pathnames
+        /// @brief Resolves 'folder/..' occurences in pathnames.
         _const_ std::string normalize_pathname(const std::string &_name);
 
         ///@brief: Explodes a string at positions indicated by _delim.

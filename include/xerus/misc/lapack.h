@@ -32,6 +32,11 @@
 * Modified June 2015 to meet the needs of the xerus library.
 *****************************************************************************/
 
+/**
+ * @file
+ * @brief Header file for all lapack functions defined in the lapack fortran library (version 3.5.0) to allow direct calls to these fortran functions.
+ */
+
 #pragma once
 
 #ifndef LAPACK_GLOBAL

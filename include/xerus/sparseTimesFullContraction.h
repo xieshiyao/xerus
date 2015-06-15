@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for sparse matrix times dense matrix wrapper functions.
+ */
+
 #pragma once
 
 #include "cs_wrapper.h"

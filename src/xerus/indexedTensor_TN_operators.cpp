@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the indexed tensor network operators.
+ */
+
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/index.h>

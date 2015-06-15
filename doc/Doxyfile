@@ -2006,7 +2006,8 @@ PREDEFINED             = MISC_NAMESPACE=xerus \
                          MISC=xerus \
                          "START_MISC_NAMESPACE=namespace xerus {" \
                          END_MISC_NAMESPACE=} \
-                         "ALLOW_MOVE(__type, __newTypeName)=template<ADD_MOVE(__type, __newTypeName)>"
+                         "ALLOW_MOVE(__type, __newTypeName)=template<ADD_MOVE(__type, __newTypeName)>" \
+                         "GENERATE_HAS_MEMBER(a)= "
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
@@ -2237,7 +2238,7 @@ INCLUDED_BY_GRAPH      = NO
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-CALL_GRAPH             = YES
+CALL_GRAPH             = NO
 
 # If the CALLER_GRAPH tag is set to YES then doxygen will generate a caller
 # dependency graph for every global function or class method.
@@ -2248,7 +2249,7 @@ CALL_GRAPH             = YES
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-CALLER_GRAPH           = YES
+CALLER_GRAPH           = NO
 
 # If the GRAPHICAL_HIERARCHY tag is set to YES then doxygen will graphical
 # hierarchy of all classes instead of a textual one.

@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for suitesparse wrapper functions.
+ */
+
 #pragma once
 
 #ifdef __has_include

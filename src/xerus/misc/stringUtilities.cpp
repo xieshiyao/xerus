@@ -17,7 +17,12 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../../include/xerus/misc/stringUtilities.h"
+/**
+ * @file
+ * @brief Implementation of the non-template basic string functionality defined in stringUtilities.h.
+ */
+
+#include <xerus/misc/stringUtilities.h>
 #include <memory>
 #include <cxxabi.h>
 

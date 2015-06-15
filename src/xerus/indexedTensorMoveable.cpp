@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the IndexedTensorMoveable class.
+ */
+
 #include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>

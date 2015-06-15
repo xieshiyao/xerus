@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for the performance analysis global objects and analysis function.
+ */
+
 #pragma once
 
 #include "standard.h"
@@ -35,14 +40,14 @@
 
 namespace xerus {
 	namespace misc {
-		/// This namespace contains all functions only used for the performance analysism, as well as the global variables.
+		/// @brief This namespace contains all functions only used for the performance analysis, as well as the respective global variables.
 		namespace performanceAnalysis {
 			#ifdef PERFORMANCE_ANALYSIS
 				extern const size_t startupTime;
 				extern std::map<std::string, std::map<std::string, std::map<std::string, std::pair<size_t, size_t>>>> calls;
 			#endif
 			
-			/// Returns a detailed performance analysis if PERFORMANCE_ANALYSIS is set, an emtpy string otherwise
+			/// @brief Returns a detailed performance analysis if PERFORMANCE_ANALYSIS is set, an emtpy string otherwise.
 			std::string get_analysis();
 		}
 	}

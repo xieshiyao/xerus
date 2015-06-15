@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the Tensor class.
+ */
+
 #include <xerus/tensor.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>

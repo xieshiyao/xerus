@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Header file for the basic operators of indexed tensor networks.
+ */
+
 #pragma once
 
 #include "indexedTensorMoveable.h"

@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the FullTensor factorizations.
+ */
+
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/fullTensor.h>
@@ -211,8 +216,8 @@ namespace xerus {
     }
     
     
-    void OrthogonalSplit::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
-        REQUIRE(_output.size() == 2, "OrthogonalSplit factorisation requires two output tensors, not " << _output.size());
+    void QC::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+        REQUIRE(_output.size() == 2, "QC factorisation requires two output tensors, not " << _output.size());
         const IndexedTensorReadOnly<Tensor>& A = *input;
         const IndexedTensorWritable<Tensor>& Q = *_output[0];
         const IndexedTensorWritable<Tensor>& C = *_output[1];

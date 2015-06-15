@@ -17,6 +17,11 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+ * @file
+ * @brief Implementation of the ALS variants.
+ */
+
 #include <xerus/algorithms/als.h>
 #include <xerus/basic.h>
 #include <xerus/indexedTensorList.h>

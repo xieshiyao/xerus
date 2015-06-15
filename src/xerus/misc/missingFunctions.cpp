@@ -17,7 +17,12 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
-#include "../../../include/xerus/misc/missingFunctions.h"
+/**
+ * @file
+ * @brief Implementation of the non-trivial non-template functions in the missingFunctions header.
+ */
+
+#include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
     namespace misc {

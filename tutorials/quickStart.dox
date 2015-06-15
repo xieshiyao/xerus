@@ -78,9 +78,9 @@ a multiindex of large enough dimension to fullz index the respective tensor obje
 
 The expected output of this whole program now looks something like
 ~~~
-ttA ranks: { 4, 4, 4, 4, 4, 4, 4, 4 }
-residual: 2.41602e-10
-error: 7.69506e-19
+ttA ranks: { 3, 3, 3, 3, 3, 3, 3, 3 }
+residual: 4.93323e-11
+error: 1.48729e-20
 ~~~
 
 We could now also print the solution with `x.to_string()` or store in in a file to plot it with another program.
