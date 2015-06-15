@@ -176,7 +176,6 @@ namespace xerus {
             }
         }
         
-        
         /** 
 		 * @brief Constructs a FullTensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
 		 * @details The entries are assigned in the order they are stored (i.e. row-major order). Each assigned is a seperate call to the random distribution.

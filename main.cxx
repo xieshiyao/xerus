@@ -21,16 +21,14 @@
 #include <stdio.h>
 #include <fstream>
 
-#include <openblas/cblas.h>
-
 void storeVeloData(xerus::FullTensor &_v, std::string _fname) {
 	std::vector<size_t> oldDim = _v.dimensions;
-	_v.reinterpret_dimensions(std::vector<size_t>({600,242,600,3}));
+	_v.reinterpret_dimensions(std::vector<size_t>({25,27,25,3}));
 	std::ofstream outX(_fname+"_vx.dat");
 	std::ofstream outY(_fname+"_vy.dat");
 	std::ofstream outZ(_fname+"_vz.dat");
-	for (size_t x=0; x<600; x+=1) {
-		for (size_t y=0; y<242; y+=1) {
+	for (size_t x=0; x<25; x+=1) {
+		for (size_t y=0; y<27; y+=1) {
 			outX << _v[{x,y,10,0}] << " ";
 			outY << _v[{x,y,10,1}] << " ";
 			outZ << _v[{x,y,10,2}] << " ";
@@ -57,14 +55,13 @@ void swap_endianness(size_t *n) {
 
 //g++ -std=c++11 -Ofast -march=native -flto -I include/ main.cxx build/lib/libxerus.a -lcxsparse -llapacke -llapack -lopenblasp -lgfortran -lbfd -liberty -lz -ldl
 int main() {
-	openblas_set_num_threads(4);
-	
 	std::ifstream in("data/fgv_013.bin", std::ios::binary);
 	xerus::FullTensor velocity({3,600,242,600});
 	xerus::Index i1,i2,i3,i4;
-	in.read(reinterpret_cast<char*>(velocity.data.get()), 600*242*600*3*sizeof(double));
+	in.read(reinterpret_cast<char*>(velocity.data.get()), 25*27*25*3*sizeof(double));
 	in.close();
 	velocity(i1,i2,i3,i4) = velocity(i4,i3,i2,i1);
+
 // 	velocity(i1,i2,i3) = velocity(i1,i2,i3, 0);
 	velocity.reinterpret_dimensions(std::vector<size_t>({3,2,5,2,5,2, 11,2,11, 3,2,5,2,5,2, 3}));
 	
@@ -93,6 +90,11 @@ int main() {
 		    << xerus::frob_norm(approx-velocity)/velo_norm << " " 
  			<< ttv.datasize() << std::endl;
 		storeVeloData(approx, "channels/channel_r"+std::to_string(r));
+		xerus::FullTensor diff = approx-velocity;
+		for(size_t i = 0; i < diff.size; ++i) {
+			diff[i] = std::abs(diff[i]); ///approx[i]
+		}
+		storeVeloData(diff, "channels/channel_diff_r"+std::to_string(r));
 	}
 	out.close();
 	

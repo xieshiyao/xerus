@@ -26,6 +26,8 @@
 
 #include "indexedTensor.h"
 #include "tensor.h"
+#include "misc/missingFunctions.h"
+
 #include <map>
 #include <set>
 #include <memory>
@@ -53,7 +55,7 @@ namespace xerus {
 			///@brief IndexPosition on the other node or index of external index.
 			size_t indexPosition;
 			
-			///@brief dimension of the link, always equals to other->tensorObject->dimensions[indexPosition].
+			///@brief Dimension of the link, always equals to other->tensorObject->dimensions[indexPosition].
 			size_t dimension;
 			
 			///@brief Flag indicating whether this link correspond to an external index.
@@ -115,6 +117,8 @@ namespace xerus {
 			
 			void erase();
 		};
+		
+		
 
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
@@ -128,16 +132,23 @@ namespace xerus {
         std::vector<Link> externalLinks;
         
         ///@brief A single value representing a constant factor and/or the only entry of an order zero tensor
-        value_t factor;
+//         value_t factor;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
         /** 
-		* @brief Constructs an empty TensorNetwork.
-		* @details The order of an empty TN is zero. The network will contain no nodes 
-		* and the global factor, which also determines the only entry, is set to zero.
+		* @brief Constructs an order zero TensorNetwork.
+		* @details The order of an empty TN is zero. The network will contain one node with the single
+		* entry zero.
 		*/
-		explicit TensorNetwork();
+		explicit TensorNetwork(const misc::NoCast<bool> _addZeroNode = true);
+		
+	protected:
+		
+		///@brief Internal indicator to avoid magic false
+		static const misc::NoCast<bool> NoZeroNode;
+		
+	public:
         
         ///@brief Copy Constructor
         implicit TensorNetwork(const TensorNetwork& _cpy);
@@ -185,20 +196,6 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		//TODO describtion
 		std::vector<Link> init_from_dimension_array();
-        
-		/** 
-		* @brief Checks whether there is a non-trivial global scaling factor.
-		* @details That is it checks whether factor != 1.0
-		* @return True is there is a non trivial factor, FALSE otherwise.
-		*/
-        bool has_factor() const;
-        
-		/** 
-		* @brief Applies the factor to the network.
-		* @details If there is a non trivial global scaling factor, it is apllied to one node.
-		* In case of special decompositions, e.g. TTTensor the canonicalisation is conservered.
-		*/
-        virtual void apply_factor();
         
 		/** 
 		* @brief Contracts all nodes that are not connected to any external links.
@@ -261,7 +258,7 @@ namespace xerus {
          * @param _factor the factor,
          * @return a reference to this TensorNetwork.
          */
-        TensorNetwork& operator*=(const value_t _factor);  // TODO implement!
+        virtual void operator*=(const value_t _factor);
         
         
         /** 
@@ -270,7 +267,7 @@ namespace xerus {
          * @param _divisor the divisor,
          * @return a reference to this TensorNetwork.
          */ 
-        TensorNetwork& operator/=(const value_t _divisor); // TODO implement!
+        virtual void operator/=(const value_t _divisor);
         
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

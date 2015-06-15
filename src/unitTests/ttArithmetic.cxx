@@ -466,11 +466,13 @@ UNIT_TEST(TT, full_contraction,
 	TEST(misc::approx_equal(frob_norm(A(i&0)-B(i&0)), frob_norm(toA(i&0)-toB(i&0)), 1e-12));
 	FullTensor C(0);
 	C() = A(i/1)*B(i&0);
+	
 	TTTensor ttC(0);
 	ttC() = ttA(i&0)*ttB(i&0);
+	TEST(misc::approx_equal(C[0], ttC[0], 1e-12));
+	
 	TTOperator toC(0);
 	toC() = ttA(i&0)*ttB(i&0);
-	TEST(misc::approx_equal(C[{}], ttC[{}], 1e-12));
 	TEST(misc::approx_equal(C[{}], toC[{}], 1e-12));
 )
 

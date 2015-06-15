@@ -112,7 +112,6 @@ namespace xerus {
             #endif
             
             TTNetwork result(_dimensions.size());
-			result.factor = 1.0;
 			const size_t numComponents = _dimensions.size()/N;
 			size_t maxDim1 = 1;
 			size_t maxDim2 = misc::product(_dimensions);
@@ -365,7 +364,7 @@ namespace xerus {
         TTNetwork  operator-(const TTNetwork& _other) const;
         
 		
-        TTNetwork& operator*=(const value_t _prod);
+        virtual void operator*=(const value_t _factor) override;
 		
 		
 		/** 
@@ -374,9 +373,9 @@ namespace xerus {
 		 * @param _factor the factor,
 		 * @return the resulting scaled TensorNetwork.
 		 */
-        TTNetwork  operator*(const value_t _prod) const;
+        TTNetwork  operator*(const value_t _factor) const;
         
-        TTNetwork& operator/=(const value_t _div);
+        virtual void operator/=(const value_t _divisor) override;
 		
 		/** 
 		 * @brief Calculates the entrywise divison of this TensorNetwork by a constant @a _divisor.
@@ -417,6 +416,24 @@ namespace xerus {
 			
 			explicit TTStack(bool _canno, size_t _corePos=0) : cannonicalization_required(_canno), futureCorePosition(_corePos) {};
 			
+			
+			virtual void operator*=(const value_t _factor) override {
+				REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+				
+				if(cannonicalization_required) {
+					*nodes[futureCorePosition+1].tensorObject *= _factor;
+				} else if(degree() > 0) {
+					*nodes[1].tensorObject *= _factor;
+				} else {
+					*nodes[0].tensorObject *= _factor;
+				}
+			}
+		
+			virtual void operator/=(const value_t _divisor) override {
+				operator*=(1/_divisor);
+			}
+			
+		
             /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
             virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me _unused_ , const IndexedTensorReadOnly<TensorNetwork> &_other _unused_) override {
                 LOG(fatal, "TTStack not supported as a storing type");

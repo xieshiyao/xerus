@@ -34,48 +34,43 @@ namespace xerus {
     
     template<> 
     void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork> &_rhs) {
+		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
         std::vector<Index> rightIndices = _rhs.get_assigned_indices();
-//         LOG(LetsTrySomething, _rhs.tensorObjectReadOnly->factor);
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
 		TensorNetwork::trace_out_double_indices(rightIndices, cpy(rightIndices));
         
         std::set<size_t> all;
         for (size_t i=0; i < cpy.nodes.size(); ++i) {
-            if (!cpy.nodes[i].erased) all.insert(i);
+            all.insert(i);
         }
-        
-        if (all.empty()) {
-			tensorObject->reset({}, DONT_SET_ZERO());
-            tensorObject->operator[]({}) = cpy.factor;
-		} else {
-			size_t res = cpy.contract(all);
-			
-			std::vector<Index> externalOrder;
-			for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
-			
-			std::vector<Index> internalOrder;
-			for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
-				REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
-				internalOrder.emplace_back(externalOrder[link.indexPosition]);
-			}
-			
-			const std::vector<Index> myIndices = get_assigned_indices(get_eval_degree(rightIndices));
-			std::vector<Index> outOrder;
-			for (const Index &idx : myIndices) {
-				REQUIRE(misc::contains(rightIndices, idx), "Every index on the LHS must appear somewhere on the RHS");
-				size_t spanSum = 0;
-				for (size_t j = 0; rightIndices[j] != idx; ++j) {
-					spanSum += rightIndices[j].span;
-				}
-				
-				for (size_t i=0; i < idx.span; ++i) {
-					outOrder.push_back(externalOrder[spanSum+i]);
-				}
-			}
+
+		size_t res = cpy.contract(all);
 		
-			(*tensorObject)(outOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
+		std::vector<Index> externalOrder;
+		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
+		
+		std::vector<Index> internalOrder;
+		for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
+			REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
+			internalOrder.emplace_back(externalOrder[link.indexPosition]);
 		}
-    }
+		
+		const std::vector<Index> myIndices = get_assigned_indices(get_eval_degree(rightIndices));
+		std::vector<Index> outOrder;
+		for (const Index &idx : myIndices) {
+			REQUIRE(misc::contains(rightIndices, idx), "Every index on the LHS must appear somewhere on the RHS");
+			size_t spanSum = 0;
+			for (size_t j = 0; rightIndices[j] != idx; ++j) {
+				spanSum += rightIndices[j].span;
+			}
+			
+			for (size_t i=0; i < idx.span; ++i) {
+				outOrder.push_back(externalOrder[spanSum+i]);
+			}
+		}
+	
+		(*tensorObject)(outOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
+	}
 
     
     template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>& _rhs) {
@@ -121,14 +116,14 @@ namespace xerus {
     
     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
         TensorNetwork *res = _rhs.tensorObjectReadOnly->get_copy();
-        res->factor *= _factor;
+        *res *= _factor;
         IndexedTensorMoveable<TensorNetwork> result(res, _rhs.indices);
         return result;
     }
     
     IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&  _rhs) {
         IndexedTensorMoveable<TensorNetwork> result(std::move(_rhs));
-        result.tensorObject->factor *= _factor;
+        *result.tensorObject *= _factor;
         return result;
     }
     
@@ -180,15 +175,15 @@ namespace xerus {
     }
     
     IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		_lhs.tensorObject->factor *= -1;
+		*_lhs.tensorObject *= -1.0;
 		return (-1)*operator+(std::move(_lhs), _rhs);
 	}
     IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		_rhs.tensorObject->factor*=-1;
+		*_rhs.tensorObject *= -1.0;
 		return operator+(std::move(_rhs), _lhs);
 	} 
     IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		_rhs.tensorObject->factor*=-1;
+		*_rhs.tensorObject *= -1.0;
 		return operator+(std::move(_rhs), std::move(_lhs));
 	}
 }
