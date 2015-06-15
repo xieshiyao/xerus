@@ -91,14 +91,14 @@ namespace xerus {
         GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
         GREEDY(greedy_r, -r)
 		GREEDY(greedy_littlestep, (n*m<(n+m)*r? -1e10 + n*m*r : n*m-(n+m)*r))
-		GREEDY(greedy_bit_tensor, (n*m<(n+m)*r? -std::max(n,m)*r : n*m-(n+m)*r))
+		GREEDY(greedy_big_tensor, (n*m<(n+m)*r? -std::max(n,m)*r : n*m-(n+m)*r))
         
         static ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
 		static ContractionHeuristic::AddToVector greedy_nm_heuristic("greedy_nm", greedy_nm);
         static ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
         static ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
 		static ContractionHeuristic::AddToVector greedy_littlestep_heuristic("greedy_littlestep", greedy_littlestep);
-		static ContractionHeuristic::AddToVector greedy_bit_tensor_heuristic("greedy_bit_tensor", greedy_bit_tensor);
+		static ContractionHeuristic::AddToVector greedy_big_tensor_heuristic("greedy_big_tensor", greedy_big_tensor);
     }
 
 }
