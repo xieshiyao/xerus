@@ -19,7 +19,17 @@
 
 #pragma once
 
-#include <suitesparse/cs.h>
+#ifdef __has_include
+    #if __has_include(<cs.h>)
+        #include <cs.h>
+    #elif __has_include(<suitesparse/cs.h>)
+        #include <suitesparse/cs.h>
+	#else
+		#pragma error no SuiteSparse found
+    #endif
+#else
+    #include <cs.h>
+#endif
 
 #include "sparseTensor.h"
 
