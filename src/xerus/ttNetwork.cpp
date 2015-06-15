@@ -211,6 +211,7 @@ namespace xerus {
 		set_component(numComponents-1, std::move(nxtTensor));
 		
 		move_core(0); // TODO create with correct cannonicalization in the first place
+		component(0) *= _tensor.factor; // NOTE this needs to be removed if the loop above does not use low-level calls anymore
 		
 		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
 		REQUIRE(is_in_expected_format(), "ie");
