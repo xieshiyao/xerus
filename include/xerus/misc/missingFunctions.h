@@ -38,7 +38,7 @@
 
 /**
  * @def VLA(T, name)
- * @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but are created on the heap
+ * @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but is created on the heap.
  */
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); auto const & name = name##_store.get();
 
@@ -188,11 +188,10 @@ namespace xerus {
             return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
         }
 
-        ///@brief: Checks whether the absolute difference between @a _a and @a _b is smaller than @a _eps.
+        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|+|b|)) is smaller than @a _eps.
         template<class T>
         bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
-            bool horst = std::abs(_a-_b) <= _eps;
-            return horst;
+            return std::abs(_a-_b) <= _eps;
         }
     }
 }

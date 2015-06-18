@@ -85,10 +85,6 @@ UNIT_TEST(FullTensor, SVD_soft_thresholding,
     TEST(approx_equal(U, Us, 1e-12));
     TEST(approx_equal(V, Vs, 1e-12));
 	
-	LOG(bla, U.frob_norm() << " vs " << Us.frob_norm() << " => " << (U-Us).frob_norm());
-	LOG(bla, S.frob_norm() << " vs " << Ss.frob_norm() << " => " << (S-Ss).frob_norm());
-	LOG(bla, V.frob_norm() << " vs " << Vs.frob_norm() << " => " << (V-Vs).frob_norm());
-	
 	for(size_t x = 0; x < S.dimensions[0]; ++x) {
 		if(x < Ss.dimensions[0]) {
 			TEST(misc::approx_equal(Ss[{x,x}], std::max(0.0, S[{x, x}]-7.3), 3e-13));
