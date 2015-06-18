@@ -256,6 +256,20 @@ namespace xerus {
 		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
 		 */
         void round(int _maxRank);
+		
+		/** 
+		 * @brief Applies the soft threshholding operation to all ranks.
+		 * @param _tau the soft threshholding parameter to be applied. I.e. all singular values are reduced to max(0, Lambda_ui - _tau).
+		 */
+        void soft_threshold(const double _tau);
+		
+		/** 
+		 * @brief Applies soft threshholding operations to all ranks.
+		 * @param _taus the soft threshholding parameters to be applied. I.e. all singular values of the j-th matrification are reduced to max(0, Lambda_ui - _tau[j]).
+		 */
+        void soft_threshold(const std::vector<double>& _taus);
+		
+		
 
 		/** 
 		 * @brief Gets the ranks of the TTNetwork.
