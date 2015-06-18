@@ -137,23 +137,28 @@ namespace xerus {
         
         std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
         
-        if(reorderedBaseTensor->is_sparse()){
+		// Calculate the actual SVD
+        if(reorderedBaseTensor->is_sparse()) {
             LOG(fatal, "Sparse SVD not yet implemented.");
         } else {
             blasWrapper::svd(static_cast<FullTensor*>(U.tensorObject)->data.get(), tmpS.get(), static_cast<FullTensor*>(Vt.tensorObject)->data.get(), static_cast<FullTensor*>(reorderedBaseTensor.get())->data.get(), lhsSize, rhsSize);
         }
         
-        // Determine the real rank
-        for(size_t j = 1; j<rank; ++j) {
-            REQUIRE(tmpS[j] >= 0, "Singular Value must be >= 0");
-            if (tmpS[j] <= epsilon) {
+        // Account for hard threshold
+        rank = std::min(rank, maxRank);
+        
+        // Apply factor to the diagonal matrix
+        misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
+		
+		// Apply soft threshold and determine the real rank
+		tmpS[0] = std::max(0.0, tmpS[0] - softThreshold);
+		for(size_t j = 1; j < rank; ++j) {
+			tmpS[j] -= softThreshold;
+			if (tmpS[j] <= epsilon*tmpS[0]) {
                 rank = j;
                 break;
             }
-        }
-        
-        //Apply factor to the diagonal matrix 
-        misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
+		}
         
         // Create tensor from diagonal values
         S.tensorObject->reset(std::vector<size_t>(2, rank));

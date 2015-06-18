@@ -163,7 +163,6 @@ namespace xerus {
 		if (degree() == 0) {
 			REQUIRE(_position == 0, "Tried to access non-existing entry of TN");
 			REQUIRE(nodes.size() == 1, "Internal Error");
-			LOG(myNodeHasXXX, (*nodes[0].tensorObject).to_string());
 			return (*nodes[0].tensorObject)[0];
 		}
         std::vector<size_t> positions(degree());
