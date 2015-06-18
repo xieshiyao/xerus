@@ -104,3 +104,21 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TEST(approx_equal(B5,A5, 1e-14));
 )
 
+
+UNIT_TEST(TT, no_rounding,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+
+    Index i,j,k;
+	TTTensor a = TTTensor::construct_random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, rnd, dist);
+	TTTensor b(a);
+	a.round(2);
+	TEST(approx_equal(FullTensor(a),FullTensor(b)));
+	TTTensor c = TTTensor::construct_random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, rnd, dist);
+	a(i&0) = a(i&0) + 0.0*c(i&0);
+	LOG(unit_testk, a.ranks());
+	a.round(2);
+	LOG(unit_testk, frob_norm(b-a));
+	TEST(approx_equal(FullTensor(a),FullTensor(b)));
+)
+

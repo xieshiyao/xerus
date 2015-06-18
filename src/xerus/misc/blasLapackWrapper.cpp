@@ -336,16 +336,15 @@ namespace xerus {
             lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, _A, (int) _n, tau.get());
             CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
             
-            //Copy Q (_m x rank) into position, if Q is not to be constructed in place of A
-            if(_A != _Q) {
-                if(_m == _n) {
-                    misc::array_copy(_Q, _A, _m*_n);
-                } else {
-                    for(size_t row =0; row < _m; ++row) {
-                        misc::array_copy(_Q+row*rank, _A+row*_n, rank);
-                    }
-                }
-            }
+            // Copy Q (_m x rank) into position
+            if(_A != _Q && _m == _n) {
+				misc::array_copy(_Q, _A, _m*_n);
+            } 
+			if (_m != _n) {
+				for(size_t row =0; row < _m; ++row) {
+					misc::array_copy(_Q+row*rank, _A+row*_n, rank);
+				}
+			}
             
 			PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
         }

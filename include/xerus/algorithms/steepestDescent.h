@@ -48,12 +48,12 @@ namespace xerus {
 		
 		/// retraction that performs a HOSVD to project back onto the Manifold
 		struct HOSVDRetraction {
-			bool roundByRank;
+			bool roundByVector;
 			size_t rank;
-			value_t epsilon;
+			std::vector<size_t> rankVector;
 			void operator()(TTTensor &_U, const TTTensor &_change) const;
-			HOSVDRetraction(size_t _rank) : roundByRank(true), rank(_rank) {}
-			HOSVDRetraction(value_t _eps) : roundByRank(false), epsilon(_eps) {}
+			HOSVDRetraction(size_t _rank) : roundByVector(false), rank(_rank) {}
+			HOSVDRetraction(const std::vector<size_t> &_rank) : roundByVector(true), rank(~0ul), rankVector(_rank) {}
 		};
 		
 		/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
