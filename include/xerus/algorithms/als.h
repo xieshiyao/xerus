@@ -59,8 +59,8 @@ namespace xerus {
 		//TODO add local CG solver
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ALSVariant(uint _sites, value_t _minimumLocalResidual, std::function<void(const TensorNetwork &, Tensor &, const Tensor &)> _localSolver) 
-                : sites(_sites), numHalfSweeps(0), convergenceEpsilon(1e-6), 
+        ALSVariant(uint _sites, size_t _numHalfSweeps, value_t _minimumLocalResidual, std::function<void(const TensorNetwork &, Tensor &, const Tensor &)> _localSolver) 
+                : sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
                 minimumLocalResidual(_minimumLocalResidual), printProgress(false), 
                 useResidualForEndCriterion(false), preserveCorePosition(true), localSolver(_localSolver)
 		{
@@ -136,9 +136,9 @@ namespace xerus {
     };
 	
 	/// default variant of the single-site ALS algorithm using the lapack solver
-    const ALSVariant ALS(1, EPSILON, ALSVariant::lapack_solver);
+    const ALSVariant ALS(1, 0, EPSILON, ALSVariant::lapack_solver);
 	
 	/// default variant of the two-site DMRG algorithm using the lapack solver
-    const ALSVariant DMRG(2, EPSILON, ALSVariant::lapack_solver);
+    const ALSVariant DMRG(2, 0, EPSILON, ALSVariant::lapack_solver);
 }
 
