@@ -852,39 +852,34 @@ namespace xerus {
 		}
 	}
 	
-// 	template<bool isOperator>
-// 	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus) {
-// 		REQUIRE(is_valid_tt(), "Cannot apply soft thresholding to invalid TTNetwork.");
-// 		const size_t numComponents = degree()/N;
-// 		const bool initialCanonicalization = cannonicalized;
-// 		const size_t initialCorePosition = corePosition;
-// 		move_core(0);
-// 		
-// 		// Round all ranks directly
-// 		FullTensor X, U, S, Vt;
-// 		Index i1, i2, rl, rm, rr, r;
-// 		for(size_t i = 0; i < numComponents; ++i) {
-// 			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
-// 			(U(rl, i1, mr
-// 			
-// 		}
-// 		
-// 		// Move core back
-// 		move_core(initialCorePosition);
-// 		
-// 		// Round all ranks to the right
-// 		for(size_t i = initialCorePosition; i < numComponents; ++i) {
-// 			
-// 		}
-// 		
-// 		// Move core back if the TT was initally canonicalized
-// 		if(initialCanonicalization) {
-// 			move_core(initialCorePosition);
-// 		} else {
-// 			// We are canonicalized never the less.
-// 			cannonicalized = true;
-// 		}
-// 	}
+	template<bool isOperator>
+	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus) {
+		const size_t numComponents = degree()/N;
+		REQUIRE(is_valid_tt(), "Cannot apply soft thresholding to invalid TTNetwork.");
+		REQUIRE(_taus.size() == numComponents, "We need exactly " << numComponents << " taus but got " << _taus.size());
+		const bool initialCanonicalization = cannonicalized;
+		const size_t initialCorePosition = corePosition;
+		move_core(0);
+		
+		// Round all ranks directly
+		FullTensor X;
+		SparseTensor S;
+		Index i1, i2, rl, rm, rr;
+		for(size_t i = 0; i < numComponents; ++i) {
+			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
+			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i]);
+			component(i+1)(rl, i2, rr) = S(rl, rm) * component(i+1)(rm, i2, rr);
+			corePosition = i+1;
+		}
+		
+		// Move core back if the TT was initally canonicalized
+		if(initialCanonicalization) {
+			move_core(initialCorePosition);
+		} else {
+			// We are canonicalized never the less.
+			cannonicalized = true;
+		}
+	}
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::round(int _maxRank) {
