@@ -66,6 +66,41 @@ UNIT_TEST(FullTensor, SVD_Random_512x512,
     TEST(approx_equal(res4, A, 1e-14));
 )
 
+UNIT_TEST(FullTensor, SVD_soft_thresholding,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 10.0);
+
+    FullTensor A = FullTensor::construct_random({3,5,2,7,3,12}, rnd, dist);
+    FullTensor Ax, U, V, Us, Vs;
+    SparseTensor S, Ss;
+    
+    Index i, j, k, l, m, n, o, p, r, s;
+    
+    (U(i,j,k,o), S(o,p), V(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
+    (Us(i,j,k,o), Ss(o,p), Vs(p,l,m,n)) = SVD(A(i,j,k,l,m,n), xerus::EPSILON, 7.3);
+	
+	U.resize_dimension(U.degree()-1, Ss.dimensions[0]);
+	V.resize_dimension(0, Ss.dimensions[0]);
+	
+    TEST(approx_equal(U, Us, 1e-12));
+    TEST(approx_equal(V, Vs, 1e-12));
+	
+	LOG(bla, U.frob_norm() << " vs " << Us.frob_norm() << " => " << (U-Us).frob_norm());
+	LOG(bla, S.frob_norm() << " vs " << Ss.frob_norm() << " => " << (S-Ss).frob_norm());
+	LOG(bla, V.frob_norm() << " vs " << Vs.frob_norm() << " => " << (V-Vs).frob_norm());
+	
+	for(size_t x = 0; x < S.dimensions[0]; ++x) {
+		if(x < Ss.dimensions[0]) {
+			TEST(misc::approx_equal(Ss[{x,x}], std::max(0.0, S[{x, x}]-7.3), 3e-13));
+		} else {
+			TEST(S[{x,x}] <= 7.3);
+		}
+	}
+	
+	Ax(i,j,k,l,m,n) = U(i,j,k,o)* S(o,p)* V(p,l,m,n);
+	TEST(approx_equal(A, Ax, 1e-12));
+)
+
 UNIT_TEST(FullTensor, SVD_Random_Order_Six,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);

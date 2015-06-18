@@ -164,7 +164,7 @@ namespace xerus {
         S.tensorObject->reset(std::vector<size_t>(2, rank));
         if(S.tensorObject->is_sparse()) {
             for(size_t i = 0; i < rank; ++i) {
-                static_cast<FullTensor&>(*S.tensorObject)[{i,i}] = tmpS[i];
+                static_cast<SparseTensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
             }
         } else {
             value_t* const dataPtr =  static_cast<FullTensor*>(S.tensorObject)->data.get();
