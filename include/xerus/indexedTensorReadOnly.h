@@ -83,6 +83,10 @@ namespace xerus {
 // 		IndexedTensorMoveable<tensor_type> operator+(IndexedTensorMoveable<tensor_type>&& _other) const;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		///@brief Allows cast to value_t if the degree of the current object is equal to 0.
+		explicit operator value_t() const;
+		
         bool uses_tensor(const tensor_type *otherTensor) const;
         
         size_t degree() const;

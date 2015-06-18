@@ -59,7 +59,7 @@ namespace xerus {
 		leftStack.push_back(tmp);
 		for (size_t i=0; i<_U.degree()-1; ++i) {
 			FullTensor newLeft;
-			newLeft(j1,j2) = leftStack.back()(i1,i2) * _U.component(i)(i1,r,j1) * _change.component(i)(i2,r,j2);
+			newLeft(j1,j2) = leftStack.back()(i1,i2) * _U.get_component(i)(i1,r,j1) * _change.get_component(i)(i2,r,j2);
 			leftStack.emplace_back(std::move(newLeft));
 		}
 		TTTensor oldU(_U);
@@ -67,9 +67,9 @@ namespace xerus {
 		for (size_t i=_U.degree(); i>0; --i) {
 			const size_t currIdx = i-1;
 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
-			(*newComponent)(i1,r,j1) = oldU.component(currIdx)(i1,r,j1) + leftStack.back()(i1,i2) * _change.component(currIdx)(i2,r,j2) * right(j1,j2);
+			(*newComponent)(i1,r,j1) = oldU.get_component(currIdx)(i1,r,j1) + leftStack.back()(i1,i2) * _change.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 			_U.set_component(currIdx, std::move(newComponent));
-			right(j1,j2) = oldU.component(currIdx)(j1,r,i1) * _change.component(currIdx)(j2,r,i2) * right(i1,i2);
+			right(j1,j2) = oldU.get_component(currIdx)(j1,r,i1) * _change.get_component(currIdx)(j2,r,i2) * right(i1,i2);
 		}
 		_U.move_core(0, true);
 	}
@@ -88,7 +88,7 @@ namespace xerus {
 		auto updateResidualAndPerfdata = [&]() {
 			lastResidual = currResidual;
 			if (_Ap) {
-				residual(i&0) = _b(j&0) - _A(i/2,j/2)*_x(j&0);
+				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
 			}
@@ -117,9 +117,9 @@ namespace xerus {
 				// direction of change A*y
 				Ay(i&0) = _A(i/2,j/2) * y(j&0);
 				// optimal stepsize alpha = <res,Ay>/<Ay,Ay>
-				alpha = value_t(residual(i&0)*Ay(i&0)) / value_t(Ay(i&0)*Ay(i&0));
+				alpha = value_t(residual(i&0)*Ay(i&0)) / frob_norm(Ay);
 				// "optimal" change: alpha*y
-				y *= alpha;
+				y *= -alpha/1000;
 			} else {
 				y = residual;
 			}
@@ -129,6 +129,7 @@ namespace xerus {
 			updateResidualAndPerfdata();
 		}
 		
+		return currResidual;
 	}
 	
 }

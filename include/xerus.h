@@ -64,6 +64,7 @@
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttNetwork.h"
     #include "xerus/algorithms/als.h"
+    #include "xerus/algorithms/steepestDescent.h"
     #include "xerus/algorithms/decompositionAls.h"
 
 #endif

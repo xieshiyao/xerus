@@ -57,7 +57,6 @@ namespace xerus {
         static_cast<IndexedTensorWritable<tensor_type>&>(*this) = _rhs;
     }
     
-    
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensor<Tensor>;
     template class IndexedTensor<TensorNetwork>;

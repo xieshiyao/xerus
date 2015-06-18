@@ -73,6 +73,12 @@ namespace xerus {
         return result;
 	}
 	
+	template<class tensor_type>
+    IndexedTensorReadOnly<tensor_type>::operator value_t() const {
+		REQUIRE(degree() == 0, "cannot cast tensors of degree > 0 to value_t. did you mean frob_norm() or similar?");
+		return (*tensorObjectReadOnly)[0];
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     template<class tensor_type>
     bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
