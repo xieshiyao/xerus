@@ -35,10 +35,10 @@ namespace xerus {
 	void SteepestDescentVariant::HOSVDRetraction::operator()(TTTensor &_U, const TTTensor &_change) const {
 		static const Index i;
 		_U(i&0) = _U(i&0) + _change(i&0);
-		if (roundByRank) {
-			_U.round(rank);
+		if (roundByVector) {
+			_U.round(rankVector);
 		} else {
-			_U.round(epsilon);
+			_U.round(rank);
 		}
 	}
 	
@@ -70,7 +70,9 @@ namespace xerus {
 			(*newComponent)(i1,r,j1) = oldU.get_component(currIdx)(i1,r,j1) + leftStack.back()(i1,i2) * _change.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 			_U.set_component(currIdx, std::move(newComponent));
 			right(j1,j2) = oldU.get_component(currIdx)(j1,r,i1) * _change.get_component(currIdx)(j2,r,i2) * right(i1,i2);
+			leftStack.pop_back();
 		}
+		REQUIRE(_U.is_valid_tt(), "ie");
 		_U.move_core(0, true);
 	}
 	
@@ -97,17 +99,19 @@ namespace xerus {
 				_perfData->push_back(currResidual);
 			}
 			if (printProgress) {
-				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << "\r" << std::flush;
-				std::cout << "                                                                      \r"; // note: not flushed so it will only erase content on next output
+				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
+				          << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
+						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
+				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
 		updateResidualAndPerfdata();
 		TTTensor y, Ay;
 		value_t alpha;
-		while (stepCount <= numSteps 
-			   && currResidual > convergenceEpsilon
-			   && (lastResidual-currResidual) > convergenceEpsilon
-			   && std::abs(1-currResidual/lastResidual) > convergenceEpsilon) 
+		while ((_numSteps == 0 || stepCount < _numSteps)
+			   && currResidual > _convergenceEpsilon
+			   && (lastResidual-currResidual) > _convergenceEpsilon
+			   && std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
 		{
 			stepCount += 1;
 			
@@ -117,9 +121,9 @@ namespace xerus {
 				// direction of change A*y
 				Ay(i&0) = _A(i/2,j/2) * y(j&0);
 				// optimal stepsize alpha = <res,Ay>/<Ay,Ay>
-				alpha = value_t(residual(i&0)*Ay(i&0)) / frob_norm(Ay);
+				alpha = value_t(residual(i&0)*Ay(i&0)) / misc::sqr(frob_norm(Ay));
 				// "optimal" change: alpha*y
-				y *= -alpha/1000;
+				y *= 0;
 			} else {
 				y = residual;
 			}
