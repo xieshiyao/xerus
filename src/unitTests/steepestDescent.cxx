@@ -26,55 +26,44 @@ using namespace xerus;
 
 
 UNIT_TEST(SteepestDescent, random_operator,
-	std::mt19937_64 rnd;
-    rnd.seed(0xDEADBEEF);
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	const size_t d = 10;
-	const std::vector<size_t> stateDims(d, 2);
-	const std::vector<size_t> operatorDims(2*d, 2);
+	const size_t d = 7;
+	const std::vector<size_t> stateDims(d, 5);
+	const std::vector<size_t> operatorDims(2*d, 5);
 	
-	TTOperator A = TTOperator::construct_random(operatorDims, std::vector<size_t>(d-1, 2), rnd, dist);
-	TTTensor b = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,2), rnd, dist);
+	TTOperator A = TTOperator::construct_random(operatorDims, std::vector<size_t>(d-1, 4), rnd, dist);
+	TTTensor b = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
 	Index i,j,k;
 	b(i&0) = A(i/2,j/2)*b(j&0);
-	TTTensor initX = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,2), rnd, dist);
+	TTTensor initX = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
 	TTTensor x(initX);
-	std::vector<value_t> perfdata;
+	PerformanceData perfdata;
+	perfdata << "testcase with random operator\n";
 	
 	SteepestDescentVariant::HOSVDRetraction svdRet(2ul);
 	SteepestDescentVariant hosvdGrad(svdRet);
 	hosvdGrad.printProgress = true;
-	hosvdGrad(A,x,b,20000ul,&perfdata);
-	std::cout << "HOSVD: " << perfdata.size() << std::endl;
-	std::ofstream out("hosvd.dat");
-	for (value_t p : perfdata) {
-		out << p << std::endl;
-	}
-	out.close();
+	hosvdGrad(A,x,b,1000ul,perfdata);
+	std::cout << "HOSVD: " << perfdata.data.size() << " " << perfdata.data.back().elapsedTime << std::endl;
+	perfdata.dumpToFile("hosvd.dat");
+	
 	
 	SteepestDescentVariant alsGrad(SteepestDescentVariant::ALSRetraction);
 	alsGrad.printProgress = true;
-	perfdata.clear();
+	perfdata.reset();
 	x = initX;
-	alsGrad(A,x,b,20000ul, &perfdata);
-	std::cout << "ALS: " << perfdata.size() << std::endl;
-	out.open("als.dat");
-	for (value_t p : perfdata) {
-		out << p << std::endl;
-	}
-	out.close();
+	alsGrad(A,x,b,1000ul, perfdata);
+	std::cout << "ALS: " << perfdata.data.size()  << " " << perfdata.data.back().elapsedTime << std::endl;
+	perfdata.dumpToFile("als.dat");
 	
 	SteepestDescentVariant submanGrad(SteepestDescentVariant::SubmanifoldRetraction);
 	submanGrad.printProgress = true;
-	perfdata.clear();
+	perfdata.reset();
 	x = initX;
-	submanGrad(A,x,b,20000ul, &perfdata);
-	std::cout << "Submanifold: " << perfdata.size() << std::endl;
-// 	std::ofstream out("submani.dat");
-	out.open("submani.dat");
-	for (value_t p : perfdata) {
-		out << p << std::endl;
-	}
-	out.close();
+	submanGrad(A,x,b,1000ul, perfdata);
+	std::cout << "Submanifold: " << perfdata.data.size()  << " " << perfdata.data.back().elapsedTime << std::endl;
+	perfdata.dumpToFile("submani.dat");
 )

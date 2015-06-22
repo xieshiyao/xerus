@@ -25,6 +25,7 @@
 #pragma once
 
 #include "../ttNetwork.h"
+#include "../performanceData.h"
 
 namespace xerus {
 
@@ -35,7 +36,7 @@ namespace xerus {
 	*/
 	class SteepestDescentVariant {
 	protected:
-		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const;
+		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
 	public:
 		size_t numSteps; ///< maximum number of steps to perform. set to 0 for infinite
@@ -81,7 +82,7 @@ namespace xerus {
 		* @param _perfData vector of performance data (residuals after every microiteration)
 		* @returns the residual @f$|Ax-b|@f$ of the final @a _x
 		*/
-		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData = nullptr) const {
+		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const {
 			return solve(&_A, _x, _b, numSteps, _convergenceEpsilon, _perfData);
 		}
 		
@@ -94,7 +95,7 @@ namespace xerus {
 		* @param _perfData vector of performance data (residuals after every microiteration)
 		* @returns the residual @f$|Ax-b|@f$ of the final @a _x
 		*/
-		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps,  std::vector<value_t> *_perfData = nullptr) const {
+		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_perfData = NoPerfData) const {
 			return solve(&_A, _x, _b, _numSteps, convergenceEpsilon, _perfData);
 		}
 		
@@ -106,7 +107,7 @@ namespace xerus {
 		* @param _perfData vector of performance data (residuals after every microiteration)
 		* @returns the residual @f$|Ax-b|@f$ of the final @a _x
 		*/
-		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, std::vector<value_t> *_perfData = nullptr) const {
+		double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_perfData = NoPerfData) const {
 			return solve(&_A, _x, _b, numSteps, convergenceEpsilon, _perfData);
 		}
 		
@@ -118,7 +119,7 @@ namespace xerus {
 		* @param _perfData vector of performance data (residuals after every microiteration)
 		* @returns the residual @f$|x-b|@f$ of the final @a _x
 		*/
-		double operator()(TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData = nullptr) const {
+		double operator()(TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const {
 			return solve(nullptr, _x, _b, numSteps, _convergenceEpsilon, _perfData);
 		}
 		
@@ -130,12 +131,12 @@ namespace xerus {
 		* @param _perfData vector of performance data (residuals after every microiteration)
 		* @returns the residual @f$|x-b|@f$ of the final @a _x
 		*/
-		double operator()(TTTensor &_x, const TTTensor &_b, size_t _numSteps,  std::vector<value_t> *_perfData = nullptr) const {
+		double operator()(TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_perfData = NoPerfData) const {
 			return solve(nullptr, _x, _b, _numSteps, convergenceEpsilon, _perfData);
 		}
 		
 		double operator()(TTTensor &_x, const TTTensor &_b) const {
-			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, nullptr);
+			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, NoPerfData);
 		}
 	};
 	

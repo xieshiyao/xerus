@@ -48,6 +48,7 @@ namespace xerus {
 		TTTensor target;
 		target(i&0) = _U(i&0) + _change(i&0);
 		roundingALS(_U, target);
+// 		_U.move_core(0);
 	}
 	
 	//TODO this should use low-level calls and then be part of FullTensor
@@ -108,13 +109,22 @@ namespace xerus {
 	
 	
 	
-	value_t SteepestDescentVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const {
+	value_t SteepestDescentVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		const TTOperator &_A = *_Ap;
 		static const Index i,j;
 		size_t stepCount=0;
 		TTTensor residual;
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
+		
+		_perfData << "Steepest Descent for A*x = b, x.dimensions: " << _x.dimensions << '\n'
+				  << "A.ranks: " << _A.ranks() << '\n'
+				  << "x.ranks: " << _x.ranks() << '\n'
+				  << "b.ranks: " << _b.ranks() << '\n'
+				  << "maximum number of steps: " << _numSteps << '\n'
+				  << "convergence epsilon: " << _convergenceEpsilon << '\n';
+		_perfData.start();
+		
 		auto updateResidualAndPerfdata = [&]() {
 			lastResidual = currResidual;
 			if (_Ap) {
@@ -123,9 +133,7 @@ namespace xerus {
 				residual = _b - _x;
 			}
 			currResidual = frob_norm(residual);
-			if (_perfData) {
-				_perfData->push_back(currResidual);
-			}
+			_perfData.add(currResidual);
 			if (printProgress && stepCount%37==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 				          << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
