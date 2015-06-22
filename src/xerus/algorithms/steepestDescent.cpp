@@ -148,8 +148,8 @@ namespace xerus {
 				y(i&0) = _A(j/2,i/2) * residual(j&0);
 				// direction of change A*y
 				Ay(i&0) = _A(i/2,j/2) * y(j&0);
-				// "optimal" stepsize alpha = <res,Ay>/<Ay,Ay>
-				alpha = value_t(residual(i&0)*Ay(i&0)) / misc::sqr(frob_norm(Ay));
+				// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
+				alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
 				// "optimal" change: alpha*y
 				y *= alpha;
 			} else {

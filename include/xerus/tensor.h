@@ -130,27 +130,27 @@ namespace xerus {
         virtual void ensure_own_data_and_apply_factor() = 0;
         
         /** 
-		 * @brief Resets the tensor to the given dimensions and undefined entries.
+		 * @brief Resets the tensor to the given dimensions, factor equals one and undefined entries.
 		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) = 0;
         
 		/** 
-		 * @brief Resets the tensor to the given dimensions and undefined entries.
+		 * @brief Resets the tensor to the given dimensions, factor equals one and undefined entries.
 		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) = 0;
         
 		/** 
-		 * @brief Resets the tensor to the given dimensions and all entries equals zero.
+		 * @brief Resets the tensor to the given dimensions, factor equals one and all entries equals zero.
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(const std::vector<size_t>&  _newDim) = 0;
         
 		/** 
-		 * @brief Resets the tensor to the given dimensions and all entries equals zero.
+		 * @brief Resets the tensor to the given dimensions, factor equals one and all entries equals zero.
 		 * @param _newDim the new dimensions the tensor shall have
 		 */
         virtual void reset(      std::vector<size_t>&& _newDim) = 0;
@@ -290,6 +290,13 @@ namespace xerus {
 		 * @return the number of non-zero entries found.
 		 */
         virtual size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+		
+		
+		/** 
+		 * @brief Checks the tensor for illegal entries, e.g. nan, inf,...
+		 * @return TRUE there are no invalid entries, FALSE otherwise.
+		 */
+        virtual bool all_entries_valid() const = 0;
         
 		/** 
 		 * @brief Approximates the cost to reorder the tensor.

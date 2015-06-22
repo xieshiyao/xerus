@@ -206,9 +206,22 @@ namespace xerus {
             REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");
             
             PA_START;
-            
+            std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+			misc::array_copy(tmpA.get(), _A, _m*_n);
+			
             int lapackAnswer = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', (int) _m, (int) _n, _A, (int) _n, _S, _U, (int) std::min(_m, _n), _Vt, (int) _n);
             CHECK(lapackAnswer == 0, error, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
+            CHECK(lapackAnswer == 0, error, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << (int) _m << ", " << (int) _n << ", " << _A << ", " << (int) _n <<", " 
+			<< _S <<", " << _U << ", " << (int) std::min(_m, _n) << ", " << _Vt << ", " << (int) _n << ");");
+			if(lapackAnswer != 0) {
+				std::cout << "A was: " << std::endl;
+				for(size_t i=0; i < _m; ++i) {
+					for(size_t j=0; j < _n; ++j) {
+						std::cout << tmpA[i*_n+j];
+					}
+					std::cout << std::endl;
+				}
+			}
             
 			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
         }

@@ -305,6 +305,8 @@ namespace xerus {
         
         virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
         
+		virtual bool all_entries_valid() const override;
+		
         virtual value_t frob_norm() const;
         
         virtual std::string to_string() const override;
