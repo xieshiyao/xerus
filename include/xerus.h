@@ -63,6 +63,7 @@
     #include "xerus/indexedTensor_TN_operators.h"
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttNetwork.h"
+	#include "xerus/performanceData.h"
     #include "xerus/algorithms/als.h"
     #include "xerus/algorithms/steepestDescent.h"
     #include "xerus/algorithms/decompositionAls.h"
