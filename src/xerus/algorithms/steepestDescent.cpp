@@ -50,17 +50,32 @@ namespace xerus {
 		roundingALS(_U, target);
 	}
 	
+	//TODO this should use low-level calls and then be part of FullTensor
+	static FullTensor pseudoInverse(const FullTensor &_A) {
+		static const Index i1,i2,i3,i4;
+		FullTensor U,S,V;
+		(U(i1,i2), S(i2,i3), V(i3,i4)) = SVD(_A(i1,i4));
+		S.modify_diag_elements([](value_t &a){a = 1/a;});
+		FullTensor res;
+		res(i1,i4) = V(i2,i1) * S(i2,i3) * U(i4,i3);
+		return res;
+	}
+	
 	void SteepestDescentVariant::SubmanifoldRetraction(TTTensor &_U, const TTTensor &_change) {
 		REQUIRE(_U.cannonicalized && _U.corePosition == 0, "SubmanifoldRetraction is only implemented for core position 0 at the moment");
 		REQUIRE(_U.dimensions == _change.dimensions, "");
 		static const Index i1,i2,j1,j2,r,s,jx;
-		std::vector<FullTensor> leftStack;
+		std::vector<FullTensor> leftStackUV;
+		std::vector<FullTensor> leftStackUU;
 		FullTensor tmp({1,1}, [](){return 1.0;});
-		leftStack.push_back(tmp);
+		leftStackUV.push_back(tmp);
+		leftStackUU.push_back(tmp);
 		for (size_t i=0; i<_U.degree()-1; ++i) {
 			FullTensor newLeft;
-			newLeft(j1,j2) = leftStack.back()(i1,i2) * _U.get_component(i)(i1,r,j1) * _change.get_component(i)(i2,r,j2);
-			leftStack.emplace_back(std::move(newLeft));
+			newLeft(j1,j2) = leftStackUV.back()(i1,i2) * _U.get_component(i)(i1,r,j1) * _change.get_component(i)(i2,r,j2);
+			leftStackUV.emplace_back(std::move(newLeft));
+			newLeft(j1,j2) = leftStackUU.back()(i1,i2) * _U.get_component(i)(i1,r,j1) * _U.get_component(i)(i2,r,j2);
+			leftStackUU.emplace_back(std::move(newLeft));
 		}
 		TTTensor oldU(_U);
 		FullTensor right(tmp);
@@ -70,7 +85,7 @@ namespace xerus {
 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
 			const Tensor &UComp = oldU.component(currIdx);
 			FullTensor V;
-			V(i1,r,j1) = leftStack.back()(i1,i2) * _change.get_component(currIdx)(i2,r,j2) * right(j1,j2); // 
+			V(i1,r,j1) = pseudoInverse(leftStackUU.back())(i1,s) * leftStackUV.back()(s,i2) * _change.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 			if (i!=_U.degree()) {
 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
 			}
@@ -78,15 +93,15 @@ namespace xerus {
 				UTV(i1,i2) = V(i1,r,j1) * UComp(i2,r,j1);
 				V(i1,r,j1) = V(i1,r,j1) - UTV(i1,s) * UComp(s,r,j1);
 			}
-			(*newComponent)(i1,r,j1) = (UComp(i1,r,jx) + V(i1,r,jx)) * tmp(jx,j1);
-			(tmp(i1,s), (*newComponent)(s,r,j1)) = RQ((*newComponent)(i1,r,j1));
+			(*newComponent)(i1,r,j1) = (UComp(i1,r,j1) + V(i1,r,j1));
 			_U.set_component(currIdx, std::move(newComponent));
 			right(j1,j2) = oldU.get_component(currIdx)(j1,r,i1) * _change.get_component(currIdx)(j2,r,i2) * right(i1,i2);
-			leftStack.pop_back();
+			leftStackUV.pop_back();
+			leftStackUU.pop_back();
 		}
 		REQUIRE(_U.is_valid_tt(), "ie");
-		_U.assume_core_position(0);
-// 		_U.move_core(0, true);
+// 		_U.assume_core_position(0);
+		_U.move_core(0, true);
 	}
 	
 	
@@ -111,10 +126,10 @@ namespace xerus {
 			if (_perfData) {
 				_perfData->push_back(currResidual);
 			}
-			if (printProgress) {
+			if (printProgress && stepCount%37==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 				          << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\n" << std::flush;
+						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
 				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
@@ -123,7 +138,7 @@ namespace xerus {
 		value_t alpha;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			   && currResidual > _convergenceEpsilon
-// 			   && (lastResidual-currResidual) > _convergenceEpsilon
+			   && (lastResidual-currResidual) > _convergenceEpsilon
 			   && std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
 		{
 			stepCount += 1;
