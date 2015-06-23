@@ -148,20 +148,31 @@ namespace xerus {
 		value_t alpha;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			   && currResidual > _convergenceEpsilon
-			   && (lastResidual-currResidual) > _convergenceEpsilon
+			   && std::abs(lastResidual-currResidual) > _convergenceEpsilon
 			   && std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
 		{
 			stepCount += 1;
 			
 			if (_Ap) {
-				// search direction: y = A^T(b-Ax)
-				y(i&0) = _A(j/2,i/2) * residual(j&0);
-				// direction of change A*y
-				Ay(i&0) = _A(i/2,j/2) * y(j&0);
-				// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
-				alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
-				// "optimal" change: alpha*y
-				y *= alpha;
+				if (assumeSymmetricPositiveDefiniteOperator) {
+					// search direction: y = b-Ax
+					y = residual;
+					// direction of change A*y
+					Ay(i&0) = _A(i/2,j/2) * y(j&0);
+					// "optimal" stepsize alpha = <y,y>/<y,Ay>
+					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
+					// "optimal" change: alpha*y
+					y *= alpha;
+				} else {
+					// search direction: y = A^T(b-Ax)
+					y(i&0) = _A(j/2,i/2) * residual(j&0);
+					// direction of change A*y
+					Ay(i&0) = _A(i/2,j/2) * y(j&0);
+					// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
+					alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
+					// "optimal" change: alpha*y
+					y *= alpha;
+				}
 			} else {
 				y = residual;
 			}

@@ -25,6 +25,7 @@
 #pragma once
 #include <string>
 #include <fstream>
+#include <map>
 #include "basic.h"
 #include "misc/timeMeasure.h"
 
@@ -41,12 +42,23 @@ public:
 		DataPoint(size_t _itrCount, size_t _time, value_t _res) 
 			: iterationCount(_itrCount), elapsedTime(_time), residual(_res) {}
 	};
+	struct Histogram {
+		value_t base;
+		std::map<int, size_t> buckets;
+		size_t totalTime;
+		
+		///@brief creates a histogram of convergence rates based on the data given. assumes that the limit of the residuals is equal to 0!
+		explicit Histogram(const std::vector<DataPoint> &_data, value_t _base);
+		explicit Histogram(value_t _base);
+		Histogram operator+=(const Histogram &_other);
+		void dump_to_file(const std::string &_fileName) const;
+	};
 	std::string additionalInformation;
 	std::vector<DataPoint> data;
 	size_t startTime;
 	bool isLogging;
 	
-	PerformanceData(bool logging=true) : startTime(~0ul), isLogging(logging) {}
+	explicit PerformanceData(bool logging=true) : startTime(~0ul), isLogging(logging) {}
 	
 	void start() {
 		startTime = misc::uTime();
@@ -73,7 +85,9 @@ public:
 		return *this;
 	}
 	
-	void dumpToFile(const std::string &_fileName) const;
+	void dump_to_file(const std::string &_fileName) const;
+	
+	Histogram get_histogram(value_t _base) const;
 };
 
 extern PerformanceData NoPerfData;

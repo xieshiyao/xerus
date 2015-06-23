@@ -42,6 +42,7 @@ namespace xerus {
 		size_t numSteps; ///< maximum number of steps to perform. set to 0 for infinite
 		value_t convergenceEpsilon; ///< default value for the change in the residual at which the algorithm assumes it is converged
 		bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
+		bool assumeSymmetricPositiveDefiniteOperator; ///< calculates the gradient as b-Ax instead of A^T(b-Ax)
 		
 		std::function<void(TTTensor &, const TTTensor &)> retraction; ///< the retraction to project from point + tangent vector to a new point on the manifold
 		
@@ -64,8 +65,9 @@ namespace xerus {
 		static void SubmanifoldRetraction(TTTensor &_U, const TTTensor &_change);
 		
 		/// fully defining constructor. alternatively SteepestDescentVariant can be created by copying a predefined variant and modifying it
-		SteepestDescentVariant(size_t _numSteps, value_t _convergenceEpsilon, std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon), retraction(_retraction)
+		SteepestDescentVariant(size_t _numSteps, value_t _convergenceEpsilon, bool _symPosOp, std::function<void(TTTensor &, const TTTensor &)> _retraction)
+				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon),
+				  assumeSymmetricPositiveDefiniteOperator(_symPosOp), retraction(_retraction)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
@@ -141,6 +143,6 @@ namespace xerus {
 	};
 	
 	/// default variant of the steepest descent algorithm using the lapack solver
-	const SteepestDescentVariant SteepestDescent(0, 1e-8, SteepestDescentVariant::SubmanifoldRetraction);
+	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SteepestDescentVariant::SubmanifoldRetraction);
 }
 

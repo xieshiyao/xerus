@@ -25,8 +25,45 @@
 #include <string>
 #include <fstream>
 #include <xerus/performanceData.h>
+#include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
+	
+	PerformanceData::Histogram::Histogram(const std::vector<DataPoint> &_data, value_t _base) : base(_base), totalTime(0) {
+		for (size_t i=1; i<_data.size(); ++i) {
+			if (_data[i].residual >= _data[i-1].residual) {
+				continue;
+			}
+			// assume x_2 = x_1 * 2^(-alpha * delta-t)
+			value_t relativeChange = _data[i].residual/_data[i-1].residual;
+			value_t exponent = log(relativeChange) / log(2);
+			size_t delta_t = _data[i].elapsedTime - _data[i-1].elapsedTime;
+			value_t rate = - exponent / delta_t;
+			int logRate = int(log(rate)/log(base));
+			buckets[logRate] += delta_t;
+			totalTime += delta_t;
+		}
+	}
+	
+	PerformanceData::Histogram::Histogram(value_t _base) : base(_base), totalTime(0) {}
+	
+	PerformanceData::Histogram PerformanceData::Histogram::operator+=(const Histogram &_other) {
+		REQUIRE(misc::approx_equal(_other.base, base), "only histograms of identical base can be added");
+		for (const auto &h : _other.buckets) {
+			buckets[h.first] += h.second;
+		}
+		totalTime += _other.totalTime;
+		return *this;
+	}
+	
+	void PerformanceData::Histogram::dump_to_file(const std::string &_fileName) const {
+		std::ofstream out(_fileName);
+		for (auto &h : buckets) {
+			out << pow(base, h.first) << " " << double(h.second)/totalTime << '\n';
+		}
+		out.close();
+	}
+	
 	
 	void PerformanceData::add(size_t _itrCount, value_t _residual) {
 		if (isLogging) {
@@ -45,7 +82,7 @@ namespace xerus {
 		}
 	}
 
-	void PerformanceData::dumpToFile(const std::string &_fileName) const {
+	void PerformanceData::dump_to_file(const std::string &_fileName) const {
 		std::string header;
 		header += "# ";
 		header += additionalInformation;
@@ -58,6 +95,11 @@ namespace xerus {
 		}
 		out.close();
 	}
+	
+	PerformanceData::Histogram PerformanceData::get_histogram(value_t _base) const {
+		return Histogram(data, _base);
+	}
+
 
 	PerformanceData NoPerfData(false);
 

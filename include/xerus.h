@@ -40,6 +40,7 @@
     #include "xerus/misc/simpleNumerics.h"
     #include "xerus/misc/timeMeasure.h"
     #include "xerus/misc/performanceAnalysis.h"
+	#include "xerus/misc/exceptions.h"
 
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"

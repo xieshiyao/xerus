@@ -31,39 +31,71 @@ UNIT_TEST(SteepestDescent, random_operator,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
 	const size_t d = 7;
-	const std::vector<size_t> stateDims(d, 5);
-	const std::vector<size_t> operatorDims(2*d, 5);
+	const std::vector<size_t> stateDims(d, 2);
+	const std::vector<size_t> operatorDims(2*d, 2);
 	
-	TTOperator A = TTOperator::construct_random(operatorDims, std::vector<size_t>(d-1, 4), rnd, dist);
-	TTTensor b = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
 	Index i,j,k;
-	b(i&0) = A(i/2,j/2)*b(j&0);
-	TTTensor initX = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
-	TTTensor x(initX);
 	PerformanceData perfdata;
-	perfdata << "testcase with random operator\n";
 	
 	SteepestDescentVariant::HOSVDRetraction svdRet(2ul);
 	SteepestDescentVariant hosvdGrad(svdRet);
 	hosvdGrad.printProgress = true;
-	hosvdGrad(A,x,b,1000ul,perfdata);
-	std::cout << "HOSVD: " << perfdata.data.size() << " " << perfdata.data.back().elapsedTime << std::endl;
-	perfdata.dumpToFile("hosvd.dat");
-	
+	hosvdGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
 	SteepestDescentVariant alsGrad(SteepestDescentVariant::ALSRetraction);
 	alsGrad.printProgress = true;
-	perfdata.reset();
-	x = initX;
-	alsGrad(A,x,b,1000ul, perfdata);
-	std::cout << "ALS: " << perfdata.data.size()  << " " << perfdata.data.back().elapsedTime << std::endl;
-	perfdata.dumpToFile("als.dat");
+	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
 	SteepestDescentVariant submanGrad(SteepestDescentVariant::SubmanifoldRetraction);
 	submanGrad.printProgress = true;
-	perfdata.reset();
-	x = initX;
-	submanGrad(A,x,b,1000ul, perfdata);
-	std::cout << "Submanifold: " << perfdata.data.size()  << " " << perfdata.data.back().elapsedTime << std::endl;
-	perfdata.dumpToFile("submani.dat");
+	submanGrad.assumeSymmetricPositiveDefiniteOperator = true;
+	
+	ALSVariant ALSb(ALS);
+	ALSb.printProgress = true;
+	ALSb.useResidualForEndCriterion = true;
+	
+	PerformanceData::Histogram hosvdHist(0.9), gradalsHist(0.9), submaniHist(0.9), alsHist(0.9);
+	
+	
+	
+	while (true) {
+		TTOperator A = TTOperator::construct_random(operatorDims, std::vector<size_t>(d-1, 2), rnd, dist);
+		A(i/2, j/2) = A(i/2, k/2) * A(j/2, k/2);
+		TTTensor b = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+		b(i&0) = A(i/2,j/2)*b(j&0);
+		TTTensor initX = TTTensor::construct_random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+		TTTensor x(initX);
+		
+		try {
+			perfdata.reset();
+			hosvdGrad(A,x,b,1000ul,perfdata);
+			std::cout << "HOSVD: " << perfdata.data.size() << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
+			hosvdHist += perfdata.get_histogram(0.9);
+			hosvdHist.dump_to_file("hosvd.dat");
+			
+			perfdata.reset();
+			x = initX;
+			alsGrad(A,x,b,1000ul, perfdata);
+			std::cout << "grad(ALS): " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
+			gradalsHist += perfdata.get_histogram(0.9);
+			gradalsHist.dump_to_file("gradals.dat");
+			
+			perfdata.reset();
+			x = initX;
+			submanGrad(A,x,b,1000ul, perfdata);
+			std::cout << "Submanifold: " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
+			submaniHist += perfdata.get_histogram(0.9);
+			submaniHist.dump_to_file("submani.dat");
+			
+			perfdata.reset();
+			x = initX;
+			ALSb(A,x,b,100ul, perfdata);
+			std::cout << "ALS: " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
+			alsHist += perfdata.get_histogram(0.9);
+			alsHist.dump_to_file("als.dat");
+		} catch (xerus::misc::generic_error &) {
+			
+		}
+	}
+	
 )
