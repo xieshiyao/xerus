@@ -96,7 +96,9 @@ namespace xerus {
 			}
 			(*newComponent)(i1,r,j1) = (UComp(i1,r,j1) + V(i1,r,j1));
 			_U.set_component(currIdx, std::move(newComponent));
-			right(j1,j2) = oldU.get_component(currIdx)(j1,r,i1) * _change.get_component(currIdx)(j2,r,i2) * right(i1,i2);
+			if (currIdx != 0) {
+				right(j1,j2) = oldU.get_component(currIdx)(j1,r,i1) * _change.get_component(currIdx)(j2,r,i2) * right(i1,i2);
+			}
 			leftStackUV.pop_back();
 			leftStackUU.pop_back();
 		}
