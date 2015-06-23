@@ -30,17 +30,18 @@ UNIT_TEST(Algorithm, largestEntry,
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
     
-    Index k,l,m,n,o,p;
-	const size_t D = 10;
+	const size_t D = 28;
+	const size_t N = 2;
     
-	const std::vector<size_t> stateDims(D, 2);
+	const std::vector<size_t> stateDims(D, N);
 	
-    TTTensor X = TTTensor::construct_random(stateDims, 4, rnd, dist);
+    TTTensor X = TTTensor::construct_random(stateDims, 3, rnd, dist);
 	X /= X.frob_norm();
+	
 	FullTensor fullX(X);
 	
 	size_t posA = 0, posB = 0;
-	
+	LOG(creation, "finished");
 	for(size_t i = 1; i < fullX.size; ++i) {
 		if(std::abs(fullX[i]) > std::abs(fullX[posA])) {
 			posB = posA;
@@ -49,19 +50,28 @@ UNIT_TEST(Algorithm, largestEntry,
 	}
 	LOG(largestTwo, fullX[posA] << " and " << fullX[posB]);
 	
-	const double st = (std::abs(fullX[posA])-std::abs(fullX[posB]))/20;
-// 	LOG(bla, "SoftT: " << st);
+	const double st = (std::abs(fullX[posA])-std::abs(fullX[posB]))/250;
 	
-	while(true) {
+	while(misc::sum(X.ranks()) >= D) { 
 		X = TTTensor::entrywise_product(X, X);
 		X.soft_threshold(st);
-		LOG(before, X.ranks() << " --- " << X.frob_norm());
 		X /= X.frob_norm();
 		LOG(after, X.ranks() << " --- " << X.frob_norm());
-		
-		if(misc::sum(X.ranks()) == D-1) {
-			LOG(finished, "Wuhu");
-			break;
-		}
 	}
+	
+	size_t position = 0;
+	size_t factor = misc::pow(N, D-1);
+	for(size_t c = 0; c < D; ++c) {
+		size_t maxPos = 0;
+		for(size_t i = 1; i < N; ++i) {
+			if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
+				maxPos = i;
+			}
+		}
+		position += maxPos*factor;
+		factor /= N;
+	}
+	
+	LOG(ResultEntry, fullX[position]);
+	TEST(position == posA);
 )
