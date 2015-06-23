@@ -19,7 +19,7 @@
 
 /**
  * @file
- * @brief Header file for the steepest descent algorithms.
+ * @brief Header file for the CG algorithm.
  */
 
 #pragma once
@@ -31,33 +31,33 @@
 namespace xerus {
 
 	/**
-	* @brief Wrapper class for all steepest descent variants
+	* @brief Wrapper class for all CG variants
 	* @note only implemented for TTTensors at the moment.
 	* @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
 	*/
-	class SteepestDescentVariant {
+	class CGVariant {
 	protected:
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
 	public:
 		size_t numSteps; ///< maximum number of steps to perform. set to 0 for infinite
+		size_t restartInterval; ///< restarts the algorithm every N steps. set to 0 to never restart
 		value_t convergenceEpsilon; ///< default value for the change in the residual at which the algorithm assumes it is converged
 		bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
-		bool assumeSymmetricPositiveDefiniteOperator; ///< calculates the gradient as b-Ax instead of A^T(b-Ax)
 		
 		std::function<void(TTTensor &, const TTTensor &)> retraction; ///< the retraction to project from point + tangent vector to a new point on the manifold
 		
 		// TODO preconditioner
 		
-		/// fully defining constructor. alternatively SteepestDescentVariant can be created by copying a predefined variant and modifying it
-		SteepestDescentVariant(size_t _numSteps, value_t _convergenceEpsilon, bool _symPosOp, std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon),
-				  assumeSymmetricPositiveDefiniteOperator(_symPosOp), retraction(_retraction)
+		/// fully defining constructor. alternatively CGVariant can be created by copying a predefined variant and modifying it
+		CGVariant(size_t _numSteps, size_t _restart, value_t _convergenceEpsilon, std::function<void(TTTensor &, const TTTensor &)> _retraction)
+				: numSteps(_numSteps), restartInterval(_restart), convergenceEpsilon(_convergenceEpsilon),
+				  retraction(_retraction)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
-		SteepestDescentVariant(std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), retraction(_retraction)
+		CGVariant(std::function<void(TTTensor &, const TTTensor &)> _retraction)
+				: numSteps(0), restartInterval(0), convergenceEpsilon(0.0), retraction(_retraction)
 		{ }
 		
 		/**
@@ -128,6 +128,6 @@ namespace xerus {
 	};
 	
 	/// default variant of the steepest descent algorithm using the lapack solver
-	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetraction);
+	const CGVariant CG(0, 0, 1e-8, SubmanifoldRetraction);
 }
 

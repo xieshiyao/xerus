@@ -30,23 +30,26 @@ UNIT_TEST(SteepestDescent, random_operator,
 	std::mt19937_64 rnd(rd());
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	const size_t d = 7;
-	const std::vector<size_t> stateDims(d, 2);
-	const std::vector<size_t> operatorDims(2*d, 2);
+	const size_t d = 10;
+	const std::vector<size_t> stateDims(d, 5);
+	const std::vector<size_t> operatorDims(2*d, 5);
 	
 	Index i,j,k;
 	PerformanceData perfdata;
 	
-	SteepestDescentVariant::HOSVDRetraction svdRet(2ul);
+	HOSVDRetraction svdRet(2ul);
 	SteepestDescentVariant hosvdGrad(svdRet);
+// 	CGVariant hosvdGrad(svdRet);
 	hosvdGrad.printProgress = true;
 	hosvdGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-	SteepestDescentVariant alsGrad(SteepestDescentVariant::ALSRetraction);
+	SteepestDescentVariant alsGrad(ALSRetraction);
+// 	CGVariant alsGrad(ALSRetraction);
 	alsGrad.printProgress = true;
 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-	SteepestDescentVariant submanGrad(SteepestDescentVariant::SubmanifoldRetraction);
+	SteepestDescentVariant submanGrad(SubmanifoldRetraction);
+// 	CGVariant submanGrad(SubmanifoldRetraction);
 	submanGrad.printProgress = true;
 	submanGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
@@ -68,34 +71,33 @@ UNIT_TEST(SteepestDescent, random_operator,
 		
 		try {
 			perfdata.reset();
-			hosvdGrad(A,x,b,1000ul,perfdata);
+			hosvdGrad(A,x,b,4000ul,perfdata);
 			std::cout << "HOSVD: " << perfdata.data.size() << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
 			hosvdHist += perfdata.get_histogram(0.9);
 			hosvdHist.dump_to_file("hosvd.dat");
 			
 			perfdata.reset();
 			x = initX;
-			alsGrad(A,x,b,1000ul, perfdata);
+			alsGrad(A,x,b,4000ul, perfdata);
 			std::cout << "grad(ALS): " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
 			gradalsHist += perfdata.get_histogram(0.9);
 			gradalsHist.dump_to_file("gradals.dat");
 			
 			perfdata.reset();
 			x = initX;
-			submanGrad(A,x,b,1000ul, perfdata);
+			submanGrad(A,x,b,4000ul, perfdata);
 			std::cout << "Submanifold: " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
 			submaniHist += perfdata.get_histogram(0.9);
 			submaniHist.dump_to_file("submani.dat");
+			perfdata.dump_to_file("submaniPlot.dat");
 			
 			perfdata.reset();
 			x = initX;
-			ALSb(A,x,b,100ul, perfdata);
+			ALSb(A,x,b,50ul, perfdata);
 			std::cout << "ALS: " << perfdata.data.size()  << " " << perfdata.data.back().residual << " " << perfdata.data.back().elapsedTime << std::endl;
 			alsHist += perfdata.get_histogram(0.9);
 			alsHist.dump_to_file("als.dat");
-		} catch (xerus::misc::generic_error &) {
-			
-		}
+		} catch (xerus::misc::generic_error &) { }
 	}
 	
 )

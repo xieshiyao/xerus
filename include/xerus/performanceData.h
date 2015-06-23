@@ -81,7 +81,9 @@ public:
 	/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
 	template<class T>
 	PerformanceData& operator<<(const T &_info) noexcept {
-		additionalInformation += misc::to_string(_info);
+		if (isLogging) {
+			additionalInformation += misc::to_string(_info);
+		}
 		return *this;
 	}
 	
