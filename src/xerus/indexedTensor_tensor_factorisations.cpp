@@ -150,7 +150,7 @@ namespace xerus {
         rank = std::min(rank, maxRank);
 		
 		// Apply soft threshold and determine the real rank
-		tmpS[0] = std::max(0.0, tmpS[0] - softThreshold);
+		tmpS[0] = std::max(preventZero ? epsilon : 0.0, tmpS[0] - softThreshold);
 		for(size_t j = 1; j < rank; ++j) {
 			tmpS[j] -= softThreshold;
 			if (tmpS[j] <= epsilon*tmpS[0]) {

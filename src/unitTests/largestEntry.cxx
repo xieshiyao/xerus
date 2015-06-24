@@ -30,12 +30,12 @@ UNIT_TEST(Algorithm, largestEntry,
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
     
-	const size_t D = 28;
+	const size_t D = 24;
 	const size_t N = 2;
     
 	const std::vector<size_t> stateDims(D, N);
 	
-    TTTensor X = TTTensor::construct_random(stateDims, 3, rnd, dist);
+    TTTensor X = TTTensor::construct_random(stateDims, 10, rnd, dist);
 	X /= X.frob_norm();
 	
 	FullTensor fullX(X);
@@ -50,12 +50,16 @@ UNIT_TEST(Algorithm, largestEntry,
 	}
 	LOG(largestTwo, fullX[posA] << " and " << fullX[posB]);
 	
-	const double st = (std::abs(fullX[posA])-std::abs(fullX[posB]))/250;
+	double alpha = std::abs(fullX[posA]/fullX[posB]);
+	double beta = std::sqrt(alpha);
+	double st = (beta - 1)*beta*beta*beta*std::abs(fullX[posB])/(5*D);
+	LOG(bsdgfla, alpha << " >> " << beta << " >> " << st);
 	
 	while(misc::sum(X.ranks()) >= D) { 
 		X = TTTensor::entrywise_product(X, X);
-		X.soft_threshold(st);
-		X /= X.frob_norm();
+		X.soft_threshold(st, true);
+// 		st /= X.frob_norm();
+// 		X /= X.frob_norm();
 		LOG(after, X.ranks() << " --- " << X.frob_norm());
 	}
 	

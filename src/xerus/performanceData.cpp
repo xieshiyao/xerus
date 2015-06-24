@@ -38,7 +38,7 @@ namespace xerus {
 			value_t relativeChange = _data[i].residual/_data[i-1].residual;
 			value_t exponent = log(relativeChange) / log(2);
 			size_t delta_t = _data[i].elapsedTime - _data[i-1].elapsedTime;
-			value_t rate = - exponent / delta_t;
+			value_t rate = - exponent / value_t(delta_t);
 			int logRate = int(log(rate)/log(base));
 			buckets[logRate] += delta_t;
 			totalTime += delta_t;
@@ -59,7 +59,7 @@ namespace xerus {
 	void PerformanceData::Histogram::dump_to_file(const std::string &_fileName) const {
 		std::ofstream out(_fileName);
 		for (auto &h : buckets) {
-			out << pow(base, h.first) << " " << double(h.second)/totalTime << '\n';
+			out << pow(base, h.first) << " " << double(h.second)/double(totalTime) << '\n';
 		}
 		out.close();
 	}

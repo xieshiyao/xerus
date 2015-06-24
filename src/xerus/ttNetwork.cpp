@@ -854,12 +854,12 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::soft_threshold(const double _tau) {
-		soft_threshold(std::vector<double>(degree()/N-1, _tau));
+	void TTNetwork<isOperator>::soft_threshold(const double _tau, const bool _preventZero) {
+		soft_threshold(std::vector<double>(degree()/N-1, _tau), _preventZero);
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus) {
+	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool _preventZero) {
 		const size_t numComponents = degree()/N;
 		REQUIRE(is_valid_tt(), "Cannot apply soft thresholding to invalid TTNetwork.");
 		REQUIRE(_taus.size()+1 == numComponents, "We need exactly " << numComponents << " taus but got " << _taus.size());
@@ -875,7 +875,7 @@ namespace xerus {
 // 			LOG(bla, std::endl << "Componentes " << i << "/" << i+1 << ". Validity says " << component(i).all_entries_valid() << " / " << component(i+1).all_entries_valid());
 			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
 // 			LOG(bla, "X valid " << X.all_entries_valid());
-			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i]);
+			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i], _preventZero);
 // 			LOG(bla, "U S V valid " << component(i).all_entries_valid() << " / " << S.all_entries_valid() << " / " << component(i+1).all_entries_valid());
 			CHECK(component(i).all_entries_valid(), i, std::endl << component(i).to_string());
 			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
