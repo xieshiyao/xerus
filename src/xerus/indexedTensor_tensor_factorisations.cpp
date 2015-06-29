@@ -129,6 +129,7 @@ namespace xerus {
         REQUIRE(U.indices.back() == S.indices[0], "The last index of U must conincide with the first of S");
         REQUIRE(Vt.indices[0] == S.indices[1], " The second index of S must coincide with the first of Vt");
         REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be FullTensors, as they are defenitely not sparse.");
+		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
         
         size_t lhsSize, rhsSize, rank;
         
@@ -150,9 +151,16 @@ namespace xerus {
         rank = std::min(rank, maxRank);
 		
 		// Apply soft threshold and determine the real rank
-		tmpS[0] = std::max(preventZero ? epsilon : 0.0, tmpS[0] - softThreshold);
+		double realSoftThreshold;
+		if(preventZero) {
+			realSoftThreshold = std::min((1-EPSILON)*tmpS[0], softThreshold);
+		} else {
+			realSoftThreshold = softThreshold;
+		}
+		
+		tmpS[0] = std::max(0.0, tmpS[0] - realSoftThreshold);
 		for(size_t j = 1; j < rank; ++j) {
-			tmpS[j] -= softThreshold;
+			tmpS[j] -= realSoftThreshold;
 			if (tmpS[j] <= epsilon*tmpS[0]) {
                 rank = j;
                 break;
@@ -174,6 +182,10 @@ namespace xerus {
         
         static_cast<FullTensor*>(U.tensorObject)->resize_dimension(U.degree()-1, rank);
         static_cast<FullTensor*>(Vt.tensorObject)->resize_dimension(0, rank);
+		
+		REQUIRE(U.tensorObject->all_entries_valid(), "Internal Error");
+		REQUIRE(S.tensorObject->all_entries_valid(), "Internal Error");
+		REQUIRE(Vt.tensorObject->all_entries_valid(), "Internal Error");
     }
 
 

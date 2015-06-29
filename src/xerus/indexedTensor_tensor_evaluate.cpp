@@ -204,8 +204,8 @@ namespace xerus {
             
             } else if(_base.tensorObjectReadOnly->is_sparse()) { // Sparse => Full
                 FullTensor& outTensor = *static_cast<FullTensor*>(_out.tensorObject);
-                value_t* const outData = outTensor.data.get();
                 outTensor.ensure_own_data_no_copy();
+                value_t* const outData = outTensor.data.get();
                 misc::array_set_zero(outData, outTensor.size);
                 for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries) {
                     outData[entry.first] = entry.second;

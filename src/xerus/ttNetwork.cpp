@@ -871,28 +871,32 @@ namespace xerus {
 		FullTensor X;
 		SparseTensor S;
 		Index i1, i2, rl, rm, rr;
+		value_t factor = frob_norm();
+		*this /= factor;
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-// 			LOG(bla, std::endl << "Componentes " << i << "/" << i+1 << ". Validity says " << component(i).all_entries_valid() << " / " << component(i+1).all_entries_valid());
 			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
-// 			LOG(bla, "X valid " << X.all_entries_valid());
-			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i], _preventZero);
-// 			LOG(bla, "U S V valid " << component(i).all_entries_valid() << " / " << S.all_entries_valid() << " / " << component(i+1).all_entries_valid());
+			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), _taus[i]/factor, _preventZero);
+			
 			CHECK(component(i).all_entries_valid(), i, std::endl << component(i).to_string());
 			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
 			CHECK(S.all_entries_valid(), S, std::endl << S.to_string());
 			CHECK(S.all_entries_valid() && component(i).all_entries_valid() && component(i+1).all_entries_valid(), X, std::endl << X.to_string());
 			
-			component(i+1)(rl, i2, rr) = S(rl, rm) * component(i+1)(rm, i2, rr);
-// 			LOG(bla, "S*V valid " << component(i+1).all_entries_valid());
+			// Scale such that the first SV is euqalt to one.
+			factor *= S[0];
+			S /= S[0];
 			
-			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
+			component(i+1)(rl, i2, rr) = S(rl, rm) * component(i+1)(rm, i2, rr);
+			
+			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string() << std::endl << std::endl << "S was: " << S.to_string());
 			
 			nodes[i+1].neighbors.back().dimension = component(i).dimensions.back();
 			nodes[i+2].neighbors.front().dimension = component(i+1).dimensions.front();
 			corePosition = i+1;
 		}
 		
-		
+		// Account for the acumulated factor
+		*this *= std::max(factor, _preventZero ? 1e-300 : 0.0);
 		
 		// Move core back if the TT was initally canonicalized
 		if(initialCanonicalization) {
