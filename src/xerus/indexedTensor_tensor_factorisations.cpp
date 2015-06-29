@@ -64,7 +64,6 @@ namespace xerus {
         
         
         // Work through the indices of lhs
-		
         for(size_t i = 0; i < lhsIndices.size()-1; ++i) {
             REQUIRE(!misc::contains(rhsIndices, lhsIndices[i]), "Left and right part of factorization must not share common indices.");
             
@@ -144,14 +143,14 @@ namespace xerus {
             blasWrapper::svd(static_cast<FullTensor*>(U.tensorObject)->data.get(), tmpS.get(), static_cast<FullTensor*>(Vt.tensorObject)->data.get(), static_cast<FullTensor*>(reorderedBaseTensor.get())->data.get(), lhsSize, rhsSize);
         }
         
-        // Account for hard threshold
-        rank = std::min(rank, maxRank);
-        
         // Apply factor to the diagonal matrix
         misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
+        
+        // Account for hard threshold
+        rank = std::min(rank, maxRank);
 		
 		// Apply soft threshold and determine the real rank
-		tmpS[0] = std::max(0.0, tmpS[0] - softThreshold);
+		tmpS[0] = std::max(preventZero ? epsilon : 0.0, tmpS[0] - softThreshold);
 		for(size_t j = 1; j < rank; ++j) {
 			tmpS[j] -= softThreshold;
 			if (tmpS[j] <= epsilon*tmpS[0]) {

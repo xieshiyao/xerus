@@ -314,6 +314,13 @@ namespace xerus {
         return count;
     }
     
+    bool SparseTensor::all_entries_valid() const {
+        for(const std::pair<size_t, value_t>& entry : *entries) {
+            if(!std::isfinite(entry.second)) {return false; } 
+        }
+        return true;
+    }
+    
     value_t SparseTensor::frob_norm() const {
         value_t norm = 0;
         for(const std::pair<size_t, value_t>& entry : *entries) {

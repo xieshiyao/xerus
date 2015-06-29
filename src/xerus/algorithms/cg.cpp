@@ -19,10 +19,10 @@
 
 /**
  * @file
- * @brief Implementation of the steepest descent algorithms.
+ * @brief Implementation of the CG algorithm.
  */
 
-#include <xerus/algorithms/steepestDescent.h>
+#include <xerus/algorithms/cg.h>
 #include <xerus/algorithms/als.h>
 #include <xerus/basic.h>
 #include <xerus/indexedTensorList.h>
@@ -33,7 +33,7 @@
 
 namespace xerus {
 	
-	value_t SteepestDescentVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
+	value_t CGVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		const TTOperator &_A = *_Ap;
 		static const Index i,j;
 		size_t stepCount=0;
@@ -41,15 +41,11 @@ namespace xerus {
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
 		
-		
 		if (_Ap) {
-			_perfData << "Steepest Descent for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
+			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _A.ranks() << '\n';
-			if (assumeSymmetricPositiveDefiniteOperator) {
-				_perfData << " with symmetric positive definite Operator A\n";
-			}
 		} else {
-			_perfData << "Steepest Descent for ||x - b||^2, x.dimensions: " << _x.dimensions << '\n';
+			_perfData << "Conjugated Gradients for ||x - b||^2, x.dimensions: " << _x.dimensions << '\n';
 		}
 		_perfData << "x.ranks: " << _x.ranks() << '\n'
 					<< "b.ranks: " << _b.ranks() << '\n'
@@ -66,7 +62,7 @@ namespace xerus {
 			}
 			currResidual = frob_norm(residual);
 			_perfData.add(currResidual);
-			if (printProgress && stepCount%37==0) {
+			if (printProgress && stepCount%1==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
 						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
@@ -74,45 +70,57 @@ namespace xerus {
 			}
 		};
 		updateResidualAndPerfdata();
-		TTTensor y, Ay;
-		value_t alpha;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			   && currResidual > _convergenceEpsilon
 			   && std::abs(lastResidual-currResidual) > _convergenceEpsilon
 			   && std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
 		{
-			stepCount += 1;
+			TTTensor direction(residual);
 			
-			if (_Ap) {
-				if (assumeSymmetricPositiveDefiniteOperator) {
-					// search direction: y = b-Ax
-					y = residual;
-					// direction of change A*y
-					Ay(i&0) = _A(i/2,j/2) * y(j&0);
-					// "optimal" stepsize alpha = <y,y>/<y,Ay>
-					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
-					// "optimal" change: alpha*y
-					y *= alpha;
-				} else {
-					// search direction: y = A^T(b-Ax)
-					y(i&0) = _A(j/2,i/2) * residual(j&0);
-					// direction of change A*y
-					Ay(i&0) = _A(i/2,j/2) * y(j&0);
-					// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
-					alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
-					// "optimal" change: alpha*y
-					y *= alpha;
-				}
-			} else {
-				y = residual;
+			while ((_numSteps == 0 || stepCount < _numSteps)
+				&& (restartInterval == 0 || (stepCount+1)%restartInterval != 0)
+				&& currResidual > _convergenceEpsilon
+				&& std::abs(lastResidual-currResidual) > _convergenceEpsilon
+				&& std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
+			{
+				stepCount += 1;
+				TTTensor change;
+				value_t alpha;
+				
+	// 			change(i&0) = _A(i/2,j/2) * direction(j&0);
+				alpha = currResidual/value_t(direction(i&0)*_A(i/2,j/2)*direction(j&0));//direction(i&0)*change(i&0));
+	// 			LOG(alpha, alpha << " " << currResidual << " / " << value_t(direction(i&0)*_A(i/2,j/2)*direction(j&0)) << " " << value_t(direction(i&0)*change(i&0)));
+				retraction(_x, alpha * direction);
+	// 			retraction(residual, -alpha * change);
+				updateResidualAndPerfdata();
+				
+				double beta = currResidual / lastResidual;
+	// 			direction(i&0) = residual(i&0) + beta * direction(i&0);
+	// 			TTTensor oldDirection(direction);
+	// 			direction = residual;
+				direction *= beta;
+				retraction(direction, residual);
+	// 			retraction(direction, beta * oldDirection);
 			}
-			
-			retraction(_x, y);
-			
-			updateResidualAndPerfdata();
 		}
 		
 		return currResidual;
 	}
-	
+	/*
+	 * 		change(j^d) = _A(j^d,k^d) * dir(k^d);
+		double alpha = fnorm/double(dir(i^d)*change(i^d));
+		_x(i^d) = _x(i^d) + alpha * dir(i^d);
+		res(i^d) = res(i^d) - alpha*change(i^d);
+		double newfnorm = frob_norm(res(i^d));
+		double beta = newfnorm / fnorm;
+		dir(i^d) = res(i^d) + beta * dir(i^d);
+		fnorm = newfnorm;
+// 		dir.round(1e-14);
+// 		_x.round(1e-14);
+// 		res.round(1e-14);
+		if (_perfData) _perfData->push_back(fnorm);
+		std::ofstream out("test.dat", std::ios_base::app | std::ios_base::ate);
+		out << fnorm << std::endl;
+		out.close();
+		LOG(cg, fnorm);*/
 }

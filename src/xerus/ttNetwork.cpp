@@ -702,6 +702,7 @@ namespace xerus {
 			REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
 			TTNetwork result(_A.degree());
 			const size_t numComponents = _A.degree() / N;
+			
 			std::unique_ptr<FullTensor> newComponent;
 			// TODO degree 0 TTs
 			for (size_t i=0; i<numComponents; ++i) {
@@ -730,7 +731,7 @@ namespace xerus {
 // 								offsetA = r2 + (n + r1 * externalDim) * componentA.dimensions.back();
 // 								offsetB =      (n + s1 * externalDim) * componentB.dimensions.back();
 // 								offsetResult = (((r1 * componentB.dimensions.front() + s1) * externalDim +n) * componentA.dimensions.back() + r2) * stepsize;
-								misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentA.data.get()[offsetA], componentB.data.get()+offsetB, stepsize);
+								misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentB.factor*componentA.factor*componentA.data.get()[offsetA], componentB.data.get()+offsetB, stepsize);
 								offsetResult += stepsize;
 								offsetA += 1;
 							}
@@ -853,10 +854,15 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus) {
+	void TTNetwork<isOperator>::soft_threshold(const double _tau, const bool _preventZero) {
+		soft_threshold(std::vector<double>(degree()/N-1, _tau), _preventZero);
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool _preventZero) {
 		const size_t numComponents = degree()/N;
 		REQUIRE(is_valid_tt(), "Cannot apply soft thresholding to invalid TTNetwork.");
-		REQUIRE(_taus.size() == numComponents, "We need exactly " << numComponents << " taus but got " << _taus.size());
+		REQUIRE(_taus.size()+1 == numComponents, "We need exactly " << numComponents << " taus but got " << _taus.size());
 		const bool initialCanonicalization = cannonicalized;
 		const size_t initialCorePosition = corePosition;
 		move_core(0);
@@ -865,12 +871,28 @@ namespace xerus {
 		FullTensor X;
 		SparseTensor S;
 		Index i1, i2, rl, rm, rr;
-		for(size_t i = 0; i < numComponents; ++i) {
+		for(size_t i = 0; i+1 < numComponents; ++i) {
+// 			LOG(bla, std::endl << "Componentes " << i << "/" << i+1 << ". Validity says " << component(i).all_entries_valid() << " / " << component(i+1).all_entries_valid());
 			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
-			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i]);
+// 			LOG(bla, "X valid " << X.all_entries_valid());
+			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), EPSILON, _taus[i], _preventZero);
+// 			LOG(bla, "U S V valid " << component(i).all_entries_valid() << " / " << S.all_entries_valid() << " / " << component(i+1).all_entries_valid());
+			CHECK(component(i).all_entries_valid(), i, std::endl << component(i).to_string());
+			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
+			CHECK(S.all_entries_valid(), S, std::endl << S.to_string());
+			CHECK(S.all_entries_valid() && component(i).all_entries_valid() && component(i+1).all_entries_valid(), X, std::endl << X.to_string());
+			
 			component(i+1)(rl, i2, rr) = S(rl, rm) * component(i+1)(rm, i2, rr);
+// 			LOG(bla, "S*V valid " << component(i+1).all_entries_valid());
+			
+			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
+			
+			nodes[i+1].neighbors.back().dimension = component(i).dimensions.back();
+			nodes[i+2].neighbors.front().dimension = component(i+1).dimensions.front();
 			corePosition = i+1;
 		}
+		
+		
 		
 		// Move core back if the TT was initally canonicalized
 		if(initialCanonicalization) {
@@ -879,6 +901,7 @@ namespace xerus {
 			// We are canonicalized never the less.
 			cannonicalized = true;
 		}
+		is_valid_tt();
 	}
 	
 	template<bool isOperator>

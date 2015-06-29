@@ -125,7 +125,7 @@ namespace xerus {
 		return std::pair<size_t, size_t>(firstOptimizedIndex, firstNotOptimizedIndex);
 	}
 
-    double ALSVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon,  std::vector<value_t> *_perfData) const {
+    double ALSVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		const TTOperator &_A = *_Ap;
         LOG(ALS, "ALS("<< sites << ", " << minimumLocalResidual <<") called");
 		#ifndef DISABLE_RUNTIME_CHECKS_
@@ -144,6 +144,22 @@ namespace xerus {
 				}
 			}
         #endif
+        
+        if (_Ap) {
+			_perfData << "ALS for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
+					<< "A.ranks: " << _A.ranks() << '\n'
+					<< "x.ranks: " << _x.ranks() << '\n'
+					<< "b.ranks: " << _b.ranks() << '\n'
+					<< "maximum number of half sweeps: " << _numHalfSweeps << '\n'
+					<< "convergence epsilon: " << _convergenceEpsilon << '\n';
+		} else {
+			_perfData << "ALS for ||x - b||^2, x.dimensions: " << _x.dimensions << '\n'
+					<< "x.ranks: " << _x.ranks() << '\n'
+					<< "b.ranks: " << _b.ranks() << '\n'
+					<< "maximum number of half sweeps: " << _numHalfSweeps << '\n'
+					<< "convergence epsilon: " << _convergenceEpsilon << '\n';
+		}
+		_perfData.start();
         
         const size_t d = _x.degree();
         Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
@@ -231,9 +247,9 @@ namespace xerus {
 		}
         
         // Calculate initial residual
-        if (_perfData != nullptr) {
+        if (_perfData) {
 			energy = energy_f();
-			_perfData->push_back(energy);
+			_perfData.add(energy);
 			LOG(ALS, "calculated residual for perfData: " << energy);
         }
 		
@@ -260,11 +276,11 @@ namespace xerus {
 			
             if (_perfData) {
                 energy = energy_f();
-				_perfData->push_back(energy);
+				_perfData.add(energy);
                 LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
                 if (printProgress) {
-					std::cout << "                                                                      \r";
                     std::cout << "optimized tensor "<< currIndex << ": " << std::scientific << energy << " ( \t" << std::abs(energy - lastEnergy) << " vs \t" << _convergenceEpsilon << " ) \r" << std::flush;
+					std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
                 }
             }
 			if (done && (corePosAtTheEnd == currIndex 

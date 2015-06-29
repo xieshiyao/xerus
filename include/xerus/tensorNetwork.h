@@ -379,6 +379,18 @@ namespace xerus {
 		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
 	
 		/**
+		 * @brief Thresholds the rank between two given nodes.
+		 * @details The cores of the given nodes are contracted and an SVD is calculated to perform the thresholding. The obtained core is contracted to nodeB,
+		 * i.e. nodeA remains orthogonal in the used matrification.
+		 * @param _nodeA First node that takes part in the rank thresholding. This node remains orthogonalized.
+		 * @param _nodeB Second node that takes part in the rank thresholding.
+		 * @param _maxRank Maximal allowed rank.
+		 * @param _softThreshold Softthreshold that is to be applied.
+		 * @param _eps Epsilion to be used in the SVD to determine zero singular values.
+		 */
+		void round(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _softThreshold, const double _eps); // TODO implement
+		
+		/**
 		* contracts the nodes with indices @a _node1 and @a _node2
 		* replaces node1 with the contraction and node2 with an degree-0 tensor
 		*/

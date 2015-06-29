@@ -261,13 +261,13 @@ namespace xerus {
 		 * @brief Applies the soft threshholding operation to all ranks.
 		 * @param _tau the soft threshholding parameter to be applied. I.e. all singular values are reduced to max(0, Lambda_ui - _tau).
 		 */
-        void soft_threshold(const double _tau);
+        void soft_threshold(const double _tau, const bool _preventZero = false);
 		
 		/** 
 		 * @brief Applies soft threshholding operations to all ranks.
 		 * @param _taus the soft threshholding parameters to be applied. I.e. all singular values of the j-th matrification are reduced to max(0, Lambda_ui - _tau[j]).
 		 */
-        void soft_threshold(const std::vector<double>& _taus);
+        void soft_threshold(const std::vector<double>& _taus, const bool _preventZero = false);
 		
 		
 

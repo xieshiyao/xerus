@@ -453,6 +453,14 @@ namespace xerus {
         return count;
     }
     
+    
+	bool FullTensor::all_entries_valid() const {
+		for(size_t i = 0; i < size; ++i) {
+            if(!std::isfinite(data.get()[i])) { return false; } 
+        }
+        return true;
+	}
+    
     value_t FullTensor::frob_norm() const {
         return std::abs(factor)*blasWrapper::two_norm(data.get(), size);
     }

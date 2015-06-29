@@ -40,6 +40,7 @@
     #include "xerus/misc/simpleNumerics.h"
     #include "xerus/misc/timeMeasure.h"
     #include "xerus/misc/performanceAnalysis.h"
+	#include "xerus/misc/exceptions.h"
 
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"
@@ -66,6 +67,7 @@
 	#include "xerus/performanceData.h"
     #include "xerus/algorithms/als.h"
     #include "xerus/algorithms/steepestDescent.h"
+    #include "xerus/algorithms/cg.h"
     #include "xerus/algorithms/decompositionAls.h"
 
 #endif
