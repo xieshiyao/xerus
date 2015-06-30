@@ -53,7 +53,7 @@ void swap_endianness(size_t *n) {
 	*n = res;
 }
 
-//g++ -std=c++11 -Ofast -march=native -flto -I include/ main.cxx build/lib/libxerus.a -lcxsparse -llapacke -llapack -lopenblasp -lgfortran -lbfd -liberty -lz -ldl
+//g++ -std=c++11 main.cxx -I /usr/include/suitesparse build/lib/libxerus.a ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lcxsparse -lbfd -liberty -lz -ldl -lgfortran
 int main() {
 	std::ifstream in("data/fgv_013.bin", std::ios::binary);
 	xerus::FullTensor velocity({3,600,242,600});
