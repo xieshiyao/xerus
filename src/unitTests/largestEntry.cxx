@@ -23,6 +23,55 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
+UNIT_TEST(Test, bla,
+	const size_t N = 2000;
+	Index i,j,k,l;
+	FullTensor U({N,N}, [](const std::vector<size_t>& _pos) {
+		if(_pos[0] == 0) {return _pos[1] == 0 ? -1.0/std::sqrt(N) : -1/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else if(_pos[1] == 0) { return -1.0/std::sqrt(N); }
+		else if(_pos[0] == _pos[1]) { return double(_pos[0])/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else if(_pos[0] < _pos[1]) { return -1.0/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else { return 0.0; }});
+	U(i,j) = -1.0*U(j,i);
+	FullTensor S({N,N}, [](const std::vector<size_t>& _pos){return _pos[0] == _pos[1] ? 1.0 : 0.0 ;});
+	S[0] = 100000.0;
+	FullTensor Vt({N,N}, [](const std::vector<size_t>& _pos) {
+		if(_pos[0] == 0) {return _pos[1] == 0 ? 1/std::sqrt(N) : 1/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else if(_pos[1] == 0) { return -1.0/std::sqrt(N); }
+		else if(_pos[0] == _pos[1]) { return double(_pos[0])/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else if(_pos[0] < _pos[1]) { return -1.0/std::sqrt(_pos[1]*(_pos[1]+1)); }
+		else { return 0.0; }});
+// 	LOG(test, "U: " << std::endl << U.to_string());
+// 	LOG(test, "S: " << std::endl << S.to_string());
+// 	LOG(test, "Vt: " << std::endl << Vt.to_string());
+	
+	
+/*	
+	FullTensor UU;
+	UU(i,k) = U(j,i) * U(j,k);
+	LOG(test, "UU: " << std::endl << UU.to_string());
+	
+	UU(i,k) = U(i,j) * U(k,j);
+	LOG(test, "UU: " << std::endl << UU.to_string());*/
+	
+	FullTensor X;
+	
+	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
+	LOG(test, "X: " << std::endl << X[0] << " <=> " << X[X.size-1]);
+// 	LOG(test, "X: " << std::endl << X.to_string());
+	
+	FullTensor M, P, L;
+	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1.0); 
+	
+// 	LOG(test, "M: " << std::endl << M.to_string());
+// 	LOG(test, "L: " << std::endl << L.to_string());
+// 	LOG(test, "P: " << std::endl << P.to_string());
+	
+	
+	X(i,l) = M(i,j)* L(j,k)* P(k,l);
+	
+	LOG(test, "X: " << std::endl << X[0] << " <=> " << X[X.size-1]);
+)
 
 UNIT_TEST(Algorithm, largestEntry,
     //Random numbers
@@ -32,9 +81,9 @@ UNIT_TEST(Algorithm, largestEntry,
 	std::uniform_int_distribution<size_t> dimDist(1,4);
 	std::uniform_int_distribution<size_t> rankDist(1,6);
     
-	const size_t D = 16;
+	const size_t D = 15;
 	
-	for(size_t k = 0; k < 2; ++k) {
+	for(size_t k = 0; k < 250; ++k) {
 		std::vector<size_t> stateDims;
 		stateDims.push_back(dimDist(rnd));
 		
