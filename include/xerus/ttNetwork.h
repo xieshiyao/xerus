@@ -117,14 +117,15 @@ namespace xerus {
 			size_t maxDim2 = misc::product(_dimensions);
 			
 			for(size_t i = 0; i < numComponents; ++i) {
-				size_t oldMaxDim = std::min(maxDim1, maxDim2);
+				size_t leftRank = i==0 ? 1 : std::min(_ranks[i-1], std::min(maxDim1, maxDim2));
 				maxDim1 *= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
 				maxDim2 /= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
-				size_t maxDim = std::min(maxDim1, maxDim2);
+				size_t rightRank = i==numComponents-1 ? 1 : std::min(_ranks[i], std::min(maxDim1, maxDim2));
+
 				if(isOperator) {
-					result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], _dimensions[numComponents+i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+					result.set_component(i, FullTensor::construct_random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
 				} else {
-					result.set_component(i, FullTensor::construct_random({i==0?1:std::min(oldMaxDim, _ranks[i-1]), _dimensions[i], i==numComponents-1?1:std::min(maxDim, _ranks[i])}, _rnd, _dist));
+					result.set_component(i, FullTensor::construct_random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
 				}
 			}
             result.cannonicalize_left();
