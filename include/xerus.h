@@ -69,5 +69,7 @@
     #include "xerus/algorithms/steepestDescent.h"
     #include "xerus/algorithms/cg.h"
     #include "xerus/algorithms/decompositionAls.h"
+    
+	#include "xerus/examples/specificLowRankTensors.h"
 
 #endif
