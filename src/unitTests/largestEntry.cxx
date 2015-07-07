@@ -80,8 +80,8 @@ UNIT_TEST(Algorithm, largestEntry,
     std::mt19937_64 rnd;
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	std::uniform_int_distribution<size_t> dimDist(1,7);
-	std::uniform_int_distribution<size_t> rankDist(1,8);
+	std::uniform_int_distribution<size_t> dimDist(1,5);
+	std::uniform_int_distribution<size_t> rankDist(1,5);
     
 	const size_t D = 12;
 	
@@ -127,7 +127,7 @@ UNIT_TEST(Algorithm, largestEntry,
 	}
 )
 
-
+/*
 UNIT_TEST(Algorithm, largestEntryData,
     //Random numbers
 	std::random_device rd;
@@ -228,4 +228,4 @@ UNIT_TEST(Algorithm, largestEntryData,
 	}
 	out.close();
 )
-
+*/

@@ -350,11 +350,16 @@ namespace xerus {
             CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
             
             // Copy Q (_m x rank) into position
-            if(_A != _Q && _m == _n) {
-				misc::array_copy(_Q, _A, _m*_n);
-            } 
-			if (_m != _n) {
-				for(size_t row =0; row < _m; ++row) {
+            if(_A != _Q) {
+				if(_m == _n) {
+					misc::array_copy(_Q, _A, _m*_n);
+				} else {
+					for(size_t row =0; row < _m; ++row) {
+						misc::array_copy(_Q+row*rank, _A+row*_n, rank);
+					}
+				}
+            } else if(_m != _n) { // Note extra treatmeant to avoid memcpy overlap
+				for(size_t row = 1; row < _m; ++row) {
 					misc::array_copy(_Q+row*rank, _A+row*_n, rank);
 				}
 			}
