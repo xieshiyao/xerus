@@ -19,18 +19,19 @@
 
 /**
  * @file
- * @brief Header file that defines the logging behaviour of the internal debug log-levels used in the library.
+ * @brief Header file for some examples of low-rank TT tensors.
  */
 
 #pragma once
+#include "../ttNetwork.h"
 
-#include "misc/namedLogger.h"
+namespace xerus { namespace examples {
+	
+	/**
+	 * @brief Constructs a rank _n+1 TTTensor of degree @a _degree and external dimensions @a _n that has entries >0, maximal where all indices coincide.
+	 * @details Constructed as a sum of nearest-neighbor terms that each have entries as 1/(std::abs(i-j)+alpha)
+	 */
+	TTTensor peaking_diagonals(size_t _degree, size_t _n, value_t _alpha = 1.0);
+	
+}}
 
-SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
-// SET_LOGGING(largestEntry, xerus::misc::internal::LOGGING_ON_ERROR)
-/* */

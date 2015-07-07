@@ -867,6 +867,8 @@ namespace xerus {
 		const size_t initialCorePosition = corePosition;
 		move_core(0);
 		
+// 		LOG(aslkdj, "soft threshold with " << _taus);
+		
 		// Round all ranks directly
 		FullTensor X;
 		SparseTensor S;

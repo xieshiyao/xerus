@@ -19,18 +19,32 @@
 
 /**
  * @file
- * @brief Header file that defines the logging behaviour of the internal debug log-levels used in the library.
+ * @brief Implementation of the examples of low-rank TT tensors defined in the respective header file.
  */
 
-#pragma once
+#include <xerus/examples/specificLowRankTensors.h>
 
-#include "misc/namedLogger.h"
+namespace xerus { namespace examples {
+	
+	TTTensor peaking_diagonals(size_t _degree, size_t _n, value_t _alpha) {
+		REQUIRE(_degree >= 2, "");
+		REQUIRE(_n>=2, "");
+		TTTensor e1(FullTensor({_n}, [](){return 1.0;}));
+		TTTensor cross(FullTensor({_n,_n}, [&](const std::vector<size_t> &idx){
+			return 1.0/(std::abs(idx[0]-idx[1]) + _alpha) + 1.0/(double(idx[0])+_alpha) + 1.0/(double(idx[1])+_alpha);
+		}));
+		
+		TTTensor result(cross);
+		TTTensor buffer(e1);
+		while (result.degree() < _degree) {
+			result = TTTensor::dyadic_product(result, e1);
+			TTTensor tmp = TTTensor::dyadic_product(buffer, cross);
+			result += tmp;
+			result.round(0.0);
+			buffer = TTTensor::dyadic_product(buffer, e1);
+		}
+		return result;
+	}
+	
+}}
 
-SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
-// SET_LOGGING(largestEntry, xerus::misc::internal::LOGGING_ON_ERROR)
-/* */
