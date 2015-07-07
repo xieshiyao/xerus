@@ -24,53 +24,55 @@
 using namespace xerus;
 
 UNIT_TEST(Test, bla,
-	const size_t N = 2000;
 	Index i,j,k,l;
-	FullTensor U({N,N}, [](const std::vector<size_t>& _pos) {
-		if(_pos[0] == 0) {return _pos[1] == 0 ? -1.0/std::sqrt(N) : -1/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else if(_pos[1] == 0) { return -1.0/std::sqrt(N); }
-		else if(_pos[0] == _pos[1]) { return double(_pos[0])/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else if(_pos[0] < _pos[1]) { return -1.0/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else { return 0.0; }});
-	U(i,j) = -1.0*U(j,i);
-	FullTensor S({N,N}, [](const std::vector<size_t>& _pos){return _pos[0] == _pos[1] ? 1.0 : 0.0 ;});
-	S[0] = 100000.0;
-	FullTensor Vt({N,N}, [](const std::vector<size_t>& _pos) {
-		if(_pos[0] == 0) {return _pos[1] == 0 ? 1/std::sqrt(N) : 1/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else if(_pos[1] == 0) { return -1.0/std::sqrt(N); }
-		else if(_pos[0] == _pos[1]) { return double(_pos[0])/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else if(_pos[0] < _pos[1]) { return -1.0/std::sqrt(_pos[1]*(_pos[1]+1)); }
-		else { return 0.0; }});
-// 	LOG(test, "U: " << std::endl << U.to_string());
-// 	LOG(test, "S: " << std::endl << S.to_string());
-// 	LOG(test, "Vt: " << std::endl << Vt.to_string());
+	FullTensor U({2,2});
+	FullTensor S({2,2});
+	FullTensor Vt({2,2});
+	
+	double eps = 0.001;
+	
+	U[{0,0}] = eps;
+	U[{0,1}] = std::sqrt(1-eps*eps);
+	U[{1,0}] = std::sqrt(1-eps*eps);
+	U[{1,1}] = -eps;
+	
+	S[{0,0}] = 1/(eps*eps);
+	S[{1,1}] = 1/(1-eps*eps);
+	
+	Vt[{0,0}] = eps;
+	Vt[{0,1}] = std::sqrt(1-eps*eps);
+	Vt[{1,0}] = -std::sqrt(1-eps*eps);
+	Vt[{1,1}] = eps;
+	
+	LOG(test, "U: " << std::endl << U.to_string());
+	LOG(test, "S: " << std::endl << S.to_string());
+	LOG(test, "Vt: " << std::endl << Vt.to_string());
 	
 	
-/*	
+	
 	FullTensor UU;
 	UU(i,k) = U(j,i) * U(j,k);
 	LOG(test, "UU: " << std::endl << UU.to_string());
 	
 	UU(i,k) = U(i,j) * U(k,j);
-	LOG(test, "UU: " << std::endl << UU.to_string());*/
+	LOG(test, "UU: " << std::endl << UU.to_string());
 	
 	FullTensor X;
 	
 	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
-	LOG(test, "X: " << std::endl << X[0] << " <=> " << X[X.size-1]);
-// 	LOG(test, "X: " << std::endl << X.to_string());
+	LOG(test, "X: " << std::endl << X.to_string());
 	
 	FullTensor M, P, L;
-	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1.0); 
+	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
 	
-// 	LOG(test, "M: " << std::endl << M.to_string());
-// 	LOG(test, "L: " << std::endl << L.to_string());
-// 	LOG(test, "P: " << std::endl << P.to_string());
+	LOG(test, "M: " << std::endl << M.to_string());
+	LOG(test, "L: " << std::endl << L.to_string());
+	LOG(test, "P: " << std::endl << P.to_string());
 	
 	
 	X(i,l) = M(i,j)* L(j,k)* P(k,l);
 	
-	LOG(test, "X: " << std::endl << X[0] << " <=> " << X[X.size-1]);
+	LOG(test, "X: " << std::endl << X.to_string());
 )
 
 UNIT_TEST(Algorithm, largestEntry,
@@ -78,12 +80,12 @@ UNIT_TEST(Algorithm, largestEntry,
     std::mt19937_64 rnd;
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	std::uniform_int_distribution<size_t> dimDist(1,4);
-	std::uniform_int_distribution<size_t> rankDist(1,6);
+	std::uniform_int_distribution<size_t> dimDist(1,7);
+	std::uniform_int_distribution<size_t> rankDist(1,8);
     
-	const size_t D = 15;
+	const size_t D = 12;
 	
-	for(size_t k = 0; k < 250; ++k) {
+	for(size_t k = 0; k < 2; ++k) {
 		std::vector<size_t> stateDims;
 		stateDims.push_back(dimDist(rnd));
 		
@@ -113,34 +115,8 @@ UNIT_TEST(Algorithm, largestEntry,
 			
 			double alpha = std::abs(fullX[posB]/fullX[posA]);
 			double Xn = std::abs(fullX[posA]);
-			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(d-1));
-			LOG(largestEntry, alpha << " >> " << tau);
 			
-			while(misc::sum(X.ranks()) >= d) {
-				X = TTTensor::entrywise_product(X, X);
-				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
-				X.soft_threshold(tau, true);
-				LOG(largestEntry, "After ST: " << X.ranks() << " --- " << X.frob_norm());
-				
-				Xn = std::max(0.0, (1-(1-alpha)*alpha/2.0))*Xn*Xn;
-				double fNorm = X.frob_norm();
-				Xn /= fNorm;
-				X /= fNorm;
-				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(d-1));
-			}
-			
-			size_t position = 0;
-			size_t factor = misc::product(stateDims);
-			for(size_t c = 0; c < d; ++c) {
-				factor /= stateDims[c];
-				size_t maxPos = 0;
-				for(size_t i = 1; i < stateDims[c]; ++i) {
-					if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
-						maxPos = i;
-					}
-				}
-				position += maxPos*factor;
-			}
+			size_t position = X.find_largest_entry(alpha, Xn);
 			
 			LOG(largestEntry, "Result: " << fullX[position] << " vs " << fullX[posA] << " at positions " << position << " and " << posA);
 			TEST(position == posA);

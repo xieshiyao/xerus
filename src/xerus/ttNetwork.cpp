@@ -1009,6 +1009,67 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
+	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy) const {
+		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
+	
+		TTNetwork X = entrywise_product(*this, *this);
+		X.round(1);
+		
+		size_t position = 0;
+		size_t factor = misc::product(dimensions);
+		for(size_t c = 0; c < degree(); ++c) {
+			factor /= dimensions[c];
+			size_t maxPos = 0;
+			for(size_t i = 1; i < dimensions[c]; ++i) {
+				if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
+					maxPos = i;
+				}
+			}
+			position += maxPos*factor;
+		}
+		
+		return find_largest_entry(_accuracy, std::abs(operator[](position)));
+	}
+		
+	template<bool isOperator>
+	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
+		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
+		
+			double alpha = _accuracy;
+			double Xn = _lowerBound;
+			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
+			TTNetwork X = *this;
+			LOG(largestEntry, alpha << " >> " << tau);
+			
+			while(misc::sum(X.ranks()) >= degree()) {
+				X = TTNetwork::entrywise_product(X, X);
+				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
+				X.soft_threshold(tau, true);
+				LOG(largestEntry, "After ST: " << X.ranks() << " --- " << X.frob_norm());
+				
+				Xn = std::max(0.0, (1-(1-alpha)*alpha/2.0))*Xn*Xn;
+				double fNorm = X.frob_norm();
+				Xn /= fNorm;
+				X /= fNorm;
+				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
+			}
+			
+			size_t position = 0;
+			size_t factor = misc::product(dimensions);
+			for(size_t c = 0; c < degree(); ++c) {
+				factor /= dimensions[c];
+				size_t maxPos = 0;
+				for(size_t i = 1; i < dimensions[c]; ++i) {
+					if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
+						maxPos = i;
+					}
+				}
+				position += maxPos*factor;
+			}
+		return position;
+	}
+	
+	template<bool isOperator>
 	bool TTNetwork<isOperator>::is_in_expected_format() const {
 		return is_valid_tt();
 	}
