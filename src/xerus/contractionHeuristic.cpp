@@ -29,6 +29,18 @@ namespace xerus {
 		
 		template<double (*scoreFct)(double, double, double, double, double)>
 		void greedy_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network) {
+			// estimated cost to calculate this heuristic is
+			// numNodes * numNodes * 2*avgEdgesPerNode = 2 * numNodes * numEdges
+			double numNodes=0, numEdges=0;
+			for (size_t i=0; i<_network.nodes.size(); ++i) {
+				if (!_network.nodes[i].erased) {
+					numNodes += 1;
+					numEdges += (double)_network.nodes[i].degree();
+				}
+			}
+			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
+			if (_bestCost < 2 * 2 * numNodes * numEdges) return;
+			
 			double bestScore, ourCost=0;
 			double ourFinalCost=0;
 			std::vector<std::pair<size_t,size_t>> ourContractions;
@@ -114,6 +126,139 @@ namespace xerus {
 				return -std::max(_n,_m)*_r;
 			} else {
 				return _n*_m-(_n+_m)*_r;
+			}
+		}
+		
+		
+		
+		std::tuple<size_t, size_t, double> best_of_three(const TensorNetwork &_network, size_t _id1, size_t _id2, size_t _id3) {
+			const TensorNetwork::TensorNode &na = _network.nodes[_id1];
+			const TensorNetwork::TensorNode &nb = _network.nodes[_id2];
+			const TensorNetwork::TensorNode &nc = _network.nodes[_id3];
+			double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
+			double sab=1, sbc=1, sac=1; // link dimensions
+			for (size_t d=0; d<na.degree(); ++d) {
+				if (na.neighbors[d].links(_id2)) {
+					sab *= (double)na.neighbors[d].dimension;
+				} else if (na.neighbors[d].links(_id3)) {
+					sac *= (double)na.neighbors[d].dimension;
+				} else {
+					sa *= (double)na.neighbors[d].dimension;
+				}
+			}
+			for (size_t d=0; d<nb.degree(); ++d) {
+				if (nb.neighbors[d].links(_id3)) {
+					sbc *= (double) nb.neighbors[d].dimension;
+				} else if (!nb.neighbors[d].links(_id1)) {
+					sb *= (double) nb.neighbors[d].dimension;
+				}
+			}
+			for (size_t d=0; d<nc.degree(); ++d) {
+//                 size_t other = nc.neighbors[d].other;
+				if (!nc.neighbors[d].links(_id1) && !nc.neighbors[d].links(_id2)) {
+					sc *= (double)nc.neighbors[d].dimension;
+				}
+			}
+			// cost of contraction a-b first etc.
+			double costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
+			double costAC = sa*sc*sab*sbc*(sac+sb); 
+			double costBC = sb*sc*sab*sac*(sbc+sa);
+			if (costAB < costAC && costAB < costBC) {
+				return std::tuple<size_t, size_t, double>(_id1, _id2, costAB);
+			} else if (costAC < costBC) {
+				return std::tuple<size_t, size_t, double>(_id1, _id3, costAC);
+			} else {
+				return std::tuple<size_t, size_t, double>(_id2, _id3, costBC);
+			}
+		}
+		
+		
+		void greedy_best_of_three_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network) {
+			// estimated cost to calculate this heuristic is
+			// numNodes * numNodes * 3*avgEdgesPerNode = 3 * numNodes * numEdges
+			size_t numNodes=0, numEdges=0;
+			for (size_t i=0; i<_network.nodes.size(); ++i) {
+				if (!_network.nodes[i].erased) {
+					numNodes += 1;
+					numEdges += _network.nodes[i].degree();
+				}
+			}
+			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
+// 			if (_bestCost < double(2 * 3 * numNodes * numEdges)) return;
+			
+			double ourFinalCost=0;
+			std::vector<std::pair<size_t,size_t>> ourContractions;
+			while (numNodes >= 3) {
+				// find a node with lowest degree
+				size_t id1 = 0;
+				size_t currDegree=~0ul;
+				for (size_t i=0; i<_network.nodes.size(); ++i) {
+					if (!_network.nodes[i].erased) {
+						if (_network.nodes[i].degree() < currDegree) {
+							id1 = i;
+							currDegree = _network.nodes[i].degree();
+						}
+					}
+				}
+				
+				// find its neighbor with lowest degree
+				size_t id2 = 0;
+				currDegree=~0ul;
+				for (const TensorNetwork::Link &l : _network.nodes[id1].neighbors) {
+					if (!l.external) {
+						if (_network.nodes[l.other].degree() < currDegree) {
+							id2 = l.other;
+							currDegree = _network.nodes[l.other].degree();
+						}
+					}
+				}
+				
+				size_t id3=0;
+				// find the next available node
+				while (id3 == id1 || id3 == id2 || _network.nodes[id3].erased) {
+					id3 += 1;
+				}
+				size_t numConnections = 0;
+				for (const TensorNetwork::Link &l : _network.nodes[id3].neighbors) {
+					if (l.links(id1) || l.links(id2)) {
+						numConnections += 1;
+					}
+				}
+				// find the next most connected node
+				for (size_t i=id3+1; i<_network.nodes.size(); ++i) {
+					if (i == id1 || i == id2) continue;
+					size_t newConnections=0;
+					for (const TensorNetwork::Link &l : _network.nodes[i].neighbors) {
+						if (l.links(id1) || l.links(id2)) {
+							newConnections += 1;
+						}
+					}
+					if (newConnections > numConnections) {
+						numConnections = newConnections;
+						id3 = i;
+					}
+				}
+				
+				// find the next best contraction within id1,id2,id3
+				std::tuple<size_t, size_t, double> contraction = best_of_three(_network, id1, id2, id3);
+				ourFinalCost += std::get<2>(contraction);
+// 				if (ourFinalCost > _bestCost) {
+// 					return;
+// 				}
+// 				if (std::get<1>(contraction) == id1) {
+// 					id1 = id3;
+// 				} else if (std::get<1>(contraction) == id2) {
+// 					id2 = id3;
+// 				}
+				ourContractions.emplace_back(std::get<0>(contraction), std::get<1>(contraction));
+				_network.contract(std::get<0>(contraction), std::get<1>(contraction));
+				numNodes -= 1;
+			}
+			
+			LOG(hahaha, ourFinalCost << " vs " << _bestCost);
+			if (ourFinalCost < _bestCost) {
+				_bestCost = ourFinalCost;
+				_contractions = std::move(ourContractions);
 			}
 		}
     }

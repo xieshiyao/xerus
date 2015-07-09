@@ -44,6 +44,9 @@ namespace xerus {
 		double score_big_tensor(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
 		double score_littlestep(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
 		
+		
+		void greedy_best_of_three_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network);
+		
 		const std::vector<ContractionHeuristic> contractionHeuristics{
 			&greedy_heuristic<&score_size>,
 			&greedy_heuristic<&score_mn>,
@@ -51,6 +54,7 @@ namespace xerus {
 // 			&greedy_heuristic<&score_r>,
 			&greedy_heuristic<&score_big_tensor>,
 			&greedy_heuristic<&score_littlestep>
+// 			&greedy_best_of_three_heuristic
 		};
 	}
 	
