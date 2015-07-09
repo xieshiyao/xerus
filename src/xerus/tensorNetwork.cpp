@@ -783,34 +783,22 @@ namespace xerus {
         }
         
         
-        TensorNetwork stripped = stripped_subnet(_ids); 
-        double bestScore=1e32f;
-        std::vector<std::pair<size_t, size_t>> *bestOrder=nullptr;
+        TensorNetwork strippedNetwork = stripped_subnet(_ids); 
+        double bestCost=std::numeric_limits<double>::max();
+        std::vector<std::pair<size_t, size_t>> bestOrder;
         
         // ask heuristics
-        for (ContractionHeuristic &c : *ContractionHeuristic::list) {
-            if (c.rescore(stripped) < bestScore) {
-                bestScore = c.score;
-                bestOrder = &c.contractions; //TODO not threadsafe
-            }
-            LOG(TNContract, "heuristic '" << c.name << "' contracts with cost " << c.score);
-            //if (bestScore < 256*256*256) break;
+        for (const internal::ContractionHeuristic &c : internal::contractionHeuristics) {
+            c(bestCost, bestOrder, strippedNetwork);
         }
         
-        REQUIRE(bestScore < 1e32f && bestOrder, "Internal Error.");
-        // perform contractions
-//         size_t numContraction = 0;
-//         misc::exec("rm contractions/*");
-// 		LOG(contractionOrderX, "Starting contraction ");
-//         draw(std::string("contractions/after_")+misc::to_string(numContraction++)+"_steps");
-        for (const std::pair<size_t,size_t> &c : *bestOrder) {
-// 			LOG(contractionOrderX, "Going to contract: " << c.first << " and " << c.second);
+        REQUIRE(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
+        for (const std::pair<size_t,size_t> &c : bestOrder) {
             contract(c.first, c.second);
-//             draw(std::string("contractions/after_")+misc::to_string(numContraction++)+"_steps");
         }
         
         // note: no sanitization as eg. TTStacks require the indices not to change after calling this function
-        return bestOrder->back().first;
+        return bestOrder.back().first;
     }
 
     value_t TensorNetwork::frob_norm() const {

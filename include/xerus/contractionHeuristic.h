@@ -28,35 +28,31 @@
 
 namespace xerus {
 
-    //TODO individuelle schranken
     
-    /// @brief Class representing heuristics used to find good contraction orders of TensorNetworks.
-    class ContractionHeuristic {
-    public:
-        static std::vector<ContractionHeuristic> *list;
+	namespace internal {
+		typedef void (*ContractionHeuristic)(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork);
 		
-		// TODO get rid of this
-		/// @brief Internal Wrapper Class
-        struct AddToVector {
-            template<typename... args>
-            AddToVector(args... _args) {
-                if (!list) list = new std::vector<ContractionHeuristic>();
-                list->emplace_back(_args...);
-            }
-        };
-        
-		/// Name of the heuristic
-        std::string name;
-        
-        double score;
-        
-        std::vector<std::pair<size_t,size_t>> contractions;
-        
-        std::function<void(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> scoreFct;
-        
-        ContractionHeuristic(std::string _name, std::function<void(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct);
-        
-        double rescore(TensorNetwork _tn); // NOTE take as value to get a deep copy instead of reference!
-    };
+		template<double (*scoreFct)(double, double, double, double, double)>
+		void greedy_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network);
+		
+		double contraction_cost(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		
+		double score_size(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		double score_mn(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		double score_speed(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		double score_r(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		double score_big_tensor(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		double score_littlestep(double _m, double _n, double _r, double _sparsity1, double _sparsity2);
+		
+		const std::vector<ContractionHeuristic> contractionHeuristics{
+			&greedy_heuristic<&score_size>,
+			&greedy_heuristic<&score_mn>,
+			&greedy_heuristic<&score_speed>,
+// 			&greedy_heuristic<&score_r>,
+			&greedy_heuristic<&score_big_tensor>,
+			&greedy_heuristic<&score_littlestep>
+		};
+	}
+	
 }
 

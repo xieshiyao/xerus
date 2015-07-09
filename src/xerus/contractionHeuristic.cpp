@@ -25,85 +25,97 @@
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {
-    ContractionHeuristic::ContractionHeuristic(std::string _name, std::function<void(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork &)> _scoreFct) 
-        : name(_name), scoreFct(_scoreFct) {}
-    
-    double ContractionHeuristic::rescore(TensorNetwork _tn) { // NOTE take as value to get a deep copy instead of reference!
-        score=0;
-        contractions.clear();
-        scoreFct(score, contractions, _tn);
-        return score;
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External Stuff - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    std::vector<ContractionHeuristic>* ContractionHeuristic::list = nullptr;
-    
-	static __attribute__((destructor)) void destroy_list() {
-		delete ContractionHeuristic::list;
-		ContractionHeuristic::list = nullptr;
-	}
-
-	//TODO non-quadratic
-    #define GREEDY(name, alg) \
-        void name(double &_score, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork &_tn) { \
-        double best = std::numeric_limits<double>::max(); \
-        size_t bestId1, bestId2; \
-        do { \
-            best = std::numeric_limits<double>::max(); \
-            for (size_t i=0; i<_tn.nodes.size(); ++i) { \
-                if (_tn.nodes[i].erased) continue; \
-                TensorNetwork::TensorNode &ni = _tn.nodes[i]; \
-                for (size_t j=i+1; j<_tn.nodes.size(); ++j) { \
-                    if (_tn.nodes[j].erased) continue; \
-                    TensorNetwork::TensorNode &nj = _tn.nodes[j]; \
-                    /* possible candidate (i.e. link to a later node) */\
-                    /* calculate n,m,r */ \
-                    double m=1,n=1,r=1; \
-                    for (size_t d=0; d<ni.degree(); ++d) { \
-                        if (ni.neighbors[d].other == j) { \
-                            r *= (double)ni.neighbors[d].dimension; \
-                        } else { \
-                            m *= (double)ni.neighbors[d].dimension; \
-                        } \
-                    } \
-                    for (size_t d=0; d<nj.degree(); ++d) { \
-                        if (nj.neighbors[d].other != i) { \
-                            n *= (double)nj.neighbors[d].dimension; \
-                        } \
-                    } \
-                    double tmpscore = alg; \
-                    if (tmpscore < best) { \
-                        best = tmpscore; \
-                        bestId1 = i; \
-                        bestId2 = j; \
-                    } \
-                } \
-            } \
-            if (best < std::numeric_limits<double>::max()) { \
-                _score += _tn.contraction_cost(bestId1,bestId2); \
-                _contractions.emplace_back(bestId1,bestId2); \
-                _tn.contract(bestId1,bestId2); \
-            } \
-        } while (best < std::numeric_limits<double>::max()); \
-    }
-
-    
-
     namespace internal {
-        GREEDY(greedy_size, n*m-(n+m)*r)
-		GREEDY(greedy_nm, n*m)
-        GREEDY(greedy_speed, (n*m-(n+m)*r)/(n*m*r))
-        GREEDY(greedy_r, -r)
-		GREEDY(greedy_littlestep, (n*m<(n+m)*r? -1e10 + n*m*r : n*m-(n+m)*r))
-		GREEDY(greedy_big_tensor, (n*m<(n+m)*r? -std::max(n,m)*r : n*m-(n+m)*r))
-        
-        static ContractionHeuristic::AddToVector greedy_size_heuristic("greedy_size", greedy_size);
-		static ContractionHeuristic::AddToVector greedy_nm_heuristic("greedy_nm", greedy_nm);
-        static ContractionHeuristic::AddToVector greedy_speed_heuristic("greedy_speed", greedy_speed);
-        static ContractionHeuristic::AddToVector greedy_rank_heuristic("greedy_r", greedy_r);
-		static ContractionHeuristic::AddToVector greedy_littlestep_heuristic("greedy_littlestep", greedy_littlestep);
-		static ContractionHeuristic::AddToVector greedy_big_tensor_heuristic("greedy_big_tensor", greedy_big_tensor);
+		
+		template<double (*scoreFct)(double, double, double, double, double)>
+		void greedy_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network) {
+			double bestScore, ourCost=0;
+			double ourFinalCost=0;
+			std::vector<std::pair<size_t,size_t>> ourContractions;
+			size_t bestId1, bestId2;
+			do {
+				bestScore = std::numeric_limits<double>::max();
+				for (size_t i=0; i<_network.nodes.size(); ++i) {
+					if (_network.nodes[i].erased) continue;
+					TensorNetwork::TensorNode &ni = _network.nodes[i];
+					for (size_t j=i+1; j<_network.nodes.size(); ++j) {
+						if (_network.nodes[j].erased) continue;
+						TensorNetwork::TensorNode &nj = _network.nodes[j];
+						/* possible candidate (i.e. link to a later node) */
+						/* calculate n,m,r */
+						double m=1,n=1,r=1;
+						for (size_t d=0; d<ni.degree(); ++d) {
+							if (ni.neighbors[d].other == j) {
+								r *= (double)ni.neighbors[d].dimension;
+							} else {
+								m *= (double)ni.neighbors[d].dimension;
+							}
+						}
+						for (size_t d=0; d<nj.degree(); ++d) {
+							if (nj.neighbors[d].other != i) {
+								n *= (double)nj.neighbors[d].dimension;
+							}
+						}
+						double tmpscore = scoreFct(m,n,r,0.0,0.0);
+						if (tmpscore < bestScore) {
+							bestScore = tmpscore;
+							ourCost = contraction_cost(m,n,r,0.0,0.0);
+							bestId1 = i;
+							bestId2 = j;
+						}
+					}
+				}
+				if (bestScore < std::numeric_limits<double>::max()) {
+					ourFinalCost += ourCost;
+					if (ourFinalCost > _bestCost) {
+						return;
+					}
+					ourContractions.emplace_back(bestId1,bestId2);
+					_network.contract(bestId1,bestId2);
+				}
+			} while (bestScore < std::numeric_limits<double>::max());
+			if (ourFinalCost < _bestCost) {
+				_bestCost = ourFinalCost;
+				_contractions = std::move(ourContractions);
+			}
+		}
+		
+		
+		
+		
+		double contraction_cost(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			return _m*_n*_r; // TODO sparse
+		}
+		
+		
+		
+		
+		double score_size(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			return _n*_m-(_n+_m)*_r;
+		}
+		double score_mn(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			return _m*_n;
+		}
+		double score_speed(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			return (_n*_m-(_n+_m)*_r)/(_n*_m*_r);
+		}
+		double score_r(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			return -_r;
+		}
+		double score_big_tensor(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			if (_n*_m<(_n+_m)*_r) {
+				return -1e10 + _n*_m*_r;
+			} else {
+				return _n*_m-(_n+_m)*_r;
+			}
+		}
+		double score_littlestep(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+			if (_n*_m<(_n+_m)*_r) {
+				return -std::max(_n,_m)*_r;
+			} else {
+				return _n*_m-(_n+_m)*_r;
+			}
+		}
     }
 
 }
