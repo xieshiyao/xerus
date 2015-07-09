@@ -97,7 +97,7 @@ namespace xerus {
 			std::move(neighbors)
 		);
 		
-		REQUIRE(is_valid_tt(), "ie");
+		REQUIRE(is_valid_tt(), "Internal Error.");
 	}
 	
 	
@@ -214,7 +214,7 @@ namespace xerus {
 		component(0) *= _tensor.factor; // NOTE this needs to be removed if the loop above does not use low-level calls anymore
 		
 		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
-		REQUIRE(is_in_expected_format(), "ie");
+		REQUIRE(is_in_expected_format(), "Internal Error.");
 	}
 	
 	
@@ -346,7 +346,7 @@ namespace xerus {
 		
 		cannonicalized = true;
 		corePosition = degree()/N-1;
-		REQUIRE(is_in_expected_format(), "ie");
+		REQUIRE(is_in_expected_format(), "Internal Error.");
 	}
 	
 	
@@ -367,7 +367,7 @@ namespace xerus {
 		// after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
 		// so modulus gives the correct wanted id
 		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
-		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "ie");
+		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
 		REQUIRE(_me.tensorObject->is_valid_network(), "ie: something went wrong in contract_stack");
 		
 		// reset to new external links
@@ -418,7 +418,7 @@ namespace xerus {
 					newRight.push_back(oldIndices.back());
 					newRank *= l.dimension;
 				} else  {
-					LOG(fatal, "ie");
+					LOG(fatal, "Internal Error.");
 				}
 			}
 			newIndices = std::move(lastRight);
@@ -432,7 +432,7 @@ namespace xerus {
 			n.neighbors.emplace_back(i, i==0?0:N+1,lastRank, false);
 			newDimensions.push_back(lastRank);
 			for (size_t j=0; j<N; ++j) {
-				REQUIRE(_me.tensorObject->dimensions[i+j*numComponents] == externalDim[j], "ie");
+				REQUIRE(_me.tensorObject->dimensions[i+j*numComponents] == externalDim[j], "Internal Error.");
 				n.neighbors.emplace_back(0,i+j*numComponents,externalDim[j], true);
 				newDimensions.push_back(externalDim[j]);
 			}
@@ -678,7 +678,7 @@ namespace xerus {
 			result.cannonicalized = false;
 		}
 		
-		REQUIRE(result.is_valid_tt(), "ie");
+		REQUIRE(result.is_valid_tt(), "Internal Error.");
 		return result;
 	}
 	
@@ -700,11 +700,18 @@ namespace xerus {
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
 			REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
+			
+			if(_A.degree() == 0) {
+				TTNetwork result(_A);
+				result *= _B[0];
+				return result;
+			}
+			
 			TTNetwork result(_A.degree());
+			
 			const size_t numComponents = _A.degree() / N;
 			
 			std::unique_ptr<FullTensor> newComponent;
-			// TODO degree 0 TTs
 			for (size_t i=0; i<numComponents; ++i) {
 				//TODO sparse TT
 				const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
@@ -742,8 +749,9 @@ namespace xerus {
 				}
 				result.set_component(i, std::move(newComponent));
 			}
-			REQUIRE(result.is_valid_tt(), "ie");
-			REQUIRE(result.is_valid_network(), "ie");
+			
+			REQUIRE(result.is_valid_tt(), "Internal Error.");
+			REQUIRE(result.is_valid_network(), "Internal Error.");
 			if (_A.cannonicalized) {
 				result.move_core(_A.corePosition);
 			}
@@ -1155,7 +1163,7 @@ namespace xerus {
 		
 		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
 		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
-		REQUIRE(meTT || meTTStack, "ie");
+		REQUIRE(meTT || meTTStack, "Internal Error.");
 		
 		const TTTensor* const otherTT = dynamic_cast<const TTTensor*>(_other.tensorObjectReadOnly);
 		const internal::TTStack<false>* const otherTTStack = dynamic_cast<const internal::TTStack<false>*>(_other.tensorObjectReadOnly);
@@ -1183,7 +1191,7 @@ namespace xerus {
 		auto midIndexItr = myIndices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
-			REQUIRE(midIndexItr != myIndices.end(), "ie");
+			REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
 			spanSum += midIndexItr->span;
 			++midIndexItr;
 		}
@@ -1207,7 +1215,7 @@ namespace xerus {
 			auto otherMidIndexItr = otherIndices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+				REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
@@ -1250,14 +1258,14 @@ namespace xerus {
 			auto midIndexItr = myIndices.begin();
 			size_t spanSum = 0;
 			while (spanSum < _me.degree() / 2) {
-				REQUIRE(midIndexItr != myIndices.end(), "ie");
+				REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
 				spanSum += midIndexItr->span;
 				++midIndexItr;
 			}
 			auto otherMidIndexItr = otherIndices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != otherIndices.end(), "ie");
+				REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
@@ -1464,11 +1472,11 @@ namespace xerus {
 		// TODO profiler should warn if other->corePos differs
 		
 		if (ttMe->cannonicalized) {
-			REQUIRE(!outTensor.cannonicalized, "ie");
+			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
 			outTensor.move_core(ttMe->corePosition);
 		}
 		
-		REQUIRE(outTensor.is_valid_tt(), "ie");
+		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
 		_out.assign(std::move(tmpOut));
 		return true;
 	}
@@ -1485,7 +1493,7 @@ namespace xerus {
 		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
 		const TTNetwork* const otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
 		TTNetwork* const meTTN = dynamic_cast<TTNetwork*>(_me.tensorObject);
-		REQUIRE(meTTN, "ie");
+		REQUIRE(meTTN, "Internal Error.");
 		const internal::TTStack<isOperator>* const otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
 		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
 		if (otherTTStack) {
