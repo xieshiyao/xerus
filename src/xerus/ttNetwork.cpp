@@ -453,7 +453,7 @@ namespace xerus {
 			const size_t numNodes = degree()==0 ? 1 : degree()/N + 2;
 			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
 			REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
-			REQUIRE(!cannonicalized || corePosition < numComponents, corePosition << " vs " << numComponents);
+			REQUIRE(!cannonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, corePosition << " vs " << numComponents);
 			REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 			
 			// per external link
@@ -1119,10 +1119,12 @@ namespace xerus {
 	void TTNetwork<isOperator>::operator*=(const value_t _factor) {
 		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
 		
-		if(cannonicalized) {
-			component(corePosition) *= _factor;
-		} else if(degree() > 0) {
-			component(0) *= _factor;
+		if(degree() > 0) {
+			if(cannonicalized) {
+				component(corePosition) *= _factor;
+			} else {
+				component(0) *= _factor;
+			}
 		} else {
 			*nodes[0].tensorObject *= _factor;
 		}

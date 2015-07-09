@@ -477,24 +477,36 @@ UNIT_TEST(TT, full_contraction,
 )
 
 UNIT_TEST(TT, disjoint_product,
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
+	//Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
+	std::uniform_int_distribution<size_t> dimDist(1, 5);
 	
-	FullTensor A = FullTensor::construct_random({10,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({10,10}, rnd, dist);
-	FullTensor C(4);
-	TTTensor ttA(A); 
-	TTTensor ttB(B);
-	TTTensor ttC(4);
-	
+	std::vector<size_t> dimsA;
+	std::vector<size_t> dimsB;
+    
+	const size_t D = 5;
 	Index i,j;
 	
-	ttC = TTTensor::dyadic_product(ttA,ttB);
-	C(i^2,j^2) = A(i&0)*B(j&0);
-	
-	LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
-	TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+	for(size_t d = 0; d <= D; ++d) {
+		FullTensor A = FullTensor::construct_random(dimsA, rnd, dist);
+		FullTensor B = FullTensor::construct_random(dimsB, rnd, dist);
+		FullTensor C;
+		TTTensor ttA(A); 
+		TTTensor ttB(B);
+		TTTensor ttC;
+		
+		
+		ttC = TTTensor::dyadic_product(ttA,ttB);
+		C(i/2,j/2) = A(i&0)*B(j&0);
+		
+		LOG(unit_test, frob_norm(C(i&0) - FullTensor(ttC)(i&0)));
+		TEST(approx_equal(C, FullTensor(ttC), 1e-13));
+		
+		dimsA.push_back(dimDist(rnd));
+		dimsB.push_back(dimDist(rnd));
+	}
 )
 
 
