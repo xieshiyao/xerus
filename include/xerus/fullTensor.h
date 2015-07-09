@@ -33,6 +33,7 @@
 
 namespace xerus {
     class SparseTensor;
+    class TensorNetwork;
     
     /// @brief The xerus class used to represent all dense tensor objects.
     class FullTensor final : public Tensor {
@@ -67,6 +68,14 @@ namespace xerus {
 		 * @param _other the Tensor which shall be used.
 		 */
         explicit FullTensor(      Tensor&& _other);
+		
+		
+		/** 
+		 * @brief Constructs a FullTensor by completely contracting a Tensor network.
+		 * @param _other the TensorNetwork which shall be used.
+		 */
+        explicit FullTensor(const TensorNetwork&  _other);
+		
         
 		
 		/** 

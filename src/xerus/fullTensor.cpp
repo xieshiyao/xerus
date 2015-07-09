@@ -24,6 +24,7 @@
 
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
+#include <xerus/tensorNetwork.h>
 #include <xerus/misc/blasLapackWrapper.h>
 #include <cstring>
 
@@ -53,6 +54,7 @@ namespace xerus {
 		}
 	}
     
+    FullTensor::FullTensor(const TensorNetwork& _other) : FullTensor(*_other.fully_contracted_tensor()) { }
 
     FullTensor::FullTensor(const size_t _degree) : FullTensor(std::vector<size_t>(_degree, 1)) { }
     
