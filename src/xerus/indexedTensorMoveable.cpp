@@ -66,30 +66,7 @@ namespace xerus {
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other ) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), std::move(_other.indices), true) { }
         
-        
-	 
-    template<>
-    void IndexedTensorMoveable<Tensor>::perform_traces() {
-		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
-		const std::vector<Index> assIndices = this->get_assigned_indices();
-		std::vector<Index> openIndices;
-		bool allOpen = true;
-		for(const Index& idx : assIndices) {
-			if(idx.open()) {
-				openIndices.push_back(idx);
-			} else {
-				allOpen = false;
-			}
-		}
-		if(!allOpen) { 
-			Tensor* tmpTensor(this->tensorObjectReadOnly->construct_new());
-			(*tmpTensor)(openIndices) = *this;
-			delete this->tensorObject;
-			this->tensorObject = tmpTensor;
-			this->tensorObjectReadOnly = tmpTensor;
-			this->indices = openIndices;
-		}
-	}
+    
         
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensorMoveable<Tensor>;

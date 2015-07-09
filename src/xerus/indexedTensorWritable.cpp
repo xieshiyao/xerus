@@ -107,6 +107,25 @@ namespace xerus {
         operator=(static_cast<const IndexedTensorReadOnly<tensor_type> &>(_rhs));
     }
     
+    template<>
+    void IndexedTensorWritable<Tensor>::perform_traces() {
+		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
+		const std::vector<Index> assIndices = this->get_assigned_indices();
+		std::vector<Index> openIndices;
+		bool allOpen = true;
+		for(const Index& idx : assIndices) {
+			if(idx.open()) {
+				openIndices.push_back(idx);
+			} else {
+				allOpen = false;
+			}
+		}
+		if(!allOpen) { 
+			(*this->tensorObject)(openIndices) = *this;
+			this->indices = openIndices;
+		}
+	}
+    
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensorWritable<Tensor>;
     template class IndexedTensorWritable<TensorNetwork>;

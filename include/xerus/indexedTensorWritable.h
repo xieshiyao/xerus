@@ -101,5 +101,11 @@ namespace xerus {
         ///@brief The following would be deleted due to move constructor and is therefore implemented here, calls the IndexedTensorReadOnly version. 
         void operator=(const IndexedTensorWritable<tensor_type>& _rhs);
 		
+		
+		/**
+		 * @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.
+		 */
+		void perform_traces();
+		
     };
 }

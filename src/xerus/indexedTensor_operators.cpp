@@ -33,86 +33,7 @@
 
 namespace xerus {
     
-	
-    namespace internal {
-		
-        template<bool PLUS>
-        static _inline_ IndexedTensorMoveable<Tensor> plus_minus(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
-            const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
-            const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
-            
-            // Get open rhs indices that are not contained in lhs
-            std::vector<Index> lhsNotRhs;
-            std::vector<Index> lhsOpen;
-            size_t lhsOpenDim = 0;
-            for(size_t i = 0; i < lhsIndices.size(); ++i) {
-                if(lhsIndices[i].open()) {
-                    lhsOpen.emplace_back(lhsIndices[i]);
-                    lhsOpenDim += lhsIndices[i].span;
-                    if(!misc::contains(rhsIndices, lhsIndices[i])) {
-                        lhsNotRhs.emplace_back(lhsIndices[i]);
-                    }
-                }
-            }
-            
-            // Get open lhs indices that are not contained in rhs
-            std::vector<Index> rhsNotLhs;
-            std::vector<Index> rhsOpen;
-            size_t rhsOpenDim = 0;
-            for(size_t i = 0; i < rhsIndices.size(); ++i) {
-                if(rhsIndices[i].open()) {
-                    rhsOpen.emplace_back(rhsIndices[i]);
-                    rhsOpenDim += rhsIndices[i].span;
-                    if(!misc::contains(lhsIndices, rhsIndices[i])) {
-                        rhsNotLhs.emplace_back(rhsIndices[i]);
-                    }
-                }
-            }
-             
-            if(rhsNotLhs.empty() && lhsNotRhs.empty()) {
-                IndexedTensorMoveable<Tensor> tmp1(_lhs.tensorObjectReadOnly->construct_new(std::vector<size_t>(lhsOpenDim, 1)), lhsOpen); //TODO get rid of vector
-                static_cast<IndexedTensorWritable<Tensor>&>(tmp1) = _lhs;
-                IndexedTensorMoveable<Tensor> tmp2(_rhs.tensorObjectReadOnly->construct_new(std::vector<size_t>(lhsOpenDim, 1)), lhsOpen); //TODO get rid of vector
-                static_cast<IndexedTensorWritable<Tensor>&>(tmp2) = _rhs;
-                
-                if(!tmp1.tensorObjectReadOnly->is_sparse() && !tmp2.tensorObjectReadOnly->is_sparse()) { // Both Full
-                    if(PLUS) {
-                        static_cast<FullTensor&>(*tmp1.tensorObject) += static_cast<FullTensor&>(*tmp2.tensorObject);
-                    } else {
-                        static_cast<FullTensor&>(*tmp1.tensorObject) -= static_cast<FullTensor&>(*tmp2.tensorObject);
-                    }
-                    return tmp1;
-                } else if(tmp1.tensorObjectReadOnly->is_sparse() && tmp2.tensorObjectReadOnly->is_sparse()) { // Both Sparse
-                    if(PLUS) {
-                        static_cast<SparseTensor&>(*tmp1.tensorObject) += static_cast<SparseTensor&>(*tmp2.tensorObject);
-                    } else {
-                        static_cast<SparseTensor&>(*tmp1.tensorObject) -= static_cast<SparseTensor&>(*tmp2.tensorObject);
-                    }
-                    return tmp1;
-                } else if(!tmp1.tensorObjectReadOnly->is_sparse() && tmp2.tensorObjectReadOnly->is_sparse()) { // Full + Sparse
-                    if(PLUS) {
-                        static_cast<FullTensor&>(*tmp1.tensorObject) += static_cast<SparseTensor&>(*tmp2.tensorObject);
-                    } else {
-                        static_cast<FullTensor&>(*tmp1.tensorObject) -= static_cast<SparseTensor&>(*tmp2.tensorObject);
-                    }
-                    return tmp1;
-                } else { // Sparse + Full (switch lhs and rhs)
-                    if(PLUS) {
-                        static_cast<FullTensor&>(*tmp2.tensorObject) += static_cast<SparseTensor&>(*tmp1.tensorObject);
-                    } else {
-                        static_cast<FullTensor&>(*tmp2.tensorObject) -= static_cast<SparseTensor&>(*tmp1.tensorObject);
-                        tmp2.tensorObject->factor *= -1;
-                    }
-                    return tmp2;
-                }
-            } else {
-                LOG(fatal, "Sum/Diff with non common indices not yet implemented.");
-                return IndexedTensorMoveable<Tensor>(_lhs.tensorObjectReadOnly->construct_new({}), lhsOpen);
-            }
-        }
-    }
-    
-	void plus_equal(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
+	void operator+=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
 		std::unique_ptr<Tensor> reorderedRhs(_rhs.tensorObjectReadOnly->construct_new());
 		(*reorderedRhs)(_lhs.indices) = _rhs;
 		
@@ -124,7 +45,7 @@ namespace xerus {
 		}		
 	}
 	
-	void minus_equal(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
+	void operator-=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
 		std::unique_ptr<Tensor> reorderedRhs(_rhs.tensorObjectReadOnly->construct_new());
 		(*reorderedRhs)(_lhs.indices) = _rhs;
 		
@@ -141,12 +62,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(_lhs);
 			result.perform_traces();
-			plus_equal(result, _rhs);
+			operator+=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_rhs);
 			result.perform_traces();
-			plus_equal(result, _lhs);
+			operator+=(result, _lhs);
 			return result;
 		}
 	}
@@ -155,12 +76,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			plus_equal(result, _rhs);
+			operator+=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_rhs);
 			result.perform_traces();
-			plus_equal(result, _lhs);
+			operator+=(result, _lhs);
 			return result;
 		}
 	}
@@ -169,12 +90,12 @@ namespace xerus {
 		if(!_rhs.tensorObjectReadOnly->is_sparse() || _lhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			plus_equal(result, _lhs);
+			operator+=(result, _lhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_lhs);
 			result.perform_traces();
-			plus_equal(result, _rhs);
+			operator+=(result, _rhs);
 			return result;
 		}
 	}
@@ -183,12 +104,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			plus_equal(result, _rhs);
+			operator+=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			plus_equal(result, _lhs);
+			operator+=(result, _lhs);
 			return result;
 		}
 	}
@@ -199,12 +120,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(_lhs);
 			result.perform_traces();
-			minus_equal(result, _rhs);
+			operator-=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_rhs);
 			result.perform_traces();
-			minus_equal(result, _lhs);
+			operator-=(result, _lhs);
 			*result.tensorObject *= -1.0;
 			return result;
 		}
@@ -214,12 +135,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			minus_equal(result, _rhs);
+			operator-=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_rhs);
 			result.perform_traces();
-			minus_equal(result, _lhs);
+			operator-=(result, _lhs);
 			*result.tensorObject *= -1.0;
 			return result;
 		}
@@ -229,13 +150,13 @@ namespace xerus {
 		if(!_rhs.tensorObjectReadOnly->is_sparse() || _lhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			minus_equal(result, _lhs);
+			operator-=(result, _lhs);
 			*result.tensorObject *= -1.0;
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(_lhs);
 			result.perform_traces();
-			minus_equal(result, _rhs);
+			operator-=(result, _rhs);
 			return result;
 		}
 	}
@@ -244,12 +165,12 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			minus_equal(result, _rhs);
+			operator-=(result, _rhs);
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			minus_equal(result, _lhs);
+			operator-=(result, _lhs);
 			*result.tensorObject *= -1.0;
 			return result;
 		}
@@ -284,4 +205,13 @@ namespace xerus {
     IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork>  & _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
         return _lhs+(-1*_rhs);
     }
+    
+    
+	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
+		_lhs = _lhs + _rhs;
+	}
+	
+	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
+		_lhs = _lhs - _rhs;
+	}
 }
