@@ -57,10 +57,16 @@ namespace xerus {
         
 		
 		/** 
-		 * @brief Constructs a FullTensor from a SparseTensor.
-		 * @param _other the SparseTensor which shall be used.
+		 * @brief Constructs a FullTensor from another Tensor.
+		 * @param _other the Tensor which shall be used.
 		 */
-        explicit FullTensor(const SparseTensor& _other);
+        explicit FullTensor(const Tensor&  _other);
+		
+		/** 
+		 * @brief Move-constructs a FullTensor from another Tensor.
+		 * @param _other the Tensor which shall be used.
+		 */
+        explicit FullTensor(      Tensor&& _other);
         
 		
 		/** 

@@ -35,17 +35,24 @@ namespace xerus {
 
     FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)), data(_other.data) { }
     
-    FullTensor::FullTensor(const SparseTensor& _other) : FullTensor(_other.dimensions) {
-        if(_other.has_factor()) {
-            for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-                data.get()[entry.first] = _other.factor*entry.second;
-            }
-        } else {
-            for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-                data.get()[entry.first] = entry.second;
-            }
-        }
-    }
+    FullTensor::FullTensor(const Tensor&  _other) : Tensor(_other), data(_other.is_sparse() ? std::shared_ptr<value_t>(new value_t[size], internal::array_deleter_vt) : static_cast<const FullTensor&>(_other).data) {
+		if(_other.is_sparse()) {
+			misc::array_set_zero(data.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				data.get()[entry.first] = entry.second;
+			}
+		}
+	}
+
+    FullTensor::FullTensor(      Tensor&& _other) : Tensor(std::move(_other)), data(_other.is_sparse() ? std::shared_ptr<value_t>(new value_t[size], internal::array_deleter_vt) : static_cast<FullTensor&>(_other).data) {
+		if(_other.is_sparse()) {
+			misc::array_set_zero(data.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				data.get()[entry.first] = entry.second;
+			}
+		}
+	}
+    
 
     FullTensor::FullTensor(const size_t _degree) : FullTensor(std::vector<size_t>(_degree, 1)) { }
     
