@@ -131,7 +131,7 @@ namespace xerus {
 		
 		
 		
-		std::tuple<size_t, size_t, double> best_of_three(const TensorNetwork &_network, size_t _id1, size_t _id2, size_t _id3) {
+		std::tuple<size_t, size_t, size_t, double> best_of_three(const TensorNetwork &_network, size_t _id1, size_t _id2, size_t _id3) {
 			const TensorNetwork::TensorNode &na = _network.nodes[_id1];
 			const TensorNetwork::TensorNode &nb = _network.nodes[_id2];
 			const TensorNetwork::TensorNode &nc = _network.nodes[_id3];
@@ -164,11 +164,11 @@ namespace xerus {
 			double costAC = sa*sc*sab*sbc*(sac+sb); 
 			double costBC = sb*sc*sab*sac*(sbc+sa);
 			if (costAB < costAC && costAB < costBC) {
-				return std::tuple<size_t, size_t, double>(_id1, _id2, costAB);
+				return std::tuple<size_t, size_t, size_t, double>(_id1, _id2, _id3, sa*sb*sac*sbc*sab);
 			} else if (costAC < costBC) {
-				return std::tuple<size_t, size_t, double>(_id1, _id3, costAC);
+				return std::tuple<size_t, size_t, size_t, double>(_id1, _id3, _id2, sa*sc*sab*sbc*sac);
 			} else {
-				return std::tuple<size_t, size_t, double>(_id2, _id3, costBC);
+				return std::tuple<size_t, size_t, size_t, double>(_id2, _id3, _id1, sb*sc*sab*sac*sbc);
 			}
 		}
 		
@@ -184,7 +184,7 @@ namespace xerus {
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
-// 			if (_bestCost < double(2 * 3 * numNodes * numEdges)) return;
+			if (_bestCost < double(2 * 3 * numNodes * numEdges)) return;
 			
 			double ourFinalCost=0;
 			std::vector<std::pair<size_t,size_t>> ourContractions;
@@ -240,11 +240,11 @@ namespace xerus {
 				}
 				
 				// find the next best contraction within id1,id2,id3
-				std::tuple<size_t, size_t, double> contraction = best_of_three(_network, id1, id2, id3);
-				ourFinalCost += std::get<2>(contraction);
-// 				if (ourFinalCost > _bestCost) {
-// 					return;
-// 				}
+				std::tuple<size_t, size_t, size_t, double> contraction = best_of_three(_network, id1, id2, id3);
+				ourFinalCost += std::get<3>(contraction);
+				if (ourFinalCost > _bestCost) {
+					return;
+				}
 // 				if (std::get<1>(contraction) == id1) {
 // 					id1 = id3;
 // 				} else if (std::get<1>(contraction) == id2) {
@@ -269,6 +269,94 @@ namespace xerus {
 				_contractions = std::move(ourContractions);
 			}
 		}
+		
+		
+		void exchange_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network) {
+			// estimated cost to calculate this heuristic is
+			// numContractions * 3*avgEdgesPerNode ~= 3 * numEdges
+			TensorNetwork copyNet(_network);
+			double numEdges=0;
+			for (size_t i=0; i<_network.nodes.size(); ++i) {
+				if (!_network.nodes[i].erased) {
+					numEdges += (double)_network.nodes[i].degree();
+				}
+			}
+			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
+			double cost_of_heuristic = 3*numEdges;
+// 			LOG(vergleich, _bestCost << " vs " << cost_of_heuristic);
+			if (_bestCost < 2 * cost_of_heuristic) return;
+			
+			
+			size_t id1 = _contractions.front().first;
+			size_t id2 = _contractions.front().second;
+			
+			double ourFinalCost=0;
+			std::vector<std::pair<size_t,size_t>> ourContractions;
+			std::vector<size_t> idMap;
+			for (size_t i =0; i<_network.nodes.size(); ++i) {
+				idMap.emplace_back(i);
+			}
+			
+			for (size_t i=1; i<_contractions.size(); ++i) {
+				std::pair<size_t, size_t> next = _contractions[i];
+				while (next.first != idMap[next.first]) next.first = idMap[next.first];
+				while (next.second != idMap[next.second]) next.second = idMap[next.second];
+				
+				if (next.first != id1 && next.first != id2) {
+					if (next.second == id1 || next.second == id2) {
+						auto contr = best_of_three(_network, id1, id2, next.first);
+						size_t a = std::get<0>(contr);
+						size_t b = std::get<1>(contr);
+						size_t c = std::get<2>(contr);
+						idMap[b] = a;
+						ourFinalCost += std::get<3>(contr);
+						ourContractions.emplace_back(a,b);
+						_network.contract(a,b);
+						id1 = a;
+						id2 = c;
+					} else {
+						ourFinalCost += _network.contraction_cost(id1, id2);
+						ourContractions.emplace_back(id1, id2);
+						_network.contract(id1,id2);
+						idMap[id2] = id1;
+						id1 = next.first;
+						id2 = next.second;
+					}
+				} else {
+					if (next.second == id1 || next.second == id2) {
+						LOG(fatal, "ie");
+					} else {
+						auto contr = best_of_three(_network, id1, id2, next.second);
+						size_t a = std::get<0>(contr);
+						size_t b = std::get<1>(contr);
+						size_t c = std::get<2>(contr);
+						idMap[b] = a;
+						ourFinalCost += std::get<3>(contr);
+						ourContractions.emplace_back(a,b);
+						_network.contract(a,b);
+						id1 = a;
+						id2 = c;
+					}
+				}
+			}
+			
+			ourFinalCost += _network.contraction_cost(id1, id2);
+			ourContractions.emplace_back(id1, id2);
+			
+// 			LOG(hohohoEx, ourFinalCost << " vs " << _bestCost);
+			if (ourFinalCost < _bestCost) {
+				bool repeat = false;
+				if (_bestCost - ourFinalCost > cost_of_heuristic * 2) {
+					repeat = true;
+				}
+				_bestCost = ourFinalCost;
+				_contractions = std::move(ourContractions);
+				if (repeat) {
+					exchange_heuristic(_bestCost, _contractions, copyNet);
+				}
+			}
+		}
+		
     }
 
 }
