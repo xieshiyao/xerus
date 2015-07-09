@@ -253,6 +253,14 @@ namespace xerus {
 				ourContractions.emplace_back(std::get<0>(contraction), std::get<1>(contraction));
 				_network.contract(std::get<0>(contraction), std::get<1>(contraction));
 				numNodes -= 1;
+				LOG(cont, std::get<0>(contraction) << " " << std::get<1>(contraction));
+				
+				if (numNodes == 2) {
+					ourFinalCost += _network.contraction_cost(id1, id2);
+					ourContractions.emplace_back(id1, id2);
+					LOG(cont, id1 << " " << id2);
+					numNodes -= 1;
+				}
 			}
 			
 			LOG(hahaha, ourFinalCost << " vs " << _bestCost);

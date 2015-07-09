@@ -54,7 +54,7 @@ namespace xerus {
 // 			&greedy_heuristic<&score_r>,
 			&greedy_heuristic<&score_big_tensor>,
 			&greedy_heuristic<&score_littlestep>
-// 			&greedy_best_of_three_heuristic
+// 			,&greedy_best_of_three_heuristic
 		};
 	}
 	

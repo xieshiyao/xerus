@@ -617,8 +617,8 @@ namespace xerus {
         TensorNode &node1 = nodes[_nodeId1];
         TensorNode &node2 = nodes[_nodeId2];
         
-        REQUIRE(!node1.erased, "It appears node1 was already contracted?");
-        REQUIRE(!node2.erased, "It appears node2 was already contracted?");
+        REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
+        REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
         
         if (_nodeId1 == _nodeId2) {
             return (double)node1.size(); // cost of a trace
