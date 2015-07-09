@@ -59,19 +59,19 @@ namespace xerus {
     
     
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    template<class tensor_type>
-    IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator*(const value_t _factor) const {
-		IndexedTensorMoveable<tensor_type> result(*this);
-        *result.tensorObject *= _factor;
-        return result;
-	}
-	
-	template<class tensor_type>
-    IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator/(const value_t _divisor) const {
-		IndexedTensorMoveable<tensor_type> result(*this);
-        *result.tensorObject /= _divisor;
-        return result;
-	}
+//     template<class tensor_type>
+//     IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator*(const value_t _factor) const {
+// 		IndexedTensorMoveable<tensor_type> result(*this);
+//         *result.tensorObject *= _factor;
+//         return result;
+// 	}
+// 	
+// 	template<class tensor_type>
+//     IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator/(const value_t _divisor) const {
+// 		IndexedTensorMoveable<tensor_type> result(*this);
+//         *result.tensorObject /= _divisor;
+//         return result;
+// 	}
 	
 	template<class tensor_type>
     IndexedTensorReadOnly<tensor_type>::operator value_t() const {

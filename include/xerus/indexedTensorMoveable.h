@@ -72,5 +72,10 @@ namespace xerus {
         ///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
 		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
         IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other);
+		
+		/**
+		 * @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.
+		 */
+		void perform_traces();
     };
 }

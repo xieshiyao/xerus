@@ -74,7 +74,7 @@ namespace xerus {
 
     
     template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>& _rhs) {
-		tensorObject->specialized_evaluation(*this, static_cast<IndexedTensorMoveable<TensorNetwork>>(_rhs)); // TODO change this to not cast
+		tensorObject->specialized_evaluation(*this, IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
     }
     
     
@@ -111,25 +111,6 @@ namespace xerus {
     void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>& _rhs) {
 		tensorObject->specialized_evaluation(*this, _rhs);
     }
-    
-    
-    
-    IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
-        TensorNetwork *res = _rhs.tensorObjectReadOnly->get_copy();
-        *res *= _factor;
-        IndexedTensorMoveable<TensorNetwork> result(res, _rhs.indices);
-        return result;
-    }
-    
-    IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&  _rhs) {
-        IndexedTensorMoveable<TensorNetwork> result(std::move(_rhs));
-        *result.tensorObject *= _factor;
-        return result;
-    }
-    
-    
-
-
 
     IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
@@ -157,33 +138,4 @@ namespace xerus {
         return result;
     }
 
-    
-    IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork>  &  _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
-        IndexedTensorMoveable<TensorNetwork> result;
-        if(!_lhs.tensorObjectReadOnly->specialized_sum(result, _lhs, _rhs) && !_rhs.tensorObjectReadOnly->specialized_sum(result, _rhs, _lhs)) {
-//             LOG(warning, "Using FullTensor fallback for TensorNetwork sum!");
-            std::unique_ptr<FullTensor> tmpResult(new FullTensor(_lhs.degree())); //TODO sparse
-            (*tmpResult)(_lhs.indices) = IndexedTensorMoveable<Tensor>(_lhs) + IndexedTensorMoveable<Tensor>(_rhs);
-            result.assign(IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(std::move(tmpResult)), _lhs.indices));
-        }
-        return result;
-    }
-    
-    
-    IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork>  & _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
-        return _lhs+(-1*_rhs);
-    }
-    
-    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		*_lhs.tensorObject *= -1.0;
-		return (-1)*operator+(std::move(_lhs), _rhs);
-	}
-    IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		*_rhs.tensorObject *= -1.0;
-		return operator+(std::move(_rhs), _lhs);
-	} 
-    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		*_rhs.tensorObject *= -1.0;
-		return operator+(std::move(_rhs), std::move(_lhs));
-	}
 }

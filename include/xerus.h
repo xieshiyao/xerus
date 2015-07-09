@@ -62,6 +62,7 @@
     #include "xerus/indexedTensor_tensor_factorisations.h"
     #include "xerus/tensorNetwork.h"
     #include "xerus/indexedTensor_TN_operators.h"
+    #include "xerus/indexedTensor_operators.h"
     #include "xerus/contractionHeuristic.h"
     #include "xerus/ttNetwork.h"
 	#include "xerus/performanceData.h"

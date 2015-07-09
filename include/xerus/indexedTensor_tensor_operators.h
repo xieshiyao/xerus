@@ -25,15 +25,11 @@
 #pragma once
 
 #include "indexedTensorMoveable.h"
+#include "tensor.h"
+#include "indexedTensor_operators.h"
 
 namespace xerus {
-    
-    //TODO move variants
-    
-    IndexedTensorMoveable<Tensor> operator+ (const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs);
-        
-    IndexedTensorMoveable<Tensor> operator- (const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs);
-    
+	
     IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A);
     
 

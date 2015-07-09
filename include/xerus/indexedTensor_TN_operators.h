@@ -25,31 +25,9 @@
 #pragma once
 
 #include "indexedTensorMoveable.h"
+#include "indexedTensor_operators.h"
 
 namespace xerus {
-    // Defined in the IndexedTensor classes: 
-    template<> void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
-    
-    template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs);
-    
-    template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
-    
-    
-    
-    IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, const IndexedTensorReadOnly<TensorNetwork>& _network);
-	
-	IndexedTensorMoveable<TensorNetwork> operator*(value_t _factor, IndexedTensorMoveable<TensorNetwork> &&_network);
-
-    static _inline_ IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> & _network, value_t _factor) {
-        return _factor*_network;
-    }
-    
-    static _inline_ IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork> &&_network, value_t _factor) {
-        return _factor*std::move(_network);
-    }
-
-    
-    
     IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // creates a new network
     
     IndexedTensorMoveable<TensorNetwork> operator*(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // copy right into left network
@@ -62,26 +40,4 @@ namespace xerus {
 		return operator*(std::move(_lhs), _rhs);
 	}
 
-	
-	
-    IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // creates a new network
-    
-    static _inline_ IndexedTensorMoveable<TensorNetwork> operator+(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) { // TODO own function
-		return operator+(_lhs, _rhs);
-	}
-	
-    static _inline_ IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		return operator+(std::move(_rhs), _lhs);
-	}
-	
-    static _inline_ IndexedTensorMoveable<TensorNetwork> operator+(      IndexedTensorMoveable<TensorNetwork> && _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
-		return operator+(std::move(_lhs), _rhs);
-	}
-	
-	
-	
-	IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // creates a new network
-    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-    IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs);
-    IndexedTensorMoveable<TensorNetwork> operator-(      IndexedTensorMoveable<TensorNetwork> && _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs); 
 }

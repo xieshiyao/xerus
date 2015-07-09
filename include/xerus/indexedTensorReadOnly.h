@@ -72,10 +72,6 @@ namespace xerus {
         virtual ~IndexedTensorReadOnly();
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-		IndexedTensorMoveable<tensor_type> operator*(const value_t _factor) const;
-		
-		IndexedTensorMoveable<tensor_type> operator/(const value_t _divisor) const;
 		
 		// TODO use these and implement specialized sum for Tensor
 // 		IndexedTensorMoveable<tensor_type> operator+(const IndexedTensorReadOnly& _other) const;
@@ -110,7 +106,4 @@ namespace xerus {
     
     size_t get_eval_degree(const std::vector<Index>& _indices);
 	
-	
-    template<class tensor_type>
-    static _inline_ IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, const IndexedTensorReadOnly<tensor_type>& _iTensor) {return _iTensor*_factor; }
 }

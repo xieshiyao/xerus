@@ -481,8 +481,8 @@ namespace xerus {
 			}
             
             virtual TensorNetwork* get_copy() const override {
-                LOG(fatal, "Forbidden");
-                return nullptr;
+// 				LOG(fatal, "Forbidden");
+                return new TTStack(*this);
             }
             
             virtual value_t frob_norm() const override {
