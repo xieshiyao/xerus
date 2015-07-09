@@ -31,7 +31,7 @@ namespace xerus { namespace examples {
 		REQUIRE(_n>=2, "");
 		TTTensor e1(FullTensor({_n}, [](){return 1.0;}));
 		TTTensor cross(FullTensor({_n,_n}, [&](const std::vector<size_t> &idx){
-			return 1.0/(std::abs(idx[0]-idx[1]) + _alpha) + 1.0/(double(idx[0])+_alpha) + 1.0/(double(idx[1])+_alpha);
+			return 1.0/((idx[0]>idx[1]?idx[0]-idx[1]:idx[1]-idx[0]) + _alpha) + 1.0/(double(idx[0])+_alpha) + 1.0/(double(idx[1])+_alpha);
 		}));
 		
 		TTTensor result(cross);
