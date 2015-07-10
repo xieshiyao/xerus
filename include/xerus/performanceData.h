@@ -56,6 +56,7 @@ public:
 	std::string additionalInformation;
 	std::vector<DataPoint> data;
 	size_t startTime;
+	size_t stopTime;
 	bool isLogging;
 	
 	explicit PerformanceData(bool logging=true) : startTime(~0ul), isLogging(logging) {}
@@ -64,10 +65,29 @@ public:
 		startTime = misc::uTime();
 	}
 	
+	void stop_timer() {
+		stopTime = misc::uTime();
+	}
+	
+	void continue_timer() {
+		size_t currtime = misc::uTime();
+		startTime += currtime - stopTime;
+		stopTime = ~0ul;
+	}
+	
 	void reset() {
 		data.clear();
 		additionalInformation.clear();
 		startTime = ~0ul;
+		stopTime = ~0ul;
+	}
+	
+	size_t get_runtime() const {
+		if (stopTime != ~0ul) {
+			return stopTime - startTime;
+		} else {
+			return misc::uTime() - startTime;
+		}
 	}
 	
 	void add(size_t _itrCount, value_t _residual);

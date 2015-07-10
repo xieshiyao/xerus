@@ -1,5 +1,16 @@
 ## Changelog
 
+Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
+
+* 2015-07-10 v1.3.0
+ * Added several retractions to allow Riemannian algorithms on TT manifolds.
+ * Added the basic (Riemannian) steepest descent algorithm.
+ * Added the (so far untested) CG algorithm for TT tensors.
+ * ! New PerformanceData class to log stepcount, time and residual of algorithm runs.
+ * New algorithm to determine the largest entry of a TT tensor.
+ * Fully rewrote the contraction heuristics, now including a local search for more optimal contraction orders.
+ * Several bugfixes for order-zero tensors, TT tensors of more than full rank and other rare cases.
+
 * 2015-06-15 v1.2.1
  * entrywise_product for FullTensor and TTNetwork.
  * TensorNetworks now without extraneous factor.

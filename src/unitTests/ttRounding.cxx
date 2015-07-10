@@ -116,9 +116,9 @@ UNIT_TEST(TT, no_rounding,
 	TEST(approx_equal(FullTensor(a),FullTensor(b)));
 	TTTensor c = TTTensor::construct_random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, rnd, dist);
 	a(i&0) = a(i&0) + 0.0*c(i&0);
-	LOG(unit_testk, a.ranks());
+	LOG(unit_test, a.ranks());
 	a.round(2);
-	LOG(unit_testk, frob_norm(b-a));
+	LOG(unit_test, frob_norm(b-a));
 	TEST(approx_equal(FullTensor(a),FullTensor(b)));
 )
 
