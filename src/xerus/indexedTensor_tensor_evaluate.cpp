@@ -29,7 +29,7 @@
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <memory>
-#include <xerus/misc/selectedFunctions.h>
+#include <xerus/selectedFunctions.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/performanceAnalysis.h>
 

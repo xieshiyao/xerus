@@ -29,23 +29,14 @@
     #define MISC_NAMESPACE xerus
 
     // The misc stuff needed by xerus
-    #include "xerus/misc/standard.h"
-    #include "xerus/misc/namedLogger.h"
-    #include "xerus/misc/missingFunctions.h"
-    #include "xerus/misc/stringUtilities.h"
-    #include "xerus/misc/sfinae.h"
-    #include "xerus/misc/blasLapackWrapper.h"
-    #include "xerus/misc/selectedFunctions.h"
-    #include "xerus/misc/callStack.h"
-    #include "xerus/misc/simpleNumerics.h"
-    #include "xerus/misc/timeMeasure.h"
-    #include "xerus/misc/performanceAnalysis.h"
-	#include "xerus/misc/exceptions.h"
-
+    #include "xerus/misc.h"
+    
     // File which sets the custom log levels
     #include "xerus/tensorLogger.h"
 
     // All the xerus headers
+	#include "xerus/blasLapackWrapper.h"
+	#include "xerus/selectedFunctions.h"
     #include "xerus/index.h"
     #include "xerus/indexedTensorReadOnly.h"
     #include "xerus/indexedTensorWritable.h"

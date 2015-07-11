@@ -32,8 +32,8 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/misc/blasLapackWrapper.h>
-#include <xerus/misc/selectedFunctions.h>
+#include <xerus/blasLapackWrapper.h>
+#include <xerus/selectedFunctions.h>
 #include <xerus/misc/check.h>
 
 namespace xerus {

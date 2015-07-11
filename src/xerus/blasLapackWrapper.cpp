@@ -22,8 +22,8 @@
  * @brief Implementation of the blas and lapack wrapper functions.
  */
 
-#include <xerus/misc/blasLapackWrapper.h>
-#include <xerus/misc/selectedFunctions.h>
+#include <xerus/blasLapackWrapper.h>
+#include <xerus/selectedFunctions.h>
 
 #include <complex.h>
 // fix for non standard-conform complex implementation
