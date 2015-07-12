@@ -180,9 +180,15 @@ namespace xerus {
 		
 		/**
 		 * @brief Calculates the componentwise product of two tensors given in the TT format.
-		 * @details Usually the resulting rank = rank(A)*rank(B). Retains the core position of @a _A
+		 * @details In general the resulting rank = rank(A)*rank(B). Retains the core position of @a _A
 		 */
 		static TTNetwork entrywise_product(const TTNetwork &_A, const TTNetwork &_B);
+		
+		/**
+		 * @brief Computes the entrywise square of the tensor.
+		 * @details In general the resulting equals rank*(rank+1)/2. Retains the core position.
+		 */
+		void entrywise_square();
 		
 		/** 
 		* @brief Complete access to a specific component of the TT decomposition.

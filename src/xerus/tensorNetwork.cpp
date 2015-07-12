@@ -451,6 +451,29 @@ namespace xerus {
 		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
     }
     
+//     void TensorNetwork::round(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _softThreshold, const double _eps) {
+// 		std::vector<Index> firstAindices, secondAindices, qrAindcies, firstBindices, secondBindices, qrBindices;
+// 		Index commonIdx;
+// 		bool foundCommon = false;
+// 		
+// 		for(const Link& link : nodes[_nodeA].neighbors) {
+// 			if(!foundCommon) {
+// 				if(link.other == _nodeB) {
+// 					foundCommon = true;
+// 					qrAindcies.push_back(commonIdx);
+// 				} else {
+// 					firstAindices.emplace_back();
+// 					qrAindcies.push_back(firstAindices.back());
+// 				}
+// 			} else {
+// 				REQUIRE(link.other != _nodeB, "TN round does not work if two nodes share more than one link");
+// 				secondAindices.emplace_back();
+// 				qrAindcies.push_back(secondAindices.back());
+// 			}
+// 		}
+// 	}
+		
+    
     void TensorNetwork::contract_unconnected_subnetworks() {
 		REQUIRE(is_valid_network(), "Invalid TensorNetwork");
         std::vector<bool> seen(nodes.size(), false);
