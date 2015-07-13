@@ -33,6 +33,7 @@
 
     #include <string.h> // for strsignal
     #include <sys/stat.h>
+    #include <sys/mman.h> // For mlockall
     
     #include <xerus/misc/standard.h>
     #include <xerus/misc/exceptions.h>
@@ -163,6 +164,9 @@
         signal(SIGFPE,xerus::misc::internal::catch_signals);
         signal(SIGILL,xerus::misc::internal::catch_signals);
         signal(SIGSEGV,xerus::misc::internal::catch_signals);
+		
+		// Prevent swap usage
+		mlockall(MCL_CURRENT | MCL_FUTURE);
         
 		// perform required_test initializations
 		// pass address of xerus::misc::internal::catch_signals as the address of main cannot be taken as by ISO c++...

@@ -37,10 +37,10 @@ UNIT_TEST(TT, entrywise_product,
 	
 	FullTensor Df = FullTensor::entrywise_product(Af, Af);
 
-	TEST(approx_equal(Df, FullTensor(D1), 1e-4));
-	TEST(approx_equal(Df, FullTensor(D2), 1e-4));
-	TEST(approx_equal(Df, FullTensor(Do1), 1e-4));
-	TEST(approx_equal(Df, FullTensor(Do2), 1e-4));
+	TEST(approx_equal(Df, FullTensor(D1), 1e-14));
+	TEST(approx_equal(Df, FullTensor(D2), 1e-14));
+	TEST(approx_equal(Df, FullTensor(Do1), 1e-14));
+	TEST(approx_equal(Df, FullTensor(Do2), 1e-14));
 )
 
 UNIT_TEST(TT, soft_thresholding,

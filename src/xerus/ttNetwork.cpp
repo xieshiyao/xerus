@@ -749,9 +749,9 @@ namespace xerus {
 		
 		REQUIRE(result.is_valid_tt(), "Internal Error.");
 		REQUIRE(result.is_valid_network(), "Internal Error.");
-// 		if (_A.cannonicalized) {
-// 			result.move_core(_A.corePosition);
-// 		}
+		if (_A.cannonicalized) {
+			result.move_core(_A.corePosition);
+		}
 		return result;
 	}
 	
@@ -759,10 +759,11 @@ namespace xerus {
 	template<bool isOperator>
 	void TTNetwork<isOperator>::entrywise_square() {
 		const size_t numComponents = degree() / N;
+		const bool cannonicalizedBefore = cannonicalized;
 		
 		if(degree() == 0) {
 			(*nodes[0].tensorObject)[0] *= (*nodes[0].tensorObject)[0];
-		} else if ( degree() <= 3) {
+		} else if ( degree() <= 2 ) {
 			for (size_t i = 0; i < numComponents; ++i) {
 				const Tensor& currComp = get_component(i);
 				const size_t newLeftRank = currComp.dimensions.front()*(currComp.dimensions.front()+1)/2;
@@ -770,8 +771,7 @@ namespace xerus {
 				
 				FullTensor newComponent(isOperator ? 
 					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}) 
-				);
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
 				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
@@ -783,13 +783,9 @@ namespace xerus {
 						for (size_t n = 0; n < externalDim; ++n) {
 							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
 								for (size_t s2 = 0; s2 <= s1; ++s2) {
-									if(r2 <= r1 && s2 <= s1) {
-										const double factor = (s1 == s2 ? 1.0 : 2.0);
-										newComponent[newPos] = factor * currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
-									}
-									newPos++;
+									newComponent[newPos++] = (s1 == s2 ? 1.0 : 2.0) * currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
 								}
-							}
+ 							}
 						}
 					}
 				}
@@ -803,8 +799,7 @@ namespace xerus {
 				
 				FullTensor newComponent(isOperator ? 
 					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}) 
-				);
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
 				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
@@ -815,10 +810,8 @@ namespace xerus {
 					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
 						for (size_t n = 0; n < externalDim; ++n) {
 							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								for (size_t s2 = 0; s2 < currComp.dimensions.back(); ++s2) {
-									newComponent[newPos] = currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
-									newPos++;
-								}
+								misc::array_scaled_copy(newComponent.data.get()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const FullTensor&>(currComp).data.get()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
+								newPos += currComp.dimensions.back();
 							}
 						}
 					}
@@ -828,8 +821,7 @@ namespace xerus {
 		}
 		
 		// Restore cannonicalization
-		if(cannonicalized) {
-			cannonicalized = false;
+		if(cannonicalizedBefore) {
 			move_core(corePosition);
 		}
 	}
@@ -1031,8 +1023,8 @@ namespace xerus {
 		REQUIRE(_position < numComponents, "Illegal position for core chosen");
 		Index i,r,j;
 		FullTensor core(2);
-		const size_t fromLeft = cannonicalized? corePosition : 0;
-		const size_t fromRight = cannonicalized? corePosition : (numComponents - 1);
+		const size_t fromLeft = cannonicalized ? corePosition : 0;
+		const size_t fromRight = cannonicalized ? corePosition : (numComponents - 1);
 		// move right?
 		for (size_t n=fromLeft; n<_position; ++n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
@@ -1128,7 +1120,7 @@ namespace xerus {
 			LOG(largestEntry, alpha << " >> " << tau);
 			
 			while(misc::sum(X.ranks()) >= degree()) {
-				X = TTNetwork::entrywise_product(X, X);
+				X.entrywise_square();
 				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
 				X.soft_threshold(tau, true);
 				LOG(largestEntry, "After ST: " << X.ranks() << " --- " << X.frob_norm());
