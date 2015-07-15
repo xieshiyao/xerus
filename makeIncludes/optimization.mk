@@ -74,7 +74,7 @@ else ifdef DANGEROUS_OPTIMIZATION
 		OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
 		OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
 		OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
-		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
+# 		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
 		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
 		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
 		OPTIMIZE += -fomit-frame-pointer		# Don't keep the frame pointer in a register for functions that don't need one.

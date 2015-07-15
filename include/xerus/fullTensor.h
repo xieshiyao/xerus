@@ -27,7 +27,7 @@
 #include "basic.h"
 #include <memory>
 #include "tensor.h"
-#include "misc/selectedFunctions.h"
+#include "selectedFunctions.h"
 #include "misc/sfinae.h"
 #include "misc/performanceAnalysis.h"
 

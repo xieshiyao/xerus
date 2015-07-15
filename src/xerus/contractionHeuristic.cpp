@@ -287,8 +287,8 @@ namespace xerus {
 			if (_bestCost < 2 * cost_of_heuristic) return;
 			
 			
-			size_t id1 = _contractions.front().first;
-			size_t id2 = _contractions.front().second;
+			std::vector<std::pair<size_t, size_t>> openPairs;
+			openPairs.push_back(_contractions.front());
 			
 			double ourFinalCost=0;
 			std::vector<std::pair<size_t,size_t>> ourContractions;
@@ -302,46 +302,52 @@ namespace xerus {
 				while (next.first != idMap[next.first]) next.first = idMap[next.first];
 				while (next.second != idMap[next.second]) next.second = idMap[next.second];
 				
-				if (next.first != id1 && next.first != id2) {
-					if (next.second == id1 || next.second == id2) {
-						auto contr = best_of_three(_network, id1, id2, next.first);
-						size_t a = std::get<0>(contr);
-						size_t b = std::get<1>(contr);
-						size_t c = std::get<2>(contr);
-						idMap[b] = a;
-						ourFinalCost += std::get<3>(contr);
-						ourContractions.emplace_back(a,b);
-						_network.contract(a,b);
-						id1 = a;
-						id2 = c;
+				std::vector<std::pair<size_t, size_t>> newOpenPairs;
+				for (const std::pair<size_t, size_t> &p : openPairs) {
+					size_t id1 = p.first;
+					while (id1 != idMap[id1]) id1 = idMap[id1];
+					size_t id2 = p.second;
+					while (id2 != idMap[id2]) id2 = idMap[id2];
+					if (next.first != id1 && next.first != id2) {
+						if (next.second == id1 || next.second == id2) {
+							auto contr = best_of_three(_network, id1, id2, next.first);
+							size_t a = std::get<0>(contr);
+							size_t b = std::get<1>(contr);
+							size_t c = std::get<2>(contr);
+							idMap[b] = a;
+							ourFinalCost += std::get<3>(contr);
+							ourContractions.emplace_back(a,b);
+							_network.contract(a,b);
+							next.first = a;
+							next.second = c;
+						} else {
+							newOpenPairs.emplace_back(id1,id2);
+						}
 					} else {
-						ourFinalCost += _network.contraction_cost(id1, id2);
-						ourContractions.emplace_back(id1, id2);
-						_network.contract(id1,id2);
-						idMap[id2] = id1;
-						id1 = next.first;
-						id2 = next.second;
-					}
-				} else {
-					if (next.second == id1 || next.second == id2) {
-						LOG(fatal, "ie");
-					} else {
-						auto contr = best_of_three(_network, id1, id2, next.second);
-						size_t a = std::get<0>(contr);
-						size_t b = std::get<1>(contr);
-						size_t c = std::get<2>(contr);
-						idMap[b] = a;
-						ourFinalCost += std::get<3>(contr);
-						ourContractions.emplace_back(a,b);
-						_network.contract(a,b);
-						id1 = a;
-						id2 = c;
+						if (next.second == id1 || next.second == id2) {
+							LOG(fatal, "ie");
+						} else {
+							auto contr = best_of_three(_network, id1, id2, next.second);
+							size_t a = std::get<0>(contr);
+							size_t b = std::get<1>(contr);
+							size_t c = std::get<2>(contr);
+							idMap[b] = a;
+							ourFinalCost += std::get<3>(contr);
+							ourContractions.emplace_back(a,b);
+							_network.contract(a,b);
+							next.first = a;
+							next.second = c;
+						}
 					}
 				}
+				newOpenPairs.emplace_back(next);
+				openPairs = std::move(newOpenPairs);
 			}
 			
-			ourFinalCost += _network.contraction_cost(id1, id2);
-			ourContractions.emplace_back(id1, id2);
+			REQUIRE(openPairs.size() == 1, "ie");
+			
+			ourFinalCost += _network.contraction_cost(openPairs.front().first, openPairs.front().second);
+			ourContractions.emplace_back(openPairs.front());
 			
 // 			LOG(hohohoEx, ourFinalCost << " vs " << _bestCost);
 			if (ourFinalCost < _bestCost) {
@@ -351,6 +357,7 @@ namespace xerus {
 				}
 				_bestCost = ourFinalCost;
 				_contractions = std::move(ourContractions);
+				
 				if (repeat) {
 					exchange_heuristic(_bestCost, _contractions, copyNet);
 				}

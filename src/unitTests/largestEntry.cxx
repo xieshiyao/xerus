@@ -23,57 +23,57 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Test, bla,
-	Index i,j,k,l;
-	FullTensor U({2,2});
-	FullTensor S({2,2});
-	FullTensor Vt({2,2});
-	
-	double eps = 0.001;
-	
-	U[{0,0}] = eps;
-	U[{0,1}] = std::sqrt(1-eps*eps);
-	U[{1,0}] = std::sqrt(1-eps*eps);
-	U[{1,1}] = -eps;
-	
-	S[{0,0}] = 1/(eps*eps);
-	S[{1,1}] = 1/(1-eps*eps);
-	
-	Vt[{0,0}] = eps;
-	Vt[{0,1}] = std::sqrt(1-eps*eps);
-	Vt[{1,0}] = -std::sqrt(1-eps*eps);
-	Vt[{1,1}] = eps;
-	
-	LOG(test, "U: " << std::endl << U.to_string());
-	LOG(test, "S: " << std::endl << S.to_string());
-	LOG(test, "Vt: " << std::endl << Vt.to_string());
-	
-	
-	
-	FullTensor UU;
-	UU(i,k) = U(j,i) * U(j,k);
-	LOG(test, "UU: " << std::endl << UU.to_string());
-	
-	UU(i,k) = U(i,j) * U(k,j);
-	LOG(test, "UU: " << std::endl << UU.to_string());
-	
-	FullTensor X;
-	
-	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
-	LOG(test, "X: " << std::endl << X.to_string());
-	
-	FullTensor M, P, L;
-	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
-	
-	LOG(test, "M: " << std::endl << M.to_string());
-	LOG(test, "L: " << std::endl << L.to_string());
-	LOG(test, "P: " << std::endl << P.to_string());
-	
-	
-	X(i,l) = M(i,j)* L(j,k)* P(k,l);
-	
-	LOG(test, "X: " << std::endl << X.to_string());
-)
+// UNIT_TEST(Test, bla,
+// 	Index i,j,k,l;
+// 	FullTensor U({2,2});
+// 	FullTensor S({2,2});
+// 	FullTensor Vt({2,2});
+// 	
+// 	double eps = 0.001;
+// 	
+// 	U[{0,0}] = eps;
+// 	U[{0,1}] = std::sqrt(1-eps*eps);
+// 	U[{1,0}] = std::sqrt(1-eps*eps);
+// 	U[{1,1}] = -eps;
+// 	
+// 	S[{0,0}] = 1/(eps*eps);
+// 	S[{1,1}] = 1/(1-eps*eps);
+// 	
+// 	Vt[{0,0}] = eps;
+// 	Vt[{0,1}] = std::sqrt(1-eps*eps);
+// 	Vt[{1,0}] = -std::sqrt(1-eps*eps);
+// 	Vt[{1,1}] = eps;
+// 	
+// 	LOG(test, "U: " << std::endl << U.to_string());
+// 	LOG(test, "S: " << std::endl << S.to_string());
+// 	LOG(test, "Vt: " << std::endl << Vt.to_string());
+// 	
+// 	
+// 	
+// 	FullTensor UU;
+// 	UU(i,k) = U(j,i) * U(j,k);
+// 	LOG(test, "UU: " << std::endl << UU.to_string());
+// 	
+// 	UU(i,k) = U(i,j) * U(k,j);
+// 	LOG(test, "UU: " << std::endl << UU.to_string());
+// 	
+// 	FullTensor X;
+// 	
+// 	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
+// 	LOG(test, "X: " << std::endl << X.to_string());
+// 	
+// 	FullTensor M, P, L;
+// 	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
+// 	
+// 	LOG(test, "M: " << std::endl << M.to_string());
+// 	LOG(test, "L: " << std::endl << L.to_string());
+// 	LOG(test, "P: " << std::endl << P.to_string());
+// 	
+// 	
+// 	X(i,l) = M(i,j)* L(j,k)* P(k,l);
+// 	
+// 	LOG(test, "X: " << std::endl << X.to_string());
+// )
 
 UNIT_TEST(Algorithm, largestEntry,
     //Random numbers
@@ -81,7 +81,7 @@ UNIT_TEST(Algorithm, largestEntry,
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	std::uniform_int_distribution<size_t> dimDist(1,8);
-	std::uniform_int_distribution<size_t> rankDist(1,5);
+	std::uniform_int_distribution<size_t> rankDist(1,6);
     
 	const size_t D = 12;
 	

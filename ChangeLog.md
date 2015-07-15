@@ -1,5 +1,16 @@
 ## Changelog
 
+Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
+
+* 2015-07-10 v1.3.0
+ * Added several retractions to allow Riemannian algorithms on TT manifolds.
+ * Added the basic (Riemannian) steepest descent algorithm.
+ * Added the (so far untested) CG algorithm for TT tensors.
+ * ! New PerformanceData class to log stepcount, time and residual of algorithm runs.
+ * New algorithm to determine the largest entry of a TT tensor.
+ * Fully rewrote the contraction heuristics, now including a local search for more optimal contraction orders.
+ * Several bugfixes for order-zero tensors, TT tensors of more than full rank and other rare cases.
+
 * 2015-06-15 v1.2.1
  * entrywise_product for FullTensor and TTNetwork.
  * TensorNetworks now without extraneous factor.
@@ -20,14 +31,14 @@
  * Several minor fixes
 
 * 2015-06-01 v1.1.0
- * New representation for the TT tensors: all component tensors are now of degree 3 / 4 (operators).
+ * ! New representation for the TT tensors: all component tensors are now of degree 3 / 4 (operators).
  * TT::get_component and ::set_component functions that handle the meta data.
  * More strict ISO c++ conformity: no names starting with '__'.
  * More elaborate performance profiling.
 
 * 2015-05-27 v1.0.2
  * Added support for Clang++
- * Cleanup of namespace structure
+ * ! Cleanup of namespace structure
  * Several documentation fixes
 
 * 2015-05-20 v1.0.1

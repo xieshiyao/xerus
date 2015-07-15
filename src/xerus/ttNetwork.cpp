@@ -32,8 +32,8 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/misc/blasLapackWrapper.h>
-#include <xerus/misc/selectedFunctions.h>
+#include <xerus/blasLapackWrapper.h>
+#include <xerus/selectedFunctions.h>
 #include <xerus/misc/check.h>
 
 namespace xerus {
@@ -707,64 +707,132 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
-			REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
-			
-			if(_A.degree() == 0) {
-				TTNetwork result(_A);
-				result *= _B[0];
-				return result;
-			}
-			
-			TTNetwork result(_A.degree());
-			
-			const size_t numComponents = _A.degree() / N;
-			
-			std::unique_ptr<FullTensor> newComponent;
-			for (size_t i=0; i<numComponents; ++i) {
-				//TODO sparse TT
-				const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
-				const FullTensor &componentB = static_cast<const FullTensor &>(_B.get_component(i));
-				size_t externalDim;
-				if (isOperator) {
-					newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
-												componentA.dimensions[1], componentA.dimensions[2], 
-												componentA.dimensions.back()*componentB.dimensions.back()   }));
-					externalDim = componentA.dimensions[1] * componentA.dimensions[2];
-				} else {
-					newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
-												componentA.dimensions[1], 
-												componentA.dimensions.back()*componentB.dimensions.back()   }));
-					externalDim = componentA.dimensions[1];
-				}
-				size_t offsetA=0, offsetB=0, offsetResult=0;
-				size_t stepsize = componentB.dimensions.back();
-				for (size_t r1=0; r1<componentA.dimensions.front(); ++r1) {
-					for (size_t s1=0; s1<componentB.dimensions.front(); ++s1) {
-						offsetA = r1 * externalDim * componentA.dimensions.back();
-						for (size_t n=0; n<externalDim; ++n) {
-							for (size_t r2=0; r2<componentA.dimensions.back(); ++r2) {
-// 								offsetA = r2 + (n + r1 * externalDim) * componentA.dimensions.back();
-// 								offsetB =      (n + s1 * externalDim) * componentB.dimensions.back();
-// 								offsetResult = (((r1 * componentB.dimensions.front() + s1) * externalDim +n) * componentA.dimensions.back() + r2) * stepsize;
-								misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentB.factor*componentA.factor*componentA.data.get()[offsetA], componentB.data.get()+offsetB, stepsize);
-								offsetResult += stepsize;
-								offsetA += 1;
-							}
-							offsetB += stepsize;
-						}
-					}
-					offsetB = 0;
-				}
-				result.set_component(i, std::move(newComponent));
-			}
-			
-			REQUIRE(result.is_valid_tt(), "Internal Error.");
-			REQUIRE(result.is_valid_network(), "Internal Error.");
-			if (_A.cannonicalized) {
-				result.move_core(_A.corePosition);
-			}
+		REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
+		
+		if(_A.degree() == 0) {
+			TTNetwork result(_A);
+			result *= _B[0];
 			return result;
 		}
+		
+		TTNetwork result(_A.degree());
+		
+		const size_t numComponents = _A.degree() / N;
+		
+		std::unique_ptr<FullTensor> newComponent;
+		for (size_t i=0; i<numComponents; ++i) {
+			//TODO sparse TT
+			const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
+			const FullTensor &componentB = static_cast<const FullTensor &>(_B.get_component(i));
+			size_t externalDim;
+			if (isOperator) {
+				newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+											componentA.dimensions[1], componentA.dimensions[2], 
+											componentA.dimensions.back()*componentB.dimensions.back()   }));
+				externalDim = componentA.dimensions[1] * componentA.dimensions[2];
+			} else {
+				newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+											componentA.dimensions[1], 
+											componentA.dimensions.back()*componentB.dimensions.back()   }));
+				externalDim = componentA.dimensions[1];
+			}
+			size_t offsetA = 0, offsetB = 0, offsetResult = 0;
+			const size_t stepsize = componentB.dimensions.back();
+			for (size_t r1=0; r1<componentA.dimensions.front(); ++r1) {
+				for (size_t s1=0; s1<componentB.dimensions.front(); ++s1) {
+					offsetA = r1 * externalDim * componentA.dimensions.back();
+					for (size_t n=0; n<externalDim; ++n) {
+						for (size_t r2=0; r2<componentA.dimensions.back(); ++r2) {
+							misc::array_scaled_copy(newComponent->data.get()+offsetResult, componentB.factor*componentA.factor*componentA.data.get()[offsetA], componentB.data.get()+offsetB, stepsize);
+							offsetResult += stepsize;
+							offsetA += 1;
+						}
+						offsetB += stepsize;
+					}
+				}
+				offsetB = 0;
+			}
+			result.set_component(i, std::move(newComponent));
+		}
+		
+		REQUIRE(result.is_valid_tt(), "Internal Error.");
+		REQUIRE(result.is_valid_network(), "Internal Error.");
+		if (_A.cannonicalized) {
+			result.move_core(_A.corePosition);
+		}
+		return result;
+	}
+	
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::entrywise_square() {
+		const size_t numComponents = degree() / N;
+		const bool cannonicalizedBefore = cannonicalized;
+		
+		if(degree() == 0) {
+			(*nodes[0].tensorObject)[0] *= (*nodes[0].tensorObject)[0];
+		} else if ( degree() <= 2 ) {
+			for (size_t i = 0; i < numComponents; ++i) {
+				const Tensor& currComp = get_component(i);
+				const size_t newLeftRank = currComp.dimensions.front()*(currComp.dimensions.front()+1)/2;
+				const size_t newRightRank = currComp.dimensions.back()*(currComp.dimensions.back()+1)/2;
+				
+				FullTensor newComponent(isOperator ? 
+					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
+				
+				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
+				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
+				const size_t oldExtStep = currComp.dimensions.back();
+				
+				size_t newPos = 0;
+				for (size_t r1 = 0; r1 < currComp.dimensions.front(); ++r1) {
+					for (size_t r2 = 0; r2 <= r1; ++r2) {
+						for (size_t n = 0; n < externalDim; ++n) {
+							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
+								for (size_t s2 = 0; s2 <= s1; ++s2) {
+									newComponent[newPos++] = (s1 == s2 ? 1.0 : 2.0) * currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
+								}
+ 							}
+						}
+					}
+				}
+				set_component(i, std::move(newComponent));
+			}
+		} else {
+			for (size_t i = 0; i < numComponents; ++i) {
+				const Tensor& currComp = get_component(i);
+				const size_t newLeftRank = currComp.dimensions.front()*currComp.dimensions.front();
+				const size_t newRightRank = currComp.dimensions.back()*currComp.dimensions.back();
+				
+				FullTensor newComponent(isOperator ? 
+					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
+				
+				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
+				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
+				const size_t oldExtStep = currComp.dimensions.back();
+				
+				size_t newPos = 0;
+				for (size_t r1 = 0; r1 < currComp.dimensions.front(); ++r1) {
+					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
+						for (size_t n = 0; n < externalDim; ++n) {
+							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
+								misc::array_scaled_copy(newComponent.data.get()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const FullTensor&>(currComp).data.get()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
+								newPos += currComp.dimensions.back();
+							}
+						}
+					}
+				}
+				set_component(i, std::move(newComponent));
+			}
+		}
+		
+		// Restore cannonicalization
+		if(cannonicalizedBefore) {
+			move_core(corePosition);
+		}
+	}
 	
 	template<bool isOperator>
 	std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
@@ -963,8 +1031,8 @@ namespace xerus {
 		REQUIRE(_position < numComponents, "Illegal position for core chosen");
 		Index i,r,j;
 		FullTensor core(2);
-		const size_t fromLeft = cannonicalized? corePosition : 0;
-		const size_t fromRight = cannonicalized? corePosition : (numComponents - 1);
+		const size_t fromLeft = cannonicalized ? corePosition : 0;
+		const size_t fromRight = cannonicalized ? corePosition : (numComponents - 1);
 		// move right?
 		for (size_t n=fromLeft; n<_position; ++n) {
 			Tensor &currTensor = *nodes[n+1].tensorObject;
@@ -1042,7 +1110,7 @@ namespace xerus {
 			
 			X = *this;
 			while(misc::sum(X.ranks()) >= degree()) {
-				X = TTNetwork::entrywise_product(X, X);
+				X.entrywise_square();
 				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
 				X.soft_threshold(tau, true);
 				LOG(largestEntry, "After ST: " << X.ranks() << " --- " << X.frob_norm());

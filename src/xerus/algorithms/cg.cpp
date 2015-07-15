@@ -89,38 +89,19 @@ namespace xerus {
 				
 	// 			change(i&0) = _A(i/2,j/2) * direction(j&0);
 				alpha = currResidual/value_t(direction(i&0)*_A(i/2,j/2)*direction(j&0));//direction(i&0)*change(i&0));
-	// 			LOG(alpha, alpha << " " << currResidual << " / " << value_t(direction(i&0)*_A(i/2,j/2)*direction(j&0)) << " " << value_t(direction(i&0)*change(i&0)));
 				retraction(_x, alpha * direction);
-	// 			retraction(residual, -alpha * change);
 				updateResidualAndPerfdata();
 				
 				double beta = currResidual / lastResidual;
 	// 			direction(i&0) = residual(i&0) + beta * direction(i&0);
 	// 			TTTensor oldDirection(direction);
 	// 			direction = residual;
+	// 			retraction(direction, beta * oldDirection);
 				direction *= beta;
 				retraction(direction, residual);
-	// 			retraction(direction, beta * oldDirection);
 			}
 		}
 		
 		return currResidual;
 	}
-	/*
-	 * 		change(j^d) = _A(j^d,k^d) * dir(k^d);
-		double alpha = fnorm/double(dir(i^d)*change(i^d));
-		_x(i^d) = _x(i^d) + alpha * dir(i^d);
-		res(i^d) = res(i^d) - alpha*change(i^d);
-		double newfnorm = frob_norm(res(i^d));
-		double beta = newfnorm / fnorm;
-		dir(i^d) = res(i^d) + beta * dir(i^d);
-		fnorm = newfnorm;
-// 		dir.round(1e-14);
-// 		_x.round(1e-14);
-// 		res.round(1e-14);
-		if (_perfData) _perfData->push_back(fnorm);
-		std::ofstream out("test.dat", std::ios_base::app | std::ios_base::ate);
-		out << fnorm << std::endl;
-		out.close();
-		LOG(cg, fnorm);*/
 }

@@ -71,9 +71,9 @@ namespace xerus {
 			Link& operator=(      Link&&) = default;
 			
 			/**
-			 * @brief Checks whether this links links to a particular node
+			 * @brief Checks whether this link links to a particular node
 			 * @param _other the other node for which the linkage shall be checked
-			 * @return TRUE if _other the target of this Link, FALSE otherwise.
+			 * @return TRUE if _other is the target of this Link, FALSE otherwise.
 			 */
 			bool links(const size_t _other) const;
 		};

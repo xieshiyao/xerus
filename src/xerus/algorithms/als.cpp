@@ -248,7 +248,9 @@ namespace xerus {
         
         // Calculate initial residual
         if (_perfData) {
+			_perfData.stop_timer();
 			energy = energy_f();
+			_perfData.continue_timer();
 			_perfData.add(energy);
 			LOG(ALS, "calculated residual for perfData: " << energy);
         }
@@ -275,7 +277,9 @@ namespace xerus {
 			}
 			
             if (_perfData) {
-                energy = energy_f();
+                _perfData.stop_timer();
+				energy = energy_f();
+				_perfData.continue_timer();
 				_perfData.add(energy);
                 LOG(ALS, "Calculated residual for perfData after tensor "<< currIndex <<": " << energy << " ( " << std::abs(energy - lastEnergy) << " vs " << _convergenceEpsilon << " ) ");
                 if (printProgress) {

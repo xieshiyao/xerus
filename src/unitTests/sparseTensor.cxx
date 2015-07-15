@@ -92,7 +92,7 @@ UNIT_TEST(SparseTensor, Creation,
     
     fullX -= fullB;
     sparseX -= sparseB;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-13));
+    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-12));
     
     fullX = fullA + fullB;
     sparseX = sparseA + sparseB;

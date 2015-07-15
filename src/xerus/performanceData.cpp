@@ -70,7 +70,7 @@ namespace xerus {
 			if (startTime == ~0ul) {
 				start();
 			}
-			data.emplace_back(_itrCount, (misc::uTime()-startTime), _residual);
+			data.emplace_back(_itrCount, get_runtime(), _residual);
 		}
 	}
 	

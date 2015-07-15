@@ -25,7 +25,7 @@
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/tensorNetwork.h>
-#include <xerus/misc/blasLapackWrapper.h>
+#include <xerus/blasLapackWrapper.h>
 #include <cstring>
 
 namespace xerus {

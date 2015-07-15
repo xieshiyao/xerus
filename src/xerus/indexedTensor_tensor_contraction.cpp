@@ -31,7 +31,7 @@
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 #include <memory>
-#include <xerus/misc/blasLapackWrapper.h>
+#include <xerus/blasLapackWrapper.h>
 
 namespace xerus {
     
