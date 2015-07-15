@@ -275,7 +275,7 @@ namespace xerus {
 		REQUIRE(degree()%N==0, "Number of indicis must be even for TTOperator");
 		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
 		REQUIRE(_maxRanks.size() == degree()/N-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << degree()/N-1 << " are given.");
-		REQUIRE(is_in_expected_format(), "round called on illegal TT tensor");
+		REQUIRE(is_valid_tt(), "round called on illegal TT tensor");
 		
 		// If there is no or only one node in the train object we are already finished as there is no rank that can be rounded
 		if(degree() <= N) { return; }
@@ -283,6 +283,7 @@ namespace xerus {
 		// Needed variables
 		std::unique_ptr<value_t[]> LR, RR, M, U, S, Vt, newLeft, newRight;
 		size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank;
+		value_t factor = 1.0;
 		
 		for(size_t position = 0; position < degree()/N-1; ++position) {
 			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+1].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
@@ -291,12 +292,15 @@ namespace xerus {
 			FullTensor& leftTensor = *static_cast<FullTensor*>(nodes[position+1].tensorObject.get());
 			FullTensor& rightTensor = *static_cast<FullTensor*>(nodes[position+2].tensorObject.get());
 			
+			// Eat the factor of LHS
+			factor *= leftTensor.factor;
+			leftTensor.factor = 1.0;
+			
 			// Determine the dimensions of the next matrifications
 			midDim   = leftTensor.dimensions.back();
 			leftDim  = leftTensor.size/midDim;
 			rightDim = rightTensor.size/midDim;
 			maxLeftRank = std::min(leftDim, midDim);
-			// blasWrapper::rank_revealing_split(leftTensor.data, LR, leftTensor.data.get(), leftDim, midDim, maxLeftRank);
 			maxRightRank = std::min(midDim, rightDim);
 			maxRank = std::min(maxLeftRank, maxRightRank);
 			
@@ -305,6 +309,7 @@ namespace xerus {
 			rightTensor.ensure_own_data();
 			LR.reset(new value_t[maxLeftRank*midDim]);
 			RR.reset(new value_t[midDim*maxRightRank]);
+			// blasWrapper::rank_revealing_split(leftTensor.data, LR, leftTensor.data.get(), leftDim, midDim, maxLeftRank);
 			blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
 			blasWrapper::inplace_rq(RR.get(), rightTensor.data.get(), midDim, rightDim);
 			
@@ -343,6 +348,9 @@ namespace xerus {
 			nodes[position+1].neighbors.back().dimension  = currRank;
 			nodes[position+2].neighbors.front().dimension = currRank;
 		}
+		
+		// Apply accumulated factor
+		nodes[degree()/N].tensorObject->factor *= factor;
 		
 		cannonicalized = true;
 		corePosition = degree()/N-1;
@@ -1017,66 +1025,56 @@ namespace xerus {
 			return std::sqrt((*((*this)(i&0)*(*this)(i&0)).tensorObject)[0]);
 		}
 	}
-	
-	template<bool isOperator>
-	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy) const {
-		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
-	
-		TTNetwork X = entrywise_product(*this, *this);
-		X.round(1);
-		
-		size_t position = 0;
-		size_t factor = misc::product(dimensions);
-		for(size_t c = 0; c < degree(); ++c) {
-			factor /= dimensions[c];
-			size_t maxPos = 0;
-			for(size_t i = 1; i < dimensions[c]; ++i) {
-				if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
-					maxPos = i;
-				}
-			}
-			position += maxPos*factor;
-		}
-		
-		return find_largest_entry(_accuracy, std::abs(operator[](position)));
-	}
 		
 	template<bool isOperator>
 	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
 		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
+		REQUIRE(is_valid_tt(), "Invalid TT");
 		
-			double alpha = _accuracy;
-			double Xn = _lowerBound;
-			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
-			TTNetwork X = *this;
-			LOG(largestEntry, alpha << " >> " << tau);
+		// There is actual work to be done
+		if(misc::sum(ranks()) >= degree()) {
+			const double alpha = _accuracy;
 			
+			TTNetwork X = *this;
+			X.round(1);
+			double Xn = std::max(operator[](X.find_largest_entry(0.0, 0.0)), _lowerBound);
+			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
+			
+			X = *this;
 			while(misc::sum(X.ranks()) >= degree()) {
 				X = TTNetwork::entrywise_product(X, X);
 				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
 				X.soft_threshold(tau, true);
 				LOG(largestEntry, "After ST: " << X.ranks() << " --- " << X.frob_norm());
 				
-				Xn = std::max(0.0, (1-(1-alpha)*alpha/2.0))*Xn*Xn;
+				TTNetwork Y = X;
+				Y.round(1);
+				const size_t yMaxPos = Y.find_largest_entry(0.0, 0.0);
+				
+				Xn = std::max(X[yMaxPos], (1-(1-alpha)*alpha/2.0)*Xn*Xn);
 				double fNorm = X.frob_norm();
 				Xn /= fNorm;
 				X /= fNorm;
 				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
 			}
+			return X.find_largest_entry(0.0, 0.0);
 			
+		// We are already rank one
+		} else {
 			size_t position = 0;
 			size_t factor = misc::product(dimensions);
 			for(size_t c = 0; c < degree(); ++c) {
 				factor /= dimensions[c];
 				size_t maxPos = 0;
 				for(size_t i = 1; i < dimensions[c]; ++i) {
-					if(std::abs(X.get_component(c)[i]) > std::abs(X.get_component(c)[maxPos])) {
+					if(std::abs(get_component(c)[i]) > std::abs(get_component(c)[maxPos])) {
 						maxPos = i;
 					}
 				}
 				position += maxPos*factor;
 			}
-		return position;
+			return position;
+		}
 	}
 	
 	template<bool isOperator>
