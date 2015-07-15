@@ -1087,7 +1087,7 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy) const {
+	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount) const {
 		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
 	
 		TTNetwork X = entrywise_product(*this, *this);
@@ -1106,11 +1106,11 @@ namespace xerus {
 			position += maxPos*factor;
 		}
 		
-		return find_largest_entry(_accuracy, std::abs(operator[](position)));
+		return find_largest_entry(_accuracy, std::abs(operator[](position)), _maxRank, _interationCount);
 	}
 		
 	template<bool isOperator>
-	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
+	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound, size_t& _maxRank, size_t& _interationCount) const {
 		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
 		
 			double alpha = _accuracy;
@@ -1118,8 +1118,11 @@ namespace xerus {
 			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
 			TTNetwork X = *this;
 			LOG(largestEntry, alpha << " >> " << tau);
-			
+			_interationCount = 0;
 			while(misc::sum(X.ranks()) >= degree()) {
+				_interationCount++;
+				_maxRank = std::max(_maxRank, misc::max(X.ranks()));
+				
 				X.entrywise_square();
 				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
 				X.soft_threshold(tau, true);

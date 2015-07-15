@@ -352,7 +352,7 @@ namespace xerus {
 		 * @param _accuracy factor that determains the maximal deviation of the returned entry from the true largest entry.
 		 * @return the position of the entry found.
 		 */
-		size_t find_largest_entry(const double _accuracy) const;
+		size_t find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount) const;
 		
 		/** 
 		 * @brief Finds the position of the approximately largest entry.
@@ -363,7 +363,7 @@ namespace xerus {
 		 * this size (in absolute value). The algorithm may fail completely if this is not fullfilled.
 		 * @return the position of the entry found.
 		 */
-		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound) const;
+		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound, size_t& _maxRank, size_t& _interationCount) const;
         
         virtual bool is_in_expected_format() const override;
         

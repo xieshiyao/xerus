@@ -74,7 +74,7 @@ using namespace xerus;
 // 	
 // 	LOG(test, "X: " << std::endl << X.to_string());
 // )
-
+/*
 UNIT_TEST(Algorithm, largestEntry,
     //Random numbers
     std::mt19937_64 rnd;
@@ -124,6 +124,78 @@ UNIT_TEST(Algorithm, largestEntry,
 				LOG(omg, fullX.to_string());
 			}
 		}
+	}
+)*/
+
+// UNIT_TEST(Algorithm, rankRange,
+//     //Random numbers
+//     std::mt19937_64 rnd;
+//     rnd.seed(73);
+// 	std::normal_distribution<value_t> dist (0.0, 1.0);
+//     
+// 	const size_t R = 5;
+// 	
+// 	std::vector<size_t> runtimes(R+1, 0);
+// 	std::vector<size_t> interationCounts(R+1, 0);
+// 	std::vector<size_t> maxRanks(R+1, 0);
+// 	misc::TimeMeasure clock;
+// 	
+// 	size_t d = 20;
+// 	
+// 	for(size_t k = 0; k < 100000; ++k) {
+// 		runtimes[0]++;
+// 		maxRanks[0]++;
+// 		interationCounts[0]++;
+// 		for(size_t r = 1; r <= R; ++r) {
+// 			LOG(bla, r);
+// 			TTTensor X = TTTensor::construct_random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, r), rnd, dist);
+// 			size_t maxRank = 0, interationCount = 0;
+// 			clock.step();
+// 			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
+// 			runtimes[r] += clock.get();
+// 			interationCounts[r] += interationCount;
+// 			maxRanks[r] += maxRank;
+// 		}
+// 		std::ofstream out("normalRankRange.dat");
+// 		for(size_t r = 2; r <= R; ++r) {
+// 			out << r << " " << runtimes[r]/runtimes[0] << " " << double(interationCounts[r])/double(interationCounts[0]) << " " << double(maxRanks[r])/double(maxRanks[0]) << std::endl;
+// 		}
+// 		out.close();
+// 	}
+// )
+
+UNIT_TEST(Algorithm, orderRange,
+    //Random numbers
+    std::mt19937_64 rnd;
+    rnd.seed(73);
+	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
+    
+	const size_t D = 62;
+	
+	std::vector<size_t> runtimes(D+1, 0);
+	std::vector<size_t> interationCounts(D+1, 0);
+	std::vector<size_t> maxRanks(D+1, 0);
+	misc::TimeMeasure clock;
+	
+	for(size_t k = 0; k < 100000; ++k) {
+		runtimes[0]++;
+		maxRanks[0]++;
+		interationCounts[0]++;
+		for(size_t d = 2; d <= D; ++d) {
+			TTTensor X = TTTensor::construct_random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, 2), rnd, dist);
+			size_t maxRank = 0, interationCount = 0;
+			clock.step();
+			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
+			runtimes[d] += clock.get();
+			interationCounts[d] += interationCount;
+			maxRanks[d] += maxRank;
+		}
+		
+		std::ofstream out("uniOrderRange.dat");
+		for(size_t d = 2; d <= D; ++d) {
+			out << d << " " << runtimes[d]/runtimes[0] << " " << double(interationCounts[d])/double(interationCounts[0]) << " " << double(maxRanks[d])/double(maxRanks[0]) << std::endl;
+		}
+		out.close();
 	}
 )
 
