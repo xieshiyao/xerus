@@ -410,7 +410,7 @@ namespace xerus {
 		 * @param _nodeB Second node, which carries the core.
 		 * @param _allowRankReduction Flag indicating whether a rank revealing decomposition is to be used which allows the reduction of the rank.
 		 */
-		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction);
+		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
 		
 		/**
 		* contracts the nodes with indices @a _node1 and @a _node2

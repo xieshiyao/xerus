@@ -505,50 +505,24 @@ namespace xerus {
 	
 	
 	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
-		std::vector<Index> indicesA, indicesA2, indicesB;
-		Index commonIdx, commonIdx2;
-		size_t linkPosA, linkPosB;
-		
-		// Construct indices for node A
-		bool foundCommon = false;
-		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
-			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
-				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
-				foundCommon = true;
-				linkPosA = i;
-				indicesA.push_back(commonIdx);
-				indicesA2.push_back(commonIdx2);
-			} else {
-				indicesA.emplace_back();
-				indicesA2.push_back(indicesA.back());
-			}
-		}
-		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
-		
-		// Construct indices for node B
-		foundCommon = false;
-		for(size_t i = 0; i < nodes[_nodeB].neighbors.size(); ++i) {
-			if(nodes[_nodeB].neighbors[i].other == _nodeA) {
-				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
-				foundCommon = true;
-				linkPosB = i;
-				indicesB.push_back(commonIdx);
-			} else {
-				indicesB.emplace_back();
-			}
-		}
-		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
+		size_t posA, posB;
+		Index ba, aa, bb, ab, c1, c2;
+		identify_common_edge(posA, posB, ba, aa, bb, ab, _nodeA, _nodeB);
 		
 		// Calculate QR
 		FullTensor X;
-		((*nodes[_nodeA].tensorObject)(indicesA2), X(commonIdx2, commonIdx)) = QR((*nodes[_nodeA].tensorObject)(indicesA));
-		
-		const size_t rank = X.dimensions[0];
-		nodes[_nodeA].neighbors[linkPosA].dimension = rank;
-		nodes[_nodeB].neighbors[linkPosB].dimension = rank;
+		if(_allowRankReduction) {
+			((*nodes[_nodeA].tensorObject)(ba, c2, aa), X(c2, c1)) = QC((*nodes[_nodeA].tensorObject)(ba, c1, aa));
+		} else {
+			((*nodes[_nodeA].tensorObject)(ba, c2, aa), X(c2, c1)) = QR((*nodes[_nodeA].tensorObject)(ba, c1, aa));
+		}
 		
 		// Contract diagnonal matrix to NodeB
-		(*nodes[_nodeB].tensorObject)(indicesB) = X(commonIdx2, commonIdx) * ((*nodes[_nodeB].tensorObject)(indicesB));
+		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = X(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
+		
+		// Set the new dimension in the nodes
+		nodes[_nodeA].neighbors[posA].dimension = X.dimensions[0];
+		nodes[_nodeB].neighbors[posB].dimension = X.dimensions[0];
 	}
     
     void TensorNetwork::contract_unconnected_subnetworks() {
