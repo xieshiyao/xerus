@@ -57,21 +57,9 @@ namespace xerus {
     template<class tensor_type>
     IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
     
-    
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-//     template<class tensor_type>
-//     IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator*(const value_t _factor) const {
-// 		IndexedTensorMoveable<tensor_type> result(*this);
-//         *result.tensorObject *= _factor;
-//         return result;
-// 	}
-// 	
-// 	template<class tensor_type>
-//     IndexedTensorMoveable<tensor_type> IndexedTensorReadOnly<tensor_type>::operator/(const value_t _divisor) const {
-// 		IndexedTensorMoveable<tensor_type> result(*this);
-//         *result.tensorObject /= _divisor;
-//         return result;
-// 	}
+	
+	
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	template<class tensor_type>
     IndexedTensorReadOnly<tensor_type>::operator value_t() const {
@@ -79,7 +67,6 @@ namespace xerus {
 		return (*tensorObjectReadOnly)[0];
 	}
 	
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     template<class tensor_type>
     bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
         return otherTensor == tensorObjectReadOnly;
@@ -181,18 +168,22 @@ namespace xerus {
     }
     
     #ifndef DISABLE_RUNTIME_CHECKS_
-        /// Checks whether the indices are usefull in combination with the current dimensions
         template<class tensor_type>
         void IndexedTensorReadOnly<tensor_type>::check_indices(const bool _allowNonOpen) const {
+			check_indices(degree(), _allowNonOpen);
+        }
+        
+        template<class tensor_type>
+        void IndexedTensorReadOnly<tensor_type>::check_indices(const size_t _futureDegree, const bool _allowNonOpen) const {
             size_t dimensionCount = 0;
             for(const Index& idx : indices) {
                 REQUIRE(_allowNonOpen || !idx.fixed(), "Fixed indices are not allowed here.");
                 REQUIRE(_allowNonOpen || misc::count(indices, idx) == 1, "Traces are not allowed here.");
                 REQUIRE(misc::count(indices, idx) <= 2, "An index must not appere more than twice!");
-				dimensionCount += idx.actual_span(degree());
+				dimensionCount += idx.actual_span(_futureDegree);
             }
-            REQUIRE(dimensionCount >= degree(), "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
-            REQUIRE(dimensionCount <= degree(), "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
+            REQUIRE(dimensionCount >= _futureDegree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
+            REQUIRE(dimensionCount <= _futureDegree, "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
         }
     #endif
     

@@ -956,12 +956,12 @@ namespace xerus {
 		// Round all ranks directly
 		FullTensor X;
 		SparseTensor S;
-		Index i1, i2, rl, rm, rr;
+		Index i1, i2, rl, rm, rn, rr;
 		value_t factor = frob_norm();
 		*this /= factor;
 		for(size_t i = 0; i+1 < numComponents; ++i) {
 			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
-			(component(i)(rl, i1, rm), S(rm, rm), component(i+1)(rm, i2, rr)) = SVD(X(rl, i1, i2, rr), _taus[i]/factor, _preventZero);
+			(component(i)(rl, i1, rm), S(rm, rn), component(i+1)(rn, i2, rr)) = SVD(X(rl, i1, i2, rr), _taus[i]/factor, _preventZero);
 			
 			CHECK(component(i).all_entries_valid(), i, std::endl << component(i).to_string());
 			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());

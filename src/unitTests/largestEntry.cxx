@@ -83,7 +83,7 @@ UNIT_TEST(Algorithm, largestEntry,
 	std::uniform_int_distribution<size_t> dimDist(1,7);
 	std::uniform_int_distribution<size_t> rankDist(1,5);
     
-	const size_t D = 12;
+	const size_t D = 10;
 	
 	for(size_t k = 0; k < 2; ++k) {
 		std::vector<size_t> stateDims;

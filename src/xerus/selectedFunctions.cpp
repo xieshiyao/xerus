@@ -59,12 +59,19 @@ namespace xerus {
         template void array_set_zero<size_t>(size_t* const __restrict _x, const size_t _n);
 
         template <typename T>
-        void array_copy(T* const __restrict _x, const T* const _y, const size_t _n) {
+        void array_copy(T* const __restrict _x, const T* const __restrict _y, const size_t _n) {
             memcpy(_x, _y, _n*sizeof(T));
         }
         
         template void array_copy<double>(double* const __restrict _x, const double* const _y, const size_t _n);
+		
+		template <typename T>
+        void array_copy_inplace(T* const _x, const T* const _y, const size_t _n) {
+            memmove(_x, _y, _n*sizeof(T));
+        }
 
+        template void array_copy_inplace<double>(double* const _x, const double* const _y, const size_t _n);
+		
         void array_set_zero(double* const __restrict _x, const size_t _n) {
             for(size_t i=0; i<_n; ++i) { _x[i] = 0; }
         }

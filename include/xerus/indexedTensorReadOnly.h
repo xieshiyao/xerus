@@ -96,8 +96,15 @@ namespace xerus {
         std::vector<Index> get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions = false) const;
         
         #ifndef DISABLE_RUNTIME_CHECKS_
-            /// Checks whether the indices are usefull in combination with the current dimensions
+			/**
+			* @brief: Checks whether the indices are usefull in combination with the current degree.
+			*/
             void check_indices(const bool _allowNonOpen = true) const;
+			
+			/**
+			* @brief: Checks whether the indices are usefull in combination with the given degree.
+			*/
+			void check_indices(const size_t _futureDegree, const bool _allowNonOpen) const;
         #endif
     };
     
