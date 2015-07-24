@@ -951,37 +951,11 @@ namespace xerus {
 		const size_t initialCorePosition = corePosition;
 		move_core(0);
 		
-// 		LOG(aslkdj, "soft threshold with " << _taus);
-		
-		// Round all ranks directly
-		FullTensor X;
-		SparseTensor S;
-		Index i1, i2, rl, rm, rn, rr;
 		value_t factor = frob_norm();
 		*this /= factor;
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			X(rl, i1, i2, rr) = component(i)(rl, i1, rm)*component(i+1)(rm, i2, rr);
-			(component(i)(rl, i1, rm), S(rm, rn), component(i+1)(rn, i2, rr)) = SVD(X(rl, i1, i2, rr), _taus[i]/factor, _preventZero);
-			
-			CHECK(component(i).all_entries_valid(), i, std::endl << component(i).to_string());
-			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string());
-			CHECK(S.all_entries_valid(), S, std::endl << S.to_string());
-			CHECK(S.all_entries_valid() && component(i).all_entries_valid() && component(i+1).all_entries_valid(), X, std::endl << X.to_string());
-			
-			// Scale such that the first SV is euqalt to one.
-			factor *= S[0];
-			S /= S[0];
-			
-			component(i+1)(rl, i2, rr) = S(rl, rm) * component(i+1)(rm, i2, rr);
-			
-			CHECK(component(i+1).all_entries_valid(), i+1, std::endl << component(i+1).to_string() << std::endl << std::endl << "S was: " << S.to_string());
-			
-			nodes[i+1].neighbors.back().dimension = component(i).dimensions.back();
-			nodes[i+2].neighbors.front().dimension = component(i+1).dimensions.front();
-			corePosition = i+1;
+			roundX(i+1, i+2, std::numeric_limits<size_t>::max(), 0.0, _taus[i]/factor, true);
 		}
-		
-		// Account for the acumulated factor
 		*this *= std::max(factor, _preventZero ? 1e-300 : 0.0);
 		
 		// Move core back if the TT was initally canonicalized

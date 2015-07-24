@@ -388,7 +388,7 @@ namespace xerus {
 		 * @param _softThreshold Softthreshold that is to be applied.
 		 * @param _eps Epsilion to be used in the SVD to determine zero singular values.
 		 */
-		void round(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _softThreshold, const double _eps); // TODO implement
+		void roundX(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
 		
 		/**
 		* contracts the nodes with indices @a _node1 and @a _node2
