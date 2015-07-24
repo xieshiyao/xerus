@@ -498,6 +498,8 @@ namespace xerus {
 		// Contract diagnonal matrix to NodeB
 		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
 		
+		REQUIRE(!nodes[_nodeA].tensorObject->has_factor(), "Internal Error");
+		
 		// Set the new dimension in the nodes
 		nodes[_nodeA].neighbors[posA].dimension = S.dimensions[0];
 		nodes[_nodeB].neighbors[posB].dimension = S.dimensions[0];
@@ -519,6 +521,8 @@ namespace xerus {
 		
 		// Contract diagnonal matrix to NodeB
 		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = X(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
+		
+		REQUIRE(!nodes[_nodeA].tensorObject->has_factor(), "Internal Error");
 		
 		// Set the new dimension in the nodes
 		nodes[_nodeA].neighbors[posA].dimension = X.dimensions[0];
