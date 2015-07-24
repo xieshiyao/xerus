@@ -149,6 +149,7 @@ namespace xerus {
 		IF_CHECK(S.check_indices(2, false));
 		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be FullTensors, as they are defenitely not sparse.");
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
+		REQUIRE(maxRank > 0, "maxRank must be larger than zero.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;

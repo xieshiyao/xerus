@@ -148,8 +148,6 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     protected:
-        void round_train(const std::vector<size_t>& _maxRanks, const double _eps);
-
 		static void construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps);
         
         static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
@@ -241,29 +239,30 @@ namespace xerus {
         std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
         
 		/** 
-		 * @brief Reduce all ranks up to a given accuracy.
+		 * @brief Reduce all ranks up to a given accuracy and maximal number.
+		 * @param _maxRanks maximal allowed ranks. All current ranks that are larger than the given ones are reduced by truncation.
 		 * @param _eps the accuracy to use for truncation in the individual SVDs.
 		 */
-        void round(value_t _eps);
-
+		void round(const std::vector<size_t>& _maxRanks, const double _eps = EPSILON);
+		
 		/** 
 		 * @brief Reduce all ranks to the given number.
 		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
 		 */
-        void round(size_t _maxRank);
-
-		/** 
-		 * @brief Reduce all ranks to the given numbers.
-		 * @param _maxRanks maximal allowed ranks. All current ranks that are larger than the given ones are reduced by truncation.
-		 */
-        void round(const std::vector<size_t> &_maxRanks);
+        void round(const size_t _maxRank);
         
 		/** 
 		 * @brief Reduce all ranks to the given number.
 		 * @param _maxRank maximal allowed rank. All current ranks that are larger than this are reduced by truncation.
 		 */
-        void round(int _maxRank);
+        void round(const int _maxRank);
 		
+		/** 
+		 * @brief Reduce all ranks up to a given accuracy.
+		 * @param _eps the accuracy to use for truncation in the individual SVDs.
+		 */
+        void round(const value_t _eps);
+
 		/** 
 		 * @brief Applies the soft threshholding operation to all ranks.
 		 * @param _tau the soft threshholding parameter to be applied. I.e. all singular values are reduced to max(0, Lambda_ui - _tau).

@@ -270,93 +270,6 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	template<bool isOperator>
-	void TTNetwork<isOperator>::round_train(const std::vector<size_t>& _maxRanks, const double _eps) {
-		REQUIRE(degree()%N==0, "Number of indicis must be even for TTOperator");
-		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
-		REQUIRE(_maxRanks.size() == degree()/N-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << degree()/N-1 << " are given.");
-		REQUIRE(is_valid_tt(), "round called on illegal TT tensor");
-		
-		// If there is no or only one node in the train object we are already finished as there is no rank that can be rounded
-		if(degree() <= N) { return; }
-		
-		// Needed variables
-		std::unique_ptr<value_t[]> LR, RR, M, U, S, Vt, newLeft, newRight;
-		size_t leftDim, midDim, rightDim, maxLeftRank, maxRightRank, maxRank;
-		value_t factor = 1.0;
-		
-		for(size_t position = 0; position < degree()/N-1; ++position) {
-			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+1].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
-			REQUIRE(dynamic_cast<FullTensor*>(nodes[position+2].tensorObject.get()), "Tensor Train nodes are required to be FullTensors for round(...)");
-			
-			FullTensor& leftTensor = *static_cast<FullTensor*>(nodes[position+1].tensorObject.get());
-			FullTensor& rightTensor = *static_cast<FullTensor*>(nodes[position+2].tensorObject.get());
-			
-			// Eat the factor of LHS
-			factor *= leftTensor.factor;
-			leftTensor.factor = 1.0;
-			
-			// Determine the dimensions of the next matrifications
-			midDim   = leftTensor.dimensions.back();
-			leftDim  = leftTensor.size/midDim;
-			rightDim = rightTensor.size/midDim;
-			maxLeftRank = std::min(leftDim, midDim);
-			maxRightRank = std::min(midDim, rightDim);
-			maxRank = std::min(maxLeftRank, maxRightRank);
-			
-			// Calculate QR and RQ decompositoins
-			leftTensor.ensure_own_data();
-			rightTensor.ensure_own_data();
-			LR.reset(new value_t[maxLeftRank*midDim]);
-			RR.reset(new value_t[midDim*maxRightRank]);
-			// blasWrapper::rank_revealing_split(leftTensor.data, LR, leftTensor.data.get(), leftDim, midDim, maxLeftRank);
-			blasWrapper::inplace_qr(leftTensor.data.get(), LR.get(), leftDim, midDim);
-			blasWrapper::inplace_rq(RR.get(), rightTensor.data.get(), midDim, rightDim);
-			
-			// Calculate Middle Matrix M = LR*RR
-			M.reset(new value_t[maxLeftRank*maxRightRank]);
-			blasWrapper::matrix_matrix_product(M.get(), maxLeftRank, maxRightRank, 1.0, LR.get(), false, midDim, RR.get(), false);
-			
-			// Calculate SVD of M = U S Vt -- Reuse the space allocted for LR and RR and allow destruction of M
-			U = std::move(LR);
-			S.reset(new value_t[maxRank]);
-			Vt = std::move(RR);
-			blasWrapper::svd_destructive(U.get(), S.get(), Vt.get(), M.get(), maxLeftRank, maxRightRank);
-			
-			// Determine the Rank NOTE: this terminates as _eps is required to be < 1
-			size_t currRank = std::min(maxRank, _maxRanks[position]);
-			for(; S[currRank-1] < _eps*S[0]; --currRank) { }
-			
-			// Calclate S*Vt by scaling the rows of Vt appropriatly
-			for(size_t row = 0; row < currRank; ++row) {
-				misc::array_scale(Vt.get()+row*maxRightRank, S[row], maxRightRank);
-			}
-			
-			// Multiply U and (S*Vt) back to the left and to the right respectively
-			newLeft.reset(new value_t[leftDim*currRank]);
-			newRight.reset(new value_t[currRank*rightDim]);
-			blasWrapper::matrix_matrix_product(newLeft.get(), leftDim, currRank, 1.0, leftTensor.data.get(), maxLeftRank, false, maxLeftRank, U.get(), maxRank, false);
-			blasWrapper::matrix_matrix_product(newRight.get(), currRank, rightDim, 1.0, Vt.get(), false, maxRightRank, rightTensor.data.get(), false);
-			
-			// Put the new Tensors to their place
-			leftTensor.data.reset(newLeft.release(), internal::array_deleter_vt);
-			rightTensor.data.reset(newRight.release(), internal::array_deleter_vt);
-			leftTensor.dimensions.back() = currRank;
-			leftTensor.size = misc::product(leftTensor.dimensions);
-			rightTensor.dimensions.front() = currRank;
-			rightTensor.size = misc::product(rightTensor.dimensions);
-			nodes[position+1].neighbors.back().dimension  = currRank;
-			nodes[position+2].neighbors.front().dimension = currRank;
-		}
-		
-		// Apply accumulated factor
-		nodes[degree()/N].tensorObject->factor *= factor;
-		
-		cannonicalized = true;
-		corePosition = degree()/N-1;
-		REQUIRE(is_in_expected_format(), "Internal Error.");
-	}
-	
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
@@ -903,39 +816,48 @@ namespace xerus {
 		return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
 	}
 	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(const std::vector<size_t>& _maxRanks, const double _eps) {
+		const size_t numComponents = degree()/N;
+		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
+		REQUIRE(_maxRanks.size() == numComponents-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << numComponents-1 << " are given.");
+		REQUIRE(is_valid_tt(), "round called on illegal TT tensor");
+		
+		const bool initialCanonicalization = cannonicalized;
+		const size_t initialCorePosition = corePosition;
+		
+		move_core(numComponents-1);
+		
+		for(size_t i = 0; i+1 < numComponents; ++i) {
+			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0, false);
+		}
+		
+		cannonicalized = true;
+		corePosition = 0;
+		
+		if(initialCanonicalization) {
+			move_core(initialCorePosition);
+		}
+		
+		REQUIRE(is_in_expected_format(), "Internal Error.");
+	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::round(value_t _eps) {
-		const bool oldCannon = cannonicalized;
-		const size_t oldCorePos = corePosition;
-		move_core(0);
-		round_train(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
-		if (oldCannon) {
-			move_core(oldCorePos);
-		}
+	void TTNetwork<isOperator>::round(const size_t _maxRank) {
+		round(std::vector<size_t>(degree()/N-1, _maxRank), 1e-15);
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(const int _maxRank) {
+		REQUIRE( _maxRank > 0, "MaxRank must be positive");
+		round(size_t(_maxRank));
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::round(const value_t _eps) {
+		round(std::vector<size_t>(degree()/N-1, size_t(-1)), _eps);
 	}
 
-	template<bool isOperator>
-	void TTNetwork<isOperator>::round(size_t _maxRank) {
-		const bool oldCannon = cannonicalized;
-		const size_t oldCorePos = corePosition;
-		move_core(0);
-		round_train(std::vector<size_t>(degree()/N-1, _maxRank), 1e-15);
-		if (oldCannon) {
-			move_core(oldCorePos);
-		}
-	}
-
-	template<bool isOperator>
-	void TTNetwork<isOperator>::round(const std::vector<size_t> &_maxRanks) {
-		const bool oldCannon = cannonicalized;
-		const size_t oldCorePos = corePosition;
-		move_core(0);
-		round_train(_maxRanks, 1e-15);
-		if (oldCannon) {
-			move_core(oldCorePos);
-		}
-	}
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::soft_threshold(const double _tau, const bool _preventZero) {
@@ -968,11 +890,6 @@ namespace xerus {
 		is_valid_tt();
 	}
 	
-	template<bool isOperator>
-	void TTNetwork<isOperator>::round(int _maxRank) {
-		REQUIRE( _maxRank > 0, "MaxRank must be positive");
-		round(size_t(_maxRank));
-	}
 
 	template<bool isOperator>
 	std::vector<size_t> TTNetwork<isOperator>::ranks() const {
