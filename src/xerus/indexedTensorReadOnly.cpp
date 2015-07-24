@@ -87,22 +87,30 @@ namespace xerus {
         std::vector<size_t> evalDimensions;
         evalDimensions.reserve(_indexOrder.size());
 		
+		// Find the order that this tensor has using the current indices
+		const std::vector<Index> myIndices = get_assigned_indices();
+		size_t trueOrder = 0;
+		for(const Index& idx : myIndices) {
+			if(idx.open()) {trueOrder += idx.span; }
+		}
+		
+		// Find dimensions for all given indices
         for(const Index& idx : _indexOrder) {
-            REQUIRE(misc::count(indices, idx) == 1, "All indices of evaluation target must appear exactly once.");
+			if(idx.actual_span(trueOrder) == 0) { continue; }
+			
+            REQUIRE(misc::count(myIndices, idx) == 1, "All indices of evaluation target must appear exactly once. Here " << misc::count(myIndices, idx));
             
             // Find index
             size_t indexPos = 0, dimCount = 0;
-            while(indices[indexPos] != idx) {
-				dimCount += indices[indexPos++].actual_span(degree());
+            while(myIndices[indexPos] != idx) {
+				dimCount += myIndices[indexPos++].span;
 			}
-            
-            // Calculate span
-            const size_t span = indices[indexPos].actual_span(degree());
-            
-            REQUIRE(dimCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large. Tensor has " << tensorObjectReadOnly->dimensions.size() << " indices at least " << dimCount+span);
+			
+			REQUIRE(myIndices[indexPos].open(), "Index appearing on the LHS of assignment must be open on RHS");
+            REQUIRE(dimCount+myIndices[indexPos].span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large. Tensor has " << tensorObjectReadOnly->dimensions.size() << " indices at least " << dimCount+myIndices[indexPos].span);
             
             // Insert dimensions
-            for(size_t i = 0; i < span; ++i) {
+            for(size_t i = 0; i < myIndices[indexPos].span; ++i) {
                 evalDimensions.emplace_back(tensorObjectReadOnly->dimensions[dimCount+i]);
             }
         }

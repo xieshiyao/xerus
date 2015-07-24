@@ -452,9 +452,60 @@ namespace xerus {
 		
 		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
     }
+    void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
+		// Find common Index in nodeA
+		bool foundCommon = false;
+		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
+			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
+				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
+				foundCommon = true;
+				_posA = i;
+			}
+		}
+		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
+		
+		// Find common Index in nodeB
+		foundCommon = false;
+		for(size_t i = 0; i < nodes[_nodeB].neighbors.size(); ++i) {
+			if(nodes[_nodeB].neighbors[i].other == _nodeA) {
+				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
+				foundCommon = true;
+				_posB = i;
+			}
+		}
+		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
+		
+		// Set the spans of the indices
+		_ba.span = _posA;
+		_aa.span = nodes[_nodeA].degree() - _posA - 1;
+		_bb.span = _posB;
+		_ab.span = nodes[_nodeB].degree() - _posB - 1;
+	}
     
-    void TensorNetwork::roundX(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
-		std::vector<Index> indicesA, indicesB, indicesB2, indicesX;
+    void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+		size_t posA, posB;
+		Index ba, aa, bb, ab, c1, c2;
+		identify_common_edge(posA, posB, ba, aa, bb, ab, _nodeA, _nodeB);
+		
+		// Contract the two
+		FullTensor X; // TODO Sparse
+		X(ba, aa, bb, ab) = (*nodes[_nodeA].tensorObject)(ba, c1, aa) * (*nodes[_nodeB].tensorObject)(bb, c1, ab);
+		
+		// Calculate SVD
+		SparseTensor S;
+		(((*nodes[_nodeA].tensorObject)(ba, c1, aa)), S(c1, c2), ((*nodes[_nodeB].tensorObject)(bb, c2, ab))) = SVD(X(ba, aa, bb, ab), _maxRank, _eps, _softThreshold, _preventZero);
+		
+		// Contract diagnonal matrix to NodeB
+		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
+		
+		// Set the new dimension in the nodes
+		nodes[_nodeA].neighbors[posA].dimension = S.dimensions[0];
+		nodes[_nodeB].neighbors[posB].dimension = S.dimensions[0];
+	}
+	
+	
+	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
+		std::vector<Index> indicesA, indicesA2, indicesB;
 		Index commonIdx, commonIdx2;
 		size_t linkPosA, linkPosB;
 		
@@ -466,9 +517,10 @@ namespace xerus {
 				foundCommon = true;
 				linkPosA = i;
 				indicesA.push_back(commonIdx);
+				indicesA2.push_back(commonIdx2);
 			} else {
 				indicesA.emplace_back();
-				indicesX.push_back(indicesA.back());
+				indicesA2.push_back(indicesA.back());
 			}
 		}
 		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
@@ -481,31 +533,23 @@ namespace xerus {
 				foundCommon = true;
 				linkPosB = i;
 				indicesB.push_back(commonIdx);
-				indicesB2.push_back(commonIdx2);
 			} else {
 				indicesB.emplace_back();
-				indicesB2.push_back(indicesB.back());
-				indicesX.push_back(indicesB.back());
 			}
 		}
 		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
 		
-		// Contract the two
-		FullTensor X; // TODO Sparse
-		X(indicesX) = (*nodes[_nodeA].tensorObject)(indicesA) * (*nodes[_nodeB].tensorObject)(indicesB);
+		// Calculate QR
+		FullTensor X;
+		((*nodes[_nodeA].tensorObject)(indicesA2), X(commonIdx2, commonIdx)) = QR((*nodes[_nodeA].tensorObject)(indicesA));
 		
-		// Calculate SVD
-		SparseTensor S;
-		(((*nodes[_nodeA].tensorObject)(indicesA)), S(commonIdx, commonIdx2), ((*nodes[_nodeB].tensorObject)(indicesB2))) = SVD(X(indicesX), _maxRank, _eps, _softThreshold, _preventZero);
-		
-		const size_t rank = S.dimensions[0];
+		const size_t rank = X.dimensions[0];
 		nodes[_nodeA].neighbors[linkPosA].dimension = rank;
 		nodes[_nodeB].neighbors[linkPosB].dimension = rank;
 		
 		// Contract diagnonal matrix to NodeB
-		(*nodes[_nodeB].tensorObject)(indicesB) = S(commonIdx, commonIdx2) * ((*nodes[_nodeB].tensorObject)(indicesB2));
+		(*nodes[_nodeB].tensorObject)(indicesB) = X(commonIdx2, commonIdx) * ((*nodes[_nodeB].tensorObject)(indicesB));
 	}
-		
     
     void TensorNetwork::contract_unconnected_subnetworks() {
 		REQUIRE(is_valid_network(), "Invalid TensorNetwork");

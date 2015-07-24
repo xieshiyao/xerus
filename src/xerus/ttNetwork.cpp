@@ -954,7 +954,7 @@ namespace xerus {
 		value_t factor = frob_norm();
 		*this /= factor;
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			roundX(i+1, i+2, std::numeric_limits<size_t>::max(), 0.0, _taus[i]/factor, true);
+			round_edge(i+1, i+2, std::numeric_limits<size_t>::max(), 0.0, _taus[i]/factor, true);
 		}
 		*this *= std::max(factor, _preventZero ? 1e-300 : 0.0);
 		
