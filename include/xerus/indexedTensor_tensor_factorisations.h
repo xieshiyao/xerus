@@ -49,6 +49,9 @@ namespace xerus {
 			
         SVD(const IndexedTensorReadOnly<Tensor>& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
 			input(_input), epsilon(_epsilon), softThreshold(0.0), maxRank(_maxRank), preventZero(false) { }
+			
+		SVD(const IndexedTensorReadOnly<Tensor>& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
+			input(_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
         
         void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const ;
     };

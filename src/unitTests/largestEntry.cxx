@@ -80,12 +80,12 @@ UNIT_TEST(Algorithm, largestEntry,
     std::mt19937_64 rnd;
     rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	std::uniform_int_distribution<size_t> dimDist(1,8);
-	std::uniform_int_distribution<size_t> rankDist(1,6);
+	std::uniform_int_distribution<size_t> dimDist(1,3);
+	std::uniform_int_distribution<size_t> rankDist(1,4);
     
-	const size_t D = 12;
+	const size_t D = 16;
 	
-	for(size_t k = 0; k < 10; ++k) {
+	for(size_t k = 0; k < 2; ++k) {
 		std::vector<size_t> stateDims;
 		stateDims.push_back(dimDist(rnd));
 		

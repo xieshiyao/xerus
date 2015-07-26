@@ -103,7 +103,7 @@ namespace xerus {
     }
     
     template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::operator=(const IndexedTensorWritable<tensor_type>& _rhs) {
+    void IndexedTensorWritable<tensor_type>::operator=(const IndexedTensorWritable<tensor_type>& _rhs) const {
         operator=(static_cast<const IndexedTensorReadOnly<tensor_type> &>(_rhs));
     }
     

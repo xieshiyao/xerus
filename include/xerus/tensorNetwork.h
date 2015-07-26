@@ -377,18 +377,40 @@ namespace xerus {
         
         // TODO describtion
 		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
-	
+	protected:
+		/**
+		 * @brief Finds the position of a single common edge between two nodes.
+		 * @param _beforeA # of dimensions in nodeA before the common edge.
+		 * @param _afterA # of dimensions in nodeA after the common edge.
+		 * @param _beforeB # of dimensions in nodeB before the common edge.
+		 * @param _afterB # of dimensions in nodeB after the common edge.
+		 * @param _nodeA The node.
+		 * @param _nodeB The second node.
+		 */
+		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
+		
+	public:
 		/**
 		 * @brief Thresholds the rank between two given nodes.
-		 * @details The cores of the given nodes are contracted and an SVD is calculated to perform the thresholding. The obtained core is contracted to nodeB,
-		 * i.e. nodeA remains orthogonal in the used matrification.
+		 * @details The given nodes must be joined by a single edge. Both nodes are contracted and an SVD is calculated to perform the thresholding.
+		 * The obtained core is contracted to nodeB, i.e. nodeA remains orthogonal in the used matrification.
 		 * @param _nodeA First node that takes part in the rank thresholding. This node remains orthogonalized.
-		 * @param _nodeB Second node that takes part in the rank thresholding.
+		 * @param _nodeB Second node that takes part in the rank thresholding. This nodes carries the core.
 		 * @param _maxRank Maximal allowed rank.
-		 * @param _softThreshold Softthreshold that is to be applied.
 		 * @param _eps Epsilion to be used in the SVD to determine zero singular values.
+		 * @param _softThreshold Softthreshold that is to be applied.
+		 * @param _preventZero Flag set to prevent the result to become the zero tensor.
 		 */
-		void round(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _softThreshold, const double _eps); // TODO implement
+		void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
+		
+		/**
+		 * @brief Transfers the core from one given node to another.
+		 * @details The given nodes must be joined by a single edge. A QR decomposition of the first node is calculated and the core contracted to the second one.
+		 * @param _nodeA First node, which remains orthogonalized.
+		 * @param _nodeB Second node, which carries the core.
+		 * @param _allowRankReduction Flag indicating whether a rank revealing decomposition is to be used which allows the reduction of the rank.
+		 */
+		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
 		
 		/**
 		* contracts the nodes with indices @a _node1 and @a _node2

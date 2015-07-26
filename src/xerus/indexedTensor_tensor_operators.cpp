@@ -33,7 +33,7 @@
 namespace xerus {
 
     template<>
-    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs)  {
+    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs) const {
         if(!_rhs.uses_tensor(tensorObject)) {
             // If LHS and RHS object don't coincide we can directly evaluate
             this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), DONT_SET_ZERO());

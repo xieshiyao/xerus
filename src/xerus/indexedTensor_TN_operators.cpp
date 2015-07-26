@@ -33,7 +33,7 @@
 namespace xerus {
     
     template<> 
-    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork> &_rhs) {
+    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork> &_rhs) const {
 		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
         std::vector<Index> rightIndices = _rhs.get_assigned_indices();
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
@@ -73,7 +73,7 @@ namespace xerus {
 	}
 
     
-    template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>& _rhs) {
+    template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>& _rhs) const {
 		tensorObject->specialized_evaluation(*this, IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
     }
     
@@ -108,7 +108,7 @@ namespace xerus {
     }
 
     template<>
-    void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>& _rhs) {
+    void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>& _rhs) const {
 		tensorObject->specialized_evaluation(*this, _rhs);
     }
 

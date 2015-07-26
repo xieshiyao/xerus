@@ -19,18 +19,30 @@
 
 /**
  * @file
- * @brief Header file that defines the logging behaviour of the internal debug log-levels used in the library.
+ * @brief Header file for the different measurment classes.
  */
 
 #pragma once
 
-#include "misc/namedLogger.h"
+#include "basic.h"
 
-SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(largestEntry, xerus::misc::internal::LOGGING_ON_ERROR)
-/* */
+namespace xerus {
+    
+	/** 
+	* @brief Class used to represent a set of single point measurments.
+	*/
+    class SinglePointMeasurments {
+		/** 
+		* @brief Class used to represent a single point measurments.
+		*/
+		class SinglePointMeasurment {
+			std::vector<size_t> positions;
+			value_t value;
+		};
+		
+		///@brief Number of measurments contained in the set.
+		std::vector<SinglePointMeasurment> measurments;
+		
+		
+	};
+}
