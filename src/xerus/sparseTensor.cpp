@@ -254,6 +254,10 @@ namespace xerus {
     }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	void SparseTensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		LOG(fatal, "Not yet implemented"); // TODO 
+	}
     
     void SparseTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
         change_dimensions(_newDim);

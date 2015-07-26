@@ -183,23 +183,16 @@ namespace xerus {
         TensorNetwork partialCopy;
         partialCopy.nodes = nodes;
         
-        
         // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
         for(TensorNode& node : partialCopy.nodes) {
-            std::vector<Index> shrinkIndices, baseIndices;
-            for(const TensorNetwork::Link& link : node.neighbors) {
-                if(link.external) {
-                    // Add fixed index to base
-                    baseIndices.emplace_back(_positions[link.indexPosition]);
-                } else {
-                    // Add real index to both
-                    shrinkIndices.emplace_back();
-                    baseIndices.push_back(shrinkIndices.back());
+			// Fix slates in external links
+			size_t killedDimensions = 0;
+            for(size_t i = 0; i < node.neighbors.size(); ++i) {
+                if(node.neighbors[i].external) {
+                    node.tensorObject->fix_slate(i-killedDimensions, _positions[node.neighbors[i].indexPosition]);
+					killedDimensions++;
                 }
             }
-            Tensor* tmp = node.tensorObject->construct_new();
-            (*tmp)(std::move(shrinkIndices)) = (*node.tensorObject)(std::move(baseIndices));
-            node.tensorObject.reset(tmp);
             
             // Remove all external links, because they don't exist anymore
             node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNetwork::Link& _test){return _test.external;}), node.neighbors.end());

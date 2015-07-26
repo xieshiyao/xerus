@@ -292,6 +292,8 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
         
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO);
 		

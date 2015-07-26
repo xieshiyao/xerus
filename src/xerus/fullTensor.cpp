@@ -26,6 +26,7 @@
 #include <xerus/sparseTensor.h>
 #include <xerus/tensorNetwork.h>
 #include <xerus/blasLapackWrapper.h>
+#include <xerus/selectedFunctions.h>
 #include <cstring>
 
 namespace xerus {
@@ -381,6 +382,33 @@ namespace xerus {
         
         resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
     }
+    
+    
+	void FullTensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
+		
+		size_t stepCount = 1, blockSize = 1;
+		for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
+		for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
+		
+		const size_t stepSize = dimensions[_dimension]*blockSize;
+		size_t inputPosition = _slatePosition*blockSize;
+		
+		value_t * const newData = new value_t[stepCount*blockSize];
+		
+		// Copy data
+		for(size_t i = 0; i < stepCount; ++i) {
+			misc::array_copy(newData+i*blockSize, data.get()+inputPosition, blockSize);
+			inputPosition += stepSize;
+		}
+		
+		// Set data
+		data.reset(newData, &internal::array_deleter_vt);
+		
+		// Adjust dimensions
+		dimensions.erase(dimensions.begin()+_dimension);
+		size = stepCount*blockSize;
+	}
 
     //TODO Allow more 2d
     void FullTensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
