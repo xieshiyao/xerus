@@ -491,8 +491,6 @@ namespace xerus {
 		// Contract diagnonal matrix to NodeB
 		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
 		
-		REQUIRE(!nodes[_nodeA].tensorObject->has_factor(), "Internal Error");
-		
 		// Set the new dimension in the nodes
 		nodes[_nodeA].neighbors[posA].dimension = S.dimensions[0];
 		nodes[_nodeB].neighbors[posB].dimension = S.dimensions[0];
@@ -515,12 +513,20 @@ namespace xerus {
 		// Contract diagnonal matrix to NodeB
 		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = X(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
 		
-		REQUIRE(!nodes[_nodeA].tensorObject->has_factor(), "Internal Error");
-		
 		// Set the new dimension in the nodes
 		nodes[_nodeA].neighbors[posA].dimension = X.dimensions[0];
 		nodes[_nodeB].neighbors[posB].dimension = X.dimensions[0];
 	}
+	
+	
+	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		const size_t extNode = externalLinks[_dimension].other;
+		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
+		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
+		externalLinks.erase(externalLinks.begin()+_dimension);
+	}
+    
     
     void TensorNetwork::contract_unconnected_subnetworks() {
 		REQUIRE(is_valid_network(), "Invalid TensorNetwork");

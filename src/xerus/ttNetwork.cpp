@@ -966,25 +966,27 @@ namespace xerus {
 	}
 		
 	template<bool isOperator>
-	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount, const value_t _lowerBound) const {
+// 	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount, const value_t _lowerBound) const {
+	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
 		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
 		REQUIRE(is_valid_tt(), "Invalid TT");
 		
-		size_t dummyA, dummyB;
+// 		size_t dummyA, dummyB;
 		// There is actual work to be done
 		if(misc::sum(ranks()) >= degree()) {
 			const double alpha = _accuracy;
-			_interationCount = 0;
+// 			_interationCount = 0;
 			
 			TTNetwork X = *this;
 			X.round(1);
-			double Xn = std::max(operator[](X.find_largest_entry(0.0, dummyA, dummyB, 0.0)), _lowerBound);
+			double Xn = std::max(operator[](X.find_largest_entry(0.0, 0.0)), _lowerBound);
+// 			double Xn = std::max(operator[](X.find_largest_entry(0.0, dummyA, dummyB, 0.0)), _lowerBound);
 			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
 			
 			X = *this;
 			while(misc::sum(X.ranks()) >= degree()) {
-				_interationCount++;
-				_maxRank = std::max(_maxRank, misc::max(X.ranks()));
+// 				_interationCount++;
+// 				_maxRank = std::max(_maxRank, misc::max(X.ranks()));
 				
 				X.entrywise_square();
 				LOG(largestEntry, "Before ST: " << X.ranks() << " --- " << X.frob_norm());
@@ -993,7 +995,8 @@ namespace xerus {
 				
 				TTNetwork Y = X;
 				Y.round(1);
-				const size_t yMaxPos = Y.find_largest_entry(0.0, dummyA, dummyB, 0.0);
+				const size_t yMaxPos = Y.find_largest_entry(0.0, 0.0);
+// 				const size_t yMaxPos = Y.find_largest_entry(0.0, dummyA, dummyB, 0.0);
 				
 				Xn = std::max(X[yMaxPos], (1-(1-alpha)*alpha/2.0)*Xn*Xn);
 				double fNorm = X.frob_norm();
@@ -1001,7 +1004,8 @@ namespace xerus {
 				X /= fNorm;
 				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
 			}
-			return X.find_largest_entry(0.0, dummyA, dummyB, 0.0);
+			return X.find_largest_entry(0.0, 0.0);
+// 			return X.find_largest_entry(0.0, dummyA, dummyB, 0.0);
 			
 		// We are already rank one
 		} else {

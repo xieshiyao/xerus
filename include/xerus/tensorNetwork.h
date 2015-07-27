@@ -412,6 +412,14 @@ namespace xerus {
 		 */
 		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
 		
+		
+		/** 
+		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
+		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
+		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
+		 */
+		void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		
 		/**
 		* contracts the nodes with indices @a _node1 and @a _node2
 		* replaces node1 with the contraction and node2 with an degree-0 tensor
