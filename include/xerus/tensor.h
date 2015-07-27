@@ -342,7 +342,7 @@ namespace xerus {
         
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
-		 * @param _dimension the dimensions in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
+		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
 		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
 		 */
 		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) = 0;
