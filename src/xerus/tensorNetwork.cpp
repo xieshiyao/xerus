@@ -477,19 +477,48 @@ namespace xerus {
     
     void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
 		size_t posA, posB;
-		Index ba, aa, bb, ab, c1, c2;
+		Index ba, aa, bb, ab, c1, c2, k, l;
 		identify_common_edge(posA, posB, ba, aa, bb, ab, _nodeA, _nodeB);
 		
-		// Contract the two
+		Tensor& tensorA = (*nodes[_nodeA].tensorObject);
+		Tensor& tensorB = (*nodes[_nodeB].tensorObject);
+		
 		FullTensor X; // TODO Sparse
-		X(ba, aa, bb, ab) = (*nodes[_nodeA].tensorObject)(ba, c1, aa) * (*nodes[_nodeB].tensorObject)(bb, c1, ab);
-		
-		// Calculate SVD
 		SparseTensor S;
-		(((*nodes[_nodeA].tensorObject)(ba, c1, aa)), S(c1, c2), ((*nodes[_nodeB].tensorObject)(bb, c2, ab))) = SVD(X(ba, aa, bb, ab), _maxRank, _eps, _softThreshold, _preventZero);
+
+		// TODO eventually use only one QC if only one is usefull.
 		
-		// Contract diagnonal matrix to NodeB
-		(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
+		// Check whether prior QR makes sense
+		if (tensorA.size > misc::sqr(tensorA.dimensions[posA]) 
+		 || tensorB.size > misc::sqr(tensorB.dimensions[posB])) {
+			// Calculate the cores
+			FullTensor coreA, coreB;
+			(tensorA(ba, c1, aa), coreA(c1, k)) = QC(tensorA(ba, k, aa));
+			(tensorB(bb, c2, ab), coreB(k, c2)) = QC(tensorB(bb, k, ab)); // TODO use CQ when available
+			
+			// Contract the cores
+			X(c1, c2) = coreA(c1, k)*coreB(k, c2);
+			
+			// Calculate SVD
+			(coreA(c1, k), S(k,l), coreB(l, c2)) = SVD(X(c1, c2), _maxRank, _eps, _softThreshold, _preventZero);
+			
+			// Contract diagnonal matrix to coreB
+			coreB(l, c2) = S(l, k) * coreB(k, c2);
+			
+			// Contract the "cores" back to their sides
+			tensorA(ba, k, aa) = tensorA(ba, c1, aa) * coreA(c1, k);
+			tensorB(bb, k, ab) = coreB(k, c2) * tensorB(bb, c2, ab);
+			
+		} else {
+			// Contract the two
+			X(ba, aa, bb, ab) = (*nodes[_nodeA].tensorObject)(ba, c1, aa) * (*nodes[_nodeB].tensorObject)(bb, c1, ab);
+			
+			// Calculate SVD
+			(((*nodes[_nodeA].tensorObject)(ba, c1, aa)), S(c1, c2), ((*nodes[_nodeB].tensorObject)(bb, c2, ab))) = SVD(X(ba, aa, bb, ab), _maxRank, _eps, _softThreshold, _preventZero);
+			
+			// Contract diagnonal matrix to NodeB
+			(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
+		}
 		
 		// Set the new dimension in the nodes
 		nodes[_nodeA].neighbors[posA].dimension = S.dimensions[0];

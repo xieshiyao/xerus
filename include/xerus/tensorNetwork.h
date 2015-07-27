@@ -378,13 +378,15 @@ namespace xerus {
         // TODO describtion
 		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
 	protected:
-		/**
+		/** 
 		 * @brief Finds the position of a single common edge between two nodes.
-		 * @param _beforeA # of dimensions in nodeA before the common edge.
-		 * @param _afterA # of dimensions in nodeA after the common edge.
-		 * @param _beforeB # of dimensions in nodeB before the common edge.
-		 * @param _afterB # of dimensions in nodeB after the common edge.
-		 * @param _nodeA The node.
+		 * @param _posA position of the common edge in the first node.
+		 * @param _posB position of the common edge in the second node.
+		 * @param _ba Index whose span is set equals the number of dimensions before the common edge in first node.
+		 * @param _aa Index whose span is set equals the number of dimensions after the common edge in first node.
+		 * @param _bb Index whose span is set equals the number of dimensions before the common edge in second node.
+		 * @param _ab Index whose span is set equals the number of dimensions after the common edge in second node.
+		 * @param _nodeA The first node.
 		 * @param _nodeB The second node.
 		 */
 		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
@@ -426,7 +428,12 @@ namespace xerus {
 		*/
 		void contract(size_t _nodeId1, size_t _nodeId2);
 		
-        // TODO describtion
+		/** 
+		 * @brief Approximates the cost of contraction two given nodes.
+		 * @param _nodeId1 id of the first node.
+		 * @param _nodeId2 id of the second node.
+		 * @return The approxiamted contraction cost.
+		 */
 		double contraction_cost(size_t _nodeId1, size_t _nodeId2);
 		
 		
