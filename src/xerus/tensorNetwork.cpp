@@ -351,28 +351,34 @@ namespace xerus {
 		return is_valid_network();
 	}
     
-    /// Creates a copy of a subnet that only contains nullptr as data pointers
-    TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
-        TensorNetwork cpy(NoZeroNode);
-        cpy.nodes.resize(nodes.size());
-        cpy.dimensions = dimensions;
-        cpy.externalLinks = externalLinks;
-        for (size_t id : _ids) {
-            cpy.nodes[id] = nodes[id].strippped_copy();
-            for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
-                TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
-                if (!l.external) { // Link was not external before
-                    if (!misc::contains(_ids, l.other)) { // ...but is "external" to this subnet
-                        l.external = true;
-                        l.indexPosition = cpy.externalLinks.size();
-                        cpy.dimensions.emplace_back(l.dimension);
-                        cpy.externalLinks.emplace_back(id, i, l.dimension, false);
-                    } 
-                }
-            }
-        }
-        return cpy;
-    }
+	/// Creates a copy of a subnet that only contains nullptr as data pointers
+	TensorNetwork TensorNetwork::stripped_subnet(std::function<bool(size_t)> _idF) const {
+		TensorNetwork cpy(NoZeroNode);
+		cpy.nodes.resize(nodes.size());
+		cpy.dimensions = dimensions;
+		cpy.externalLinks = externalLinks;
+		for (size_t id =0; id<nodes.size(); ++id) {
+			if (!_idF(id)) continue;
+			cpy.nodes[id] = nodes[id].strippped_copy();
+			for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
+				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
+				if (!l.external) { // Link was not external before
+					if (!_idF(l.other)) { // ...but is "external" to this subnet
+						l.external = true;
+						l.indexPosition = cpy.externalLinks.size();
+						cpy.dimensions.emplace_back(l.dimension);
+						cpy.externalLinks.emplace_back(id, i, l.dimension, false);
+					} 
+				}
+			}
+		}
+		return cpy;
+	}
+	
+	TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
+		return stripped_subnet([&](size_t _id){ return _ids.count(_id)>0; });
+	}
+    
     
     void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
         TensorNetwork::Link &li = externalLinks[_i];
@@ -608,6 +614,52 @@ namespace xerus {
 		REQUIRE(!keepFinalNode || nodes.size() == 1, "internal error!");
     }
 
+    
+    void TensorNetwork::reduce_representation() {
+		REQUIRE(is_valid_network(), "");
+		TensorNetwork strippedNet = stripped_subnet();
+		std::vector<std::set<size_t>> contractions;
+		bool change = false;
+		do {
+			for (size_t id1=0; id1 < strippedNet.nodes.size(); ++id1) {
+				TensorNode &currNode = strippedNet.nodes[id1];
+				if (currNode.erased) {
+					continue;
+				}
+				for (Link &l : currNode.neighbors) {
+					size_t r=1;
+					for (Link &l2 : currNode.neighbors) {
+						if (l2.other == l.other) {
+							r *= l2.dimension;
+						}
+					}
+					if (r*r >= currNode.size()) {
+						if (contractions[id1].empty()) {
+							contractions[id1].insert(id1);
+						}
+						if (contractions[l.other].empty()) {
+							contractions[id1].insert(l.other);
+						} else {
+							contractions[id1].insert(contractions[l.other].begin(), contractions[l.other].end());
+							contractions[l.other].clear();
+						}
+						strippedNet.contract(id1, l.other);
+						REQUIRE(strippedNet.nodes[l.other].erased, "ie");
+						change = true;
+						break; // for-each iterator is broken, so we have to break
+					}
+				}
+			}
+		} while (change);
+		
+		// perform the collected contractions from above
+		for (std::set<size_t> &ids : contractions) {
+			if (ids.size() > 1) {
+				contract(ids);
+			}
+		}
+	}
+    
 
     //TODO testcase A(i,j)*B(k,k) of TTtensors
     /**
