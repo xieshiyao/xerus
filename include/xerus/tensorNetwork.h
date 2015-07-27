@@ -107,8 +107,6 @@ namespace xerus {
 
 			TensorNode strippped_copy() const;
 			
-			void add_factor(const value_t _factor);
-			
 			// All getters are written without the use of tensorObject so that they also work for empty nodes
 			
 			size_t size() const;
@@ -130,9 +128,6 @@ namespace xerus {
             
         ///@brief The open links of the network in order.
         std::vector<Link> externalLinks;
-        
-        ///@brief A single value representing a constant factor and/or the only entry of an order zero tensor
-//         value_t factor;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
@@ -358,11 +353,22 @@ namespace xerus {
 		/** 
 		 * @brief Creates a dataless copy of a subnet.
 		 * @details Creates a copy of this TensorNetwork containing the specified nodes,
-		 * but do not propagate the data but use the nullptr as data for all nodes
+		 * but does not propagate the data. Instead it uses the nullptr as data for all nodes.
 		 * @param _ids the indices of the nodes to be copied. 
 		 * @return the new TensorNetwork.
 		 */
         TensorNetwork stripped_subnet(std::set<size_t> _ids) const;
+		
+		/** 
+		 * @brief Creates a dataless copy of a subnet.
+		 * @details Creates a copy of this TensorNetwork containing the specified nodes,
+		 * but does not propagate the data. Instead it uses the nullptr as data for all nodes.
+		 * @param _idF a function returning true if its argument should be part of the stripped subnet. defaults to selecting all nodes.
+		 * @return the new TensorNetwork.
+		 */
+        TensorNetwork stripped_subnet(std::function<bool(size_t)> _idF = [](size_t){ return true;}) const;
+		
+		
         
         
         // TODO describtion
@@ -415,6 +421,12 @@ namespace xerus {
 		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
 		
 		
+		/**
+		 * @brief contracts all nodes that are joined by a full-rank edge.
+		 * @details This reduces the overall storage requirements and can be useful to store intermediate results e.g. after fixing one of several indices.
+		 */
+		void reduce_representation();
+		
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
 		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
@@ -455,7 +467,7 @@ namespace xerus {
 		 * @details Checks whether all links in the network are set consistently and matching the 
 		 * underlying tensor objects. This also checks whether the additional constrains of the specific 
 		 * format (if any) are fullfilled.
-		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
+		 * @return TRUE if the sanity check passes. If not an exception is thrown.
 		 */
 		virtual bool is_in_expected_format() const;
 		

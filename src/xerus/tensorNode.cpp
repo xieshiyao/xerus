@@ -59,12 +59,7 @@ namespace xerus {
     TensorNetwork::TensorNode TensorNetwork::TensorNode::strippped_copy() const {
         return TensorNetwork::TensorNode(std::unique_ptr<Tensor>(), neighbors);
     }
-    
-    void TensorNetwork::TensorNode::add_factor(const value_t _factor) {
-        tensorObject->factor *= _factor;
-    }
-    
-    
+        
     size_t TensorNetwork::TensorNode::size() const {
         size_t s = 1;
         for (const Link &l : neighbors) {
