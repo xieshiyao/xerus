@@ -27,22 +27,33 @@
 #include "basic.h"
 
 namespace xerus {
-    
+	/** 
+	* @brief Class used to represent a single point measurments.
+	*/
+    class SinglePointMeasurment {
+		size_t position;
+		std::vector<size_t> positions;
+		value_t value;
+		
+		SinglePointMeasurment(const size_t _position, const std::vector<size_t> _positions, const value_t _value);
+		
+		bool operator< (const SinglePointMeasurment & _other);
+	};
+		
 	/** 
 	* @brief Class used to represent a set of single point measurments.
 	*/
-    class SinglePointMeasurments {
-		/** 
-		* @brief Class used to represent a single point measurments.
-		*/
-		class SinglePointMeasurment {
-			std::vector<size_t> positions;
-			value_t value;
-		};
+    class SinglePointMeasurmentSet {
+		///@brief Dimensions of the tensor the measurments apply to.
+		std::vector<size_t> dimensions;
 		
-		///@brief Number of measurments contained in the set.
+		///@brief The measurments contained in the set.
 		std::vector<SinglePointMeasurment> measurments;
 		
+		SinglePointMeasurmentSet(const std::vector<size_t>& _dimensions);
 		
+		void add(const size_t _position, const value_t _value);
+		
+		void add(const std::vector<size_t> _positions, const value_t _value);
 	};
 }
