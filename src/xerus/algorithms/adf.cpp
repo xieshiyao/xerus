@@ -19,15 +19,15 @@
 
 /**
  * @file
- * @brief Implementation of the measurment classes class.
+ * @brief Implementation of the ADF variants.
  */
 
-#include <xerus/measurments.h>
-
+#include <xerus/algorithms/adf.h>
 
 namespace xerus {
-	// --------------------- SinglePointMeasurment -----------------
 	
-	SinglePointMeasurment::SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value) : positions(_positions), value(_value) {}
+	double ADFVariant::solve(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
+		return 0.0;
+	}
 	
 }

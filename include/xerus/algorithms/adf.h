@@ -35,7 +35,7 @@ namespace xerus {
 	 */
     class ADFVariant {
 	protected:
-		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
+		double solve(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const;
     
 	public:
         size_t maxInterations; ///< maximum number of sweeps to perform. set to 0 for infinite
@@ -47,69 +47,13 @@ namespace xerus {
                 : maxInterations(_maxIteration), convergenceEpsilon(_convergenceEpsilon), printProgress(_printProgress) { }
         
         /**
-		 * call to solve @f$ A\cdot x = b@f$ for @f$ x @f$ (in a least-squares sense)
-		 * @param _A operator to solve for
-		 * @param[in,out] _x in: initial guess, out: solution as found by the algorithm
-		 * @param _b right-hand side of the equation to be solved
-		 * @param _convergenceEpsilon minimum change in residual / energy under which the algorithm terminates
-		 * @param _perfData vector of performance data (residuals after every microiteration)
-		 * @returns the residual @f$|Ax-b|@f$ of the final @a _x
+		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		 * @param _b the available measurments.
+		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		 */
-        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const value_t _convergenceEpsilon) const {
+        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
 			return solve(_x, _measurments);
-		}
-		
-		/**
-		 * call to solve @f$ A\cdot x = b@f$ for @f$ x @f$ (in a least-squares sense)
-		 * @param _A operator to solve for
-		 * @param[in,out] _x in: initial guess, out: solution as found by the algorithm
-		 * @param _b right-hand side of the equation to be solved
-		 * @param _numHalfSweeps maximum number of half-sweeps to perform
-		 * @param _perfData vector of performance data (residuals after every microiteration)
-		 * @returns the residual @f$|Ax-b|@f$ of the final @a _x
-		 */
-        double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_perfData = NoPerfData) const {
-			return solve(&_A, _x, _b, _numHalfSweeps, convergenceEpsilon, _perfData);
-		}
-		
-		/**
-		 * call to solve @f$ A\cdot x = b@f$ for @f$ x @f$ (in a least-squares sense)
-		 * @param _A operator to solve for
-		 * @param[in,out] _x in: initial guess, out: solution as found by the algorithm
-		 * @param _b right-hand side of the equation to be solved
-		 * @param _perfData vector of performance data (residuals after every microiteration)
-		 * @returns the residual @f$|Ax-b|@f$ of the final @a _x
-		 */
-        double operator()(const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_perfData = NoPerfData) const {
-			return solve(&_A, _x, _b, numHalfSweeps, convergenceEpsilon, _perfData);
-		}
-		
-		/**
-		 * call to minimze @f$ \|x - b\|^2 @f$ for @f$ x @f$
-		 * @param[in,out] _x in: initial guess, out: solution as found by the algorithm
-		 * @param _b right-hand side of the equation to be solved
-		 * @param _convergenceEpsilon minimum change in residual / energy under which the algorithm terminates
-		 * @param _perfData vector of performance data (residuals after every microiteration)
-		 * @returns the residual @f$|x-b|@f$ of the final @a _x
-		 */
-        double operator()(TTTensor &_x, const TTTensor &_b, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const {
-			return solve(nullptr, _x, _b, numHalfSweeps, _convergenceEpsilon, _perfData);
-		}
-		
-		/**
-		 * call to minimze @f$ \|x - b\|^2 @f$ for @f$ x @f$
-		 * @param[in,out] _x in: initial guess, out: solution as found by the algorithm
-		 * @param _b right-hand side of the equation to be solved
-		 * @param _numHalfSweeps maximum number of half-sweeps to perform
-		 * @param _perfData vector of performance data (residuals after every microiteration)
-		 * @returns the residual @f$|x-b|@f$ of the final @a _x
-		 */
-        double operator()(TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_perfData = NoPerfData) const {
-			return solve(nullptr, _x, _b, _numHalfSweeps, convergenceEpsilon, _perfData);
-		}
-		
-		double operator()(TTTensor &_x, const TTTensor &_b) const {
-			return solve(nullptr, _x, _b, numHalfSweeps, convergenceEpsilon, NoPerfData);
 		}
     };
 	
