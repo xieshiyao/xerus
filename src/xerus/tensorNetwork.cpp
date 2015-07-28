@@ -212,6 +212,47 @@ namespace xerus {
         return (*partialCopy.nodes[0].tensorObject)[0];
     }
     
+    
+	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const {
+		std::vector<TensorNetwork> stack;
+		stack.emplace_back(*this);
+		stack.back().reduce_representation();
+		
+		// Sort measurements
+		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
+		
+		std::vector<size_t> previousPosition(degree(), 0);
+		for(SinglePointMeasurment& measurment : _measurments) {
+			// Find the maximal recyclable stack position
+			size_t rebuildIndex = degree();
+			for(size_t i = 0; i < degree(); ++i) {
+				if(previousPosition[i] != measurment.positions[i]) {
+					rebuildIndex = i;
+					break;
+				}
+			}
+			previousPosition = measurment.positions;
+			
+			// Trash stack that is not needed anymore
+			while(stack.size() > rebuildIndex+1) { stack.pop_back(); }
+			
+			// Rebuild stack
+			for(size_t i = rebuildIndex; i < degree(); ++i) {
+				stack.emplace_back(stack.back());
+				stack.back().fix_slate(0, measurment.positions[i]);
+				stack.back().reduce_representation();
+			}
+			REQUIRE(stack.size() == degree()+1 && stack.back().degree() == 0, "Internal Error");
+			
+			size_t bla = 0;
+			for(const TensorNetwork& tn : stack) {
+				tn.draw(std::string("stack_lvl") + misc::to_string(bla++));
+			}
+			
+			measurment.value = stack.back()[0];
+		}
+	}
+    
 
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 

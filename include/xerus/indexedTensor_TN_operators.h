@@ -25,13 +25,14 @@
 #pragma once
 
 #include "indexedTensorMoveable.h"
+#include "indexedTensor.h"
 #include "indexedTensor_operators.h"
 
 namespace xerus {
     IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // creates a new network
     
     IndexedTensorMoveable<TensorNetwork> operator*(      IndexedTensorMoveable<TensorNetwork> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs); // copy right into left network
-    
+	
     static _inline_ IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<TensorNetwork> && _rhs) {
 		return operator*(std::move(_rhs), _lhs);
 	}

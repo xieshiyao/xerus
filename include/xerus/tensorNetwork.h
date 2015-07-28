@@ -27,6 +27,7 @@
 #include "indexedTensor.h"
 #include "tensor.h"
 #include "misc/missingFunctions.h"
+#include "measurments.h"
 
 #include <map>
 #include <set>
@@ -243,6 +244,13 @@ namespace xerus {
 		* @returns the calculated value (NO reference)
 		*/
         value_t operator[](const std::vector<size_t>& _positions) const;
+		
+		/** 
+		* @brief Calculates the value of the tensor at the given positions.
+		* @param _measurments vector of SinglePointMeasurments defining the positions. On output the values are those of the tensor. 
+		* Note that the order of the measurments may be changed.
+		*/
+        void measure(std::vector<SinglePointMeasurment>& _measurments) const;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

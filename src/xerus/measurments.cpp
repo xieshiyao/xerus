@@ -22,8 +22,8 @@
  * @brief Implementation of the measurment classes class.
  */
 
+#include <xerus/misc/check.h>
 #include <xerus/measurments.h>
-
 
 namespace xerus {
 	// --------------------- SinglePointMeasurment -----------------
@@ -32,11 +32,11 @@ namespace xerus {
 	
 	bool SinglePointMeasurment::Comparator::operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const {
 		REQUIRE(_lhs.positions.size() == _rhs.positions.size(), "");
-		for (size_t i=0; i<split_position-1 && i<_lhs.positions.size(); ++i) {
+		for (size_t i = 0; i < split_position && i < _lhs.positions.size(); ++i) {
 			if (_lhs.positions[i] < _rhs.positions[i]) return true;
 			if (_lhs.positions[i] > _rhs.positions[i]) return false;
 		}
-		for (size_t i=_lhs.positions.size(); i>split_position; ++i) {
+		for (size_t i = _lhs.positions.size(); i > split_position; --i) {
 			if (_lhs.positions[i-1] < _rhs.positions[i-1]) return true;
 			if (_lhs.positions[i-1] > _rhs.positions[i-1]) return false;
 		}

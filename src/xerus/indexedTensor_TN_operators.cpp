@@ -112,6 +112,7 @@ namespace xerus {
 		tensorObject->specialized_evaluation(*this, _rhs);
     }
 
+    
     IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
         if(!_lhs.tensorObjectReadOnly->specialized_contraction(result, _lhs, _rhs) && !_rhs.tensorObjectReadOnly->specialized_contraction(result, _rhs, _lhs)) {
