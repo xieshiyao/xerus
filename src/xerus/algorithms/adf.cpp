@@ -38,16 +38,23 @@ namespace xerus {
 		
 		std::vector<SinglePointMeasurment> ourMeasurments(_measurments);
 		
-		_x.move_core(0, true);
+		value_t normMeasuredValues = 0;
+		for(const SinglePointMeasurment& measurement : ourMeasurments) {
+			normMeasuredValues += misc::sqr(measurement.value);
+		}
+		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
 		std::vector<TensorNetwork> stack;
+		value_t residual=1;
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
+				_x.move_core(corePosition, true);
 				// Build initial stack 
 				stack.resize(1);
 				std::pair<TensorNetwork, TensorNetwork> choppedTN = _x.chop(corePosition);
 				stack.back()(i1^(corePosition+1), i2&(corePosition+1)) = choppedTN.first(i1&0)*choppedTN.second(i2&0);
+				stack.back().reduce_representation();
 				
 				// Build translation array
 				std::vector<size_t> orderToPos;
@@ -63,11 +70,12 @@ namespace xerus {
 				std::sort(ourMeasurments.begin(), ourMeasurments.end(), SinglePointMeasurment::Comparator(corePosition));
 				
 				// Create update tensor
-				FullTensor updateDirection({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
+				FullTensor componentUpdate({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				const size_t blockSize = _x.get_component(corePosition).dimensions[0] * _x.get_component(corePosition).dimensions[2];
 				
 				std::vector<size_t> previousPosition;
 				bool firstStep = true;
+				residual=0;
 				for(const SinglePointMeasurment& measurment : ourMeasurments) {
 					// Find the maximal recyclable stack position
 					size_t rebuildIndex = ~0ul;
@@ -104,28 +112,53 @@ namespace xerus {
 					}
 					REQUIRE(stack.size() == degree && stack.back().degree() == 2, "Internal Error");
 					
-					size_t bla = 0;
-					for(const TensorNetwork& tn : stack) {
-						tn.draw(std::string("stack_lvl") + misc::to_string(bla++));
-					}
+// 					size_t bla = 0;
+// 					for(const TensorNetwork& tn : stack) {
+// 						tn.draw(std::string("stack_lvl") + misc::to_string(bla++));
+// 					}
 					
 					// Calculate current value at measured position
 					FullTensor missingComp;
 					missingComp(i1, i2) = _x.get_component(corePosition)(i1, measurment.positions[corePosition], i2);
 					const value_t factor = measurment.value - value_t(missingComp(i1^2)*stack.back()(i1^2));
+					residual += misc::sqr(factor);
 					
 					FullTensor X;
 					X = FullTensor(stack.back());
 					REQUIRE(X.size == blockSize, "Internal Error.");
 					
-					misc::array_add(updateDirection.data.get()+measurment.positions[corePosition]*blockSize, factor, X.data.get(), blockSize);
-					
+					misc::array_add(componentUpdate.data.get()+measurment.positions[corePosition]*blockSize, factor, X.data.get(), blockSize);
 				}
+				residual = std::sqrt(residual)/ normMeasuredValues;
+				
+				if (printProgress) {
+					std::cout << "in iteration: " << iteration << " core pos: " << corePosition << " residual: " << residual << std::endl;
+					std::cout << "\b                                                                                          \b";
+				}
+				
+				// calculate ||Ay||^2 for step size
+				std::vector<SinglePointMeasurment> measCopy(ourMeasurments);
+				TTTensor changeDirection(_x);
+				// Reshuffle the component update
+				componentUpdate(i1,i2,i3) = componentUpdate(i2,i1,i3);
+				changeDirection.set_component(corePosition, componentUpdate);
+				changeDirection.measure(measCopy);
+				value_t norm_ay = 0;
+				for (const SinglePointMeasurment &m : measCopy) {
+					norm_ay += misc::sqr(m.value);
+				}
+				value_t alpha = misc::sqr(frob_norm(componentUpdate))/norm_ay;
+				
+				_x.component(corePosition)(i1,i2,i3) = _x.component(corePosition)(i1,i2,i3) + alpha*componentUpdate(i1,i2,i3);
 			}
 			
 			// Check for termination
+			// TODO relative residual
+			if (residual < convergenceEpsilon) {
+				return residual;
+			}
 		}
-		return 0.0;
+		return residual;
 	}
 	
 }

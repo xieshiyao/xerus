@@ -34,6 +34,8 @@ namespace xerus {
 		std::vector<size_t> positions;
 		value_t value;
 		
+		SinglePointMeasurment() = default;
+		
 		SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value);
 		
 		struct Comparator {

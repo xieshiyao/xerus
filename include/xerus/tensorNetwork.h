@@ -405,6 +405,12 @@ namespace xerus {
 		 */
 		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
 		
+		/**
+		 * @brief removes the erased nodes. 
+		 * @note this will change the node ids
+		 */
+		void sanitize();
+		
 	public:
 		/**
 		 * @brief Thresholds the rank between two given nodes.

@@ -18,7 +18,7 @@
 // or contact us at contact@libXerus.org.
 
 
-#include<xerus.h>
+#include <xerus.h>
 
 #include "../../include/xerus/misc/test.h"
 
@@ -59,4 +59,46 @@ UNIT_TEST(TensorNetwork, element_access,
     TEST(misc::approx_equal(res[{0,0}], 15.0));
     TEST(misc::approx_equal(res[{1,0}], 18.0));
     TEST(misc::approx_equal(res[{2,0}], 21.0));
+)
+
+
+UNIT_TEST(TensorNetwork, many_element_access,
+    FullTensor A({1,2});
+    FullTensor B({2,3});
+    TensorNetwork res;
+
+    Index i,j,k,l;
+    
+    A[{0,0}] = 1;
+    A[{0,1}] = 2;
+    
+    B[{0,0}] = 3;
+    B[{0,1}] = 4;
+    B[{0,2}] = 5;
+    B[{1,0}] = 6;
+    B[{1,1}] = 7;
+    B[{1,2}] = 8;
+    
+    //No Index contracted
+    res(i,j,k,l) = A(i,j) * B(k,l);
+
+	std::vector<SinglePointMeasurment> measurments(12);
+	measurments[0].positions = {0,0,0,0};
+	measurments[1].positions = {0,0,0,1};
+	measurments[2].positions = {0,0,0,2};
+	measurments[3].positions = {0,0,1,0};
+	measurments[4].positions = {0,0,1,1};
+	measurments[5].positions = {0,0,1,2};
+	measurments[6].positions = {0,1,0,0};
+	measurments[7].positions = {0,1,0,1};
+	measurments[8].positions = {0,1,0,2};
+	measurments[9].positions = {0,1,1,0};
+	measurments[10].positions = {0,1,1,1};
+	measurments[11].positions = {0,1,1,2};
+	
+	res.measure(measurments);
+	
+    for(const SinglePointMeasurment& meas : measurments) {
+        TEST(misc::approx_equal(meas.value, res[meas.positions]));
+    }
 )

@@ -221,16 +221,23 @@ namespace xerus {
 		// Sort measurements
 		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
 		
-		std::vector<size_t> previousPosition(degree(), 0);
+		bool firstTime = true;
+		std::vector<size_t> previousPosition;
 		for(SinglePointMeasurment& measurment : _measurments) {
-			// Find the maximal recyclable stack position
-			size_t rebuildIndex = degree();
-			for(size_t i = 0; i < degree(); ++i) {
-				if(previousPosition[i] != measurment.positions[i]) {
-					rebuildIndex = i;
-					break;
+			size_t rebuildIndex = ~0ul;
+			if(firstTime) {
+				rebuildIndex = 0;
+				firstTime = false;
+			} else {
+				// Find the maximal recyclable stack position
+				for(size_t i = 0; i < degree(); ++i) {
+					if(previousPosition[i] != measurment.positions[i]) {
+						rebuildIndex = i;
+						break;
+					}
 				}
 			}
+			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
 			previousPosition = measurment.positions;
 			
 			// Trash stack that is not needed anymore
@@ -239,15 +246,16 @@ namespace xerus {
 			// Rebuild stack
 			for(size_t i = rebuildIndex; i < degree(); ++i) {
 				stack.emplace_back(stack.back());
-				stack.back().fix_slate(0, measurment.positions[i]);
+				stack.back().fix_slate(0, measurment.positions[i]); 
 				stack.back().reduce_representation();
 			}
-			REQUIRE(stack.size() == degree()+1 && stack.back().degree() == 0, "Internal Error");
-			
+			REQUIRE(stack.back().degree() == 0, "Internal Error");
+			REQUIRE(stack.size() == degree()+1, "Internal Error");
+/*			
 			size_t bla = 0;
 			for(const TensorNetwork& tn : stack) {
 				tn.draw(std::string("stack_lvl") + misc::to_string(bla++));
-			}
+			}*/
 			
 			measurment.value = stack.back()[0];
 		}
@@ -330,6 +338,10 @@ namespace xerus {
 		}
 		nodes = newOrder;
 		nodes.resize(newSize);
+		for (size_t i=0; i<externalLinks.size(); ++i) {
+			externalLinks[i].other = _f(externalLinks[i].other);
+		}
+		is_valid_network();
 	}
     
 #ifndef DISABLE_RUNTIME_CHECKS_
@@ -339,7 +351,7 @@ namespace xerus {
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
 		// Per external link
-		for (size_t n=0; n<externalLinks.size(); ++n) {
+		for (size_t n = 0; n < externalLinks.size(); ++n) {
 			const TensorNetwork::Link &el = externalLinks[n];
 			REQUIRE(el.other < nodes.size(), "n=" << n);
             REQUIRE(el.dimension > 0, "n=" << n);
@@ -597,11 +609,31 @@ namespace xerus {
 	
 	
 	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		is_valid_network();
 		const size_t extNode = externalLinks[_dimension].other;
 		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		
+		for(size_t i = _dimension+1; i < dimensions.size(); ++i) {
+			nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition--;
+		}
+		
+		externalLinks.erase(externalLinks.begin()+(long)_dimension);
+		dimensions.erase(dimensions.begin()+(long)_dimension);
+		
+		for(size_t i = extNodeIndexPos+1; i < nodes[extNode].neighbors.size(); ++i) {
+			const Link& link = nodes[extNode].neighbors[i];
+			if(link.external) {
+				externalLinks[link.indexPosition].indexPosition--; 
+			} else {
+				nodes[link.other].neighbors[link.indexPosition].indexPosition--;
+			}
+		}
+		
 		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
 		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + (long)extNodeIndexPos);
-		externalLinks.erase(externalLinks.begin()+(long)_dimension);
+		
+		contract_unconnected_subnetworks();
+		is_valid_network();
 	}
     
     
@@ -695,13 +727,14 @@ namespace xerus {
     void TensorNetwork::reduce_representation() {
 		REQUIRE(is_valid_network(), "");
 		TensorNetwork strippedNet = stripped_subnet();
-		std::vector<std::set<size_t>> contractions;
+		std::vector<std::set<size_t>> contractions(strippedNet.nodes.size());
 		for (size_t id1=0; id1 < strippedNet.nodes.size(); ++id1) {
 			TensorNode &currNode = strippedNet.nodes[id1];
 			if (currNode.erased) {
 				continue;
 			}
 			for (Link &l : currNode.neighbors) {
+				if (l.external) continue;
 				size_t r=1;
 				for (Link &l2 : currNode.neighbors) {
 					if (l2.other == l.other) {
@@ -719,7 +752,6 @@ namespace xerus {
 						contractions[l.other].clear();
 					}
 					strippedNet.contract(id1, l.other);
-					REQUIRE(strippedNet.nodes[l.other].erased, "ie");
 					id1 -= 1; // check the same node again in the next iteration
 					break; // for-each iterator is broken, so we have to break
 				}
@@ -732,6 +764,21 @@ namespace xerus {
 				contract(ids);
 			}
 		}
+		
+		sanitize();
+		is_valid_network();
+	}
+	
+	
+	void TensorNetwork::sanitize() {
+		size_t idCount=0;
+		std::map<size_t, size_t> idMap;
+		for (size_t i=0; i<nodes.size(); ++i) {
+			if (!nodes[i].erased) {
+				idMap[i] = idCount++;
+			}
+		}
+		reshuffle_nodes(idMap);
 	}
     
 
@@ -1008,8 +1055,8 @@ namespace xerus {
 	void TensorNetwork::draw(const std::string& _filename) const {
 		static std::mutex fileNameMutex; // TODO define guards?
 		fileNameMutex.lock();
-		std::unique_ptr<const char[]> tmpFileName(tempnam(nullptr, "xerusToDot"));
-		std::fstream graphLayout(tmpFileName.get(), std::fstream::out);
+		char* const tmpFileName = tempnam(nullptr, "xerusToDot");
+		std::fstream graphLayout(tmpFileName, std::fstream::out);
 		fileNameMutex.unlock();
 		
 		graphLayout << "graph G {" << std::endl;
@@ -1053,9 +1100,12 @@ namespace xerus {
 		}
 		graphLayout << "}" << std::endl;
 		graphLayout.close();
-		misc::exec(std::string("dot -Tsvg ") + tmpFileName.get() + " > " + _filename+".svg");
+		misc::exec(std::string("dot -Tsvg ") + tmpFileName + " > " + _filename+".svg");
 		
 		// Delete tmp File
-		remove(tmpFileName.get());
+		remove(tmpFileName);
+		
+		// Free stupid C memory!
+		free(tmpFileName);
 	}
 }
