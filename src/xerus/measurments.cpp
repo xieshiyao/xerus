@@ -30,7 +30,7 @@ namespace xerus {
 	
 	SinglePointMeasurment::SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value) : positions(_positions), value(_value) {}
 	
-	bool SinglePointMeasurment::operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const {
+	bool SinglePointMeasurment::Comparator::operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const {
 		REQUIRE(_lhs.positions.size() == _rhs.positions.size(), "");
 		for (size_t i=0; i<split_position-1 && i<_lhs.positions.size(); ++i) {
 			if (_lhs.positions[i] < _rhs.positions[i]) return true;
