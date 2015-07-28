@@ -218,6 +218,8 @@ namespace xerus {
 		stack.emplace_back(*this);
 		stack.back().reduce_representation();
 		
+// 		std::map<size_t, size_t> histo;
+		
 		// Sort measurements
 		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
 		
@@ -240,6 +242,8 @@ namespace xerus {
 			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
 			previousPosition = measurment.positions;
 			
+// 			histo[rebuildIndex] += 1;
+			
 			// Trash stack that is not needed anymore
 			while(stack.size() > rebuildIndex+1) { stack.pop_back(); }
 			
@@ -259,6 +263,15 @@ namespace xerus {
 			
 			measurment.value = stack.back()[0];
 		}
+		
+// 		size_t sum=0;
+// 		size_t integrated = 0;
+// 		for (auto &a: histo) {
+// 			integrated += a.second;
+// 			LOG(histo, a.first << "\t" << a.second << "\t" << integrated);
+// 			sum += (degree()-a.first) * a.second;
+// 		}
+// 		LOG(histo, "total: " << sum << " mean: " << double(sum)/double(_measurments.size()));
 	}
     
 
