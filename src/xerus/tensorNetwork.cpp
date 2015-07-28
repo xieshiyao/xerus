@@ -559,8 +559,8 @@ namespace xerus {
 		const size_t extNode = externalLinks[_dimension].other;
 		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
 		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
-		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
-		externalLinks.erase(externalLinks.begin()+_dimension);
+		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + (long)extNodeIndexPos);
+		externalLinks.erase(externalLinks.begin()+(long)_dimension);
 	}
     
     

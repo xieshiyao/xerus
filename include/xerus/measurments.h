@@ -35,5 +35,11 @@ namespace xerus {
 		value_t value;
 		
 		SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value);
+		
+		struct Comparator {
+			size_t split_position;
+			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
+			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
+		};
 	};
 }
