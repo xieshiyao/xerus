@@ -179,7 +179,6 @@ namespace xerus {
     
     value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
 		REQUIRE(is_valid_network(), "Invalid Network");
-		REQUIRE(nodes.size() > 0, "There must always be at least one node");
         TensorNetwork partialCopy;
         partialCopy.nodes = nodes;
         
@@ -964,15 +963,14 @@ namespace xerus {
     
     
 	void TensorNetwork::draw(const std::string& _filename) const {
-		char * tmpFileName = tempnam(nullptr, "xerusToDot");
-		std::fstream graphLayout(tmpFileName, std::fstream::out);
+		std::unique_ptr<char[]> tmpFileName(tempnam(nullptr, "xerusToDot"));
+		std::fstream graphLayout(tmpFileName.get(), std::fstream::out);
 		
 		graphLayout << "graph G {" << std::endl;
 		graphLayout << "graph [mclimit=1000, maxiter=1000, overlap = false, splines = true]" << std::endl;
 		 
 		for(size_t i = 0; i < nodes.size(); ++i) {
 			// Create the Nodes
-			
 			if(nodes[i].erased) {
 				graphLayout << "\tN"<<i<<" [label=\"N"<<i<<"\", shape=circle, fixedsize=shape, height=0.45];" << std::endl;
 			} else {
@@ -1009,6 +1007,9 @@ namespace xerus {
 		}
 		graphLayout << "}" << std::endl;
 		graphLayout.close();
-		misc::exec(std::string("dot -Tsvg ") + tmpFileName + " > " + _filename+".svg");
+		misc::exec(std::string("dot -Tsvg ") + tmpFileName.get() + " > " + _filename+".svg");
+		
+		// Delete tmp File
+		misc::exec(std::string("rm ") + tmpFileName.get());
 	}
 }
