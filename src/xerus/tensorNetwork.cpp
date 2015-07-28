@@ -654,38 +654,35 @@ namespace xerus {
 		REQUIRE(is_valid_network(), "");
 		TensorNetwork strippedNet = stripped_subnet();
 		std::vector<std::set<size_t>> contractions;
-		bool change = false;
-		do {
-			for (size_t id1=0; id1 < strippedNet.nodes.size(); ++id1) {
-				TensorNode &currNode = strippedNet.nodes[id1];
-				if (currNode.erased) {
-					continue;
+		for (size_t id1=0; id1 < strippedNet.nodes.size(); ++id1) {
+			TensorNode &currNode = strippedNet.nodes[id1];
+			if (currNode.erased) {
+				continue;
+			}
+			for (Link &l : currNode.neighbors) {
+				size_t r=1;
+				for (Link &l2 : currNode.neighbors) {
+					if (l2.other == l.other) {
+						r *= l2.dimension;
+					}
 				}
-				for (Link &l : currNode.neighbors) {
-					size_t r=1;
-					for (Link &l2 : currNode.neighbors) {
-						if (l2.other == l.other) {
-							r *= l2.dimension;
-						}
+				if (r*r >= currNode.size() || r*r >= strippedNet.nodes[l.other].size()) {
+					if (contractions[id1].empty()) {
+						contractions[id1].insert(id1);
 					}
-					if (r*r >= currNode.size()) {
-						if (contractions[id1].empty()) {
-							contractions[id1].insert(id1);
-						}
-						if (contractions[l.other].empty()) {
-							contractions[id1].insert(l.other);
-						} else {
-							contractions[id1].insert(contractions[l.other].begin(), contractions[l.other].end());
-							contractions[l.other].clear();
-						}
-						strippedNet.contract(id1, l.other);
-						REQUIRE(strippedNet.nodes[l.other].erased, "ie");
-						change = true;
-						break; // for-each iterator is broken, so we have to break
+					if (contractions[l.other].empty()) {
+						contractions[id1].insert(l.other);
+					} else {
+						contractions[id1].insert(contractions[l.other].begin(), contractions[l.other].end());
+						contractions[l.other].clear();
 					}
+					strippedNet.contract(id1, l.other);
+					REQUIRE(strippedNet.nodes[l.other].erased, "ie");
+					id1 -= 1; // check the same node again in the next iteration
+					break; // for-each iterator is broken, so we have to break
 				}
 			}
-		} while (change);
+		}
 		
 		// perform the collected contractions from above
 		for (std::set<size_t> &ids : contractions) {
@@ -845,7 +842,6 @@ namespace xerus {
     }
 
 
-    //TODO vorwaerts fressende heuristik (ein knoten + nachbarn und nachbars-nachbarn -> exakte dreier berechnung)
     //TODO contract with std::function
     size_t TensorNetwork::contract(std::set<size_t> _ids) {
         LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
@@ -968,7 +964,9 @@ namespace xerus {
     
     
 	void TensorNetwork::draw(const std::string& _filename) const {
-		std::fstream graphLayout("/tmp/graph.dot", std::fstream::out);
+		char * tmpFileName = tempnam(nullptr, "xerusToDot");
+		std::fstream graphLayout(tmpFileName, std::fstream::out);
+		
 		graphLayout << "graph G {" << std::endl;
 		graphLayout << "graph [mclimit=1000, maxiter=1000, overlap = false, splines = true]" << std::endl;
 		 
@@ -1009,8 +1007,8 @@ namespace xerus {
 				}
 			}
 		}
-	graphLayout << "}" << std::endl;
-	graphLayout.close();
-	misc::exec(std::string("dot -Tsvg /tmp/graph.dot > ") + _filename+".svg");
+		graphLayout << "}" << std::endl;
+		graphLayout.close();
+		misc::exec(std::string("dot -Tsvg ") + tmpFileName + " > " + _filename+".svg");
 	}
 }
