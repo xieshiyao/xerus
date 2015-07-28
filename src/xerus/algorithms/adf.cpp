@@ -19,28 +19,15 @@
 
 /**
  * @file
- * @brief Implementation of the measurment classes class.
+ * @brief Implementation of the ADF variants.
  */
 
-#include <xerus/measurments.h>
-
+#include <xerus/algorithms/adf.h>
 
 namespace xerus {
-	// --------------------- SinglePointMeasurment -----------------
 	
-	SinglePointMeasurment::SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value) : positions(_positions), value(_value) {}
-	
-	bool SinglePointMeasurment::operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const {
-		REQUIRE(_lhs.positions.size() == _rhs.positions.size(), "");
-		for (size_t i=0; i<split_position-1 && i<_lhs.positions.size(); ++i) {
-			if (_lhs.positions[i] < _rhs.positions[i]) return true;
-			if (_lhs.positions[i] > _rhs.positions[i]) return false;
-		}
-		for (size_t i=_lhs.positions.size(); i>split_position; ++i) {
-			if (_lhs.positions[i-1] < _rhs.positions[i-1]) return true;
-			if (_lhs.positions[i-1] > _rhs.positions[i-1]) return false;
-		}
-		return false; // equality
+	double ADFVariant::solve(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
+		return 0.0;
 	}
 	
 }
