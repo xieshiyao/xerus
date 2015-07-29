@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cstdio>
-#include <thread> // TODO define guard?
+#include <stdlib.h>
 
 namespace xerus {
 	const misc::NoCast<bool> TensorNetwork::NoZeroNode(false);
@@ -1066,12 +1066,8 @@ namespace xerus {
     
     
 	void TensorNetwork::draw(const std::string& _filename) const {
-		static std::mutex fileNameMutex; // TODO define guards?
-		fileNameMutex.lock();
-		char* const tmpFileName = tempnam(nullptr, "xerusToDot");
-		std::fstream graphLayout(tmpFileName, std::fstream::out);
-		fileNameMutex.unlock();
-		
+		std::stringstream graphLayout;
+				
 		graphLayout << "graph G {" << std::endl;
 		graphLayout << "graph [mclimit=1000, maxiter=1000, overlap = false, splines = true]" << std::endl;
 		 
@@ -1112,13 +1108,6 @@ namespace xerus {
 			}
 		}
 		graphLayout << "}" << std::endl;
-		graphLayout.close();
-		misc::exec(std::string("dot -Tsvg ") + tmpFileName + " > " + _filename+".svg");
-		
-		// Delete tmp File
-		remove(tmpFileName);
-		
-		// Free stupid C memory!
-		free(tmpFileName);
+		misc::exec(std::string("dot -Tsvg > ") + _filename+".svg", graphLayout.str());
 	}
 }

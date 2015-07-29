@@ -26,9 +26,9 @@
 
 namespace xerus {
     namespace misc {
-		std::string exec(const std::string _cmd) {
+		std::string exec(const std::string & _cmd) {
 			FILE* pipe = popen(_cmd.c_str(), "r");
-			if (!pipe) return "ERROR";
+			REQUIRE(pipe, "could not start " << _cmd);
 			char buffer[128];
 			std::string result = "";
 			while(!feof(pipe)) {
@@ -37,6 +37,13 @@ namespace xerus {
 			}
 			pclose(pipe);
 			return result;
+		}
+		
+		void exec(const std::string & _cmd, const std::string &_stdin) {
+			FILE* pipe = popen(_cmd.c_str(), "w");
+			REQUIRE(pipe, "could not start " << _cmd);
+			fputs(_stdin.c_str(), pipe);
+			pclose(pipe);
 		}
 	}
 }
