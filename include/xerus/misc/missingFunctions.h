@@ -62,7 +62,14 @@ namespace xerus {
 		 * @param _cmd the command to execute
 		 * @return the cout return of the command.
 		 */
-		std::string exec(const std::string _cmd);
+		std::string exec(const std::string &_cmd);
+		
+		/**
+		 * @brief Execute a given command and pipe _stdin to its std input,
+		 * @param _cmd the command to execute
+		 * @param _stdin the input for the program
+		 */
+		void exec(const std::string & _cmd, const std::string &_stdin);
 
 		/**
 		 * @brief Wrapper class to disallow implicit cast (e.g. from everything to bool).
