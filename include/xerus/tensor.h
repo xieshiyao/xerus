@@ -338,7 +338,7 @@ namespace xerus {
 		 * required use change_dimensions() instead.
 		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
 		 */
-        void reinterpret_dimensions( std::initializer_list<size_t> _newDimensions);
+        void reinterpret_dimensions( std::initializer_list<size_t>&& _newDimensions);
         
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
@@ -360,7 +360,7 @@ namespace xerus {
 		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
 		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
 		 */
-        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+        virtual bool compare_to_data(const std::vector<value_t>& _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
         
 		
 		/** 

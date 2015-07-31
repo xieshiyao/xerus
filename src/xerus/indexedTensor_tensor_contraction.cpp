@@ -254,6 +254,9 @@ namespace xerus {
 
         // Construct the vectors for reordering
         std::vector<Index> lhsOpenIndices, rhsOpenIndices, commonIndices;
+		lhsOpenIndices.reserve(_lhsIndices.size());
+		rhsOpenIndices.reserve(_rhsIndices.size());
+		commonIndices.reserve(std::min(_lhsIndices.size(), _rhsIndices.size()));
         size_t leftDim = 1, midDim = 1, rightDim = 1;
         
         // Set lhs and common indices
@@ -414,7 +417,9 @@ namespace xerus {
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
         const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
         std::vector<Index> outIndices;
+		outIndices.reserve(_lhs.indices.size() + _rhs.indices.size());
         std::vector<size_t> outDimensions;
+		outDimensions.reserve(_lhs.degree()+_rhs.degree());
                 
         size_t lhsOpenDim = 1, rhsOpenDim = 1;
         size_t dimensionCount = 0;

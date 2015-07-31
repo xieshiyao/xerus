@@ -654,6 +654,7 @@ namespace xerus {
 		REQUIRE(is_valid_network(), "Invalid TensorNetwork");
         std::vector<bool> seen(nodes.size(), false);
         std::vector<size_t> expansionStack;
+		expansionStack.reserve(nodes.size());
         
         // Starting at every external link...
         for (TensorNetwork::Link &el : externalLinks) {
@@ -811,31 +812,38 @@ namespace xerus {
         LOG(TNContract, "contraction of " << _nodeId1 << " and " << _nodeId2 << " size " << nodes.size());
         
         std::vector<Index> i1, i2, ri;
+		i1.reserve(node1.degree());
+		i2.reserve(node2.degree());
+		ri.reserve(node1.degree() + node2.degree());
+		
         std::vector<TensorNetwork::Link> newLinks;
+		newLinks.reserve(node1.degree() + node2.degree());
+		
         for (size_t d=0; d<node1.degree(); ++d) {
             // self-link?
             if (node1.neighbors[d].links(_nodeId1) && d > node1.neighbors[d].indexPosition) {
-                i1.push_back(i1[node1.neighbors[d].indexPosition]);
+                i1.emplace_back(i1[node1.neighbors[d].indexPosition]);
             } else {
                 i1.emplace_back();
             }
             
             if (!node1.neighbors[d].links(_nodeId2) && !node1.neighbors[d].links(_nodeId1)) {
-                ri.push_back(i1.back());
-                newLinks.push_back(node1.neighbors[d]);
+                ri.emplace_back(i1.back());
+                newLinks.emplace_back(node1.neighbors[d]);
             }
         }
-        for (size_t d=0; d<node2.degree(); ++d) {
+        
+        for (size_t d = 0; d < node2.degree(); ++d) {
             if (node2.neighbors[d].links(_nodeId1)) {
-                REQUIRE(i1.size()>node2.neighbors[d].indexPosition, "Internal Error.");
+                REQUIRE(i1.size() > node2.neighbors[d].indexPosition, "Internal Error.");
                 REQUIRE(node1.neighbors[node2.neighbors[d].indexPosition].links(_nodeId2), "Internal Error."); // consistency check
-                i2.push_back(i1[node2.neighbors[d].indexPosition]); // common index
+                i2.emplace_back(i1[node2.neighbors[d].indexPosition]); // common index
             } else if (node2.neighbors[d].links(_nodeId2) && d > node2.neighbors[d].indexPosition) {
-                i2.push_back(i2[node2.neighbors[d].indexPosition]);
+                i2.emplace_back(i2[node2.neighbors[d].indexPosition]);
             } else {
                 i2.emplace_back(); // new (open) index
-                ri.push_back(i2.back());
-                newLinks.push_back(node2.neighbors[d]);
+                ri.emplace_back(i2.back());
+                newLinks.emplace_back(node2.neighbors[d]);
             }
         }
         

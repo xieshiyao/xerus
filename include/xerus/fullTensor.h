@@ -456,7 +456,7 @@ namespace xerus {
         
         virtual std::string to_string() const override;
         
-        virtual bool compare_to_data(std::vector<value_t> _values, const double _eps = EPSILON) const override;
+        virtual bool compare_to_data(const std::vector<value_t>& _values, const double _eps = EPSILON) const override;
         
         virtual bool compare_to_data(const value_t* _values, const double _eps = EPSILON) const override;
     };

@@ -343,7 +343,7 @@ namespace xerus {
         return result;
     }
     
-    bool SparseTensor::compare_to_data(std::vector<value_t> _values, const double _eps) const {
+    bool SparseTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
         REQUIRE(entries, "Internal Error");
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {

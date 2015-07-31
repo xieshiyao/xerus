@@ -526,7 +526,7 @@ namespace xerus {
     }
 
 
-    bool FullTensor::compare_to_data(std::vector<value_t> _values, const double _eps) const {
+    bool FullTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {
             if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }

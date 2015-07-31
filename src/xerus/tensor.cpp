@@ -34,7 +34,7 @@ namespace xerus {
 
     Tensor::Tensor(const  Tensor&  _other ) : dimensions(_other.dimensions), size(_other.size), factor(_other.factor) { }
     
-    Tensor::Tensor(       Tensor&& _other ) : dimensions(_other.dimensions), size(_other.size), factor(_other.factor) { }
+    Tensor::Tensor(       Tensor&& _other ) : dimensions(std::move(_other.dimensions)), size(_other.size), factor(_other.factor) { }
     
     Tensor::Tensor(const std::vector<size_t>& _dimensions, const value_t _factor) : dimensions(_dimensions), size(misc::product(dimensions)), factor(_factor) {
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
@@ -116,8 +116,8 @@ namespace xerus {
         dimensions = std::move(_newDimensions);
     }
     
-    void Tensor::reinterpret_dimensions( std::initializer_list<size_t> _newDimensions) {
-        reinterpret_dimensions(std::vector<size_t>(_newDimensions));
+    void Tensor::reinterpret_dimensions(std::initializer_list<size_t>&& _newDimensions) {
+        reinterpret_dimensions(std::vector<size_t>(std::move(_newDimensions)));
     }
     
     
