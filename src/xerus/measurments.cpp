@@ -42,5 +42,4 @@ namespace xerus {
 		}
 		return false; // equality
 	}
-	
 }

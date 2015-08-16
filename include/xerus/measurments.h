@@ -43,5 +43,6 @@ namespace xerus {
 			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
 			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
 		};
+		
 	};
 }
