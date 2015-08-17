@@ -24,30 +24,24 @@
 
 
 #pragma once
+#include <ext/new_allocator.h>
 
 namespace xerus { namespace misc {
 
 struct allocatorStorage {
 	static unsigned long allocCount[1000];
-	static unsigned long maxAlloc[1000];
-	static unsigned long currAlloc[1000];
+	static long maxAlloc[1000];
+	static long currAlloc[1000];
 };
 
-__attribute__((constructor)) void bla() {
-	for (unsigned long i=0; i<1000; ++i) {
-		allocatorStorage::allocCount[i]=0;
-		allocatorStorage::maxAlloc[i]=0;
-		allocatorStorage::currAlloc[i]=0;
-	}
-}
-
 template <class Tp>
-struct DebugAllocator {
+struct DebugAllocator : __gnu_cxx::new_allocator<Tp> {
 	typedef Tp value_type;
 	
 	DebugAllocator() {};
 	template <class T> DebugAllocator(const DebugAllocator<T>& other) {};
 	Tp* allocate(unsigned long n) {
+		n = n * sizeof(Tp);
 		if (n<1000) {
 			allocatorStorage::allocCount[n] += 1;
 			allocatorStorage::currAlloc[n] += 1;
@@ -55,13 +49,19 @@ struct DebugAllocator {
 				allocatorStorage::maxAlloc[n] = allocatorStorage::currAlloc[n];
 			}
 		}
-		return new Tp[n];
+		// TODO check whether n*sizeof overflows
+		return static_cast<Tp*>(::operator new(n));
 	}
 	void deallocate(Tp* p, unsigned long n) {
+		if (p == nullptr) return;
+		n = n * sizeof(Tp);
 		if (n<1000) {
 			allocatorStorage::currAlloc[n] -= 1;
+// 			if (allocatorStorage::currAlloc[n] < 0) {
+// 				allocatorStorage::currAlloc[n] = 0;
+// 			}
 		}
-		delete[] p;
+		::operator delete(p);
 	}
 };
 template <class T, class U>
