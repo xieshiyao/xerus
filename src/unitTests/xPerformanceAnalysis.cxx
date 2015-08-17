@@ -27,5 +27,9 @@ using namespace xerus;
     UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
         std::cout << misc::performanceAnalysis::get_analysis();
         LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
+		LOG(allocator, "");
+		for (size_t i=0; i<1000; ++i) {
+			LOG(allocator, i << " \tx\t " << misc::allocatorStorage::allocCount[i] << "\tmax: " << misc::allocatorStorage::maxAlloc[i]);
+		}
     )
 #endif

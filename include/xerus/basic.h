@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "misc/allocator.h"
 #include "misc/standard.h"
 #include "tensorLogger.h"
 
@@ -52,14 +53,18 @@ namespace xerus {
 	* namespace. If you want to do so nevertheless be aware of the minimalistic documentation and in some cases 
 	* quite unexpected behavior.
 	*/
-    namespace internal {
-        /// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
-        void array_deleter_vt(value_t* const _toDelete);
-        
-        /// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
-        void array_deleter_st(size_t* const _toDelete);
-    }
-    
-    /// @brief Helper class to provide possible overloads of several Tensor constructors.
-    class DONT_SET_ZERO {};
+	namespace internal {
+		/// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
+		void array_deleter_vt(value_t* const _toDelete);
+		
+		/// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
+		void array_deleter_st(size_t* const _toDelete);
+	}
+	
+	/// @brief Helper class to provide possible overloads of several Tensor constructors.
+	class DONT_SET_ZERO {};
+	
+	// TODO define guards
+	/// @brief default allocator for internal small objects
+	using allocator = misc::DebugAllocator<void*>;
 }

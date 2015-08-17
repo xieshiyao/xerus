@@ -87,7 +87,7 @@ namespace xerus {
 		 * @param _f the function to be used to create each non zero entry. 
 		 * @param _N the number of non-zero entries to be created.
 		 */
-        ALLOW_MOVE(std::vector<size_t>, Vec)
+        ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit SparseTensor(Vec&& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N) : SparseTensor(std::forward<Vec>(_dimensions)) {
             REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
             for (size_t i=0; i < _N; ++i) {
@@ -128,7 +128,7 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-        template<ADD_MOVE(std::vector<size_t>, Vec), class generator, class distribution>
+        template<ADD_MOVE(Vec, std::vector<size_t>), class generator, class distribution>
         static SparseTensor construct_random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
             SparseTensor result(std::forward<Vec>(_dimensions));
             REQUIRE(_n < result.size, " Cannot create " << _n << " non zero entries in a tensor with only " << result.size << " total entries!");

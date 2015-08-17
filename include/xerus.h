@@ -28,6 +28,8 @@
 
     #define MISC_NAMESPACE xerus
 
+	#include "xerus/misc/replaceAllocator.h"
+    
     // The misc stuff needed by xerus
     #include "xerus/misc.h"
     

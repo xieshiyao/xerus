@@ -27,10 +27,10 @@
 #include <type_traits>
 
 /**
- * @def ALLOW_MOVE(oldTypeName, newTypeName)
+ * @def ALLOW_MOVE(newTypeName, oldTypeName)
  * @brief Adds a template argument to a function which can be of only one specified class, but allows & and && types.
  */
-#define ALLOW_MOVE(oldTypeName, newTypeName) template<ADD_MOVE(oldTypeName, newTypeName)>
+#define ALLOW_MOVE(newTypeName, ...) template<ADD_MOVE(newTypeName, __VA_ARGS__)>
 
 // Adds two template arguments to a function which can each be of only one specified class, but allows & and && types.
 #define ALLOW_MOVE_TWO(newTypeName, allowedType1, allowedType2) \
@@ -43,10 +43,10 @@
     >
 
 /**
- * @def ADD_MOVE(oldTypeName, newTypeName)
+ * @def ADD_MOVE(newTypeName, oldTypeName)
  * @brief Adds a template arguments whithin an existing template argument list, which can be of only one specified class, but allows & and && types.
  */
-#define ADD_MOVE(oldTypeName, newTypeName) class newTypeName, typename std::enable_if<std::is_base_of<oldTypeName, typename std::decay<newTypeName>::type>{}, int>::type = 0
+#define ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>{}, int>::type = 0
 
 
 

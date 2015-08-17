@@ -99,8 +99,8 @@ namespace xerus {
 		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
 		
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
-		template<class generator, class distribution>
-		static TTNetwork construct_random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+		template<class generator, class distribution, class aloc = std::allocator<size_t>>
+		static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
 			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::construct_random");
 			#ifndef DISABLE_RUNTIME_CHECKS_
 				for (const size_t d : _dimensions) {
@@ -134,8 +134,8 @@ namespace xerus {
 		}
 		
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
-		template<class generator, class distribution>
-		static TTNetwork construct_random(const std::vector<size_t>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
+		template<class generator, class distribution, class aloc = std::allocator<size_t>>
+		static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
 			return construct_random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
 		}
 		

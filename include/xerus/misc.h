@@ -34,3 +34,4 @@
 #include "misc/timeMeasure.h"
 #include "misc/performanceAnalysis.h"
 #include "misc/exceptions.h"
+#include "misc/allocator.h"

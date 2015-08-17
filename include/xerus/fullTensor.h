@@ -116,7 +116,7 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _data a shared_ptr to the data the FullTensor shall use. This must be (at least) of the size determined by the dimensions.
 		 */
-        template<ADD_MOVE(std::vector<size_t>, Vec), ADD_MOVE(std::shared_ptr<value_t>, SPtr)>
+        template<ADD_MOVE(Vec, std::vector<size_t>), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
         explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions)), data(std::forward<SPtr>(_data)) { }
         
         /** 
@@ -141,7 +141,7 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the FullTensor. 
 		 */
-        ALLOW_MOVE(std::vector<size_t>, Vec)
+        ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t()>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
             value_t* realData = data.get();
             for (size_t i=0; i < size; ++i) {
@@ -155,7 +155,7 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the FullTensor. 
 		 */
-        ALLOW_MOVE(std::vector<size_t>, Vec)
+        ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
             value_t* realData = data.get();
             for (size_t i=0; i < size; ++i) {
@@ -170,7 +170,7 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the FullTensor. 
 		 */
-        ALLOW_MOVE(std::vector<size_t>, Vec)
+        ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
             value_t* realData = data.get();
             std::vector<size_t> multIdx(degree(), 0);
@@ -198,7 +198,7 @@ namespace xerus {
 		 * @param _rnd the random generator to be use.
 		 * @param _dist the random distribution to be used.
 		 */
-        template<class generator, class distribution, ADD_MOVE(std::vector<size_t>, Vec)>
+        template<class generator, class distribution, ADD_MOVE(Vec, std::vector<size_t>)>
         static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
 			PA_START;
@@ -230,7 +230,7 @@ namespace xerus {
 		 * @brief Constructs a FullTensor with the given dimensions and uses the provided data as entries.
 		 * @details See the std::vector variant for details.
 		 */
-        ALLOW_MOVE(std::shared_ptr<value_t>, SPtr)
+        ALLOW_MOVE(SPtr, std::shared_ptr<value_t>)
         explicit FullTensor(std::initializer_list<size_t>&& _dimensions, SPtr&& _data) : FullTensor(std::vector<size_t>(_dimensions), std::forward<SPtr>(_data)) {}
         
         
