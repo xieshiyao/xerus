@@ -36,6 +36,7 @@ extern "C"
 {
     #include <cblas.h> 
 }
+
 #ifdef __has_include
     #if __has_include(<lapacke.h>)
         #include <lapacke.h>

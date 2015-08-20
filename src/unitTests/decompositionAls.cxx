@@ -22,9 +22,6 @@
 
 #include "../../include/xerus/misc/test.h"
 
-#include <iomanip>
-#include <fstream>
-
 using namespace xerus;
 
 UNIT_TEST(ALS, decomposition_als,
@@ -32,17 +29,13 @@ UNIT_TEST(ALS, decomposition_als,
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
-	const size_t d = 10;
+	const size_t d = 14;
 	const size_t n = 2;
 
 	const std::vector<size_t> stateDims(d, n);
 	
     xerus::TTTensor TTB = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
 	FullTensor B(TTB);
-	
-	xerus::TTTensor HOSVDB(TTB);
-	HOSVDB.round(11);
-// 	LOG(HOSVD, frob_norm(FullTensor(TTB) - FullTensor(HOSVDB)));
 	
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
 	

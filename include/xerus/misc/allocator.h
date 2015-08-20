@@ -39,7 +39,7 @@ struct DebugAllocator : __gnu_cxx::new_allocator<Tp> {
 	typedef Tp value_type;
 	
 	DebugAllocator() {};
-	template <class T> DebugAllocator(const DebugAllocator<T>& other) {};
+	template <class T> DebugAllocator(const DebugAllocator<T>& other) {}
 	Tp* allocate(unsigned long n) {
 		n = n * sizeof(Tp);
 		if (n<1000) {
