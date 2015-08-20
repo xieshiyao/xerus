@@ -24,56 +24,55 @@
 
 
 #pragma once
-#include <ext/new_allocator.h>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
+#include <array>
 
 namespace xerus { namespace misc {
 
-struct allocatorStorage {
-	static unsigned long allocCount[1000];
-	static long maxAlloc[1000];
-	static long currAlloc[1000];
-};
-
-template <class Tp>
-struct DebugAllocator : __gnu_cxx::new_allocator<Tp> {
-	typedef Tp value_type;
-	
-	DebugAllocator() {};
-	template <class T> DebugAllocator(const DebugAllocator<T>& other) {};
-	Tp* allocate(unsigned long n) {
-		n = n * sizeof(Tp);
-		if (n<1000) {
-			allocatorStorage::allocCount[n] += 1;
-			allocatorStorage::currAlloc[n] += 1;
-			if (allocatorStorage::currAlloc[n] > allocatorStorage::maxAlloc[n]) {
-				allocatorStorage::maxAlloc[n] = allocatorStorage::currAlloc[n];
-			}
+template <class T>
+struct Mallocator {
+	typedef T value_type;
+	Mallocator();
+	template <class S> Mallocator(const Mallocator<S>& other) {}
+	T* allocate(std::size_t n) {
+		if (~0ul / sizeof(T) < n) {
+			throw new std::bad_alloc();
 		}
-		// TODO check whether n*sizeof overflows
-		return static_cast<Tp*>(::operator new(n));
+		return std::malloc(n*sizeof(T));
 	}
-	void deallocate(Tp* p, unsigned long n) {
-		if (p == nullptr) return;
-		n = n * sizeof(Tp);
-		if (n<1000) {
-			allocatorStorage::currAlloc[n] -= 1;
-// 			if (allocatorStorage::currAlloc[n] < 0) {
-// 				allocatorStorage::currAlloc[n] = 0;
-// 			}
-		}
-		::operator delete(p);
+	void deallocate(T* p, std::size_t ) {
+		std::free(p);
 	}
 };
 template <class T, class U>
-bool operator==(const DebugAllocator<T>&, const DebugAllocator<U>&) {
+bool operator==(const Mallocator<T>&, const Mallocator<U>&) {
 	return true;
 }
 template <class T, class U>
-bool operator!=(const DebugAllocator<T>&, const DebugAllocator<U>&) {
+bool operator!=(const Mallocator<T>&, const Mallocator<U>&) {
 	return false;
 }
 
+struct AllocatorStorage {
+	static constexpr size_t SMALLEST_NOT_CACHED_SIZE = 2048;
+	static constexpr size_t POOL_SIZE = 9*1024*1024;
+	
+	static thread_local std::array<std::vector<void*, Mallocator<void*>>, SMALLEST_NOT_CACHED_SIZE> buckets;
+	static thread_local std::vector<std::pair<char*, char*>, Mallocator<void*>> pools;
+	
+	static unsigned long allocCount[SMALLEST_NOT_CACHED_SIZE];
+	static long maxAlloc[SMALLEST_NOT_CACHED_SIZE];
+	static long currAlloc[SMALLEST_NOT_CACHED_SIZE];
+};
+
 }}
+
+void* operator new(std::size_t n);
+void operator delete(void* ptr) noexcept;
+
+
 
 
 

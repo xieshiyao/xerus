@@ -63,8 +63,4 @@ namespace xerus {
 	
 	/// @brief Helper class to provide possible overloads of several Tensor constructors.
 	class DONT_SET_ZERO {};
-	
-	// TODO define guards
-	/// @brief default allocator for internal small objects
-	using allocator = misc::DebugAllocator<void*>;
 }

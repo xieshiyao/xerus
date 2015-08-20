@@ -28,9 +28,20 @@ using namespace xerus;
         std::cout << misc::performanceAnalysis::get_analysis();
         LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 		LOG(allocator, "");
-		for (size_t i=0; i<1000; ++i) {
-			if (misc::allocatorStorage::allocCount[i] == 0 && misc::allocatorStorage::currAlloc[i] == 0) continue;
-			LOG(allocator, i << " \tx\t " << misc::allocatorStorage::allocCount[i] << "\tmax: " << misc::allocatorStorage::maxAlloc[i] << '\t' << misc::allocatorStorage::currAlloc[i]);
+		size_t totalStorage=0;
+		for (size_t i=0; i<misc::AllocatorStorage::SMALLEST_NOT_CACHED_SIZE; ++i) {
+			if (misc::AllocatorStorage::allocCount[i] == 0 && misc::AllocatorStorage::currAlloc[i] == 0) continue;
+			totalStorage += i * misc::AllocatorStorage::maxAlloc[i];
+			LOG(allocator, i << " \tx\t " << misc::AllocatorStorage::allocCount[i] << "\tmax: " << misc::AllocatorStorage::maxAlloc[i] << '\t' << misc::AllocatorStorage::currAlloc[i] << '\t' << totalStorage);
 		}
+		LOG(storageNeeded, totalStorage);
+		LOG(index, sizeof(Index));
+		LOG(node, sizeof(TensorNetwork::TensorNode));
+		LOG(link, sizeof(TensorNetwork::Link));
+		LOG(tn, sizeof(TensorNetwork));
+		LOG(fulltensor, sizeof(FullTensor));
+		LOG(SparseTensor, sizeof(SparseTensor));
+		LOG(tt, sizeof(TTTensor) << " | " << sizeof(TTOperator));
+		LOG(measurement, sizeof(SinglePointMeasurment));
     )
 #endif
