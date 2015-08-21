@@ -19,7 +19,7 @@
 
 /**
  * @file
- * @brief Header file for xerus::misc::allocators
+ * @brief Header file for the data structures used by the custom new and delete operators
  */
 
 
@@ -28,50 +28,38 @@
 #include <cstdlib>
 #include <vector>
 #include <array>
+#include <set>
+#include <ext/malloc_allocator.h>
 
 namespace xerus { namespace misc {
 
-template <class T>
-struct Mallocator {
-	typedef T value_type;
-	Mallocator();
-	template <class S> Mallocator(const Mallocator<S>& other) {}
-	T* allocate(std::size_t n) {
-		if (~0ul / sizeof(T) < n) {
-			throw new std::bad_alloc();
-		}
-		return std::malloc(n*sizeof(T));
-	}
-	void deallocate(T* p, std::size_t ) {
-		std::free(p);
-	}
-};
-template <class T, class U>
-bool operator==(const Mallocator<T>&, const Mallocator<U>&) {
-	return true;
-}
-template <class T, class U>
-bool operator!=(const Mallocator<T>&, const Mallocator<U>&) {
-	return false;
-}
+extern void* (*r_malloc)(size_t);
+extern void (*r_free)(void*);
+	
+using Mallocator = __gnu_cxx::malloc_allocator<void*>;
 
 struct AllocatorStorage {
-	static constexpr size_t SMALLEST_NOT_CACHED_SIZE = 2048;
-	static constexpr size_t POOL_SIZE = 9*1024*1024;
+	static constexpr size_t POOL_SIZE = 3*1024*1024;
+	static constexpr size_t BUCKET_SIZE = 32;
+	static constexpr size_t NUM_BUCKETS = 64;
+	static constexpr size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
 	
-	static thread_local std::array<std::vector<void*, Mallocator<void*>>, SMALLEST_NOT_CACHED_SIZE> buckets;
-	static thread_local std::vector<std::pair<char*, char*>, Mallocator<void*>> pools;
+	std::array<std::vector<uint8_t*, Mallocator>, NUM_BUCKETS> buckets;
+	std::vector<std::pair<uint8_t*, uint8_t*>, Mallocator> pools;
 	
-	static unsigned long allocCount[SMALLEST_NOT_CACHED_SIZE];
-	static long maxAlloc[SMALLEST_NOT_CACHED_SIZE];
-	static long currAlloc[SMALLEST_NOT_CACHED_SIZE];
+	AllocatorStorage();
+	~AllocatorStorage();
+	
+	static void create_new_pool();
+
+	static unsigned long allocCount[NUM_BUCKETS];
+	static long maxAlloc[NUM_BUCKETS];
+	static long currAlloc[NUM_BUCKETS];
 };
 
+extern thread_local AllocatorStorage astore;
+
 }}
-
-void* operator new(std::size_t n);
-void operator delete(void* ptr) noexcept;
-
 
 
 

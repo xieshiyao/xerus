@@ -25,16 +25,17 @@ using namespace xerus;
 
 #ifdef PERFORMANCE_ANALYSIS
     UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
+		using xma = xerus::misc::AllocatorStorage;
         std::cout << misc::performanceAnalysis::get_analysis();
         LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 		LOG(allocator, "");
 		size_t totalStorage=0;
-		for (size_t i=0; i<misc::AllocatorStorage::SMALLEST_NOT_CACHED_SIZE; ++i) {
-			if (misc::AllocatorStorage::allocCount[i] == 0 && misc::AllocatorStorage::currAlloc[i] == 0) continue;
-			totalStorage += i * misc::AllocatorStorage::maxAlloc[i];
-			LOG(allocator, i << " \tx\t " << misc::AllocatorStorage::allocCount[i] << "\tmax: " << misc::AllocatorStorage::maxAlloc[i] << '\t' << misc::AllocatorStorage::currAlloc[i] << '\t' << totalStorage);
+		for (size_t i=0; i<xma::NUM_BUCKETS; ++i) {
+			if (xma::allocCount[i] == 0 && xma::currAlloc[i] == 0) continue;
+			totalStorage += i * xma::BUCKET_SIZE * (size_t)xma::maxAlloc[i];
+			LOG(allocator, i * xma::BUCKET_SIZE << " \tx\t " << xma::allocCount[i] << "\tmax: " << xma::maxAlloc[i] << '\t' << xma::currAlloc[i] << '\t' << totalStorage);
 		}
-		LOG(storageNeeded, totalStorage);
+		LOG(storageNeeded, totalStorage << " storage used: " << misc::astore.pools.size()*xma::POOL_SIZE);
 		LOG(index, sizeof(Index));
 		LOG(node, sizeof(TensorNetwork::TensorNode));
 		LOG(link, sizeof(TensorNetwork::Link));
