@@ -50,11 +50,11 @@ struct AllocatorStorage {
 	AllocatorStorage();
 	~AllocatorStorage();
 	
-	static void create_new_pool();
+	void create_new_pool();
 
-	static unsigned long allocCount[NUM_BUCKETS];
-	static long maxAlloc[NUM_BUCKETS];
-	static long currAlloc[NUM_BUCKETS];
+	unsigned long allocCount[NUM_BUCKETS];
+	long maxAlloc[NUM_BUCKETS];
+	long currAlloc[NUM_BUCKETS];
 };
 
 extern thread_local AllocatorStorage astore;

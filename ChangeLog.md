@@ -2,6 +2,15 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* ????-??-?? v1.4.0
+ * Added an implementation of the ADF algorithm.
+ * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk).
+ * Tensor decomposition now allow arbitrary index orders in the target as well as the source.
+ * Added TN::measure(...) to perform a batch of evaluations of the network.
+ * Added TN::fix_slate(...) to fix a single index to a specific value.
+ * Added TN::reduce_representation() to try and reduce the storage requirements of the given network.
+ * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
+
 * 2015-07-10 v1.3.0
  * Added several retractions to allow Riemannian algorithms on TT manifolds.
  * Added the basic (Riemannian) steepest descent algorithm.

@@ -39,7 +39,7 @@ COMPILE_THREADS = 8					# Number of threads to use during link time optimization
 
 # Xerus uses many small objects (Indices, vectors of dimensions etc.) for which the standard allocator
 # is not very efficient. With the following option, an experimental replacement allocator will be 
-# included in the library, which will _globaly_ replace the 'new' and 'delete' operators in your program.
+# included in the library, which will _globally_ replace the 'new' and 'delete' operators in your program.
 # DEBUG += -D REPLACE_ALLOCATOR
 
 

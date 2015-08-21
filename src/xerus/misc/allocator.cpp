@@ -31,14 +31,16 @@
 using xma = xerus::misc::AllocatorStorage;
 namespace xm = xerus::misc;
 
-unsigned long xma::allocCount[xma::NUM_BUCKETS];
-long xma::maxAlloc[xma::NUM_BUCKETS];
-long xma::currAlloc[xma::NUM_BUCKETS];
-
 thread_local xerus::misc::AllocatorStorage xm::astore;
 static bool programIsRunning = true;
 
-xerus::misc::AllocatorStorage::AllocatorStorage() { }
+xerus::misc::AllocatorStorage::AllocatorStorage() { 
+	for (unsigned long i=0; i<xma::NUM_BUCKETS; ++i) {
+		allocCount[i]=0;
+		maxAlloc[i]=0;
+		currAlloc[i]=0;
+	}
+}
 xerus::misc::AllocatorStorage::~AllocatorStorage(){ programIsRunning=false; }
 
 
@@ -48,21 +50,9 @@ using freeType = void (*)(void*);
 void (*xerus::misc::r_free)(void*) = &free;//(freeType)dlsym(RTLD_NEXT, "free");
 
 
-__attribute__((constructor)) void initAllocatorStorage() {
-	using mallocType = void *(*)(size_t);
-// 	xerus::misc::r_malloc = (mallocType)dlsym(RTLD_NEXT, "malloc");
-	using freeType = void (*)(void*);
-// 	xerus::misc::r_free = (freeType)dlsym(RTLD_NEXT, "free");
-	for (unsigned long i=0; i<xma::NUM_BUCKETS; ++i) {
-		xma::allocCount[i]=0;
-		xma::maxAlloc[i]=0;
-		xma::currAlloc[i]=0;
-	}
-}
-
-void xma::create_new_pool() {
+void xerus::misc::AllocatorStorage::create_new_pool() {
 	uint8_t* newPool = static_cast<uint8_t*>(xerus::misc::r_malloc(xma::POOL_SIZE)); // TODO use mmap(...)
-	xm::astore.pools.emplace_back(newPool, newPool+xma::BUCKET_SIZE);
+	pools.emplace_back(newPool, newPool+xma::BUCKET_SIZE);
 }
 
 void *myalloc(size_t n) {
@@ -76,7 +66,7 @@ void *myalloc(size_t n) {
 		uint8_t* res;
 		if (xm::astore.buckets[numBucket].empty()) {
 			if (xm::astore.pools.empty() || xm::astore.pools.back().second + (numBucket+1)*xma::BUCKET_SIZE >= xm::astore.pools.back().first + xma::POOL_SIZE) {
-				xma::create_new_pool();
+				xm::astore.create_new_pool();
 // 				std::printf("new pool ... ");
 			}
 			res = xm::astore.pools.back().second;
@@ -87,10 +77,10 @@ void *myalloc(size_t n) {
 			xm::astore.buckets[numBucket].pop_back();
 		}
 		#ifdef PERFORMANCE_ANALYSIS
-			xma::allocCount[numBucket] += 1;
-			xma::currAlloc[numBucket] += 1;
-			if (xma::currAlloc[numBucket] > xma::maxAlloc[numBucket]) {
-				xma::maxAlloc[numBucket] = xma::currAlloc[numBucket];
+			xm::astore.allocCount[numBucket] += 1;
+			xm::astore.currAlloc[numBucket] += 1;
+			if (xm::astore.currAlloc[numBucket] > xm::astore.:maxAlloc[numBucket]) {
+				xm::astore.maxAlloc[numBucket] = xm::astore.currAlloc[numBucket];
 			}
 		#endif
 		return static_cast<void*>(res);
@@ -135,13 +125,14 @@ void *operator new[](std::size_t s) {
 // 		return newstorage;
 // 	}
 // }
+// TODO valloc
 
 
 void mydelete(void *ptr) noexcept {
 	uint8_t n = *(static_cast<uint8_t*>(ptr)-1);
 	if (n<0xFF) {
 		#ifdef PERFORMANCE_ANALYSIS
-			xma::currAlloc[n] -= 1;
+			xm::astore.currAlloc[n] -= 1;
 		#endif
 		if (programIsRunning) {
 			xm::astore.buckets[n].push_back(static_cast<uint8_t*>(ptr));

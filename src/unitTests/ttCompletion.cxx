@@ -25,8 +25,8 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	std::random_device rd;
-	std::mt19937_64 rnd(rd());
+// 	std::random_device rd;
+	std::mt19937_64 rnd(0xDEAFBEEF);
 	std::uniform_int_distribution<size_t> dist(0,3);
 	std::normal_distribution<value_t> distF(0,1);
 	TTTensor trueSolution(examples::peaking_diagonals(10,4,1.0));
