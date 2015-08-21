@@ -26,14 +26,15 @@ using namespace xerus;
 #ifdef PERFORMANCE_ANALYSIS
     UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
 		using xma = xerus::misc::AllocatorStorage;
+		namespace xm = xerus::misc; 
         std::cout << misc::performanceAnalysis::get_analysis();
         LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 		LOG(allocator, "");
 		size_t totalStorage=0;
 		for (size_t i=0; i<xma::NUM_BUCKETS; ++i) {
-			if (xma::allocCount[i] == 0 && xma::currAlloc[i] == 0) continue;
-			totalStorage += i * xma::BUCKET_SIZE * (size_t)xma::maxAlloc[i];
-			LOG(allocator, i * xma::BUCKET_SIZE << " \tx\t " << xma::allocCount[i] << "\tmax: " << xma::maxAlloc[i] << '\t' << xma::currAlloc[i] << '\t' << totalStorage);
+			if (xm::astore.allocCount[i] == 0 && xm::astore.currAlloc[i] == 0) continue;
+			totalStorage += i * xma::BUCKET_SIZE * (size_t)xm::astore.maxAlloc[i];
+			LOG(allocator, i * xma::BUCKET_SIZE << " \tx\t " << xm::astore.allocCount[i] << "\tmax: " << xm::astore.maxAlloc[i] << '\t' << xm::astore.currAlloc[i] << '\t' << totalStorage);
 		}
 		LOG(storageNeeded, totalStorage << " storage used: " << misc::astore.pools.size()*xma::POOL_SIZE);
 		LOG(index, sizeof(Index));

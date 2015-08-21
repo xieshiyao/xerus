@@ -79,7 +79,7 @@ void *myalloc(size_t n) {
 		#ifdef PERFORMANCE_ANALYSIS
 			xm::astore.allocCount[numBucket] += 1;
 			xm::astore.currAlloc[numBucket] += 1;
-			if (xm::astore.currAlloc[numBucket] > xm::astore.:maxAlloc[numBucket]) {
+			if (xm::astore.currAlloc[numBucket] > xm::astore.maxAlloc[numBucket]) {
 				xm::astore.maxAlloc[numBucket] = xm::astore.currAlloc[numBucket];
 			}
 		#endif
