@@ -19,61 +19,48 @@
 
 /**
  * @file
- * @brief Header file for xerus::misc::allocators
+ * @brief Header file for the data structures used by the custom new and delete operators
  */
 
 
 #pragma once
-#include <ext/new_allocator.h>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
+#include <array>
+#include <set>
+#include <ext/malloc_allocator.h>
 
 namespace xerus { namespace misc {
 
-struct allocatorStorage {
-	static unsigned long allocCount[1000];
-	static long maxAlloc[1000];
-	static long currAlloc[1000];
+extern void* (*r_malloc)(size_t);
+extern void (*r_free)(void*);
+	
+using Mallocator = __gnu_cxx::malloc_allocator<void*>;
+
+struct AllocatorStorage {
+	static constexpr size_t POOL_SIZE = 3*1024*1024;
+	static constexpr size_t BUCKET_SIZE = 32;
+	static constexpr size_t NUM_BUCKETS = 64;
+	static constexpr size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
+	
+	std::array<std::vector<uint8_t*, Mallocator>, NUM_BUCKETS> buckets;
+	std::vector<std::pair<uint8_t*, uint8_t*>, Mallocator> pools;
+	
+	AllocatorStorage();
+	~AllocatorStorage();
+	
+	static void create_new_pool();
+
+	static unsigned long allocCount[NUM_BUCKETS];
+	static long maxAlloc[NUM_BUCKETS];
+	static long currAlloc[NUM_BUCKETS];
 };
 
-template <class Tp>
-struct DebugAllocator : __gnu_cxx::new_allocator<Tp> {
-	typedef Tp value_type;
-	
-	DebugAllocator() {};
-	template <class T> DebugAllocator(const DebugAllocator<T>& other) {}
-	Tp* allocate(unsigned long n) {
-		n = n * sizeof(Tp);
-		if (n<1000) {
-			allocatorStorage::allocCount[n] += 1;
-			allocatorStorage::currAlloc[n] += 1;
-			if (allocatorStorage::currAlloc[n] > allocatorStorage::maxAlloc[n]) {
-				allocatorStorage::maxAlloc[n] = allocatorStorage::currAlloc[n];
-			}
-		}
-		// TODO check whether n*sizeof overflows
-		return static_cast<Tp*>(::operator new(n));
-	}
-	void deallocate(Tp* p, unsigned long n) {
-		if (p == nullptr) return;
-		n = n * sizeof(Tp);
-		if (n<1000) {
-			allocatorStorage::currAlloc[n] -= 1;
-// 			if (allocatorStorage::currAlloc[n] < 0) {
-// 				allocatorStorage::currAlloc[n] = 0;
-// 			}
-		}
-		::operator delete(p);
-	}
-};
-template <class T, class U>
-bool operator==(const DebugAllocator<T>&, const DebugAllocator<U>&) {
-	return true;
-}
-template <class T, class U>
-bool operator!=(const DebugAllocator<T>&, const DebugAllocator<U>&) {
-	return false;
-}
+extern thread_local AllocatorStorage astore;
 
 }}
+
 
 
 

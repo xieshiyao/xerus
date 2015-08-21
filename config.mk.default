@@ -37,6 +37,12 @@ COMPILE_THREADS = 8					# Number of threads to use during link time optimization
 # DEBUG += -D TEST_COVERAGE_			# enable coverage tests
 
 
+# Xerus uses many small objects (Indices, vectors of dimensions etc.) for which the standard allocator
+# is not very efficient. With the following option, an experimental replacement allocator will be 
+# included in the library, which will _globaly_ replace the 'new' and 'delete' operators in your program.
+# DEBUG += -D REPLACE_ALLOCATOR
+
+
 # In the default configuration xerus will throw exceptions if it encounters invalid inputs
 # or (hopefully never) suffers an internal error. For some debugging purposes however it is
 # more convinient to instruct xerus to directly exit in such cases.
