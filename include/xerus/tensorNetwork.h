@@ -411,6 +411,8 @@ namespace xerus {
 		 */
 		void sanitize();
 		
+		
+		void trace_out_self_links(size_t _nodeId);
 	public:
 		/**
 		 * @brief Thresholds the rank between two given nodes.

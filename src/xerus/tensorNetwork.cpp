@@ -33,6 +33,9 @@
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/misc/stringUtilities.h>
+#include <xerus/cs_wrapper.h>
+#include <xerus/sparseTimesFullContraction.h>
+#include <xerus/blasLapackWrapper.h>
 #include <algorithm>
 #include <fstream>
 #include <cstdio>
@@ -795,6 +798,32 @@ namespace xerus {
 		reshuffle_nodes(idMap);
 	}
     
+    
+    //TODO do this without indices
+    void TensorNetwork::trace_out_self_links(size_t _nodeId) {
+		LOG(TNContract, "single-node trace of id " << _nodeId);
+		std::vector<Index> idxIn, idxOut;
+		std::vector<TensorNetwork::Link> newLinks;
+		for (size_t i=0; i<nodes[_nodeId].neighbors.size(); ++i) {
+			const TensorNetwork::Link &l = nodes[_nodeId].neighbors[i];
+			if (!l.links(_nodeId)) {
+				idxIn.emplace_back();
+				idxOut.emplace_back(idxIn.back());
+				newLinks.emplace_back(l);
+			} else if (l.indexPosition > i) {
+				idxIn.emplace_back();
+			} else {
+				idxIn.emplace_back(idxIn[l.indexPosition]);
+			}
+		}
+		// Perform the trace
+		if (nodes[_nodeId].tensorObject) {
+			std::unique_ptr<Tensor> newTensor(nodes[_nodeId].tensorObject->construct_new());
+			(*newTensor)(idxOut) = (*nodes[_nodeId].tensorObject)(idxIn);
+			nodes[_nodeId].tensorObject = std::move(newTensor);
+			nodes[_nodeId].neighbors = std::move(newLinks);
+		}
+	}
 
     //TODO testcase A(i,j)*B(k,k) of TTtensors
     /**
@@ -811,53 +840,209 @@ namespace xerus {
         
         LOG(TNContract, "contraction of " << _nodeId1 << " and " << _nodeId2 << " size " << nodes.size());
         
-        std::vector<Index> i1, i2, ri;
-		i1.reserve(node1.degree());
-		i2.reserve(node2.degree());
-		ri.reserve(node1.degree() + node2.degree());
-		
         std::vector<TensorNetwork::Link> newLinks;
 		newLinks.reserve(node1.degree() + node2.degree());
 		
-        for (size_t d=0; d<node1.degree(); ++d) {
-            // self-link?
-            if (node1.neighbors[d].links(_nodeId1) && d > node1.neighbors[d].indexPosition) {
-                i1.emplace_back(i1[node1.neighbors[d].indexPosition]);
-            } else {
-                i1.emplace_back();
-            }
-            
-            if (!node1.neighbors[d].links(_nodeId2) && !node1.neighbors[d].links(_nodeId1)) {
-                ri.emplace_back(i1.back());
-                newLinks.emplace_back(node1.neighbors[d]);
-            }
-        }
-        
-        for (size_t d = 0; d < node2.degree(); ++d) {
-            if (node2.neighbors[d].links(_nodeId1)) {
-                REQUIRE(i1.size() > node2.neighbors[d].indexPosition, "Internal Error.");
-                REQUIRE(node1.neighbors[node2.neighbors[d].indexPosition].links(_nodeId2), "Internal Error."); // consistency check
-                i2.emplace_back(i1[node2.neighbors[d].indexPosition]); // common index
-            } else if (node2.neighbors[d].links(_nodeId2) && d > node2.neighbors[d].indexPosition) {
-                i2.emplace_back(i2[node2.neighbors[d].indexPosition]);
-            } else {
-                i2.emplace_back(); // new (open) index
-                ri.emplace_back(i2.back());
-                newLinks.emplace_back(node2.neighbors[d]);
-            }
-        }
-        
+		
         // Construct new node
         std::unique_ptr<Tensor> newTensor;
-        if (node1.tensorObject) {
-            REQUIRE(node2.tensorObject, "Internal Error.");
+        if (!node1.tensorObject) {
+			REQUIRE(!node2.tensorObject, "Internal Error.");
+			
+			// determine the links of the resulting tensor (first half)
+			REQUIRE(node1.degree() > 0, "illegal network");
+			for (size_t d=0; d<node1.degree(); ++d) {
+				if (!node1.neighbors[d].links(_nodeId1) && !node1.neighbors[d].links(_nodeId2)) {
+					newLinks.emplace_back(node1.neighbors[d]);
+				}
+			}
+			// determine the links of the resulting tensor (second half)
+			REQUIRE(node2.degree() > 0, "illegal network");
+			for (size_t d = 0; d < node2.degree(); ++d) {
+				if (!node2.neighbors[d].links(_nodeId2) && !node2.neighbors[d].links(_nodeId1)) {
+					newLinks.emplace_back(node2.neighbors[d]);
+				}
+			}
+		} else {
+			REQUIRE(node2.tensorObject, "Internal Error.");
+			std::vector<size_t> outDimensions;
+			size_t leftDim = 1, rightDim = 1, midDim = 1;
+			
+			// first pass of the links of node1 to determine
+			//   1. the number of links between the two nodes, 
+			//   2. whether any self-links exist,
+			//   3. determine whether node1 is separated (ownlinks-commonlinks) or transposed separated (commonlinks-ownlinks)
+			//   4. determine the links of the resulting tensor (first half)
+			bool traceNeeded = false;
+			REQUIRE(node1.degree() > 0, "illegal network");
+			uint_fast8_t switches = 0;
+			bool previous = node1.neighbors[0].links(_nodeId2);
+			size_t numLinks = 0;
+			for (size_t d=0; d<node1.degree(); ++d) {
+				if (node1.neighbors[d].links(_nodeId1)) {
+					traceNeeded = true;
+				} else if (node1.neighbors[d].links(_nodeId2)) {
+					numLinks += 1;
+					midDim *= node1.neighbors[d].dimension;
+					if (!previous) {
+						switches += 1;
+						previous = true;
+					}
+				} else {
+					newLinks.emplace_back(node1.neighbors[d]);
+					outDimensions.emplace_back(node1.neighbors[d].dimension);
+					leftDim *= node1.neighbors[d].dimension;
+					if (previous) {
+						switches += 1;
+						previous = false;
+					}
+				}
+			}
+			if (traceNeeded) {
+				trace_out_self_links(_nodeId1);
+			}
+			bool separated1 = (switches < 2);
+			
+			// first pass of the links of node2 to determine
+			//   1. whether the order of common links is correct
+			//   2. whether any self-links exist
+			//   3. whether the second node is separated
+			//   4. determine the links of the resulting tensor (second half)
+			traceNeeded = false;
+			REQUIRE(node2.degree() > 0, "illegal network");
+			previous = node2.neighbors[0].links(_nodeId1);
+			switches = 0;
+			size_t lastPosOfCommon = 0;
+			bool matchingOrder = true;
+			for (size_t d = 0; d < node2.degree(); ++d) {
+				if (node2.neighbors[d].links(_nodeId2)) {
+					traceNeeded = true;
+				} else if (node2.neighbors[d].links(_nodeId1)) {
+					if (node2.neighbors[d].indexPosition < lastPosOfCommon) {
+						matchingOrder = false;
+					}
+					lastPosOfCommon = node2.neighbors[d].indexPosition;
+					if (!previous) {
+						switches += 1;
+						previous = true;
+					}
+				} else {
+					newLinks.emplace_back(node2.neighbors[d]);
+					outDimensions.emplace_back(node2.neighbors[d].dimension);
+					rightDim *= node2.neighbors[d].dimension;
+					if (previous) {
+						switches += 1;
+						previous = false;
+					}
+				}
+			}
+			if (traceNeeded) {
+				trace_out_self_links(_nodeId2);
+			}
+			bool separated2 = (switches < 2);
+			
             
-            IndexedTensorMoveable<Tensor> result(xerus::contract((*node1.tensorObject)(i1), (*node2.tensorObject)(i2)));
-            newTensor.reset(result.tensorObjectReadOnly->construct_new());
-            (*newTensor.get())(ri) = result;
-        } else {
-            REQUIRE(!node2.tensorObject, "Internal Error.");
-        } 
+			
+			// determine which (if any) node should be reshuffled
+			// if order of common links does not match, reshuffle the smaller one
+			if (!matchingOrder && separated1 && separated2) {
+				if (node1.size() < node2.size()) {
+					separated1 = false;
+				} else {
+					separated2 = false;
+				}
+			}
+			
+			bool trans1 = node1.neighbors[0].links(_nodeId2);
+			bool trans2 = !(node2.neighbors[0].links(_nodeId1));
+			
+			// TODO optimize desired transposition for blas call
+			
+			// reshuffle first node
+			if (!separated1) {
+				// TODO this without indices!
+				std::vector<Index> before, after;
+				before.reserve(node1.degree()); after.reserve(node1.degree());
+				for (size_t d=0; d<node1.degree(); ++d) {
+					before.emplace_back();
+					if (!node1.neighbors[d].links(_nodeId2)) {
+						after.emplace_back(before.back());
+					}
+				}
+				for (size_t d=0; d<node2.degree(); ++d) {
+					if (node2.neighbors[d].links(_nodeId1)) {
+						after.emplace_back(before[node2.neighbors[d].indexPosition]);
+					}
+				}
+				(*node1.tensorObject)(after) = (*node1.tensorObject)(before);
+				matchingOrder = true;
+				trans1 = false;
+			}
+			
+			// reshuffle second node
+			if (!separated2) {
+				// TODO this without indices!
+				std::vector<Index> before, after;
+				before.reserve(node2.degree()); after.reserve(node2.degree());
+				for (size_t d=0; d<node2.degree(); ++d) {
+					before.emplace_back();
+					if (!node2.neighbors[d].links(_nodeId1)) {
+						after.emplace_back(before.back());
+					}
+				}
+				if (!matchingOrder) {
+					for (size_t d=0; d<node1.degree(); ++d) {
+						if (node1.neighbors[d].links(_nodeId2)) {
+							after.emplace_back(before[node1.neighbors[d].indexPosition]);
+						}
+					}
+				} else {
+					// add common links in order as they appear in node2 to avoid both nodes changing to the opposite link order
+					for (size_t d=0; d<node2.degree(); ++d) {
+						if (node2.neighbors[d].links(_nodeId1)) {
+							after.emplace_back(before[d]);
+						}
+					}
+				}
+				(*node2.tensorObject)(after) = (*node2.tensorObject)(before);
+				trans2 = true;
+			}
+			value_t commonFactor = node1.tensorObject->factor * node2.tensorObject->factor;
+			
+			bool sparse1 = node1.tensorObject->is_sparse();
+			bool sparse2 = node2.tensorObject->is_sparse();
+			bool resultSparse = sparse1 && sparse2;
+			
+			if (resultSparse) {
+				newTensor.reset(new SparseTensor(outDimensions));
+			} else {
+				newTensor.reset(new FullTensor(outDimensions, DONT_SET_ZERO()));
+			}
+			
+			if(!sparse1 && !sparse2 && !resultSparse) { // Full * Full => Full
+                blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(newTensor.get())->data.get(), leftDim, rightDim, commonFactor, 
+												   static_cast<const FullTensor*>(node1.tensorObject.get())->data.get(), trans1, midDim, 
+												   static_cast<const FullTensor*>(node2.tensorObject.get())->data.get(), trans2);
+            } else if(sparse1 && !sparse2 && !resultSparse) { // Sparse * Full => Full
+                matrix_matrix_product(static_cast<FullTensor*>(newTensor.get())->data.get(), leftDim, rightDim, commonFactor, 
+									  *static_cast<const SparseTensor*>(node1.tensorObject.get())->entries.get(), trans1, midDim, 
+									  static_cast<const FullTensor*>(node2.tensorObject.get())->data.get(), trans2);
+            } else if(!sparse1 && sparse2 && !resultSparse) { // Full * Sparse => Full
+                matrix_matrix_product(static_cast<FullTensor*>(newTensor.get())->data.get(), leftDim, rightDim, commonFactor, 
+									  static_cast<const FullTensor*>(node1.tensorObject.get())->data.get(), trans1, midDim, 
+									  *static_cast<const SparseTensor*>(node2.tensorObject.get())->entries.get(), trans2);
+            } else if(sparse1 && !sparse2 && resultSparse) { // Sparse * Full => Sparse
+                matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->entries.get(), leftDim, rightDim, commonFactor, 
+									  *static_cast<const SparseTensor*>(node1.tensorObject.get())->entries.get(), trans1, midDim, 
+									  static_cast<const FullTensor*>(node2.tensorObject.get())->data.get(), trans2);
+            } else if(!sparse1 && sparse2 && resultSparse) { // Full * Sparse => Sparse
+                matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->entries.get(), leftDim, rightDim, commonFactor, 
+									  static_cast<const FullTensor*>(node1.tensorObject.get())->data.get(), trans1, midDim, 
+									  *static_cast<const SparseTensor*>(node2.tensorObject.get())->entries.get(), trans2);
+            } else {
+                LOG(fatal, "ie: Invalid combiantion of sparse/dense tensors in contraction");
+            }
+        }
         TensorNode newNode(std::move(newTensor), newLinks);
         
         // replace node1 and node2
@@ -969,28 +1154,7 @@ namespace xerus {
                 }
             }
             if (traceNeeded) {
-                LOG(TNContract, "single-node trace of id " << id);
-                std::vector<Index> idxIn, idxOut;
-                std::vector<TensorNetwork::Link> newLinks;
-                for (size_t i=0; i<nodes[id].neighbors.size(); ++i) {
-                    const TensorNetwork::Link &l = nodes[id].neighbors[i];
-                    if (!l.links(id)) {
-                        idxIn.emplace_back();
-                        idxOut.emplace_back(idxIn.back());
-                        newLinks.emplace_back(l);
-                    } else if (l.indexPosition > i) {
-                        idxIn.emplace_back();
-                    } else {
-                        idxIn.emplace_back(idxIn[l.indexPosition]);
-                    }
-                }
-                // Perform the trace
-                if (nodes[id].tensorObject) {
-                    std::unique_ptr<Tensor> newTensor(nodes[id].tensorObject->construct_new());
-                    (*newTensor)(idxOut) = (*nodes[id].tensorObject)(idxIn);
-                    nodes[id].tensorObject = std::move(newTensor);
-                    nodes[id].neighbors = std::move(newLinks);
-                }
+                trace_out_self_links(id);
             }
         }
         

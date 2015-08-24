@@ -30,8 +30,8 @@
 #include <xerus/sparseTensor.h>
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
-#include <memory>
 #include <xerus/blasLapackWrapper.h>
+#include <memory>
 
 namespace xerus {
     

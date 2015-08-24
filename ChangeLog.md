@@ -8,7 +8,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * Tensor decomposition now allow arbitrary index orders in the target as well as the source.
  * Added TN::measure(...) to perform a batch of evaluations of the network.
  * Added TN::fix_slate(...) to fix a single index to a specific value.
- * Added TN::reduce_representation() to try and reduce the storage requirements of the given network.
+ * Added TN::reduce_representation() to trace out any full-rank edge.
  * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
 
 * 2015-07-10 v1.3.0
