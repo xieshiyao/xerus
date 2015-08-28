@@ -24,43 +24,44 @@
 
 
 #pragma once
-#include <cstdio>
-#include <cstdlib>
-#include <vector>
-#include <array>
-#include <set>
-#include <ext/malloc_allocator.h>
 
-namespace xerus { namespace misc {
+#ifdef REPLACE_ALLOCATOR
 
-extern void* (*r_malloc)(size_t);
-extern void (*r_free)(void*);
-	
-using Mallocator = __gnu_cxx::malloc_allocator<void*>;
+	#include <cstdio>
+	#include <cstdlib>
+	#include <vector>
+	#include <array>
+	#include <set>
+	#include <ext/malloc_allocator.h>
 
-struct AllocatorStorage {
-	static constexpr size_t POOL_SIZE = 3*1024*1024;
-	static constexpr size_t BUCKET_SIZE = 32;
-	static constexpr size_t NUM_BUCKETS = 64;
-	static constexpr size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
-	
-	std::array<std::vector<uint8_t*, Mallocator>, NUM_BUCKETS> buckets;
-	std::vector<std::pair<uint8_t*, uint8_t*>, Mallocator> pools;
-	
-	AllocatorStorage();
-	~AllocatorStorage();
-	
-	void create_new_pool();
+	namespace xerus { namespace misc {
 
-	unsigned long allocCount[NUM_BUCKETS];
-	long maxAlloc[NUM_BUCKETS];
-	long currAlloc[NUM_BUCKETS];
-};
+	extern void* (*r_malloc)(size_t);
+	extern void (*r_free)(void*);
+		
+	using Mallocator = __gnu_cxx::malloc_allocator<void*>;
 
-extern thread_local AllocatorStorage astore;
+	struct AllocatorStorage {
+		static constexpr const size_t POOL_SIZE = 4*1024*1024;
+		static constexpr const size_t BUCKET_SIZE = 64;
+		static constexpr const size_t NUM_BUCKETS = 64;
+		static constexpr const size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
+		
+		std::array<std::vector<uint8_t*, Mallocator>, NUM_BUCKETS> buckets;
+		std::vector<std::pair<uint8_t*, uint8_t*>, Mallocator> pools;
+		
+		AllocatorStorage();
+		~AllocatorStorage();
+		
+		void create_new_pool();
 
-}}
+		unsigned long allocCount[NUM_BUCKETS];
+		long maxAlloc[NUM_BUCKETS];
+		long currAlloc[NUM_BUCKETS];
+	};
 
+	extern thread_local AllocatorStorage astore;
+	}}
 
-
+#endif
 
