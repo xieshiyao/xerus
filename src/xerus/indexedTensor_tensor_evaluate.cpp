@@ -145,15 +145,22 @@ namespace xerus {
         }
     }
     
+    
+    /**
+	 * @brief: Performes the low level evaluation of a FullTensor to another FullTensor
+	 * @param _outTensor: The tensor INTO which the evaluation is performed. The Dimensions must be set correctly
+	 * @param _inputTensor: The tensor which is evalueted. 
+	 * 
+	 */
     void full_to_full_evaluation(FullTensor& _outTensor,
 								 const FullTensor& _inputTensor,
-								 const size_t _numIndicesToShuffle,
 								 const size_t _fixedIndexOffset,
 								 const size_t _orderedIndexDim,
+								 const size_t _numIndicesToShuffle,
 								 const size_t* const _stepSizes, 
 								 const size_t* const _outIndexDimensions,
 								 const size_t _totalTraceDim,
-								 const std::vector<size_t>& _traceDimensions, 
+								 const std::vector<size_t>& _traceDimensions,
 								 const std::vector<size_t>& _traceStepSizes
 								) {
 		// Start performance analysis for low level part
@@ -320,13 +327,13 @@ namespace xerus {
                     }
                 }
             }
-            
+
             
             full_to_full_evaluation(*static_cast<FullTensor*>(_out.tensorObject),
 								 *static_cast<const FullTensor*>(_base.tensorObjectReadOnly),
-								 outIndices.size()-numOrderedIndices,
 								 fixedIndexOffset,
 								 orderedIndexDim,
+								 outIndices.size()-numOrderedIndices,
 								 stepSizes,
 								 outIndexDimensions.get(),
 								 totalTraceDim,
