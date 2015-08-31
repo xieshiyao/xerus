@@ -31,6 +31,8 @@
 #include "indexedTensor.h"
 
 namespace xerus {
+	class FullTensor;
+	class SparseTensor;
 	
     /// @brief Abstract class which defines the common functionalities of the actual tensor classes FullTensor and SparseTensor.
     class Tensor {
@@ -112,6 +114,43 @@ namespace xerus {
          * @param _dimensions the dimensions of the new tensor.
          */
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
+		
+        /** 
+		 * @brief: Returns a FullTensor with all entries equal to one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
+        static FullTensor ones(const std::vector<size_t>& _dimensions);
+		
+		/** 
+		 * @brief: Returns a SparseTensor representation of the identity operator with the given dimensions.
+		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
+         * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
+         */
+        static SparseTensor identity(const std::vector<size_t>& _dimensions);
+		
+		/** 
+		 * @brief: Returns a SparseTensor representation of the kronecker delta.
+		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
+         * @param _dimensions the dimensions of the new tensor.
+         */
+        static SparseTensor kronecker(const std::vector<size_t>& _dimensions);
+		
+		/** 
+		 * @brief: Returns a SparseTensor with a single entry equals oen and all other zero.
+         * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+         */
+        static SparseTensor dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position);
+		
+		/** 
+		 * @brief: Returns a SparseTensor with a single entry equals oen and all other zero.
+         * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+         */
+        static SparseTensor dirac(const std::vector<size_t>& _dimensions, const size_t _position);
+		
+		
+		
         
         /// @brief Destructor
         virtual ~Tensor();

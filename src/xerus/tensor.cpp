@@ -48,6 +48,43 @@ namespace xerus {
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
     }
     
+    FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
+		FullTensor ret(_dimensions, DONT_SET_ZERO());
+		value_t* const data = ret.data.get();
+		for(size_t i = 0; i < ret.size; ++i) {
+			data[i] = 1.0;
+		}
+		return ret;
+	}
+		
+	SparseTensor Tensor::identity(const std::vector<size_t>& _dimensions) {
+		REQUIRE(_dimensions.size()%2 == 0, "Identity tensor must have even degree, here: " << _dimensions.size());
+		SparseTensor ret(_dimensions);
+		LOG(fatal, "Not implemented");
+		
+		return ret;
+	}
+		
+	SparseTensor Tensor::kronecker(const std::vector<size_t>& _dimensions) {
+		SparseTensor ret(_dimensions);
+		for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
+			ret[std::vector<size_t>(ret.degree(), i)] = 1.0;
+		}
+		return ret;
+	}
+		
+	SparseTensor Tensor::dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position) {
+		SparseTensor ret(_dimensions);
+		ret[_position] = 1.0;
+		return ret;
+	}
+		
+	SparseTensor Tensor::dirac(const std::vector<size_t>& _dimensions, const size_t _position) {
+		SparseTensor ret(_dimensions);
+		ret[_position] = 1.0;
+		return ret;
+	}
+    
     Tensor::~Tensor() {}
     
     
