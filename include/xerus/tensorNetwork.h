@@ -356,7 +356,7 @@ namespace xerus {
 		 * use is_in_expected_format().
 		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
 		 */
-		bool is_valid_network() const;
+		bool is_valid_network(bool _check_erased=true) const;
         
 		/** 
 		 * @brief Creates a dataless copy of a subnet.
