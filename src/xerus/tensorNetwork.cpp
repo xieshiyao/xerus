@@ -878,33 +878,23 @@ namespace xerus {
         }
     }
 
-    double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {
-        TensorNode &node1 = nodes[_nodeId1];
-        TensorNode &node2 = nodes[_nodeId2];
-        
-        REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
-        REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
+    double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
+        REQUIRE(!nodes[_nodeId1].erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
+        REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
         
         if (_nodeId1 == _nodeId2) {
-            return (double)node1.size(); // cost of a trace
+            return (double) nodes[_nodeId1].size(); // Costs of a trace
         }
         
-        // assume cost of strassen with mxr * rxn = m*n*r (which is incorrect)
+        // Assume cost of mxr * rxn = m*n*r (which is a rough approximation of the actual cost for openBlas/Atlas)
         //TODO add correct calculation for sparse matrices
-        size_t m=1,n=1,r=1;
-        for (size_t d=0; d<node1.degree(); ++d) {
-            if (node1.neighbors[d].links(_nodeId2)) {
-                r *= node1.neighbors[d].dimension;
-            } else {
-                m *= node1.neighbors[d].dimension;
-            }
-        }
-        for (size_t d=0; d<node2.degree(); ++d) {
-            if (!node2.neighbors[d].links(_nodeId1)) {
-                n *= node2.neighbors[d].dimension;
-            }
-        }
-        return (double) (m*n*r);
+        size_t cost = nodes[_nodeId1].size();
+		for(const Link& neighbor : nodes[_nodeId2].neighbors) {
+			if(!neighbor.links(_nodeId1)) {
+				cost *= neighbor.dimension;
+			}
+		}
+        return (double) (cost);
     }
 
     void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert) {
