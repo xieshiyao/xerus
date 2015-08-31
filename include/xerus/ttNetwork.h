@@ -100,7 +100,7 @@ namespace xerus {
 		
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		template<class generator, class distribution, class aloc = std::allocator<size_t>>
-		static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+		static TTNetwork random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
 			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::construct_random");
 			#ifndef DISABLE_RUNTIME_CHECKS_
 				for (const size_t d : _dimensions) {
@@ -133,16 +133,30 @@ namespace xerus {
 			return result;
 		}
 		
+		template<class generator, class distribution, class aloc = std::allocator<size_t>>
+		_deprecated_ static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+			return TTNetwork::random(_dimensions, _ranks, _rnd, _dist);
+		}
+		
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		template<class generator, class distribution, class aloc = std::allocator<size_t>>
-		static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
-			return construct_random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+		static TTNetwork random(const std::vector<size_t, aloc>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
+			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+		}
+		
+		template<class generator, class distribution, class aloc = std::allocator<size_t>>
+		_deprecated_ static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
+			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
 		}
 		
 		/// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
-		static TTNetwork construct_identity(const std::vector<size_t>& _dimensions);
+		static TTNetwork identity(const std::vector<size_t>& _dimensions);
 		
+		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
+		_deprecated_ static TTNetwork construct_identity(const std::vector<size_t>& _dimensions) {
+			return TTNetwork::identity(_dimensions);
+		}
 		
 		TTNetwork& operator=(const TTNetwork& _other) = default;
 		

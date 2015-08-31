@@ -233,7 +233,7 @@ namespace xerus {
 
 	
 	template<> template<>
-	TTNetwork<true> TTNetwork<true>::construct_identity(const std::vector<size_t>& _dimensions) {
+	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			for (size_t d : _dimensions) {
