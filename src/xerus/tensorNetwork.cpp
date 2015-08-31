@@ -375,7 +375,7 @@ namespace xerus {
 			REQUIRE(!el.external, "n=" << n);
 			
 			const TensorNode &other = nodes[el.other];
-			REQUIRE(other.degree() > el.indexPosition, "n=" << n);
+			REQUIRE(other.degree() > el.indexPosition, "n=" << n << " " << other.degree() << " vs " << el.indexPosition);
 			REQUIRE(other.neighbors[el.indexPosition].external, "n=" << n);
 			REQUIRE(other.neighbors[el.indexPosition].indexPosition == n, "n=" << n << " We have " << other.neighbors[el.indexPosition].indexPosition << " != " << n << " and el.other =" << el.other << " and el.indexPosition = " << el.indexPosition );
 			REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
@@ -442,6 +442,25 @@ namespace xerus {
 				}
 			}
 		}
+		size_t correction = 0;
+		std::vector<size_t> toErase;
+		for (size_t eid=0; eid<cpy.externalLinks.size(); ++eid) {
+			TensorNetwork::Link &l = cpy.externalLinks[eid];
+			if (!_idF(l.other)) {
+				toErase.emplace_back(eid);
+				correction++;
+			} else {
+				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
+				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
+				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
+			}
+		}
+		for (size_t i=toErase.size(); i>0; --i) {
+			cpy.dimensions.erase(cpy.dimensions.begin()+toErase[i-1]);
+			cpy.externalLinks.erase(cpy.externalLinks.begin()+toErase[i-1]);
+		}
+		
+		cpy.is_valid_network(false);
 		return cpy;
 	}
 	
@@ -871,6 +890,14 @@ namespace xerus {
 					newLinks.emplace_back(node2.neighbors[d]);
 				}
 			}
+		} else if (node2.degree() == 0) {
+			(*node1.tensorObject) *= (*node2.tensorObject)[0];
+			newTensor.reset(node1.tensorObject.release());
+			newLinks = node1.neighbors;
+		} else if (node1.degree() == 0) {
+			(*node2.tensorObject) *= (*node1.tensorObject)[0];
+			newTensor.reset(node2.tensorObject.release());
+			newLinks = node2.neighbors;
 		} else {
 			REQUIRE(node2.tensorObject, "Internal Error.");
 			bool sparse1 = node1.tensorObject->is_sparse();
