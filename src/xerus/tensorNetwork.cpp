@@ -362,7 +362,7 @@ namespace xerus {
     
 #ifndef DISABLE_RUNTIME_CHECKS_
     /// check whether all links in the network are set consistently and matching the underlying tensor objects
-    bool TensorNetwork::is_valid_network() const {
+    bool TensorNetwork::is_valid_network(bool _check_erased) const {
         REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
@@ -384,7 +384,7 @@ namespace xerus {
 		// per node
 		for (size_t n=0; n<nodes.size(); ++n) {
 			const TensorNode &currNode = nodes[n];
-			REQUIRE(!currNode.erased, "n=" << n);
+			REQUIRE(!_check_erased || !currNode.erased, "n=" << n);
 			if (currNode.tensorObject) {
 				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "n=" << n << " " << currNode.degree() << " vs " << currNode.tensorObject->degree());
 			}
@@ -412,7 +412,7 @@ namespace xerus {
 	}
 #else
 	/// no checks are performed with disabled checks... 
-    bool TensorNetwork::is_valid_network() const {
+    bool TensorNetwork::is_valid_network(bool _check_erased) const {
 		return true;
 	}
 #endif
@@ -895,6 +895,7 @@ namespace xerus {
 						lhsOpen.emplace_back();
 						lhsCurr.emplace_back(lhsOpen.back());
 						outDimensions.emplace_back(node1.neighbors[d].dimension);
+						newLinks.emplace_back(node1.neighbors[d]);
 					}
 				}
 				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE Ax: " << node1.degree() << " != " << node1.tensorObject->degree());
@@ -914,6 +915,7 @@ namespace xerus {
 						rhsOpen.emplace_back();
 						rhsCurr.emplace_back(rhsOpen.back());
 						outDimensions.emplace_back(node2.neighbors[d].dimension);
+						newLinks.emplace_back(node2.neighbors[d]);
 					}
 				}
 				if (traceNeeded) {
@@ -923,7 +925,6 @@ namespace xerus {
 				newTensor.reset(new SparseTensor(outDimensions));
 				
 				newTensor->factor = node1.tensorObject->factor*node2.tensorObject->factor;
-				
 				CsUniquePtr lhsCS = to_cs_format((*node1.tensorObject)(lhsCurr), lhsOpen, common);
 				CsUniquePtr rhsCS = to_cs_format((*node2.tensorObject)(rhsCurr), common, rhsOpen);
 				CsUniquePtr resultCS = matrix_matrix_product(lhsCS, rhsCS);
@@ -1129,6 +1130,8 @@ namespace xerus {
             nn->other = _nodeId1;
             nn->indexPosition = d;
         }
+        
+        is_valid_network(false);
     }
 
     double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
