@@ -9,8 +9,8 @@ UNIT_TEST(TT, entrywise_product,
 
     Index i,j,k;
     
-	TTTensor A = TTTensor::construct_random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
-	TTTensor B = TTTensor::construct_random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
 	
 	FullTensor Af(A);
 	FullTensor Bf(B);
@@ -49,8 +49,8 @@ UNIT_TEST(TT, soft_thresholding,
 
     Index i,j,k;
     
-	TTTensor A = TTTensor::construct_random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
-	TTTensor B = TTTensor::construct_random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
 	
 	
 	FullTensor Af(A);

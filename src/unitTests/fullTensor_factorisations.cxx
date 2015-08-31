@@ -47,7 +47,7 @@ UNIT_TEST(FullTensor, SVD_Random_512x512,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({8,8,8,8,8,8}, rnd, dist);
+    FullTensor A = FullTensor::random({8,8,8,8,8,8}, rnd, dist);
     FullTensor res1(4);
     FullTensor res2(2);
     FullTensor res3(4);
@@ -77,7 +77,7 @@ UNIT_TEST(FullTensor, SVD_soft_thresholding,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({3,5,2,7,3,12}, rnd, dist);
+    FullTensor A = FullTensor::random({3,5,2,7,3,12}, rnd, dist);
     FullTensor Ax, U, V, Us, Vs;
     SparseTensor S, Ss;
     
@@ -108,7 +108,7 @@ UNIT_TEST(FullTensor, SVD_Random_Order_Six,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({9,7,5,5,9,7}, rnd, dist);
+    FullTensor A = FullTensor::random({9,7,5,5,9,7}, rnd, dist);
     FullTensor res1(4);
     FullTensor res2(2);
     FullTensor res3(4);
@@ -130,7 +130,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({7,5,9,7,5,9}, rnd, dist);
+    FullTensor A = FullTensor::random({7,5,9,7,5,9}, rnd, dist);
     FullTensor Q(4);
     FullTensor R(4);
     FullTensor Q2(3);
@@ -199,7 +199,7 @@ UNIT_TEST(FullTensor, QC,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
-    FullTensor A = FullTensor::construct_random({2,2,2,2,2,2}, rnd, dist);
+    FullTensor A = FullTensor::random({2,2,2,2,2,2}, rnd, dist);
 	FullTensor B({2,3}, [](size_t i){return double(i);});
     FullTensor Q(4);
     FullTensor R(4);

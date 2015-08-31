@@ -51,7 +51,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 	TEST(test);
 	
-	TTTensor X = TTTensor::construct_random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
+	TTTensor X = TTTensor::random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
 	
 	ADF(X, measurements);
 	

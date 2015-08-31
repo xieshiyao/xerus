@@ -27,10 +27,10 @@ UNIT_TEST(TensorNetwork, contractions_of_4_to_degree_0,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({100,1}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({100,1}, rnd, dist);
-	FullTensor C = FullTensor::construct_random({100,1}, rnd, dist);
-	FullTensor D = FullTensor::construct_random({100,1}, rnd, dist);
+    FullTensor A = FullTensor::random({100,1}, rnd, dist);
+	FullTensor B = FullTensor::random({100,1}, rnd, dist);
+	FullTensor C = FullTensor::random({100,1}, rnd, dist);
+	FullTensor D = FullTensor::random({100,1}, rnd, dist);
 	FullTensor E(0);
 	Index i1,i2,i3,i4;
 	
@@ -51,9 +51,9 @@ UNIT_TEST(TensorNetwork, contractions_of_3_to_degree_0,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({10,100}, rnd, dist);
-	FullTensor C = FullTensor::construct_random({100,1}, rnd, dist);
+    FullTensor A = FullTensor::random({1,10}, rnd, dist);
+	FullTensor B = FullTensor::random({10,100}, rnd, dist);
+	FullTensor C = FullTensor::random({100,1}, rnd, dist);
 	FullTensor E(0);
 	Index i1,i2,i3,i4;
 	
@@ -73,8 +73,8 @@ UNIT_TEST(TensorNetwork, contraction_single_node_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({1,10,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({1}, rnd, dist);
+    FullTensor A = FullTensor::random({1,10,10}, rnd, dist);
+	FullTensor B = FullTensor::random({1}, rnd, dist);
 	FullTensor E(0);
 	Index i1,i2,i3;
 	
@@ -86,7 +86,7 @@ UNIT_TEST(TensorNetwork, contraction_single_network_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({2,2,2,2}, rnd, dist);
+    FullTensor A = FullTensor::random({2,2,2,2}, rnd, dist);
 	TensorNetwork ATN(A);
 	FullTensor E(0);
 	TensorNetwork ETN(0);
@@ -137,8 +137,8 @@ UNIT_TEST(TensorNetwork, contraction_multi_node_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({1,10}, rnd, dist);
+    FullTensor A = FullTensor::random({1,10}, rnd, dist);
+	FullTensor B = FullTensor::random({1,10}, rnd, dist);
 	FullTensor E(0);
 	Index i1,i2,i3,i4;
 	
@@ -152,8 +152,8 @@ UNIT_TEST(TensorNetwork, index_reshuffle,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({1,10}, rnd, dist);
+    FullTensor A = FullTensor::random({1,10}, rnd, dist);
+	FullTensor B = FullTensor::random({1,10}, rnd, dist);
 	FullTensor E(0);
 	Index i1,i2,i3,i4;
 	

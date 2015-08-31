@@ -38,8 +38,8 @@ UNIT_TEST(TT, sum,
 		dimensions.push_back(intDist(rnd));
 		dimensions.push_back(intDist(rnd));
 		dimensions.push_back(intDist(rnd));
-        FullTensor A = FullTensor::construct_random(dimensions, rnd, dist);
-        FullTensor B = FullTensor::construct_random(dimensions, rnd, dist);
+        FullTensor A = FullTensor::random(dimensions, rnd, dist);
+        FullTensor B = FullTensor::random(dimensions, rnd, dist);
         FullTensor C(d);
         TTTensor ttA(A); 
         TTTensor ttB(B); 
@@ -62,8 +62,8 @@ UNIT_TEST(TT, difference,
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A = FullTensor::construct_random({10,10,10,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
+	FullTensor A = FullTensor::random({10,10,10,10}, rnd, dist);
+	FullTensor B = FullTensor::random({10,10,10,10}, rnd, dist);
 	FullTensor C(4);
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
@@ -84,8 +84,8 @@ UNIT_TEST(TT, real_difference,
     rnd.seed(0X5EED);
     std::normal_distribution<value_t> dist (0.0, 1.0);
     
-    TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+    TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
     TTTensor ttC(5); 
     
     Index i;
@@ -113,7 +113,7 @@ UNIT_TEST(TT, real_difference,
     LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 5e-10);
 	
-	ttA = TTTensor::construct_random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
+	ttA = TTTensor::random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
 	ttC(i&0) = ttA(i&0) - ttA(i&0);
     LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
     TEST(frob_norm(ttC(i&0)) < 1e-11);
@@ -142,9 +142,9 @@ UNIT_TEST(TT, difference_of_TTStacks,
     rnd.seed(0X5EED);
     std::normal_distribution<value_t> dist (0.0, 1.0);
     
-    TTOperator ttO = TTOperator::construct_random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttA = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttB = TTTensor::construct_random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+    TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+    TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
     TTTensor ttC;
     
     Index i,j,k;
@@ -164,7 +164,7 @@ UNIT_TEST(TT, special_sum_diff,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
 	FullTensor A({10,10,10,10}); // NOTE that this is the 0 tensor
-	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
+	FullTensor B = FullTensor::random({10,10,10,10}, rnd, dist);
 	FullTensor C(4);
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
@@ -194,7 +194,7 @@ UNIT_TEST(TT, special_sum_diff,
 	TEST(frob_norm(FullTensor(ttC)(i&0) - FullTensor(ttB)(i&0)) < 3.1*1e-13);
 	
 	FullTensor X({10});
-	FullTensor Y = FullTensor::construct_random({10}, rnd, dist);
+	FullTensor Y = FullTensor::random({10}, rnd, dist);
 	FullTensor Z(1);
 	TTTensor ttX(X);
 	TTTensor ttY(Y);
@@ -227,9 +227,9 @@ UNIT_TEST(TT, product,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	Index i,j,k,l;
 	
-	TTOperator ttA = TTOperator::construct_random({10,10,10,10}, {1}, rnd, dist);
-	TTOperator ttB = TTOperator::construct_random({10,10,10,10}, {1}, rnd, dist);
-	TTTensor ttD = TTTensor::construct_random({10,10}, {2}, rnd, dist);
+	TTOperator ttA = TTOperator::random({10,10,10,10}, {1}, rnd, dist);
+	TTOperator ttB = TTOperator::random({10,10,10,10}, {1}, rnd, dist);
+	TTTensor ttD = TTTensor::random({10,10}, {2}, rnd, dist);
 	FullTensor A(ttA);
 	FullTensor B(ttB);
 	FullTensor D(ttD);
@@ -316,7 +316,7 @@ UNIT_TEST(TT, transpose,
 	std::mt19937_64 rnd;
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	FullTensor A = FullTensor::construct_random({10,10,10,10}, rnd, dist);
+	FullTensor A = FullTensor::random({10,10,10,10}, rnd, dist);
 	FullTensor B(4);
 	TTOperator ttA(A); 
 	Index i,j;
@@ -331,8 +331,8 @@ UNIT_TEST(TT, ax_b,
 	std::mt19937_64 rnd;
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	TTTensor X = TTTensor::construct_random({10,10,10}, {2,2}, rnd, dist);
-	TTTensor B = TTTensor::construct_random({10,10,10}, {2,2}, rnd, dist);
+	TTTensor X = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
+	TTTensor B = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
     
 	FullTensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
@@ -395,9 +395,9 @@ UNIT_TEST(TT, operator_times_tensor,
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A = FullTensor::construct_random({10,10,10,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
-	FullTensor C = FullTensor::construct_random({10,10}, rnd, dist);
+	FullTensor A = FullTensor::random({10,10,10,10}, rnd, dist);
+	FullTensor B = FullTensor::random({10,10,10,10}, rnd, dist);
+	FullTensor C = FullTensor::random({10,10}, rnd, dist);
 	FullTensor D(2);
 	FullTensor Do(4);
 	TTOperator ttA(A); 
@@ -450,8 +450,8 @@ UNIT_TEST(TT, full_contraction,
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A = FullTensor::construct_random({10,10,10,10}, rnd, dist);
-	FullTensor B = FullTensor::construct_random({10,10,10,10}, rnd, dist);
+	FullTensor A = FullTensor::random({10,10,10,10}, rnd, dist);
+	FullTensor B = FullTensor::random({10,10,10,10}, rnd, dist);
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
 	TTOperator toA(A); 
@@ -490,8 +490,8 @@ UNIT_TEST(TT, disjoint_product,
 	Index i,j;
 	
 	for(size_t d = 0; d <= D; ++d) {
-		FullTensor A = FullTensor::construct_random(dimsA, rnd, dist);
-		FullTensor B = FullTensor::construct_random(dimsB, rnd, dist);
+		FullTensor A = FullTensor::random(dimsA, rnd, dist);
+		FullTensor B = FullTensor::random(dimsB, rnd, dist);
 		FullTensor C;
 		TTTensor ttA(A); 
 		TTTensor ttB(B);

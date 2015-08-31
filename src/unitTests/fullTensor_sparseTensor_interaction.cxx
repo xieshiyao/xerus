@@ -74,8 +74,8 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
 
     Index i,j,k,l,m,n,o,p,q;
     
-    SparseTensor AS = SparseTensor::construct_random({2,3,4,3,5}, 23, rnd, dist);
-    SparseTensor BS = SparseTensor::construct_random({6,3,4,2,3}, 23, rnd, dist);
+    SparseTensor AS = SparseTensor::random({2,3,4,3,5}, 23, rnd, dist);
+    SparseTensor BS = SparseTensor::random({6,3,4,2,3}, 23, rnd, dist);
     
     FullTensor AF(AS);
     FullTensor BF(BS);

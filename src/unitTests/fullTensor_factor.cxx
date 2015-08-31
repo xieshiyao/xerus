@@ -27,8 +27,8 @@ UNIT_TEST(FullTensor, Factors,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::construct_random({2,7,5,5,2,7}, rnd, dist);
-    FullTensor B = FullTensor::construct_random({2,7,5,5,2,7}, rnd, dist);
+    FullTensor A = FullTensor::random({2,7,5,5,2,7}, rnd, dist);
+    FullTensor B = FullTensor::random({2,7,5,5,2,7}, rnd, dist);
     FullTensor A3 = 3*A;
     FullTensor B7 = 7*B;
 	TEST(!A.has_factor());

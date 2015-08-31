@@ -27,8 +27,8 @@ UNIT_TEST(SparseTensor, Creation,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0); 
     
-    FullTensor fullA = FullTensor::construct_random({7,13,2,9,3}, rnd, dist);
-    FullTensor fullB = FullTensor::construct_random({7,13,2,9,3}, rnd, dist);
+    FullTensor fullA = FullTensor::random({7,13,2,9,3}, rnd, dist);
+    FullTensor fullB = FullTensor::random({7,13,2,9,3}, rnd, dist);
     FullTensor fullX({7,13,2,9,3});
     
     SparseTensor sparseA = SparseTensor(fullA);

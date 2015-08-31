@@ -34,10 +34,10 @@ UNIT_TEST(ALS, decomposition_als,
 
 	const std::vector<size_t> stateDims(d, n);
 	
-    xerus::TTTensor TTB = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
+    xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4, rnd, dist);
 	FullTensor B(TTB);
 	
-	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 4, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4, rnd, dist);
 	
 	xerus::decomposition_als(X, B);
 	
