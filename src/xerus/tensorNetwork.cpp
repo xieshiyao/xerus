@@ -456,8 +456,8 @@ namespace xerus {
 			}
 		}
 		for (size_t i=toErase.size(); i>0; --i) {
-			cpy.dimensions.erase(cpy.dimensions.begin()+toErase[i-1]);
-			cpy.externalLinks.erase(cpy.externalLinks.begin()+toErase[i-1]);
+			cpy.dimensions.erase(cpy.dimensions.begin()+(long)toErase[i-1]);
+			cpy.externalLinks.erase(cpy.externalLinks.begin()+(long)toErase[i-1]);
 		}
 		
 		cpy.is_valid_network(false);
@@ -910,7 +910,6 @@ namespace xerus {
 				std::vector<Index> lhsCurr, rhsCurr, lhsOpen, rhsOpen, common;
 				std::vector<size_t> outDimensions;
 				
-				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE Axx: " << node1.degree() << " != " << node1.tensorObject->degree());
 				bool traceNeeded = false;
 				for (size_t d=0; d<node1.degree(); ++d) {
 					if (node1.neighbors[d].links(_nodeId1)) {
@@ -925,12 +924,9 @@ namespace xerus {
 						newLinks.emplace_back(node1.neighbors[d]);
 					}
 				}
-				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE Ax: " << node1.degree() << " != " << node1.tensorObject->degree());
 				if (traceNeeded) {
 					trace_out_self_links(_nodeId1); // needs to modify nodes accordingly
 				}
-				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE A: " << node1.degree() << " != " << node1.tensorObject->degree());
-				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE B: " << node1.degree() << " != " << lhsCurr.size());
 				
 				traceNeeded = false;
 				for (size_t d = 0; d < node2.degree(); ++d) {
