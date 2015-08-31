@@ -22,7 +22,7 @@ int main() {
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
 	// and set the TTOperator A to be the identity
-	xerus::TTOperator A = xerus::TTOperator::construct_identity(operatorDims);
+	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
 
     // solve the system A*X = B with the ALS (this should give us X == B)
 	xerus::ALS(A, X, B);

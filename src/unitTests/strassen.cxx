@@ -145,7 +145,7 @@ UNIT_TEST(Strassen, CP,
 		for (size_t i=0; i<n; ++i) {
 			for (size_t j=0; j<n; ++j) {
 				for (size_t k=0; k<n; ++k) {
-					decomp.push_back(new FullTensor(FullTensor::construct_random({n*n,n*n,n*n}, rnd, dist)));
+					decomp.push_back(FullTensor::construct_random({n*n,n*n,n*n}, rnd, dist));
 					T[{i*n+j,j*n+k,i*n+k}] = 1;
 // 					(*decomp.back())[{i*n+j,j*n+k,i*n+k}] = 1;
 				}

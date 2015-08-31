@@ -199,7 +199,7 @@ namespace xerus {
 		 * @param _dist the random distribution to be used.
 		 */
         template<class generator, class distribution, ADD_MOVE(Vec, std::vector<size_t>)>
-        static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
+        static FullTensor random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
 			PA_START;
             for(size_t i=0; i < result.size; ++i) {
@@ -209,7 +209,24 @@ namespace xerus {
             return result;
         }
         
+        template<class generator, class distribution, ADD_MOVE(Vec, std::vector<size_t>)>
+        _deprecated_ static FullTensor construct_random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
+            return FullTensor::random(std::forward<Vec>(_dimensions), _rnd, _dist);
+        }
         
+        /** 
+		 * @brief Constructs a FullTensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
+		 * @details See the std::vector variant for details.
+		 */
+        template<class generator, class distribution>
+        _inline_ static FullTensor random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
+            return FullTensor::random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
+        }
+        
+        template<class generator, class distribution>
+        _deprecated_ _inline_ static FullTensor construct_random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
+            return FullTensor::random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
+        }
         
         /** 
 		 * @brief Creates a tensor with the given dimensions and undefined entries.
@@ -260,16 +277,6 @@ namespace xerus {
 		 * @details See the std::vector variant for details.
 		 */
         explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
-        
-        
-        /** 
-		 * @brief Constructs a FullTensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
-		 * @details See the std::vector variant for details.
-		 */
-        template<class generator, class distribution>
-        _inline_ static FullTensor construct_random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
-            return construct_random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
-        }
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

@@ -129,7 +129,7 @@ namespace xerus {
 		 * @param _dist the random distribution to be used.
 		 */
         template<ADD_MOVE(Vec, std::vector<size_t>), class generator, class distribution>
-        static SparseTensor construct_random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+        static SparseTensor random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
             SparseTensor result(std::forward<Vec>(_dimensions));
             REQUIRE(_n < result.size, " Cannot create " << _n << " non zero entries in a tensor with only " << result.size << " total entries!");
             
@@ -143,6 +143,11 @@ namespace xerus {
             return result;
         }
         
+        template<ADD_MOVE(Vec, std::vector<size_t>), class generator, class distribution>
+        _deprecated_ static SparseTensor construct_random(Vec&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+			return SparseTensor::random(std::forward<Vec>(_dimensions), _n, _rnd, _dist);
+		}
+        
         /** 
 		 * @brief Constructs a random SparseTensor with the given dimensions.
 		 * @details The given random generator @a _rnd and distribution @a _dist are used to assign the values to @a _n randomly choosen entries.
@@ -152,9 +157,14 @@ namespace xerus {
 		 * @param _dist the random distribution to be used.
 		 */
         template<class generator, class distribution>
-        static SparseTensor construct_random(std::initializer_list<size_t>&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
-            return construct_random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
+        static SparseTensor random(std::initializer_list<size_t>&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+            return SparseTensor::random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
         }
+        
+        template<class generator, class distribution>
+        _deprecated_ static SparseTensor construct_random(std::initializer_list<size_t>&& _dimensions, const size_t _n, generator& _rnd, distribution& _dist) {
+			return SparseTensor::random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
+		}
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         

@@ -107,7 +107,7 @@ UNIT_TEST(ALS, tutorial,
     xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
 	
-	xerus::TTOperator A = xerus::TTOperator::construct_identity(operatorDims);
+	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
 	
 	xerus::ALS(A, X, B);
 	
