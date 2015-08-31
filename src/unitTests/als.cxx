@@ -33,7 +33,7 @@ UNIT_TEST(ALS, identity,
     Index k,l,m,n,o,p;
     
     FullTensor X({10, 10, 10});
-    FullTensor B = FullTensor::construct_random({10, 10, 10}, rnd, dist);
+    FullTensor B = FullTensor::random({10, 10, 10}, rnd, dist);
     
     FullTensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
@@ -60,7 +60,7 @@ UNIT_TEST(ALS, identity,
     TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-13 * 1000);
     perfdata.reset();
 	
-    ttX = TTTensor::construct_random(ttX.dimensions, ttX.ranks(), rnd, dist);
+    ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
     TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
 	LOG(unit_test, "norm: " << frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)));
     TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
@@ -77,7 +77,7 @@ UNIT_TEST(ALS, projectionALS,
 	
 	
     
-	TTTensor B = TTTensor::construct_random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
+	TTTensor B = TTTensor::random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
 	value_t normB = frob_norm(B);
 	TTTensor X = B;
 	for (size_t r = 7; r > 0; --r) {
@@ -104,8 +104,8 @@ UNIT_TEST(ALS, tutorial,
 	const std::vector<size_t> stateDims(d, 2);
 	const std::vector<size_t> operatorDims(2*d, 2);
 	
-    xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
-	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
 	
 	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
 	
@@ -115,7 +115,7 @@ UNIT_TEST(ALS, tutorial,
 	
 	TEST(misc::approx_equal(frob_norm(X-B), 0., 1e-12));
 	
-	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
+	A = xerus::TTOperator::random(operatorDims, 2, rnd, dist);
 	
 	A(i^d, j^d) = A(i^d, k^d) * A(j^d, k^d);
 	
@@ -127,7 +127,7 @@ UNIT_TEST(ALS, tutorial,
 	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);
-	X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+	X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
 // 	ALSb.printProgress = true;

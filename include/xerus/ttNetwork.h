@@ -101,7 +101,7 @@ namespace xerus {
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		template<class generator, class distribution, class aloc = std::allocator<size_t>>
 		static TTNetwork random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
-			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::construct_random");
+			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::random");
 			#ifndef DISABLE_RUNTIME_CHECKS_
 				for (const size_t d : _dimensions) {
 					REQUIRE(d > 0, "Trying to construct random TTTensor with dimension 0 is illegal.");
@@ -123,9 +123,9 @@ namespace xerus {
 				size_t rightRank = i==numComponents-1 ? 1 : std::min(_ranks[i], std::min(maxDim1, maxDim2));
 
 				if(isOperator) {
-					result.set_component(i, FullTensor::construct_random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
+					result.set_component(i, FullTensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
 				} else {
-					result.set_component(i, FullTensor::construct_random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
+					result.set_component(i, FullTensor::random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
 				}
 			}
 			result.cannonicalize_left();

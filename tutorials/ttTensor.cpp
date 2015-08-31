@@ -18,8 +18,8 @@ int main() {
 	const std::vector<size_t> operatorDims(2*d, 4);
 	
 	// create random ttTensors of rank 2
-    xerus::TTTensor B = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
-	xerus::TTTensor X = xerus::TTTensor::construct_random(stateDims, 2, rnd, dist);
+    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
 	
 	// and set the TTOperator A to be the identity
 	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
@@ -31,7 +31,7 @@ int main() {
 	std::cout << "Frobenius norm of X-B is: " << frob_norm(X-B) << " this should be almost 0..." << std::endl;
 	
 	// replace the operator by a random rank-2 operator
-	A = xerus::TTOperator::construct_random(operatorDims, 2, rnd, dist);
+	A = xerus::TTOperator::random(operatorDims, 2, rnd, dist);
 	
 	// ensure that A is symmetric by calculating @f$ A\cdot A^T @f$
 	// here i^d signifies, that i should represent a multi-index of dimension d

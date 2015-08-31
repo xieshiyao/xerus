@@ -29,32 +29,32 @@ UNIT_TEST(TT, TTTensor_Creation,
 
     Index i,j,k;
     
-    FullTensor A1 = FullTensor::construct_random({2}, rnd, dist);
+    FullTensor A1 = FullTensor::random({2}, rnd, dist);
     TTTensor TTA1(A1, 1e-14);
     FullTensor B1(1);
     B1(i) = TTA1(i);
     TEST(approx_equal(B1,A1, 1e-14));
     
-    FullTensor A2 = FullTensor::construct_random({2,2}, rnd, dist);
+    FullTensor A2 = FullTensor::random({2,2}, rnd, dist);
     TTTensor TTA2(A2, 1e-14);
     FullTensor B2(2);
     B2(j,i) = TTA2(j,i);
     TEST(approx_equal(B2,A2, 1e-14));
     
-    FullTensor A3 = FullTensor::construct_random({2,7}, rnd, dist);
+    FullTensor A3 = FullTensor::random({2,7}, rnd, dist);
     TTTensor TTA3(A3, 1e-14);
     FullTensor B3(2);
     B3(j,i) = TTA3(j,i);
     TEST(approx_equal(B3,A3, 1e-14));
     
-    FullTensor A4 = FullTensor::construct_random({2,2,2,2,2,2,2,2}, rnd, dist);
+    FullTensor A4 = FullTensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
     TTTensor TTA4(A4, 1e-14);
 	TTA4.draw("test.svg");
     FullTensor B4(8);
     B4(j,i^7) = TTA4(j,i^7);
     TEST(approx_equal(B4,A4, 1e-14));
     
-    FullTensor A5 = FullTensor::construct_random({7,5,3,1,4,2,8,1}, rnd, dist);
+    FullTensor A5 = FullTensor::random({7,5,3,1,4,2,8,1}, rnd, dist);
     TTTensor TTA5(A5, 1e-14);
     FullTensor B5(8);
     B5(j,i^7) = TTA5(j,i&1);
@@ -68,31 +68,31 @@ UNIT_TEST(TT, TTOperator_Creation,
 
     Index i,j,k;
     
-    FullTensor A1 = FullTensor::construct_random({2,2}, rnd, dist);
+    FullTensor A1 = FullTensor::random({2,2}, rnd, dist);
     TTOperator TTA1(A1, 1e-14);
     FullTensor B1(2);
     B1(i^2) = TTA1(i^2);
     TEST(approx_equal(B1,A1, 1e-14));
     
-    FullTensor A2 = FullTensor::construct_random({2,7}, rnd, dist);
+    FullTensor A2 = FullTensor::random({2,7}, rnd, dist);
     TTOperator TTA2(A2, 1e-14);
     FullTensor B2(2);
     B2(j,i) = TTA2(j,i);
     TEST(approx_equal(B2,A2, 1e-14));
     
-    FullTensor A3 = FullTensor::construct_random({2,7,3,1}, rnd, dist);
+    FullTensor A3 = FullTensor::random({2,7,3,1}, rnd, dist);
     TTOperator TTA3(A3, 1e-14);
     FullTensor B3(4);
     B3(j,i^3) = TTA3(j,i^3);
     TEST(approx_equal(B3,A3, 1e-14));
     
-    FullTensor A4 = FullTensor::construct_random({2,2,2,2,2,2,2,2}, rnd, dist);
+    FullTensor A4 = FullTensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
     TTOperator TTA4(A4, 1e-14);
     FullTensor B4(8);
     B4(j,i^7) = TTA4(j,i&1);
     TEST(approx_equal(B4,A4, 1e-14));
     
-    FullTensor A5 = FullTensor::construct_random({7,5,6,3,1,4,2,1}, rnd, dist); 
+    FullTensor A5 = FullTensor::random({7,5,6,3,1,4,2,1}, rnd, dist); 
     TTOperator TTA5(A5, 1e-14);
     FullTensor B5(8);
     B5(j,i^7) = TTA5(j,i^7);
@@ -107,7 +107,7 @@ UNIT_TEST(TT, creation_with_epsilon,
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A = FullTensor::construct_random({5,5,5,5}, rnd, dist);
+	FullTensor A = FullTensor::random({5,5,5,5}, rnd, dist);
 	TTTensor ttA(A, EPS); 
 	TTTensor ttB(A, 0);
 	ttB.round(EPS);
@@ -126,7 +126,7 @@ UNIT_TEST(TT, creation_from_fullTensor_5x5x5x5,
 	rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	FullTensor A = FullTensor::construct_random({5,5,5,5}, rnd, dist);
+	FullTensor A = FullTensor::random({5,5,5,5}, rnd, dist);
 	TTTensor ttA(A);
 	FullTensor B(ttA);
 	

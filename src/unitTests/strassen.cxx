@@ -38,8 +38,8 @@ UNIT_TEST(Strassen, TTRanks,
 				}
 			}
 		}
-		FullTensor A = FullTensor::construct_random({n,n}, rnd, dist);
-		FullTensor B = FullTensor::construct_random({n,n}, rnd, dist);
+		FullTensor A = FullTensor::random({n,n}, rnd, dist);
+		FullTensor B = FullTensor::random({n,n}, rnd, dist);
 		FullTensor C1(2);
 		FullTensor C2(2);
 		C1(i1,i3) = A(i1,i2) * B(i2,i3);
@@ -145,7 +145,7 @@ UNIT_TEST(Strassen, CP,
 		for (size_t i=0; i<n; ++i) {
 			for (size_t j=0; j<n; ++j) {
 				for (size_t k=0; k<n; ++k) {
-					decomp.push_back(FullTensor::construct_random({n*n,n*n,n*n}, rnd, dist));
+					decomp.push_back(FullTensor::random({n*n,n*n,n*n}, rnd, dist));
 					T[{i*n+j,j*n+k,i*n+k}] = 1;
 // 					(*decomp.back())[{i*n+j,j*n+k,i*n+k}] = 1;
 				}
