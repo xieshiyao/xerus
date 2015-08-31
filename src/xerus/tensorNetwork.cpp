@@ -800,12 +800,12 @@ namespace xerus {
     
     
     //TODO do this without indices
-    void TensorNetwork::trace_out_self_links(size_t _nodeId) {
+    void TensorNetwork::trace_out_self_links(const size_t _nodeId) {
 		LOG(TNContract, "single-node trace of id " << _nodeId);
 		std::vector<Index> idxIn, idxOut;
 		std::vector<TensorNetwork::Link> newLinks;
 		size_t correction = 0;
-		for (size_t i=0; i<nodes[_nodeId].neighbors.size(); ++i) {
+		for (size_t i=0; i < nodes[_nodeId].neighbors.size(); ++i) {
 			const TensorNetwork::Link &l = nodes[_nodeId].neighbors[i];
 			if (!l.links(_nodeId)) {
 				idxIn.emplace_back();
@@ -824,13 +824,15 @@ namespace xerus {
 				correction += 1;
 			}
 		}
+		
 		// Perform the trace
 		if (nodes[_nodeId].tensorObject) {
 			std::unique_ptr<Tensor> newTensor(nodes[_nodeId].tensorObject->construct_new());
 			(*newTensor)(idxOut) = (*nodes[_nodeId].tensorObject)(idxIn);
 			nodes[_nodeId].tensorObject = std::move(newTensor);
-			nodes[_nodeId].neighbors = std::move(newLinks);
 		}
+		
+		nodes[_nodeId].neighbors = std::move(newLinks);
 	}
 
     //TODO testcase A(i,j)*B(k,k) of TTtensors
@@ -838,7 +840,7 @@ namespace xerus {
      * contracts the nodes with indices @a _node1 and @a _node2
      * replaces node1 with the contraction and node2 with an degree-0 tensor
      */
-    void TensorNetwork::contract(size_t _nodeId1, size_t _nodeId2) {
+    void TensorNetwork::contract(const size_t _nodeId1, const size_t _nodeId2) {
         TensorNode &node1 = nodes[_nodeId1];
         TensorNode &node2 = nodes[_nodeId2];
         
@@ -881,6 +883,7 @@ namespace xerus {
 				std::vector<Index> lhsCurr, rhsCurr, lhsOpen, rhsOpen, common;
 				std::vector<size_t> outDimensions;
 				
+				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE Axx: " << node1.degree() << " != " << node1.tensorObject->degree());
 				bool traceNeeded = false;
 				for (size_t d=0; d<node1.degree(); ++d) {
 					if (node1.neighbors[d].links(_nodeId1)) {
@@ -894,9 +897,12 @@ namespace xerus {
 						outDimensions.emplace_back(node1.neighbors[d].dimension);
 					}
 				}
+				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE Ax: " << node1.degree() << " != " << node1.tensorObject->degree());
 				if (traceNeeded) {
 					trace_out_self_links(_nodeId1); // needs to modify nodes accordingly
 				}
+				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE A: " << node1.degree() << " != " << node1.tensorObject->degree());
+				REQUIRE(node1.degree() == node1.tensorObject->degree() && node1.degree() == lhsCurr.size(), "IE B: " << node1.degree() << " != " << lhsCurr.size());
 				
 				traceNeeded = false;
 				for (size_t d = 0; d < node2.degree(); ++d) {

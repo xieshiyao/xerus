@@ -454,7 +454,7 @@ namespace xerus {
 		* contracts the nodes with indices @a _node1 and @a _node2
 		* replaces node1 with the contraction and node2 with an degree-0 tensor
 		*/
-		void contract(size_t _nodeId1, size_t _nodeId2);
+		void contract(const size_t _nodeId1, const size_t _nodeId2);
 		
 		/** 
 		 * @brief Approximates the cost of contraction two given nodes.

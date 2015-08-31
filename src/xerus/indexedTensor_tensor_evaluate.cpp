@@ -144,6 +144,59 @@ namespace xerus {
             return std::unique_ptr<const size_t[]>(stepSizes);
         }
     }
+    
+    void full_to_full_evaluation(FullTensor& _outTensor,
+								 const FullTensor& _inputTensor,
+								 const size_t _numIndicesToShuffle,
+								 const size_t _fixedIndexOffset,
+								 const size_t _orderedIndexDim,
+								 const size_t* const _stepSizes, 
+								 const size_t* const _outIndexDimensions,
+								 const size_t _totalTraceDim,
+								 const std::vector<size_t>& _traceDimensions, 
+								 const std::vector<size_t>& _traceStepSizes
+								) {
+		// Start performance analysis for low level part
+		PA_START;
+		
+		// Get pointers to the data
+		const value_t* oldPosition = _inputTensor.data.get()+_fixedIndexOffset;
+		value_t* const newPosition = _outTensor.data.get();
+		
+		// Get specific sizes
+		const size_t numSteps = _outTensor.size/_orderedIndexDim;
+		
+		if(_orderedIndexDim == 1) { // We have to copy/add single entries
+			if(_totalTraceDim == 1) { // We don't need to sum any traces
+				newPosition[0] = *oldPosition;
+				for(size_t i = 1; i < numSteps; ++i) {
+					increase_indices(i, oldPosition, _numIndicesToShuffle, _stepSizes, _outIndexDimensions);
+					newPosition[i] = *oldPosition;
+				}
+			} else { // We have to add traces
+				sum_traces(newPosition, oldPosition, _traceStepSizes.data(), _traceDimensions.data(), _traceDimensions.size(), _totalTraceDim);
+				for(size_t i = 1; i < numSteps; ++i) {
+					increase_indices(i, oldPosition, _numIndicesToShuffle, _stepSizes, _outIndexDimensions);
+					sum_traces(newPosition+i, oldPosition, _traceStepSizes.data(), _traceDimensions.data(), _traceDimensions.size(), _totalTraceDim);
+				}
+			}
+		} else { // We can copy/add larger blocks
+			if(_totalTraceDim == 1) { // We don't need to sum any traces
+				misc::array_copy(newPosition, oldPosition, _orderedIndexDim);
+				for(size_t i = 1; i < numSteps; ++i) {
+					increase_indices(i, oldPosition, _numIndicesToShuffle, _stepSizes, _outIndexDimensions);
+					misc::array_copy(newPosition + i*_orderedIndexDim, oldPosition, _orderedIndexDim);
+				}
+			} else { // We have to add traces
+				sum_traces(newPosition, oldPosition, _traceStepSizes.data(), _traceDimensions.data(), _traceDimensions.size(), _totalTraceDim, _orderedIndexDim);
+				for(size_t i = 1; i < numSteps; ++i) {
+					increase_indices(i, oldPosition, _numIndicesToShuffle, _stepSizes, _outIndexDimensions);
+					sum_traces(newPosition + i*_orderedIndexDim, oldPosition, _traceStepSizes.data(), _traceDimensions.data(), _traceDimensions.size(), _totalTraceDim, _orderedIndexDim);
+				}
+			}
+		}
+		PA_END("Evaluation", "Full->Full", misc::to_string(_inputTensor.dimensions)+" ==> " + misc::to_string(_outTensor.dimensions));
+	}
 
 
     void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base) {
@@ -268,6 +321,20 @@ namespace xerus {
                 }
             }
             
+            
+            full_to_full_evaluation(*static_cast<FullTensor*>(_out.tensorObject),
+								 *static_cast<const FullTensor*>(_base.tensorObjectReadOnly),
+								 outIndices.size()-numOrderedIndices,
+								 fixedIndexOffset,
+								 orderedIndexDim,
+								 stepSizes,
+								 outIndexDimensions.get(),
+								 totalTraceDim,
+								 traceDimensions, 
+								 traceStepSizes
+								);
+            
+            /*
             // Get pointers to the data
             const value_t* oldPosition = static_cast<const FullTensor*>(_base.tensorObjectReadOnly)->data.get()+fixedIndexOffset;
             value_t* const newPosition = static_cast<FullTensor*>(_out.tensorObject)->data.get();
@@ -301,7 +368,7 @@ namespace xerus {
                     }
                 }
             }
-            PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
+            PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));*/
         }
         //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Both  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         else if(_base.tensorObjectReadOnly->is_sparse()) {
