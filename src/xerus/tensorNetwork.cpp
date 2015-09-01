@@ -504,10 +504,12 @@ namespace xerus {
                     }
                 }
                 REQUIRE(k<_modifiedIndices.size(), "ie " << _modifiedIndices << " k " << k << " j " << j << " ij " << ij << " contained and open? " << _base.is_contained_and_open(ij));
+				REQUIRE(ij.span == _modifiedIndices[k].span, "Index spans do not coincide " << ij << " vs " << _modifiedIndices[k]);
                 
                 for (size_t n=0; n<ij.span; ++n) {
                     TensorNetwork::Link &link1 = base.externalLinks[spanSumJ];
                     TensorNetwork::Link &link2 = base.externalLinks[spanSumK-n];
+					REQUIRE(link1.dimension == link2.dimension, "Index dimensions do not coincide: " << link1.dimension << " vs " << link2.dimension);
                     base.nodes[link1.other].neighbors[link1.indexPosition] = link2;
                     base.nodes[link2.other].neighbors[link2.indexPosition] = link1;
                     
