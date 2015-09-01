@@ -19,7 +19,7 @@
 
 /**
  * @file
- * @brief Header file for several types of retractions.
+ * @brief Header file for several retractions of type I and II as well as simple vector transport.
  */
 
 #pragma once
@@ -37,8 +37,13 @@ namespace xerus {
 		TTTangentVector(const TTTensor &_base, const TTTensor &_direction);
 		TTTangentVector &operator+=(const TTTangentVector &_rhs);
 		TTTangentVector &operator*=(value_t _alpha);
-		TTTangentVector operator*(value_t _alpha);
-		value_t scalar_product(const TTTensor &_base, const TTTangentVector &_other);
+		TTTangentVector operator*(value_t _alpha) const;
+		value_t scalar_product(const TTTensor &_base, const TTTangentVector &_other) const;
+	private:
+		TTTensor change_direction_not_orthogonalized(const TTTensor &_base) const;
+	public:
+		TTTensor change_direction(const TTTensor &_base) const;
+		TTTensor added_to_base(const TTTensor &_base) const;
 	};
 	
 	/// retraction that performs a HOSVD to project back onto the Manifold
@@ -47,6 +52,7 @@ namespace xerus {
 		size_t rank;
 		std::vector<size_t> rankVector;
 		void operator()(TTTensor &_U, const TTTensor &_change) const;
+		void operator()(TTTensor &_U, const TTTangentVector &_change) const;
 		HOSVDRetraction(size_t _rank) : roundByVector(false), rank(_rank) {}
 		HOSVDRetraction(const std::vector<size_t> &_rank) : roundByVector(true), rank(~0ul), rankVector(_rank) {}
 	};
@@ -54,8 +60,18 @@ namespace xerus {
 	/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
 	void ALSRetraction(TTTensor &_U, const TTTensor &_change);
 	
+	/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
+	void ALSRetraction(TTTensor &_U, const TTTangentVector &_change);
+	
 	/// retraction that performs componentwise addition of @f$ U_i @f$ and @f$ W_i @f$ where @f$ W_i @f$ is the i-th component of the riemannian tangential vector representation
 	void SubmanifoldRetraction(TTTensor &_U, const TTTensor &_change);
+	
+	/// retraction that performs componentwise addition of @f$ U_i @f$ and @f$ W_i @f$ where @f$ W_i @f$ is the i-th component of the riemannian tangential vector representation
+	void SubmanifoldRetraction(TTTensor &_U, const TTTangentVector &_change);
+	
+	
+	/// simple vector transport by projecting onto the new tangent plane
+	void ProjectiveVectorTransport(const TTTensor &_oldBase, const TTTensor &_newBase, TTTangentVector &_tangentVector);
 	
 }
 
