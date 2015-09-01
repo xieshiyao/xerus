@@ -58,16 +58,16 @@ namespace xerus {
 	};
 	
 	/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
-	void ALSRetraction(TTTensor &_U, const TTTensor &_change);
+	void ALSRetractionII(TTTensor &_U, const TTTensor &_change);
 	
 	/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
-	void ALSRetraction(TTTensor &_U, const TTTangentVector &_change);
+	void ALSRetractionI(TTTensor &_U, const TTTangentVector &_change);
 	
 	/// retraction that performs componentwise addition of @f$ U_i @f$ and @f$ W_i @f$ where @f$ W_i @f$ is the i-th component of the riemannian tangential vector representation
-	void SubmanifoldRetraction(TTTensor &_U, const TTTensor &_change);
+	void SubmanifoldRetractionII(TTTensor &_U, const TTTensor &_change);
 	
 	/// retraction that performs componentwise addition of @f$ U_i @f$ and @f$ W_i @f$ where @f$ W_i @f$ is the i-th component of the riemannian tangential vector representation
-	void SubmanifoldRetraction(TTTensor &_U, const TTTangentVector &_change);
+	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change);
 	
 	
 	/// simple vector transport by projecting onto the new tangent plane

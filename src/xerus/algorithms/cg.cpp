@@ -33,7 +33,7 @@
 
 namespace xerus {
 	
-	value_t CGVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
+	value_t GeometricCGVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		const TTOperator &_A = *_Ap;
 		static const Index i,j;
 		size_t stepCount=0;
@@ -44,6 +44,9 @@ namespace xerus {
 		if (_Ap) {
 			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _A.ranks() << '\n';
+			if (assumeSymmetricPositiveDefiniteOperator) {
+				_perfData << " with symmetric positive definite Operator A\n";
+			}
 		} else {
 			_perfData << "Conjugated Gradients for ||x - b||^2, x.dimensions: " << _x.dimensions << '\n';
 		}
@@ -53,53 +56,82 @@ namespace xerus {
 					<< "convergence epsilon: " << _convergenceEpsilon << '\n';
 		_perfData.start();
 		
-		auto updateResidualAndPerfdata = [&]() {
-			lastResidual = currResidual;
+		auto updateResidual = [&]() {
 			if (_Ap) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
 			}
 			currResidual = frob_norm(residual);
+		};
+		
+		auto updatePerfdata = [&]() {
 			_perfData.add(currResidual);
 			if (printProgress && stepCount%1==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
+						  << " vs " << _convergenceEpsilon << ")\n" << std::flush;
 				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
-		updateResidualAndPerfdata();
+		updateResidual();
+		updatePerfdata();
+		
+		TTTangentVector direction(_x, residual);
 		while ((_numSteps == 0 || stepCount < _numSteps)
-			   && currResidual > _convergenceEpsilon
-			   && std::abs(lastResidual-currResidual) > _convergenceEpsilon
-			   && std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
+			&& currResidual > _convergenceEpsilon
+			&& std::abs(lastResidual-currResidual) > _convergenceEpsilon
+			&& std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
 		{
-			TTTensor direction(residual);
-			
-			while ((_numSteps == 0 || stepCount < _numSteps)
-				&& (restartInterval == 0 || (stepCount+1)%restartInterval != 0)
-				&& currResidual > _convergenceEpsilon
-				&& std::abs(lastResidual-currResidual) > _convergenceEpsilon
-				&& std::abs(1-currResidual/lastResidual) > _convergenceEpsilon) 
-			{
-				stepCount += 1;
-				TTTensor change;
-				value_t alpha;
-				
-	// 			change(i&0) = _A(i/2,j/2) * direction(j&0);
-				alpha = currResidual/value_t(direction(i&0)*_A(i/2,j/2)*direction(j&0));//direction(i&0)*change(i&0));
-				retraction(_x, alpha * direction);
-				updateResidualAndPerfdata();
-				
-				double beta = currResidual / lastResidual;
-	// 			direction(i&0) = residual(i&0) + beta * direction(i&0);
-	// 			TTTensor oldDirection(direction);
-	// 			direction = residual;
-	// 			retraction(direction, beta * oldDirection);
-				direction *= beta;
-				retraction(direction, residual);
+			if (restartInterval != 0 && (stepCount+1)%restartInterval == 0) {
+				direction = TTTangentVector(_x, residual);
 			}
+			stepCount += 1;
+			value_t alpha;
+			
+			if (_Ap) {
+				TTTensor dirTT = direction.change_direction(_x);
+				if (assumeSymmetricPositiveDefiniteOperator) {
+					alpha = 32* dirTT.frob_norm()/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
+				} else {
+					value_t normDir = dirTT.frob_norm();
+					dirTT(i&0) = _A(i/2,j/2) * dirTT(j&0);
+					alpha = normDir/frob_norm(dirTT);
+				}
+			} else {
+				alpha = 1;
+			}
+			
+			// TODO armijo backtracking
+			TTTensor oldX(_x);
+			retraction(_x, direction * (alpha));
+			lastResidual = currResidual;
+			updateResidual();
+			
+// 			while (lastResidual < currResidual - 1e-4 * value_t(residual(i&0) * direction.change_direction(oldX)(i&0))*alpha) {
+// 				LOG(huch, alpha << " " << currResidual);
+// 				alpha /= 2;
+// 				_x = oldX;
+// 				retraction(_x, direction * alpha);
+// 				updateResidual();
+// 			}
+			
+			updatePerfdata();
+			
+// 			direction(i&0) = residual(i&0) + beta * direction(i&0);
+			TTTangentVector oldDirection(direction);
+			value_t oldDirNorm = oldDirection.scalar_product(_x, oldDirection);
+			vectorTransport(oldX, _x, direction);
+			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
+				direction = TTTangentVector(_x, residual);
+			} else {
+				TTTensor grad;
+				grad(i&0) = _A(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
+				direction = TTTangentVector(_x, grad);
+			}
+			double beta = direction.scalar_product(_x, direction) / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update
+			LOG(ab, "\t\t\t" << alpha << " " << beta);
+			direction += oldDirection * (beta);
 		}
 		
 		return currResidual;

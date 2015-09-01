@@ -128,6 +128,6 @@ namespace xerus {
 	};
 	
 	/// default variant of the steepest descent algorithm using the lapack solver
-	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetraction);
+	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetractionII);
 }
 

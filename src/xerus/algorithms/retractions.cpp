@@ -46,7 +46,7 @@ namespace xerus {
 		}
 	}
 	
-	void ALSRetraction(TTTensor &_U, const TTTensor &_change) {
+	void ALSRetractionII(TTTensor &_U, const TTTensor &_change) {
 		static const ALSVariant roundingALS(1, 2, 0, ALSVariant::lapack_solver);
 		Index i;
 		TTTensor target;
@@ -55,7 +55,7 @@ namespace xerus {
 // 		_U.move_core(0);
 	}
 	
-	void ALSRetraction(TTTensor &_U, const TTTangentVector &_change) {
+	void ALSRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const ALSVariant roundingALS(1, 2, 0, ALSVariant::lapack_solver);
 		Index i;
 		TTTensor target = _change.added_to_base(_U);
@@ -149,7 +149,7 @@ namespace xerus {
 		value_t result = 0;
 		FullTensor left({1,1}, [](){return 1.0;});
 		for (size_t i=0; i<components.size(); ++i) {
-			result += value_t(left(i1,i2)*components[i](i1,r,j1)*_other.components[i](i2,r,j2));
+			result += value_t(left(i1,i2)*components[i](i1,r,j1)*_other.components[i](i2,r,j1));
 			if (i < components.size()-1) {
 				left(j1,j2) = left(i1,i2) * _base.get_component(i)(i1,r,j1) * _base.get_component(i)(i2,r,j2);
 			}
@@ -163,7 +163,7 @@ namespace xerus {
 		TTTensor result(_base.degree());
 		Index i1,i2,n,r1,r2;
 		if (components.size() == 1) {
-			result.set_component(0, components[0](r1,n,r2));
+			result.set_component(0, components[0]);
 			return result;
 		}
 		for (size_t i=0; i<components.size(); ++i) {
@@ -220,12 +220,12 @@ namespace xerus {
 	
 	
 	
-	void SubmanifoldRetraction(TTTensor &_U, const TTTensor &_change) {
+	void SubmanifoldRetractionII(TTTensor &_U, const TTTensor &_change) {
 		TTTangentVector W(_U, _change);
-		SubmanifoldRetraction(_U, W);
+		SubmanifoldRetractionI(_U, W);
 	}
 	
-	void SubmanifoldRetraction(TTTensor &_U, const TTTangentVector &_change) {
+	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const Index i1,j1,r;
 		for (size_t i=0; i<_U.degree(); ++i) {
 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
