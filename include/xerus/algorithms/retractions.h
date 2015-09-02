@@ -36,6 +36,7 @@ namespace xerus {
 		///@brief creates a tangent vector by projecting @a _direction onto the tangent plane located at @a _base
 		TTTangentVector(const TTTensor &_base, const TTTensor &_direction);
 		TTTangentVector &operator+=(const TTTangentVector &_rhs);
+		TTTangentVector &operator-=(const TTTangentVector &_rhs);
 		TTTangentVector &operator*=(value_t _alpha);
 		TTTangentVector operator*(value_t _alpha) const;
 		value_t scalar_product(const TTTensor &_base, const TTTangentVector &_other) const;

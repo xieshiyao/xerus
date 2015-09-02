@@ -78,7 +78,7 @@ namespace xerus {
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
 		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
-		Index i1,i2,j1,j2,r,s,jx;
+		Index i1,i2,j1,j2,r,s,s2,jx;
 		std::vector<FullTensor> leftStackUV;
 		std::vector<FullTensor> leftStackUU;
 		FullTensor tmp({1,1}, [](){return 1.0;});
@@ -99,7 +99,8 @@ namespace xerus {
 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
 			const Tensor &UComp = _base.get_component(currIdx);
 			FullTensor V;
-			V(i1,r,j1) = pseudoInverse(leftStackUU.back())(i1,s) * leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
+			FullTensor uuInv = pseudoInverse(leftStackUU.back());
+			V(i1,r,j1) =  uuInv(i1,s) * leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 			if (i!=_base.degree()) {
 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
 			}
@@ -124,6 +125,14 @@ namespace xerus {
 		REQUIRE(components.size() == _rhs.components.size(), "");
 		for (size_t i=0; i<components.size(); ++i) {
 			components[i] += _rhs.components[i];
+		}
+		return *this;
+	}
+	
+	TTTangentVector& TTTangentVector::operator-=(const TTTangentVector& _rhs) {
+		REQUIRE(components.size() == _rhs.components.size(), "");
+		for (size_t i=0; i<components.size(); ++i) {
+			components[i] -= _rhs.components[i];
 		}
 		return *this;
 	}
@@ -190,13 +199,18 @@ namespace xerus {
 				result.set_component(i, newComponent);
 			}
 		}
-		result.move_core(0, true);
 		return result;
 	}
 	
 	TTTensor TTTangentVector::change_direction(const TTTensor &_base) const {
-		TTTensor result = change_direction_not_orthogonalized(_base);
-		result.move_core(0, true);
+		TTTensor result(_base);// = change_direction_not_orthogonalized(_base);
+		result.set_component(0, components[0]);
+		for (size_t i=1; i<components.size(); ++i) {
+			TTTensor tmp(_base);
+			tmp.set_component(i, components[i]);
+			result += tmp;
+		}
+		result.move_core(0);
 		return result;
 	}
 	
@@ -209,10 +223,13 @@ namespace xerus {
 			result.set_component(0, newComponent);
 		} else {
 			result = change_direction_not_orthogonalized(_base);
-			FullTensor tmp(4);
-			tmp(r1,i1,n,r2) = Tensor::dirac({2},{0})(i1) * _base.get_component(components.size()-1)(r1,n,r2);
-			tmp.reinterpret_dimensions({tmp.dimensions[0]*2, tmp.dimensions[2], tmp.dimensions[3]});
-			result.component(components.size()-1)(r1,n,r2) = result.component(components.size()-1)(r1,n,r2) + tmp(r1,n,r2);
+			size_t pos = components.size()-1;
+			const Tensor &baseComponent = _base.get_component(pos);
+			FullTensor newComponent(4);
+			newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * (components[pos](r1,n,r2) + baseComponent(r1,n,r2))
+										+Tensor::dirac({2},{1})(i1) * baseComponent(r1,n,r2);
+			newComponent.reinterpret_dimensions({components[pos].dimensions[0]*2, components[pos].dimensions[1], 1});
+			result.set_component(pos, newComponent);
 		}
 		result.move_core(0, true);
 		return result;
