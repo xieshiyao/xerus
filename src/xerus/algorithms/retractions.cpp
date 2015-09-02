@@ -78,7 +78,7 @@ namespace xerus {
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
 		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
-		Index i1,i2,j1,j2,r,s,s2,jx;
+		Index i1,i2,j1,j2,r,s;
 		std::vector<FullTensor> leftStackUV;
 		std::vector<FullTensor> leftStackUU;
 		FullTensor tmp({1,1}, [](){return 1.0;});
