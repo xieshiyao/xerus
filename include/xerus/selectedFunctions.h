@@ -1,11 +1,14 @@
 #pragma once
 
 #include "misc/standard.h"
+#include <cstring>
 
 namespace xerus {
     namespace misc {
         template <typename T>
-        void array_set_zero(T* const __restrict _x, const size_t _n);
+        void array_set_zero(T* const __restrict _x, const size_t _n) {
+            memset(_x, 0, _n*sizeof(T));
+        }
 
         template <typename T>
         void array_copy(T* const __restrict _x, const T* const __restrict _y, const size_t _n);

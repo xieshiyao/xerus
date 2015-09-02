@@ -54,7 +54,7 @@ else
 endif
 
 # Exceptions from Error Promotion
-WARNINGS += -Wno-error=parentheses			        # Do not Promote to Error
+# WARNINGS += -Wno-error=parentheses			        # Do not Promote to Error
 WARNINGS += -Wno-error=unused-parameter			    # Do not Promote to Error
 WARNINGS += -Wno-error=unused-variable			    # Do not Promote to Error
 WARNINGS += -Wno-error=disabled-optimization		# Do not Promote to Error

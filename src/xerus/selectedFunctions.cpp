@@ -48,11 +48,6 @@ extern "C"
 
 namespace xerus {
     namespace misc {
-
-        template <typename T>
-        void array_set_zero(T* const __restrict _x, const size_t _n) {
-            memset(_x, 0, _n*sizeof(T));
-        }
         
         template void array_set_zero<double>(double* const __restrict _x, const size_t _n);
         template void array_set_zero<int>(int* const __restrict _x, const size_t _n);
