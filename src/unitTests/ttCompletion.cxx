@@ -29,13 +29,13 @@ UNIT_TEST(Algorithm, adf_completion,
 	std::mt19937_64 rnd(0xDEAFBEEF);
 	std::uniform_int_distribution<size_t> dist(0,3);
 	std::normal_distribution<value_t> distF(0,1);
-	TTTensor trueSolution(examples::peaking_diagonals(5,4,1.0));
+	TTTensor trueSolution(examples::peaking_diagonals(10,4,1.0));
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<10*5*5*5*4; ++i) {
+	for (size_t i=0; i<10*10*5*5*4; ++i) {
 		std::vector<size_t> pos;
-		for (size_t n=0; n<5; ++n) {
+		for (size_t n=0; n<10; ++n) {
 			pos.emplace_back(dist(rnd));
 		}
 		measSet.emplace(pos, 0.0);
