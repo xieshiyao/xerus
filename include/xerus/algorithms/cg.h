@@ -31,11 +31,12 @@
 namespace xerus {
 
 	/**
-	* @brief Wrapper class for all CG variants
+	* @brief Wrapper class for all geometric (ie. Riemannian) CG variants
 	* @note only implemented for TTTensors at the moment.
 	* @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
+	*  cf. Steinlechner, Michael. "Riemannian optimization for high-dimensional tensor completion." (2015).
 	*/
-	class CGVariant {
+	class GeometricCGVariant {
 	protected:
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
@@ -43,21 +44,27 @@ namespace xerus {
 		size_t numSteps; ///< maximum number of steps to perform. set to 0 for infinite
 		size_t restartInterval; ///< restarts the algorithm every N steps. set to 0 to never restart
 		value_t convergenceEpsilon; ///< default value for the change in the residual at which the algorithm assumes it is converged
+		bool assumeSymmetricPositiveDefiniteOperator; ///< calculates the gradient as b-Ax instead of A^T(b-Ax)
 		bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
 		
-		std::function<void(TTTensor &, const TTTensor &)> retraction; ///< the retraction to project from point + tangent vector to a new point on the manifold
+		std::function<void(TTTensor &, const TTTangentVector &)> retraction; ///< the retraction type I to project from point + tangent vector to a new point on the manifold
+		std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> vectorTransport; ///< the vector transport from old tangent space to new one
 		
 		// TODO preconditioner
 		
 		/// fully defining constructor. alternatively CGVariant can be created by copying a predefined variant and modifying it
-		CGVariant(size_t _numSteps, size_t _restart, value_t _convergenceEpsilon, std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(_numSteps), restartInterval(_restart), convergenceEpsilon(_convergenceEpsilon),
-				  retraction(_retraction)
+		GeometricCGVariant(size_t _numSteps, size_t _restart, value_t _convergenceEpsilon, bool _symPosOp,
+						   std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
+						   std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> _vectorTransport
+  						)
+				: numSteps(_numSteps), restartInterval(_restart), convergenceEpsilon(_convergenceEpsilon), assumeSymmetricPositiveDefiniteOperator(_symPosOp), printProgress(false),
+				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
-		CGVariant(std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(0), restartInterval(0), convergenceEpsilon(0.0), retraction(_retraction)
+		GeometricCGVariant(std::function<void(TTTensor &, const TTTangentVector &)> _retraction, std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> _vectorTransport)
+				: numSteps(0), restartInterval(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), printProgress(false),
+				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }
 		
 		/**
@@ -128,6 +135,6 @@ namespace xerus {
 	};
 	
 	/// default variant of the steepest descent algorithm using the lapack solver
-	const CGVariant CG(0, 0, 1e-8, SubmanifoldRetraction);
+	const GeometricCGVariant GeometricCG(0, 0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport);
 }
 
