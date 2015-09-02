@@ -179,7 +179,7 @@ namespace xerus {
 		
 		value_t residual=1;
 		
-		std::vector<FullTensor> fixedComponents;
+		VLA(value_t[numMeasurments], currentDifferences);
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
@@ -189,7 +189,7 @@ namespace xerus {
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
 				
 				// Prepare the single slates of the current component
-				fixedComponents = std::vector<FullTensor>(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
+				std::vector<FullTensor> fixedComponents(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
 				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
 					fixedComponents[i].fix_slate(1, i);
 				}
@@ -204,7 +204,7 @@ namespace xerus {
 			
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 				// Prepare the single slates of the current component
-				fixedComponents = std::vector<FullTensor>(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
+				std::vector<FullTensor> fixedComponents(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
 				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
 					fixedComponents[i].fix_slate(1, i);
 				}
@@ -220,13 +220,29 @@ namespace xerus {
 					const value_t currentDifference = _measurments[i].value-currentValue[0];
 					misc::array_add(deltaPlus.data.get()+_measurments[i].positions[corePosition]*entryAddition.size, currentDifference, entryAddition.data.get(), entryAddition.size);
 					residual += misc::sqr(currentDifference);
+					currentDifferences[i] = currentDifference;
 				}
 				
 				residual = sqrt(residual)/normMeasuredValues;
 				LOG(ADF, iteration << " " << residual);
 				
+				// Calculate <P(y), P(X-B)> and ||P(y)||^2, where y is the update direction.
+				std::vector<FullTensor> fixedDeltas(_x.dimensions[corePosition], deltaPlus);
+				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+					fixedDeltas[i].fix_slate(0, i);
+				}
+				value_t PyPy = 0;
+				value_t PyR = 0;
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					value_t Py = value_t((*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * fixedDeltas[_measurments[i].positions[corePosition]](r1, r2) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r2));
+					PyPy += misc::sqr(Py);
+					PyR += Py*currentDifferences[i];
+				}
+				LOG(ADF, "StepSize: " << PyR/PyPy);
+				
+				
 				// Update current component
-				_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + deltaPlus(i1, r1, r2);
+				_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*deltaPlus(i1, r1, r2);
 				
 				if(corePosition+1 < degree) {
 					_x.move_core(corePosition+1, true);

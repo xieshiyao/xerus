@@ -25,17 +25,18 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
+	const size_t D = 10;
 // 	std::random_device rd;
 	std::mt19937_64 rnd(0xDEAFBEEF);
 	std::uniform_int_distribution<size_t> dist(0,3);
 	std::normal_distribution<value_t> distF(0,1);
-	TTTensor trueSolution(examples::peaking_diagonals(10,4,1.0));
+	TTTensor trueSolution(examples::peaking_diagonals(D,4,1.0));
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<10*10*5*5*4; ++i) {
+	for (size_t i=0; i<10*D*5*5*4; ++i) {
 		std::vector<size_t> pos;
-		for (size_t n=0; n<10; ++n) {
+		for (size_t n=0; n<D; ++n) {
 			pos.emplace_back(dist(rnd));
 		}
 		measSet.emplace(pos, 0.0);
@@ -52,6 +53,7 @@ UNIT_TEST(Algorithm, adf_completion,
 // 	TEST(test);
 	
 	TTTensor X = TTTensor::random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
+	X /= X.frob_norm()*1000.0;
 	
 	ADF(X, measurements);
 	
