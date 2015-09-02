@@ -64,62 +64,101 @@ namespace xerus {
 	}
 	
 	//TODO this should use low-level calls and then be part of FullTensor
-	static FullTensor pseudoInverse(const FullTensor &_A) {
-		Index i1,i2,i3,i4;
-		FullTensor U,S,V;
-		(U(i1,i2), S(i2,i3), V(i3,i4)) = SVD(_A(i1,i4));
-		S.modify_diag_elements([](value_t &a){a = 1/a;});
-		FullTensor res;
-		res(i1,i4) = V(i2,i1) * S(i2,i3) * U(i4,i3);
-		return res;
-	}
+// 	static FullTensor pseudoInverse(const FullTensor &_A) {
+// 		Index i1,i2,i3,i4;
+// 		FullTensor U,S,V;
+// 		(U(i1,i2), S(i2,i3), V(i3,i4)) = SVD(_A(i1,i4));
+// 		S.modify_diag_elements([](value_t &a){a = 1/a;});
+// 		FullTensor res;
+// 		res(i1,i4) = V(i2,i1) * S(i2,i3) * U(i4,i3);
+// 		return res;
+// 	}
 	
 	
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
 		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
 		Index i1,i2,j1,j2,r,s;
-		std::vector<FullTensor> leftStackUV;
-		std::vector<FullTensor> leftStackUU;
-		FullTensor tmp({1,1}, [](){return 1.0;});
-		leftStackUV.push_back(tmp);
-		leftStackUU.push_back(tmp);
-		for (size_t i=0; i<_base.degree()-1; ++i) {
-			FullTensor newLeft;
-			newLeft(j1,j2) = leftStackUV.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
-			leftStackUV.emplace_back(std::move(newLeft));
-			newLeft(j1,j2) = leftStackUU.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _base.get_component(i)(i2,r,j2);
-			leftStackUU.emplace_back(std::move(newLeft));
+		std::vector<FullTensor> rightStackUV;
+		rightStackUV.push_back(Tensor::ones({1,1}));
+		for (size_t i=_base.degree()-1; i>0; --i) {
+			FullTensor newRight;
+			newRight(i1,i2) = _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			rightStackUV.emplace_back(std::move(newRight));
 		}
-		FullTensor right(tmp);
-		FullTensor UTV;
-		std::vector<FullTensor> tmpComponents;
-		for (size_t i=_base.degree(); i>0; --i) {
-			const size_t currIdx = i-1;
-			std::unique_ptr<FullTensor> newComponent(new FullTensor);
-			const Tensor &UComp = _base.get_component(currIdx);
+		FullTensor left(Tensor::ones({1,1}));
+		
+		// project onto the single components
+		TTTensor baseCpy(_base);
+		for (size_t i=0; i<_base.degree(); ++i) {
 			FullTensor V;
-			FullTensor uuInv = pseudoInverse(leftStackUU.back());
-			V(i1,r,j1) =  uuInv(i1,s) * leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
-			if (i!=_base.degree()) {
-				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
+			V(i1,r,j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			components.emplace_back(std::move(V));
+			if (i<_base.degree()-1) {
+				baseCpy.move_core(i+1, true);
+				left(j1,j2) = left(i1,i2) * baseCpy.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
 			}
-			if (currIdx!=0) {
-				UTV(i1,i2) = V(i1,r,j1) * UComp(i2,r,j1);
-				V(i1,r,j1) = V(i1,r,j1) - UTV(i1,s) * UComp(s,r,j1);
-			}
-			tmpComponents.emplace_back(std::move(V));
-			if (currIdx != 0) {
-				right(j1,j2) = UComp(j1,r,i1) * _direction.get_component(currIdx)(j2,r,i2) * right(i1,i2);
-			}
-			leftStackUV.pop_back();
-			leftStackUU.pop_back();
+			rightStackUV.pop_back();
 		}
-		while (!tmpComponents.empty()) {
-			components.emplace_back(std::move(tmpComponents.back()));
-			tmpComponents.pop_back();
+		
+		// orthogonalize with regard  to _base
+		FullTensor movedPart({1,1});
+		for (size_t i=_base.degree(); i>0; --i) {
+			const size_t curr = i-1;
+			const Tensor &UComp =  _base.get_component(curr);
+			components[curr](i1,r,j1) = components[curr](i1,r,j1) + UComp(i1,r,s) * movedPart(s,j1);
+			if (curr > 0) {
+				movedPart(i1,i2) = components[curr](i1,r,j1) * UComp(i2,r,j1);
+				components[curr](i1,r,j1) = components[curr](i1,r,j1) - movedPart(i1,i2) * UComp(i2,r,j1);
+			}
 		}
 	}
+	
+// 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
+// 		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
+// 		REQUIRE(_base.dimensions == _direction.dimensions, "");
+// 		Index i1,i2,j1,j2,r,s;
+// 		std::vector<FullTensor> leftStackUV;
+// 		std::vector<FullTensor> leftStackUU;
+// 		FullTensor tmp({1,1}, [](){return 1.0;});
+// 		leftStackUV.push_back(tmp);
+// 		leftStackUU.push_back(tmp);
+// 		for (size_t i=0; i<_base.degree()-1; ++i) {
+// 			FullTensor newLeft;
+// 			newLeft(j1,j2) = leftStackUV.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
+// 			leftStackUV.emplace_back(std::move(newLeft));
+// 			newLeft(j1,j2) = leftStackUU.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _base.get_component(i)(i2,r,j2);
+// 			leftStackUU.emplace_back(std::move(newLeft));
+// 		}
+// 		FullTensor right(tmp);
+// 		FullTensor UTV;
+// 		std::vector<FullTensor> tmpComponents;
+// 		for (size_t i=_base.degree(); i>0; --i) {
+// 			const size_t currIdx = i-1;
+// 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
+// 			const Tensor &UComp = _base.get_component(currIdx);
+// 			FullTensor V;
+// 			FullTensor uuInv = pseudoInverse(leftStackUU.back());
+// 			V(i1,r,j1) =  uuInv(i1,s) * leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
+// 			if (i!=_base.degree()) {
+// 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
+// 			}
+// 			if (currIdx!=0) {
+// 				UTV(i1,i2) = V(i1,r,j1) * UComp(i2,r,j1);
+// 				V(i1,r,j1) = V(i1,r,j1) - UTV(i1,s) * UComp(s,r,j1);
+// 			}
+// 			tmpComponents.emplace_back(std::move(V));
+// 			if (currIdx != 0) {
+// 				right(j1,j2) = UComp(j1,r,i1) * _direction.get_component(currIdx)(j2,r,i2) * right(i1,i2);
+// 			}
+// 			leftStackUV.pop_back();
+// 			leftStackUU.pop_back();
+// 		}
+// 		while (!tmpComponents.empty()) {
+// 			components.emplace_back(std::move(tmpComponents.back()));
+// 			tmpComponents.pop_back();
+// 		}
+// 	}
 	
 	TTTangentVector& TTTangentVector::operator+=(const TTTangentVector& _rhs) {
 		REQUIRE(components.size() == _rhs.components.size(), "");
