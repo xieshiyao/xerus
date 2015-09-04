@@ -24,6 +24,7 @@
 
 #include <xerus/algorithms/adf.h>
 #include <xerus/misc/check.h>
+#include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
 
 namespace xerus {
@@ -195,9 +196,17 @@ namespace xerus {
 				}
 				
 				// Reset the FullTensors
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					if(backwardUpdates[i + corePosition*numMeasurments]) {
-						(*backwardStack[i + corePosition*numMeasurments])(r2) = fixedComponents[_measurments[i].positions[corePosition]](r2, r1) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r1);
+				if(iteration > 0) {
+					for(size_t i = 0; i < numMeasurments; ++i) {
+						if(backwardUpdates[i + corePosition*numMeasurments]) {
+							contract((*backwardStack[i + corePosition*numMeasurments])(r2), fixedComponents[_measurments[i].positions[corePosition]](r2, r1) , (*backwardStack[i + (corePosition+1)*numMeasurments])(r1));
+						}
+					}
+				} else {
+					for(size_t i = 0; i < numMeasurments; ++i) {
+						if(backwardUpdates[i + corePosition*numMeasurments]) {
+							(*backwardStack[i + corePosition*numMeasurments])(r2) = fixedComponents[_measurments[i].positions[corePosition]](r2, r1) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r1);
+						}
 					}
 				}
 			}
@@ -254,9 +263,17 @@ namespace xerus {
 					}
 					
 					// Update the stack
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							(*forwardStack[i + corePosition*numMeasurments])(r2) = (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * fixedComponents[_measurments[i].positions[corePosition]](r1, r2);
+					if(iteration > 0) {
+						for(size_t i = 0; i < numMeasurments; ++i) {
+							if(forwardUpdates[i + corePosition*numMeasurments]) {
+								contract((*forwardStack[i + corePosition*numMeasurments])(r2) , (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) , fixedComponents[_measurments[i].positions[corePosition]](r1, r2));
+							}
+						}
+					} else {
+						for(size_t i = 0; i < numMeasurments; ++i) {
+							if(forwardUpdates[i + corePosition*numMeasurments]) {
+								(*forwardStack[i + corePosition*numMeasurments])(r2) = (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * fixedComponents[_measurments[i].positions[corePosition]](r1, r2);
+							}
 						}
 					}
 				}
