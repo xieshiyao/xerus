@@ -50,6 +50,7 @@
 	#define PASTE( a, b) PASTE2( a, b)
 
 	#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); passed = false;} else {PRINTCHECK;} void(0)
+	#define MTEST(cond, ...) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed, msg: " << __VA_ARGS__); passed = false;} else {PRINTCHECK;} void(0)
 	
 	#ifdef TEST_COVERAGE_
 		#define REQUIRE_TEST \

@@ -90,7 +90,7 @@ namespace xerus {
 			value_t alpha;
 			
 			if (_Ap) {
-				TTTensor dirTT = direction.change_direction(_x);
+				TTTensor dirTT = TTTensor(direction);
 				if (assumeSymmetricPositiveDefiniteOperator) {
 					alpha = 32* dirTT.frob_norm()/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
 				} else {
@@ -120,7 +120,7 @@ namespace xerus {
 			
 // 			direction(i&0) = residual(i&0) + beta * direction(i&0);
 			TTTangentVector oldDirection(direction);
-			value_t oldDirNorm = oldDirection.scalar_product(_x, oldDirection);
+			value_t oldDirNorm = oldDirection.scalar_product(oldDirection);
 			vectorTransport(oldX, _x, direction);
 			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
 				direction = TTTangentVector(_x, residual);
@@ -129,7 +129,7 @@ namespace xerus {
 				grad(i&0) = _A(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
 				direction = TTTangentVector(_x, grad);
 			}
-			double beta = direction.scalar_product(_x, direction) / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update
+			double beta = direction.scalar_product(direction) / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update
 			LOG(ab, "\t\t\t" << alpha << " " << beta);
 			direction += oldDirection * (beta);
 		}

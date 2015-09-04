@@ -38,7 +38,7 @@ namespace xerus {
 	
 	void HOSVDRetraction::operator()(TTTensor &_U, const TTTangentVector &_change) const {
 		Index i;
-		_U = _change.added_to_base(_U);
+		_U = _change.added_to_base();
 		if (roundByVector) {
 			_U.round(rankVector);
 		} else {
@@ -48,17 +48,14 @@ namespace xerus {
 	
 	void ALSRetractionII(TTTensor &_U, const TTTensor &_change) {
 		static const ALSVariant roundingALS(1, 2, 0, ALSVariant::lapack_solver);
-		Index i;
-		TTTensor target;
-		target(i&0) = _U(i&0) + _change(i&0);
+		TTTensor target = _U + _change;
 		roundingALS(_U, target);
 // 		_U.move_core(0);
 	}
 	
 	void ALSRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const ALSVariant roundingALS(1, 2, 0, ALSVariant::lapack_solver);
-		Index i;
-		TTTensor target = _change.added_to_base(_U);
+		TTTensor target = _change.added_to_base();
 		roundingALS(_U, target);
 // 		_U.move_core(0);
 	}
@@ -74,113 +71,48 @@ namespace xerus {
 // 		return res;
 // 	}
 	
+	void TTTangentVector::set_base(const TTTensor &_newBase) {
+		REQUIRE(_newBase.dimensions == baseL.dimensions, "");
+		baseL = _newBase;
+		baseL.move_core(0, true);
+		baseR = _newBase;
+		baseR.move_core(baseR.degree()-1, true);
+	}
 	
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
-		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
+		REQUIRE(_base.is_valid_tt(), "");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
 		Index i1,i2,j1,j2,r,s;
+		
+		baseL = _base;
+		baseL.move_core(0, true);
+		baseR = _base;
+		baseR.move_core(baseR.degree()-1, true);
+		
 		std::vector<FullTensor> rightStackUV;
-		rightStackUV.emplace_back(Tensor::ones({1,1}));
-		for (size_t i = _base.degree()-1; i>0; --i) {
+		rightStackUV.push_back(Tensor::ones({1,1}));
+		for (size_t i=baseL.degree()-1; i>0; --i) {
 			FullTensor newRight;
-			newRight(i1,i2) = _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			newRight(i1,i2) = baseL.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
 			rightStackUV.emplace_back(std::move(newRight));
 		}
 		FullTensor left(Tensor::ones({1,1}));
 		
-		// Project onto the single components
-		TTTensor baseCpy(_base);
-		for (size_t i = 0; i < _base.degree(); ++i) {
+		// project onto the single components
+		for (size_t i=0; i<baseR.degree(); ++i) {
 			FullTensor V;
-			V(i1, r, j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			V(i1,r,j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			if (i>0) {
+				// P^- part
+				V(i1,r,j1) = V(i1,r,j1) - V(i1,s,j2) * baseL.get_component(i)(i2,s,j2) * baseL.get_component(i)(i2,r,j1);
+			}
 			components.emplace_back(std::move(V));
-			if (i<_base.degree()-1) {
-				baseCpy.move_core(i+1, true);
-				left(j1,j2) = left(i1,i2) * baseCpy.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
+			if (i<baseR.degree()-1) {
+				left(j1,j2) = left(i1,i2) * baseR.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
 			}
 			rightStackUV.pop_back();
 		}
-		
-		TTTensor realFullprojectedDirectionBefore = change_direction(_base);
-		
-		FullTensor fullprojectedDirectionBefore = Tensor::ones({1});
-		for(const FullTensor& comp : components) {
-			     fullprojectedDirectionBefore(i1&2, i2, r) = fullprojectedDirectionBefore(i1&1, s) * comp(s, i2, r);
-		}
-		
-		
-		// orthogonalize with regard  to _base
-		FullTensor movedPart({1,1});
-		for (size_t i=_base.degree(); i>0; --i) {
-			const size_t curr = i-1;
-			const Tensor &UComp =  _base.get_component(curr);
-			components[curr](i1,r,j1) = components[curr](i1,r,j1) + UComp(i1,r,s) * movedPart(s,j1);
-			if (curr > 0) {
-				movedPart(i1,i2) = components[curr](i1,r,j1) * UComp(i2,r,j1);
-				components[curr](i1,r,j1) = components[curr](i1,r,j1) - movedPart(i1,i2) * UComp(i2,r,j1);
-			}
-		}
-		
-		
-		TTTensor realFullprojectedDirectionAfter = change_direction(_base);
-		
-		REQUIRE(frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter) < 1e-10, "IE: " << frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter));
-		LOG(bla, frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter));
-		
-		FullTensor fullprojectedDirectionAfter = Tensor::ones({1});
-		for(const FullTensor& comp : components) {
-			     fullprojectedDirectionAfter(i1&2, i2, r) = fullprojectedDirectionAfter(i1&1, s) * comp(s, i2, r);
-		}
-		REQUIRE(frob_norm(fullprojectedDirectionBefore - fullprojectedDirectionAfter) < 1e-10, "IE: " << frob_norm(fullprojectedDirectionBefore - fullprojectedDirectionAfter));
-
-		LOG(bla, "passed");
 	}
-	
-// 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
-// 		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
-// 		REQUIRE(_base.dimensions == _direction.dimensions, "");
-// 		Index i1,i2,j1,j2,r,s;
-// 		std::vector<FullTensor> leftStackUV;
-// 		std::vector<FullTensor> leftStackUU;
-// 		FullTensor tmp({1,1}, [](){return 1.0;});
-// 		leftStackUV.push_back(tmp);
-// 		leftStackUU.push_back(tmp);
-// 		for (size_t i=0; i<_base.degree()-1; ++i) {
-// 			FullTensor newLeft;
-// 			newLeft(j1,j2) = leftStackUV.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
-// 			leftStackUV.emplace_back(std::move(newLeft));
-// 			newLeft(j1,j2) = leftStackUU.back()(i1,i2) * _base.get_component(i)(i1,r,j1) * _base.get_component(i)(i2,r,j2);
-// 			leftStackUU.emplace_back(std::move(newLeft));
-// 		}
-// 		FullTensor right(tmp);
-// 		FullTensor UTV;
-// 		std::vector<FullTensor> tmpComponents;
-// 		for (size_t i=_base.degree(); i>0; --i) {
-// 			const size_t currIdx = i-1;
-// 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
-// 			const Tensor &UComp = _base.get_component(currIdx);
-// 			FullTensor V;
-// 			FullTensor uuInv = pseudoInverse(leftStackUU.back());
-// 			V(i1,r,j1) =  uuInv(i1,s) * leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
-// 			if (i!=_base.degree()) {
-// 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
-// 			}
-// 			if (currIdx!=0) {
-// 				UTV(i1,i2) = V(i1,r,j1) * UComp(i2,r,j1);
-// 				V(i1,r,j1) = V(i1,r,j1) - UTV(i1,s) * UComp(s,r,j1);
-// 			}
-// 			tmpComponents.emplace_back(std::move(V));
-// 			if (currIdx != 0) {
-// 				right(j1,j2) = UComp(j1,r,i1) * _direction.get_component(currIdx)(j2,r,i2) * right(i1,i2);
-// 			}
-// 			leftStackUV.pop_back();
-// 			leftStackUU.pop_back();
-// 		}
-// 		while (!tmpComponents.empty()) {
-// 			components.emplace_back(std::move(tmpComponents.back()));
-// 			tmpComponents.pop_back();
-// 		}
-// 	}
 	
 	TTTangentVector& TTTangentVector::operator+=(const TTTangentVector& _rhs) {
 		REQUIRE(components.size() == _rhs.components.size(), "");
@@ -211,63 +143,67 @@ namespace xerus {
 		return result;
 	}
 	
-	value_t TTTangentVector::scalar_product(const TTTensor& _base, const TTTangentVector& _other) const {
-		REQUIRE(_base.degree() == components.size(), "");
-		REQUIRE(components.size() == _other.components.size(), "");
-		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "tangent vectors only implemented for core position 0 atm");
-		Index i1,i2,r,j1,j2;
+	value_t TTTangentVector::scalar_product(const TTTangentVector& _other) const {
+		Index j;
 		value_t result = 0;
-		FullTensor left({1,1}, [](){return 1.0;});
 		for (size_t i=0; i<components.size(); ++i) {
-			result += value_t(left(i1,i2)*components[i](i1,r,j1)*_other.components[i](i2,r,j1));
-			if (i < components.size()-1) {
-				left(j1,j2) = left(i1,i2) * _base.get_component(i)(i1,r,j1) * _base.get_component(i)(i2,r,j2);
-			}
+			result += value_t(components[i](j^3)*_other.components[i](j^3));
 		}
 		return result;
 	}
 	
-	TTTensor TTTangentVector::change_direction_not_orthogonalized(const TTTensor &_base) const {
-		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "tangent vectors only implemented for core position 0 atm");
-		REQUIRE(_base.degree() == components.size(), "");
-		TTTensor result(_base.degree());
+	TTTensor TTTangentVector::change_direction_incomplete() const {
+		TTTensor result(baseL.degree());
 		Index i1,i2,n,r1,r2;
-		if (components.size() == 1) {
-			result.set_component(0, components[0]);
-			return result;
-		}
-		for (size_t i=0; i<components.size(); ++i) {
-			const Tensor &baseComponent = _base.get_component(i);
-			REQUIRE(baseComponent.dimensions == components[i].dimensions, "illegal base tensor for this tangent vector (ranks or external dimension do not coincide)");
+		REQUIRE(components.size()>1, "ie: not meant to be called in this case");
+		for (size_t i=0; i<components.size()-1; ++i) {
 			if (i == 0) {
 				FullTensor newComponent(4);
-				newComponent(r1,n,i2,r2) = Tensor::dirac({2},{0})(i2) * baseComponent(r1,n,r2)
+				newComponent(r1,n,i2,r2) = Tensor::dirac({2},{0})(i2) * baseR.get_component(i)(r1,n,r2)
 											+Tensor::dirac({2},{1})(i2) * components[i](r1,n,r2);
 				newComponent.reinterpret_dimensions({1, components[i].dimensions[1], components[i].dimensions[2]*2});
 				result.set_component(i, newComponent);
 			} else if (i < components.size()-1) {
 				FullTensor newComponent(5);
-				newComponent(i1,r1,n,i2,r2) = Tensor::dirac({2,2},{0,0})(i1,i2) * baseComponent(r1,n,r2)
+				newComponent(i1,r1,n,i2,r2) = Tensor::dirac({2,2},{0,0})(i1,i2) * baseR.get_component(i)(r1,n,r2)
 											+Tensor::dirac({2,2},{0,1})(i1,i2) * components[i](r1,n,r2)
-											+Tensor::dirac({2,2},{1,1})(i1,i2) * baseComponent(r1,n,r2);
+											+Tensor::dirac({2,2},{1,1})(i1,i2) * baseL.get_component(i)(r1,n,r2);
 				newComponent.reinterpret_dimensions({components[i].dimensions[0]*2, components[i].dimensions[1], components[i].dimensions[2]*2});
 				result.set_component(i, newComponent);
 			} else {
+				LOG(fatal, "ie");
+			}
+			/*else {
 				FullTensor newComponent(4);
 				newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * components[i](r1,n,r2)
-											+Tensor::dirac({2},{1})(i1) * baseComponent(r1,n,r2);
+											+Tensor::dirac({2},{1})(i1) * baseR.get_component(i)(r1,n,r2);
 				newComponent.reinterpret_dimensions({components[i].dimensions[0]*2, components[i].dimensions[1], 1});
 				result.set_component(i, newComponent);
-			}
+			}*/ // will be done in the calling functions
 		}
 		return result;
 	}
 	
-	TTTensor TTTangentVector::change_direction(const TTTensor &_base) const {
-		TTTensor result(_base);// = change_direction_not_orthogonalized(_base);
+	TTTangentVector::operator TTTensor() const {
+// 		if (components.size() == 1) {
+// 			TTTensor result(1);
+// 			result.set_component(0, components[0]);
+// 			return result;
+// 		}
+// 		TTTensor result = change_direction_incomplete();
+// 		FullTensor newComponent(4);
+// 		Index i1,i2,n,r1,r2;
+// 		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * components[components.size()-1](r1,n,r2)
+// 									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
+// 		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
+// 		result.set_component(components.size()-1, newComponent);
+// 		result.move_core(0);
+// 		return result;
+		TTTensor result(baseL);
 		result.set_component(0, components[0]);
 		for (size_t i=1; i<components.size(); ++i) {
-			TTTensor tmp(_base);
+			TTTensor tmp(baseL);
+			tmp.move_core(i, true);
 			tmp.set_component(i, components[i]);
 			result += tmp;
 		}
@@ -275,24 +211,31 @@ namespace xerus {
 		return result;
 	}
 	
-	TTTensor TTTangentVector::added_to_base(const TTTensor &_base) const {
-		TTTensor result(components.size());
-		Index i1,i2,n,r1,r2;
-		if (components.size() == 1) {
-			FullTensor newComponent(3);
-			newComponent(r1,n,r2) = _base.get_component(0)(r1,n,r2) + components[0](r1,n,r2);
-			result.set_component(0, newComponent);
-		} else {
-			result = change_direction_not_orthogonalized(_base);
-			size_t pos = components.size()-1;
-			const Tensor &baseComponent = _base.get_component(pos);
-			FullTensor newComponent(4);
-			newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * (components[pos](r1,n,r2) + baseComponent(r1,n,r2))
-										+Tensor::dirac({2},{1})(i1) * baseComponent(r1,n,r2);
-			newComponent.reinterpret_dimensions({components[pos].dimensions[0]*2, components[pos].dimensions[1], 1});
-			result.set_component(pos, newComponent);
+	TTTensor TTTangentVector::added_to_base() const {
+// 		if (components.size() == 1) {
+// 			TTTensor result(1);
+// 			result.set_component(0, components[0]);
+// 			result = result + baseL;
+// 			return result;
+// 		}
+// 		TTTensor result = change_direction_incomplete();
+// 		FullTensor newComponent(4);
+// 		Index i1,i2,n,r1,r2;
+// 		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * (components[components.size()-1](r1,n,r2) + baseR.get_component(components.size()-1)(r1,n,r2))
+// 									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
+// 		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
+// 		result.set_component(components.size()-1, newComponent);
+// 		result.move_core(0);
+// 		return result;
+		TTTensor result(baseL);
+// 		result.set_component(0, components[0]);
+		for (size_t i=0; i<components.size(); ++i) {
+			TTTensor tmp(baseL);
+			tmp.move_core(i, true);
+			tmp.set_component(i, components[i]);
+			result += tmp;
 		}
-		result.move_core(0, true);
+		result.move_core(0);
 		return result;
 	}
 	
@@ -321,6 +264,7 @@ namespace xerus {
 		REQUIRE(_oldBase.cannonicalized && _oldBase.corePosition == 0, "tangent vectors only implemented for core position 0 atm");
 		REQUIRE(_newBase.cannonicalized && _newBase.corePosition == 0, "tangent vectors only implemented for core position 0 atm");
 		
-		_tangentVector = TTTangentVector(_newBase, _tangentVector.change_direction(_oldBase));
+		_tangentVector.set_base(_oldBase);
+		_tangentVector = TTTangentVector(_newBase, TTTensor(_tangentVector));
 	}
 }

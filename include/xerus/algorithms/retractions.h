@@ -32,6 +32,11 @@ namespace xerus {
 	///@brief class to compactly represent tangent vectors of the manifold of constant TT-rank
 	class TTTangentVector {
 	public:
+		TTTensor baseL, baseR;
+		
+		///@note components will not be changed. use a vector transport to update them accordingly instead of calling this function
+		void set_base(const TTTensor &_newBase);
+		
 		std::vector<FullTensor> components;
 		///@brief creates a tangent vector by projecting @a _direction onto the tangent plane located at @a _base
 		TTTangentVector(const TTTensor &_base, const TTTensor &_direction);
@@ -39,12 +44,12 @@ namespace xerus {
 		TTTangentVector &operator-=(const TTTangentVector &_rhs);
 		TTTangentVector &operator*=(value_t _alpha);
 		TTTangentVector operator*(value_t _alpha) const;
-		value_t scalar_product(const TTTensor &_base, const TTTangentVector &_other) const;
+		value_t scalar_product(const TTTangentVector &_other) const;
 	private:
-		TTTensor change_direction_not_orthogonalized(const TTTensor &_base) const;
+		TTTensor change_direction_incomplete() const;
 	public:
-		TTTensor change_direction(const TTTensor &_base) const;
-		TTTensor added_to_base(const TTTensor &_base) const;
+		explicit operator TTTensor() const;
+		TTTensor added_to_base() const;
 	};
 	
 	/// retraction that performs a HOSVD to project back onto the Manifold

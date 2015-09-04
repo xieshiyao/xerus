@@ -37,45 +37,44 @@ UNIT_TEST(algorithms, retractions,
 	
 	TTTangentVector tangentZero(X, zero);
 	for (size_t i=0; i<stateDims.size(); ++i) {
-// 		LOG(ASDAS, frob_norm(tangentZero.components[i]));
-		TEST(frob_norm(tangentZero.components[i]) < 1e-16 * (i==0?1000:1));
+		MTEST(frob_norm(tangentZero.components[i]) < 1e-14, frob_norm(tangentZero.components[i]));
 	}
 	
 	{
 		TTTensor Y(X);
 		ALSRetractionI(Y, tangentZero);
-		TEST(frob_norm(X-Y) < 1e-8);
+		MTEST(frob_norm(X-Y) < 1e-8, "alsI " << frob_norm(X-Y));
 	}
 	{
 		TTTensor Y(X);
 		ALSRetractionII(Y, zero);
-		TEST(frob_norm(X-Y) < 1e-8);
+		MTEST(frob_norm(X-Y) < 1e-8, "alsII " << frob_norm(X-Y));
 	}
-	{
-		TTTensor Y(X);
-		SubmanifoldRetractionI(Y, tangentZero);
-		TEST(frob_norm(X-Y) < 1e-8);
-	}
-	{
-		TTTensor Y(X);
-		SubmanifoldRetractionII(Y, zero);
-		TEST(frob_norm(X-Y) < 1e-8);
-	}
+// 	{
+// 		TTTensor Y(X);
+// 		SubmanifoldRetractionI(Y, tangentZero);
+// 		MTEST(frob_norm(X-Y) < 1e-8, "submaniI " << frob_norm(X-Y));
+// 	}
+// 	{
+// 		TTTensor Y(X);
+// 		SubmanifoldRetractionII(Y, zero);
+// 		MTEST(frob_norm(X-Y) < 1e-8, "submaniII " << frob_norm(X-Y));
+// 	}
 	HOSVDRetraction hosvd(2);
 	{
 		TTTensor Y(X);
 		hosvd(Y, tangentZero);
-		TEST(frob_norm(X-Y) < 1e-8);
+		MTEST(frob_norm(X-Y) < 1e-8, "hosvdI " << frob_norm(X-Y));
 	}
 	{
 		TTTensor Y(X);
 		hosvd(Y, zero);
-		TEST(frob_norm(X-Y) < 1e-8);
+		MTEST(frob_norm(X-Y) < 1e-8, "hosvdII " << frob_norm(X-Y));
 	}
 	
 	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
 	const value_t EPS = 1e-4;
-	change *= 1e-4 / frob_norm(change);
+	change *= EPS / frob_norm(change);
 	
 	Index i1,i2,i3,i4;
 	TTTangentVector tangentChange(X, change);
@@ -86,53 +85,68 @@ UNIT_TEST(algorithms, retractions,
 		}
 	}
 	
+	TTTensor riemannianChange = TTTensor(tangentChange);
+	riemannianChange /= frob_norm(riemannianChange);
+	
 	{
 		TTTensor Y(X);
 		ALSRetractionI(Y, tangentChange);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
+		TTTensor actualChange = Y-X;
+		value_t fnorm = frob_norm(actualChange);
+		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+		MTEST(angle < 100 * EPS * EPS, "alsI " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm > EPS * 1e-4, "alsI " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm < EPS, "alsI " << fnorm << " " << angle << " " << EPS);
 	}
 	{
 		TTTensor Y(X);
 		ALSRetractionII(Y, change);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
+		TTTensor actualChange = Y-X;
+		value_t fnorm = frob_norm(actualChange);
+		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+		MTEST(angle < 100 * EPS * EPS, "alsII " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm > EPS * 1e-4, "alsII " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm < EPS, "alsII " << fnorm << " " << angle << " " << EPS);
 	}
-	{
-		TTTensor Y(X);
-		SubmanifoldRetractionI(Y, tangentChange);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
-	}
-	{
-		TTTensor Y(X);
-		SubmanifoldRetractionII(Y, change);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
-	}
+// 	{
+// 		TTTensor Y(X);
+// 		SubmanifoldRetractionI(Y, tangentChange);
+// 		TTTensor actualChange = Y-X;
+// 		value_t fnorm = frob_norm(actualChange);
+// 		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+// 		MTEST(angle < 100 * EPS * EPS, "submaniI " << fnorm << " " << angle << " " << EPS);
+// 		MTEST(fnorm > EPS * 1e-4, "submaniI " << fnorm << " " << angle << " " << EPS);
+// 		MTEST(fnorm < EPS, "submaniI " << fnorm << " " << angle << " " << EPS);
+// 	}
+// 	{
+// 		TTTensor Y(X);
+// 		SubmanifoldRetractionII(Y, change);
+// 		TTTensor actualChange = Y-X;
+// 		value_t fnorm = frob_norm(actualChange);
+// 		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+// 		MTEST(angle < 100 * EPS * EPS, "submaniII " << fnorm << " " << angle << " " << EPS);
+// 		MTEST(fnorm > EPS * 1e-4, "submaniII " << fnorm << " " << angle << " " << EPS);
+// 		MTEST(fnorm < EPS, "submaniII " << fnorm << " " << angle << " " << EPS);
+// 	}
 	{
 		TTTensor Y(X);
 		hosvd(Y, tangentChange);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
+		TTTensor actualChange = Y-X;
+		value_t fnorm = frob_norm(actualChange);
+		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+		MTEST(angle < 100 * EPS * EPS, "hosvdI " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm > EPS * 1e-4, "hosvdI " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm < EPS, "hosvdI " << fnorm << " " << angle << " " << EPS);
 	}
 	{
 		TTTensor Y(X);
 		hosvd(Y, change);
-		value_t fnorm = frob_norm(X-Y);
-		LOG(fnorm, fnorm);
-		TEST(fnorm > 1e-8);
-		TEST(fnorm < EPS);
+		TTTensor actualChange = Y-X;
+		value_t fnorm = frob_norm(actualChange);
+		value_t angle = std::acos(value_t(riemannianChange(i1&0) * actualChange(i1&0)) / fnorm);
+		MTEST(angle < 100 * EPS * EPS, "hosvdII " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm > EPS * 1e-4, "hosvdII " << fnorm << " " << angle << " " << EPS);
+		MTEST(fnorm < EPS, "hosvdII " << fnorm << " " << angle << " " << EPS);
 	}
 )
 
@@ -143,30 +157,47 @@ UNIT_TEST(algorithms, vectorTransport,
 	
 	std::vector<size_t> stateDims(8,4);
 	std::vector<size_t> stateRank(7,2);
+	Index j;
 	
 	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTangentVector tangentChange1(X, change);
-	
-	LOG(norms, frob_norm(change) << " " << frob_norm(tangentChange1.change_direction(X)));
-	
-	TEST(frob_norm(change) > frob_norm(tangentChange1.change_direction(X)));
-	
+	// projection should decrease norm
+	MTEST(frob_norm(change) > frob_norm(TTTensor(tangentChange1)), frob_norm(change) << " " << frob_norm(TTTensor(tangentChange1)));
 	TTTangentVector tangentChange2(tangentChange1);
 	
+	// test whether copy construction, += and * work as intended
 	tangentChange2 += tangentChange1 * (-1);
 	
 	for (size_t i=0; i<stateDims.size(); ++i) {
 		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);
 	}
 	
-	tangentChange2 = TTTangentVector(X, tangentChange1.change_direction(X));
+	// projection P*P = P
+	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
+	MTEST(frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)) < 1e-13, frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)));
 	
-	LOG(asdasd, frob_norm(tangentChange2.change_direction(X) - tangentChange1.change_direction(X)));
-	
+	// vector transport from X to X should not change the vector at all
+	ProjectiveVectorTransport(X, X, tangentChange2);
+	tangentChange2 -= tangentChange1;
 	for (size_t i=0; i<stateDims.size(); ++i) {
-		LOG(aklsjd, frob_norm(tangentChange2.components[i]) / frob_norm(tangentChange1.components[i]));
-		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);
+		MTEST(frob_norm(tangentChange2.components[i]) < 1e-13, frob_norm(tangentChange2.components[i]));
+	}
+	
+	// tangent space of 10*X should be equal to tangent space of X
+	tangentChange2 = TTTangentVector(10 * X, TTTensor(tangentChange1));
+	MTEST(frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)) < 1e-13, frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)));
+	
+	value_t normOld = frob_norm(TTTensor(tangentChange1));
+	for (value_t eps = 1e-10; eps <= 1e-4; eps *= 10) {
+		TTTensor newX(X);
+		SubmanifoldRetractionI(newX, tangentChange1 * eps);
+		tangentChange2 = tangentChange1;
+		ProjectiveVectorTransport(newX, X, tangentChange2);
+		value_t normNew = frob_norm(TTTensor(tangentChange2));
+		value_t changeAngle = (tangentChange1.scalar_product(tangentChange2) / normOld / normNew);
+		MTEST(1-changeAngle < 1e-6, (1-changeAngle));
+		MTEST(normNew <= normOld + 1e-9, normNew << " vs " << normOld);
 	}
 )
 
