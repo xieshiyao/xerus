@@ -80,19 +80,19 @@ namespace xerus {
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
 		Index i1,i2,j1,j2,r,s;
 		std::vector<FullTensor> rightStackUV;
-		rightStackUV.push_back(Tensor::ones({1,1}));
-		for (size_t i=_base.degree()-1; i>0; --i) {
+		rightStackUV.emplace_back(Tensor::ones({1,1}));
+		for (size_t i = _base.degree()-1; i>0; --i) {
 			FullTensor newRight;
 			newRight(i1,i2) = _base.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
 			rightStackUV.emplace_back(std::move(newRight));
 		}
 		FullTensor left(Tensor::ones({1,1}));
 		
-		// project onto the single components
+		// Project onto the single components
 		TTTensor baseCpy(_base);
-		for (size_t i=0; i<_base.degree(); ++i) {
+		for (size_t i = 0; i < _base.degree(); ++i) {
 			FullTensor V;
-			V(i1,r,j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
+			V(i1, r, j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
 			components.emplace_back(std::move(V));
 			if (i<_base.degree()-1) {
 				baseCpy.move_core(i+1, true);
@@ -100,6 +100,14 @@ namespace xerus {
 			}
 			rightStackUV.pop_back();
 		}
+		
+		TTTensor realFullprojectedDirectionBefore = change_direction(_base);
+		
+		FullTensor fullprojectedDirectionBefore = Tensor::ones({1});
+		for(const FullTensor& comp : components) {
+			     fullprojectedDirectionBefore(i1&2, i2, r) = fullprojectedDirectionBefore(i1&1, s) * comp(s, i2, r);
+		}
+		
 		
 		// orthogonalize with regard  to _base
 		FullTensor movedPart({1,1});
@@ -112,6 +120,20 @@ namespace xerus {
 				components[curr](i1,r,j1) = components[curr](i1,r,j1) - movedPart(i1,i2) * UComp(i2,r,j1);
 			}
 		}
+		
+		
+		TTTensor realFullprojectedDirectionAfter = change_direction(_base);
+		
+		REQUIRE(frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter) < 1e-10, "IE: " << frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter));
+		LOG(bla, frob_norm(realFullprojectedDirectionBefore - realFullprojectedDirectionAfter));
+		
+		FullTensor fullprojectedDirectionAfter = Tensor::ones({1});
+		for(const FullTensor& comp : components) {
+			     fullprojectedDirectionAfter(i1&2, i2, r) = fullprojectedDirectionAfter(i1&1, s) * comp(s, i2, r);
+		}
+		REQUIRE(frob_norm(fullprojectedDirectionBefore - fullprojectedDirectionAfter) < 1e-10, "IE: " << frob_norm(fullprojectedDirectionBefore - fullprojectedDirectionAfter));
+
+		LOG(bla, "passed");
 	}
 	
 // 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {

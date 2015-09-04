@@ -147,19 +147,23 @@ UNIT_TEST(algorithms, vectorTransport,
 	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTangentVector tangentChange1(X, change);
+	
 	LOG(norms, frob_norm(change) << " " << frob_norm(tangentChange1.change_direction(X)));
+	
 	TEST(frob_norm(change) > frob_norm(tangentChange1.change_direction(X)));
+	
 	TTTangentVector tangentChange2(tangentChange1);
 	
 	tangentChange2 += tangentChange1 * (-1);
+	
 	for (size_t i=0; i<stateDims.size(); ++i) {
 		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);
 	}
 	
 	tangentChange2 = TTTangentVector(X, tangentChange1.change_direction(X));
+	
 	LOG(asdasd, frob_norm(tangentChange2.change_direction(X) - tangentChange1.change_direction(X)));
-	//ProjectiveVectorTransport(X, X, tangentChange2);
-// 	tangentChange2 -= tangentChange1;
+	
 	for (size_t i=0; i<stateDims.size(); ++i) {
 		LOG(aklsjd, frob_norm(tangentChange2.components[i]) / frob_norm(tangentChange1.components[i]));
 		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);

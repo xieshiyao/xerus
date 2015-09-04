@@ -199,7 +199,7 @@ namespace xerus {
 				if(iteration > 0) {
 					for(size_t i = 0; i < numMeasurments; ++i) {
 						if(backwardUpdates[i + corePosition*numMeasurments]) {
-							contract((*backwardStack[i + corePosition*numMeasurments])(r2), fixedComponents[_measurments[i].positions[corePosition]](r2, r1) , (*backwardStack[i + (corePosition+1)*numMeasurments])(r1));
+							contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
 						}
 					}
 				} else {
@@ -220,12 +220,14 @@ namespace xerus {
 				
 				FullTensor deltaPlus({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				FullTensor entryAddition({_x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
-				FullTensor currentValue;
+				FullTensor currentValue({});
 				residual = 0;
 				
 				for(size_t i = 0; i < numMeasurments; ++i) {
-					entryAddition(r1, r2) = (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r2);
-					currentValue() = entryAddition(r1, r2) * fixedComponents[_measurments[i].positions[corePosition]](r1, r2);
+// 					entryAddition(r1, r2) = (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r2);
+					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
+// 					currentValue() = entryAddition(r1, r2) * fixedComponents[_measurments[i].positions[corePosition]](r1, r2);
+					contract(currentValue, entryAddition, false, fixedComponents[_measurments[i].positions[corePosition]], false, 2);
 					const value_t currentDifference = _measurments[i].value-currentValue[0];
 					misc::array_add(deltaPlus.data.get()+_measurments[i].positions[corePosition]*entryAddition.size, currentDifference, entryAddition.data.get(), entryAddition.size);
 					residual += misc::sqr(currentDifference);
@@ -242,8 +244,12 @@ namespace xerus {
 				}
 				value_t PyPy = 0;
 				value_t PyR = 0;
+				FullTensor halfPy({deltaPlus.dimensions[1]});
 				for(size_t i = 0; i < numMeasurments; ++i) {
-					value_t Py = value_t((*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * fixedDeltas[_measurments[i].positions[corePosition]](r1, r2) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r2));
+					contract(halfPy, fixedDeltas[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+					contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
+					value_t Py = currentValue[0];
+// 					value_t Py = value_t((*forwardStack[i + (corePosition-1)*numMeasurments])(r1) * fixedDeltas[_measurments[i].positions[corePosition]](r1, r2) * (*backwardStack[i + (corePosition+1)*numMeasurments])(r2));
 					PyPy += misc::sqr(Py);
 					PyR += Py*currentDifferences[i];
 				}
@@ -266,7 +272,8 @@ namespace xerus {
 					if(iteration > 0) {
 						for(size_t i = 0; i < numMeasurments; ++i) {
 							if(forwardUpdates[i + corePosition*numMeasurments]) {
-								contract((*forwardStack[i + corePosition*numMeasurments])(r2) , (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) , fixedComponents[_measurments[i].positions[corePosition]](r1, r2));
+								contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments[i].positions[corePosition]], false, 1);
+// 								contract((*forwardStack[i + corePosition*numMeasurments])(r2) , (*forwardStack[i + (corePosition-1)*numMeasurments])(r1) , fixedComponents[_measurments[i].positions[corePosition]](r1, r2));
 							}
 						}
 					} else {

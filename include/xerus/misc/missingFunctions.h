@@ -183,6 +183,18 @@ namespace xerus {
             return product;
         }
         
+        ///@brief: Calculates the product the entries in the range [_first, _last).
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        _pure_ item_t product(const container_t<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
+			REQUIRE(_first <= _last && _last <= _container.size(), "Invalid range " << _first << "-" << _last << " given (Contaienr size " << _container.size() << ")"); 
+            item_t product = item_t(1);
+			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+_first; item != _container.begin()+_last; ++item) { 
+				product *= *item; 
+				REQUIRE(product >= *item, "overflow in product"); 
+			}
+            return product;
+        }
+        
         ///@brief: Erases all elements specified by @a _rule from the container @a _container.
         template<class rule_t, template<class, class...> class container_t, class item_t, class... rest_t>
         _pure_ void erase(container_t<item_t, rest_t...>& _container, const rule_t& _rule) {

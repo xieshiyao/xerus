@@ -550,6 +550,45 @@ namespace xerus {
         result.factor *= -1;
         return result;
     }
+    
+    
+    void contract(FullTensor& _result, const FullTensor& _lhs, const bool _lhsTrans, const FullTensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
+		const size_t leftDim = _lhsTrans ? misc::product(_lhs.dimensions, _numIndices, _lhs.degree()) : misc::product(_lhs.dimensions, 0, _lhs.degree() - _numIndices);
+		const size_t midDim = _lhsTrans ? misc::product(_lhs.dimensions, 0, _numIndices) : misc::product(_lhs.dimensions, _lhs.degree()-_numIndices, _lhs.degree());
+		const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
+		
+		IF_CHECK(
+			std::vector<size_t> resultDims;
+			if(_lhsTrans) {
+				for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
+					resultDims.emplace_back(_lhs.dimensions[i]);
+				}
+			} else {
+				for(size_t i = 0; i < _lhs.degree()-_numIndices; ++i) {
+					resultDims.emplace_back(_lhs.dimensions[i]);
+				}
+			}
+			if(_rhsTrans) {
+				for(size_t i = 0; i < _rhs.degree()-_numIndices; ++i) {
+					resultDims.emplace_back(_rhs.dimensions[i]);
+				}
+			} else {
+				for(size_t i = _numIndices; i < _rhs.degree(); ++i) {
+					resultDims.emplace_back(_rhs.dimensions[i]);
+				}
+			}
+			REQUIRE(resultDims == _result.dimensions, "The given results has wrong dimensions " << _result.dimensions << " should be " << resultDims);
+			
+			for(size_t i = 0; i < _numIndices; ++i) {
+				REQUIRE((_lhsTrans ? _lhs.dimensions[i] : _lhs.dimensions[_lhs.degree()-_numIndices+i]) == (_rhsTrans ? _rhs.dimensions[_rhs.degree()-_numIndices+i] : _rhs.dimensions[i]), "Dimensions of the be contracted indices do not coincide.");
+			}
+		)
+		
+		_result.factor = 1.0;
+		_result.ensure_own_data_no_copy();
+		blasWrapper::matrix_matrix_product(_result.data.get(), leftDim, rightDim, _lhs.factor*_rhs.factor, _lhs.data.get(), _lhsTrans, midDim, _rhs.data.get(), _rhsTrans);
+	}
 }
 
 

@@ -496,4 +496,17 @@ namespace xerus {
 	* @return the difference as a FullTensor.
 	*/
     FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
+	
+	
+	/** 
+	* @brief Low-level contraction between FullTensors.
+	* @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
+	* @param _result Output for the result of the contraction. Must allready have the right dimensions!
+	* @param _lhs left hand side of the contraction.
+	* @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
+	* @param _rhs right hand side of the contraction.
+	* @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
+	* @param _numIndices number of indices that shall be contracted.
+	*/
+    void contract(FullTensor& _result, const FullTensor& _lhs, const bool _lhsTrans, const FullTensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
 }
