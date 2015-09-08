@@ -82,6 +82,14 @@ namespace xerus {
 			
 			operator T() const{ return value; }
 		};
+		
+		///@brief: Concatenates two given cointainers.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+		container_t<item_t, rest_t...> operator |(const container_t<item_t, rest_t...> & _left, const container_t<item_t, rest_t...> & _right) {
+			container_t<item_t, rest_t...> both(_left);
+			both.insert(both.end(), _right.begin(), _right.end());
+			return both;
+		}
 
         ///@brief: Counts how often an element is contained in an arbitary container
         template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>

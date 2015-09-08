@@ -198,10 +198,10 @@ namespace xerus {
 		
 		PA_START;
 		if(_other.is_sparse()) {
-			if(has_factor() || _other.has_factor()) {
-				const value_t factorToApply = _other.factor/factor;
+			apply_factor();
+			if(_other.has_factor()) {
 				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
-					dataPtr[entry.first] -= factorToApply*entry.second;
+					dataPtr[entry.first] -= _other.factor*entry.second;
 				}
 			} else {
 				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {

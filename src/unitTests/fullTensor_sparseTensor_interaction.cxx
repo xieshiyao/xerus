@@ -109,15 +109,18 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
     TEST(approx_equal(check, resFS, 1e-14));
 )
 
-UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
+UNIT_TEST(FullTensor_SparseTensor_Interaction, Random_Add_Sub,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
-    std::uniform_int_distribution<size_t> intDist (1, 10);
+    std::uniform_int_distribution<size_t> intDist (1, 5);
+    std::uniform_int_distribution<size_t> idxDist (0, 4);
 
-    Index i,j,k,l,m,n,o,p,q;
+    Index i0, i1, i2, i3, i4;
 	
 	std::vector<size_t> dimensions;
-	for(size_t d = 0; d < 6; ++d) {
+	std::vector<size_t> idxPow(5, 0);
+	
+	for(size_t d = 0; d < 10; ++d) {
 		std::vector<size_t> opDim(dimensions);
 		opDim.insert(opDim.end(), dimensions.begin(), dimensions.end());
 		std::uniform_int_distribution<size_t> numDist (0, misc::product(dimensions));
@@ -204,6 +207,50 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
 		TEST(approx_equal(resFF, resSF));
 		TEST(approx_equal(resFF, resSS));
 		
+		
+		// Simple Indexed Addition
+		resFF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) + BF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resFS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) + BS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resSF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) + BF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resSS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) + BS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
+		// Simple Indexed Subtraction
+		resFF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) - BF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resFS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) - BS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resSF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) - BF(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		resSS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) 
+		= AS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]) - BS(i0^idxPow[0], i1^idxPow[1], i2^idxPow[2], i3^idxPow[3], i4^idxPow[4]);
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
 		dimensions.push_back(intDist(rnd));
+		idxPow[idxDist(rnd)]++;
+	}
+)
+	
+UNIT_TEST(FullTensor_SparseTensor_Interaction, Random_Indexed,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 10.0);
+    std::uniform_int_distribution<size_t> intDist (1, 5);
+    std::uniform_int_distribution<size_t> idxDist (0, 4);
+
+    Index i, j, k, l, m, n, o, p;
+	
+	std::vector<std::vector<size_t>> dimensionSets(5);
+	
+	for(size_t d = 0; d < 10; ++d) {
 	}
 )
