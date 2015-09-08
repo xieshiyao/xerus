@@ -40,6 +40,7 @@ namespace xerus {
 		TTTensor residual;
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
+		value_t normB = frob_norm(_b);
 		
 		
 		if (_Ap) {
@@ -57,23 +58,27 @@ namespace xerus {
 					<< "convergence epsilon: " << _convergenceEpsilon << '\n';
 		_perfData.start();
 		
-		auto updateResidualAndPerfdata = [&]() {
-			lastResidual = currResidual;
+		auto updateResidual = [&]() {
 			if (_Ap) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
 			}
-			currResidual = frob_norm(residual);
+			currResidual = frob_norm(residual)/normB;
+		};
+		
+		auto updatePerfdata = [&]() {
 			_perfData.add(currResidual);
-			if (printProgress && stepCount%37==0) {
+			if (printProgress && stepCount%1==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
+						  << " vs " << _convergenceEpsilon << ")\n" << std::flush;
 				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
-		updateResidualAndPerfdata();
+		updateResidual();
+		updatePerfdata();
+		
 		TTTensor y, Ay;
 		value_t alpha;
 		while ((_numSteps == 0 || stepCount < _numSteps)
@@ -84,7 +89,7 @@ namespace xerus {
 			stepCount += 1;
 			
 			if (_Ap) {
-				if (assumeSymmetricPositiveDefiniteOperator) {
+				if (assumeSymmetricPositiveDefiniteOperator) { REQUIRE_TEST;
 					// search direction: y = b-Ax
 					y = residual;
 					// direction of change A*y
@@ -93,7 +98,7 @@ namespace xerus {
 					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
 					// "optimal" change: alpha*y
 					y *= alpha;
-				} else {
+				} else { REQUIRE_TEST;
 					// search direction: y = A^T(b-Ax)
 					y(i&0) = _A(j/2,i/2) * residual(j&0);
 					// direction of change A*y
@@ -107,9 +112,20 @@ namespace xerus {
 				y = residual;
 			}
 			
+			TTTensor oldX(_x);
 			retraction(_x, y);
+			lastResidual = currResidual;
+			updateResidual();
+			// armijo backtracking
+			while (lastResidual < currResidual){// - 1e-4 * value_t(residual(i&0) * TTTensor(direction)(i&0))*alpha) {
+				LOG(huch, alpha << " " << currResidual);
+				y *= 0.5;
+				_x = oldX;
+				retraction(_x, y);
+				updateResidual();
+			}
 			
-			updateResidualAndPerfdata();
+			updatePerfdata();
 		}
 		
 		return currResidual;

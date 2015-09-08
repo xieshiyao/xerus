@@ -40,6 +40,7 @@ namespace xerus {
 		TTTensor residual;
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
+		value_t normB = frob_norm(_b);
 		
 		if (_Ap) {
 			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
@@ -62,7 +63,7 @@ namespace xerus {
 			} else {
 				residual = _b - _x;
 			}
-			currResidual = frob_norm(residual);
+			currResidual = frob_norm(residual)/normB;
 		};
 		
 		auto updatePerfdata = [&]() {
@@ -92,7 +93,7 @@ namespace xerus {
 			if (_Ap) {
 				TTTensor dirTT = TTTensor(direction);
 				if (assumeSymmetricPositiveDefiniteOperator) {
-					alpha = 32* dirTT.frob_norm()/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
+					alpha = direction.scalar_product(direction)/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
 				} else {
 					value_t normDir = dirTT.frob_norm();
 					dirTT(i&0) = _A(i/2,j/2) * dirTT(j&0);
@@ -102,19 +103,19 @@ namespace xerus {
 				alpha = 1;
 			}
 			
-			// TODO armijo backtracking
 			TTTensor oldX(_x);
-			retraction(_x, direction * (alpha));
+			retraction(_x, direction * alpha);
 			lastResidual = currResidual;
 			updateResidual();
 			
-// 			while (lastResidual < currResidual - 1e-4 * value_t(residual(i&0) * direction.change_direction(oldX)(i&0))*alpha) {
+			// armijo backtracking
+			while (lastResidual < currResidual - 1e-4 * value_t(residual(i&0) * TTTensor(direction)(i&0))*alpha) {
 // 				LOG(huch, alpha << " " << currResidual);
-// 				alpha /= 2;
-// 				_x = oldX;
-// 				retraction(_x, direction * alpha);
-// 				updateResidual();
-// 			}
+				alpha /= 2;
+				_x = oldX;
+				retraction(_x, direction * alpha);
+				updateResidual();
+			}
 			
 			updatePerfdata();
 			
@@ -130,7 +131,7 @@ namespace xerus {
 				direction = TTTangentVector(_x, grad);
 			}
 			double beta = direction.scalar_product(direction) / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update
-			LOG(ab, "\t\t\t" << alpha << " " << beta);
+// 			LOG(ab, "\t\t\t" << alpha << " " << beta);
 			direction += oldDirection * (beta);
 		}
 		

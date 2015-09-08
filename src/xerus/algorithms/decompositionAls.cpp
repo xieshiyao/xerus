@@ -42,7 +42,7 @@ namespace xerus {
 		
 		for(size_t iteration = 0; iteration < _maxIterations; ++iteration) {
 			// Move right
-			for(size_t pos = 0; pos < _x.degree(); ++pos) {
+			for(size_t pos = 0; pos < _x.degree(); ++pos) { REQUIRE_TEST;
 //                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);
@@ -50,7 +50,7 @@ namespace xerus {
 			}
 			
 			// Move left
-			for(size_t pos = _x.degree()-2; pos > 0; --pos) {
+			for(size_t pos = _x.degree()-2; pos > 0; --pos) { REQUIRE_TEST;
 //                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);

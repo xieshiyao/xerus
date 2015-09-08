@@ -35,21 +35,21 @@ UNIT_TEST(algorithms, cg,
 	TTOperator A = TTOperator::random({10,10,10,10,10,10}, {2,2}, rnd, dist);
 	
 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
-// 	B(i&0) = A(i/2,j/2) * B(j&0);
+	B(i&0) = A(i/2,j/2) * B(j&0);
 	
 	GeometricCGVariant cg(GeometricCG);
 	cg.printProgress = true;
 	cg.assumeSymmetricPositiveDefiniteOperator = true;
 	cg.retraction = ALSRetractionI;
-// 	cg.restartInterval = 20;
+	cg.restartInterval = 20;
 	
 	cg(A, X, B);
 	
-	SteepestDescentVariant submanGrad(ALSRetractionII);
-	submanGrad.printProgress = true;
-	submanGrad.assumeSymmetricPositiveDefiniteOperator = true;
+	SteepestDescentVariant alsGrad(ALSRetractionII);
+	alsGrad.printProgress = true;
+	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-	submanGrad(A, X, B);
+// 	alsGrad(A, X, B);
 )
 
 

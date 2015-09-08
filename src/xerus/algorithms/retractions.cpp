@@ -99,7 +99,7 @@ namespace xerus {
 		FullTensor left(Tensor::ones({1,1}));
 		
 		// project onto the single components
-		for (size_t i=0; i<baseR.degree(); ++i) {
+		for (size_t i=0; i<baseR.degree(); ++i) { REQUIRE_TEST;
 			FullTensor V;
 			V(i1,r,j1) =  left(i1,i2) * _direction.get_component(i)(i2,r,j2) * rightStackUV.back()(j1,j2);
 			if (i>0) {
@@ -185,58 +185,57 @@ namespace xerus {
 	}
 	
 	TTTangentVector::operator TTTensor() const {
-// 		if (components.size() == 1) {
-// 			TTTensor result(1);
-// 			result.set_component(0, components[0]);
-// 			return result;
-// 		}
-// 		TTTensor result = change_direction_incomplete();
-// 		FullTensor newComponent(4);
-// 		Index i1,i2,n,r1,r2;
-// 		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * components[components.size()-1](r1,n,r2)
-// 									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
-// 		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
-// 		result.set_component(components.size()-1, newComponent);
-// 		result.move_core(0);
-// 		return result;
-		TTTensor result(baseL);
-		result.set_component(0, components[0]);
-		for (size_t i=1; i<components.size(); ++i) {
-			TTTensor tmp(baseL);
-			tmp.move_core(i, true);
-			tmp.set_component(i, components[i]);
-			result += tmp;
+		if (components.size() == 1) {
+			TTTensor result(1);
+			result.set_component(0, components[0]);
+			return result;
 		}
+		TTTensor result = change_direction_incomplete();
+		FullTensor newComponent(4);
+		Index i1,i2,n,r1,r2;
+		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * components[components.size()-1](r1,n,r2)
+									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
+		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
+		result.set_component(components.size()-1, newComponent);
 		result.move_core(0);
 		return result;
+// 		TTTensor result(baseL);
+// 		result.set_component(0, components[0]);
+// 		for (size_t i=1; i<components.size(); ++i) {
+// 			TTTensor tmp(baseL);
+// 			tmp.move_core(i, true);
+// 			tmp.set_component(i, components[i]);
+// 			result += tmp;
+// 		}
+// 		result.move_core(0);
+// 		return result;
 	}
 	
 	TTTensor TTTangentVector::added_to_base() const {
-// 		if (components.size() == 1) {
-// 			TTTensor result(1);
-// 			result.set_component(0, components[0]);
-// 			result = result + baseL;
-// 			return result;
-// 		}
-// 		TTTensor result = change_direction_incomplete();
-// 		FullTensor newComponent(4);
-// 		Index i1,i2,n,r1,r2;
-// 		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * (components[components.size()-1](r1,n,r2) + baseR.get_component(components.size()-1)(r1,n,r2))
-// 									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
-// 		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
-// 		result.set_component(components.size()-1, newComponent);
-// 		result.move_core(0);
-// 		return result;
-		TTTensor result(baseL);
-// 		result.set_component(0, components[0]);
-		for (size_t i=0; i<components.size(); ++i) {
-			TTTensor tmp(baseL);
-			tmp.move_core(i, true);
-			tmp.set_component(i, components[i]);
-			result += tmp;
+		if (components.size() == 1) {
+			TTTensor result(1);
+			result.set_component(0, components[0]);
+			result = result + baseL;
+			return result;
 		}
+		TTTensor result = change_direction_incomplete();
+		FullTensor newComponent(4);
+		Index i1,i2,n,r1,r2;
+		newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * (components[components.size()-1](r1,n,r2) + baseR.get_component(components.size()-1)(r1,n,r2))
+									+Tensor::dirac({2},{1})(i1) * baseL.get_component(components.size()-1)(r1,n,r2);
+		newComponent.reinterpret_dimensions({components[components.size()-1].dimensions[0]*2, components[components.size()-1].dimensions[1], 1});
+		result.set_component(components.size()-1, newComponent);
 		result.move_core(0);
 		return result;
+// 		TTTensor result(baseL);
+// 		for (size_t i=0; i<components.size(); ++i) {
+// 			TTTensor tmp(baseL);
+// 			tmp.move_core(i, true);
+// 			tmp.set_component(i, components[i]);
+// 			result += tmp;
+// 		}
+// 		result.move_core(0);
+// 		return result;
 	}
 	
 	
@@ -248,7 +247,7 @@ namespace xerus {
 	
 	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const Index i1,j1,r;
-		for (size_t i=0; i<_U.degree(); ++i) {
+		for (size_t i=0; i<_U.degree(); ++i) { REQUIRE_TEST;
 			std::unique_ptr<FullTensor> newComponent(new FullTensor);
 			(*newComponent)(i1,r,j1) = _U.get_component(i)(i1,r,j1) + _change.components[i](i1,r,j1);
 			_U.set_component(i, std::move(newComponent));
