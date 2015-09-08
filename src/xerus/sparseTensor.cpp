@@ -204,7 +204,7 @@ namespace xerus {
         
 		PA_START;
         for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->insert(entry);
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, _other.factor*entry.second);
             if(!result.second) {
                 result.first->second += _other.factor*entry.second;
             }
@@ -224,7 +224,7 @@ namespace xerus {
         
 		PA_START;
         for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->insert(entry);
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, -_other.factor*entry.second);
             if(!result.second) {
                 result.first->second -= _other.factor*entry.second;
             }

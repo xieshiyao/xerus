@@ -74,8 +74,6 @@ UNIT_TEST(ALS, projectionALS,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
     
     Index k,l,m,n,o,p;
-	
-	
     
 	TTTensor B = TTTensor::random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
 	value_t normB = frob_norm(B);
@@ -113,7 +111,7 @@ UNIT_TEST(ALS, tutorial,
 	
 // 	LOG(asd, frob_norm(X-B));
 	
-	TEST(misc::approx_equal(frob_norm(X-B), 0., 1e-12));
+	TEST(frob_norm(X-B) < 1e-12);
 	
 	A = xerus::TTOperator::random(operatorDims, 2, rnd, dist);
 	
@@ -135,7 +133,7 @@ UNIT_TEST(ALS, tutorial,
 // 	std::vector<value_t> perfdata;
 	
 	ALSb(A, X, C, 1e-12);
-	TEST(misc::approx_equal(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)), 0., 1e-4));
+	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
 	
 	
 // 	perfdata.clear();

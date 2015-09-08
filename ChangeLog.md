@@ -16,6 +16,8 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
   * Tensor::identity(...) to construct a (sparse) tensor equal to the TTOperator::identity.
   * Tensor::dirac(...) to construct a (sparse) tensor with a single 1 at a given position and 0 everywhere else.
   * Tensor::kronecker(...) to construct a tensor that is 1 when all indices are equal and 0 otherwise.
+ * ! approx_equal now works relative for normal values (to achive consistency with the tensor variant).
+ * Several bugfixes for SparseTensors.
  * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
 
 * 2015-07-10 v1.3.0

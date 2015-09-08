@@ -216,12 +216,10 @@ namespace xerus {
     }
     
     
-	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const {
+	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
 		std::vector<TensorNetwork> stack;
 		stack.emplace_back(*this);
 		stack.back().reduce_representation();
-		
-// 		std::map<size_t, size_t> histo;
 		
 		// Sort measurements
 		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
@@ -245,36 +243,20 @@ namespace xerus {
 			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
 			previousPosition = measurment.positions;
 			
-// 			histo[rebuildIndex] += 1;
-			
 			// Trash stack that is not needed anymore
-			while(stack.size() > rebuildIndex+1) { stack.pop_back(); }
+			stack.resize(rebuildIndex+1);
 			
 			// Rebuild stack
 			for(size_t i = rebuildIndex; i < degree(); ++i) {
 				stack.emplace_back(stack.back());
-				stack.back().fix_slate(0, measurment.positions[i]); 
+				stack.back().fix_slate(0, measurment.positions[i]);
 				stack.back().reduce_representation();
 			}
 			REQUIRE(stack.back().degree() == 0, "Internal Error");
 			REQUIRE(stack.size() == degree()+1, "Internal Error");
-/*			
-			size_t bla = 0;
-			for(const TensorNetwork& tn : stack) {
-				tn.draw(std::string("stack_lvl") + misc::to_string(bla++));
-			}*/
 			
 			measurment.value = stack.back()[0];
 		}
-		
-// 		size_t sum=0;
-// 		size_t integrated = 0;
-// 		for (auto &a: histo) {
-// 			integrated += a.second;
-// 			LOG(histo, a.first << "\t" << a.second << "\t" << integrated);
-// 			sum += (degree()-a.first) * a.second;
-// 		}
-// 		LOG(histo, "total: " << sum << " mean: " << double(sum)/double(_measurments.size()));
 	}
     
 

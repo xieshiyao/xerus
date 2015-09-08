@@ -82,6 +82,14 @@ namespace xerus {
 			
 			operator T() const{ return value; }
 		};
+		
+		///@brief: Concatenates two given cointainers.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+		container_t<item_t, rest_t...> operator |(const container_t<item_t, rest_t...> & _left, const container_t<item_t, rest_t...> & _right) {
+			container_t<item_t, rest_t...> both(_left);
+			both.insert(both.end(), _right.begin(), _right.end());
+			return both;
+		}
 
         ///@brief: Counts how often an element is contained in an arbitary container
         template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
@@ -213,10 +221,10 @@ namespace xerus {
             return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
         }
 
-        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|+|b|)) is smaller than @a _eps.
+        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
         template<class T>
         bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
-            return std::abs(_a-_b) <= _eps;
+            return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
         }
     }
 }

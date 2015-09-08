@@ -154,26 +154,23 @@ namespace xerus {
         
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
-		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
 		*/
         implicit TensorNetwork(const Tensor& _other);
         
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
-		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
 		*/
         implicit TensorNetwork(Tensor&& _other);
         
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
-		* @details The global factor of the TN is set to 1.0 (the tensor may still have a factor on its own).
 		* The TN takes the ownership of the pointer.
 		*/
         implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
         
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing a FullTensor with the given degree.
-		* @details All dimensions are set equals one, the global factor of the TN is one and the only entry 
+		* @details All dimensions are set equals one and the only entry 
 		* of the tensor is zero.
 		*/
         implicit TensorNetwork(size_t _degree);
@@ -183,7 +180,7 @@ namespace xerus {
         
         /** 
 		* @brief Returns a new copy of the network.
-		* @details All dimensions are set equals one, the global factor of the TN is one and the only entry 
+		* @details All dimensions are set equals to one and the only entry 
 		* of the tensor is zero.
 		*/
 		virtual TensorNetwork* get_copy() const;
