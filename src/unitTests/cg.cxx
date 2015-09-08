@@ -22,7 +22,7 @@
 
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
-/*
+
 UNIT_TEST(algorithms, cg,
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
@@ -30,9 +30,9 @@ UNIT_TEST(algorithms, cg,
     
     Index i,j,k;
     
-    TTTensor X = TTTensor::random({10,10,10}, {4,4}, rnd, dist);
-	TTTensor B = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
-	TTOperator A = TTOperator::random({10,10,10,10,10,10}, {2,2}, rnd, dist);
+    TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, rnd, dist);
+	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
+	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
 	
 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
 	B(i&0) = A(i/2,j/2) * B(j&0);
@@ -43,12 +43,12 @@ UNIT_TEST(algorithms, cg,
 	cg.retraction = ALSRetractionI;
 	cg.restartInterval = 20;
 	
-	cg(A, X, B);
+// 	cg(A, X, B);
 	
 	SteepestDescentVariant alsGrad(ALSRetractionII);
 	alsGrad.printProgress = true;
 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-// 	alsGrad(A, X, B);
+	alsGrad(A, X, B);
 )
-*/
+

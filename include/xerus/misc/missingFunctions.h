@@ -188,7 +188,7 @@ namespace xerus {
         _pure_ item_t product(const container_t<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
 			REQUIRE(_first <= _last && _last <= _container.size(), "Invalid range " << _first << "-" << _last << " given (Contaienr size " << _container.size() << ")"); 
             item_t product = item_t(1);
-			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+_first; item != _container.begin()+_last; ++item) { 
+			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+(long)_first; item != _container.begin()+(long)_last; ++item) { 
 				product *= *item; 
 				REQUIRE(product >= *item, "overflow in product"); 
 			}

@@ -58,5 +58,5 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	ADF(X, measurements);
 	
-	TEST(misc::approx_equal(frob_norm(X - trueSolution),0.0,1e-13));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 5e-15, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )
