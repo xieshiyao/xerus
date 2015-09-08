@@ -193,6 +193,17 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
 		TEST(approx_equal(resFF, resSF));
 		TEST(approx_equal(resFF, resSS));
 		
+		
+		// Addition + Subtraction + scale C
+		resFF = 0.9*AF - 3.7*(7*BF + 2.1*CF) + 2037*(0*AF + 0*BF);
+		resFS = 0.9*AF - 3.7*(7*BS + 2.1*CF) + 2037*(0*AS + 0*BF);
+		resSF = 0.9*AS - 3.7*(7*BF + 2.1*CS) + 2037*(0*AF + 0*BS);
+		resSS = 0.9*AS - 3.7*(7*BS + 2.1*CS) + 2037*(0*AS + 0*BS);
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
 		dimensions.push_back(intDist(rnd));
 	}
 )
