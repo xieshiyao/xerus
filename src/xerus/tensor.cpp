@@ -60,6 +60,8 @@ namespace xerus {
 	SparseTensor Tensor::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2 == 0, "Identity tensor must have even degree, here: " << _dimensions.size());
 		SparseTensor ret(_dimensions);
+		std::vector<size_t> position(0, _dimensions.size());
+		
 		LOG(fatal, "Not implemented");
 		
 		return ret;

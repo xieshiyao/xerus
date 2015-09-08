@@ -266,6 +266,9 @@ namespace xerus {
 					}
 				}
 			}
+			if(residual <= convergenceEpsilon) {
+				return residual;
+			}
 		}
 		return residual;
 	}
