@@ -26,15 +26,16 @@ using namespace xerus;
 
 UNIT_TEST(Algorithm, adf_completion,
 	const size_t D = 10;
-// 	std::random_device rd;
-	std::mt19937_64 rnd(0xDEAFBEEF);
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
 	std::uniform_int_distribution<size_t> dist(0,3);
 	std::normal_distribution<value_t> distF(0,1);
-	TTTensor trueSolution(examples::peaking_diagonals(D,4,1.0));
+// 	TTTensor trueSolution(examples::peaking_diagonals(D,4,1.0));
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, 4), std::vector<size_t>(D-1, 5), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<10*D*5*5*4; ++i) {
+	for (size_t i=0; i<100*D*5*5*4; ++i) {
 		std::vector<size_t> pos;
 		for (size_t n=0; n<D; ++n) {
 			pos.emplace_back(dist(rnd));
@@ -46,11 +47,11 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	trueSolution.measure(measurements);
 	
-// 	bool test = true;
-// 	for (const SinglePointMeasurment &m : measurements) {
-// 		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-13);
-// 	}
-// 	TEST(test);
+	bool test = true;
+	for (const SinglePointMeasurment &m : measurements) {
+		MTEST(misc::approx_equal(m.value, trueSolution[m.positions], 1e-12), m.value - trueSolution[m.positions]); 
+	}
+	TEST(test);
 	
 	TTTensor X = TTTensor::random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
 	X /= X.frob_norm()*1000.0;
