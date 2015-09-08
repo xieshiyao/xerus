@@ -49,6 +49,6 @@ UNIT_TEST(algorithms, cg,
 	alsGrad.printProgress = true;
 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-	alsGrad(A, X, B);
+// 	alsGrad(A, X, B);
 )
 

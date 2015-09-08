@@ -151,6 +151,43 @@ UNIT_TEST(algorithms, retractions,
 )
 
 
+UNIT_TEST(TTTangentVector, orthogonality,
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
+	std::normal_distribution<double> dist (0.0, 1.0);
+	
+	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
+	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
+	Index j;
+	
+	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTangentVector tangentChange(X, change);
+	TTTensor PX = TTTensor(tangentChange);
+	TTTensor XPX = X - PX;
+	
+	// construct all possible basis vectors for the tangent plane
+	for (size_t n=0; n<stateDims.size(); ++n) {
+		TTTensor xMovedCore(X);
+		xMovedCore.move_core(n);
+		for (size_t i=0; i<X.get_component(n).size; ++i) {
+			TTTensor b(xMovedCore);
+			b.set_component(n, FullTensor(Tensor::dirac(b.component(n).dimensions, i)));
+			b.move_core(0);
+			// check Pb = b
+			TTTensor pb = TTTensor(TTTangentVector(X, b));
+			MTEST(frob_norm(b-pb)/frob_norm(b) < 5e-15, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
+			
+			// check orthogonality
+			value_t scalarProd = value_t(XPX(j&0) * b(j&0));
+			MTEST(std::abs(scalarProd) < 1e-20, n << " " << i << " " << scalarProd);
+			
+			MTEST(misc::approx_equal(value_t(X(j&0) * b(j&0)), value_t(PX(j&0) * b(j&0))),  n << " " << i << " " << value_t(X(j&0) * b(j&0)) << " " << value_t(PX(j&0) * b(j&0)));
+		}
+	}
+)
+
+
 UNIT_TEST(algorithms, vectorTransport,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
