@@ -59,18 +59,40 @@ namespace xerus {
 		
 	SparseTensor Tensor::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2 == 0, "Identity tensor must have even degree, here: " << _dimensions.size());
-		SparseTensor ret(_dimensions);
-		std::vector<size_t> position(0, _dimensions.size());
+		const size_t d = _dimensions.size();
 		
-		LOG(fatal, "Not implemented");
+		SparseTensor ret(_dimensions);
+		std::vector<size_t> position(_dimensions.size(), 0);
+		
+		if(d == 0) {
+			ret[position] = 1.0;
+		} else {
+			bool notMultiLevelBreak = true;
+			while(notMultiLevelBreak) {
+				ret[position] = 1.0;
+				
+				position[0]++; position[d/2]++;
+				size_t node = 0;
+				while(position[node] == std::min(_dimensions[node], _dimensions[d/2+node])) {
+					position[node] = position[d/2+node] = 0;
+					node++;
+					if(node == d/2) {notMultiLevelBreak = false; break;}
+					position[node]++; position[d/2+node]++;
+				}
+			}
+		}
 		
 		return ret;
 	}
 		
 	SparseTensor Tensor::kronecker(const std::vector<size_t>& _dimensions) {
 		SparseTensor ret(_dimensions);
-		for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
-			ret[std::vector<size_t>(ret.degree(), i)] = 1.0;
+		if(_dimensions.empty()) {
+			ret[{}] = 1.0;
+		} else {
+			for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
+				ret[std::vector<size_t>(ret.degree(), i)] = 1.0;
+			}
 		}
 		return ret;
 	}

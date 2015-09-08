@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and other Tensor Networks.
+The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and general Tensor Networks.
 The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
 
 The key features include:
@@ -16,9 +16,9 @@ The key features include:
 
 ## Version History
 
-We have just released our first stable version 1.0 in May 2015. It can be obtained via [git](https://git.hemio.de/xerus/xerus/tree/master) or as an archived download via the same link.
-The current development version is also available in the same git repository (branch 'development') and it might include some more features than the latest stable release (especially
-at these early stages of development), but be adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
+We have just released our first stable version 1.0 in May 2015. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
+The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be
+adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
 
 ## Getting Started
 
@@ -35,9 +35,8 @@ Should you have any problems with the library do not hesitate to contact us at [
 
 ## Licence and Attribution
 
-The `xerus` library is published under the AGPL v3.0. With proper attribution you are thus allowed to freely use the source code but if you distribute your software including the `xerus`
-library (or you provide a service based on this library) you have to provide the full source code under a compatible licence. 
-For more information see the [AGPL](http://www.gnu.org/licenses/agpl-3.0.html).
+The `xerus` library is published under the AGPL v3.0. With proper attribution you are thus allowed to freely use and modify the source code but if you distribute your software including the `xerus`
+library (or you provide a service based on this library) you have to provide the full source code under a compatible licence. For more information see the [AGPL](http://www.gnu.org/licenses/agpl-3.0.html).
 
 If this library proved useful in your scientific research we would be grateful for any contributions to the source code and citations. As there is no related article yet, a corresponding bibtex 
 entry might look as follows
