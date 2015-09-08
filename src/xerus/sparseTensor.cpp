@@ -200,13 +200,13 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     SparseTensor& SparseTensor::operator+=(const SparseTensor& _other) {
-        ensure_own_data_and_apply_factor();
+        ensure_own_data();
         
 		PA_START;
         for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->insert(entry);
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, _other.factor*entry.second/factor);
             if(!result.second) {
-                result.first->second += _other.factor*entry.second;
+                result.first->second += _other.factor*entry.second/factor;
             }
         }
         PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));
@@ -220,13 +220,13 @@ namespace xerus {
     }
     
     SparseTensor& SparseTensor::operator-=(const SparseTensor& _other) {
-        ensure_own_data_and_apply_factor();
+        ensure_own_data();
         
 		PA_START;
         for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->insert(entry);
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, -_other.factor*entry.second/factor);
             if(!result.second) {
-                result.first->second -= _other.factor*entry.second;
+                result.first->second -= _other.factor*entry.second/factor;
             }
         }
         PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));

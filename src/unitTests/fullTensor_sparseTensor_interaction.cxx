@@ -124,21 +124,26 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
 		
 		SparseTensor AS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
 		SparseTensor BS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
+		SparseTensor CS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
 		SparseTensor I = Tensor::identity(opDim);
 		
 		FullTensor AF(AS);
 		FullTensor BF(BS);
+		FullTensor CF(CS);
 		
 		TEST(approx_equal(AS, AF));
 		TEST(approx_equal(AF, AS));
 		TEST(approx_equal(BS, BF));
 		TEST(approx_equal(BF, BS));
+		TEST(approx_equal(CS, CF));
+		TEST(approx_equal(CF, CS));
 
 		FullTensor resFF;
 		FullTensor resFS;
 		FullTensor resSF;
 		SparseTensor resSS;
 		
+		// Simple Addition
 		resFF = AF + BF;
 		resFS = AF + BS;
 		resSF = AS + BF;
@@ -148,6 +153,45 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
 		TEST(approx_equal(resFF, resSF));
 		TEST(approx_equal(resFF, resSS));
 		
+		// Simple Subtraction
+		resFF = AF - BF;
+		resFS = AF - BS;
+		resSF = AS - BF;
+		resSS = AS - BS;
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
+		// Addition + Subtraction
+		resFF = AF - BF + CF;
+		resFS = AF - BS + CF;
+		resSF = AS - BF + CS;
+		resSS = AS - BS + CS;
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
+		// Addition + Subtraction + scale A
+		resFF = 7.3*AF - 3.7*(BF + (-9.5)*CF);
+		resFS = 7.3*AF - 3.7*(BS + (-9.5)*CF);
+		resSF = 7.3*AS - 3.7*(BF + (-9.5)*CS);
+		resSS = 7.3*AS - 3.7*(BS + (-9.5)*CS);
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
+		// Addition + Subtraction + scale B
+		resFF = 7300.9*AF - 3.7*(0*BF + 1*CF);
+		resFS = 7300.9*AF - 3.7*(0*BS + 1*CF);
+		resSF = 7300.9*AS - 3.7*(0*BF + 1*CS);
+		resSS = 7300.9*AS - 3.7*(0*BS + 1*CS);
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
 		
 		dimensions.push_back(intDist(rnd));
 	}

@@ -149,7 +149,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 	
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
 	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
-	TEST(misc::approx_equal(frob_norm(res4), 0.0, 1e-12));
+	TEST(frob_norm(res4) < 1e-12);
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);

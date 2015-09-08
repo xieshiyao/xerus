@@ -213,10 +213,10 @@ namespace xerus {
             return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
         }
 
-        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|+|b|)) is smaller than @a _eps.
+        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
         template<class T>
         bool approx_equal(T _a, T _b, T _eps = std::numeric_limits<T>::epsilon()) {
-            return std::abs(_a-_b) <= _eps;
+            return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
         }
     }
 }

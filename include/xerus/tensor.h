@@ -1,4 +1,4 @@
-// Xerus - A General Purpose Tensor Library
+// // Xerus - A General Purpose Tensor Library
 // Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
@@ -436,7 +436,7 @@ namespace xerus {
     
     /** 
     * @brief Checks whether two Tensors are approximately equal.
-    * @details Check whether ||@a _a - @a _b ||/(||@a a || + ||@a _b || < _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
+    * @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
     * @param _a the first test candidate.
     * @param _b the second test candidate
     * @param _eps the maximal relative difference between @a _a and @a _b.
