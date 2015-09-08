@@ -108,3 +108,47 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
     resFS(i,m,n,q) = AF(q,j,k,l,n)*BS(m,l,k,i,j);
     TEST(approx_equal(check, resFS, 1e-14));
 )
+
+UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 10.0);
+    std::uniform_int_distribution<size_t> intDist (1, 10);
+
+    Index i,j,k,l,m,n,o,p,q;
+	
+	std::vector<size_t> dimensions;
+	for(size_t d = 0; d < 6; ++d) {
+		std::vector<size_t> opDim(dimensions);
+		opDim.insert(opDim.end(), dimensions.begin(), dimensions.end());
+		std::uniform_int_distribution<size_t> numDist (0, misc::product(dimensions));
+		
+		SparseTensor AS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
+		SparseTensor BS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
+		SparseTensor I = Tensor::identity(opDim);
+		
+		FullTensor AF(AS);
+		FullTensor BF(BS);
+		
+		TEST(approx_equal(AS, AF));
+		TEST(approx_equal(AF, AS));
+		TEST(approx_equal(BS, BF));
+		TEST(approx_equal(BF, BS));
+
+		FullTensor resFF;
+		FullTensor resFS;
+		FullTensor resSF;
+		SparseTensor resSS;
+		
+		resFF = AF + BF;
+		resFS = AF + BS;
+		resSF = AS + BF;
+		resSS = AS + BS;
+		
+		TEST(approx_equal(resFF, resFS));
+		TEST(approx_equal(resFF, resSF));
+		TEST(approx_equal(resFF, resSS));
+		
+		
+		dimensions.push_back(intDist(rnd));
+	}
+)

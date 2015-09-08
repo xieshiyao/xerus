@@ -62,17 +62,23 @@ namespace xerus {
 		const size_t d = _dimensions.size();
 		
 		SparseTensor ret(_dimensions);
-		std::vector<size_t> position(0, _dimensions.size());
+		std::vector<size_t> position(_dimensions.size(), 0);
 		
-		while(position[d/2-1] < std::min(_dimensions[d/2-1], _dimensions[d-1])) {
+		if(d == 0) {
 			ret[position] = 1.0;
-			
-			position[0]++; position[d/2]++;
-			size_t node = 0;
-			while(position[node] == std::min(_dimensions[node], _dimensions[d/2+node])) {
-				position[node] = position[d/2+node] = 0;
-				node++;
-				position[node]++; position[d/2+node]++;
+		} else {
+			bool notMultiLevelBreak = true;
+			while(notMultiLevelBreak) {
+				ret[position] = 1.0;
+				
+				position[0]++; position[d/2]++;
+				size_t node = 0;
+				while(position[node] == std::min(_dimensions[node], _dimensions[d/2+node])) {
+					position[node] = position[d/2+node] = 0;
+					node++;
+					if(node == d/2) {notMultiLevelBreak = false; break;}
+					position[node]++; position[d/2+node]++;
+				}
 			}
 		}
 		
@@ -81,8 +87,12 @@ namespace xerus {
 		
 	SparseTensor Tensor::kronecker(const std::vector<size_t>& _dimensions) {
 		SparseTensor ret(_dimensions);
-		for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
-			ret[std::vector<size_t>(ret.degree(), i)] = 1.0;
+		if(_dimensions.empty()) {
+			ret[{}] = 1.0;
+		} else {
+			for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
+				ret[std::vector<size_t>(ret.degree(), i)] = 1.0;
+			}
 		}
 		return ret;
 	}
