@@ -73,7 +73,7 @@ UNIT_TEST(algorithms, retractions,
 	}
 	
 	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
-	const value_t EPS = 1e-4;
+	const value_t EPS = 1e-3;
 	change *= EPS / frob_norm(change);
 	
 	Index i1,i2,i3,i4;

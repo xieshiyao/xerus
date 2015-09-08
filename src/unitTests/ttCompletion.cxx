@@ -25,7 +25,7 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 10;
+	const size_t D = 8;
 // 	std::random_device rd;
 	std::mt19937_64 rnd(0xDEAFBEEF);
 	std::uniform_int_distribution<size_t> dist(0,3);
@@ -57,5 +57,5 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	ADF(X, measurements);
 	
-	TEST(misc::approx_equal(frob_norm(X - trueSolution),0.0,1e-13));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 5e-15, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )
