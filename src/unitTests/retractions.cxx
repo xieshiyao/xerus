@@ -24,7 +24,7 @@
 using namespace xerus;
 
 
-UNIT_TEST(algorithms, retractions,
+UNIT_TEST(Algorithms, retractions,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -226,8 +226,8 @@ UNIT_TEST(TTTangentVector, creation,
 	
 	// projection P*P = P
 	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
-	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 2e-15, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
-	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 2e-15, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
+	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 3e-15, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
+	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 4e-15, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
 	
 	// tangent space of 10*X should be equal to tangent space of X
 	tangentChange2 = TTTangentVector(10 * X, change);
@@ -235,7 +235,7 @@ UNIT_TEST(TTTangentVector, creation,
 )
 
 
-UNIT_TEST(algorithms, vectorTransport,
+UNIT_TEST(Algorithms, vectorTransport,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	

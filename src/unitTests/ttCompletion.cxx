@@ -25,7 +25,7 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 10;
+	const size_t D = 6;
 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0,3);
 	std::normal_distribution<value_t> distF(0,1);
@@ -33,7 +33,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<25*D*5*5*4; ++i) {
+	for (size_t i=0; i<20*D*5*5*4; ++i) {
 		std::vector<size_t> pos;
 		for (size_t n=0; n<D; ++n) {
 			pos.emplace_back(dist(rnd));

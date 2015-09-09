@@ -25,7 +25,7 @@ using namespace xerus;
 
 #ifdef PERFORMANCE_ANALYSIS
 	#ifdef REPLACE_ALLOCATOR  
-		UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
+		UNIT_TEST(x_PerformanceAnalysis_x, Analysis,
 			std::cout << misc::performanceAnalysis::get_analysis();
 			LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 			
@@ -36,7 +36,7 @@ using namespace xerus;
 			for (size_t i=0; i<xma::NUM_BUCKETS; ++i) {
 				if (xm::astore.allocCount[i] == 0 && xm::astore.currAlloc[i] == 0) continue;
 				totalStorage += i * xma::BUCKET_SIZE * (size_t)xm::astore.maxAlloc[i];
-				LOG(allocator, i * xma::BUCKET_SIZE << " \tx\t " << xm::astore.allocCount[i] << "\tmax: " << xm::astore.maxAlloc[i] << '\t' << xm::astore.currAlloc[i] << '\t' << totalStorage);
+				LOG(allocator, (i+1) * xma::BUCKET_SIZE-1 << " \tx\t " << xm::astore.allocCount[i] << "\tmax: " << xm::astore.maxAlloc[i] << '\t' << xm::astore.currAlloc[i] << '\t' << totalStorage);
 			}
 			LOG(storageNeeded, totalStorage << " storage used: " << misc::astore.pools.size()*xma::POOL_SIZE);
 			LOG(index, sizeof(Index));
@@ -49,7 +49,7 @@ using namespace xerus;
 			LOG(measurement, sizeof(SinglePointMeasurment));
 		)
 	#else
-		UNIT_TEST(X_PerformanceAnalysis_X, Analysis,
+		UNIT_TEST(x_PerformanceAnalysis_x, Analysis,
 			std::cout << misc::performanceAnalysis::get_analysis();
 			LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 		)

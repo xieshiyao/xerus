@@ -145,7 +145,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "1 " << frob_norm(res4-A) << " / " << frob_norm(A));
 	
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
 	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
@@ -153,40 +153,40 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "2 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     (Q2(i,k,l), R2(l,m,j,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "3 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     (Q3(i,m,j,k,l), R3(l,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "4 " << frob_norm(res4-A) << " / " << frob_norm(A));
 	
 	(Q(i,l,j,k,m), R(l,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "5 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R(i,j,k,o)*Q(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 5e-15), "6 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = R(i,j,k,o)*Q(o,m,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 5e-15), "7 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     (R2(i,m,j,k,l), Q2(l,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R2(i,m,j,k,l)*Q2(l,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "8 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     (R3(i,k,l), Q3(l,m,j,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R3(i,k,o)*Q3(o,m,j,n,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "9 " << frob_norm(res4-A) << " / " << frob_norm(A));
 	
 	(R(l,i,k), Q(n,m,j,l,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R(o,i,k)*Q(n,m,j,o,r);
-    TEST(approx_equal(res4, A, 1e-15));
+    MTEST(approx_equal(res4, A, 2e-15), "10 " << frob_norm(res4-A) << " / " << frob_norm(A));
     
     
     (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));

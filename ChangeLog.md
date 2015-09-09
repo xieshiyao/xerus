@@ -2,21 +2,22 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2015-??-?? v1.4.0
+* 2015-09-09 v1.4.0
  * Added an implementation of the ADF algorithm.
- * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk).
+ * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk). This allocator is highly recommended for use with the ADF algorithm.
  * Reduced overhead (time not spent in blas) of TensorNetwork contractions.
  * Tensor decomposition now allow arbitrary index orders in the target as well as the source.
  * Added TN::measure(...) to perform a batch of evaluations of the network.
  * Added TN::fix_slate(...) to fix a single index to a specific value.
  * Added TN::reduce_representation() to trace out any full-rank edge.
+ * Added TN::transfer_core(...) and TN::round_edge(...) analogously to TT rounding / core movement operations.
  * ! renamed class::construct_random to class::random and TTOperator::construct_identity to TTOperator::identity.
  * Added several named constructors
   * Tensor::ones(...) to construct tensors filled with all entries equal to 1.
   * Tensor::identity(...) to construct a (sparse) tensor equal to the TTOperator::identity.
   * Tensor::dirac(...) to construct a (sparse) tensor with a single 1 at a given position and 0 everywhere else.
   * Tensor::kronecker(...) to construct a tensor that is 1 when all indices are equal and 0 otherwise.
- * ! approx_equal now works relative for normal values (to achive consistency with the tensor variant).
+ * ! misc::approx_equal now uses a relative difference (for consistency with the tensor variant xerus::approx_equal).
  * Several bugfixes for SparseTensors.
  * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
 
