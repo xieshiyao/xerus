@@ -71,7 +71,7 @@ namespace xerus {
 			if (printProgress && stepCount%1==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\n" << std::flush;
+						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
 				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
@@ -79,6 +79,7 @@ namespace xerus {
 		updatePerfdata();
 		
 		TTTangentVector direction(_x, residual);
+		value_t alpha = 1;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			&& currResidual > _convergenceEpsilon
 			&& std::abs(lastResidual-currResidual) > _convergenceEpsilon
@@ -88,20 +89,19 @@ namespace xerus {
 				direction = TTTangentVector(_x, residual);
 			}
 			stepCount += 1;
-			value_t alpha;
 			
-			if (_Ap) {
-				TTTensor dirTT = TTTensor(direction);
-				if (assumeSymmetricPositiveDefiniteOperator) {
-					alpha = direction.scalar_product(direction)/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
-				} else {
-					value_t normDir = dirTT.frob_norm();
-					dirTT(i&0) = _A(i/2,j/2) * dirTT(j&0);
-					alpha = normDir/frob_norm(dirTT);
-				}
-			} else {
-				alpha = 1;
-			}
+// 			if (_Ap) {
+// 				TTTensor dirTT = TTTensor(direction);
+// 				if (assumeSymmetricPositiveDefiniteOperator) {
+// 					alpha = direction.scalar_product(direction)/value_t(dirTT(i&0)*_A(i/2,j/2)*dirTT(j&0));//direction(i&0)*change(i&0));
+// 				} else {
+// 					value_t normDir = dirTT.frob_norm();
+// 					dirTT(i&0) = _A(i/2,j/2) * dirTT(j&0);
+// 					alpha = normDir/frob_norm(dirTT);
+// 				}
+// 			} else {
+// 				alpha = 1;
+// 			}
 			
 			TTTensor oldX(_x);
 			retraction(_x, direction * alpha);
@@ -109,7 +109,7 @@ namespace xerus {
 			updateResidual();
 			
 			// armijo backtracking
-			while (alpha > 1e-20 && lastResidual < currResidual - 1e-4 * lastResidual * alpha * value_t(residual(i&0) * TTTensor(direction)(i&0))) {
+			while (alpha > 1e-20 && lastResidual < currResidual - 1e-4 * alpha * value_t(residual(i&0) * TTTensor(direction)(i&0))) {
 // 				LOG(huch, alpha << " " << currResidual);
 				alpha /= 2;
 				_x = oldX;
@@ -121,8 +121,8 @@ namespace xerus {
 			
 // 			direction(i&0) = residual(i&0) + beta * direction(i&0);
 			TTTangentVector oldDirection(direction);
-			value_t oldDirNorm = oldDirection.scalar_product(oldDirection);
-			vectorTransport(_x, direction);
+			value_t oldDirNorm = oldDirection.frob_norm();
+			vectorTransport(_x, oldDirection);
 			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
 				direction = TTTangentVector(_x, residual);
 			} else {
@@ -130,7 +130,7 @@ namespace xerus {
 				grad(i&0) = _A(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
 				direction = TTTangentVector(_x, grad);
 			}
-			double beta = direction.scalar_product(direction) / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update
+			double beta = direction.frob_norm() / oldDirNorm ;//currResidual / lastResidual; // Fletcher-Reeves update // 
 // 			LOG(ab, "\t\t\t" << alpha << " " << beta);
 			direction += oldDirection * (beta);
 		}

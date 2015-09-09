@@ -72,7 +72,7 @@ namespace xerus {
 			if (printProgress && stepCount%1==0) {
 				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
 						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\n" << std::flush;
+						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
 				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
 			}
 		};
@@ -80,7 +80,7 @@ namespace xerus {
 		updatePerfdata();
 		
 		TTTensor y, Ay;
-		value_t alpha;
+		value_t alpha = 1;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			   && currResidual > _convergenceEpsilon
 			   && std::abs(lastResidual-currResidual) > _convergenceEpsilon
@@ -95,33 +95,29 @@ namespace xerus {
 					// direction of change A*y
 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<y,Ay>
-					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
-					// "optimal" change: alpha*y
-					y *= alpha;
+// 					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
 				} else { REQUIRE_TEST;
 					// search direction: y = A^T(b-Ax)
 					y(i&0) = _A(j/2,i/2) * residual(j&0);
 					// direction of change A*y
 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
-					alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
-					// "optimal" change: alpha*y
-					y *= alpha;
+// 					alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
 				}
 			} else {
 				y = residual;
 			}
 			
 			TTTensor oldX(_x);
-			retraction(_x, y);
+			retraction(_x, y * alpha);
 			lastResidual = currResidual;
 			updateResidual();
 			// armijo backtracking
-			while (lastResidual < currResidual - 1e-4 * alpha * value_t(residual(i&0) * y(i&0))) {
+			while (alpha > 1e-30 && lastResidual < currResidual){// - 1e-4 * alpha * value_t(residual(i&0) * y(i&0))) {
 // 				LOG(huch, alpha << " " << currResidual); 
-				y *= 0.5;
+				alpha /= 2;
 				_x = oldX;
-				retraction(_x, y);
+				retraction(_x, y * alpha);
 				updateResidual();
 			}
 			

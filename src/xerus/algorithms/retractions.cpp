@@ -108,9 +108,9 @@ namespace xerus {
 			FullTensor V;
 			FullTensor uuInv = pseudoInverse(leftStackUU.back());
 			V(i1,r,j1) =  uuInv(i1,s)* leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
-			if (i!=baseL.degree()) {
+// 			if (i!=baseL.degree()) {
 // 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
-			}
+// 			}
 			if (currIdx!=0) {
 				UTV(i1,i2) = V(i1,r,j1) * UComp(i2,r,j1);
 				V(i1,r,j1) = V(i1,r,j1) - UTV(i1,s) * UComp(s,r,j1);
