@@ -188,6 +188,55 @@ UNIT_TEST(TTTangentVector, orthogonality,
 )
 
 
+UNIT_TEST(TTTangentVector, creation,
+	std::mt19937_64 rnd(0xDEADBEEF);
+	std::normal_distribution<double> dist (0.0, 1.0);
+	
+	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
+	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
+	Index j;
+	
+	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTangentVector tangentChange1(X, change);
+	// projection should decrease norm
+	MTEST(frob_norm(change) > frob_norm(TTTensor(tangentChange1)), frob_norm(change) << " " << frob_norm(TTTensor(tangentChange1)));
+	
+	// test of scalar products in tangent space
+	value_t scalarProdInTangentSpace = std::sqrt(tangentChange1.scalar_product(tangentChange1));
+	value_t scalarProdInEmbeddingSpace = frob_norm(TTTensor(tangentChange1));
+	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
+		  "norm1 " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
+	
+	scalarProdInTangentSpace = tangentChange1.frob_norm();
+	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
+		  "norm2 " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
+	
+	TTTensor change2 = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTangentVector tangentChange2(X, change2);
+	
+	scalarProdInTangentSpace = tangentChange1.scalar_product(tangentChange2);
+	scalarProdInEmbeddingSpace = value_t(TTTensor(tangentChange1)(j&0) * TTTensor(tangentChange2)(j&0));
+	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
+		  "scalarProd " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
+	
+	// test whether copy assignment, += and * work as intended
+	tangentChange2 = tangentChange1;
+	tangentChange2 += tangentChange1 * (-1);
+	for (size_t i=0; i<stateDims.size(); ++i) {
+		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);
+	}
+	
+	// projection P*P = P
+	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
+	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 2e-15, tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
+	
+	// tangent space of 10*X should be equal to tangent space of X
+	tangentChange2 = TTTangentVector(10 * X, change);
+	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 2e-15, tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
+)
+
+
 UNIT_TEST(algorithms, vectorTransport,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
@@ -199,20 +248,7 @@ UNIT_TEST(algorithms, vectorTransport,
 	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
 	TTTangentVector tangentChange1(X, change);
-	// projection should decrease norm
-	MTEST(frob_norm(change) > frob_norm(TTTensor(tangentChange1)), frob_norm(change) << " " << frob_norm(TTTensor(tangentChange1)));
 	TTTangentVector tangentChange2(tangentChange1);
-	
-	// test whether copy construction, += and * work as intended
-	tangentChange2 += tangentChange1 * (-1);
-	
-	for (size_t i=0; i<stateDims.size(); ++i) {
-		TEST(frob_norm(tangentChange2.components[i]) < 1e-14);
-	}
-	
-	// projection P*P = P
-	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
-	MTEST(frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)) < 1e-13, frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)));
 	
 	// vector transport from X to X should not change the vector at all
 	ProjectiveVectorTransport(X, X, tangentChange2);
@@ -220,10 +256,6 @@ UNIT_TEST(algorithms, vectorTransport,
 	for (size_t i=0; i<stateDims.size(); ++i) {
 		MTEST(frob_norm(tangentChange2.components[i]) < 1e-13, frob_norm(tangentChange2.components[i]));
 	}
-	
-	// tangent space of 10*X should be equal to tangent space of X
-	tangentChange2 = TTTangentVector(10 * X, TTTensor(tangentChange1));
-	MTEST(frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)) < 1e-13, frob_norm(TTTensor(tangentChange2) - TTTensor(tangentChange1)));
 	
 	value_t normOld = frob_norm(TTTensor(tangentChange1));
 	for (value_t eps = 1e-10; eps <= 1e-4; eps *= 10) {

@@ -45,6 +45,7 @@ namespace xerus {
 		TTTangentVector &operator*=(value_t _alpha);
 		TTTangentVector operator*(value_t _alpha) const;
 		value_t scalar_product(const TTTangentVector &_other) const;
+		value_t frob_norm() const;
 	private:
 		TTTensor change_direction_incomplete() const;
 	public:

@@ -152,6 +152,15 @@ namespace xerus {
 		return result;
 	}
 	
+	value_t TTTangentVector::frob_norm() const {
+		value_t result = 0;
+		for (size_t i=0; i<components.size(); ++i) {
+			result += misc::sqr(components[i].frob_norm());
+		}
+		return std::sqrt(result);
+	}
+
+	
 	TTTensor TTTangentVector::change_direction_incomplete() const {
 		TTTensor result(baseL.degree());
 		Index i1,i2,n,r1,r2;

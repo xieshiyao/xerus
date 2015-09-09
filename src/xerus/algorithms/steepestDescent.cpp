@@ -117,7 +117,7 @@ namespace xerus {
 			lastResidual = currResidual;
 			updateResidual();
 			// armijo backtracking
-			while (lastResidual < currResidual - 1e-4 * alpha * value_t(residual(i&0) * TTTensor(y)(i&0))) {
+			while (lastResidual < currResidual - 1e-4 * alpha * value_t(residual(i&0) * y(i&0))) {
 // 				LOG(huch, alpha << " " << currResidual); 
 				y *= 0.5;
 				_x = oldX;
