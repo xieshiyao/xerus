@@ -122,7 +122,7 @@ namespace xerus {
 // 			direction(i&0) = residual(i&0) + beta * direction(i&0);
 			TTTangentVector oldDirection(direction);
 			value_t oldDirNorm = oldDirection.scalar_product(oldDirection);
-			vectorTransport(oldX, _x, direction);
+			vectorTransport(_x, direction);
 			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
 				direction = TTTangentVector(_x, residual);
 			} else {
