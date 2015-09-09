@@ -50,16 +50,16 @@ UNIT_TEST(algorithms, retractions,
 		ALSRetractionII(Y, zero);
 		MTEST(frob_norm(X-Y) < 1e-8, "alsII " << frob_norm(X-Y));
 	}
-// 	{
-// 		TTTensor Y(X);
-// 		SubmanifoldRetractionI(Y, tangentZero);
-// 		MTEST(frob_norm(X-Y) < 1e-8, "submaniI " << frob_norm(X-Y));
-// 	}
-// 	{
-// 		TTTensor Y(X);
-// 		SubmanifoldRetractionII(Y, zero);
-// 		MTEST(frob_norm(X-Y) < 1e-8, "submaniII " << frob_norm(X-Y));
-// 	}
+	{
+		TTTensor Y(X);
+		SubmanifoldRetractionI(Y, tangentZero);
+		MTEST(frob_norm(X-Y) < 1e-8, "submaniI " << frob_norm(X-Y));
+	}
+	{
+		TTTensor Y(X);
+		SubmanifoldRetractionII(Y, zero);
+		MTEST(frob_norm(X-Y) < 1e-8, "submaniII " << frob_norm(X-Y));
+	}
 	HOSVDRetraction hosvd(2);
 	{
 		TTTensor Y(X);
@@ -160,10 +160,10 @@ UNIT_TEST(TTTangentVector, orthogonality,
 	Index j;
 	
 	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTangentVector tangentChange(X, change);
-	TTTensor PX = TTTensor(tangentChange);
-	TTTensor XPX = X - PX;
+	TTTensor delta = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTangentVector tangentChange(X, delta);
+	TTTensor Pdelta = TTTensor(tangentChange);
+	TTTensor deltaPdelta = delta - Pdelta;
 	
 	// construct all possible basis vectors for the tangent plane
 	for (size_t n=0; n<stateDims.size(); ++n) {
@@ -176,11 +176,10 @@ UNIT_TEST(TTTangentVector, orthogonality,
 			MTEST(frob_norm(b-pb)/frob_norm(b) < 2e-14, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
 			
 			// check orthogonality
-			value_t scalarProd = value_t(XPX(j&0) * b(j&0));
-			LOG(norms, frob_norm(X) << " " << frob_norm(XPX) << " " << frob_norm(b));
-			MTEST(std::abs(scalarProd) < 1e-20, n << " " << i << " prod: " << scalarProd);
+			value_t scalarProd = value_t(deltaPdelta(j&0) * b(j&0));
+			MTEST(std::abs(scalarProd) < 2e-10, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
 			
-			MTEST(misc::approx_equal(value_t(X(j&0) * b(j&0)), value_t(PX(j&0) * b(j&0))),  n << " " << i << " " << value_t(X(j&0) * b(j&0)) << " " << value_t(PX(j&0) * b(j&0)));
+			MTEST(misc::approx_equal(value_t(delta(j&0) * b(j&0)), value_t(Pdelta(j&0) * b(j&0)), 2e-10),  n << " " << i << " " << value_t(delta(j&0) * b(j&0)) << " " << value_t(Pdelta(j&0) * b(j&0)));
 		}
 	}
 )

@@ -22,7 +22,7 @@
 
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
-/*
+
 UNIT_TEST(algorithms, cg,
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
@@ -49,6 +49,6 @@ UNIT_TEST(algorithms, cg,
 	alsGrad.printProgress = true;
 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-// 	alsGrad(A, X, B);
+	alsGrad(A, X, B);
 )
-*/
+
