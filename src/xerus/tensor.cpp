@@ -210,19 +210,19 @@ namespace xerus {
         REQUIRE(_a.dimensions == _b.dimensions, 
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
         
-        
+		const double avgNorm = (_a.frob_norm() + _b.frob_norm())/2.0;
         if (!_a.is_sparse() && !_b.is_sparse()) { // Special treatment for two fullTensors because blas has better accuracy
-            return frob_norm(static_cast<const FullTensor&>(_a) - static_cast<const FullTensor&>(_b))/(_a.frob_norm() + _b.frob_norm()) < _eps;
-        } else if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
-            return frob_norm(static_cast<const SparseTensor&>(_a) - static_cast<const SparseTensor&>(_b))/(_a.frob_norm() + _b.frob_norm()) < _eps;
-        } else {
-            PA_START;
-            double sqrNorm = 0;
-            for(size_t i=0; i < _a.size; ++i) {
-                sqrNorm += misc::sqr(_a[i]-_b[i]);
-            }
-            PA_END("Mixed Norm calculation", "", misc::to_string(_a.size));
-            return sqrt(sqrNorm)/(_a.frob_norm() + _b.frob_norm()) < _eps;
+            return frob_norm(static_cast<const FullTensor&>(_a) - static_cast<const FullTensor&>(_b)) <= _eps*avgNorm;
+		} else if(_a.is_sparse()) {
+			FullTensor bma(_b);
+			bma -= _a;
+			return frob_norm(bma) <= _eps*avgNorm;
+		} else if(_b.is_sparse()) {
+			FullTensor amb(_a);
+			amb -= _b;
+			return frob_norm(amb) <= _eps*avgNorm;
+        } else { // Special treatment if both are sparse, because better asyptotic is possible.
+            return frob_norm(static_cast<const SparseTensor&>(_a) - static_cast<const SparseTensor&>(_b)) <= _eps*avgNorm;
         }
     }
     

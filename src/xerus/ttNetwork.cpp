@@ -626,6 +626,8 @@ namespace xerus {
 		std::unique_ptr<FullTensor> newComponent;
 		for (size_t i=0; i<numComponents; ++i) {
 			//TODO sparse TT
+			REQUIRE(!_A.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
+			REQUIRE(!_B.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 			const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
 			const FullTensor &componentB = static_cast<const FullTensor &>(_B.get_component(i));
 			size_t externalDim;
@@ -705,6 +707,7 @@ namespace xerus {
 			}
 		} else {
 			for (size_t i = 0; i < numComponents; ++i) {
+				REQUIRE(!get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 				const Tensor& currComp = get_component(i);
 				const size_t newLeftRank = currComp.dimensions.front()*currComp.dimensions.front();
 				const size_t newRightRank = currComp.dimensions.back()*currComp.dimensions.back();
@@ -961,7 +964,7 @@ namespace xerus {
 			return get_component(corePosition).frob_norm();
 		} else {
 			Index i;
-			return std::sqrt((*((*this)(i&0)*(*this)(i&0)).tensorObject)[0]);
+			return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));
 		}
 	}
 		
@@ -1330,6 +1333,8 @@ namespace xerus {
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current input nodes
 			// TODO sparse
+			REQUIRE(!realMe.tensorObjectReadOnly->nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
+			REQUIRE(!realOther.nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
 			FullTensor &myComponent = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
 			FullTensor &otherComponent = *static_cast<FullTensor*>(realOther.nodes[position+1].tensorObject.get());
 			

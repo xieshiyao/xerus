@@ -48,21 +48,21 @@ namespace xerus {
 		bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
 		
 		std::function<void(TTTensor &, const TTTangentVector &)> retraction; ///< the retraction type I to project from point + tangent vector to a new point on the manifold
-		std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> vectorTransport; ///< the vector transport from old tangent space to new one
+		std::function<void(const TTTensor &, TTTangentVector &)> vectorTransport; ///< the vector transport from old tangent space to new one
 		
 		// TODO preconditioner
 		
 		/// fully defining constructor. alternatively CGVariant can be created by copying a predefined variant and modifying it
 		GeometricCGVariant(size_t _numSteps, size_t _restart, value_t _convergenceEpsilon, bool _symPosOp,
 						   std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
-						   std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> _vectorTransport
+						   std::function<void(const TTTensor &, TTTangentVector &)> _vectorTransport
   						)
 				: numSteps(_numSteps), restartInterval(_restart), convergenceEpsilon(_convergenceEpsilon), assumeSymmetricPositiveDefiniteOperator(_symPosOp), printProgress(false),
 				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
-		GeometricCGVariant(std::function<void(TTTensor &, const TTTangentVector &)> _retraction, std::function<void(const TTTensor &, const TTTensor &, TTTangentVector &)> _vectorTransport)
+		GeometricCGVariant(std::function<void(TTTensor &, const TTTangentVector &)> _retraction, std::function<void(const TTTensor &, TTTangentVector &)> _vectorTransport)
 				: numSteps(0), restartInterval(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), printProgress(false),
 				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }

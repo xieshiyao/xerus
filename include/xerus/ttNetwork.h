@@ -55,8 +55,7 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
 		 * @brief Constructs an order zero TTNetwork.
-		 * @details This is a TensorNetwork with no entries. The global factor (which is the only entry of the tensor)
-		 * is set to zero.
+		 * @details This is an empty TensorNetwork. Internally the network contains one order zero node with entry zero.
 		 */
 		explicit TTNetwork();
 		

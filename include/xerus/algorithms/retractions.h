@@ -32,7 +32,7 @@ namespace xerus {
 	///@brief class to compactly represent tangent vectors of the manifold of constant TT-rank
 	class TTTangentVector {
 	public:
-		TTTensor baseL, baseR;
+		TTTensor baseL;
 		
 		///@note components will not be changed. use a vector transport to update them accordingly instead of calling this function
 		void set_base(const TTTensor &_newBase);
@@ -45,6 +45,7 @@ namespace xerus {
 		TTTangentVector &operator*=(value_t _alpha);
 		TTTangentVector operator*(value_t _alpha) const;
 		value_t scalar_product(const TTTangentVector &_other) const;
+		value_t frob_norm() const;
 	private:
 		TTTensor change_direction_incomplete() const;
 	public:
@@ -77,7 +78,7 @@ namespace xerus {
 	
 	
 	/// simple vector transport by projecting onto the new tangent plane
-	void ProjectiveVectorTransport(const TTTensor &_oldBase, const TTTensor &_newBase, TTTangentVector &_tangentVector);
+	void ProjectiveVectorTransport(const TTTensor &_newBase, TTTangentVector &_tangentVector);
 	
 }
 

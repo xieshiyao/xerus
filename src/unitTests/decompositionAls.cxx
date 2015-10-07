@@ -41,5 +41,5 @@ UNIT_TEST(ALS, decomposition_als,
 	
 	xerus::decomposition_als(X, B);
 	
-	TEST(misc::approx_equal(frob_norm(X(i&0)-B(i&0)), 0., 1e-8));
+	TEST(frob_norm(X(i&0)-B(i&0)) < 1e-8);
 )

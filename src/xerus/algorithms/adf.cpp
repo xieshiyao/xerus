@@ -108,7 +108,7 @@ namespace xerus {
 				const size_t realId = reorderedMeasurments[i].second;
 				const size_t realPreviousId = reorderedMeasurments[i-1].second;
 				
-				int64_t corePosition = degree-1;
+				size_t corePosition = degree-1;
 				for( ; corePosition > 0 && _measurments[realId].positions[corePosition] == _measurments[realPreviousId].positions[corePosition]; --corePosition) {
 					size_t otherId = realPreviousId;
 					while(true) {
@@ -226,7 +226,6 @@ namespace xerus {
 				}
 				
 				residual = sqrt(residual)/normMeasuredValues;
-				LOG(ADF, iteration << " " << residual);
 				
 				// Calculate <P(y), P(X-B)> and ||P(y)||^2, where y is the update direction.
 				std::vector<FullTensor> fixedDeltas(_x.dimensions[corePosition], deltaPlus);
@@ -243,7 +242,7 @@ namespace xerus {
 					PyPy += misc::sqr(Py);
 					PyR += Py*currentDifferences[i];
 				}
-				LOG(ADF, "StepSize: " << PyR/PyPy);
+// 				LOG(ADF, "StepSize: " << PyR/PyPy);
 				
 				
 				// Update current component
@@ -266,6 +265,8 @@ namespace xerus {
 					}
 				}
 			}
+			
+			LOG(ADF, iteration << " " << residual);
 			if(residual <= convergenceEpsilon) {
 				return residual;
 			}

@@ -259,7 +259,11 @@ namespace xerus {
 		// R has to carry the constant factor
 		R.tensorObject->factor = reorderedBaseTensor->factor;
 		
-		blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->data.get(), static_cast<FullTensor*>(Q.tensorObject)->data.get(), static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), lhsSize, rhsSize);
+		if(reorderedBaseTensor->is_sparse()) {
+			LOG(fatal, "Sparse QR not yet implemented.");
+		} else {
+			blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->data.get(), static_cast<FullTensor*>(Q.tensorObject)->data.get(), static_cast<const FullTensor*>(reorderedBaseTensor.get())->data.get(), lhsSize, rhsSize);
+		}
 
 		// Post evaluate the results
 		R = (*R.tensorObjectReadOnly)(lhsPreliminaryIndices);

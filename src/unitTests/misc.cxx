@@ -39,7 +39,7 @@ UNIT_TEST(Misc, romberg_integration,
 	
 	npi = misc::integrate([](double x){ return (x*x*x+1e-14); }, -1, 1, 1e-14);
 	LOG(unit_test, std::abs(npi - 2e-14));
-	TEST(misc::approx_equal(npi,2e-14,2e-14));
+	TEST(std::abs(npi - 2e-14) < 1e-14);
 	
 	npi = misc::integrate([](double x){ return std::cos(x); }, 0, 1, 1e-14);
 	LOG(unit_test, npi << " " << std::sin(1) << " " << std::abs(npi - std::sin(1)));
@@ -65,7 +65,7 @@ UNIT_TEST(Misc, polynomial,
 		TEST(misc::approx_equal(base[i].norm(weight, -1, 1), 1.0, 1e-12));
 		for (size_t j=0; j<base.size(); ++j) {
 			if (i==j) continue;
-			TEST(misc::approx_equal(base[i].scalar_product(base[j], weight, -1, 1), 0., 1e-10));
+			TEST(std::abs(base[i].scalar_product(base[j], weight, -1, 1)) < 1e-10);
 		}
 	}
 )

@@ -411,38 +411,31 @@ UNIT_TEST(TT, operator_times_tensor,
 	Index i,j,k,l,m;
 	ttD(i^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(j^2,k^2) * C(k^2);
-	LOG(unit_test, frob_norm(D(i&0) - FullTensor(ttD)(i&0)));
-	TEST(approx_equal(D, FullTensor(ttD), 2e-15));
+	MTEST(approx_equal(D, FullTensor(ttD), 2e-15), "1 " << frob_norm(D-FullTensor(ttD)) << " / " << frob_norm(D));
 	
 	ttD(i^2) = ttA(i^2,j^2) * ttB(k^2,j^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(k^2,j^2) * C(k^2);
-	LOG(unit_test, frob_norm(D(i&0) - FullTensor(ttD)(i&0)));
-	TEST(approx_equal(D, FullTensor(ttD), 1e-15));
+	MTEST(approx_equal(D, FullTensor(ttD), 2e-15), "1 " << frob_norm(D-FullTensor(ttD)) << " / " << frob_norm(D));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttB(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * B(j^2,k^2);
-	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
+	MTEST(approx_equal(Do, FullTensor(ttDo), 2e-15), "1 " << frob_norm(Do-FullTensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttA(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * A(j^2,k^2);
-	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
+	MTEST(approx_equal(Do, FullTensor(ttDo), 2e-15), "1 " << frob_norm(Do-FullTensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttA(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * A(l^2,k^2);
-	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
+	MTEST(approx_equal(Do, FullTensor(ttDo), 2e-15), "1 " << frob_norm(Do-FullTensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2);
-	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
+	MTEST(approx_equal(Do, FullTensor(ttDo), 2e-15), "1 " << frob_norm(Do-FullTensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,m^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2) * ttA(l^2,m^2);
 	Do(i^2,m^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2) * A(l^2,m^2);
-	LOG(unit_test, frob_norm(Do(i&0) - FullTensor(ttDo)(i&0)));
-	TEST(approx_equal(Do, FullTensor(ttDo), 1e-15));
+	MTEST(approx_equal(Do, FullTensor(ttDo), 2e-15), "1 " << frob_norm(Do-FullTensor(ttDo)) << " / " << frob_norm(Do));
 )
 
 UNIT_TEST(TT, full_contraction,
