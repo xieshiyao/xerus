@@ -24,6 +24,7 @@
 
 #include <xerus/misc/check.h>
 #include <xerus/measurments.h>
+#include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
 	// --------------------- SinglePointMeasurment -----------------
@@ -43,6 +44,13 @@ namespace xerus {
 		return false; // equality
 	}
 	
+	void sort(std::vector<SinglePointMeasurment>& _set, const size_t _splitPos) {
+		SinglePointMeasurment::Comparator comp(_splitPos);
+// 		auto perm = misc::create_sort_permutation(_set, comp);
+// 		misc::apply_permutation(_set, perm);
+		std::sort(_set.begin(), _set.end(), comp);
+	}
+	
 	// --------------------- RankOneMeasurmentSet -----------------
 	
 	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {
@@ -50,7 +58,27 @@ namespace xerus {
 		measuredValues.emplace_back(_measuredValue);
 	}
 	
-	bool RankOneMeasurmentSet::Comparator::operator()(const RankOneMeasurmentSet &_lhs, const RankOneMeasurmentSet &_rhs) const {
+	bool RankOneMeasurmentSet::Comparator::operator()(const std::vector<FullTensor>& _lhs, const std::vector<FullTensor>& _rhs) const {
+		REQUIRE(_lhs.size() == _rhs.size(), "I.E.");
+		for (size_t i = 0; i < split_position && i < _lhs.size(); ++i) {
+			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
+			for(size_t j = 0; j < _lhs[i].size; ++j) {
+				if (_lhs[i][j] < _rhs[i][j]) return true;
+				if (_lhs[i][j] > _rhs[i][j]) return false;
+			}
+		}
+		for (size_t i = _lhs.size(); i > split_position; --i) {
+			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
+			for(size_t j = 0; j < _lhs[i].size; ++j) {
+				if (_lhs[i-1][j] < _rhs[i-1][j]) return true;
+				if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
+			}
+		}
 		return false; // equality
+	}
+	
+	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos) {
+		RankOneMeasurmentSet::Comparator comp(_splitPos);
+		misc::simultaneous_sort(_set.positions, _set.measuredValues, comp);
 	}
 }

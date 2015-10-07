@@ -21,41 +21,43 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
+#include </store/runge/datastore/wolf/code/xerus/include/xerus/misc/missingFunctions.h>
 using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
 	const size_t D = 7;
-	const size_t N = 15;
-	const size_t R = 14;
+	const size_t N = 12;
+	const size_t R = 3; 
+	const size_t CS = 10;
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
-	std::uniform_int_distribution<size_t> dist(0,3);
+	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<10*D*N*R*R; ++i) {
+	while(measSet.size() < CS*D*N*R*R) {
 		std::vector<size_t> pos;
 		for (size_t n=0; n<D; ++n) {
 			pos.emplace_back(dist(rnd));
 		}
 		measSet.emplace(pos, 0.0);
 	}
+	LOG(bla, "Set size " << measSet.size() << " should be " << CS*D*N*R*R);
 	
 	measurements.insert(measurements.begin(), measSet.begin(), measSet.end());
 	
 	trueSolution.measure(measurements);
-	const double trueNorm = frob_norm(trueSolution);
 	bool test = true;
 	for (const SinglePointMeasurment &m : measurements) {
-		test = test && std::abs(m.value - trueSolution[m.positions]) < trueNorm*1e-14;
+		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-10);
 	}
 	TEST(test);
 	
 	TTTensor X = TTTensor::random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
-	X /= X.frob_norm()*10000.0;
+	X /= X.frob_norm();
 	
 	ADF(X, measurements);
 	

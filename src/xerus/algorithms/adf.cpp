@@ -44,17 +44,21 @@ namespace xerus {
 		}
 		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
+		// Bool arrays signlaing whether a specific stack entry is unique and has to be calculated
 		VLA(bool[degree*numMeasurments], forwardUpdates);
 		VLA(bool[degree*numMeasurments], backwardUpdates);
 		
+		// Array containing all unqiue stack entries
 		std::unique_ptr<FullTensor[]> stackSaveSlots;
 		
-		VLA(FullTensor*[numMeasurments*(degree+2)], forwardStackMem);
-		FullTensor* const * const forwardStack = forwardStackMem+numMeasurments;
-		VLA(FullTensor*[numMeasurments*(degree+2)], backwardStackMem);
-		FullTensor* const * const backwardStack = backwardStackMem+numMeasurments;
+		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (Note that both allow corePositions -1 to degree.
+		std::unique_ptr<FullTensor*[]> forwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
+		FullTensor* const * const forwardStack = forwardStackMem.get()+numMeasurments;
 		
-		// Construct the Stacks
+		std::unique_ptr<FullTensor*[]> backwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
+		FullTensor* const * const backwardStack = backwardStackMem.get()+numMeasurments;
+		
+		// Construct the stacks and the maps
 		{
 			VLA(size_t[degree*numMeasurments], forwardCalculationMap);
 			VLA(size_t[degree*numMeasurments], backwardCalculationMap);
@@ -80,6 +84,7 @@ namespace xerus {
 					++numUniqueStackEntries;
 				}
 			}
+			
 			
 			// Create the backward map
 			std::vector<std::pair<const SinglePointMeasurment*, size_t>> reorderedMeasurments;
@@ -141,7 +146,7 @@ namespace xerus {
 			}
 			
 			// Count how many FullTensors we need for the stack
-			numUniqueStackEntries++; // +1 for the position -1 and degree stacks
+			numUniqueStackEntries++; // +1 for the special positions -1 and degree.
 			
 			// Create the stack
 			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries]);
@@ -174,8 +179,11 @@ namespace xerus {
 					}
 				}
 			}
-			REQUIRE(usedSlots == numUniqueStackEntries, "IE");
+			REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+			
+			LOG(ADF, "We have " << numUniqueStackEntries << " unique stack entries. There are " << numMeasurments*(degree+2) << " virtual stack entries.");
 		}
+		
 
 		Index i1, i2, r1, r2;
 		
@@ -242,8 +250,6 @@ namespace xerus {
 					PyPy += misc::sqr(Py);
 					PyR += Py*currentDifferences[i];
 				}
-// 				LOG(ADF, "StepSize: " << PyR/PyPy);
-				
 				
 				// Update current component
 				_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*deltaPlus(i1, r1, r2);
