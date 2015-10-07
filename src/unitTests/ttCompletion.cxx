@@ -25,15 +25,18 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 6;
-	std::mt19937_64 rnd;
+	const size_t D = 7;
+	const size_t N = 15;
+	const size_t R = 14;
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
 	std::uniform_int_distribution<size_t> dist(0,3);
-	std::normal_distribution<value_t> distF(0,1);
-	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, 4), std::vector<size_t>(D-1, 5), rnd, distF);
+	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	for (size_t i=0; i<20*D*5*5*4; ++i) {
+	for (size_t i=0; i<10*D*N*R*R; ++i) {
 		std::vector<size_t> pos;
 		for (size_t n=0; n<D; ++n) {
 			pos.emplace_back(dist(rnd));
