@@ -36,7 +36,7 @@ namespace xerus {
         FullTensor A(_A);
         Index i,j;
         _x(i&0) = _b(j&0) / A(j/2, i/2);
-        REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
+//         REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
     }
     
     /// @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly

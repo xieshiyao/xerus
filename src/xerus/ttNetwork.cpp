@@ -1460,10 +1460,9 @@ namespace xerus {
 					*meTTN = *otherTTN;
 				} else {
 					static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
+					meTTN->cannonicalized = false;
 					if (otherTTStack->cannonicalization_required) {
 						meTTN->move_core(otherTTStack->futureCorePosition);
-					} else {
-						meTTN->cannonicalized = false;
 					}
 				}
 				return;
@@ -1501,10 +1500,9 @@ namespace xerus {
 						*meTTN = *otherTTN;
 					} else {
 						static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
+						meTTN->cannonicalized = false;
 						if (otherTTStack->cannonicalization_required) {
 							meTTN->move_core(otherTTStack->futureCorePosition);
-						} else {
-							meTTN->cannonicalized = false;
 						}
 					}
 					REQUIRE(is_valid_tt(), "Internal Error.");
