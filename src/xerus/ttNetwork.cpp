@@ -1459,7 +1459,7 @@ namespace xerus {
 				if (otherTTN) {
 					*meTTN = *otherTTN;
 				} else {
-					static_cast<TensorNetwork*>(_me.tensorObject)->operator=(*_other.tensorObjectReadOnly);
+					_me.tensorObject->operator=(*_other.tensorObjectReadOnly);
 					if (otherTTStack->cannonicalization_required) {
 						meTTN->move_core(otherTTStack->futureCorePosition);
 					} else {

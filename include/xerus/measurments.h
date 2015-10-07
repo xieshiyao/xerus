@@ -25,6 +25,7 @@
 #pragma once
 
 #include "basic.h"
+#include "fullTensor.h"
 
 namespace xerus {
 	/** 
@@ -42,6 +43,25 @@ namespace xerus {
 			size_t split_position;
 			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
 			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
+		};
+		
+	};
+	
+	class RankOneMeasurmentSet {
+		std::vector<std::vector<FullTensor>> positions;
+		std::vector<value_t> measuredValues;
+		
+		RankOneMeasurmentSet() = default;
+		RankOneMeasurmentSet(const RankOneMeasurmentSet&  _other) = default;
+		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
+		
+		
+		void add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue);
+		
+		struct Comparator {
+			size_t split_position;
+			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
+			bool operator()(const RankOneMeasurmentSet &_lhs, const RankOneMeasurmentSet &_rhs) const;
 		};
 		
 	};

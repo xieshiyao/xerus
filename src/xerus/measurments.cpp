@@ -42,4 +42,15 @@ namespace xerus {
 		}
 		return false; // equality
 	}
+	
+	// --------------------- RankOneMeasurmentSet -----------------
+	
+	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {
+		positions.emplace_back(_position);
+		measuredValues.emplace_back(_measuredValue);
+	}
+	
+	bool RankOneMeasurmentSet::Comparator::operator()(const RankOneMeasurmentSet &_lhs, const RankOneMeasurmentSet &_rhs) const {
+		return false; // equality
+	}
 }
