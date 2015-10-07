@@ -110,7 +110,7 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
 )
 
 UNIT_TEST(FullTensor_SparseTensor_Interaction, Random,
-    std::mt19937_64 rnd;
+    std::mt19937_64 rnd(0x938429347);
     std::normal_distribution<value_t> dist (0.0, 10.0);
     std::uniform_int_distribution<size_t> intDist (1, 10);
 
