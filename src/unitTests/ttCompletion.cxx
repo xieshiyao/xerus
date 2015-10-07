@@ -21,7 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
-#include </store/runge/datastore/wolf/code/xerus/include/xerus/misc/missingFunctions.h>
+#include <../include/xerus/misc/missingFunctions.h>
 using namespace xerus;
 
 
