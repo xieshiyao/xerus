@@ -21,7 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
-#include </store/runge/datastore/wolf/code/xerus/include/xerus/misc/missingFunctions.h>
+#include <../../include/xerus/misc/missingFunctions.h>
 using namespace xerus;
 
 
@@ -39,16 +39,25 @@ UNIT_TEST(Algorithm, adf_completion,
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
-	while(measSet.size() < CS*D*N*R*R) {
-		std::vector<size_t> pos;
-		for (size_t n=0; n<D; ++n) {
-			pos.emplace_back(dist(rnd));
+	for(size_t d = 0; d < D; ++d) {
+		for(size_t n = 0; n < N; ++n) {
+			while(measSet.size() < d*N*CS*R*R + (n+1)*CS*R*R) {
+				std::vector<size_t> pos;
+				for (size_t i = 0; i < d; ++i) {
+					pos.emplace_back(dist(rnd));
+				}
+				pos.emplace_back(n);
+				for (size_t i = d+1; i < D; ++i) {
+					pos.emplace_back(dist(rnd));
+				}
+				measSet.emplace(pos, 0.0);
+			}
+			
 		}
-		measSet.emplace(pos, 0.0);
 	}
-	LOG(bla, "Set size " << measSet.size() << " should be " << CS*D*N*R*R);
-	
-	measurements.insert(measurements.begin(), measSet.begin(), measSet.end());
+
+	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
+	LOG(bla, "Set size " << measurements.size() << " should be " << CS*D*N*R*R);
 	
 	trueSolution.measure(measurements);
 	bool test = true;
@@ -57,10 +66,19 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 	TEST(test);
 	
-	TTTensor X = TTTensor::random(trueSolution.dimensions, trueSolution.ranks(), rnd, distF);
+	TTTensor X = TTTensor::random(trueSolution.dimensions, std::vector<size_t>(D-1, 1), rnd, distF);
 	X /= X.frob_norm();
 	
+	const ADFVariant ADF20(10, EPSILON, true);  
+	
+	for(size_t r = 1; r < R; ++r) {
+		ADF20(X, measurements);
+		TTTensor rankInc = TTTensor::random(trueSolution.dimensions, std::vector<size_t>(D-1, 1), rnd, distF);
+		X = X+rankInc;
+	}
+	
 	ADF(X, measurements);
+	
 	
 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )
