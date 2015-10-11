@@ -195,6 +195,7 @@ namespace xerus {
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			_x.move_core(0, true);
+			_x.component(0).apply_factor();
 			
 			// Rebuild the lower part of the stack
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
@@ -223,8 +224,7 @@ namespace xerus {
 				FullTensor deltaPlus({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				FullTensor entryAddition({_x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				FullTensor currentValue({});
-				currentValue.factor = 1.0;
-				value_t currentValueX;
+				
 				residual = 0;
 				const size_t leftStackDim = _x.get_component(corePosition).dimensions[0];
 				const size_t rightStackDim = _x.get_component(corePosition).dimensions[2];
@@ -236,11 +236,10 @@ namespace xerus {
 // 													forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 
 // 													backwardStack[i + (corePosition+1)*numMeasurments]->data.get());
 					
-// 					contract(currentValue, entryAddition, false, fixedComponents[_measurments[i].positions[corePosition]], false, 2);
-					REQUIRE(entryAddition.factor == 1.0 && fixedComponents[_measurments[i].positions[corePosition]].factor == 1.0, "ARGS " << entryAddition.factor << " --- " << fixedComponents[_measurments[i].positions[corePosition]].factor );
-					blasWrapper::matrix_matrix_product(currentValue.data.get(), 1, 1, 1.0, entryAddition.data.get(), false, dyadicDim, fixedComponents[_measurments[i].positions[corePosition]].data.get(), false);
-// 					currentValue[0] = currentValueX;
-					const value_t currentDifference = _measurments[i].value-currentValue[0];
+					contract(currentValue, entryAddition, false, fixedComponents[_measurments[i].positions[corePosition]], false, 2);
+// 					REQUIRE(entryAddition.factor == 1.0 && fixedComponents[_measurments[i].positions[corePosition]].factor == 1.0, "ARGS " << entryAddition.factor << " --- " << fixedComponents[_measurments[i].positions[corePosition]].factor );
+// 					blasWrapper::matrix_matrix_product(currentValue.data.get(), 1, 1, 1.0, entryAddition.data.get(), false, dyadicDim, fixedComponents[_measurments[i].positions[corePosition]].data.get(), false);
+					const value_t currentDifference = (_measurments[i].value-currentValue[0]);
 					misc::array_add(deltaPlus.data.get()+_measurments[i].positions[corePosition]*entryAddition.size, currentDifference, entryAddition.data.get(), entryAddition.size);
 					residual += misc::sqr(currentDifference);
 					currentDifferences[i] = currentDifference;
