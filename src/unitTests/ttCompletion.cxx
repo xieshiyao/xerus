@@ -21,18 +21,18 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
-#include <../../include/xerus/misc/missingFunctions.h>
+#include "../../include/xerus/misc/missingFunctions.h"
 using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 4;
+	const size_t D = 5;
 	const size_t N = 12;
-	const size_t R = 3; 
-	const size_t CS = 10;
-// 	std::random_device rd;
-// 	std::mt19937_64 rnd(rd());
-	std::mt19937_64 rnd;
+	const size_t R = 2; 
+	const size_t CS = 30;
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
+// 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
@@ -57,7 +57,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 
 	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
-	LOG(bla, "Set size " << measurements.size() << " should be " << CS*D*N*R*R);
+	LOG(bla, "Set size " << measurements.size() << " should be " << D*N*CS*R*R << " measured quotient " << double(D*N*CS*R*R)/(double) misc::pow(N, D));
 	
 	trueSolution.measure(measurements);
 	bool test = true;
@@ -66,14 +66,24 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 	TEST(test);
 	
-	TTTensor X = TTTensor::random(trueSolution.dimensions, std::vector<size_t>(D-1, 1), rnd, distF);
+	TTTensor Y = trueSolution;
+	
+	Y.round(3);
+	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
+	Y.round(2);
+	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
+	Y.round(1);
+	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
+	
+	
+	TTTensor X = TTTensor::ones(trueSolution.dimensions);
 	X /= X.frob_norm();
 	
-	const ADFVariant ADF20(10, EPSILON, true);  
+	const ADFVariant ADF20(25, EPSILON, true);  
 	
 	for(size_t r = 1; r < R; ++r) {
 		ADF20(X, measurements);
-		TTTensor rankInc = TTTensor::random(trueSolution.dimensions, std::vector<size_t>(D-1, 1), rnd, distF);
+		TTTensor rankInc = TTTensor::ones(trueSolution.dimensions);
 		X = X+rankInc;
 	}
 	

@@ -23,6 +23,7 @@
  */
 
 #include <xerus/algorithms/adf.h>
+#include <xerus/sparseTensor.h>
 #include <xerus/misc/check.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
@@ -31,7 +32,7 @@
 namespace xerus {
 	
 	double ADFVariant::solve(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
-		REQUIRE(_x.is_valid_tt(), "");
+		REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
 		REQUIRE(_measurments.size() > 0, "Need at very least one measurment.");
 		REQUIRE(_measurments[0].positions.size() == _x.degree(), "Measurment order must coincide with _x order.");
 		
@@ -46,8 +47,10 @@ namespace xerus {
 		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
 		// Bool arrays signlaing whether a specific stack entry is unique and has to be calculated
-		VLA(bool[degree*numMeasurments], forwardUpdates);
-		VLA(bool[degree*numMeasurments], backwardUpdates);
+		std::vector<bool> forwardUpdates(degree*numMeasurments);
+		std::vector<bool> backwardUpdates(degree*numMeasurments);
+// 		VLA(bool[degree*numMeasurments], forwardUpdates);
+// 		VLA(bool[degree*numMeasurments], backwardUpdates);
 		
 		// Array containing all unqiue stack entries
 		std::unique_ptr<FullTensor[]> stackSaveSlots;
@@ -152,9 +155,9 @@ namespace xerus {
 			// Create the stack
 			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries]);
 			size_t usedSlots = 1; // Zero is reserved for the the position -1 and degree stacks
+			stackSaveSlots[0] = Tensor::ones({1});
 
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				stackSaveSlots[0] = Tensor::ones({1});
 				forwardStackMem[i + 0] = &stackSaveSlots[0];
 				backwardStackMem[i + (degree+1)*numMeasurments] = &stackSaveSlots[0];
 			}
@@ -191,11 +194,13 @@ namespace xerus {
 		value_t residual;
 		
 		VLA(value_t[numMeasurments], currentDifferences);
+		TTTensor oldIterant;
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			_x.move_core(0, true);
-			_x.component(0).apply_factor();
+			LOG(bla, "Change: " << frob_norm(oldIterant - _x)/frob_norm(_x));
+			oldIterant = _x;
 			
 			// Rebuild the lower part of the stack
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
@@ -247,24 +252,32 @@ namespace xerus {
 				
 				residual = sqrt(residual)/normMeasuredValues;
 				
-				// Calculate <P(y), P(X-B)> and ||P(y)||^2, where y is the update direction.
-				std::vector<FullTensor> fixedDeltas(_x.dimensions[corePosition], deltaPlus);
-				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-					fixedDeltas[i].fix_slate(0, i);
-				}
-				value_t PyPy = 0;
-				value_t PyR = 0;
-				FullTensor halfPy({deltaPlus.dimensions[1]});
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					contract(halfPy, fixedDeltas[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-					contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
-					value_t Py = currentValue[0];
-					PyPy += misc::sqr(Py);
-					PyR += Py*currentDifferences[i];
+				// Seperate Updates for each slice
+				for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
+					
+					std::vector<FullTensor> fixedDeltas(_x.dimensions[corePosition], deltaPlus);
+					for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+						fixedDeltas[i].fix_slate(0, i);
+					}
+					
+					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2 and ||P(y)||^2, where y is the update direction.
+					const value_t PyR = misc::sqr(frob_norm(fixedDeltas[j]));
+					value_t PyPy = 0;
+					FullTensor halfPy({deltaPlus.dimensions[1]});
+					for(size_t i = 0; i < numMeasurments; ++i) {
+						if(_measurments[i].positions[corePosition] != j) { continue; }
+						contract(halfPy, fixedDeltas[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
+						const value_t Py = currentValue[0];
+						PyPy += misc::sqr(Py);
+					}
+					
+					// Update current component
+					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*fixedDeltas[j](r1, r2);
+					
 				}
 				
-				// Update current component
-				_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*deltaPlus(i1, r1, r2);
+				
 				
 				if(corePosition+1 < degree) {
 					_x.move_core(corePosition+1, true);

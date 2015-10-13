@@ -58,6 +58,6 @@ namespace xerus {
     };
 	
 	/// default variant of the single-site ALS algorithm using the lapack solver
-    const ADFVariant ADF(100000, EPSILON, true);
+    const ADFVariant ADF(100000, 1e-10, true);
 }
 
