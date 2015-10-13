@@ -116,7 +116,7 @@ namespace xerus {
 			result *= 1/std::sqrt(misc::product(_dimensions));
 			result.cannonicalize_left();
 			REQUIRE(result.is_valid_tt(), "Internal Error.");
-			REQUIRE(approx_equal(frob_norm(result), 1.0), "IE: " << frob_norm(result)); 
+			REQUIRE(misc::approx_equal(result.frob_norm(), 1.0), "IE: " << result.frob_norm()); 
 			return result;
 		}
 		

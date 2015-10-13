@@ -38,6 +38,9 @@ namespace xerus {
 		
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
+		#define SLOT(_i, _corePosition) (_i+_corePosition*numMeasurments)
+		
+		#undef SLOT
 		
 		// Calculate the norm of all measured entries.
 		value_t normMeasuredValues = 0;
@@ -155,9 +158,9 @@ namespace xerus {
 			// Create the stack
 			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries]);
 			size_t usedSlots = 1; // Zero is reserved for the the position -1 and degree stacks
-			stackSaveSlots[0] = Tensor::ones({1});
 
 			for(size_t i = 0; i < numMeasurments; ++i) {
+				stackSaveSlots[0] = Tensor::ones({1}); // TODO
 				forwardStackMem[i + 0] = &stackSaveSlots[0];
 				backwardStackMem[i + (degree+1)*numMeasurments] = &stackSaveSlots[0];
 			}
@@ -165,7 +168,7 @@ namespace xerus {
 			for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					if(forwardCalculationMap[i + corePosition*numMeasurments] == i) {
-						stackSaveSlots[usedSlots].reset({_x.rank(corePosition)},DONT_SET_ZERO());
+						stackSaveSlots[usedSlots].reset({_x.rank(corePosition)}, DONT_SET_ZERO());
 						forwardStackMem[i + (corePosition+1)*numMeasurments] = &stackSaveSlots[usedSlots++];
 					} else {
 						forwardStackMem[i + (corePosition+1)*numMeasurments] = forwardStackMem[forwardCalculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
@@ -194,13 +197,11 @@ namespace xerus {
 		value_t residual;
 		
 		VLA(value_t[numMeasurments], currentDifferences);
-		TTTensor oldIterant;
+		TTTensor oldIterant(_x);
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			_x.move_core(0, true);
-			LOG(bla, "Change: " << frob_norm(oldIterant - _x)/frob_norm(_x));
-			oldIterant = _x;
 			
 			// Rebuild the lower part of the stack
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
@@ -301,6 +302,10 @@ namespace xerus {
 			if(residual <= convergenceEpsilon) {
 				return residual;
 			}
+			
+			LOG(bla, "Change: " << frob_norm(oldIterant - _x)/frob_norm(_x));
+			if(frob_norm(oldIterant - _x)/frob_norm(_x) < 3e-7) { break; }
+			oldIterant = _x;
 		}
 		return residual;
 	}

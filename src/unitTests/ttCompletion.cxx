@@ -22,14 +22,15 @@
 
 #include "../../include/xerus/misc/test.h"
 #include "../../include/xerus/misc/missingFunctions.h"
+#include "../../include/xerus/examples/tensorCompletion.h"
 using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 5;
+	const size_t D = 7; 
 	const size_t N = 12;
-	const size_t R = 2; 
-	const size_t CS = 30;
+	const size_t R = 7;
+	const size_t CS = 10;
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
 // 	std::mt19937_64 rnd;
@@ -38,6 +39,9 @@ UNIT_TEST(Algorithm, adf_completion,
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
+	
+	LOG(bla, "Creating Measurment Set " << D*N*CS*R*R << " of " << misc::pow(N, D));
+	REQUIRE(D*N*CS*R*R < misc::pow(N, D), "CS too large");
 	
 	for(size_t d = 0; d < D; ++d) {
 		for(size_t n = 0; n < N; ++n) {
@@ -52,34 +56,23 @@ UNIT_TEST(Algorithm, adf_completion,
 				}
 				measSet.emplace(pos, 0.0);
 			}
-			
 		}
 	}
 
 	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
 	LOG(bla, "Set size " << measurements.size() << " should be " << D*N*CS*R*R << " measured quotient " << double(D*N*CS*R*R)/(double) misc::pow(N, D));
 	
-	trueSolution.measure(measurements);
-	bool test = true;
-	for (const SinglePointMeasurment &m : measurements) {
-		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-10);
-	}
-	TEST(test);
-	
-	TTTensor Y = trueSolution;
-	
-	Y.round(3);
-	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
-	Y.round(2);
-	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
-	Y.round(1);
-	LOG(bla, frob_norm(Y - trueSolution)/frob_norm(trueSolution));
-	
+	examples::completion::inverse_index_norm(measurements);
+// 	trueSolution.measure(measurements);
+// 	bool test = true;
+// 	for (const SinglePointMeasurment &m : measurements) {
+// 		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-10);
+// 	}
+// 	TEST(test);
 	
 	TTTensor X = TTTensor::ones(trueSolution.dimensions);
-	X /= X.frob_norm();
 	
-	const ADFVariant ADF20(25, EPSILON, true);  
+	const ADFVariant ADF20(200, EPSILON, true);  
 	
 	for(size_t r = 1; r < R; ++r) {
 		ADF20(X, measurements);
@@ -89,5 +82,19 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	ADF(X, measurements);
 	
-	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
+	std::vector<SinglePointMeasurment> ctrSet = SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd);
+	
+	examples::completion::inverse_index_norm(ctrSet);
+	
+	value_t ctrValue = 0.0;
+	value_t ctrNorm = 0.0;
+	for(const SinglePointMeasurment& meas : ctrSet) {
+		ctrValue += misc::sqr(meas.value - X[meas.positions]);
+		ctrNorm += misc::sqr(meas.value);
+	}
+	ctrValue = std::sqrt(ctrValue)/std::sqrt(ctrNorm);
+	
+	LOG(bla, ctrValue);
+	
+// 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )

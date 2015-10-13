@@ -46,8 +46,8 @@ namespace xerus {
 			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
 		};
 		
-		template<class random_engine, class distribution>
-		static std::vector<SinglePointMeasurment> create_set(size_t _degree, size_t _n, size_t _numMeasurements, distribution _dist, random_engine _rnd) {
+		template<class random_engine>
+		static std::vector<SinglePointMeasurment> create_set(size_t _degree, size_t _n, const size_t _numMeasurements, random_engine _rnd) {
 			REQUIRE(misc::pow(_n, _degree) >= _numMeasurements, "it's impossible to perform as many measurements as requested");
 			std::uniform_int_distribution<size_t> indexDist(0,_n-1);
 			std::set<std::vector<size_t>> measuredPositions;
