@@ -38,9 +38,6 @@ namespace xerus {
 		
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
-		#define SLOT(_i, _corePosition) (_i+_corePosition*numMeasurments)
-		
-		#undef SLOT
 		
 		// Calculate the norm of all measured entries.
 		value_t normMeasuredValues = 0;
@@ -52,8 +49,6 @@ namespace xerus {
 		// Bool arrays signlaing whether a specific stack entry is unique and has to be calculated
 		std::vector<bool> forwardUpdates(degree*numMeasurments);
 		std::vector<bool> backwardUpdates(degree*numMeasurments);
-// 		VLA(bool[degree*numMeasurments], forwardUpdates);
-// 		VLA(bool[degree*numMeasurments], backwardUpdates);
 		
 		// Array containing all unqiue stack entries
 		std::unique_ptr<FullTensor[]> stackSaveSlots;
@@ -67,9 +62,10 @@ namespace xerus {
 		
 		// Construct the stacks and the maps
 		{
-			VLA(size_t[degree*numMeasurments], forwardCalculationMap);
-			VLA(size_t[degree*numMeasurments], backwardCalculationMap);
+			std::vector<size_t> forwardCalculationMap(degree*numMeasurments);
+			std::vector<size_t> backwardCalculationMap(degree*numMeasurments);
 			
+			// Count how many FullTensors we need for the stacks
 			size_t numUniqueStackEntries = 0;
 		
 			// Create the forward map
@@ -91,6 +87,7 @@ namespace xerus {
 					++numUniqueStackEntries;
 				}
 			}
+			
 			
 			
 			// Create the backward map
@@ -152,15 +149,12 @@ namespace xerus {
 				}
 			}
 			
-			// Count how many FullTensors we need for the stack
-			numUniqueStackEntries++; // +1 for the special positions -1 and degree.
-			
 			// Create the stack
-			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries]);
-			size_t usedSlots = 1; // Zero is reserved for the the position -1 and degree stacks
-
+			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries+1]); // +1 for the special positions -1 and degree.
+			size_t usedSlots = 0; // Zero is reserved for the the position -1 and degree stacks
+			stackSaveSlots[usedSlots++] = Tensor::ones({1});
+			
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				stackSaveSlots[0] = Tensor::ones({1}); // TODO
 				forwardStackMem[i + 0] = &stackSaveSlots[0];
 				backwardStackMem[i + (degree+1)*numMeasurments] = &stackSaveSlots[0];
 			}
@@ -186,7 +180,8 @@ namespace xerus {
 					}
 				}
 			}
-			REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+			
+			REQUIRE(usedSlots == numUniqueStackEntries+1, "Internal Error.");
 			
 			LOG(ADF, "We have " << numUniqueStackEntries << " unique stack entries. There are " << 2*numMeasurments*(degree-1)+1 << " virtual stack entries.");
 		}
@@ -194,9 +189,12 @@ namespace xerus {
 
 		Index i1, i2, r1, r2;
 		
-		value_t residual;
+		value_t residual = 1.0, lastResidual = 1.0;
+		size_t smallResidualCount = 0;
 		
-		VLA(value_t[numMeasurments], currentDifferences);
+		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
+		std::vector<value_t> currentDifferences(numMeasurments);
+		
 		TTTensor oldIterant(_x);
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
@@ -206,10 +204,9 @@ namespace xerus {
 			// Rebuild the lower part of the stack
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
 				
-				// Prepare the single slates of the current component
-				std::vector<FullTensor> fixedComponents(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
+				// Prepare the single slates of the current component 
 				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-					fixedComponents[i].fix_slate(1, i);
+					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
 				}
 				
 				// Reset the FullTensors
@@ -220,73 +217,54 @@ namespace xerus {
 				}
 			}
 			
+			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
-				// Prepare the single slates of the current component
-				std::vector<FullTensor> fixedComponents(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
-				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-					fixedComponents[i].fix_slate(1, i);
+				const size_t localN = _x.get_component(corePosition).dimensions[1];
+				const size_t localLeftRank = _x.get_component(corePosition).dimensions[0];
+				const size_t localRightRank = _x.get_component(corePosition).dimensions[2];
+				
+				// Prepare the single slates of the current component 
+				for(size_t i = 0; i < localN; ++i) {
+					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
 				}
 				
-				FullTensor deltaPlus({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
-				FullTensor entryAddition({_x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
+				std::vector<FullTensor> deltas(localN, FullTensor({localLeftRank, localRightRank}));
+				FullTensor entryAddition({localLeftRank, localRightRank});
 				FullTensor currentValue({});
 				
-				residual = 0;
-				const size_t leftStackDim = _x.get_component(corePosition).dimensions[0];
-				const size_t rightStackDim = _x.get_component(corePosition).dimensions[2];
-				const size_t dyadicDim = leftStackDim*rightStackDim;
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
-// 					blasWrapper::dyadic_vector_product(entryAddition.data.get(), leftStackDim, rightStackDim, 
-// 													forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
-// 													forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 
-// 													backwardStack[i + (corePosition+1)*numMeasurments]->data.get());
-					
 					contract(currentValue, entryAddition, false, fixedComponents[_measurments[i].positions[corePosition]], false, 2);
-// 					REQUIRE(entryAddition.factor == 1.0 && fixedComponents[_measurments[i].positions[corePosition]].factor == 1.0, "ARGS " << entryAddition.factor << " --- " << fixedComponents[_measurments[i].positions[corePosition]].factor );
-// 					blasWrapper::matrix_matrix_product(currentValue.data.get(), 1, 1, 1.0, entryAddition.data.get(), false, dyadicDim, fixedComponents[_measurments[i].positions[corePosition]].data.get(), false);
-					const value_t currentDifference = (_measurments[i].value-currentValue[0]);
-					misc::array_add(deltaPlus.data.get()+_measurments[i].positions[corePosition]*entryAddition.size, currentDifference, entryAddition.data.get(), entryAddition.size);
-					residual += misc::sqr(currentDifference);
-					currentDifferences[i] = currentDifference;
+					currentDifferences[i] = (_measurments[i].value-currentValue[0]);
+					deltas[_measurments[i].positions[corePosition]] += currentDifferences[i]*entryAddition;
 				}
 				
-				residual = sqrt(residual)/normMeasuredValues;
+				// Calculate ||P(y)||^2 for each slice seperately, where y is the update direction.
+				std::vector<value_t> PyPys(localN, 0.0);
+				FullTensor halfPy({localLeftRank});
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					contract(halfPy, deltas[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+					contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
+					PyPys[_measurments[i].positions[corePosition]] += misc::sqr(currentValue[0]);
+				}
 				
-				// Seperate Updates for each slice
-				for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
+				// Update each slice seperately
+				for(size_t j = 0; j < localN; ++j) {
+					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
+					const value_t PyR = misc::sqr(frob_norm(deltas[j]));
 					
-					std::vector<FullTensor> fixedDeltas(_x.dimensions[corePosition], deltaPlus);
-					for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-						fixedDeltas[i].fix_slate(0, i);
-					}
-					
-					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2 and ||P(y)||^2, where y is the update direction.
-					const value_t PyR = misc::sqr(frob_norm(fixedDeltas[j]));
-					value_t PyPy = 0;
-					FullTensor halfPy({deltaPlus.dimensions[1]});
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(_measurments[i].positions[corePosition] != j) { continue; }
-						contract(halfPy, fixedDeltas[_measurments[i].positions[corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
-						const value_t Py = currentValue[0];
-						PyPy += misc::sqr(Py);
-					}
-					
-					// Update current component
-					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*fixedDeltas[j](r1, r2);
-					
+					// Update
+					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({localN}, {j})(i1)*deltas[j](r1, r2);
 				}
 				
 				
-				
+				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
 					_x.move_core(corePosition+1, true);
 					
-					// We need updated the fixedComponents
-					fixedComponents = std::vector<FullTensor>(_x.dimensions[corePosition], FullTensor(_x.get_component(corePosition)));
+					// Prepare the single slates of the current component 
 					for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-						fixedComponents[i].fix_slate(1, i);
+						fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
 					}
 					
 					// Update the stack
@@ -298,13 +276,26 @@ namespace xerus {
 				}
 			}
 			
-			LOG(ADF, iteration << " " << residual);
-			if(residual <= convergenceEpsilon) {
+			// Calculate the residual (actually the residual of the last iteration because this comes more or less for free).
+			lastResidual = residual;
+			residual = 0;
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				residual += misc::sqr(currentDifferences[i]);
+			}
+			residual = std::sqrt(residual);
+			
+			if(residual/lastResidual > 1.0 - 1e-3) {
+				smallResidualCount++;
+			} else {
+				smallResidualCount = 0;
+			}
+			
+			LOG(ADF, "Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
+			
+			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
 				return residual;
 			}
 			
-			LOG(bla, "Change: " << frob_norm(oldIterant - _x)/frob_norm(_x));
-			if(frob_norm(oldIterant - _x)/frob_norm(_x) < 3e-7) { break; }
 			oldIterant = _x;
 		}
 		return residual;
