@@ -50,7 +50,7 @@ namespace xerus {
 // 		misc::apply_permutation(_set, perm);
 		std::sort(_set.begin(), _set.end(), comp);
 	}
-	
+		
 	// --------------------- RankOneMeasurmentSet -----------------
 	
 	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {

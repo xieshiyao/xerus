@@ -25,6 +25,7 @@
 #pragma once
 
 #include "basic.h"
+#include "misc/missingFunctions.h"
 #include "fullTensor.h"
 
 namespace xerus {
@@ -45,6 +46,23 @@ namespace xerus {
 			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
 		};
 		
+		template<class random_engine, class distribution>
+		static std::vector<SinglePointMeasurment> create_set(size_t _degree, size_t _n, size_t _numMeasurements, distribution _dist, random_engine _rnd) {
+			REQUIRE(misc::pow(_n, _degree) >= _numMeasurements, "it's impossible to perform as many measurements as requested");
+			std::uniform_int_distribution<size_t> indexDist(0,_n-1);
+			std::set<std::vector<size_t>> measuredPositions;
+			std::vector<SinglePointMeasurment> result;
+			while (result.size() < _numMeasurements) {
+				std::vector<size_t> pos;
+				for (size_t i=0; i<_degree; ++i) {
+					pos.emplace_back(indexDist(_rnd));
+				}
+				if (measuredPositions.count(pos) > 0) continue;
+				measuredPositions.insert(pos);
+				result.emplace_back(pos, 0.0);
+			}
+			return result;
+		}
 	};
 	
 	void sort(std::vector<SinglePointMeasurment>& _set, const size_t _splitPos = ~0ul);
