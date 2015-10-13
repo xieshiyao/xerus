@@ -2,6 +2,9 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2015-??-?? v1.4.1
+ * Fixed a bug with the recannonicalization of products of TTOperators.
+
 * 2015-09-09 v1.4.0
  * Added an implementation of the ADF algorithm.
  * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk). This allocator is highly recommended for use with the ADF algorithm.

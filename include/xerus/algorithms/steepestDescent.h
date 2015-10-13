@@ -44,6 +44,7 @@ namespace xerus {
 		value_t convergenceEpsilon; ///< default value for the change in the residual at which the algorithm assumes it is converged
 		bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
 		bool assumeSymmetricPositiveDefiniteOperator; ///< calculates the gradient as b-Ax instead of A^T(b-Ax)
+		TTOperator *preconditioner;
 		
 		std::function<void(TTTensor &, const TTTensor &)> retraction; ///< the retraction to project from point + tangent vector to a new point on the manifold
 		
@@ -52,12 +53,12 @@ namespace xerus {
 		/// fully defining constructor. alternatively SteepestDescentVariant can be created by copying a predefined variant and modifying it
 		SteepestDescentVariant(size_t _numSteps, value_t _convergenceEpsilon, bool _symPosOp, std::function<void(TTTensor &, const TTTensor &)> _retraction)
 				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon),
-				  assumeSymmetricPositiveDefiniteOperator(_symPosOp), retraction(_retraction)
+				  assumeSymmetricPositiveDefiniteOperator(_symPosOp), preconditioner(nullptr), retraction(_retraction)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
 		SteepestDescentVariant(std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), retraction(_retraction)
+				: numSteps(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), preconditioner(nullptr), retraction(_retraction)
 		{ }
 		
 		/**

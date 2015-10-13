@@ -92,15 +92,21 @@ namespace xerus {
 				if (assumeSymmetricPositiveDefiniteOperator) { REQUIRE_TEST;
 					// search direction: y = b-Ax
 					y = residual;
+					if (preconditioner) {
+						y(j&0) = (*preconditioner)(j/2,i/2) * y(i&0);
+					}
 					// direction of change A*y
-					Ay(i&0) = _A(i/2,j/2) * y(j&0);
+// 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<y,Ay>
 // 					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
 				} else { REQUIRE_TEST;
 					// search direction: y = A^T(b-Ax)
 					y(i&0) = _A(j/2,i/2) * residual(j&0);
+					if (preconditioner) {
+						y(j&0) = (*preconditioner)(j/2,i/2) * y(i&0);
+					}
 					// direction of change A*y
-					Ay(i&0) = _A(i/2,j/2) * y(j&0);
+// 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<Ay,Ay>
 // 					alpha = misc::sqr(frob_norm(y)) / misc::sqr(frob_norm(Ay));
 				}
@@ -109,6 +115,7 @@ namespace xerus {
 			}
 			
 			TTTensor oldX(_x);
+			alpha *= 2;
 			retraction(_x, y * alpha);
 			lastResidual = currResidual;
 			updateResidual();
