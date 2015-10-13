@@ -26,6 +26,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
+#include <xerus/blasLapackWrapper.h>
 
 namespace xerus {
 	
@@ -44,17 +45,21 @@ namespace xerus {
 		}
 		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
+		// Bool arrays signlaing whether a specific stack entry is unique and has to be calculated
 		VLA(bool[degree*numMeasurments], forwardUpdates);
 		VLA(bool[degree*numMeasurments], backwardUpdates);
 		
+		// Array containing all unqiue stack entries
 		std::unique_ptr<FullTensor[]> stackSaveSlots;
 		
-		VLA(FullTensor*[numMeasurments*(degree+2)], forwardStackMem);
-		FullTensor* const * const forwardStack = forwardStackMem+numMeasurments;
-		VLA(FullTensor*[numMeasurments*(degree+2)], backwardStackMem);
-		FullTensor* const * const backwardStack = backwardStackMem+numMeasurments;
+		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (Note that both allow corePositions -1 to degree.
+		std::unique_ptr<FullTensor*[]> forwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
+		FullTensor* const * const forwardStack = forwardStackMem.get()+numMeasurments;
 		
-		// Construct the Stacks
+		std::unique_ptr<FullTensor*[]> backwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
+		FullTensor* const * const backwardStack = backwardStackMem.get()+numMeasurments;
+		
+		// Construct the stacks and the maps
 		{
 			VLA(size_t[degree*numMeasurments], forwardCalculationMap);
 			VLA(size_t[degree*numMeasurments], backwardCalculationMap);
@@ -80,6 +85,7 @@ namespace xerus {
 					++numUniqueStackEntries;
 				}
 			}
+			
 			
 			// Create the backward map
 			std::vector<std::pair<const SinglePointMeasurment*, size_t>> reorderedMeasurments;
@@ -141,7 +147,7 @@ namespace xerus {
 			}
 			
 			// Count how many FullTensors we need for the stack
-			numUniqueStackEntries++; // +1 for the position -1 and degree stacks
+			numUniqueStackEntries++; // +1 for the special positions -1 and degree.
 			
 			// Create the stack
 			stackSaveSlots.reset(new FullTensor[numUniqueStackEntries]);
@@ -174,8 +180,11 @@ namespace xerus {
 					}
 				}
 			}
-			REQUIRE(usedSlots == numUniqueStackEntries, "IE");
+			REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+			
+			LOG(ADF, "We have " << numUniqueStackEntries << " unique stack entries. There are " << 2*numMeasurments*(degree-1)+1 << " virtual stack entries.");
 		}
+		
 
 		Index i1, i2, r1, r2;
 		
@@ -186,6 +195,7 @@ namespace xerus {
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			_x.move_core(0, true);
+			_x.component(0).apply_factor();
 			
 			// Rebuild the lower part of the stack
 			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
@@ -214,12 +224,22 @@ namespace xerus {
 				FullTensor deltaPlus({_x.get_component(corePosition).dimensions[1], _x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				FullTensor entryAddition({_x.get_component(corePosition).dimensions[0], _x.get_component(corePosition).dimensions[2]});
 				FullTensor currentValue({});
-				residual = 0;
 				
+				residual = 0;
+				const size_t leftStackDim = _x.get_component(corePosition).dimensions[0];
+				const size_t rightStackDim = _x.get_component(corePosition).dimensions[2];
+				const size_t dyadicDim = leftStackDim*rightStackDim;
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
+// 					blasWrapper::dyadic_vector_product(entryAddition.data.get(), leftStackDim, rightStackDim, 
+// 													forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
+// 													forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 
+// 													backwardStack[i + (corePosition+1)*numMeasurments]->data.get());
+					
 					contract(currentValue, entryAddition, false, fixedComponents[_measurments[i].positions[corePosition]], false, 2);
-					const value_t currentDifference = _measurments[i].value-currentValue[0];
+// 					REQUIRE(entryAddition.factor == 1.0 && fixedComponents[_measurments[i].positions[corePosition]].factor == 1.0, "ARGS " << entryAddition.factor << " --- " << fixedComponents[_measurments[i].positions[corePosition]].factor );
+// 					blasWrapper::matrix_matrix_product(currentValue.data.get(), 1, 1, 1.0, entryAddition.data.get(), false, dyadicDim, fixedComponents[_measurments[i].positions[corePosition]].data.get(), false);
+					const value_t currentDifference = (_measurments[i].value-currentValue[0]);
 					misc::array_add(deltaPlus.data.get()+_measurments[i].positions[corePosition]*entryAddition.size, currentDifference, entryAddition.data.get(), entryAddition.size);
 					residual += misc::sqr(currentDifference);
 					currentDifferences[i] = currentDifference;
@@ -242,8 +262,6 @@ namespace xerus {
 					PyPy += misc::sqr(Py);
 					PyR += Py*currentDifferences[i];
 				}
-// 				LOG(ADF, "StepSize: " << PyR/PyPy);
-				
 				
 				// Update current component
 				_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPy)*deltaPlus(i1, r1, r2);

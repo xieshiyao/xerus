@@ -160,20 +160,20 @@ namespace xerus {
                 PA_START;
                 
                 cblas_dgemm(    CblasRowMajor,                                  // Array storage format
-                                _transposeA ? CblasTrans : CblasNoTrans,        // LHS transposed?
-                                _transposeB ? CblasTrans : CblasNoTrans,        // RHS transposed?
-                                (int) _leftDim,                                 // Left dimension
-                                (int) _rightDim,                                // Right dimension
-                                (int) _middleDim,                               // Middle dimension
-                                _alpha,                                         // Factor to the Product
-                                _A,                                             // Pointer to LHS
-                                (int) _lda,                                     // LDA
-                                _B,                                             // Pointer to RHS
-                                (int) _ldb,                                     // LDB
-                                0.0,                                            // Factor of C (Zero if only the product is required)
-                                _C,                                             // Pointer to result
-                                (int) _rightDim                                 // LDC
-                        );
+						_transposeA ? CblasTrans : CblasNoTrans,        // LHS transposed?
+						_transposeB ? CblasTrans : CblasNoTrans,        // RHS transposed?
+						(int) _leftDim,                                 // Left dimension
+						(int) _rightDim,                                // Right dimension
+						(int) _middleDim,                               // Middle dimension
+						_alpha,                                         // Factor to the Product
+						_A,                                             // Pointer to LHS
+						(int) _lda,                                     // LDA
+						_B,                                             // Pointer to RHS
+						(int) _ldb,                                     // LDB
+						0.0,                                            // Factor of C (Zero if only the product is required)
+						_C,                                             // Pointer to result
+						(int) _rightDim                                 // LDC
+				);
                 
 				PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
             }
@@ -226,8 +226,6 @@ namespace xerus {
             
 			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
-        
-        
         
 		void qc(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
 			REQUIRE(_m <= (size_t) std::numeric_limits<int>::max(), "Dimension to large for BLAS/Lapack");

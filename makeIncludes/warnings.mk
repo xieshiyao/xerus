@@ -12,7 +12,7 @@ WARNINGS += -pedantic				# Strict ISO C++ checks (warn everywhere the ISO says t
 WARNINGS += -Wshadow					    # Warn about variables being shadowed
 WARNINGS += -Wconversion				    # warn double -> uint conversions etc.
 WARNINGS += -Wswitch-default				# Warn whenever a switch statement does not have a default case. 
-WARNINGS += -Wfloat-equal			    	# Warn if floating-point values are used in equality comparisons. 
+#WARNINGS += -Wfloat-equal			    	# Warn if floating-point values are used in equality comparisons. 
 WARNINGS += -Wundef					        # Warn if an undefined identifier is evaluated in an ‘#if’ directive. 
 WARNINGS += -Wunreachable-code				# Warn about unreachable code
 # WARNINGS += -Wframe-larger-than=16384 -Wstack-usage=16384 # Warn if the size of a function frame is larger than 16384 bytes.

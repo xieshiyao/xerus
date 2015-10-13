@@ -40,14 +40,17 @@ namespace xerus {
 		SinglePointMeasurment(const std::vector<size_t>& _positions, const value_t _value);
 		
 		struct Comparator {
-			size_t split_position;
-			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
+			const size_t split_position;
+			Comparator(const size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
 			bool operator()(const SinglePointMeasurment &_lhs, const SinglePointMeasurment &_rhs) const;
 		};
 		
 	};
 	
+	void sort(std::vector<SinglePointMeasurment>& _set, const size_t _splitPos = ~0ul);
+	
 	class RankOneMeasurmentSet {
+	public:
 		std::vector<std::vector<FullTensor>> positions;
 		std::vector<value_t> measuredValues;
 		
@@ -55,14 +58,14 @@ namespace xerus {
 		RankOneMeasurmentSet(const RankOneMeasurmentSet&  _other) = default;
 		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
 		
+		struct Comparator {
+		const size_t split_position;
+		Comparator(const size_t _splitPos) : split_position(_splitPos)  {}
+		bool operator()(const std::vector<FullTensor>& _lhs, const std::vector<FullTensor>& _rhs) const;
+	};
 		
 		void add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue);
-		
-		struct Comparator {
-			size_t split_position;
-			Comparator(size_t _splitPos = ~0ul) : split_position(_splitPos)  {}
-			bool operator()(const RankOneMeasurmentSet &_lhs, const RankOneMeasurmentSet &_rhs) const;
-		};
-		
 	};
+	
+	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos = ~0ul);
 }
