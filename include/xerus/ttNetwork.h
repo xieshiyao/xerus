@@ -97,7 +97,6 @@ namespace xerus {
 		*/
 		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
 		
-		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		/** 
 		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
          * @param _dimensions the dimensions of the new tensor.
@@ -105,18 +104,23 @@ namespace xerus {
 		static TTNetwork ones(const std::vector<size_t>& _dimensions) {
 			#ifndef DISABLE_RUNTIME_CHECKS_
 				for (const size_t d : _dimensions) {
-					REQUIRE(d > 0, "Trying to construct random TTTensor with dimension 0 is illegal.");
+					REQUIRE(d > 0, "Trying to construct a TTTensor with dimension 0 is not possible.");
 				}
 			#endif
 			
 			TTNetwork result(_dimensions.size());
-			for(size_t i = 0; i < _dimensions.size(); ++i) {
-				result.set_component(i, Tensor::ones({1, _dimensions[i], 1}));
+			const size_t numNodes = _dimensions.size()/N;
+			std::vector<size_t> dimensions;
+			for(size_t i = 0; i < numNodes; ++i) {
+				dimensions = {1, _dimensions[i]};
+				if (isOperator) {
+					dimensions.emplace_back(_dimensions[i+numNodes]);
+				}
+				dimensions.emplace_back(1);
+				result.set_component(i, Tensor::ones(dimensions));
 			}
-			result *= 1/std::sqrt(misc::product(_dimensions));
 			result.cannonicalize_left();
 			REQUIRE(result.is_valid_tt(), "Internal Error.");
-			REQUIRE(misc::approx_equal(result.frob_norm(), 1.0), "IE: " << result.frob_norm()); 
 			return result;
 		}
 		

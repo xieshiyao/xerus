@@ -5,6 +5,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 * 2015-10-13 v1.4.1
  * Fixed a bug with the recannonicalization of products of TTOperators.
  * Many improvements for the ADF algorithm for tensor completion.
+ * Added TTTensor::ones and TTOperator::ones to create TTTensors with all entries equal to 1.
 
 * 2015-09-09 v1.4.0
  * Added an implementation of the ADF algorithm.
