@@ -98,6 +98,29 @@ namespace xerus {
 		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
 		
 		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
+		/** 
+		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
+         * @param _dimensions the dimensions of the new tensor.
+         */
+		static TTNetwork ones(const std::vector<size_t>& _dimensions) {
+			#ifndef DISABLE_RUNTIME_CHECKS_
+				for (const size_t d : _dimensions) {
+					REQUIRE(d > 0, "Trying to construct random TTTensor with dimension 0 is illegal.");
+				}
+			#endif
+			
+			TTNetwork result(_dimensions.size());
+			for(size_t i = 0; i < _dimensions.size(); ++i) {
+				result.set_component(i, Tensor::ones({1, _dimensions[i], 1}));
+			}
+			result *= 1/std::sqrt(misc::product(_dimensions));
+			result.cannonicalize_left();
+			REQUIRE(result.is_valid_tt(), "Internal Error.");
+			REQUIRE(misc::approx_equal(result.frob_norm(), 1.0), "IE: " << result.frob_norm()); 
+			return result;
+		}
+		
+		/// Random constructs a TTNetwork with the given dimensions and ranks. The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		template<class generator, class distribution, class aloc = std::allocator<size_t>>
 		static TTNetwork random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
 			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::random");
@@ -147,6 +170,7 @@ namespace xerus {
 		_deprecated_ static TTNetwork construct_random(const std::vector<size_t, aloc>& _dimensions, size_t _rank, generator& _rnd, distribution& _dist) {
 			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
 		}
+		
 		
 		/// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
