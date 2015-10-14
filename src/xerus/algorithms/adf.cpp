@@ -188,7 +188,7 @@ namespace xerus {
 
 		Index i1, i2, r1, r2;
 		
-		value_t residual;
+		value_t residual = 0;
 		
 		VLA(value_t[numMeasurments], currentDifferences);
 		
@@ -226,9 +226,9 @@ namespace xerus {
 				FullTensor currentValue({});
 				
 				residual = 0;
-				const size_t leftStackDim = _x.get_component(corePosition).dimensions[0];
-				const size_t rightStackDim = _x.get_component(corePosition).dimensions[2];
-				const size_t dyadicDim = leftStackDim*rightStackDim;
+// 				const size_t leftStackDim = _x.get_component(corePosition).dimensions[0];
+// 				const size_t rightStackDim = _x.get_component(corePosition).dimensions[2];
+// 				const size_t dyadicDim = leftStackDim*rightStackDim;
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
 // 					blasWrapper::dyadic_vector_product(entryAddition.data.get(), leftStackDim, rightStackDim, 

@@ -90,49 +90,39 @@ UNIT_TEST(TT, real_difference,
     
     Index i;
     ttC(i&0) = ttA(i&0) - ttA(i&0);
-    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "1 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = ttB(i&0) - ttB(i&0);
-    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "2 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
-    LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "3 " << frob_norm(ttC(i&0)));
     
 	ttC(i&0) = (ttA(i&0) + ttB(i&0));
 	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
 	ttC(i&0) = (ttB(i&0) + ttA(i&0));
 	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
     ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
-    LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "4 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
-    LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 5e-10);
+    MTEST(frob_norm(ttC(i&0)) < 1e-9, "5 " << frob_norm(ttC(i&0)));
 	
 	ttA = TTTensor::random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
 	ttC(i&0) = ttA(i&0) - ttA(i&0);
-    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "6 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = ttB(i&0) - ttB(i&0);
-    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "7 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
-    LOG(unit_tests, "Frob norm 3 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "8 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
-    LOG(unit_tests, "Frob norm 4 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-11);
+    MTEST(frob_norm(ttC(i&0)) < 1e-11, "9 " << frob_norm(ttC(i&0)));
     
     ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
-    LOG(unit_tests, "Frob norm 5 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 5e-10);
+    MTEST(frob_norm(ttC(i&0)) < 5e-10, "10 " << frob_norm(ttC(i&0)));
 	
 )
 

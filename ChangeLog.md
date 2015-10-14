@@ -2,8 +2,9 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2015-??-?? v1.4.1
+* 2015-10-13 v1.4.1
  * Fixed a bug with the recannonicalization of products of TTOperators.
+ * Many improvements for the ADF algorithm for tensor completion.
 
 * 2015-09-09 v1.4.0
  * Added an implementation of the ADF algorithm.
@@ -15,7 +16,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * Added TN::reduce_representation() to trace out any full-rank edge.
  * Added TN::transfer_core(...) and TN::round_edge(...) analogously to TT rounding / core movement operations.
  * ! renamed class::construct_random to class::random and TTOperator::construct_identity to TTOperator::identity.
- * Added several named constructors
+ * Added several named constructors:
   * Tensor::ones(...) to construct tensors filled with all entries equal to 1.
   * Tensor::identity(...) to construct a (sparse) tensor equal to the TTOperator::identity.
   * Tensor::dirac(...) to construct a (sparse) tensor with a single 1 at a given position and 0 everywhere else.

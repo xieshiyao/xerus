@@ -21,7 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
-#include <../../include/xerus/misc/missingFunctions.h>
+#include "../../include/xerus/misc/missingFunctions.h"
 using namespace xerus;
 
 
@@ -57,7 +57,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 
 	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
-	LOG(bla, "Set size " << measurements.size() << " should be " << CS*D*N*R*R);
+// 	LOG(bla, "Set size " << measurements.size() << " should be " << CS*D*N*R*R);
 	
 	trueSolution.measure(measurements);
 	bool test = true;
