@@ -900,7 +900,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	size_t TTNetwork<isOperator>::rank(const size_t _i) const {
-		REQUIRE(_i+2 < nodes.size(), "requested illegal rank");
+		REQUIRE(_i+2 < nodes.size(), "Requested illegal rank " << _i);
 		return nodes[_i+1].neighbors.back().dimension;
 	}
 	
@@ -1426,11 +1426,16 @@ namespace xerus {
 		
 		if (ttMe->cannonicalized) {
 			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
+			LOG(bla, "Canonicalising: " << outTensor.cannonicalized << " Pos: " << outTensor.corePosition << " Current ranks" << outTensor.ranks());
 			outTensor.move_core(ttMe->corePosition);
+			LOG(bla, "After : " << outTensor.cannonicalized << " Pos: " << outTensor.corePosition << " Current ranks" << outTensor.ranks());
 		}
 		
 		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
 		_out.assign(std::move(tmpOut));
+		
+		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] >= static_cast<TTTensor*>(_out.tensorObject)->rank(0), "IE " <<  static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(0));
+		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() >= static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2), "IE " << static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2) );
 		return true;
 	}
 	

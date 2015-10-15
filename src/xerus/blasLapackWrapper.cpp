@@ -237,7 +237,7 @@ namespace xerus {
 			PA_START;
 			
 			// Maximal rank is used by Lapacke
-			const size_t maxRank = std::min(_m, _n); 
+			const size_t maxRank = std::min(_m, _n);
 			
 			// Tmp Array for Lapacke
 			const std::unique_ptr<double[]> tau(new double[maxRank]);
@@ -247,15 +247,14 @@ namespace xerus {
             misc::array_copy(tmpA.get(), _A, _m*_n);
 			
 			// Calculate QR factorisations with column pivoting
-			int lapackAnswer = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
+			IF_CHECK(int lapackAnswer = ) LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
 			REQUIRE(lapackAnswer == 0, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
 			
-			// Copy the upper triangular Matrix C (rank x _n) into position
 			size_t rank = maxRank-1;
 			bool done = false;
 			while (rank > 0) {
 				for (size_t pos = rank*(_n+1); pos < (rank+1)*_n; ++pos) {
-					if (!misc::approx_equal(tmpA[pos] / tmpA[0], 0.0, 1e-15)) {
+					if (!misc::approx_equal(tmpA[pos] / tmpA[0], 0.0, 1e-15)) { // TODO Magic number!
 						done = true;
 						break;
 					}
@@ -269,6 +268,7 @@ namespace xerus {
 			
 			_C.reset(new double[rank*_n]);
 			
+			// Copy the upper triangular Matrix C (rank x _n) into position
 			for (size_t col = 0; col < _n; ++col) {
 				size_t targetCol = size_t(permutation[col]);
 				REQUIRE(targetCol > 0, "ie");

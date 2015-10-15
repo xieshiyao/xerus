@@ -169,6 +169,7 @@ namespace xerus {
 					}
 				}
 			}
+			LOG(bla, _x.ranks());
 			
 			for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
 				for(size_t i = 0; i < numMeasurments; ++i) {

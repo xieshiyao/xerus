@@ -302,6 +302,8 @@ namespace xerus {
 			C.tensorObject->size = misc::product(C.tensorObject->dimensions);
 		}
 		
+		REQUIRE(rank <= std::min(lhsSize, rhsSize), "I.E.");
+		
 		// Post evaluate the results
 		Q = (*Q.tensorObjectReadOnly)(lhsPreliminaryIndices);
 		C = (*C.tensorObjectReadOnly)(rhsPreliminaryIndices);
