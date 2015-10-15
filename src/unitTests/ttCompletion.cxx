@@ -30,7 +30,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	const size_t D = 7; 
 	const size_t N = 4;
 	const size_t R = 5;
-	const size_t CS = 10;
+	const size_t CS = 25;
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
 // 	std::mt19937_64 rnd;
@@ -76,6 +76,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	for(size_t r = 1; r < R; ++r) {
 		ADF20(X, measurements);
+		X.cannonicalize_left();
 		TTTensor rankInc = TTTensor::ones(trueSolution.dimensions);
 		X = X+rankInc;
 	}

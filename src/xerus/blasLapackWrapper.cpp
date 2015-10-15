@@ -284,7 +284,7 @@ namespace xerus {
 			}
 			
 			// Create orthogonal matrix Q
-			lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) maxRank, (int) maxRank, tmpA.get(), (int) _n, tau.get());
+			IF_CHECK(lapackAnswer = ) LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) maxRank, (int) maxRank, tmpA.get(), (int) _n, tau.get());
 			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			
 			_Q.reset(new double[_m*rank]);
@@ -334,7 +334,7 @@ namespace xerus {
             
             // Calculate QR factorisations
     //         LOG(Lapacke, "Call to dorgqr with parameters: " << LAPACK_ROW_MAJOR << ", " << (int) _m  << ", " << (int) _n  << ", " << _A << ", " << (int) _n  << ", " << tau.get());
-            int lapackAnswer = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, (int) _m, (int) _n, _A, (int) _n, tau.get());
+            IF_CHECK( int lapackAnswer = ) LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, (int) _m, (int) _n, _A, (int) _n, tau.get());
             CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton. Lapacke says: " << lapackAnswer );
             
             // Copy the upper triangular Matrix R (rank x _n) into position
@@ -345,7 +345,7 @@ namespace xerus {
             
             // Create orthogonal matrix Q (in tmpA)
     //         LOG(Lapacke, "Call to dorgqr with parameters: " << LAPACK_ROW_MAJOR << ", " << (int) _m  << ", " << (int) rank  << ", " << (int) rank << ", " << _A << ", " << (int) _n  << ", " << tau.get());
-            lapackAnswer = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, _A, (int) _n, tau.get());
+            IF_CHECK( lapackAnswer = ) LAPACKE_dorgqr(LAPACK_ROW_MAJOR, (int) _m, (int) rank, (int) rank, _A, (int) _n, tau.get());
             CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
             
             // Copy Q (_m x rank) into position
@@ -399,7 +399,7 @@ namespace xerus {
             // Tmp Array for Lapacke
             const std::unique_ptr<double[]> tau(new double[rank]);
             
-            int lapackAnswer = LAPACKE_dgerqf(LAPACK_ROW_MAJOR, (int) _m, (int) _n, _A, (int) _n, tau.get());
+            IF_CHECK( int lapackAnswer = ) LAPACKE_dgerqf(LAPACK_ROW_MAJOR, (int) _m, (int) _n, _A, (int) _n, tau.get());
             CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton. Lapacke says: " << lapackAnswer );
             
             
@@ -414,7 +414,7 @@ namespace xerus {
             }
             
             // Create orthogonal matrix Q (in _A). Lapacke expects to get the last rank rows of A...
-            lapackAnswer = LAPACKE_dorgrq(LAPACK_ROW_MAJOR, (int) rank, (int) _n, (int) rank, _A+(_m-rank)*_n, (int) _n, tau.get()); 
+            IF_CHECK( lapackAnswer = ) LAPACKE_dorgrq(LAPACK_ROW_MAJOR, (int) rank, (int) _n, (int) rank, _A+(_m-rank)*_n, (int) _n, tau.get()); 
             CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the RQ factorisation. Lapacke says: " << lapackAnswer);
 
             
@@ -489,7 +489,7 @@ namespace xerus {
                 bOrX = _b;
             }
             
-            int lapackAnswer = LAPACKE_dgelsy(
+            IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
                 LAPACK_ROW_MAJOR, 
                 (int) _m,   // Left dimension of A
                 (int) _n,   // Right dimension of A

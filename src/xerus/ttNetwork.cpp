@@ -919,14 +919,26 @@ namespace xerus {
 		REQUIRE(is_valid_tt(), "Cannot cannonicalize invalid TT");
 		REQUIRE(_position < numComponents, "Illegal position for core chosen");
 		
-		// Move right?
-		for (size_t n = cannonicalized ? corePosition : 0; n < _position; ++n) {
-			transfer_core(n+1, n+2, !_keepRank);
-		}
-		
-		// Move left?
-		for (size_t n = cannonicalized ? corePosition : (numComponents - 1); n > _position; --n) {
-			transfer_core(n+1, n, !_keepRank);
+		if(cannonicalized) {
+			// Move right?
+			for (size_t n = corePosition; n < _position; ++n) {
+				transfer_core(n+1, n+2, !_keepRank);
+			}
+			
+			// Move left?
+			for (size_t n = corePosition; n > _position; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
+		} else {
+			// Move to the most right
+			for (size_t n = 0; n < numComponents-1; ++n) {
+				transfer_core(n+1, n+2, !_keepRank);
+			}
+			
+			// Move back left to given CorePosition
+			for (size_t n = numComponents-1; n > _position; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
 		}
 		
 		cannonicalized = true;
@@ -1426,9 +1438,7 @@ namespace xerus {
 		
 		if (ttMe->cannonicalized) {
 			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
-			LOG(bla, "Canonicalising: " << outTensor.cannonicalized << " Pos: " << outTensor.corePosition << " Current ranks" << outTensor.ranks());
 			outTensor.move_core(ttMe->corePosition);
-			LOG(bla, "After : " << outTensor.cannonicalized << " Pos: " << outTensor.corePosition << " Current ranks" << outTensor.ranks());
 		}
 		
 		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
