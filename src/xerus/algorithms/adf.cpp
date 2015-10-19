@@ -46,28 +46,38 @@ namespace xerus {
 		}
 		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
-		// Bool arrays signlaing whether a specific stack entry is unique and has to be calculated
+		// We want to construct two times numMeasurments stacks of size degree+2 containing the 
+		// left (forward) and right (backward) pre contracted stack for each measurment. (technically numMeasurments stacks
+		// would be sufficent, but there is nearly no overhead since its only pointers)
+		
+		// Bool arrays signaaling whether a specific stack entry is unique and has to be calculated
 		std::vector<bool> forwardUpdates(degree*numMeasurments);
 		std::vector<bool> backwardUpdates(degree*numMeasurments);
 		
-		// Array containing all unqiue stack entries
+		// Array that will contain all the unqiue stack entries.
 		std::unique_ptr<FullTensor[]> stackSaveSlots;
 		
-		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (Note that both allow corePositions -1 to degree.
+		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (NOTE that both allow position -1 and degree.
 		std::unique_ptr<FullTensor*[]> forwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
 		FullTensor* const * const forwardStack = forwardStackMem.get()+numMeasurments;
 		
 		std::unique_ptr<FullTensor*[]> backwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
 		FullTensor* const * const backwardStack = backwardStackMem.get()+numMeasurments;
 		
+		// We need _x to be canonicalized in the sense that there is no edge with more than maximal rank
+		_x.cannonicalize_left();
+		
 		// Construct the stacks and the maps
 		{
+			// Temporary maps
 			std::vector<size_t> forwardCalculationMap(degree*numMeasurments);
 			std::vector<size_t> backwardCalculationMap(degree*numMeasurments);
 			
 			// Count how many FullTensors we need for the stacks
 			size_t numUniqueStackEntries = 0;
 		
+			// TODO ensure that the measurments are ordered according to their position (atm this is a prerequisite)
+			
 			// Create the forward map
 			for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
 				forwardCalculationMap[0 + corePosition*numMeasurments] = 0;
@@ -169,12 +179,11 @@ namespace xerus {
 					}
 				}
 			}
-			LOG(bla, _x.ranks());
 			
 			for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					if(backwardCalculationMap[i + corePosition*numMeasurments] == i) {
-						stackSaveSlots[usedSlots].reset({_x.rank(corePosition-1)},DONT_SET_ZERO());
+						stackSaveSlots[usedSlots].reset({_x.rank(corePosition-1)}, DONT_SET_ZERO());
 						backwardStackMem[i + (corePosition+1)*numMeasurments] = &stackSaveSlots[usedSlots++];
 					} else {
 						backwardStackMem[i + (corePosition+1)*numMeasurments] = backwardStackMem[backwardCalculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
@@ -195,8 +204,6 @@ namespace xerus {
 		
 		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
 		std::vector<value_t> currentDifferences(numMeasurments);
-		
-		TTTensor oldIterant(_x);
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
@@ -296,8 +303,6 @@ namespace xerus {
 			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
 				return residual;
 			}
-			
-			oldIterant = _x;
 		}
 		return residual;
 	}
