@@ -177,7 +177,7 @@ UNIT_TEST(TTTangentVector, orthogonality,
 			
 			// check orthogonality
 			value_t scalarProd = value_t(deltaPdelta(j&0) * b(j&0));
-			MTEST(std::abs(scalarProd) < 2e-10, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
+			MTEST(std::abs(scalarProd) < 3e-10, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
 			
 			MTEST(misc::approx_equal(value_t(delta(j&0) * b(j&0)), value_t(Pdelta(j&0) * b(j&0)), 2e-10),  n << " " << i << " " << value_t(delta(j&0) * b(j&0)) << " " << value_t(Pdelta(j&0) * b(j&0)));
 		}

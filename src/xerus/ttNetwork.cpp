@@ -947,6 +947,23 @@ namespace xerus {
 				transfer_core(n+1, n, !_keepRank);
 			}
 		} else {
+			// Move right?
+			for (size_t n = 0; n < _position; ++n) {
+				transfer_core(n+1, n+2, !_keepRank);
+			}
+			
+			// Move left?
+			for (size_t n = numComponents-1; n > _position; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
+		}
+		
+		while (exceeds_maximal_ranks()) {
+			// Move left from given CorePosition
+			for (size_t n = _position; n > 0; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
+			
 			// Move to the most right
 			for (size_t n = 0; n < numComponents-1; ++n) {
 				transfer_core(n+1, n+2, !_keepRank);
@@ -962,7 +979,7 @@ namespace xerus {
 		corePosition = _position;
 		
 		REQUIRE(is_valid_tt(), "Core movement failed!");
-		REQUIRE(!exceeds_maximal_ranks(), dimensions << " rank: " << ranks());
+		REQUIRE(!exceeds_maximal_ranks(), "dim: " << dimensions << " rank: " << ranks());
 	}
 	
 	template<bool isOperator>

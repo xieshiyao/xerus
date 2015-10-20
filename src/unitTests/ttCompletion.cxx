@@ -96,6 +96,6 @@ UNIT_TEST(Algorithm, adf_completion,
 	ctrValue = std::sqrt(ctrValue)/std::sqrt(ctrNorm);
 	
 // 	LOG(bla, std::scientific << ctrValue);
-	MTEST(ctrValue < 1e-2, ctrValue);
+	MTEST(ctrValue < 1e-1, ctrValue);
 // 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )
