@@ -203,6 +203,13 @@ namespace xerus {
 		bool is_valid_tt() const;
 		
 		/** 
+		* @brief Tests whether any rank exceeds the theoretic maximal value it should have.
+		* @details does not check for the actual minimal rank for this tensor. But if any rank exceeds the theoretic maximum it is guaranteed not to be the minimal rank.
+		* @return TRUE if any rank exceeds its theoretic maximum.
+		*/
+		bool exceeds_maximal_ranks() const;
+		
+		/** 
 		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
 		* @details This function is currently needed to keep the resulting network in the TTNetwork class.
 		* Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).

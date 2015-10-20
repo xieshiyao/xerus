@@ -54,14 +54,23 @@
 
 	void xerus::misc::AllocatorStorage::create_new_pool() {
 		uint8_t* newPool = static_cast<uint8_t*>(xerus::misc::r_malloc(xma::POOL_SIZE)); // TODO use mmap(...)
-		pools.emplace_back(newPool, newPool+xma::BUCKET_SIZE);
+		uint8_t* startAddr = newPool+xma::BUCKET_SIZE - reinterpret_cast<uintptr_t>(newPool)%xma::ALIGNMENT;
+		pools.emplace_back(newPool, startAddr);
 	}
 
 	void *myalloc(size_t n) {
 		if (n >= xma::SMALLEST_NOT_CACHED_SIZE) {
-			void *res = xerus::misc::r_malloc(n+xma::BUCKET_SIZE);
-			res = static_cast<void*>(static_cast<uint8_t*>(res)+xma::BUCKET_SIZE);
+			void *res = xerus::misc::r_malloc(n+xma::ALIGNMENT+1);
+			
+			// res is increased by at least 2 bytes (as alignmentOffset < xma::ALIGNMENT)
+			res = static_cast<void*>(static_cast<uint8_t*>(res)+xma::ALIGNMENT+1);
+			uintptr_t alignmentOffset = reinterpret_cast<uintptr_t>(res)%xma::ALIGNMENT;
+			res = static_cast<void*>(static_cast<uint8_t*>(res) - alignmentOffset);
+			
+			// indicate non-bucket allocation
 			*(static_cast<uint8_t*>(res)-1) = 0xFF;
+			// and the alignmentOffset to be able to reconstruct the original res pointer
+			*(static_cast<uint8_t*>(res)-2) = static_cast<uint8_t>(alignmentOffset);
 			return res;
 		} else {
 			uint8_t numBucket = uint8_t( (n+1)/xma::BUCKET_SIZE );
@@ -139,7 +148,8 @@
 				xm::astore.buckets[n].push_back(static_cast<uint8_t*>(ptr));
 			}
 		} else {
-			xerus::misc::r_free(static_cast<void*>(static_cast<uint8_t*>(ptr)-xma::BUCKET_SIZE));
+			uint8_t offset = *(static_cast<uint8_t*>(ptr)-2);
+			xerus::misc::r_free(static_cast<void*>(static_cast<uint8_t*>(ptr)-xma::ALIGNMENT-1+offset));
 		}
 	}
 

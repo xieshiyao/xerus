@@ -457,6 +457,23 @@ namespace xerus {
 		}
 	#endif
 	
+	template<bool isOperator>
+	bool TTNetwork<isOperator>::exceeds_maximal_ranks() const {
+		for (size_t i=0; i<degree()/N; ++i) {
+			const Tensor& comp = get_component(i);
+			size_t extDim = comp.dimensions[1];
+			if (isOperator) {
+				extDim *= comp.dimensions[2];
+			}
+			if (   comp.dimensions.front() > extDim * comp.dimensions.back()
+				|| comp.dimensions.back() > extDim * comp.dimensions.front()
+			) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
@@ -945,6 +962,7 @@ namespace xerus {
 		corePosition = _position;
 		
 		REQUIRE(is_valid_tt(), "Core movement failed!");
+		REQUIRE(!exceeds_maximal_ranks(), dimensions << " rank: " << ranks());
 	}
 	
 	template<bool isOperator>
@@ -1439,13 +1457,12 @@ namespace xerus {
 		if (ttMe->cannonicalized) {
 			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
 			outTensor.move_core(ttMe->corePosition);
+			REQUIRE(!outTensor.exceeds_maximal_ranks(), outTensor.dimensions << " rank: " << outTensor.ranks());
 		}
 		
 		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
 		_out.assign(std::move(tmpOut));
 		
-		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] >= static_cast<TTTensor*>(_out.tensorObject)->rank(0), "IE " <<  static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(0));
-		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() >= static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2), "IE " << static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2) );
 		return true;
 	}
 	

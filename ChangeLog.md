@@ -2,7 +2,7 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2015-10-13 v1.4.1
+* 2015-10-14 v1.4.1
  * Fixed a bug with the recannonicalization of products of TTOperators.
  * Many improvements for the ADF algorithm for tensor completion.
  * Added TTTensor::ones and TTOperator::ones to create TTTensors with all entries equal to 1.
@@ -24,7 +24,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
   * Tensor::kronecker(...) to construct a tensor that is 1 when all indices are equal and 0 otherwise.
  * ! misc::approx_equal now uses a relative difference (for consistency with the tensor variant xerus::approx_equal).
  * Several bugfixes for SparseTensors.
- * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
+ * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment, ...).
 
 * 2015-07-10 v1.3.0
  * Added several retractions to allow Riemannian algorithms on TT manifolds.
