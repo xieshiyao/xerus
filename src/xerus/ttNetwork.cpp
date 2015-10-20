@@ -457,6 +457,23 @@ namespace xerus {
 		}
 	#endif
 	
+	template<bool isOperator>
+	bool TTNetwork<isOperator>::exceeds_maximal_ranks() const {
+		for (size_t i=0; i<degree()/N; ++i) {
+			const Tensor& comp = get_component(i);
+			size_t extDim = comp.dimensions[1];
+			if (isOperator) {
+				extDim *= comp.dimensions[2];
+			}
+			if (   comp.dimensions.front() > extDim * comp.dimensions.back()
+				|| comp.dimensions.back() > extDim * comp.dimensions.front()
+			) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
@@ -930,6 +947,23 @@ namespace xerus {
 				transfer_core(n+1, n, !_keepRank);
 			}
 		} else {
+			// Move right?
+			for (size_t n = 0; n < _position; ++n) {
+				transfer_core(n+1, n+2, !_keepRank);
+			}
+			
+			// Move left?
+			for (size_t n = numComponents-1; n > _position; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
+		}
+		
+		while (exceeds_maximal_ranks()) {
+			// Move left from given CorePosition
+			for (size_t n = _position; n > 0; --n) {
+				transfer_core(n+1, n, !_keepRank);
+			}
+			
 			// Move to the most right
 			for (size_t n = 0; n < numComponents-1; ++n) {
 				transfer_core(n+1, n+2, !_keepRank);
@@ -945,6 +979,7 @@ namespace xerus {
 		corePosition = _position;
 		
 		REQUIRE(is_valid_tt(), "Core movement failed!");
+		REQUIRE(!exceeds_maximal_ranks(), "dim: " << dimensions << " rank: " << ranks());
 	}
 	
 	template<bool isOperator>
@@ -1439,13 +1474,12 @@ namespace xerus {
 		if (ttMe->cannonicalized) {
 			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
 			outTensor.move_core(ttMe->corePosition);
+			REQUIRE(!outTensor.exceeds_maximal_ranks(), outTensor.dimensions << " rank: " << outTensor.ranks());
 		}
 		
 		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
 		_out.assign(std::move(tmpOut));
 		
-		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] >= static_cast<TTTensor*>(_out.tensorObject)->rank(0), "IE " <<  static_cast<TTTensor*>(_out.tensorObject)->dimensions[0] << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(0));
-		REQUIRE(static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() >= static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2), "IE " << static_cast<TTTensor*>(_out.tensorObject)->dimensions.back() << " < " << static_cast<TTTensor*>(_out.tensorObject)->rank(_out.tensorObject->degree()-2) );
 		return true;
 	}
 	

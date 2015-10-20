@@ -2,14 +2,18 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2015-10-13 v1.4.1
+* 2015-10-20 v1.4.2
+ * The custom allocator now enforces memory alignment even if the underlying malloc does not.
+ * Cannonicalized TT tensors can no longer exceed the maximal TT rank.
+
+* 2015-10-14 v1.4.1
  * Fixed a bug with the recannonicalization of products of TTOperators.
  * Many improvements for the ADF algorithm for tensor completion.
  * Added TTTensor::ones and TTOperator::ones to create TTTensors with all entries equal to 1.
 
 * 2015-09-09 v1.4.0
  * Added an implementation of the ADF algorithm.
- * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk). This allocator is highly recommended for use with the ADF algorithm.
+ * Added a custom allocator to better handle the small allocations of Indices etc. (requires to set the corresponding option in the config.mk).
  * Reduced overhead (time not spent in blas) of TensorNetwork contractions.
  * Tensor decomposition now allow arbitrary index orders in the target as well as the source.
  * Added TN::measure(...) to perform a batch of evaluations of the network.
@@ -24,7 +28,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
   * Tensor::kronecker(...) to construct a tensor that is 1 when all indices are equal and 0 otherwise.
  * ! misc::approx_equal now uses a relative difference (for consistency with the tensor variant xerus::approx_equal).
  * Several bugfixes for SparseTensors.
- * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment ...).
+ * Several minor bugfixes (TN::draw no longer uses temporary files, span-zero indices in assignment, ...).
 
 * 2015-07-10 v1.3.0
  * Added several retractions to allow Riemannian algorithms on TT manifolds.

@@ -27,8 +27,8 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 8; 
-	const size_t N = 10;
+	const size_t D = 6; 
+	const size_t N = 4;
 	const size_t R = 4;
 	const size_t CS = 10;
 	std::random_device rd;
@@ -96,6 +96,6 @@ UNIT_TEST(Algorithm, adf_completion,
 	ctrValue = std::sqrt(ctrValue)/std::sqrt(ctrNorm);
 	
 // 	LOG(bla, std::scientific << ctrValue);
-	MTEST(ctrValue < 1e-2, ctrValue);
+	MTEST(ctrValue < 1e-1, ctrValue);
 // 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )
