@@ -35,7 +35,7 @@ namespace xerus {
 	 */
     class ADFVariant {
 	protected:
-		double solve(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const;
+		double solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const;
     
 	public:
         size_t maxInterations; ///< maximum number of sweeps to perform. set to 0 for infinite
@@ -53,7 +53,7 @@ namespace xerus {
 		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		 */
         double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
-			return solve(_x, _measurments);
+			return solve(_x, SinglePointMeasurmentSet(_measurments));
 		}
     };
 	

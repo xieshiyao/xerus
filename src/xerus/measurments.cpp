@@ -50,7 +50,56 @@ namespace xerus {
 // 		misc::apply_permutation(_set, perm);
 		std::sort(_set.begin(), _set.end(), comp);
 	}
-		
+	
+	
+	
+	// --------------------- SinglePointMeasurmentSet -----------------
+	
+	SinglePointMeasurmentSet::SinglePointMeasurmentSet(const std::vector<SinglePointMeasurment>& _measurments) {
+		for(const SinglePointMeasurment& meas : _measurments) {
+			positions.emplace_back(meas.positions);
+			measuredValues.emplace_back(meas.value);
+		}
+	}
+	
+	size_t SinglePointMeasurmentSet::size() const {
+		REQUIRE(positions.size() == measuredValues.size(), "I.E.");
+		return positions.size();
+	}
+	
+	size_t SinglePointMeasurmentSet::degree() const {
+		IF_CHECK(
+			for(size_t i = 0; i+1 < positions.size(); ++i) {
+				REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsitent degrees in measurment set.");
+			}
+		)
+		return positions.empty() ? 0 : positions[0].size();
+	}
+	
+	void SinglePointMeasurmentSet::add_measurment(const std::vector<size_t>& _position, const value_t _measuredValue) {
+		positions.emplace_back(_position);
+		measuredValues.emplace_back(_measuredValue);
+	}
+	
+	bool SinglePointMeasurmentSet::Comparator::operator()(const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) const {
+		REQUIRE(_lhs.size() == _rhs.size(), "");
+		for (size_t i = 0; i < split_position && i < _lhs.size(); ++i) {
+			if (_lhs[i] < _rhs[i]) return true;
+			if (_lhs[i] > _rhs[i]) return false;
+		}
+		for (size_t i = _lhs.size(); i > split_position; --i) {
+			if (_lhs[i-1] < _rhs[i-1]) return true;
+			if (_lhs[i-1] > _rhs[i-1]) return false;
+		}
+		return false; // equality
+	}
+	
+	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos) {
+		SinglePointMeasurmentSet::Comparator comp(_splitPos);
+		misc::simultaneous_sort(_set.positions, _set.measuredValues, comp);
+	}
+	
+	
 	// --------------------- RankOneMeasurmentSet -----------------
 	
 	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {
