@@ -170,6 +170,154 @@ namespace xerus {
 		LOG(ADF, "We have " << numUniqueStackEntries << " unique backward stack entries. There are " << numMeasurments*degree+1 << " virtual backward stack entries.");
 	}
 	
+	
+	_inline_ void rebuild_backward_stack(const TTTensor& _x, std::vector<FullTensor>& fixedComponents, const SinglePointMeasurmentSet& _measurments, const std::vector<bool>& backwardUpdates, FullTensor* const * const backwardStack) {
+		const size_t numMeasurments = _measurments.size();
+		
+		Index r1, r2;
+		
+		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
+			
+			// Prepare the single slates of the current component 
+			for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+				fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
+			}
+			
+			// Reset the FullTensors
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				if(backwardUpdates[i + corePosition*numMeasurments]) {
+					contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * @brief: Calculates the difference between the current and measured values at the measured positions.
+	 * @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
+	 */
+	_inline_ void calculate_current_differences( std::vector<value_t>& currentDifferences,
+									const TTTensor& _x,
+									std::vector<FullTensor>& fixedComponents,
+									const SinglePointMeasurmentSet& _measurments, 
+									const std::vector<bool>& forwardUpdates, 
+									const std::vector<bool>& backwardUpdates, 
+									FullTensor* const * const forwardStack, 
+									FullTensor* const * const backwardStack, 
+									const size_t corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		
+		FullTensor currentValue({});
+		
+		Index r1, r2;
+		
+		// Prepare the single slates of the current component 
+		for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+			fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
+		}
+		
+		if(corePosition <= _x.degree()/2) {
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				if(forwardUpdates[i + corePosition*numMeasurments]) {
+					contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][corePosition]], false, 1);
+				}
+				contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+				        currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		} else {
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				if(backwardUpdates[i + corePosition*numMeasurments]) {
+					contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+				}
+				contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
+				        currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		}
+	}
+	
+	_inline_ void calculate_deltas( std::vector<FullTensor>& deltas,
+											const TTTensor& _x, 
+											const SinglePointMeasurmentSet& _measurments,
+											const FullTensor* const * const forwardStack, 
+											const FullTensor* const * const backwardStack,
+										    const std::vector<value_t>& currentDifferences,
+											const size_t corePosition) {
+		const size_t localLeftRank = _x.get_component(corePosition).dimensions[0];
+		const size_t localRightRank = _x.get_component(corePosition).dimensions[2];
+		const size_t numMeasurments = _measurments.size();
+
+		for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+			deltas[i].ensure_own_data();
+		}
+		
+// 		FullTensor entryAddition({localLeftRank, localRightRank}); // Non low-level
+		
+		for(size_t i = 0; i < numMeasurments; ++i) {
+			// Non low level variant:
+// 			contract(entryAddition, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 0);
+// 			deltas[_measurments.positions[i][_corePosition]] += _currentDifferences[i]*entryAddition;
+			
+			// Very low level calculation of dyadic product + entriewise addition (one blas call).
+			cblas_dger(CblasRowMajor, (int)localLeftRank, (int)localRightRank, 
+						             currentDifferences[i]*forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
+						             forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 1, 
+						             backwardStack[i + (corePosition+1)*numMeasurments]->data.get(), 1,
+						deltas[_measurments.positions[i][corePosition]].data.get(), (int)localRightRank);
+		}
+	}
+	
+	_inline_ void calculate_slicewise_norm_Py(std::vector<value_t>& PyPys,
+												const TTTensor& _x, 
+												const SinglePointMeasurmentSet& _measurments,
+												const std::vector<bool>& forwardUpdates, 
+												const std::vector<bool>& backwardUpdates, 
+												FullTensor* const * const forwardStack, 
+												FullTensor* const * const backwardStack,
+												const std::vector<FullTensor>& deltas,
+												const size_t corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		
+		FullTensor currentValue({});
+		
+		if(corePosition <= _x.degree()/2) {
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				if(forwardUpdates[i + corePosition*numMeasurments]) {
+					contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, deltas[_measurments.positions[i][corePosition]], false, 1);
+				}
+				contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+				PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
+			}
+		} else {
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				if(backwardUpdates[i + corePosition*numMeasurments]) {
+					contract(*backwardStack[i + corePosition*numMeasurments], deltas[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+				}
+				contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
+				PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
+			}
+		}
+	}
+	
+	_inline_ void move_forward(TTTensor& _x, std::vector<FullTensor>& fixedComponents, const SinglePointMeasurmentSet& _measurments, const std::vector<bool>& forwardUpdates, FullTensor* const * const forwardStack, const size_t corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		
+		Index r1, r2;
+		
+		_x.move_core(corePosition+1, true);
+					
+		// Prepare the single slates of the current component 
+		for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+			fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
+		}
+		
+		// Update the stack
+		for(size_t i = 0; i < numMeasurments; ++i) {
+			if(forwardUpdates[i + corePosition*numMeasurments]) {
+				contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][corePosition]], false, 1);
+			}
+		}
+	}
+	
 	double ADFVariant::solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const {
 		REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
 		
@@ -209,8 +357,6 @@ namespace xerus {
 		misc::TimeMeasure timer;
 		
 		size_t timeA=0,timeB=0,timeC=0,timeD=0, timeE=0, timeX2=0;
-
-		Index i1, i2, r1, r2;
 		
 		value_t residual = 1.0, lastResidual = 1.0;
 		size_t smallResidualCount = 0;
@@ -223,21 +369,7 @@ namespace xerus {
 			_x.move_core(0, true);
 			
 			timer.step();
-			// Rebuild the lower part of the stack
-			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
-				
-				// Prepare the single slates of the current component 
-				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-				}
-				
-				// Reset the FullTensors
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					if(backwardUpdates[i + corePosition*numMeasurments]) {
-						contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-					}
-				}
-			}
+			rebuild_backward_stack( _x, fixedComponents,_measurments, backwardUpdates, backwardStack);
 			timeA += timer.get();
 			
 			// Sweep from the first to the last component
@@ -252,10 +384,8 @@ namespace xerus {
 				}
 				
 				
-				FullTensor entryAddition({localLeftRank, localRightRank});
-				FullTensor localHalf({localRightRank});
+// 				FullTensor entryAddition({localLeftRank, localRightRank});
 				FullTensor currentValue({});
-				FullTensor currentValueX({});
 				
 				// NOTE we abuse the stack infrastructe for local calculations, which is ok because the stacks at corePosition are set at the end of each iteration.
 				
@@ -302,6 +432,29 @@ namespace xerus {
 				timer.step();
 				// Calculate ||P(y)||^2 for each slice seperately, where y is the update direction.
 				std::vector<value_t> PyPys(localN, 0.0);
+				calculate_slicewise_norm_Py(PyPys, _x, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, deltas, corePosition);
+				
+				
+					/*
+				if(corePosition <= _x.degree()/2) {
+					for(size_t i = 0; i < numMeasurments; ++i) {
+						if(forwardUpdates[i + corePosition*numMeasurments]) {
+							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, deltas[_measurments.positions[i][corePosition]], false, 1);
+						}
+						contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
+					}
+				} else {
+					for(size_t i = 0; i < numMeasurments; ++i) {
+						if(backwardUpdates[i + corePosition*numMeasurments]) {
+							contract(*backwardStack[i + corePosition*numMeasurments], deltas[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+						}
+						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
+						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
+					}
+				}*/
+				
+				/*
 				if(corePosition <= degree/2) {
 					for(size_t i = 0; i < numMeasurments; ++i) {
 						if(forwardUpdates[i + corePosition*numMeasurments]) {
@@ -318,7 +471,7 @@ namespace xerus {
 						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
 						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
 					}
-				}
+				}*/
 				timeD += timer.get();
 				
 				// Update each slice seperately
@@ -333,19 +486,7 @@ namespace xerus {
 				timer.step();
 				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
-					_x.move_core(corePosition+1, true);
-					
-					// Prepare the single slates of the current component 
-					for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-						fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-					}
-					
-					// Update the stack
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][corePosition]], false, 1);
-						}
-					}
+					move_forward( _x, fixedComponents, _measurments, forwardUpdates, forwardStack, corePosition);
 				}
 				timeE += timer.get();
 			}
@@ -364,7 +505,7 @@ namespace xerus {
 				smallResidualCount = 0;
 			}
 			
-			LOG(ADF, "Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
+			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
 			
 			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
 				LOG(time, " A: " << std::round(100.0*double(timeA)/double(timer.getTotal())) << " B: " << std::round(100.0*double(timeB)/double(timer.getTotal())) << " C: " << std::round(100.0*double(timeC)/double(timer.getTotal())) << " D: " << std::round(100.0*double(timeD)/double(timer.getTotal()))<< " E: " << std::round(100.0*double(timeE)/double(timer.getTotal()))<< " X2: " << std::round(100.0*double(timeX2)/double(timer.getTotal())));
