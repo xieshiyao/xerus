@@ -259,9 +259,9 @@ namespace xerus {
 			
 			// Very low level calculation of dyadic product + entriewise addition (one blas call).
 			cblas_dger(CblasRowMajor, (int)localLeftRank, (int)localRightRank, 
-						             currentDifferences[i]*forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
-						             forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 1, 
-						             backwardStack[i + (corePosition+1)*numMeasurments]->data.get(), 1,
+						currentDifferences[i]*forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
+						forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 1, 
+						backwardStack[i + (corePosition+1)*numMeasurments]->data.get(), 1,
 						deltas[_measurments.positions[i][corePosition]].data.get(), (int)localRightRank);
 		}
 	}
@@ -378,100 +378,18 @@ namespace xerus {
 				const size_t localLeftRank = _x.get_component(corePosition).dimensions[0];
 				const size_t localRightRank = _x.get_component(corePosition).dimensions[2];
 				
-				// Prepare the single slates of the current component 
-				for(size_t i = 0; i < localN; ++i) {
-					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-				}
-				
-				
-// 				FullTensor entryAddition({localLeftRank, localRightRank});
-				FullTensor currentValue({});
-				
-				// NOTE we abuse the stack infrastructe for local calculations, which is ok because the stacks at corePosition are set at the end of each iteration.
-				
 				timer.step();
-				if(corePosition <= degree/2) {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][corePosition]], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
-					}
-				} else {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(backwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
-						currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
-					}
-				}
+				calculate_current_differences( currentDifferences, _x, fixedComponents, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
 				timeB += timer.get();
 				
 				timer.step();
 				std::vector<FullTensor> deltas(localN, FullTensor({localLeftRank, localRightRank}));
-				for(size_t i = 0; i < localN; ++i) {
-					deltas[i].ensure_own_data();
-				}
-				
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					// Non low level variant:
-// 					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
-// 					deltas[_measurments.positions[i][corePosition]] += currentDifferences[i]*entryAddition;
-					
-					// Very low level calculation of dyadic product + entriewise addition (one blas call).
-					cblas_dger(CblasRowMajor, (int)localLeftRank, (int)localRightRank, 
-							    currentDifferences[i]*forwardStack[i + (corePosition-1)*numMeasurments]->factor*backwardStack[i + (corePosition+1)*numMeasurments]->factor,
-								forwardStack[i + (corePosition-1)*numMeasurments]->data.get(), 1, 
-								backwardStack[i + (corePosition+1)*numMeasurments]->data.get(), 1,
-							    deltas[_measurments.positions[i][corePosition]].data.get(), (int)localRightRank);
-				}
+				calculate_deltas(deltas, _x, _measurments, forwardStack, backwardStack, currentDifferences, corePosition);
 				timeC += timer.get();
 				
 				timer.step();
-				// Calculate ||P(y)||^2 for each slice seperately, where y is the update direction.
 				std::vector<value_t> PyPys(localN, 0.0);
 				calculate_slicewise_norm_Py(PyPys, _x, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, deltas, corePosition);
-				
-				
-					/*
-				if(corePosition <= _x.degree()/2) {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, deltas[_measurments.positions[i][corePosition]], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
-					}
-				} else {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(backwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*backwardStack[i + corePosition*numMeasurments], deltas[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
-						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
-					}
-				}*/
-				
-				/*
-				if(corePosition <= degree/2) {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, deltas[_measurments.positions[i][corePosition]], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + corePosition*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
-					}
-				} else {
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(backwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*backwardStack[i + corePosition*numMeasurments], deltas[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-						}
-						contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + corePosition*numMeasurments], false, 1);
-						PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
-					}
-				}*/
 				timeD += timer.get();
 				
 				// Update each slice seperately
@@ -508,10 +426,12 @@ namespace xerus {
 			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
 			
 			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
+				LOG(time, " AvG Time " << double(timer.getTotal())/double(iteration));
 				LOG(time, " A: " << std::round(100.0*double(timeA)/double(timer.getTotal())) << " B: " << std::round(100.0*double(timeB)/double(timer.getTotal())) << " C: " << std::round(100.0*double(timeC)/double(timer.getTotal())) << " D: " << std::round(100.0*double(timeD)/double(timer.getTotal()))<< " E: " << std::round(100.0*double(timeE)/double(timer.getTotal()))<< " X2: " << std::round(100.0*double(timeX2)/double(timer.getTotal())));
 				return residual;
 			}
 		}
+				LOG(time, " AvG Time " << double(timer.getTotal())/double(maxInterations));
 				LOG(time, " A: " << std::round(100.0*double(timeA)/double(timer.getTotal())) << " B: " << std::round(100.0*double(timeB)/double(timer.getTotal())) << " C: " << std::round(100.0*double(timeC)/double(timer.getTotal())) << " D: " << std::round(100.0*double(timeD)/double(timer.getTotal()))<< " E: " << std::round(100.0*double(timeE)/double(timer.getTotal()))<< " X2: " << std::round(100.0*double(timeX2)/double(timer.getTotal())));
 		return residual;
 	}
