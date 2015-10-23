@@ -27,13 +27,13 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 6; 
+	const size_t D = 10;
 	const size_t N = 4;
-	const size_t R = 4;
+	const size_t R = 10;
 	const size_t CS = 10;
-	std::random_device rd;
-	std::mt19937_64 rnd(rd());
-// 	std::mt19937_64 rnd;
+// 	std::random_device rd;
+// 	std::mt19937_64 rnd(rd());
+	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);

@@ -526,22 +526,22 @@ namespace xerus {
     }
     void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
 		// Find common Index in nodeA
-		bool foundCommon = false;
+		IF_CHECK(bool foundCommon = false;)
 		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
 			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
 				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
-				foundCommon = true;
+				IF_CHECK(foundCommon = true;)
 				_posA = i;
 			}
 		}
 		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
 		
 		// Find common Index in nodeB
-		foundCommon = false;
+		IF_CHECK(foundCommon = false;)
 		for(size_t i = 0; i < nodes[_nodeB].neighbors.size(); ++i) {
 			if(nodes[_nodeB].neighbors[i].other == _nodeA) {
 				REQUIRE(!foundCommon, "TN round does not work if the two nodes share more than one link.");
-				foundCommon = true;
+				IF_CHECK(foundCommon = true;)
 				_posB = i;
 			}
 		}
