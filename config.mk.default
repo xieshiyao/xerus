@@ -71,7 +71,7 @@ COMPILE_THREADS = 8					# Number of threads to use during link time optimization
 LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
 # LOGGING += -D WARNING_                # Informations that is linked to unexpected or erroneous behaviour from which the library is able to recover internally.
 # LOGGING += -D ERROR_                  # Information about errors that occourt, but don't require immediate attention. 
-                                        # Scince this is a numerical library which relys on correct results, there are merely any such errors.
+                                        # Since this is a numerical library which relies on correct results, there are barely any such errors.
 # LOGGING += -D CRITICAL_               # Same as above only for more severe errors. Again there are nearly no such errors.
 
 # Per default the logs are printed to cerr. Uncomment the following line to print the log messages to the file error.log instead.

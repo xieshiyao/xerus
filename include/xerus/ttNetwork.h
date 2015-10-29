@@ -139,14 +139,44 @@ namespace xerus {
 			
 			TTNetwork result(_dimensions.size());
 			const size_t numComponents = _dimensions.size()/N;
-			size_t maxDim1 = 1;
-			size_t maxDim2 = misc::product(_dimensions);
+			std::vector<size_t> targetRank(_ranks);
+			bool change = false;
+			// determine all ranks such that they are as close to the given ranks vector as possible without being larger than maximal
+			do {
+				change = false;
+				size_t currMax = 1;
+				// left to right sweep
+				for (size_t i=0; i<numComponents-1; ++i) {
+					currMax *= _dimensions[i];
+					if (isOperator) {
+						currMax *= _dimensions[numComponents+i];
+					}
+					if (currMax < targetRank[i]) {
+						targetRank[i] = currMax;
+						change = true;
+					} else {
+						currMax = targetRank[i];
+					}
+				}
+				currMax = 1;
+				// right to left sweep
+				for (size_t i=numComponents; i>0; --i) {
+					currMax *= _dimensions[i-1];
+					if (isOperator) {
+						currMax *= _dimensions[numComponents+i-1];
+					}
+					if (currMax < targetRank[i-2]) {
+						targetRank[i-2] = currMax;
+						change = true;
+					} else {
+						currMax = targetRank[i-2];
+					}
+				}
+			} while(change);
 			
 			for(size_t i = 0; i < numComponents; ++i) {
-				size_t leftRank = i==0 ? 1 : std::min(_ranks[i-1], std::min(maxDim1, maxDim2));
-				maxDim1 *= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
-				maxDim2 /= _dimensions[i] * (isOperator? _dimensions[numComponents+i] : 1);
-				size_t rightRank = i==numComponents-1 ? 1 : std::min(_ranks[i], std::min(maxDim1, maxDim2));
+				size_t leftRank = i==0 ? 1 : targetRank[i-1];
+				size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
 
 				if(isOperator) {
 					result.set_component(i, FullTensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
@@ -156,6 +186,7 @@ namespace xerus {
 			}
 			result.cannonicalize_left();
 			REQUIRE(result.is_valid_tt(), "Internal Error.");
+			REQUIRE(!result.exceeds_maximal_ranks(), "Internal Error");
 			return result;
 		}
 		

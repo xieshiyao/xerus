@@ -2,6 +2,9 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2015-10-?? v1.4.3
+ * TT::random no longer uses size_t to measure the size of the tensor and no longer exceeds maximal ranks.
+
 * 2015-10-20 v1.4.2
  * The custom allocator now enforces memory alignment even if the underlying malloc does not.
  * Cannonicalized TT tensors can no longer exceed the maximal TT rank.
