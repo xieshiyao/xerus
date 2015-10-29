@@ -29,6 +29,11 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/blasLapackWrapper.h>
 
+extern "C" {
+	#include <cblas.h> 
+}
+
+
 namespace xerus {
 	
 	double calculate_norm_of_measured_values(const std::vector<value_t>& _measurments) {
@@ -39,93 +44,42 @@ namespace xerus {
 		return std::sqrt(normMeasuredValues);
 	}
 	
-	void construct_forward_stacks(std::unique_ptr<FullTensor[]>& stackSaveSlots, std::vector<bool>& forwardUpdates, std::unique_ptr<FullTensor*[]>& forwardStackMem, TTTensor& _x, const SinglePointMeasurmentSet& _measurments) {
+	void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const bool _forward) {
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
 		
-		// Temporary map
-		std::vector<size_t> forwardCalculationMap(degree*numMeasurments);
+		// Temporary map. For each stack entrie (i.e. measurement number + corePosition) gives a measurement number of a stack entrie (at same corePosition) that shall have an equal value (or its own number otherwise). 
+		std::vector<size_t> calculationMap(degree*numMeasurments);
 		
 		// Count how many FullTensors we need for the stacks
 		size_t numUniqueStackEntries = 0;
-	
-		// TODO ensure that the measurments are ordered according to their position (atm this is a prerequisite)
 		
-		// Create the forward map
-		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
-			forwardCalculationMap[0 + corePosition*numMeasurments] = 0;
-			forwardUpdates[0 + corePosition*numMeasurments] = true;
-			++numUniqueStackEntries;
-		}
-		
-		for(size_t i = 1; i < numMeasurments; ++i) {
-			size_t corePosition = 0;
-			for( ; corePosition+1 < degree && _measurments.positions[i][corePosition] == _measurments.positions[i-1][corePosition]; corePosition++) {
-				forwardCalculationMap[i + corePosition*numMeasurments] = forwardCalculationMap[i-1 + corePosition*numMeasurments];
-				forwardUpdates[i + corePosition*numMeasurments] = false;
-			}
-			for( ; corePosition+1 < degree; ++corePosition) {
-				forwardCalculationMap[i + corePosition*numMeasurments] = i;
-				forwardUpdates[i + corePosition*numMeasurments] = true;
-				++numUniqueStackEntries;
-			}
-		}
-		
-		// Create the stack
-		stackSaveSlots.reset(new FullTensor[numUniqueStackEntries+1]); // +1 for the special positions -1 and degree.
-		size_t usedSlots = 0; // Zero is reserved for the the position -1 and degree stacks
-		stackSaveSlots[usedSlots++] = Tensor::ones({1});
-		
-		for(size_t i = 0; i < numMeasurments; ++i) {
-			forwardStackMem[i + 0] = &stackSaveSlots[0];
-		}
-			
-		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				if(forwardCalculationMap[i + corePosition*numMeasurments] == i) {
-					stackSaveSlots[usedSlots].reset({_x.rank(corePosition)}, DONT_SET_ZERO());
-					forwardStackMem[i + (corePosition+1)*numMeasurments] = &stackSaveSlots[usedSlots++];
-				} else {
-					forwardStackMem[i + (corePosition+1)*numMeasurments] = forwardStackMem[forwardCalculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
-				}
-			}
-		}
-		
-		REQUIRE(usedSlots == numUniqueStackEntries+1, "Internal Error.");
-		
-		LOG(ADF, "We have " << numUniqueStackEntries << " unique forward stack entries. There are " << numMeasurments*(degree-1)+1 << " virtual forward stack entries.");
-	}
-	
-	void construct_backward_stacks(std::unique_ptr<FullTensor[]>& stackSaveSlots, std::vector<bool>& backwardUpdates, std::unique_ptr<FullTensor*[]>& backwardStackMem, TTTensor& _x, const SinglePointMeasurmentSet& _measurments) {
-		const size_t degree = _x.degree();
-		const size_t numMeasurments = _measurments.size();
-		
-		// Temporary map
-		std::vector<size_t> backwardCalculationMap(degree*numMeasurments);
-		
-		// Count how many FullTensors we need for the stacks
-		size_t numUniqueStackEntries = 0;
-	
-		// TODO ensure that the measurments are ordered according to their position (atm this is a prerequisite)
-		
-		// Create the backward map
+		// Create a reordering map
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
 		
 		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), 
 			[&](const size_t _a, const size_t _b) {
-				for (size_t j = degree; j > 0; --j) {
-					if (_measurments.positions[_a][j-1] < _measurments.positions[_b][j-1]) return true;
-					if (_measurments.positions[_a][j-1] > _measurments.positions[_b][j-1]) return false;
+				if(_forward) {
+					for (size_t j = 0; j < degree; ++j) {
+						if (_measurments.positions[_a][j] < _measurments.positions[_b][j]) return true;
+						if (_measurments.positions[_a][j] > _measurments.positions[_b][j]) return false;
+					}
+				} else {
+					for (size_t j = degree; j > 0; --j) {
+						if (_measurments.positions[_a][j-1] < _measurments.positions[_b][j-1]) return true;
+						if (_measurments.positions[_a][j-1] > _measurments.positions[_b][j-1]) return false;
+					}
 				}
+				LOG(fatal, "Measurments must not appear twice.");
 				return false;
 			}
 		);
 		
-		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
+		// Create the entries for the first measurement (this one allways unqiue).
+		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			const size_t realId = reorderedMeasurments[0];
-			backwardCalculationMap[realId + corePosition*numMeasurments] = realId;
-			backwardUpdates[realId + corePosition*numMeasurments] = true;
+			calculationMap[realId + corePosition*numMeasurments] = realId;
 			++numUniqueStackEntries;
 		}
 		
@@ -133,61 +87,226 @@ namespace xerus {
 			const size_t realId = reorderedMeasurments[i];
 			const size_t realPreviousId = reorderedMeasurments[i-1];
 			
-			size_t corePosition = degree-1;
-			for( ; corePosition > 0 && _measurments.positions[realId][corePosition] == _measurments.positions[realPreviousId][corePosition]; --corePosition) {
+			size_t position = 0;
+			size_t corePosition = _forward ? position : degree-1-position;
+			for( ; position < degree && _measurments.positions[realId][corePosition] == _measurments.positions[realPreviousId][corePosition]; ++position, corePosition = _forward ? position : degree-1-position) {
 				size_t otherId = realPreviousId;
 				while(true) {
 					if( otherId < realId ) {
-						backwardCalculationMap[realId + corePosition*numMeasurments] = backwardCalculationMap[otherId + corePosition*numMeasurments];
-						backwardUpdates[realId + corePosition*numMeasurments] = false;
+						calculationMap[realId + corePosition*numMeasurments] = calculationMap[otherId + corePosition*numMeasurments];
 						break;
-					} else if(otherId == backwardCalculationMap[otherId + corePosition*numMeasurments]) {
-						backwardCalculationMap[otherId + corePosition*numMeasurments] = realId;
-						backwardUpdates[otherId + corePosition*numMeasurments] = false;
-						backwardCalculationMap[realId + corePosition*numMeasurments] = realId;
-						backwardUpdates[realId + corePosition*numMeasurments] = true;
+					} else if(otherId == calculationMap[otherId + corePosition*numMeasurments]) {
+						calculationMap[otherId + corePosition*numMeasurments] = realId;
+						calculationMap[realId + corePosition*numMeasurments] = realId;
 						break;
-					} else if( realId < backwardCalculationMap[otherId + corePosition*numMeasurments]) {
-						size_t nextOther = backwardCalculationMap[otherId + corePosition*numMeasurments];
-						backwardCalculationMap[otherId + corePosition*numMeasurments] = realId;
-						REQUIRE(backwardUpdates[otherId + corePosition*numMeasurments] == false, "IE");
+					} else if( realId < calculationMap[otherId + corePosition*numMeasurments]) {
+						const size_t nextOther = calculationMap[otherId + corePosition*numMeasurments];
+						calculationMap[otherId + corePosition*numMeasurments] = realId;
 						otherId = nextOther;
 					} else {
-						otherId = backwardCalculationMap[otherId + corePosition*numMeasurments];
+						otherId = calculationMap[otherId + corePosition*numMeasurments];
 					}
 				}
 			}
 			
-			for( ; corePosition > 0; --corePosition) {
-				backwardCalculationMap[realId + corePosition*numMeasurments] = realId;
-				backwardUpdates[realId + corePosition*numMeasurments] = true;
+			for( ; position < degree; ++position, corePosition = _forward ? position : degree-1-position) {
+				calculationMap[realId + corePosition*numMeasurments] = realId;
 				++numUniqueStackEntries;
 			}
 		}
 		
 		// Create the stack
-		stackSaveSlots.reset(new FullTensor[numUniqueStackEntries+1]); // +1 for the special positions -1 and degree.
-		size_t usedSlots = 0; // Zero is reserved for the the position -1 and degree stacks
-		stackSaveSlots[usedSlots++] = Tensor::ones({1});
+		numUniqueStackEntries++; // +1 for the special positions -1 and degree.
+		_stackSaveSlot.reset(new FullTensor[numUniqueStackEntries]); 
+		size_t usedSlots = 0; 
+		_stackSaveSlot[usedSlots++] = Tensor::ones({1}); // Special slot reserved for the the position -1 and degree stacks
 		
+		// NOTE that _stackMem contains (degree+2)*numMeasurments entries and has an offset of numMeasurments (to have space for corePosition -1).
+		
+		// Set links for the special entries -1 and degree
 		for(size_t i = 0; i < numMeasurments; ++i) {
-			backwardStackMem[i + (degree+1)*numMeasurments] = &stackSaveSlots[0];
+			_stackMem[i] = &_stackSaveSlot[0];
+			_stackMem[i + (degree+1)*numMeasurments] = &_stackSaveSlot[0];
 		}
 		
-		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
+		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				if(backwardCalculationMap[i + corePosition*numMeasurments] == i) {
-					stackSaveSlots[usedSlots].reset({_x.rank(corePosition-1)}, DONT_SET_ZERO());
-					backwardStackMem[i + (corePosition+1)*numMeasurments] = &stackSaveSlots[usedSlots++];
+				if(calculationMap[i + corePosition*numMeasurments] == i) {
+					_updates[corePosition].emplace_back(i);
+					_stackSaveSlot[usedSlots].reset({_x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO());
+					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots++];
 				} else {
-					backwardStackMem[i + (corePosition+1)*numMeasurments] = backwardStackMem[backwardCalculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
+					_stackMem[i + (corePosition+1)*numMeasurments] = _stackMem[calculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
 				}
 			}
 		}
 		
-		REQUIRE(usedSlots == numUniqueStackEntries+1, "Internal Error.");
+		REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+		LOG(ADF, "We have " << numUniqueStackEntries << " unique stack entries. There are " << numMeasurments*degree+1 << " virtual stack entries.");
+	}
+	
+	
+	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates) {
+		const size_t numMeasurments = _measurments.size();
 		
-		LOG(ADF, "We have " << numUniqueStackEntries << " unique backward stack entries. There are " << numMeasurments*(degree-1)+1 << " virtual backward stack entries.");
+		const Index r1, r2;
+		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
+		
+		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
+			// Prepare the single slates of the current component 
+			for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
+				fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
+			}
+			
+			// Reset the FullTensors
+			for(const size_t i : _backwardUpdates[corePosition]) {
+				contract(*_backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *_backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+			}
+		}
+	}
+	
+	/**
+	 * @brief: Calculates the difference between the current and measured values at the measured positions.
+	 * @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
+	 */
+	inline std::vector<value_t> calculate_current_differences( 
+									const TTTensor& _x,
+									const SinglePointMeasurmentSet& _measurments,
+									const std::vector<std::vector<size_t>>& _forwardUpdates,
+									const std::vector<std::vector<size_t>>& _backwardUpdates,
+									FullTensor* const * const _forwardStack, 
+									FullTensor* const * const _backwardStack, 
+									const size_t _corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		const Index r1, r2;
+		
+		std::vector<FullTensor> fixedComponents(_x.dimensions[_corePosition]);
+		FullTensor currentValue({});
+		
+		// Prepare the single slates of the current component 
+		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
+			fixedComponents[i](r1, r2) = _x.get_component(_corePosition)(r1, i, r2);
+		}
+		
+		std::vector<value_t> currentDifferences(numMeasurments);
+		
+		// Look which side of the stack needs less calculations
+		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
+			for(const size_t i : _forwardUpdates[_corePosition]) {
+				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][_corePosition]], false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		} else {
+			for(const size_t i : _backwardUpdates[_corePosition]) {
+				contract(*_backwardStack[i + _corePosition*numMeasurments], fixedComponents[_measurments.positions[i][_corePosition]], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
+				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		}
+		
+		return currentDifferences;
+	}
+	
+	inline std::vector<FullTensor> calculate_deltas(
+									const TTTensor& _x, 
+									const SinglePointMeasurmentSet& _measurments,
+									const FullTensor* const * const _forwardStack, 
+									const FullTensor* const * const _backwardStack,
+									const std::vector<value_t>& _currentDifferences,
+									const size_t _corePosition) {
+		const size_t localLeftRank = _x.get_component(_corePosition).dimensions[0];
+		const size_t localRightRank = _x.get_component(_corePosition).dimensions[2];
+		const size_t numMeasurments = _measurments.size();
+		
+		std::vector<FullTensor> deltas(_x.dimensions[_corePosition], FullTensor({localLeftRank, localRightRank}));
+
+		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
+			deltas[i].ensure_own_data();
+		}
+		
+		for(size_t i = 0; i < numMeasurments; ++i) {
+			// Interestingly writing a dyadic product on our own turn out to be faster than blas...
+			const value_t* const leftPtr = _forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
+			const value_t* const rightPtr = _backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
+			value_t* const deltaPtr = deltas[_measurments.positions[i][_corePosition]].data.get();
+			const value_t factor = _currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+			for(size_t k = 0; k < localLeftRank; ++k) {
+				for(size_t j = 0; j < localRightRank; ++j) {
+					deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
+				}
+			}
+			
+			// Very low level calculation of dyadic product + entriewise addition (one blas call).
+// 			cblas_dger(CblasRowMajor, (int)localLeftRank, (int)localRightRank, 
+// 						_currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor,
+// 						_forwardStack[i + (_corePosition-1)*numMeasurments]->data.get(), 1, 
+// 						_backwardStack[i + (_corePosition+1)*numMeasurments]->data.get(), 1,
+// 						deltas[_measurments.positions[i][_corePosition]].data.get(), (int)localRightRank);
+		}
+		
+		return deltas;
+	}
+	
+	inline std::vector<value_t> calculate_slicewise_norm_Py(
+												const std::vector<FullTensor>& _deltas,
+												const SinglePointMeasurmentSet& _measurments,
+												const std::vector<std::vector<size_t>>& _forwardUpdates,
+												const std::vector<std::vector<size_t>>& _backwardUpdates,
+												FullTensor* const * const _forwardStack, 
+												FullTensor* const * const _backwardStack,
+												const size_t _corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		
+		std::vector<value_t> PyPys(_deltas.size());
+		
+		FullTensor currentValue({});
+		
+		// Look which side of the stack needs less calculations
+		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
+			for(const size_t i : _forwardUpdates[_corePosition]) {
+				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, _deltas[_measurments.positions[i][_corePosition]], false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+				PyPys[_measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
+			}
+		} else {
+			for(const size_t i : _backwardUpdates[_corePosition]) {
+				contract(*_backwardStack[i + _corePosition*numMeasurments], _deltas[_measurments.positions[i][_corePosition]], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
+				PyPys[_measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
+			}
+		}
+		
+		return PyPys;
+	}
+	
+	inline void update_forward_stack( FullTensor* const * const _forwardStack, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _forwardUpdates, const size_t _corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		const Index r1, r2;
+		
+		std::vector<FullTensor> fixedComponents(_x.dimensions[_corePosition]);
+		
+		// Prepare the single slates of the current component 
+		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
+			fixedComponents[i](r1, r2) = _x.get_component(_corePosition)(r1, i, r2);
+		}
+		
+		// Update the stack
+		for(const size_t i : _forwardUpdates[_corePosition]) {
+			contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][_corePosition]], false, 1);
+		}
 	}
 	
 	double ADFVariant::solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const {
@@ -201,13 +320,9 @@ namespace xerus {
 		
 		const value_t normMeasuredValues = calculate_norm_of_measured_values(_measurments.measuredValues);
 		
-		// We want to construct two times numMeasurments stacks of size degree+2 containing the 
-		// left (forward) and right (backward) pre contracted stack for each measurment. (technically numMeasurments stacks
-		// would be sufficent, but there is nearly no overhead since its only pointers)
-		
-		// Bool arrays signaaling whether a specific stack entry is unique and has to be calculated
-		std::vector<bool> forwardUpdates(degree*numMeasurments);
-		std::vector<bool> backwardUpdates(degree*numMeasurments);
+		// Vectors containing for each core position, the IDs of all unqiue stack entries that need updating.
+		std::vector<std::vector<size_t>> forwardUpdates(degree);
+		std::vector<std::vector<size_t>> backwardUpdates(degree);
 		
 		// Array that will contain all the unqiue stack entries.
 		std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
@@ -220,98 +335,45 @@ namespace xerus {
 		std::unique_ptr<FullTensor*[]> backwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
 		FullTensor* const * const backwardStack = backwardStackMem.get()+numMeasurments;
 		
-		// We need _x to be canonicalized in the sense that there is no edge with more than maximal rank. (NOTE move_core(0) is called either way at the begining of the iterations)
+		// We need _x to be canonicalized in the sense that there is no edge with more than maximal rank.
 		_x.cannonicalize_left();
 		
-		construct_forward_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, _x, _measurments);
-		construct_backward_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, _x, _measurments);
-		
-		
-
-		Index i1, i2, r1, r2;
+		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, _x, _measurments, true);
+		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, _x, _measurments, false);
 		
 		value_t residual = 1.0, lastResidual = 1.0;
 		size_t smallResidualCount = 0;
 		
-		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
 		std::vector<value_t> currentDifferences(numMeasurments);
 		
 		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			_x.move_core(0, true);
 			
-			// Rebuild the lower part of the stack
-			for(size_t corePosition = degree-1; corePosition > 0; --corePosition) {
-				
-				// Prepare the single slates of the current component 
-				for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-				}
-				
-				// Reset the FullTensors
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					if(backwardUpdates[i + corePosition*numMeasurments]) {
-						contract(*backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-					}
-				}
-			}
+			rebuild_backward_stack(backwardStack, _x, _measurments, backwardUpdates);
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
-				const size_t localN = _x.get_component(corePosition).dimensions[1];
-				const size_t localLeftRank = _x.get_component(corePosition).dimensions[0];
-				const size_t localRightRank = _x.get_component(corePosition).dimensions[2];
+				currentDifferences = calculate_current_differences(_x, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
 				
-				// Prepare the single slates of the current component 
-				for(size_t i = 0; i < localN; ++i) {
-					fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-				}
+				const std::vector<FullTensor> deltas = calculate_deltas(_x, _measurments, forwardStack, backwardStack, currentDifferences, corePosition);
 				
-				std::vector<FullTensor> deltas(localN, FullTensor({localLeftRank, localRightRank}));
-				FullTensor entryAddition({localLeftRank, localRightRank});
-				FullTensor currentValue({});
-				
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					contract(entryAddition, *forwardStack[i + (corePosition-1)*numMeasurments], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 0);
-					contract(currentValue, entryAddition, false, fixedComponents[_measurments.positions[i][corePosition]], false, 2);
-					currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
-					deltas[_measurments.positions[i][corePosition]] += currentDifferences[i]*entryAddition;
-				}
-				
-				// Calculate ||P(y)||^2 for each slice seperately, where y is the update direction.
-				std::vector<value_t> PyPys(localN, 0.0);
-				FullTensor halfPy({localLeftRank});
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					contract(halfPy, deltas[_measurments.positions[i][corePosition]], false, *backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-					contract(currentValue, *forwardStack[i + (corePosition-1)*numMeasurments], false, halfPy, false, 1);
-					PyPys[_measurments.positions[i][corePosition]] += misc::sqr(currentValue[0]);
-				}
+				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
 				
 				// Update each slice seperately
-				for(size_t j = 0; j < localN; ++j) {
+				for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
 					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
 					const value_t PyR = misc::sqr(frob_norm(deltas[j]));
 					
 					// Update
-					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({localN}, {j})(i1)*deltas[j](r1, r2);
+					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
 				}
-				
 				
 				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
 					_x.move_core(corePosition+1, true);
 					
-					// Prepare the single slates of the current component 
-					for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-						fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-					}
-					
-					// Update the stack
-					for(size_t i = 0; i < numMeasurments; ++i) {
-						if(forwardUpdates[i + corePosition*numMeasurments]) {
-							contract(*forwardStack[i + corePosition*numMeasurments] , *forwardStack[i + (corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][corePosition]], false, 1);
-						}
-					}
+					update_forward_stack( forwardStack, _x, _measurments, forwardUpdates, corePosition);
 				}
 			}
 			
@@ -329,7 +391,7 @@ namespace xerus {
 				smallResidualCount = 0;
 			}
 			
-			LOG(ADF, "Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
+			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
 			
 			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
 				return residual;

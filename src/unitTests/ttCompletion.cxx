@@ -27,16 +27,16 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 6; 
-	const size_t N = 4;
-	const size_t R = 4;
+	const size_t D = 7;
+	const size_t N = 15;
+	const size_t R = 14;
 	const size_t CS = 10;
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
 // 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
-	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+// 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
@@ -62,7 +62,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
 // 	LOG(bla, "Set size " << measurements.size() << " should be " << D*N*CS*R*R << " measured quotient " << double(D*N*CS*R*R)/(double) misc::pow(N, D));
 	
-	examples::completion::inverse_index_norm(measurements);
+	examples::completion::inverse_index_ratios(measurements);
 // 	trueSolution.measure(measurements);
 // 	bool test = true;
 // 	for (const SinglePointMeasurment &m : measurements) {
@@ -70,32 +70,45 @@ UNIT_TEST(Algorithm, adf_completion,
 // 	}
 // 	TEST(test);
 	
-	TTTensor X = TTTensor::ones(trueSolution.dimensions);
+	std::vector<SinglePointMeasurment> ctrSet = SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd);
+	examples::completion::inverse_index_ratios(ctrSet);
+	
+	value_t ctrNorm = 0.0;
+	for(const SinglePointMeasurment& meas : ctrSet) {
+		ctrNorm += misc::sqr(meas.value);
+	}
+	ctrNorm = std::sqrt(ctrNorm);
+	
+	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	
 	const ADFVariant ADF20(200, EPSILON, true);  
+	
 	
 	for(size_t r = 1; r < R; ++r) {
 		ADF20(X, measurements);
 		X.cannonicalize_left();
-		TTTensor rankInc = TTTensor::ones(trueSolution.dimensions);
-		X = X+rankInc;
+		
+		value_t ctrValue = 0.0;
+		for(const SinglePointMeasurment& meas : ctrSet) {
+			ctrValue += misc::sqr(meas.value - X[meas.positions]);
+		}
+		ctrValue = std::sqrt(ctrValue)/ctrNorm;
+		
+		LOG(currError, ctrValue);
+		
+		TTTensor rankInc = TTTensor::ones(std::vector<size_t>(D, N));
+		X = X+(0.001*frob_norm(X)/frob_norm(rankInc))*rankInc;
 	}
 	
 	ADF(X, measurements);
 	
-	std::vector<SinglePointMeasurment> ctrSet = SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd);
-	
-	examples::completion::inverse_index_norm(ctrSet);
-	
 	value_t ctrValue = 0.0;
-	value_t ctrNorm = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {
 		ctrValue += misc::sqr(meas.value - X[meas.positions]);
-		ctrNorm += misc::sqr(meas.value);
 	}
-	ctrValue = std::sqrt(ctrValue)/std::sqrt(ctrNorm);
+	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
-// 	LOG(bla, std::scientific << ctrValue);
-	MTEST(ctrValue < 1e-1, ctrValue);
+	LOG(currError, ctrValue);
+	MTEST(ctrValue < 1e-2, ctrValue);
 // 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )

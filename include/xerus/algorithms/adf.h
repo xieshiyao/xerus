@@ -37,6 +37,7 @@ namespace xerus {
 	protected:
 		double solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const;
     
+		const Index r1, r2, i1, i2;
 	public:
         size_t maxInterations; ///< maximum number of sweeps to perform. set to 0 for infinite
         value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
