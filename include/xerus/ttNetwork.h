@@ -141,12 +141,12 @@ namespace xerus {
 			const size_t numComponents = _dimensions.size()/N;
 			std::vector<size_t> targetRank(_ranks);
 			bool change = false;
-			// determine all ranks such that they are as close to the given ranks vector as possible without being larger than maximal
+			// Determine all ranks such that they are as close to the given ranks vector as possible without being larger than maximal
 			do {
 				change = false;
 				size_t currMax = 1;
 				// left to right sweep
-				for (size_t i=0; i<numComponents-1; ++i) {
+				for (size_t i = 0; i < numComponents-1; ++i) {
 					currMax *= _dimensions[i];
 					if (isOperator) {
 						currMax *= _dimensions[numComponents+i];
@@ -158,18 +158,20 @@ namespace xerus {
 						currMax = targetRank[i];
 					}
 				}
+				
+				if(numComponents <= 2) { continue; }
+				
 				currMax = 1;
 				// right to left sweep
-				for (size_t i=numComponents; i>0; --i) {
-					currMax *= _dimensions[i-1];
-					if (isOperator) {
-						currMax *= _dimensions[numComponents+i-1];
-					}
-					if (currMax < targetRank[i-2]) {
-						targetRank[i-2] = currMax;
+				for (size_t i = numComponents-1; i > 0; --i) {
+					currMax *= _dimensions[i];
+					if (isOperator) { currMax *= _dimensions[numComponents+i]; }
+					
+					if (currMax < targetRank[i-1]) {
+						targetRank[i-1] = currMax;
 						change = true;
 					} else {
-						currMax = targetRank[i-2];
+						currMax = targetRank[i-1];
 					}
 				}
 			} while(change);

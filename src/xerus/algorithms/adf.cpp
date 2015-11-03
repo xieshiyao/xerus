@@ -81,7 +81,7 @@ namespace xerus {
 			const size_t realId = reorderedMeasurments[0];
 			calculationMap[realId + corePosition*numMeasurments] = realId;
 			++numUniqueStackEntries;
-		}
+		} 
 		
 		for(size_t i = 1; i < numMeasurments; ++i) {
 			const size_t realId = reorderedMeasurments[i];
@@ -392,6 +392,7 @@ namespace xerus {
 			}
 			
 			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
+			
 			
 			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
 				return residual;
