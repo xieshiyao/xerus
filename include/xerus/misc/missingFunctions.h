@@ -183,11 +183,19 @@ namespace xerus {
             return sum;
         }
 
-        ///@brief: Calculates the product of all entries of an arbitary container.
+        ///@brief: Calculates the floating point product of all entries of an arbitary container.
         template<template<class, class...> class container_t, class item_t, class... rest_t>
         _pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
             item_t product = item_t(1);
-            for(const item_t& item : _container){ product *= item; REQUIRE(product >= item, "overflow in product"); }
+            for(const item_t& item : _container){ product *= item; }
+            return product;
+        }
+        
+        ///@brief: Calculates the product of all entries of an arbitary container.
+        template<template<class, class...> class container_t, class item_t, class... rest_t>
+        _pure_ double fp_product(const container_t<item_t, rest_t...>& _container) {
+            double product = 1.0;
+            for(const item_t& item : _container){ product *= double(item); }
             return product;
         }
         
@@ -198,7 +206,6 @@ namespace xerus {
             item_t product = item_t(1);
 			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+(long)_first; item != _container.begin()+(long)_last; ++item) { 
 				product *= *item; 
-				REQUIRE(product >= *item, "overflow in product"); 
 			}
             return product;
         }

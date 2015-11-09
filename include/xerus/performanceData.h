@@ -32,86 +32,93 @@
 namespace xerus {
 
 
-/// @brief storage class for the performance data collected during an algorithm (typically iteration count, time and residual)
-class PerformanceData {
-public:
-	struct DataPoint {
-		size_t iterationCount;
-		size_t elapsedTime;
-		value_t residual;
-		DataPoint(size_t _itrCount, size_t _time, value_t _res) 
-			: iterationCount(_itrCount), elapsedTime(_time), residual(_res) {}
-	};
-	struct Histogram {
-		value_t base;
-		std::map<int, size_t> buckets;
-		size_t totalTime;
+	/// @brief Storage class for the performance data collected during an algorithm (typically iteration count, time and residual)
+	class PerformanceData {
+	public:
+		struct DataPoint {
+			size_t iterationCount;
+			size_t elapsedTime;
+			double residual;
+			
+			DataPoint(const size_t _itrCount, const size_t _time, const value_t _res) 
+				: iterationCount(_itrCount), elapsedTime(_time), residual(_res) {}
+		};
 		
-		///@brief creates a histogram of convergence rates based on the data given. assumes that the limit of the residuals is equal to 0!
-		explicit Histogram(const std::vector<DataPoint> &_data, value_t _base);
-		explicit Histogram(value_t _base);
-		Histogram operator+=(const Histogram &_other);
+		struct Histogram {
+			value_t base;
+			std::map<int, size_t> buckets;
+			size_t totalTime;
+			
+			///@brief Creates a histogram of convergence rates based on the data given. Assumes that the limit of the residuals is equal to 0!
+			explicit Histogram(const std::vector<DataPoint> &_data, const value_t _base);
+			
+			explicit Histogram(const value_t _base);
+			
+			Histogram operator+=(const Histogram &_other);
+			
+			void dump_to_file(const std::string &_fileName) const;
+		};
+		
+		std::string additionalInformation;
+		std::vector<DataPoint> data;
+		size_t startTime;
+		size_t stopTime;
+		bool isLogging;
+		
+		explicit PerformanceData(const bool logging = true) : startTime(~0ul), isLogging(logging) {}
+		
+		void start() {
+			startTime = misc::uTime();
+		}
+		
+		void stop_timer() {
+			stopTime = misc::uTime();
+		}
+		
+		void continue_timer() {
+			size_t currtime = misc::uTime();
+			startTime += currtime - stopTime;
+			stopTime = ~0ul;
+		}
+		
+		void reset() {
+			data.clear();
+			additionalInformation.clear();
+			startTime = ~0ul;
+			stopTime = ~0ul;
+		}
+		
+		size_t get_runtime() const {
+			if (stopTime != ~0ul) {
+				return stopTime - startTime;
+			} else {
+				return misc::uTime() - startTime;
+			}
+		}
+		
+		void add(const size_t _itrCount, const value_t _residual);
+		
+		void add(const value_t _residual);
+		
+		operator bool() const {
+			return isLogging;
+		}
+		
+		/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
+		template<class T>
+		PerformanceData& operator<<(const T &_info) noexcept {
+			if (isLogging) {
+				additionalInformation += misc::to_string(_info);
+			}
+			return *this;
+		}
+		
 		void dump_to_file(const std::string &_fileName) const;
+		
+		Histogram get_histogram(const value_t _base) const;
 	};
-	std::string additionalInformation;
-	std::vector<DataPoint> data;
-	size_t startTime;
-	size_t stopTime;
-	bool isLogging;
-	
-	explicit PerformanceData(bool logging=true) : startTime(~0ul), isLogging(logging) {}
-	
-	void start() {
-		startTime = misc::uTime();
-	}
-	
-	void stop_timer() {
-		stopTime = misc::uTime();
-	}
-	
-	void continue_timer() {
-		size_t currtime = misc::uTime();
-		startTime += currtime - stopTime;
-		stopTime = ~0ul;
-	}
-	
-	void reset() {
-		data.clear();
-		additionalInformation.clear();
-		startTime = ~0ul;
-		stopTime = ~0ul;
-	}
-	
-	size_t get_runtime() const {
-		if (stopTime != ~0ul) {
-			return stopTime - startTime;
-		} else {
-			return misc::uTime() - startTime;
-		}
-	}
-	
-	void add(size_t _itrCount, value_t _residual);
-	
-	void add(value_t _residual);
-	
-	operator bool() const {
-		return isLogging;
-	}
-	
-	/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
-	template<class T>
-	PerformanceData& operator<<(const T &_info) noexcept {
-		if (isLogging) {
-			additionalInformation += misc::to_string(_info);
-		}
-		return *this;
-	}
-	
-	void dump_to_file(const std::string &_fileName) const;
-	
-	Histogram get_histogram(value_t _base) const;
-};
 
-extern PerformanceData NoPerfData;
+	extern PerformanceData NoPerfData; // TODO This is no good solution, as it is not thread safe 
+									// (two algorithms using this very same PerfData, may have data races which could result in seg faults when the vectores change size).
 
 }

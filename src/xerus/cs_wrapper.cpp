@@ -99,7 +99,7 @@ namespace xerus {
         
         for(int i = 0; i < _cs_format->n; ++i) {
             for(int j = _cs_format->p[i]; j < _cs_format->p[i+1]; ++j) {
-                auto ret = reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format->i[j]*_cs_format->n+i, _cs_format->x[j]));
+                IF_CHECK( auto ret = ) reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format->i[j]*_cs_format->n+i, _cs_format->x[j]));
                 REQUIRE(ret.second, "Internal Error");
             }
         }

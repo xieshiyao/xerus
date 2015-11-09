@@ -29,11 +29,12 @@
 
 namespace xerus {
 	
-	PerformanceData::Histogram::Histogram(const std::vector<DataPoint> &_data, value_t _base) : base(_base), totalTime(0) {
-		for (size_t i=1; i<_data.size(); ++i) {
+	PerformanceData::Histogram::Histogram(const std::vector< xerus::PerformanceData::DataPoint >& _data, const xerus::value_t _base) : base(_base), totalTime(0) {
+		for (size_t i = 1; i<_data.size(); ++i) {
 			if (_data[i].residual >= _data[i-1].residual) {
 				continue;
 			}
+			
 			// assume x_2 = x_1 * 2^(-alpha * delta-t)
 			value_t relativeChange = _data[i].residual/_data[i-1].residual;
 			value_t exponent = log(relativeChange) / log(2);
@@ -45,7 +46,7 @@ namespace xerus {
 		}
 	}
 	
-	PerformanceData::Histogram::Histogram(value_t _base) : base(_base), totalTime(0) {}
+	PerformanceData::Histogram::Histogram(const xerus::value_t _base) : base(_base), totalTime(0) {}
 	
 	PerformanceData::Histogram PerformanceData::Histogram::operator+=(const Histogram &_other) {
 		REQUIRE(misc::approx_equal(_other.base, base), "only histograms of identical base can be added");
@@ -64,8 +65,7 @@ namespace xerus {
 		out.close();
 	}
 	
-	
-	void PerformanceData::add(size_t _itrCount, value_t _residual) {
+	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual) {
 		if (isLogging) {
 			if (startTime == ~0ul) {
 				start();
@@ -74,7 +74,7 @@ namespace xerus {
 		}
 	}
 	
-	void PerformanceData::add(value_t _residual) {
+	void PerformanceData::add(const xerus::value_t _residual) {
 		if (data.empty()) {
 			add(0, _residual);
 		} else {
@@ -96,11 +96,9 @@ namespace xerus {
 		out.close();
 	}
 	
-	PerformanceData::Histogram PerformanceData::get_histogram(value_t _base) const {
+	PerformanceData::Histogram PerformanceData::get_histogram(const xerus::value_t _base) const {
 		return Histogram(data, _base);
 	}
 
-
 	PerformanceData NoPerfData(false);
-
 }

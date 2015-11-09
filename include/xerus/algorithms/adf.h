@@ -35,17 +35,29 @@ namespace xerus {
 	 */
     class ADFVariant {
 	protected:
+		void solve_with_current_ranks(TTTensor& _x, 
+										size_t& _iteration,
+										double& _residual,
+										double& _lastResidual,
+										const SinglePointMeasurmentSet& _measurments,
+										const value_t _normMeasuredValues,
+										FullTensor* const * const _forwardStack, 
+										const std::vector<std::vector<size_t>>& _forwardUpdates, 
+										FullTensor* const * const _backwardStack,
+										const std::vector<std::vector<size_t>>& _backwardUpdates ) const;
+		
 		double solve(xerus::TTTensor& _x, const xerus::SinglePointMeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks) const;
     
 		const Index r1, r2, i1, i2;
 	public:
-        size_t maxInterations; ///< maximum number of sweeps to perform. set to 0 for infinite
-        value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
+        size_t maxInterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
+        double targetResidual; ///< Target residual. The algorithm will stop upon reaching a residual smaller than this value.
+        double minimalResidualDecrese; // The minimal relative decrese of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
         bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ADFVariant(const size_t _maxIteration, const value_t _convergenceEpsilon, const bool _printProgress) 
-                : maxInterations(_maxIteration), convergenceEpsilon(_convergenceEpsilon), printProgress(_printProgress) { }
+        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrese, const bool _printProgress) 
+                : maxInterations(_maxIteration), targetResidual(_targetResidual), minimalResidualDecrese(_minimalResidualDecrese), printProgress(_printProgress) { }
         
         /**
 		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
@@ -68,7 +80,7 @@ namespace xerus {
 		}
     };
 	
-	/// default variant of the single-site ALS algorithm using the lapack solver
-    const ADFVariant ADF(100000, 1e-10, true);
+	/// @brief Default variant of the ADF algorithm
+    const ADFVariant ADF(100000, 1e-8, 5e-4, true);
 }
 
