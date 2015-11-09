@@ -35,7 +35,7 @@ namespace xerus {
 	 */
     class ADFVariant {
 	protected:
-		double solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const;
+		double solve(xerus::TTTensor& _x, const xerus::SinglePointMeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks) const;
     
 		const Index r1, r2, i1, i2;
 	public:
@@ -54,7 +54,17 @@ namespace xerus {
 		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		 */
         double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
-			return solve(_x, SinglePointMeasurmentSet(_measurments));
+			return solve(_x, SinglePointMeasurmentSet(_measurments), _x.ranks());
+		}
+		
+		/**
+		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		 * @param _b the available measurments.
+		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		 */
+        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks) const {
+			return solve(_x, SinglePointMeasurmentSet(_measurments), _maxRanks);
 		}
     };
 	

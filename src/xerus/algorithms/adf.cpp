@@ -309,9 +309,10 @@ namespace xerus {
 		}
 	}
 	
-	double ADFVariant::solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments) const {
+	double ADFVariant::solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks) const {
 		REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
 		
+		LOG(ADF, "MaxRanks: " << _maxRanks);
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
 		
@@ -346,58 +347,76 @@ namespace xerus {
 		
 		std::vector<value_t> currentDifferences(numMeasurments);
 		
-		for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
-			// Move core back to position zero
-			_x.move_core(0, true);
+// 		while(_x.ranks() != _maxRanks) {
 			
-			rebuild_backward_stack(backwardStack, _x, _measurments, backwardUpdates);
-			
-			// Sweep from the first to the last component
+			// Increase the ranks
+// 			_x = _x+((1e-6*frob_norm(_x)/(double)misc::product(_x.dimensions))*TTTensor::ones(_x.dimensions)); // TODO allow scaling beyond size_t
+			// Ensure maximal ranks are not exceeded (may happen if non uniform).
+// 			_x.round(_maxRanks);
+		
+			// Resize stacks
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
-				currentDifferences = calculate_current_differences(_x, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
-				
-				const std::vector<FullTensor> deltas = calculate_deltas(_x, _measurments, forwardStack, backwardStack, currentDifferences, corePosition);
-				
-				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
-				
-				// Update each slice seperately
-				for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
-					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
-					const value_t PyR = misc::sqr(frob_norm(deltas[j]));
-					
-					// Update
-					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
+				for(const size_t i : forwardUpdates[corePosition]) {
+					forwardStackMem[i + (corePosition+1)*numMeasurments]->reset({_x.rank(corePosition)}, DONT_SET_ZERO());
 				}
-				
-				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
-				if(corePosition+1 < degree) {
-					_x.move_core(corePosition+1, true);
-					
-					update_forward_stack( forwardStack, _x, _measurments, forwardUpdates, corePosition);
+				for(const size_t i : backwardUpdates[corePosition]) {
+					backwardStackMem[i + (corePosition+1)*numMeasurments]->reset({_x.rank(corePosition - 1)}, DONT_SET_ZERO());
 				}
 			}
 			
-			// Calculate the residual (actually the residual of the last iteration because this comes more or less for free).
-			lastResidual = residual;
-			residual = 0;
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				residual += misc::sqr(currentDifferences[i]);
+			for(size_t iteration = 0; iteration < maxInterations; ++iteration) {
+				// Move core back to position zero
+				_x.move_core(0, true);
+				
+				rebuild_backward_stack(backwardStack, _x, _measurments, backwardUpdates);
+				
+				// Sweep from the first to the last component
+				for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
+					currentDifferences = calculate_current_differences(_x, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
+					
+					const std::vector<FullTensor> deltas = calculate_deltas(_x, _measurments, forwardStack, backwardStack, currentDifferences, corePosition);
+					
+					const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, _measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
+					
+					// Update each slice seperately
+					for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
+						// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
+						const value_t PyR = misc::sqr(frob_norm(deltas[j]));
+						
+						// Update
+						_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
+					}
+					
+					// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
+					if(corePosition+1 < degree) {
+						_x.move_core(corePosition+1, true);
+						
+						update_forward_stack( forwardStack, _x, _measurments, forwardUpdates, corePosition);
+					}
+				}
+				
+				// Calculate the residual (actually the residual of the last iteration because this comes more or less for free).
+				lastResidual = residual;
+				residual = 0;
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					residual += misc::sqr(currentDifferences[i]);
+				}
+				residual = std::sqrt(residual)/normMeasuredValues;
+				
+				if(residual/lastResidual > 1.0 - 1e-3) {
+					smallResidualCount++;
+				} else {
+					smallResidualCount = 0;
+				}
+				
+				LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
+				
+				
+				if(residual <= convergenceEpsilon || smallResidualCount > 3) {
+					break;
+				}
 			}
-			residual = std::sqrt(residual)/normMeasuredValues;
-			
-			if(residual/lastResidual > 1.0 - 1e-3) {
-				smallResidualCount++;
-			} else {
-				smallResidualCount = 0;
-			}
-			
-			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << residual/lastResidual);
-			
-			
-			if(residual <= convergenceEpsilon || smallResidualCount > 3) {
-				return residual;
-			}
-		}
+// 		}
 		return residual;
 	}
 }

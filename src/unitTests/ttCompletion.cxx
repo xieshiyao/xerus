@@ -81,26 +81,26 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	
-	const ADFVariant ADF20(200, EPSILON, true);  
+// 	const ADFVariant ADF20(200, EPSILON, true);  
 	
 	
-	for(size_t r = 1; r < R; ++r) {
-		ADF20(X, measurements);
-		X.cannonicalize_left();
-		
-		value_t ctrValue = 0.0;
-		for(const SinglePointMeasurment& meas : ctrSet) {
-			ctrValue += misc::sqr(meas.value - X[meas.positions]);
-		}
-		ctrValue = std::sqrt(ctrValue)/ctrNorm;
-		
-		LOG(currError, ctrValue);
-		
-		TTTensor rankInc = TTTensor::ones(std::vector<size_t>(D, N));
-		X = X+(0.001*frob_norm(X)/frob_norm(rankInc))*rankInc;
-	}
+// 	for(size_t r = 1; r < R; ++r) {
+// 		ADF20(X, measurements);
+// 		X.cannonicalize_left();
+// 		
+// 		value_t ctrValue = 0.0;
+// 		for(const SinglePointMeasurment& meas : ctrSet) {
+// 			ctrValue += misc::sqr(meas.value - X[meas.positions]);
+// 		}
+// 		ctrValue = std::sqrt(ctrValue)/ctrNorm;
+// 		
+// 		LOG(currError, ctrValue);
+// 		
+// 		TTTensor rankInc = TTTensor::ones(std::vector<size_t>(D, N));
+// 		X = X+(0.001*frob_norm(X)/frob_norm(rankInc))*rankInc;
+// 	}
 	
-	ADF(X, measurements);
+	ADF(X, measurements, std::vector<size_t>(D-1, R));
 	
 	value_t ctrValue = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {
