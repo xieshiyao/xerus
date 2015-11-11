@@ -29,15 +29,66 @@
 
 namespace xerus {
 	
-	inline double calculate_norm_of_measured_values(const std::vector<value_t>& _measurments) {
+	template<class MeasurmentSet>
+	inline double calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
-		for(const value_t measurement : _measurments) {
+		for(const value_t measurement : _measurments.measuredValues) {
 			normMeasuredValues += misc::sqr(measurement);
 		}
 		return std::sqrt(normMeasuredValues);
 	}
 	
-	void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const bool _forward) {
+	template<class MeasurmentSet>
+	class MeasurmentComparator {
+		const bool forward;
+		const MeasurmentSet& measurments;
+		const size_t degree;
+	public:
+		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
+		bool ordering_function(const size_t _a, const size_t _b) const;
+	};
+	
+	template<>
+	bool MeasurmentComparator<SinglePointMeasurmentSet>::ordering_function(const size_t _a, const size_t _b) const {
+		if(forward) {
+			for (size_t j = 0; j < degree; ++j) {
+				if (measurments.positions[_a][j] < measurments.positions[_b][j]) return true;
+				if (measurments.positions[_a][j] > measurments.positions[_b][j]) return false;
+			}
+		} else {
+			for (size_t j = degree; j > 0; --j) {
+				if (measurments.positions[_a][j-1] < measurments.positions[_b][j-1]) return true;
+				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) return false;
+			}
+		}
+		LOG(fatal, "Measurments must not appear twice.");
+		return false;
+	}
+	
+	template<>
+	bool MeasurmentComparator<RankOneMeasurmentSet>::ordering_function(const size_t _a, const size_t _b) const {
+		if(forward) {
+			for (size_t j = 0; j < degree; ++j) {
+				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
+					if (measurments.positions[_a][j][k] < measurments.positions[_b][j][k]) return true;
+					if (measurments.positions[_a][j][k] > measurments.positions[_b][j][k]) return false;
+				}
+			}
+		} else {
+			for (size_t j = degree; j > 0; --j) {
+				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
+					if (measurments.positions[_a][j-1][k] < measurments.positions[_b][j-1][k]) return true;
+					if (measurments.positions[_a][j-1][k] > measurments.positions[_b][j-1][k]) return false;
+				}
+			}
+		}
+		LOG(fatal, "Measurments must not appear twice.");
+		return false;
+	}
+	
+	
+	template<class MeasurmentSet>
+	void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const TTTensor& _x, const MeasurmentSet& _measurments, const bool _forward) {
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
 		
@@ -51,23 +102,7 @@ namespace xerus {
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
 		
-		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), 
-			[&](const size_t _a, const size_t _b) {
-				if(_forward) {
-					for (size_t j = 0; j < degree; ++j) {
-						if (_measurments.positions[_a][j] < _measurments.positions[_b][j]) return true;
-						if (_measurments.positions[_a][j] > _measurments.positions[_b][j]) return false;
-					}
-				} else {
-					for (size_t j = degree; j > 0; --j) {
-						if (_measurments.positions[_a][j-1] < _measurments.positions[_b][j-1]) return true;
-						if (_measurments.positions[_a][j-1] > _measurments.positions[_b][j-1]) return false;
-					}
-				}
-				LOG(fatal, "Measurments must not appear twice.");
-				return false;
-			}
-		);
+		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), MeasurmentComparator<MeasurmentSet>(_measurments, _forward) );
 		
 		// Create the entries for the first measurement (this one allways unqiue).
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -82,7 +117,7 @@ namespace xerus {
 			
 			size_t position = 0;
 			size_t corePosition = _forward ? position : degree-1-position;
-			for( ; position < degree && _measurments.positions[realId][corePosition] == _measurments.positions[realPreviousId][corePosition]; ++position, corePosition = _forward ? position : degree-1-position) {
+			for( ; position < degree && approx_equal(_measurments.positions[realId][corePosition], _measurments.positions[realPreviousId][corePosition]); ++position, corePosition = _forward ? position : degree-1-position) {
 				size_t otherId = realPreviousId;
 				while(true) {
 					if( otherId < realId ) {
@@ -138,11 +173,14 @@ namespace xerus {
 		LOG(ADF, "We have " << numUniqueStackEntries << " unique stack entries. There are " << numMeasurments*degree+1 << " virtual stack entries.");
 	}
 	
+	template<class MeasurmentSet>
+	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const MeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates);
 	
+	template<>
 	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates) {
 		const size_t numMeasurments = _measurments.size();
 		
-		const Index r1, r2;
+		const Index r1, r2; //TODO
 		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
 		
 		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
@@ -158,13 +196,35 @@ namespace xerus {
 		}
 	}
 	
+	template<>
+	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates) {
+		const size_t numMeasurments = _measurments.size();
+		
+		const Index r1, r2, i1; // TODO
+		
+		FullTensor reshuffledComponent;
+		
+		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
+			reshuffledComponent(r1, r2, i1) =  _x.get_component(corePosition)(r1, i1, r2);
+			
+			FullTensor mixedComponent({reshuffledComponent.dimensions[0], reshuffledComponent.dimensions[1]});
+			
+			// Reset the FullTensors
+			for(const size_t i : _backwardUpdates[corePosition]) {
+				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][corePosition], false, 1);
+				contract(*_backwardStack[i + corePosition*numMeasurments], mixedComponent, false, *_backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
+			}
+		}
+	}
+	
 	/**
 	 * @brief: Calculates the difference between the current and measured values at the measured positions.
 	 * @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
 	 */
+	template<class MeasurmentSet>
 	inline std::vector<value_t> calculate_current_differences(
 									const TTTensor& _x,
-									const SinglePointMeasurmentSet& _measurments,
+									const MeasurmentSet& _measurments,
 									const std::vector<std::vector<size_t>>& _forwardUpdates,
 									const std::vector<std::vector<size_t>>& _backwardUpdates,
 									FullTensor* const * const _forwardStack, 
@@ -207,9 +267,10 @@ namespace xerus {
 		return currentDifferences;
 	}
 	
+	template<class MeasurmentSet>
 	inline std::vector<FullTensor> calculate_deltas(
 									const TTTensor& _x, 
-									const SinglePointMeasurmentSet& _measurments,
+									const MeasurmentSet& _measurments,
 									const FullTensor* const * const _forwardStack, 
 									const FullTensor* const * const _backwardStack,
 									const std::vector<value_t>& _currentDifferences,
@@ -240,9 +301,10 @@ namespace xerus {
 		return deltas;
 	}
 	
+	template<class MeasurmentSet>
 	inline std::vector<value_t> calculate_slicewise_norm_Py(
 												const std::vector<FullTensor>& _deltas,
-												const SinglePointMeasurmentSet& _measurments,
+												const MeasurmentSet& _measurments,
 												const std::vector<std::vector<size_t>>& _forwardUpdates,
 												const std::vector<std::vector<size_t>>& _backwardUpdates,
 												FullTensor* const * const _forwardStack, 
@@ -279,7 +341,8 @@ namespace xerus {
 	}
 	
 	
-	inline void update_forward_stack( FullTensor* const * const _forwardStack, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _forwardUpdates, const size_t _corePosition) {
+	template<class MeasurmentSet>
+	inline void update_forward_stack( FullTensor* const * const _forwardStack, const TTTensor& _x, const MeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _forwardUpdates, const size_t _corePosition) {
 		const size_t numMeasurments = _measurments.size();
 		const Index r1, r2;
 		
@@ -296,16 +359,18 @@ namespace xerus {
 		}
 	}
 	
+	template<class MeasurmentSet>
 	void ADFVariant::solve_with_current_ranks(TTTensor& _x, 
 												size_t& _iteration,
 												double& _residual,
 												double& _lastResidual,
-												const SinglePointMeasurmentSet& _measurments,
+												const MeasurmentSet& _measurments,
 												const value_t _normMeasuredValues,
 												FullTensor* const * const _forwardStack, 
 												const std::vector<std::vector<size_t>>& _forwardUpdates, 
 												FullTensor* const * const _backwardStack,
-												const std::vector<std::vector<size_t>>& _backwardUpdates
+												const std::vector<std::vector<size_t>>& _backwardUpdates, 
+												PerformanceData& _perfData
 												) const {
 		const size_t numMeasurments = _measurments.size();
 		const size_t degree = _x.degree();
@@ -330,7 +395,8 @@ namespace xerus {
 			}
 			_residual = std::sqrt(_residual)/_normMeasuredValues;
 			
-			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << _iteration << " Residual: " << std::scientific << _residual << " Rel. Residual change: " << (_lastResidual-_residual)/_lastResidual);
+			_perfData.add(_iteration, _residual, _x.ranks(), 0);
+// 			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << _iteration << " Residual: " << std::scientific << _residual << " Rel. Residual change: " << (_lastResidual-_residual)/_lastResidual);
 			
 			// Check for termination criteria
 			resDec3 = resDec2; resDec2 = resDec1;
@@ -366,9 +432,11 @@ namespace xerus {
 		}
 	}
 	
-	
-	double ADFVariant::solve(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks) const {
+	template<class MeasurmentSet>
+	double ADFVariant::solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, xerus::PerformanceData& _perfData) const {
 		REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+		
+		_perfData.start();
 		
 		const size_t degree = _x.degree();
 		const size_t numMeasurments = _measurments.size();
@@ -376,7 +444,7 @@ namespace xerus {
 		REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
 		REQUIRE(_measurments.degree() == degree, "Measurment degree must coincide with _x degree.");
 		
-		const value_t normMeasuredValues = calculate_norm_of_measured_values(_measurments.measuredValues);
+		const value_t normMeasuredValues = calculate_norm_of_measured_values(_measurments);
 		
 		// Vectors containing for each core position, the IDs of all unqiue stack entries that need updating.
 		std::vector<std::vector<size_t>> forwardUpdates(degree);
@@ -403,7 +471,7 @@ namespace xerus {
 		double residual = std::numeric_limits<double>::max(), lastResidual;
 		
 		// One inital run
-		solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates);
+		solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates, _perfData);
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual or the maxRanks.
 		while(residual > targetResidual && _x.ranks() != _maxRanks) {
@@ -421,11 +489,24 @@ namespace xerus {
 				}
 			}
 			
-			solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates);
+			solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates, _perfData);
 			
 			// Ensure maximal ranks are not exceeded (may happen if non uniform).
 			_x.round(_maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 		}
 		return residual;
+	}
+	
+
+	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData) const {
+		return solve(_x, SinglePointMeasurmentSet(_measurments), _x.ranks(), _perfData);
+	}
+	
+	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
+		return solve(_x, SinglePointMeasurmentSet(_measurments), _maxRanks, _perfData);
+	}
+	
+	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData) const {
+		return solve(_x, _measurments, _x.ranks(), _perfData);
 	}
 }

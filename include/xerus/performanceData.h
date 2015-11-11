@@ -73,7 +73,7 @@ namespace xerus {
 		std::string additionalInformation;
 		
 		
-		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : active(_active), printProgress(_printProgress), startTime(~0ul) {}
+		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : active(_active), printProgress(_printProgress), startTime(~0ul), stopTime(~0ul) {}
 		
 		void start() {
 			if (active) {
@@ -102,6 +102,10 @@ namespace xerus {
 				startTime = ~0ul;
 				stopTime = ~0ul;
 			}
+		}
+		
+		size_t get_elapsed_time() const {
+			return misc::uTime() - startTime;
 		}
 		
 		size_t get_runtime() const {

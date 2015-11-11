@@ -112,6 +112,14 @@ namespace xerus {
 		};
 		
 		void add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue);
+		
+		size_t size() const {
+			return measuredValues.size();
+		}
+		
+		size_t degree() const {
+			return positions[0].size();
+		}
 	};
 	
 	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos = ~0ul);

@@ -35,19 +35,22 @@ namespace xerus {
 	 */
     class ADFVariant {
 	protected:
+		template<class MeasurmentSet>
 		void solve_with_current_ranks(TTTensor& _x, 
 										size_t& _iteration,
 										double& _residual,
 										double& _lastResidual,
-										const SinglePointMeasurmentSet& _measurments,
+										const MeasurmentSet& _measurments,
 										const value_t _normMeasuredValues,
 										FullTensor* const * const _forwardStack, 
 										const std::vector<std::vector<size_t>>& _forwardUpdates, 
 										FullTensor* const * const _backwardStack,
-										const std::vector<std::vector<size_t>>& _backwardUpdates ) const;
+										const std::vector<std::vector<size_t>>& _backwardUpdates, 
+										PerformanceData& _perfData ) const;
+										
+		template<class MeasurmentSet>
+		double solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, PerformanceData& _perfData) const;
 		
-		double solve(xerus::TTTensor& _x, const xerus::SinglePointMeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks) const;
-    
 		const Index r1, r2, i1, i2;
 	public:
         size_t maxInterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
@@ -65,9 +68,7 @@ namespace xerus {
 		 * @param _b the available measurments.
 		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		 */
-        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments) const {
-			return solve(_x, SinglePointMeasurmentSet(_measurments), _x.ranks());
-		}
+        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData = NoPerfData) const;
 		
 		/**
 		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
@@ -75,9 +76,15 @@ namespace xerus {
 		 * @param _b the available measurments.
 		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		 */
-        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks) const {
-			return solve(_x, SinglePointMeasurmentSet(_measurments), _maxRanks);
-		}
+        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
+		
+		/**
+		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		 * @param _b the available measurments.
+		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		 */
+        double operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData) const;
     };
 	
 	/// @brief Default variant of the ADF algorithm

@@ -29,7 +29,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	const size_t D = 7;
 	const size_t N = 15;
 	const size_t R = 14;
-	const size_t CS = 10;
+	const size_t CS = 1; 
 	std::random_device rd;
 	std::mt19937_64 rnd(rd());
 // 	std::mt19937_64 rnd;
@@ -99,7 +99,9 @@ UNIT_TEST(Algorithm, adf_completion,
 // 		X = X+(0.001*frob_norm(X)/frob_norm(rankInc))*rankInc;
 // 	}
 	
-	ADF(X, measurements, std::vector<size_t>(D-1, R));
+	PerformanceData perfData(true);
+	
+	ADF(X, measurements, std::vector<size_t>(D-1, R), perfData);
 	
 	value_t ctrValue = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {

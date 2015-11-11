@@ -70,12 +70,12 @@ namespace xerus {
 			if (startTime == ~0ul) {
 				start();
 			}
-			data.emplace_back(_itrCount, get_runtime(), _residual, _ranks, _flags);
+			data.emplace_back(_itrCount, get_elapsed_time(), _residual, _ranks, _flags);
 			
 			if(printProgress) {
 				LOG(PerformanceData, "Iteration " << std::setw(4) << std::setfill(' ') << _itrCount 
-					<< " Time: " <<  std::setw(6) << std::setfill(' ') << std::fixed << double(data.back().elapsedTime)*1e-6 
-					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << _residual << " Flags: " << _flags << " Ranks: " << _ranks);
+					<< " Time: " << std::right << std::setw(6) << std::setfill(' ') << std::fixed << std::setprecision(2) << double(data.back().elapsedTime)*1e-6 
+					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << _residual << " Flags: " << _flags << " Ranks: " << _ranks);
 			}
 		}
 	}

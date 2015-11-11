@@ -26,6 +26,7 @@
 
 #include "misc/allocator.h"
 #include "misc/standard.h"
+#include "misc/missingFunctions.h"
 #include "tensorLogger.h"
 
 /**
@@ -39,6 +40,11 @@ namespace xerus {
 	 * In the current version however this is fixed to double.
 	 */
 	typedef double value_t;
+	
+	bool _inline_ approx_equal(const value_t _a, const value_t _b, value_t _eps = 2*std::numeric_limits<value_t>::epsilon()) {
+		return misc::approx_equal<value_t>(_a, _b, _eps);
+	}
+	
 	
 	/**
 	 * @brief The default epsilon value in xerus.
