@@ -235,13 +235,6 @@ namespace xerus {
 					deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
 				}
 			}
-			
-			// Very low level calculation of dyadic product + entriewise addition (one blas call).
-// 			cblas_dger(CblasRowMajor, (int)localLeftRank, (int)localRightRank, 
-// 						_currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor,
-// 						_forwardStack[i + (_corePosition-1)*numMeasurments]->data.get(), 1, 
-// 						_backwardStack[i + (_corePosition+1)*numMeasurments]->data.get(), 1,
-// 						deltas[_measurments.positions[i][_corePosition]].data.get(), (int)localRightRank);
 		}
 		
 		return deltas;
@@ -381,7 +374,7 @@ namespace xerus {
 		const size_t numMeasurments = _measurments.size();
 		
 		REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
-		REQUIRE(_measurments.degree() == degree, "Measurment order must coincide with _x order.");
+		REQUIRE(_measurments.degree() == degree, "Measurment degree must coincide with _x degree.");
 		
 		const value_t normMeasuredValues = calculate_norm_of_measured_values(_measurments.measuredValues);
 		
@@ -393,7 +386,7 @@ namespace xerus {
 		std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
 		std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
 		
-		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (NOTE that both allow position -1 and degree.
+		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (NOTE that both allow position -1 and degree).
 		std::unique_ptr<FullTensor*[]> forwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
 		FullTensor* const * const forwardStack = forwardStackMem.get()+numMeasurments;
 		
@@ -433,7 +426,6 @@ namespace xerus {
 			// Ensure maximal ranks are not exceeded (may happen if non uniform).
 			_x.round(_maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 		}
-		
 		return residual;
 	}
 }

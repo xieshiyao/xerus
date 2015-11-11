@@ -81,7 +81,7 @@ namespace xerus {
 		* @param _eps the accuracy to be used in the decomposition.
 		* @param _maxRanks maximal ranks to be used
 		*/
-		explicit TTNetwork(const Tensor& _tensor, const double _eps, const std::vector<size_t>& _maxRanks);
+		explicit TTNetwork(const Tensor& _tensor, const double _eps, const RankTuple& _maxRanks);
 		
 		///@brief Copy constructor for TTNetworks.
 		implicit TTNetwork(const TTNetwork & _cpy);

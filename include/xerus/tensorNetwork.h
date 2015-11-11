@@ -37,6 +37,7 @@ namespace xerus {
     // Necessary forward declaritons
     class FullTensor;
     class SparseTensor;
+	
     
 	/** 
 	* @brief Very general class used to represent arbitary tensor networks.
@@ -44,6 +45,8 @@ namespace xerus {
 	*/
 	class TensorNetwork {
     public:
+		
+		using RankTuple = std::vector<size_t>; 
 		
 		/**
 		* @brief Class representing a link from a TensorNode to another node or an external index.

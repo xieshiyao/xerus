@@ -106,7 +106,7 @@ namespace xerus {
         TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const std::vector<size_t>& _maxRanks): TTNetwork(_tensor.degree()) {
+	TTNetwork<isOperator>::TTNetwork(const xerus::Tensor& _tensor, const double _eps, const xerus::TensorNetwork::RankTuple& _maxRanks): TTNetwork(_tensor.degree()) {
         const size_t numComponents = degree()/N;
         
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");

@@ -65,20 +65,28 @@ namespace xerus {
 		out.close();
 	}
 	
-	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual) {
-		if (isLogging) {
+	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual, const std::vector<size_t> _ranks, const size_t _flags) {
+		if (active) {
 			if (startTime == ~0ul) {
 				start();
 			}
-			data.emplace_back(_itrCount, get_runtime(), _residual);
+			data.emplace_back(_itrCount, get_runtime(), _residual, _ranks, _flags);
+			
+			if(printProgress) {
+				LOG(PerformanceData, "Iteration " << std::setw(4) << std::setfill(' ') << _itrCount 
+					<< " Time: " <<  std::setw(6) << std::setfill(' ') << std::fixed << double(data.back().elapsedTime)*1e-6 
+					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << _residual << " Flags: " << _flags << " Ranks: " << _ranks);
+			}
 		}
 	}
 	
-	void PerformanceData::add(const xerus::value_t _residual) {
-		if (data.empty()) {
-			add(0, _residual);
-		} else {
-			add(data.back().iterationCount+1, _residual);
+	void PerformanceData::add(const xerus::value_t _residual, const TensorNetwork::RankTuple _ranks, const size_t _flags) {
+		if (active) {
+			if (data.empty()) {
+				add(0, _residual, _ranks, _flags);
+			} else {
+				add(data.back().iterationCount+1, _residual, _ranks, _flags);
+			}
 		}
 	}
 

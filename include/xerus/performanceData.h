@@ -27,6 +27,7 @@
 #include <fstream>
 #include <map>
 #include "basic.h"
+#include "tensorNetwork.h"
 #include "misc/timeMeasure.h"
 
 namespace xerus {
@@ -39,9 +40,11 @@ namespace xerus {
 			size_t iterationCount;
 			size_t elapsedTime;
 			double residual;
+			TensorNetwork::RankTuple ranks;
+			size_t flags;
 			
-			DataPoint(const size_t _itrCount, const size_t _time, const value_t _res) 
-				: iterationCount(_itrCount), elapsedTime(_time), residual(_res) {}
+			DataPoint(const size_t _itrCount, const size_t _time, const value_t _res, const TensorNetwork::RankTuple _ranks, const size_t _flags) 
+				: iterationCount(_itrCount), elapsedTime(_time), residual(_res), ranks(_ranks), flags(_flags) {}
 		};
 		
 		struct Histogram {
@@ -59,33 +62,46 @@ namespace xerus {
 			void dump_to_file(const std::string &_fileName) const;
 		};
 		
-		std::string additionalInformation;
-		std::vector<DataPoint> data;
+		const bool active;
+		
+		bool printProgress;
+		
 		size_t startTime;
 		size_t stopTime;
-		bool isLogging;
+		std::vector<DataPoint> data;
 		
-		explicit PerformanceData(const bool logging = true) : startTime(~0ul), isLogging(logging) {}
+		std::string additionalInformation;
+		
+		
+		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : active(_active), printProgress(_printProgress), startTime(~0ul) {}
 		
 		void start() {
-			startTime = misc::uTime();
+			if (active) {
+				startTime = misc::uTime();
+			}
 		}
 		
 		void stop_timer() {
-			stopTime = misc::uTime();
+			if (active) {
+				stopTime = misc::uTime();
+			}
 		}
 		
 		void continue_timer() {
-			size_t currtime = misc::uTime();
-			startTime += currtime - stopTime;
-			stopTime = ~0ul;
+			if (active) {
+				size_t currtime = misc::uTime();
+				startTime += currtime - stopTime;
+				stopTime = ~0ul;
+			}
 		}
 		
 		void reset() {
-			data.clear();
-			additionalInformation.clear();
-			startTime = ~0ul;
-			stopTime = ~0ul;
+			if (active) {
+				data.clear();
+				additionalInformation.clear();
+				startTime = ~0ul;
+				stopTime = ~0ul;
+			}
 		}
 		
 		size_t get_runtime() const {
@@ -96,19 +112,24 @@ namespace xerus {
 			}
 		}
 		
-		void add(const size_t _itrCount, const value_t _residual);
+		void add(const size_t _itrCount, const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		
-		void add(const value_t _residual);
+		void add(const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		
 		operator bool() const {
-			return isLogging;
+			return active;
 		}
 		
 		/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
 		template<class T>
 		PerformanceData& operator<<(const T &_info) noexcept {
-			if (isLogging) {
-				additionalInformation += misc::to_string(_info);
+			if (active) {
+				std::string string = misc::to_string(_info);
+				additionalInformation += string;
+				
+				if(printProgress) {
+					LOG(PerformanceData, string);
+				}
 			}
 			return *this;
 		}
@@ -118,7 +139,6 @@ namespace xerus {
 		Histogram get_histogram(const value_t _base) const;
 	};
 
-	extern PerformanceData NoPerfData; // TODO This is no good solution, as it is not thread safe 
-									// (two algorithms using this very same PerfData, may have data races which could result in seg faults when the vectores change size).
+	extern PerformanceData NoPerfData;
 
 }
