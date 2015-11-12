@@ -95,11 +95,15 @@ namespace xerus {
 		header += "# ";
 		header += additionalInformation;
 		misc::replace(header, "\n", "\n# ");
-		header += "\n# \n#itr \ttime[us] \tresidual\n";
+		header += "\n# \n#itr \ttime[us] \tresidual \tflags \tranks...\n";
 		std::ofstream out(_fileName);
 		out << header;
 		for (const DataPoint &d : data) {
-			out << d.iterationCount << " " << d.elapsedTime << " " << d.residual << '\n';
+			out << d.iterationCount << '\t' << d.elapsedTime << '\t' << d.residual << '\t' << d.flags;
+			for (size_t r : d.ranks) {
+				out << '\t' << r;
+			}
+			out << '\n';
 		}
 		out.close();
 	}
