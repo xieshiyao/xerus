@@ -30,7 +30,7 @@
 namespace xerus {
 	
 	template<class MeasurmentSet>
-	inline double calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
+	double ADFVariant::InternalSolver::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
 		for(const value_t measurement : _measurments.measuredValues) {
 			normMeasuredValues += misc::sqr(measurement);
@@ -45,11 +45,11 @@ namespace xerus {
 		const size_t degree;
 	public:
 		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
-		bool ordering_function(const size_t _a, const size_t _b) const;
+		bool operator()(const size_t _a, const size_t _b) const;
 	};
 	
 	template<>
-	bool MeasurmentComparator<SinglePointMeasurmentSet>::ordering_function(const size_t _a, const size_t _b) const {
+	bool MeasurmentComparator<SinglePointMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
 				if (measurments.positions[_a][j] < measurments.positions[_b][j]) return true;
@@ -66,7 +66,7 @@ namespace xerus {
 	}
 	
 	template<>
-	bool MeasurmentComparator<RankOneMeasurmentSet>::ordering_function(const size_t _a, const size_t _b) const {
+	bool MeasurmentComparator<RankOneMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
@@ -229,6 +229,16 @@ namespace xerus {
 									const std::vector<std::vector<size_t>>& _backwardUpdates,
 									FullTensor* const * const _forwardStack, 
 									FullTensor* const * const _backwardStack, 
+									const size_t _corePosition);
+	
+	template<>
+	inline std::vector<value_t> calculate_current_differences<SinglePointMeasurmentSet>(
+									const TTTensor& _x,
+									const SinglePointMeasurmentSet& _measurments,
+									const std::vector<std::vector<size_t>>& _forwardUpdates,
+									const std::vector<std::vector<size_t>>& _backwardUpdates,
+									FullTensor* const * const _forwardStack, 
+									FullTensor* const * const _backwardStack, 
 									const size_t _corePosition) {
 		const size_t numMeasurments = _measurments.size();
 		const Index r1, r2;
@@ -267,10 +277,65 @@ namespace xerus {
 		return currentDifferences;
 	}
 	
+	template<>
+	inline std::vector<value_t> calculate_current_differences<RankOneMeasurmentSet>(
+									const TTTensor& _x,
+									const RankOneMeasurmentSet& _measurments,
+									const std::vector<std::vector<size_t>>& _forwardUpdates,
+									const std::vector<std::vector<size_t>>& _backwardUpdates,
+									FullTensor* const * const _forwardStack, 
+									FullTensor* const * const _backwardStack, 
+									const size_t _corePosition) {
+		const size_t numMeasurments = _measurments.size();
+		const Index r1, r2, i1;
+		
+		FullTensor currentValue({});
+		std::vector<value_t> currentDifferences(numMeasurments);
+		
+		
+		FullTensor reshuffledComponent;
+		reshuffledComponent(r1, r2, i1) =  _x.get_component(_corePosition)(r1, i1, r2);
+		FullTensor mixedComponent({reshuffledComponent.dimensions[0], reshuffledComponent.dimensions[1]});
+		
+		// Look which side of the stack needs less calculations
+		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
+			for(const size_t i : _forwardUpdates[_corePosition]) {
+				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][_corePosition], false, 1);
+				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		} else {
+			for(const size_t i : _backwardUpdates[_corePosition]) {
+				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][_corePosition], false, 1);
+				contract(*_backwardStack[i + _corePosition*numMeasurments], mixedComponent, false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+			}
+			
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
+				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+			}
+		}
+		
+		return currentDifferences;
+	}
+	
 	template<class MeasurmentSet>
 	inline std::vector<FullTensor> calculate_deltas(
 									const TTTensor& _x, 
 									const MeasurmentSet& _measurments,
+									const FullTensor* const * const _forwardStack, 
+									const FullTensor* const * const _backwardStack,
+									const std::vector<value_t>& _currentDifferences,
+									const size_t _corePosition);
+	
+	template<>
+	inline std::vector<FullTensor> calculate_deltas<SinglePointMeasurmentSet>(
+									const TTTensor& _x, 
+									const SinglePointMeasurmentSet& _measurments,
 									const FullTensor* const * const _forwardStack, 
 									const FullTensor* const * const _backwardStack,
 									const std::vector<value_t>& _currentDifferences,
@@ -297,7 +362,41 @@ namespace xerus {
 				}
 			}
 		}
+		return deltas;
+	}
+	
+	template<>
+	inline std::vector<FullTensor> calculate_deltas<RankOneMeasurmentSet>(
+									const TTTensor& _x, 
+									const RankOneMeasurmentSet& _measurments,
+									const FullTensor* const * const _forwardStack, 
+									const FullTensor* const * const _backwardStack,
+									const std::vector<value_t>& _currentDifferences,
+									const size_t _corePosition) {
+		const size_t localLeftRank = _x.get_component(_corePosition).dimensions[0];
+		const size_t localRightRank = _x.get_component(_corePosition).dimensions[2];
+		const size_t numMeasurments = _measurments.size();
 		
+		std::vector<FullTensor> deltas(_x.dimensions[_corePosition], FullTensor({localLeftRank, localRightRank}));
+
+		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
+			deltas[i].ensure_own_data();
+		}
+		
+		for(size_t i = 0; i < numMeasurments; ++i) {
+			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
+			const value_t* const leftPtr = _forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
+			const value_t* const rightPtr = _backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
+			for(size_t n = 0; n < _x.dimensions[_corePosition]; ++n) {
+				value_t* const deltaPtr = deltas[n].data.get();
+				const value_t factor = _measurments.positions[i][_corePosition][n]*_currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+				for(size_t k = 0; k < localLeftRank; ++k) {
+					for(size_t j = 0; j < localRightRank; ++j) {
+						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
+					}
+				}
+			}
+		}
 		return deltas;
 	}
 	
@@ -507,6 +606,7 @@ namespace xerus {
 	}
 	
 	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData) const {
-		return solve(_x, _measurments, _x.ranks(), _perfData);
+// 		return solve(_x, _measurments, _x.ranks(), _perfData);
+		return 0.0;
 	}
 }

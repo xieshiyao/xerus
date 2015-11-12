@@ -34,6 +34,35 @@ namespace xerus {
 	 * @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
 	 */
     class ADFVariant {
+	
+	template<class MeasurmentSet> 
+	class InternalSolver {
+	protected:
+		const Index r1, r2, i1, i2;
+		TTTensor& x;
+		const MeasurmentSet& measurments;
+		const value_t normMeasuredValues;
+		size_t& iteration;
+		double& residual;
+		double& lastResidual;
+		FullTensor* const * const forwardStack; 
+		const std::vector<std::vector<size_t>>& forwardUpdates; 
+		FullTensor* const * const backwardStack;
+		const std::vector<std::vector<size_t>>& backwardUpdates; 
+		PerformanceData& perfData;
+		
+		static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
+		
+		InternalSolver(	TTTensor& _x, const MeasurmentSet& _measurments, PerformanceData& _perfData ) : 
+			x(_x),
+			measurments(_measurments),
+			normMeasuredValues(calculate_norm_of_measured_values(_measurments)),
+			iteration(0), 
+			residual(std::numeric_limits<double>::max()), 
+			lastResidual(std::numeric_limits<double>::max()) {}
+			
+	};
+	
 	protected:
 		template<class MeasurmentSet>
 		void solve_with_current_ranks(TTTensor& _x, 
@@ -51,7 +80,7 @@ namespace xerus {
 		template<class MeasurmentSet>
 		double solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, PerformanceData& _perfData) const;
 		
-		const Index r1, r2, i1, i2;
+		
 	public:
         size_t maxInterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
         double targetResidual; ///< Target residual. The algorithm will stop upon reaching a residual smaller than this value.
