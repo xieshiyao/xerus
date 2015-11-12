@@ -80,6 +80,11 @@ namespace xerus {
 			}
 			result.buckets[bucketIndex] = count;
 		}
+		size_t accountedTime=0;
+		for (auto &h : result.buckets) {
+			accountedTime += h.second;
+		}
+		REQUIRE(accountedTime == result.totalTime, "histogram data inconsistent in file " << _fileName);
 		return result;
 	}
 	
