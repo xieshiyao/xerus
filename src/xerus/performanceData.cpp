@@ -97,8 +97,15 @@ namespace xerus {
 			out << ' ' << h.first << ' ' << h.second;
 		}
 		out << "\n# plotable data:\n";
-		for (auto &h : buckets) {
-			out << pow(base, h.first) << " " << double(h.second)/double(totalTime) << '\n';
+		int firstOutput = buckets.begin()->first - 1;
+		int lastOutput = buckets.rbegin()->first + 1;
+		for (int i=firstOutput; i<=lastOutput; ++i) {
+			out << pow(base, i) << ' ';
+			if (buckets.count(i) > 0) {
+				out << double(buckets.find(i)->second)/double(totalTime) << '\n';
+			} else {
+				out << "0\n";
+			}
 		}
 		out.close();
 	}
