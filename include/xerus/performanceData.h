@@ -59,6 +59,7 @@ namespace xerus {
 			
 			Histogram operator+=(const Histogram &_other);
 			
+			static Histogram read_from_file(const std::string &_fileName);
 			void dump_to_file(const std::string &_fileName) const;
 		};
 		

@@ -57,8 +57,41 @@ namespace xerus {
 		return *this;
 	}
 	
+	PerformanceData::Histogram PerformanceData::Histogram::read_from_file(const std::string &_fileName) {
+		std::ifstream in(_fileName);
+		Histogram result(0.0);
+		std::string line;
+		std::getline(in, line);
+		REQUIRE(line == "# raw data:", "unknown histogram file format " << _fileName); //TODO this should throw an exception
+		char c;
+		in >> c;
+		REQUIRE(c == '#', "missing information in histogram file " << _fileName);
+		in >> result.base >> result.totalTime;
+		std::getline(in, line); // read in rest of this line
+		std::getline(in, line); // line now contains all buckets
+		std::stringstream bucketData(line);
+		bucketData >> c;
+		REQUIRE(c == '#', "missing information in histogram file " << _fileName);
+		int bucketIndex;
+		while (bucketData >> bucketIndex) {
+			size_t count;
+			if (!(bucketData >> count)) {
+				LOG(fatal, "missing bucket count in histogram file " << _fileName);
+			}
+			result.buckets[bucketIndex] = count;
+		}
+		return result;
+	}
+	
 	void PerformanceData::Histogram::dump_to_file(const std::string &_fileName) const {
 		std::ofstream out(_fileName);
+		out << "# raw data:\n";
+		out << "# " << base << ' ' << totalTime << '\n';
+		out << '#';
+		for (auto &h : buckets) {
+			out << ' ' << h.first << ' ' << h.second;
+		}
+		out << "\n# plotable data:\n";
 		for (auto &h : buckets) {
 			out << pow(base, h.first) << " " << double(h.second)/double(totalTime) << '\n';
 		}
