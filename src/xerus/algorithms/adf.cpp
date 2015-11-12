@@ -30,7 +30,7 @@
 namespace xerus {
 	
 	template<class MeasurmentSet>
-	double ADFVariant::InternalSolver::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
+	double ADFVariant::InternalSolver<MeasurmentSet>::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
 		for(const value_t measurement : _measurments.measuredValues) {
 			normMeasuredValues += misc::sqr(measurement);
@@ -88,10 +88,7 @@ namespace xerus {
 	
 	
 	template<class MeasurmentSet>
-	void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const TTTensor& _x, const MeasurmentSet& _measurments, const bool _forward) {
-		const size_t degree = _x.degree();
-		const size_t numMeasurments = _measurments.size();
-		
+	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward) {
 		// Temporary map. For each stack entrie (i.e. measurement number + corePosition) gives a measurement number of a stack entrie (at same corePosition) that shall have an equal value (or its own number otherwise). 
 		std::vector<size_t> calculationMap(degree*numMeasurments);
 		
@@ -102,7 +99,7 @@ namespace xerus {
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
 		
-		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), MeasurmentComparator<MeasurmentSet>(_measurments, _forward) );
+		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), MeasurmentComparator<MeasurmentSet>(measurments, _forward) );
 		
 		// Create the entries for the first measurement (this one allways unqiue).
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -117,7 +114,7 @@ namespace xerus {
 			
 			size_t position = 0;
 			size_t corePosition = _forward ? position : degree-1-position;
-			for( ; position < degree && approx_equal(_measurments.positions[realId][corePosition], _measurments.positions[realPreviousId][corePosition]); ++position, corePosition = _forward ? position : degree-1-position) {
+			for( ; position < degree && approx_equal(measurments.positions[realId][corePosition], measurments.positions[realPreviousId][corePosition]); ++position, corePosition = _forward ? position : degree-1-position) {
 				size_t otherId = realPreviousId;
 				while(true) {
 					if( otherId < realId ) {
@@ -161,7 +158,7 @@ namespace xerus {
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				if(calculationMap[i + corePosition*numMeasurments] == i) {
 					_updates[corePosition].emplace_back(i);
-					_stackSaveSlot[usedSlots].reset({_x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO());
+					_stackSaveSlot[usedSlots].reset({x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO());
 					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots++];
 				} else {
 					_stackMem[i + (corePosition+1)*numMeasurments] = _stackMem[calculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
@@ -459,154 +456,121 @@ namespace xerus {
 	}
 	
 	template<class MeasurmentSet>
-	void ADFVariant::solve_with_current_ranks(TTTensor& _x, 
-												size_t& _iteration,
-												double& _residual,
-												double& _lastResidual,
-												const MeasurmentSet& _measurments,
-												const value_t _normMeasuredValues,
-												FullTensor* const * const _forwardStack, 
-												const std::vector<std::vector<size_t>>& _forwardUpdates, 
-												FullTensor* const * const _backwardStack,
-												const std::vector<std::vector<size_t>>& _backwardUpdates, 
-												PerformanceData& _perfData
-												) const {
-		const size_t numMeasurments = _measurments.size();
-		const size_t degree = _x.degree();
-		
+	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
 		double resDec1 = 1.0, resDec2 = 1.0, resDec3 = 1.0;
 		
 		std::vector<value_t> currentDifferences(numMeasurments);
 			
-		for(; _iteration < maxInterations; ++_iteration) {
+		for(; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
-			_x.move_core(0, true);
+			x.move_core(0, true);
 			
-			rebuild_backward_stack(_backwardStack, _x, _measurments, _backwardUpdates);
+			rebuild_backward_stack(backwardStack, x, measurments, backwardUpdates);
 			
 			// Calculate the current residual
-			currentDifferences = calculate_current_differences(_x, _measurments, _forwardUpdates, _backwardUpdates, _forwardStack, _backwardStack, 0);
+			currentDifferences = calculate_current_differences(x, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, 0);
 			
-			_lastResidual = _residual;
-			_residual = 0;
+			lastResidual = residual;
+			residual = 0;
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				_residual += misc::sqr(currentDifferences[i]);
+				residual += misc::sqr(currentDifferences[i]);
 			}
-			_residual = std::sqrt(_residual)/_normMeasuredValues;
+			residual = std::sqrt(residual)/normMeasuredValues;
 			
-			_perfData.add(_iteration, _residual, _x.ranks(), 0);
-// 			LOG(ADF, "Rank " << _x.ranks() << " Itr: " << _iteration << " Residual: " << std::scientific << _residual << " Rel. Residual change: " << (_lastResidual-_residual)/_lastResidual);
+			perfData.add(iteration, residual, x.ranks(), 0);
+// 			LOG(ADF, "Rank " << x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << (lastResidual-_residual)/_lastResidual);
 			
 			// Check for termination criteria
 			resDec3 = resDec2; resDec2 = resDec1;
-			resDec1 = (_lastResidual-_residual)/_lastResidual;
-			if(_residual < targetResidual || resDec1+resDec2+resDec3 < 3*minimalResidualDecrese) { break; }
+			resDec1 = (lastResidual-residual)/lastResidual;
+			if(residual < targetResidual || resDec1+resDec2+resDec3 < 3*minimalResidualDecrese) { break; }
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 				if(corePosition > 0) { // For corePosition 0 this calculation is allready done in the calculation of the residual.
-					currentDifferences = calculate_current_differences(_x, _measurments, _forwardUpdates, _backwardUpdates, _forwardStack, _backwardStack, corePosition);
+					currentDifferences = calculate_current_differences(x, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
 				}
 				
-				const std::vector<FullTensor> deltas = calculate_deltas(_x, _measurments, _forwardStack, _backwardStack, currentDifferences, corePosition);
+				const std::vector<FullTensor> deltas = calculate_deltas(x, measurments, forwardStack, backwardStack, currentDifferences, corePosition);
 				
-				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, _measurments, _forwardUpdates, _backwardUpdates, _forwardStack, _backwardStack, corePosition);
+				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
 				
 				// Update each slice seperately
-				for(size_t j = 0; j < _x.dimensions[corePosition]; ++j) {
+				for(size_t j = 0; j < x.dimensions[corePosition]; ++j) {
 					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
 					const value_t PyR = misc::sqr(frob_norm(deltas[j]));
 					
 					// Update
-					_x.component(corePosition)(r1, i1, r2) = _x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({_x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
+					x.component(corePosition)(r1, i1, r2) = x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
 				}
 				
 				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
-					_x.move_core(corePosition+1, true);
+					x.move_core(corePosition+1, true);
 					
-					update_forward_stack( _forwardStack, _x, _measurments, _forwardUpdates, corePosition);
+					update_forward_stack( forwardStack, x, measurments, forwardUpdates, corePosition);
 				}
 			}
 		}
 	}
 	
 	template<class MeasurmentSet>
-	double ADFVariant::solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, xerus::PerformanceData& _perfData) const {
-		REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
+		perfData.start();
 		
-		_perfData.start();
+		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank.
+		x.cannonicalize_left();
 		
-		const size_t degree = _x.degree();
-		const size_t numMeasurments = _measurments.size();
-		
-		REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
-		REQUIRE(_measurments.degree() == degree, "Measurment degree must coincide with _x degree.");
-		
-		const value_t normMeasuredValues = calculate_norm_of_measured_values(_measurments);
-		
-		// Vectors containing for each core position, the IDs of all unqiue stack entries that need updating.
-		std::vector<std::vector<size_t>> forwardUpdates(degree);
-		std::vector<std::vector<size_t>> backwardUpdates(degree);
-		
-		// Array that will contain all the unqiue stack entries.
-		std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
-		std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
-		
-		// Arrays mapping the stack entry to the corresponding unique entry in stackSaveSlots (NOTE that both allow position -1 and degree).
-		std::unique_ptr<FullTensor*[]> forwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
-		FullTensor* const * const forwardStack = forwardStackMem.get()+numMeasurments;
-		
-		std::unique_ptr<FullTensor*[]> backwardStackMem( new FullTensor*[numMeasurments*(degree+2)]);
-		FullTensor* const * const backwardStack = backwardStackMem.get()+numMeasurments;
-		
-		// We need _x to be canonicalized in the sense that there is no edge with more than maximal rank.
-		_x.cannonicalize_left();
-		
-		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, _x, _measurments, true);
-		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, _x, _measurments, false);
-		
-		size_t iteration = 0;
-		double residual = std::numeric_limits<double>::max(), lastResidual;
+		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
+		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
 		
 		// One inital run
-		solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates, _perfData);
+		solve_with_current_ranks();
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual or the maxRanks.
-		while(residual > targetResidual && _x.ranks() != _maxRanks) {
+		while(residual > targetResidual && x.ranks() != maxRanks) {
 			
 			// Increase the ranks
-			_x = _x+((1e-6*frob_norm(_x)/misc::fp_product(_x.dimensions))*TTTensor::ones(_x.dimensions));
+			x = x+((1e-6*frob_norm(x)/misc::fp_product(x.dimensions))*TTTensor::ones(x.dimensions));
 			
 			// Resize stacks
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 				for(const size_t i : forwardUpdates[corePosition]) {
-					forwardStack[i + corePosition*numMeasurments]->reset({_x.rank(corePosition)}, DONT_SET_ZERO());
+					forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO());
 				}
 				for(const size_t i : backwardUpdates[corePosition]) {
-					backwardStack[i + corePosition*numMeasurments]->reset({_x.rank(corePosition - 1)}, DONT_SET_ZERO());
+					backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
 				}
 			}
 			
-			solve_with_current_ranks(_x, iteration, residual, lastResidual, _measurments, normMeasuredValues, forwardStack, forwardUpdates, backwardStack, backwardUpdates, _perfData);
+			solve_with_current_ranks();
 			
 			// Ensure maximal ranks are not exceeded (may happen if non uniform).
-			_x.round(_maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
+			x.round(maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 		}
 		return residual;
 	}
 	
 
 	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData) const {
-		return solve(_x, SinglePointMeasurmentSet(_measurments), _x.ranks(), _perfData);
+	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _x.ranks(), SinglePointMeasurmentSet(_measurments), maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+	   return solver.solve();
 	}
 	
 	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-		return solve(_x, SinglePointMeasurmentSet(_measurments), _maxRanks, _perfData);
+	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _maxRanks, SinglePointMeasurmentSet(_measurments), maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+	   return solver.solve();
 	}
 	
 	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData) const {
-// 		return solve(_x, _measurments, _x.ranks(), _perfData);
+// 	  InternalSolver<RankOneMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+// 	  return solver.solve();
+		return 0.0;
+	}
+	
+	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
+// 	   InternalSolver<RankOneMeasurmentSet> solver(_x, _maxRanks, _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+// 	   return solver.solve();
 		return 0.0;
 	}
 }

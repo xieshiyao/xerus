@@ -39,27 +39,74 @@ namespace xerus {
 	class InternalSolver {
 	protected:
 		const Index r1, r2, i1, i2;
+		
 		TTTensor& x;
+		const size_t degree;
+		const std::vector<size_t> maxRanks; 
+		
 		const MeasurmentSet& measurments;
+		const size_t numMeasurments;
 		const value_t normMeasuredValues;
-		size_t& iteration;
-		double& residual;
-		double& lastResidual;
-		FullTensor* const * const forwardStack; 
-		const std::vector<std::vector<size_t>>& forwardUpdates; 
+		
+		const size_t maxInterations; 
+        const double targetResidual;
+        const double minimalResidualDecrese; 
+		
+		size_t iteration;
+		double residual;
+		double lastResidual;
+		
+		std::unique_ptr<FullTensor*[]> forwardStackMem;
+		FullTensor* const * const forwardStack;
+		std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
+		std::vector<std::vector<size_t>> forwardUpdates;
+		
+		std::unique_ptr<FullTensor*[]> backwardStackMem;
 		FullTensor* const * const backwardStack;
-		const std::vector<std::vector<size_t>>& backwardUpdates; 
+		std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
+		std::vector<std::vector<size_t>> backwardUpdates;
+		
 		PerformanceData& perfData;
 		
 		static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
 		
-		InternalSolver(	TTTensor& _x, const MeasurmentSet& _measurments, PerformanceData& _perfData ) : 
+		void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
+		
+		void solve_with_current_ranks();
+		
+	public:
+		double solve();
+		
+		InternalSolver(TTTensor& _x, const std::vector<size_t>& _maxRanks, const MeasurmentSet& _measurments, const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrese, PerformanceData& _perfData ) : 
 			x(_x),
+			degree(_x.degree()),
+			maxRanks(_maxRanks),
+			
 			measurments(_measurments),
+			numMeasurments(_measurments.size()),
 			normMeasuredValues(calculate_norm_of_measured_values(_measurments)),
+			
+			maxInterations(_maxIteration),
+			targetResidual(_targetResidual),
+			minimalResidualDecrese(_minimalResidualDecrese),
+			
 			iteration(0), 
 			residual(std::numeric_limits<double>::max()), 
-			lastResidual(std::numeric_limits<double>::max()) {}
+			lastResidual(std::numeric_limits<double>::max()),
+			
+			forwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+			forwardStack(forwardStackMem.get()+numMeasurments),
+			forwardUpdates(degree),
+				
+			backwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+			backwardStack(backwardStackMem.get()+numMeasurments),
+			backwardUpdates(degree),
+			
+			perfData(_perfData) {
+				REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+				REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
+				REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
+			}
 			
 	};
 	
@@ -76,7 +123,7 @@ namespace xerus {
 										FullTensor* const * const _backwardStack,
 										const std::vector<std::vector<size_t>>& _backwardUpdates, 
 										PerformanceData& _perfData ) const;
-										
+									
 		template<class MeasurmentSet>
 		double solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, PerformanceData& _perfData) const;
 		
@@ -92,28 +139,36 @@ namespace xerus {
                 : maxInterations(_maxIteration), targetResidual(_targetResidual), minimalResidualDecrese(_minimalResidualDecrese), printProgress(_printProgress) { }
         
         /**
-		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-		 * @param _b the available measurments.
-		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-		 */
+	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+	* @param _b the available measurments.
+	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+	*/
         double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData = NoPerfData) const;
 		
-		/**
-		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-		 * @param _b the available measurments.
-		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-		 */
+	/**
+	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+	* @param _b the available measurments.
+	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+	*/
         double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
 		
-		/**
-		 * @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-		 * @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-		 * @param _b the available measurments.
-		 * @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-		 */
+	/**
+	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+	* @param _b the available measurments.
+	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+	*/
         double operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData) const;
+	
+	/**
+	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+	* @param _b the available measurments.
+	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+	*/
+        double operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
     };
 	
 	/// @brief Default variant of the ADF algorithm

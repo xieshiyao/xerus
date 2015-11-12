@@ -45,6 +45,10 @@ namespace xerus {
 		return misc::approx_equal<value_t>(_a, _b, _eps);
 	}
 	
+	bool _inline_ approx_equal(const size_t _a, const size_t _b) {
+		return _a == _b;
+	}
+	
 	
 	/**
 	 * @brief The default epsilon value in xerus.
