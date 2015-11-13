@@ -19,21 +19,34 @@
 
 /**
  * @file
- * @brief Default include file for the misc (ie. non-tensor) functionality.
+ * @brief Header file for the histogram classes.
  */
 
-#pragma once
+#pragma once 
 
-#include "misc/check.h"
-#include "misc/standard.h"
-#include "misc/namedLogger.h"
-#include "misc/missingFunctions.h"
-#include "misc/stringUtilities.h"
-#include "misc/sfinae.h"
-#include "misc/callStack.h"
-#include "misc/simpleNumerics.h"
-#include "misc/timeMeasure.h"
-#include "misc/performanceAnalysis.h"
-#include "misc/exceptions.h"
-#include "misc/allocator.h"
-#include "misc/histogram.h"
+#include <string>
+#include <fstream>
+#include <map>
+
+
+namespace xerus { namespace misc {
+
+/**
+ * @brief A logarithmic histogram, i.e. the size of all buckets is given by a constant factor [x - x*base)
+ */
+class LogHistogram {
+public:
+	double base;
+	std::map<int, size_t> buckets;
+	size_t totalCount;
+	
+	explicit LogHistogram(const double _base);
+	
+	LogHistogram &operator+=(const LogHistogram &_other);
+	void add(double _value, size_t _count=1);
+	
+	static LogHistogram read_from_file(const std::string &_fileName);
+	void dump_to_file(const std::string &_fileName) const;
+};
+
+}}

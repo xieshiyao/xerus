@@ -29,87 +29,6 @@
 
 namespace xerus {
 	
-	PerformanceData::Histogram::Histogram(const std::vector< xerus::PerformanceData::DataPoint >& _data, const xerus::value_t _base) : base(_base), totalTime(0) {
-		for (size_t i = 1; i<_data.size(); ++i) {
-			if (_data[i].residual >= _data[i-1].residual) {
-				continue;
-			}
-			
-			// assume x_2 = x_1 * 2^(-alpha * delta-t)
-			value_t relativeChange = _data[i].residual/_data[i-1].residual;
-			value_t exponent = log(relativeChange) / log(2);
-			size_t delta_t = _data[i].elapsedTime - _data[i-1].elapsedTime;
-			value_t rate = - exponent / value_t(delta_t);
-			int logRate = int(log(rate)/log(base));
-			buckets[logRate] += delta_t;
-			totalTime += delta_t;
-		}
-	}
-	
-	PerformanceData::Histogram::Histogram(const xerus::value_t _base) : base(_base), totalTime(0) {}
-	
-	PerformanceData::Histogram PerformanceData::Histogram::operator+=(const Histogram &_other) {
-		REQUIRE(misc::approx_equal(_other.base, base), "only histograms of identical base can be added");
-		for (const auto &h : _other.buckets) {
-			buckets[h.first] += h.second;
-		}
-		totalTime += _other.totalTime;
-		return *this;
-	}
-	
-	PerformanceData::Histogram PerformanceData::Histogram::read_from_file(const std::string &_fileName) {
-		std::ifstream in(_fileName);
-		Histogram result(0.0);
-		std::string line;
-		std::getline(in, line);
-		REQUIRE(line == "# raw data:", "unknown histogram file format " << _fileName); //TODO this should throw an exception
-		char c;
-		in >> c;
-		REQUIRE(c == '#', "missing information in histogram file " << _fileName);
-		in >> result.base >> result.totalTime;
-		std::getline(in, line); // read in rest of this line
-		std::getline(in, line); // line now contains all buckets
-		std::stringstream bucketData(line);
-		bucketData >> c;
-		REQUIRE(c == '#', "missing information in histogram file " << _fileName);
-		int bucketIndex;
-		while (bucketData >> bucketIndex) {
-			size_t count;
-			if (!(bucketData >> count)) {
-				LOG(fatal, "missing bucket count in histogram file " << _fileName);
-			}
-			result.buckets[bucketIndex] = count;
-		}
-		size_t accountedTime=0;
-		for (auto &h : result.buckets) {
-			accountedTime += h.second;
-		}
-		REQUIRE(accountedTime == result.totalTime, "histogram data inconsistent in file " << _fileName);
-		return result;
-	}
-	
-	void PerformanceData::Histogram::dump_to_file(const std::string &_fileName) const {
-		std::ofstream out(_fileName);
-		out << "# raw data:\n";
-		out << "# " << base << ' ' << totalTime << '\n';
-		out << '#';
-		for (auto &h : buckets) {
-			out << ' ' << h.first << ' ' << h.second;
-		}
-		out << "\n# plotable data:\n";
-		int firstOutput = buckets.begin()->first - 1;
-		int lastOutput = buckets.rbegin()->first + 1;
-		for (int i=firstOutput; i<=lastOutput; ++i) {
-			out << pow(base, i) << ' ';
-			if (buckets.count(i) > 0) {
-				out << double(buckets.find(i)->second)/double(totalTime) << '\n';
-			} else {
-				out << "0\n";
-			}
-		}
-		out.close();
-	}
-	
 	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual, const std::vector<size_t> _ranks, const size_t _flags) {
 		if (active) {
 			if (startTime == ~0ul) {
@@ -153,9 +72,22 @@ namespace xerus {
 		out.close();
 	}
 	
-	PerformanceData::Histogram PerformanceData::get_histogram(const xerus::value_t _base) const {
-		return Histogram(data, _base);
+	misc::LogHistogram PerformanceData::get_histogram(const xerus::value_t _base) const {
+		misc::LogHistogram hist(_base);
+		for (size_t i = 1; i<data.size(); ++i) {
+			if (data[i].residual >= data[i-1].residual) {
+				continue;
+			}
+			
+			// assume x_2 = x_1 * 2^(-alpha * delta-t)
+			value_t relativeChange = data[i].residual/data[i-1].residual;
+			value_t exponent = log(relativeChange) / log(2);
+			size_t delta_t = data[i].elapsedTime - data[i-1].elapsedTime;
+			value_t rate = - exponent / value_t(delta_t);
+			hist.add(rate, delta_t);
+		}
+		return hist;
 	}
 
-	PerformanceData NoPerfData(false);
+	PerformanceData NoPerfData(false, false);
 }

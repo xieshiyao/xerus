@@ -227,6 +227,36 @@ namespace xerus {
         constexpr T pow(const T &_base, const uint64 _exp) {
             return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
         }
+        
+        ///@brief: Calculates _base^_exp by binary exponentiation
+        template<class T> 
+        constexpr T pow(const T &_base, const int64 _exp) {
+            return _exp==0 ? 
+						1 :
+						(
+							_exp<0 ? (
+								1/pow(_base, -_exp)
+							) : (
+								// _exp > 0
+								_exp%2==0 ? pow(_base*_base, _exp/2) : _base*pow(_base, _exp-1)
+							)
+						);
+        }
+        
+        ///@brief: Calculates _base^_exp by binary exponentiation
+        template<class T> 
+        constexpr T pow(const T &_base, const int _exp) {
+            return _exp==0 ? 
+						1 :
+						(
+							_exp<0 ? (
+								1/pow(_base, -_exp)
+							) : (
+								// _exp > 0
+								_exp%2==0 ? pow(_base*_base, _exp/2) : _base*pow(_base, _exp-1)
+							)
+						);
+        }
 
         ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
         template<class T>
