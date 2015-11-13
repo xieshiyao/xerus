@@ -53,8 +53,8 @@ namespace xerus {
         const double minimalResidualDecrese; 
 		
 		size_t iteration;
-		double residual;
-		double lastResidual;
+		double residualNorm;
+		double lastResidualNorm;
 		
 		std::unique_ptr<FullTensor*[]> forwardStackMem;
 		FullTensor* const * const forwardStack;
@@ -72,12 +72,35 @@ namespace xerus {
 		
 		void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
 		
+		std::vector<FullTensor> get_fixed_components(const Tensor& _component);
+		
+		void update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent);
+		
+		void update_forward_stack(const size_t _corePosition, const Tensor& _currentComponent);
+		
+		/**
+		* @brief: Calculates the difference between the current and measured values at the measured positions.
+		* @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
+		*/
+		std::vector<value_t> calculate_residual( const size_t _corePosition );
+		
+		std::vector<value_t> calculate_slicewise_norm_Py( const FullTensor& _delta, const size_t _corePosition);
+		
+		FullTensor calculate_delta( const std::vector<value_t>& _currentDifferences, const size_t _corePosition);
+		
+		
 		void solve_with_current_ranks();
 		
 	public:
 		double solve();
 		
-		InternalSolver(TTTensor& _x, const std::vector<size_t>& _maxRanks, const MeasurmentSet& _measurments, const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrese, PerformanceData& _perfData ) : 
+		InternalSolver(TTTensor& _x, 
+						const std::vector<size_t>& _maxRanks, 
+						const MeasurmentSet& _measurments, 
+						const size_t _maxIteration, 
+						const double _targetResidual, 
+						const double _minimalResidualDecrese, 
+						PerformanceData& _perfData ) : 
 			x(_x),
 			degree(_x.degree()),
 			maxRanks(_maxRanks),
@@ -91,8 +114,8 @@ namespace xerus {
 			minimalResidualDecrese(_minimalResidualDecrese),
 			
 			iteration(0), 
-			residual(std::numeric_limits<double>::max()), 
-			lastResidual(std::numeric_limits<double>::max()),
+			residualNorm(std::numeric_limits<double>::max()), 
+			lastResidualNorm(std::numeric_limits<double>::max()),
 			
 			forwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
 			forwardStack(forwardStackMem.get()+numMeasurments),
@@ -144,7 +167,7 @@ namespace xerus {
 	* @param _b the available measurments.
 	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 	*/
-        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData = NoPerfData) const;
+        double operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData) const;
 		
 	/**
 	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
@@ -152,7 +175,7 @@ namespace xerus {
 	* @param _b the available measurments.
 	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 	*/
-        double operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
+        double operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
 		
 	/**
 	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 

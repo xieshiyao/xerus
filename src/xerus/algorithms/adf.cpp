@@ -171,222 +171,136 @@ namespace xerus {
 	}
 	
 	template<class MeasurmentSet>
-	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const MeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates);
+	std::vector<FullTensor> ADFVariant::InternalSolver<MeasurmentSet>::get_fixed_components(const Tensor& _component) {
+		std::vector<FullTensor> fixedComponents(_component.dimensions[1]);
+		
+		for(size_t i = 0; i < _component.dimensions[1]; ++i) {
+			fixedComponents[i](r1, r2) = _component(r1, i, r2);
+		}
+		
+		return fixedComponents;
+	}
 	
 	template<>
-	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates) {
-		const size_t numMeasurments = _measurments.size();
+	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+		REQUIRE(x.get_component(_corePosition).dimensions == _currentComponent.dimensions, "Internal Error");
 		
-		const Index r1, r2; //TODO
-		std::vector<FullTensor> fixedComponents(misc::max(_x.dimensions));
+		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);
 		
-		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
-			// Prepare the single slates of the current component 
-			for(size_t i = 0; i < _x.dimensions[corePosition]; ++i) {
-				fixedComponents[i](r1, r2) = _x.get_component(corePosition)(r1, i, r2);
-			}
-			
-			// Reset the FullTensors
-			for(const size_t i : _backwardUpdates[corePosition]) {
-				contract(*_backwardStack[i + corePosition*numMeasurments], fixedComponents[_measurments.positions[i][corePosition]], false, *_backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-			}
+		// Reset the FullTensors
+		for(const size_t i : backwardUpdates[_corePosition]) {
+			contract(*backwardStack[i + _corePosition*numMeasurments], fixedComponents[measurments.positions[i][_corePosition]], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
 		}
 	}
 	
 	template<>
-	inline void rebuild_backward_stack(FullTensor* const * const _backwardStack, const TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _backwardUpdates) {
-		const size_t numMeasurments = _measurments.size();
-		
-		const Index r1, r2, i1; // TODO
+	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+		REQUIRE(x.get_component(_corePosition).dimensions == _currentComponent.dimensions, "Internal Error");
 		
 		FullTensor reshuffledComponent;
-		
-		for(size_t corePosition = _x.degree()-1; corePosition > 0; --corePosition) {
-			reshuffledComponent(r1, r2, i1) =  _x.get_component(corePosition)(r1, i1, r2);
-			
-			FullTensor mixedComponent({reshuffledComponent.dimensions[0], reshuffledComponent.dimensions[1]});
-			
-			// Reset the FullTensors
-			for(const size_t i : _backwardUpdates[corePosition]) {
-				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][corePosition], false, 1);
-				contract(*_backwardStack[i + corePosition*numMeasurments], mixedComponent, false, *_backwardStack[i + (corePosition+1)*numMeasurments], false, 1);
-			}
-		}
-	}
-	
-	/**
-	 * @brief: Calculates the difference between the current and measured values at the measured positions.
-	 * @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
-	 */
-	template<class MeasurmentSet>
-	inline std::vector<value_t> calculate_current_differences(
-									const TTTensor& _x,
-									const MeasurmentSet& _measurments,
-									const std::vector<std::vector<size_t>>& _forwardUpdates,
-									const std::vector<std::vector<size_t>>& _backwardUpdates,
-									FullTensor* const * const _forwardStack, 
-									FullTensor* const * const _backwardStack, 
-									const size_t _corePosition);
-	
-	template<>
-	inline std::vector<value_t> calculate_current_differences<SinglePointMeasurmentSet>(
-									const TTTensor& _x,
-									const SinglePointMeasurmentSet& _measurments,
-									const std::vector<std::vector<size_t>>& _forwardUpdates,
-									const std::vector<std::vector<size_t>>& _backwardUpdates,
-									FullTensor* const * const _forwardStack, 
-									FullTensor* const * const _backwardStack, 
-									const size_t _corePosition) {
-		const size_t numMeasurments = _measurments.size();
-		const Index r1, r2;
-		
-		std::vector<FullTensor> fixedComponents(_x.dimensions[_corePosition]);
-		FullTensor currentValue({});
-		
-		// Prepare the single slates of the current component 
-		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
-			fixedComponents[i](r1, r2) = _x.get_component(_corePosition)(r1, i, r2);
-		}
-		
-		std::vector<value_t> currentDifferences(numMeasurments);
-		
-		// Look which side of the stack needs less calculations
-		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
-			for(const size_t i : _forwardUpdates[_corePosition]) {
-				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][_corePosition]], false, 1);
-			}
-			
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
-			}
-		} else {
-			for(const size_t i : _backwardUpdates[_corePosition]) {
-				contract(*_backwardStack[i + _corePosition*numMeasurments], fixedComponents[_measurments.positions[i][_corePosition]], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-			}
-			
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
-				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
-			}
-		}
-		
-		return currentDifferences;
-	}
-	
-	template<>
-	inline std::vector<value_t> calculate_current_differences<RankOneMeasurmentSet>(
-									const TTTensor& _x,
-									const RankOneMeasurmentSet& _measurments,
-									const std::vector<std::vector<size_t>>& _forwardUpdates,
-									const std::vector<std::vector<size_t>>& _backwardUpdates,
-									FullTensor* const * const _forwardStack, 
-									FullTensor* const * const _backwardStack, 
-									const size_t _corePosition) {
-		const size_t numMeasurments = _measurments.size();
-		const Index r1, r2, i1;
-		
-		FullTensor currentValue({});
-		std::vector<value_t> currentDifferences(numMeasurments);
-		
-		
-		FullTensor reshuffledComponent;
-		reshuffledComponent(r1, r2, i1) =  _x.get_component(_corePosition)(r1, i1, r2);
+		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
+
 		FullTensor mixedComponent({reshuffledComponent.dimensions[0], reshuffledComponent.dimensions[1]});
 		
+		// Reset the FullTensors
+		for(const size_t i : backwardUpdates[_corePosition]) {
+			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
+			contract(*backwardStack[i + _corePosition*numMeasurments], mixedComponent, false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+		}
+	}
+	
+	
+	template<>
+	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+		REQUIRE(x.get_component(_corePosition).dimensions == _currentComponent.dimensions, "Internal Error");
+		
+		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);		
+		
+		// Update the stack
+		for(const size_t i : forwardUpdates[_corePosition]) {
+			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[measurments.positions[i][_corePosition]], false, 1);
+		}
+	}
+	
+	template<>
+	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+		REQUIRE(x.get_component(_corePosition).dimensions == _currentComponent.dimensions, "Internal Error");
+		
+		FullTensor reshuffledComponent;
+		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
+
+		FullTensor mixedComponent({reshuffledComponent.dimensions[0], reshuffledComponent.dimensions[1]});
+		
+		// Reset the FullTensors
+		for(const size_t i : backwardUpdates[_corePosition]) {
+			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
+			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
+		}
+	}
+	
+	
+	template<class MeasurmentSet>
+	std::vector<value_t> ADFVariant::InternalSolver<MeasurmentSet>::calculate_residual( const size_t _corePosition ) {
+		FullTensor currentValue({});
+		std::vector<value_t> currentDifferences(numMeasurments);
+		
 		// Look which side of the stack needs less calculations
-		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
-			for(const size_t i : _forwardUpdates[_corePosition]) {
-				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][_corePosition], false, 1);
-				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
-			}
+		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
+			update_forward_stack(_corePosition, x.get_component(_corePosition));
 			
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+				contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+				currentDifferences[i] = (measurments.measuredValues[i]-currentValue[0]);
 			}
 		} else {
-			for(const size_t i : _backwardUpdates[_corePosition]) {
-				contract(mixedComponent, reshuffledComponent, false, _measurments.positions[i][_corePosition], false, 1);
-				contract(*_backwardStack[i + _corePosition*numMeasurments], mixedComponent, false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-			}
+			update_backward_stack(_corePosition, x.get_component(_corePosition));
 			
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
-				currentDifferences[i] = (_measurments.measuredValues[i]-currentValue[0]);
+				contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
+				currentDifferences[i] = (measurments.measuredValues[i]-currentValue[0]);
 			}
 		}
-		
 		return currentDifferences;
 	}
 	
-	template<class MeasurmentSet>
-	inline std::vector<FullTensor> calculate_deltas(
-									const TTTensor& _x, 
-									const MeasurmentSet& _measurments,
-									const FullTensor* const * const _forwardStack, 
-									const FullTensor* const * const _backwardStack,
-									const std::vector<value_t>& _currentDifferences,
-									const size_t _corePosition);
-	
 	template<>
-	inline std::vector<FullTensor> calculate_deltas<SinglePointMeasurmentSet>(
-									const TTTensor& _x, 
-									const SinglePointMeasurmentSet& _measurments,
-									const FullTensor* const * const _forwardStack, 
-									const FullTensor* const * const _backwardStack,
-									const std::vector<value_t>& _currentDifferences,
-									const size_t _corePosition) {
-		const size_t localLeftRank = _x.get_component(_corePosition).dimensions[0];
-		const size_t localRightRank = _x.get_component(_corePosition).dimensions[2];
-		const size_t numMeasurments = _measurments.size();
+	FullTensor ADFVariant::InternalSolver<SinglePointMeasurmentSet>::calculate_delta( const std::vector<value_t>& _currentDifferences, const size_t _corePosition) {
+		const size_t localLeftRank = x.get_component(_corePosition).dimensions[0];
+		const size_t localRightRank = x.get_component(_corePosition).dimensions[2];
 		
-		std::vector<FullTensor> deltas(_x.dimensions[_corePosition], FullTensor({localLeftRank, localRightRank}));
-
-		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
-			deltas[i].ensure_own_data();
-		}
+		FullTensor delta(FullTensor({x.dimensions[_corePosition], localLeftRank, localRightRank}));
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = _forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
-			const value_t* const rightPtr = _backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
-			value_t* const deltaPtr = deltas[_measurments.positions[i][_corePosition]].data.get();
-			const value_t factor = _currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
+			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
+			value_t* const deltaPtr = delta.data.get()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
+			const value_t factor = _currentDifferences[i]*forwardStack[i + (_corePosition-1)*numMeasurments]->factor*backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
 			for(size_t k = 0; k < localLeftRank; ++k) {
 				for(size_t j = 0; j < localRightRank; ++j) {
 					deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
 				}
 			}
 		}
-		return deltas;
+		
+		delta(r1, i1, r2) = delta(i1, r1, r2);
+		return delta;
 	}
 	
 	template<>
-	inline std::vector<FullTensor> calculate_deltas<RankOneMeasurmentSet>(
-									const TTTensor& _x, 
-									const RankOneMeasurmentSet& _measurments,
-									const FullTensor* const * const _forwardStack, 
-									const FullTensor* const * const _backwardStack,
-									const std::vector<value_t>& _currentDifferences,
-									const size_t _corePosition) {
-		const size_t localLeftRank = _x.get_component(_corePosition).dimensions[0];
-		const size_t localRightRank = _x.get_component(_corePosition).dimensions[2];
-		const size_t numMeasurments = _measurments.size();
+	FullTensor ADFVariant::InternalSolver<RankOneMeasurmentSet>::calculate_delta( const std::vector<value_t>& _currentDifferences, const size_t _corePosition) {
+		const size_t localLeftRank = x.get_component(_corePosition).dimensions[0];
+		const size_t localRightRank = x.get_component(_corePosition).dimensions[2];
 		
-		std::vector<FullTensor> deltas(_x.dimensions[_corePosition], FullTensor({localLeftRank, localRightRank}));
-
-		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
-			deltas[i].ensure_own_data();
-		}
+		FullTensor delta(FullTensor({x.dimensions[_corePosition], localLeftRank, localRightRank}));
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = _forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
-			const value_t* const rightPtr = _backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
-			for(size_t n = 0; n < _x.dimensions[_corePosition]; ++n) {
-				value_t* const deltaPtr = deltas[n].data.get();
-				const value_t factor = _measurments.positions[i][_corePosition][n]*_currentDifferences[i]*_forwardStack[i + (_corePosition-1)*numMeasurments]->factor*_backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
+			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
+			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
+				value_t* const deltaPtr = delta.data.get() + n*localLeftRank*localRightRank;
+				const value_t factor = measurments.positions[i][_corePosition][n]*_currentDifferences[i]*forwardStack[i + (_corePosition-1)*numMeasurments]->factor*backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
 				for(size_t k = 0; k < localLeftRank; ++k) {
 					for(size_t j = 0; j < localRightRank; ++j) {
 						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
@@ -394,42 +308,31 @@ namespace xerus {
 				}
 			}
 		}
-		return deltas;
-	}
-	
-	template<class MeasurmentSet>
-	inline std::vector<value_t> calculate_slicewise_norm_Py(
-												const std::vector<FullTensor>& _deltas,
-												const MeasurmentSet& _measurments,
-												const std::vector<std::vector<size_t>>& _forwardUpdates,
-												const std::vector<std::vector<size_t>>& _backwardUpdates,
-												FullTensor* const * const _forwardStack, 
-												FullTensor* const * const _backwardStack,
-												const size_t _corePosition) {
-		const size_t numMeasurments = _measurments.size();
 		
-		std::vector<value_t> PyPys(_deltas.size());
+		delta(r1, i1, r2) = delta(i1, r1, r2);
+		return delta;
+	}
+
+	template<>
+	std::vector<value_t> ADFVariant::InternalSolver<SinglePointMeasurmentSet>::calculate_slicewise_norm_Py( const FullTensor& _delta, const size_t _corePosition) {
+		std::vector<value_t> PyPys(x.dimensions[_corePosition]);
 		
 		FullTensor currentValue({});
 		
 		// Look which side of the stack needs less calculations
-		if(_forwardUpdates[_corePosition].size() < _backwardUpdates[_corePosition].size()) {
-			for(const size_t i : _forwardUpdates[_corePosition]) {
-				contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, _deltas[_measurments.positions[i][_corePosition]], false, 1);
-			}
+		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
+			update_forward_stack(_corePosition, _delta);
 			
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + _corePosition*numMeasurments], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-				PyPys[_measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
+				contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+				PyPys[measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
 			}
 		} else {
-			for(const size_t i : _backwardUpdates[_corePosition]) {
-				contract(*_backwardStack[i + _corePosition*numMeasurments], _deltas[_measurments.positions[i][_corePosition]], false, *_backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-			}
+			update_backward_stack(_corePosition, _delta);
 			
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *_forwardStack[i + (_corePosition-1)*numMeasurments], false, *_backwardStack[i + _corePosition*numMeasurments], false, 1);
-				PyPys[_measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
+				contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
+				PyPys[measurments.positions[i][_corePosition]] += misc::sqr(currentValue[0]);
 			}
 		}
 		
@@ -437,78 +340,73 @@ namespace xerus {
 	}
 	
 	
-	template<class MeasurmentSet>
-	inline void update_forward_stack( FullTensor* const * const _forwardStack, const TTTensor& _x, const MeasurmentSet& _measurments, const std::vector<std::vector<size_t>>& _forwardUpdates, const size_t _corePosition) {
-		const size_t numMeasurments = _measurments.size();
-		const Index r1, r2;
-		
-		std::vector<FullTensor> fixedComponents(_x.dimensions[_corePosition]);
-		
-		// Prepare the single slates of the current component 
-		for(size_t i = 0; i < _x.dimensions[_corePosition]; ++i) {
-			fixedComponents[i](r1, r2) = _x.get_component(_corePosition)(r1, i, r2);
-		}
-		
-		// Update the stack
-		for(const size_t i : _forwardUpdates[_corePosition]) {
-			contract(*_forwardStack[i + _corePosition*numMeasurments] , *_forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[_measurments.positions[i][_corePosition]], false, 1);
-		}
+	template<>
+	std::vector<value_t> ADFVariant::InternalSolver<RankOneMeasurmentSet>::calculate_slicewise_norm_Py( const FullTensor& _delta, const size_t _corePosition) {
+		std::vector<value_t> PyPys;
+		return PyPys;
 	}
+	
+	
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
 		double resDec1 = 1.0, resDec2 = 1.0, resDec3 = 1.0;
 		
-		std::vector<value_t> currentDifferences(numMeasurments);
+		std::vector<value_t> residual(numMeasurments);
 			
 		for(; iteration < maxInterations; ++iteration) {
 			// Move core back to position zero
 			x.move_core(0, true);
 			
-			rebuild_backward_stack(backwardStack, x, measurments, backwardUpdates);
+			// Rebuild backwardStack
+			for(size_t corePosition = x.degree()-1; corePosition > 0; --corePosition) {
+				update_backward_stack(corePosition, x.get_component(corePosition));
+			}
 			
 			// Calculate the current residual
-			currentDifferences = calculate_current_differences(x, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, 0);
+			residual = calculate_residual(0);
 			
-			lastResidual = residual;
-			residual = 0;
+			lastResidualNorm = residualNorm;
+			residualNorm = 0;
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				residual += misc::sqr(currentDifferences[i]);
+				residualNorm += misc::sqr(residual[i]);
 			}
-			residual = std::sqrt(residual)/normMeasuredValues;
+			residualNorm = std::sqrt(residualNorm)/normMeasuredValues;
 			
-			perfData.add(iteration, residual, x.ranks(), 0);
-// 			LOG(ADF, "Rank " << x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residual << " Rel. Residual change: " << (lastResidual-_residual)/_lastResidual);
+			perfData.add(iteration, residualNorm, x.ranks(), 0);
+// 			LOG(ADF, "Rank " << x.ranks() << " Itr: " << iteration << " Residual: " << std::scientific << residualNorm << " Rel. Residual change: " << (lastResidualNorm-_residualNorm)/_lastResidualNorm);
 			
 			// Check for termination criteria
 			resDec3 = resDec2; resDec2 = resDec1;
-			resDec1 = (lastResidual-residual)/lastResidual;
-			if(residual < targetResidual || resDec1+resDec2+resDec3 < 3*minimalResidualDecrese) { break; }
+			resDec1 = (lastResidualNorm-residualNorm)/lastResidualNorm;
+			if(residualNorm < targetResidual || resDec1+resDec2+resDec3 < 3*minimalResidualDecrese) { break; }
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 				if(corePosition > 0) { // For corePosition 0 this calculation is allready done in the calculation of the residual.
-					currentDifferences = calculate_current_differences(x, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
+					residual = calculate_residual(corePosition);
 				}
 				
-				const std::vector<FullTensor> deltas = calculate_deltas(x, measurments, forwardStack, backwardStack, currentDifferences, corePosition);
+				const FullTensor delta = calculate_delta(residual, corePosition);
 				
-				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(deltas, measurments, forwardUpdates, backwardUpdates, forwardStack, backwardStack, corePosition);
+				const std::vector<value_t> PyPys = calculate_slicewise_norm_Py(delta, corePosition);
 				
 				// Update each slice seperately
 				for(size_t j = 0; j < x.dimensions[corePosition]; ++j) {
 					// Calculate <P(y), P(X-B)> = ||deltaPlus||^2.
-					const value_t PyR = misc::sqr(frob_norm(deltas[j]));
+					FullTensor localDelta;
+					localDelta(r1, r2) = delta(r1, j, r2);
+					const value_t PyR = misc::sqr(frob_norm(localDelta));
 					
 					// Update
-					x.component(corePosition)(r1, i1, r2) = x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({x.dimensions[corePosition]}, {j})(i1)*deltas[j](r1, r2);
+					x.component(corePosition)(r1, i1, r2) = x.component(corePosition)(r1, i1, r2) + (PyR/PyPys[j])*Tensor::dirac({x.dimensions[corePosition]}, {j})(i1)*localDelta(r1, r2);
 				}
 				
 				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
 					x.move_core(corePosition+1, true);
 					
-					update_forward_stack( forwardStack, x, measurments, forwardUpdates, corePosition);
+					update_forward_stack(corePosition, x.get_component(corePosition));
 				}
 			}
 		}
@@ -518,7 +416,7 @@ namespace xerus {
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
 		
-		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank.
+		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack creation).
 		x.cannonicalize_left();
 		
 		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
@@ -528,7 +426,7 @@ namespace xerus {
 		solve_with_current_ranks();
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual or the maxRanks.
-		while(residual > targetResidual && x.ranks() != maxRanks) {
+		while(residualNorm > targetResidual && x.ranks() != maxRanks) {
 			
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/misc::fp_product(x.dimensions))*TTTensor::ones(x.dimensions));
@@ -548,29 +446,29 @@ namespace xerus {
 			// Ensure maximal ranks are not exceeded (may happen if non uniform).
 			x.round(maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 		}
-		return residual;
+		return residualNorm;
 	}
 	
 
-	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, PerformanceData& _perfData) const {
-	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _x.ranks(), SinglePointMeasurmentSet(_measurments), maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+	double ADFVariant::operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData) const {
+	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
 	   return solver.solve();
 	}
 	
-	double ADFVariant::operator()(TTTensor& _x, const std::vector<SinglePointMeasurment>& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _maxRanks, SinglePointMeasurmentSet(_measurments), maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+	double ADFVariant::operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
+	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _maxRanks, _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
 	   return solver.solve();
 	}
 	
 	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData) const {
-// 	  InternalSolver<RankOneMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
-// 	  return solver.solve();
+		InternalSolver<RankOneMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+		return solver.solve();
 		return 0.0;
 	}
 	
 	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-// 	   InternalSolver<RankOneMeasurmentSet> solver(_x, _maxRanks, _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
-// 	   return solver.solve();
+		InternalSolver<RankOneMeasurmentSet> solver(_x, _maxRanks, _measurments, maxInterations, targetResidual, minimalResidualDecrese, _perfData);
+		return solver.solve();
 		return 0.0;
 	}
 }
