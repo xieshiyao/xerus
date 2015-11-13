@@ -25,6 +25,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/measurments.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/sparseTensor.h>
 
 namespace xerus {
 	// --------------------- SinglePointMeasurment -----------------
@@ -101,6 +102,24 @@ namespace xerus {
 	
 	
 	// --------------------- RankOneMeasurmentSet -----------------
+	
+	
+	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions) {
+		LOG(bla, "transform");
+		std::vector<FullTensor> zeroPosition;
+		for(size_t j = 0; j < +_other.degree(); ++j) {
+			zeroPosition.emplace_back(FullTensor({_dimensions[j]}));
+		}
+			
+		for(size_t i = 0; i < _other.size(); ++i) {
+			CHECK(i%100 != 0 , bla, "Doing: : " << i << "/" << _other.size());
+			add_measurment(zeroPosition, _other.measuredValues[i]);
+			for(size_t j = 0; j < _other.degree(); ++j) {
+				positions.back()[j][_other.positions[i][j]] = 1.0;
+			}
+		}
+		LOG(bla, "transform finished");
+	}
 	
 	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {
 		positions.emplace_back(_position);

@@ -105,6 +105,8 @@ namespace xerus {
 		RankOneMeasurmentSet(const RankOneMeasurmentSet&  _other) = default;
 		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
 		
+		RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions);
+		
 		struct Comparator {
 			const size_t split_position;
 			Comparator(const size_t _splitPos) : split_position(_splitPos)  {}

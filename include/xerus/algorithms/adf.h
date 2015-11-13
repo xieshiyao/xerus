@@ -34,167 +34,167 @@ namespace xerus {
 	 * @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
 	 */
     class ADFVariant {
-	
-	template<class MeasurmentSet> 
-	class InternalSolver {
-	protected:
-		const Index r1, r2, i1, i2;
-		
-		TTTensor& x;
-		const size_t degree;
-		const std::vector<size_t> maxRanks; 
-		
-		const MeasurmentSet& measurments;
-		const size_t numMeasurments;
-		const value_t normMeasuredValues;
-		
-		const size_t maxInterations; 
-        const double targetResidual;
-        const double minimalResidualDecrese; 
-		
-		size_t iteration;
-		double residualNorm;
-		double lastResidualNorm;
-		
-		std::unique_ptr<FullTensor*[]> forwardStackMem;
-		FullTensor* const * const forwardStack;
-		std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
-		std::vector<std::vector<size_t>> forwardUpdates;
-		
-		std::unique_ptr<FullTensor*[]> backwardStackMem;
-		FullTensor* const * const backwardStack;
-		std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
-		std::vector<std::vector<size_t>> backwardUpdates;
-		
-		PerformanceData& perfData;
-		
-		static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
-		
-		void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
-		
-		std::vector<FullTensor> get_fixed_components(const Tensor& _component);
-		
-		void update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent);
-		
-		void update_forward_stack(const size_t _corePosition, const Tensor& _currentComponent);
-		
-		/**
-		* @brief: Calculates the difference between the current and measured values at the measured positions.
-		* @note: Abuses the stack infrastructe for its caluclation. Changes only the stacks at corePosition.
-		*/
-		std::vector<value_t> calculate_residual( const size_t _corePosition );
-		
-		std::vector<value_t> calculate_slicewise_norm_Py( const FullTensor& _delta, const size_t _corePosition);
-		
-		FullTensor calculate_delta( const std::vector<value_t>& _currentDifferences, const size_t _corePosition);
-		
-		
-		void solve_with_current_ranks();
-		
-	public:
-		double solve();
-		
-		InternalSolver(TTTensor& _x, 
-						const std::vector<size_t>& _maxRanks, 
-						const MeasurmentSet& _measurments, 
-						const size_t _maxIteration, 
-						const double _targetResidual, 
-						const double _minimalResidualDecrese, 
-						PerformanceData& _perfData ) : 
-			x(_x),
-			degree(_x.degree()),
-			maxRanks(_maxRanks),
+		protected:
 			
-			measurments(_measurments),
-			numMeasurments(_measurments.size()),
-			normMeasuredValues(calculate_norm_of_measured_values(_measurments)),
+		template<class MeasurmentSet> 
+		class InternalSolver {
+		protected:
+			const Index r1, r2, i1; ///@brief:
 			
-			maxInterations(_maxIteration),
-			targetResidual(_targetResidual),
-			minimalResidualDecrese(_minimalResidualDecrese),
+			TTTensor& x;
+			const size_t degree;
+			const std::vector<size_t> maxRanks;
 			
-			iteration(0), 
-			residualNorm(std::numeric_limits<double>::max()), 
-			lastResidualNorm(std::numeric_limits<double>::max()),
+			const MeasurmentSet& measurments;
+			const size_t numMeasurments;
+			const value_t normMeasuredValues;
 			
-			forwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
-			forwardStack(forwardStackMem.get()+numMeasurments),
-			forwardUpdates(degree),
+			const size_t maxIterations; 
+			const double targetResidualNorm;
+			const double minimalResidualNormDecrese; 
+			
+			size_t iteration;
+			double residualNorm;
+			double lastResidualNorm;
+			
+			std::vector<value_t> residual;
+			FullTensor projectedGradientComponent;
+			
+			std::unique_ptr<FullTensor*[]> forwardStackMem;
+			FullTensor* const * const forwardStack;
+			std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
+			std::vector<std::vector<size_t>> forwardUpdates;
+			
+			std::unique_ptr<FullTensor*[]> backwardStackMem;
+			FullTensor* const * const backwardStack;
+			std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
+			std::vector<std::vector<size_t>> backwardUpdates;
+			
+			PerformanceData& perfData;
+			
+			static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
+			
+			void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
+			
+			std::vector<FullTensor> get_fixed_components(const Tensor& _component);
+			
+			void update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent);
+			
+			void update_forward_stack(const size_t _corePosition, const Tensor& _currentComponent);
+			
+			/**
+			* @brief: Calculates the current residual, i.e. b-Ax
+			*/
+			void calculate_residual( const size_t _corePosition );
+			
+			/**
+			* @brief: Calculates the (component at _corePosition of the) projected gradient from the residual, i.e. E(A^T(b-Ax)), where E is the projection on the current component
+			*/
+			void calculate_projected_gradient( const size_t _corePosition);
+			
+			/**
+			* @brief: Calculates ||P_n (A(A^T(b-Ax))))|| = ||P_n (A(A^T(residual))))|| =  ||P_n (A(gradient))|| for each n, 
+			* where P_n sets all entries equals zero except where the index at _corePosition is equals n. In case of RankOneMeasurments,
+			* the calculation is not slicewise (only n=0 is set).
+			*/
+			std::vector<value_t> calculate_slicewise_norm_A_projGrad( const size_t _corePosition);
+			
+			void update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition);
+			
+			void solve_with_current_ranks();
+			
+		public:
+			double solve();
+			
+			InternalSolver(TTTensor& _x, 
+							const std::vector<size_t>& _maxRanks, 
+							const MeasurmentSet& _measurments, 
+							const size_t _maxIteration, 
+							const double _targetResidualNorm, 
+							const double _minimalResidualNormDecrese, 
+							PerformanceData& _perfData ) : 
+				x(_x),
+				degree(_x.degree()),
+				maxRanks(_maxRanks),
 				
-			backwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
-			backwardStack(backwardStackMem.get()+numMeasurments),
-			backwardUpdates(degree),
-			
-			perfData(_perfData) {
-				REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
-				REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
-				REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
-			}
-			
-	};
-	
-	protected:
-		template<class MeasurmentSet>
-		void solve_with_current_ranks(TTTensor& _x, 
-										size_t& _iteration,
-										double& _residual,
-										double& _lastResidual,
-										const MeasurmentSet& _measurments,
-										const value_t _normMeasuredValues,
-										FullTensor* const * const _forwardStack, 
-										const std::vector<std::vector<size_t>>& _forwardUpdates, 
-										FullTensor* const * const _backwardStack,
-										const std::vector<std::vector<size_t>>& _backwardUpdates, 
-										PerformanceData& _perfData ) const;
-									
-		template<class MeasurmentSet>
-		double solve(xerus::TTTensor& _x, const MeasurmentSet& _measurments, const std::vector< size_t >& _maxRanks, PerformanceData& _perfData) const;
-		
+				measurments(_measurments),
+				numMeasurments(_measurments.size()),
+				normMeasuredValues(calculate_norm_of_measured_values(_measurments)),
+				
+				maxIterations(_maxIteration),
+				targetResidualNorm(_targetResidualNorm),
+				minimalResidualNormDecrese(_minimalResidualNormDecrese),
+				
+				iteration(0),
+				residualNorm(std::numeric_limits<double>::max()), 
+				lastResidualNorm(std::numeric_limits<double>::max()),
+				
+				residual(numMeasurments),
+				
+				forwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+				forwardStack(forwardStackMem.get()+numMeasurments),
+				forwardUpdates(degree),
+					
+				backwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+				backwardStack(backwardStackMem.get()+numMeasurments),
+				backwardUpdates(degree),
+				
+				perfData(_perfData) 
+				{
+					REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+					REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
+					REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
+				}
+				
+		};
 		
 	public:
-        size_t maxInterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
-        double targetResidual; ///< Target residual. The algorithm will stop upon reaching a residual smaller than this value.
-        double minimalResidualDecrese; // The minimal relative decrese of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
+        size_t maxIterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
+        double targetResidualNorm; ///< Target residual. The algorithm will stop upon reaching a residual smaller than this value.
+        double minimalResidualNormDecrese; // The minimal relative decrese of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
         bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
         ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrese, const bool _printProgress) 
-                : maxInterations(_maxIteration), targetResidual(_targetResidual), minimalResidualDecrese(_minimalResidualDecrese), printProgress(_printProgress) { }
+                : maxIterations(_maxIteration), targetResidualNorm(_targetResidual), minimalResidualNormDecrese(_minimalResidualDecrese), printProgress(_printProgress) { }
         
         /**
-	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-	* @param _b the available measurments.
-	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-	*/
+		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		* @param _measurments the available measurments.
+		* @param _perfData optinal performanceData object to be used.
+		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		*/
         double operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData) const;
 		
-	/**
-	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-	* @param _b the available measurments.
-	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-	*/
+		/**
+		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		* @param[in,out] _x On input: an initial guess of the solution, may be of smaller rank. On output: The reconstruction found by the algorithm.
+		* @param _measurments the available measurments.
+		* @param _maxRanks the maximal ranks the algorithm may use to decrease the resdiual.
+		* @param _perfData optinal performanceData object to be used.
+		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		*/
         double operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
 		
-	/**
-	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-	* @param _b the available measurments.
-	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-	*/
+		/**
+		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		* @param _b the available measurments.
+		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		*/
         double operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData) const;
 	
-	/**
-	* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
-	* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-	* @param _b the available measurments.
-	* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
-	*/
+		/**
+		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
+		* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
+		* @param _b the available measurments.
+		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
+		*/
         double operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData = NoPerfData) const;
     };
 	
 	/// @brief Default variant of the ADF algorithm
-    const ADFVariant ADF(100000, 1e-8, 5e-4, true);
+    const ADFVariant ADF(0, 1e-8, 5e-4, true);
 }
 
