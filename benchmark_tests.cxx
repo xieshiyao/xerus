@@ -25,41 +25,55 @@
 #include <vector>
 #include <set>
 
-#include "xerus.h"
+#include <xerus.h>
 #include <timeMeasure.h>
 
+std::random_device rd;
+std::mt19937_64 rnd(rd());
+std::normal_distribution<double> normalDist(0,1);
 
-std::string exec(const std::string cmd) {
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) return "ERROR";
-    char buffer[128];
-    std::string result = "";
-    while(!feof(pipe)) {
-        if(fgets(buffer, 128, pipe) != NULL)
-            result += buffer;
-    }
-    pclose(pipe);
-    return result;
+using namespace xerus;
+
+struct leastSquaresProblem {
+	std::string name;
+	std::vector<size_t> dimensions;
+	std::vector<size_t> x_ranks;
+	std::vector<size_t> b_ranks;
+	leastSquaresProblem(const std::string &_name)
+		: name(_name) {};
+	
+	virtual TTOperator get_a() const = 0;
+	virtual TTTensor get_x() const {
+		return TTTensor::random(dimensions, x_ranks, normalDist, rnd);
+	};
+	virtual TTTensor get_b() const {
+		return TTTensor::random(dimensions, b_ranks, normalDist, rnd);
+	};
+};
+
+namespace ls {
+	struct ls_approximation : public leastSquaresProblem {
+		ls_approximation(size_t _n, size_t _d, size_t _rankB, size_t _rankX)
+			: leastSquaresProblem("approximation")
+		{
+			dimensions = std::vector<size_t>(_d, _n);
+			x_ranks = std::vector<size_t>(_d-1, _rankX);
+			b_ranks = std::vector<size_t>(_d-1, _rankB);
+		};
+		
+		TTOperator get_a() const override {
+			std::vector<size_t> dim(dimensions);
+			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
+			return TTOperator::identity(dim);
+		}
+	};
 }
 
-const size_t maxN = 2500; // Maximal single dimension
-const size_t createN = 2*maxN*maxN; /// We want to have two times NxN random data
-const size_t maxOffset = maxN*maxN-1; /// One NxN is for offset
 
-std::mt19937_64 rnd;
-std::normal_distribution<double> normalDist(0,1000);
-std::uniform_int_distribution<size_t> offsetDist(0, maxOffset);
 
-double* offset(double* const _p) {
-    return _p+offsetDist(rnd);
-}
-
-std::map<std::string, std::map<std::vector<size_t>, size_t>> results;
-
-void add_call(const std::string& _callName, const std::vector<size_t>& _parameters, const size_t _time) {
-        results[_callName][_parameters] += _time;
-}
-
+std::vector<leastSquaresProblem> leastSquaresProblems{
+	leastSquaresProblem("random_2tothe10_rank3", ),
+};
 
 int main() {
     using namespace xerus;

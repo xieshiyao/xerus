@@ -122,7 +122,7 @@ namespace xerus {
 		
 		void dump_to_file(const std::string &_fileName) const;
 		
-		misc::LogHistogram get_histogram(const value_t _base) const;
+		misc::LogHistogram get_histogram(const value_t _base, bool _assumeConvergence = false) const;
 	};
 
 	extern PerformanceData NoPerfData;

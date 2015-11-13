@@ -72,17 +72,26 @@ namespace xerus {
 		out.close();
 	}
 	
-	misc::LogHistogram PerformanceData::get_histogram(const xerus::value_t _base) const {
+	misc::LogHistogram PerformanceData::get_histogram(const xerus::value_t _base, bool _assumeConvergence) const {
 		misc::LogHistogram hist(_base);
-		for (size_t i = 1; i<data.size(); ++i) {
-			if (data[i].residual >= data[i-1].residual) {
+		std::vector<PerformanceData> convergenceData(data);
+		if (_assumeConvergence) {
+			value_t finalResidual = data.back().residual;
+			convergenceData.pop_back();
+			for (auto &p : convergenceData) {
+				p.residual -= finalResidual;
+			}
+		}
+		
+		for (size_t i = 1; i<convergenceData.size(); ++i) {
+			if (convergenceData[i].residual >= convergenceData[i-1].residual) {
 				continue;
 			}
 			
 			// assume x_2 = x_1 * 2^(-alpha * delta-t)
-			value_t relativeChange = data[i].residual/data[i-1].residual;
+			value_t relativeChange = convergenceData[i].residual/convergenceData[i-1].residual;
 			value_t exponent = log(relativeChange) / log(2);
-			size_t delta_t = data[i].elapsedTime - data[i-1].elapsedTime;
+			size_t delta_t = convergenceData[i].elapsedTime - convergenceData[i-1].elapsedTime;
 			value_t rate = - exponent / value_t(delta_t);
 			hist.add(rate, delta_t);
 		}
