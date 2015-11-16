@@ -74,7 +74,7 @@ namespace xerus {
 	
 	misc::LogHistogram PerformanceData::get_histogram(const xerus::value_t _base, bool _assumeConvergence) const {
 		misc::LogHistogram hist(_base);
-		std::vector<PerformanceData> convergenceData(data);
+		std::vector<PerformanceData::DataPoint> convergenceData(data);
 		if (_assumeConvergence) {
 			value_t finalResidual = data.back().residual;
 			convergenceData.pop_back();
