@@ -84,14 +84,16 @@ namespace xerus { namespace misc {
 			out << ' ' << h.first << ' ' << h.second;
 		}
 		out << "\n# plotable data:\n";
-		int firstOutput = buckets.begin()->first - 1;
-		int lastOutput = buckets.rbegin()->first + 1;
-		for (int i=firstOutput; i<=lastOutput; ++i) {
-			out << pow(base, i) << ' ';
-			if (buckets.count(i) > 0) {
-				out << double(buckets.find(i)->second)/double(totalCount) << '\n';
-			} else {
-				out << "0\n";
+		if (buckets.size() > 0) {
+			int firstOutput = buckets.begin()->first - 1;
+			int lastOutput = buckets.rbegin()->first + 1;
+			for (int i=firstOutput; i<=lastOutput; ++i) {
+				out << pow(base, i) << ' ';
+				if (buckets.count(i) > 0) {
+					out << double(buckets.find(i)->second)/double(totalCount) << '\n';
+				} else {
+					out << "0\n";
+				}
 			}
 		}
 		out.close();

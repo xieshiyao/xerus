@@ -123,17 +123,17 @@ namespace ls {
 
 
 std::vector<LeastSquaresSolver> leastSquaresAlgorithms{
-	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver)}, 
+	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true)}, 
 	{"CG", GeometricCGVariant(0, 0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport)}, 
-// 	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, false, SubmanifoldRetractionII)},
+	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, false, SubmanifoldRetractionII)},
 	{"SteepestDescent_als", SteepestDescentVariant(0, 1e-8, false, ALSRetractionII)},
 	{"SteepestDescent_hosvd", SteepestDescentVariant(0, 1e-8, false, HOSVDRetraction(3))}, //TODO
 };
 
 std::vector<LeastSquaresSolver> leastSquaresAlgorithmsSPD{
-	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver)}, 
+	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true)}, 
 	{"CG", GeometricCGVariant(0, 0, 1e-8, true, SubmanifoldRetractionI, ProjectiveVectorTransport)}, 
-// 	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII)},
+	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII)},
 	{"SteepestDescent_als", SteepestDescentVariant(0, 1e-8, true, ALSRetractionII)},
 	{"SteepestDescent_hosvd", SteepestDescentVariant(0, 1e-8, true, HOSVDRetraction(3))}, //TODO
 };
@@ -149,9 +149,9 @@ struct Approximation_Variant {
 
 std::vector<LeastSquaresProblem> leastSquaresProblems{
 	ls::approximation(2, 10, 4, 2, std::vector<LeastSquaresSolver>{
-		{"ALS", Approximation_Variant(ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver))}, 
+		{"ALS", Approximation_Variant(ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true))}, 
 		{"CG", Approximation_Variant(GeometricCGVariant(0, 0, 1e-8, true, SubmanifoldRetractionI, ProjectiveVectorTransport))}, 
-// 		{"SteepestDescent_submanifold", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII))},
+		{"SteepestDescent_submanifold", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII))},
 		{"SteepestDescent_als", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, ALSRetractionII))},
 		{"SteepestDescent_hosvd", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, HOSVDRetraction(2)))}, //TODO
 	}),
@@ -209,49 +209,56 @@ std::string generate_profile_name() {
 int main() {
 	std::string profileName(generate_profile_name());
 	LOG(benchmark, "running profile " << profileName);
-	
-	for (const LeastSquaresProblem &prob : leastSquaresProblems) {
-		TTOperator A = prob.get_a();
-		TTTensor X = prob.get_x();
-		TTTensor B = prob.get_b();
-		for (const LeastSquaresSolver &solver : prob.solver) {
-			LOG(benchmark, "solving " << prob.name << " with " << solver.first);
-			TTTensor xCpy(X);
-			PerformanceData perfData;
-			misc::LogHistogram speedHist(HISTOGRAM_BASE_CONVERGENCE_RATES);
-			misc::LogHistogram residualHist(HISTOGRAM_BASE_END_RESIDUAL);
-			
+	while (true) {
+		for (const LeastSquaresProblem &prob : leastSquaresProblems) {
+			std::vector<TTOperator> A;
+			std::vector<TTTensor> X;
+			std::vector<TTTensor> B;
 			for (size_t i=0; i< NUM_SOLVES_PER_RUN; ++i) {
-				perfData.reset();
-				// solving the system
-				solver.second(A, X, B, perfData);
+				A.emplace_back(prob.get_a());
+				X.emplace_back(prob.get_x());
+				B.emplace_back(prob.get_b());
+			}
+			for (const LeastSquaresSolver &solver : prob.solver) {
+				LOG(benchmark, "solving " << prob.name << " with " << solver.first);
+				PerformanceData perfData;
+				misc::LogHistogram speedHist(HISTOGRAM_BASE_CONVERGENCE_RATES);
+				misc::LogHistogram residualHist(HISTOGRAM_BASE_END_RESIDUAL);
 				
-				// generate histograms of this run
-				speedHist += perfData.get_histogram(HISTOGRAM_BASE_CONVERGENCE_RATES, true);
-				residualHist.add(perfData.data.back().residual);
+				for (size_t i=0; i< NUM_SOLVES_PER_RUN; ++i) {
+					perfData.reset();
+					// solving the system
+					TTTensor xCpy(X[i]);
+					solver.second(A[i], xCpy, B[i], perfData);
+					
+					// generate histograms of this run
+					speedHist += perfData.get_histogram(HISTOGRAM_BASE_CONVERGENCE_RATES, true);
+					residualHist.add(perfData.data.back().residual);
+					Index i1,i2;
+					value_t trueRes = frob_norm(A[i](i1/2,i2/2)*xCpy(i2/1)-B[i](i1/1));
+					LOG(kaljsd, perfData.data.size() << " steps, final res: " << perfData.data.back().residual << "\t" << trueRes);
+				}
+				
+				// merge histograms with data on disk
+				std::string fileName = std::string("benchmark/")+profileName+"/"+prob.name+"/"+solver.first;
+				if (boost::filesystem::exists(fileName+"_speed.tsv")) {
+					misc::LogHistogram speedHistFile = misc::LogHistogram::read_from_file(fileName+"_speed.tsv");
+					speedHist += speedHistFile;
+				} else {
+					// will fail silently if the directories already exist
+					boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
+				}
+				speedHist.dump_to_file(fileName+"_speed.tsv");
+				
+				if (boost::filesystem::exists(fileName+"_residual.tsv")) {
+					misc::LogHistogram residualHistFile = misc::LogHistogram::read_from_file(fileName+"_residual.tsv");
+					residualHist += residualHistFile;
+				} else {
+					// will fail silently if the directories already exist
+					boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
+				}
+				residualHist.dump_to_file(fileName+"_residual.tsv");
 			}
-			
-			// merge histograms with data on disk
-			std::string fileName = std::string("benchmark/")+profileName+"/"+prob.name+"/"+solver.first;
-			if (boost::filesystem::exists(fileName+"_speed.tsv")) {
-				misc::LogHistogram speedHistFile = misc::LogHistogram::read_from_file(fileName+"_speed.tsv");
-				speedHist += speedHistFile;
-			} else {
-				// will fail silently if the directories already exist
-				boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
-			}
-			speedHist.dump_to_file(fileName+"_speed.tsv");
-			
-			if (boost::filesystem::exists(fileName+"_residual.tsv")) {
-				misc::LogHistogram residualHistFile = misc::LogHistogram::read_from_file(fileName+"_residual.tsv");
-				residualHist += residualHistFile;
-			} else {
-				// will fail silently if the directories already exist
-				boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
-			}
-			residualHist.dump_to_file(fileName+"_residual.tsv");
 		}
 	}
-	
-	return 0;
 }
