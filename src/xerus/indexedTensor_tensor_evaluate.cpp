@@ -109,8 +109,8 @@ namespace xerus {
 		PA_START;
 		
 		// Get pointers to the data
-		const value_t* oldPosition = _inputTensor.data.get()+_fixedIndexOffset;
-		value_t* const newPosition = _outTensor.data.get();
+		const value_t* oldPosition = _inputTensor.unsanitized_data_pointer()+_fixedIndexOffset;
+		value_t* const newPosition = _outTensor.unsanitized_data_pointer();
 		
 		// Get specific sizes
 		const size_t numSteps = _outTensor.size/_orderedBackDim;
@@ -264,22 +264,11 @@ namespace xerus {
 		
 		// If there is no index reshuffling, we can simplify a lot
 		if(baseIndices == outIndices) {
-			if(!_out.tensorObjectReadOnly->is_sparse() && !_base.tensorObjectReadOnly->is_sparse()) { // Full => Full
-				_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
-				static_cast<FullTensor*>(_out.tensorObject)->data = static_cast<const FullTensor*>(_base.tensorObjectReadOnly)->data;
+			if(!_out.tensorObjectReadOnly->is_sparse()) { // Any => Full
+				static_cast<FullTensor&>(*_out.tensorObject) = *_base.tensorObjectReadOnly;
 				
 			} else if(_out.tensorObjectReadOnly->is_sparse() && _base.tensorObjectReadOnly->is_sparse()) { // Sparse => Sparse
-				_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
-				static_cast<SparseTensor*>(_out.tensorObject)->entries = static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries;
-			
-			} else if(_base.tensorObjectReadOnly->is_sparse()) { // Sparse => Full
-				FullTensor& outTensor = *static_cast<FullTensor*>(_out.tensorObject);
-				outTensor.ensure_own_data_no_copy();
-				value_t* const outData = outTensor.data.get();
-				misc::array_set_zero(outData, outTensor.size);
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries) {
-					outData[entry.first] = entry.second;
-				}
+				static_cast<SparseTensor&>(*_out.tensorObject) = static_cast<const SparseTensor&>(*_base.tensorObjectReadOnly);
 			}
 			return; // We are finished here
 		}

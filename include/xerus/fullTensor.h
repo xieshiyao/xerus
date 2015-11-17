@@ -37,7 +37,8 @@ namespace xerus {
     
     /// @brief The xerus class used to represent all dense tensor objects.
     class FullTensor final : public Tensor {
-    public:
+	public:
+//     protected:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
 		 * @brief Shared pointer to the data array with size "size". 
@@ -319,6 +320,20 @@ namespace xerus {
 		 * @return a reference to this FullTensor.
 		 */
         FullTensor& operator=(      FullTensor&& _other);
+		
+		/** 
+		 * @brief Assignment operator for a general tensor.
+		 * @param _other the Tensor to be assinged to this one.
+		 * @return a reference to this FullTensor.
+		 */
+        FullTensor& operator=(const Tensor&  _other);
+        
+		/** 
+		 * @brief Move-assignment operator for a general tensor.
+		 * @param _other the Tensor to be move-assinged to this one.
+		 * @return a reference to this FullTensor.
+		 */
+        FullTensor& operator=(      Tensor&& _other);
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

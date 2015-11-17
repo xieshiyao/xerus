@@ -209,8 +209,6 @@ namespace xerus {
         SparseTensor& operator=(SparseTensor&& _other);
         
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 

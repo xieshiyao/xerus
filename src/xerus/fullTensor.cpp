@@ -154,6 +154,32 @@ namespace xerus {
         std::swap(data, _other.data);
         return *this;
     }
+    
+    FullTensor& FullTensor::operator=(const Tensor& _other) {
+		if(_other.is_sparse()) {
+			reset(_other.dimensions);
+			value_t* const dataPtr = unsanitized_data_pointer();
+			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				dataPtr[entry.first] = entry.second;
+			}
+		} else {
+			operator=(static_cast<const FullTensor&>(_other));
+		}
+        return *this;
+    }
+
+    FullTensor& FullTensor::operator=(Tensor&& _other) {
+        if(_other.is_sparse()) {
+			reset(_other.dimensions);
+			value_t* const dataPtr = unsanitized_data_pointer();
+			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				dataPtr[entry.first] = entry.second;
+			}
+		} else {
+			operator=(std::move(static_cast<FullTensor&&>(_other)));
+		}
+        return *this;
+    }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator+=(const Tensor& _other) {
