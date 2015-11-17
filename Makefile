@@ -9,6 +9,10 @@ LIB_NAME_STATIC = build/lib/libxerus.a
 # Name of the test executable
 TEST_NAME = XerusTest
 
+# xerus version from VERSION file
+XERUS_VERSION = $(shell cat VERSION)
+DEBUG += -D XERUS_VERSION=$(XERUS_VERSION)
+
 # ------------------------------------------------------------------------------------------------------
 #				Register source files for the xerus library      
 # ------------------------------------------------------------------------------------------------------
@@ -164,7 +168,7 @@ clean:
 
 # 	
 benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)
-	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o Benchmark
+	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -lboost_filesystem -lboost_system -o Benchmark
 # 
 # benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_STATIC)
 # 	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o BenchmarkTest

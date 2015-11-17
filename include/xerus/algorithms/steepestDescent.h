@@ -123,8 +123,8 @@ namespace xerus {
 			return solve(nullptr, _x, _b, _numSteps, convergenceEpsilon, _perfData);
 		}
 		
-		double operator()(TTTensor &_x, const TTTensor &_b) const {
-			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, NoPerfData);
+		double operator()(TTTensor &_x, const TTTensor &_b, PerformanceData &_perfData = NoPerfData) const {
+			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, _perfData);
 		}
 	};
 	
