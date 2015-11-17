@@ -37,8 +37,8 @@ namespace xerus {
     
     /// @brief The xerus class used to represent all dense tensor objects.
     class FullTensor final : public Tensor {
-	public:
-//     protected:
+// 	public:
+    protected:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
 		 * @brief Shared pointer to the data array with size "size". 
@@ -417,6 +417,31 @@ namespace xerus {
 		 */
         const value_t* unsanitized_data_pointer() const;
 		
+		/** 
+		 * @brief Returns a pointer to the internal data array for complete rewrite purpose ONLY.
+		 * @details This will reset the internal factor to 1.0 and ensure that this tensor is the sole owner of the data array,
+		 * WITHOUT copying any present data, i.e. the data can be completely random. Should only be used if the complete data is overwritten.
+		 * @return pointer to the internal data array.
+		 */
+        value_t* override_data();
+		
+		/** 
+		 * @brief Gives access to the internal shared data pointer, without any checks.
+		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a gloal
+		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return The internal shared pointer to the data array.
+		 */
+        std::shared_ptr<value_t>& unsanitized_shared_data();
+		
+		/** 
+		 * @brief Gives access to the internal shared data pointer, without any checks.
+		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a gloal
+		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return The internal shared pointer to the data array.
+		 */
+        std::shared_ptr<const value_t> unsanitized_shared_data() const;
+		
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;
@@ -426,6 +451,10 @@ namespace xerus {
         virtual void reset(const std::vector<size_t>&  _newDim) override;
         
         virtual void reset(      std::vector<size_t>&& _newDim) override;
+		
+		void reset(const std::vector<size_t>&  _newDim, value_t* const _data);
+		
+		void reset(      std::vector<size_t>&& _newDim, value_t* const _data);
         
 		/** 
 		 * @brief Resizes a specific dimension of the FullTensor.

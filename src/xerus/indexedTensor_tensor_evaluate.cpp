@@ -401,7 +401,7 @@ namespace xerus {
 				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			} else {
 				// Ensure that _out is empty
-				value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->data.get();
+				value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->unsanitized_data_pointer();
 				misc::array_set_zero(dataPointer, _out.tensorObject->size);
 				
 				if(peacefullIndices) {

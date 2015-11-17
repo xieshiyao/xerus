@@ -388,15 +388,15 @@ namespace xerus {
             
             // Select actual case
             if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
-                blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+                blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->unsanitized_data_pointer(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->unsanitized_data_pointer(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->unsanitized_data_pointer(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
-                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->unsanitized_data_pointer(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->unsanitized_data_pointer(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
-                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->data.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->unsanitized_data_pointer(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->unsanitized_data_pointer(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->data.get(), rhsTrans);
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->entries.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->unsanitized_data_pointer(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->data.get(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->entries.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->unsanitized_data_pointer(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->entries.get(), rhsTrans);
             } else {
                 LOG(fatal, "Invalid combiantion of sparse/dense tensors in contraction");
             }

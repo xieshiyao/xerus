@@ -1,4 +1,4 @@
-// Xerus - A General Purpose Tensor Library
+// // Xerus - A General Purpose Tensor Library
 // Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
@@ -304,9 +304,6 @@ namespace xerus {
 		ensure_own_data_and_apply_factor();
 		return data.get();
 	}
-
-        
-        
         
 	value_t* FullTensor::unsanitized_data_pointer() {
 		return data.get();
@@ -315,6 +312,21 @@ namespace xerus {
 	const value_t* FullTensor::unsanitized_data_pointer() const {
 		return data.get();
 	}
+	
+	value_t* FullTensor::override_data() {
+		factor = 1.0;
+		ensure_own_data_no_copy();
+		return data.get();
+	}
+	
+	std::shared_ptr<value_t>& FullTensor::unsanitized_shared_data() {
+		return data;
+	}
+	
+	std::shared_ptr<const value_t> FullTensor::unsanitized_shared_data() const {
+		return data;
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     void FullTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
@@ -358,7 +370,20 @@ namespace xerus {
         }
         memset(data.get(), 0, size*sizeof(value_t));
     }
+    
+	void FullTensor::reset(const std::vector<size_t>&  _newDim, value_t* const _data) {
+		change_dimensions(_newDim);
+		factor = 1.0;
+		data.reset(_data, internal::array_deleter_vt);
+	}
+	
+	void FullTensor::reset(      std::vector<size_t>&& _newDim, value_t* const _data) {
+		change_dimensions(std::move(_newDim));
+		factor = 1.0;
+		data.reset(_data, internal::array_deleter_vt);
+	}
 
+	
     void FullTensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
         REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
         REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
@@ -627,9 +652,7 @@ namespace xerus {
 			}
 		)
 		
-		_result.factor = 1.0;
-		_result.ensure_own_data_no_copy();
-		blasWrapper::matrix_matrix_product(_result.data.get(), leftDim, rightDim, _lhs.factor*_rhs.factor, _lhs.data.get(), _lhsTrans, midDim, _rhs.data.get(), _rhsTrans);
+		blasWrapper::matrix_matrix_product(_result.override_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, _lhs.unsanitized_data_pointer(), _lhsTrans, midDim, _rhs.unsanitized_data_pointer(), _rhsTrans);
 	}
 }
 

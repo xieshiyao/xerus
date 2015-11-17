@@ -102,13 +102,13 @@ namespace xerus {
         if(tmpA.tensorObjectReadOnly->is_sparse()) {
             LOG(fatal, "Sparse solve not yet implemented.");
         } else {
-            blasWrapper::solve_least_squares_destructive(static_cast<FullTensor*>(usedX->tensorObject)->data.get(), static_cast<FullTensor*>(tmpA.tensorObject)->data.get(), M, N, static_cast<FullTensor*>(tmpB.tensorObject)->data.get());
+            blasWrapper::solve_least_squares_destructive(static_cast<FullTensor*>(usedX->tensorObject)->unsanitized_data_pointer(), static_cast<FullTensor*>(tmpA.tensorObject)->unsanitized_data_pointer(), M, N, static_cast<FullTensor*>(tmpB.tensorObject)->unsanitized_data_pointer());
         }
         
         if(saveSlotX) { evaluate(_x, *usedX); }
         
         // Propagate the constant factor
-        _x.tensorObject->factor *= tmpB.tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
+        _x.tensorObject->factor = tmpB.tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
     }
 
     IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A) {
