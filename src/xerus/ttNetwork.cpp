@@ -917,7 +917,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	size_t TTNetwork<isOperator>::rank(const size_t _i) const {
-		REQUIRE(_i+2 < nodes.size(), "Requested illegal rank " << _i);
+		REQUIRE(degree() > 0 &&  _i < degree()-1, "Requested illegal rank " << _i);
 		return nodes[_i+1].neighbors.back().dimension;
 	}
 	

@@ -92,7 +92,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward) {
-		// Temporary map. For each stack entrie (i.e. measurement number + corePosition) gives a measurement number of a stack entrie (at same corePosition) that shall have an equal value (or its own number otherwise). 
+		// Temporary map. For each stack entry (i.e. measurement number + corePosition) gives a measurement number of a stack entry (at same corePosition) that shall have an equal value (or its own number otherwise). 
 		std::vector<size_t> calculationMap(degree*numMeasurments);
 		
 		// Count how many FullTensors we need for the stacks
@@ -109,7 +109,7 @@ namespace xerus {
 			const size_t realId = reorderedMeasurments[0];
 			calculationMap[realId + corePosition*numMeasurments] = realId;
 			++numUniqueStackEntries;
-		} 
+		}
 		
 		// Create the calculation map
 		for(size_t i = 1; i < numMeasurments; ++i) {
@@ -118,23 +118,23 @@ namespace xerus {
 			
 			size_t position = 0;
 			size_t corePosition = _forward ? position : degree-1-position;
-			for( ; position < degree && approx_equal(measurments.positions[realId][corePosition], measurments.positions[realPreviousId][corePosition]); ++position, corePosition = _forward ? position : degree-1-position) {
-				size_t otherId = realPreviousId;
-				while(true) {
-					if( otherId < realId ) {
-						calculationMap[realId + corePosition*numMeasurments] = calculationMap[otherId + corePosition*numMeasurments];
-						break;
-					} else if(otherId == calculationMap[otherId + corePosition*numMeasurments]) {
-						calculationMap[otherId + corePosition*numMeasurments] = realId;
-						calculationMap[realId + corePosition*numMeasurments] = realId;
-						break;
-					} else if( realId < calculationMap[otherId + corePosition*numMeasurments]) {
-						const size_t nextOther = calculationMap[otherId + corePosition*numMeasurments];
-						calculationMap[otherId + corePosition*numMeasurments] = realId;
-						otherId = nextOther;
-					} else {
-						otherId = calculationMap[otherId + corePosition*numMeasurments];
-					}
+			for( ; 
+				position < degree && approx_equal(measurments.positions[realId][corePosition], measurments.positions[realPreviousId][corePosition]);
+				++position, corePosition = _forward ? position : degree-1-position) 
+			{
+				if( realPreviousId < realId ) {
+					calculationMap[realId + corePosition*numMeasurments] = calculationMap[realPreviousId + corePosition*numMeasurments];
+				} else if(realPreviousId == calculationMap[realPreviousId + corePosition*numMeasurments]) {
+					calculationMap[realPreviousId + corePosition*numMeasurments] = realId;
+					calculationMap[realId + corePosition*numMeasurments] = realId;
+				} else if( realId < calculationMap[realPreviousId + corePosition*numMeasurments]) {
+					const size_t nextOther = calculationMap[realPreviousId + corePosition*numMeasurments];
+					REQUIRE(calculationMap[nextOther + corePosition*numMeasurments] == nextOther, "IE");
+					calculationMap[realPreviousId + corePosition*numMeasurments] = realId;
+					calculationMap[nextOther + corePosition*numMeasurments] = realId;
+					calculationMap[realId + corePosition*numMeasurments] = realId;
+				} else {
+					calculationMap[realId + corePosition*numMeasurments] = calculationMap[realPreviousId + corePosition*numMeasurments];
 				}
 			}
 			
@@ -154,16 +154,17 @@ namespace xerus {
 		
 		// Set links for the special entries -1 and degree
 		for(size_t i = 0; i < numMeasurments; ++i) {
-			_stackMem[i] = &_stackSaveSlot[0];
+			_stackMem[i + 0*numMeasurments] = &_stackSaveSlot[0];
 			_stackMem[i + (degree+1)*numMeasurments] = &_stackSaveSlot[0];
 		}
-		
+		// TODO use stack insteasd of statMem
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				if(calculationMap[i + corePosition*numMeasurments] == i) {
 					_updates[corePosition].emplace_back(i);
-					_stackSaveSlot[usedSlots].reset({x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO());
-					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots++];
+					_stackSaveSlot[usedSlots].reset({x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO()); // TODO brocken -1 and degree
+					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots];
+					usedSlots++;
 				} else {
 					_stackMem[i + (corePosition+1)*numMeasurments] = _stackMem[calculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
 				}
@@ -380,6 +381,7 @@ namespace xerus {
 		double resDec1 = 1.0, resDec2 = 1.0, resDec3 = 1.0;
 			
 		for(; maxIterations == 0 || iteration < maxIterations; ++iteration) {
+			
 			// Move core back to position zero
 			x.move_core(0, true);
 			
@@ -428,7 +430,6 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
-		LOG(bla, "start");
 		perfData.start();
 		
 		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack creation).

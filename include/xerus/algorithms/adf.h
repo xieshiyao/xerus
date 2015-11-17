@@ -39,7 +39,7 @@ namespace xerus {
 		template<class MeasurmentSet> 
 		class InternalSolver {
 		protected:
-			const Index r1, r2, i1; ///@brief:
+			const Index r1, r2, i1;
 			
 			TTTensor& x;
 			const size_t degree;
