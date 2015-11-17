@@ -50,7 +50,7 @@ namespace xerus {
     
     FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		FullTensor ret(_dimensions, DONT_SET_ZERO());
-		value_t* const data = ret.data.get();
+		value_t* const data = ret.data_pointer();
 		for(size_t i = 0; i < ret.size; ++i) {
 			data[i] = 1.0;
 		}

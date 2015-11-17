@@ -266,10 +266,11 @@ namespace xerus {
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
-			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
-			value_t* const deltaPtr = projectedGradientComponent.data.get()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
-			const value_t factor = residual[i]*forwardStack[i + (_corePosition-1)*numMeasurments]->factor*backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
+			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
+			value_t* const deltaPtr = projectedGradientComponent.data_pointer()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
+			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+			const value_t factor = residual[i];
 			for(size_t k = 0; k < localLeftRank; ++k) {
 				for(size_t j = 0; j < localRightRank; ++j) {
 					deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
@@ -289,11 +290,12 @@ namespace xerus {
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data.get();
-			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data.get();
+			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
+			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
 			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
-				value_t* const deltaPtr = projectedGradientComponent.data.get() + n*localLeftRank*localRightRank;
-				const value_t factor = measurments.positions[i][_corePosition][n]*residual[i]*forwardStack[i + (_corePosition-1)*numMeasurments]->factor*backwardStack[i + (_corePosition+1)*numMeasurments]->factor;
+				value_t* const deltaPtr = projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank;
+				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+				const value_t factor = measurments.positions[i][_corePosition][n]*residual[i];
 				for(size_t k = 0; k < localLeftRank; ++k) {
 					for(size_t j = 0; j < localRightRank; ++j) {
 						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
@@ -320,7 +322,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	std::vector<value_t> ADFVariant::InternalSolver<MeasurmentSet>::calculate_slicewise_norm_A_projGrad( const size_t _corePosition) {
-		std::vector<value_t> normAProjGrad(x.dimensions[_corePosition]);
+		std::vector<value_t> normAProjGrad(x.dimensions[_corePosition], 0.0);
 		
 		FullTensor currentValue({});
 		

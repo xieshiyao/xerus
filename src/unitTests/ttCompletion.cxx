@@ -26,9 +26,9 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 7;
+	const size_t D = 3;
 	const size_t N = 15;
-	const size_t R = 12;
+	const size_t R = 6;
 	const size_t CS = 1; 
 // 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());

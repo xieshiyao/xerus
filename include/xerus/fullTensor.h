@@ -378,6 +378,13 @@ namespace xerus {
         
         virtual value_t& operator[](const std::vector<size_t>& _positions) override;
         virtual value_t operator[](const std::vector<size_t>& _positions) const override;
+		
+		/** 
+		 * @brief Returns a pointer for direct access to the data array in row major order. 
+		 * @details Also takes care that this direct access is safe, i.e. that this tensor is the sole owner of the data and that no non trivial factor exists.
+		 * @return pointer to the data array.
+		 */
+		value_t* data_pointer();
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

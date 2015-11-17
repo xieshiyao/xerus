@@ -272,6 +272,12 @@ namespace xerus {
         }
         return factor*data.get()[finalIndex];
     }
+    
+    
+	value_t* FullTensor::data_pointer() {
+		ensure_own_data_and_apply_factor();
+		return data.get();
+	}
 
         
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

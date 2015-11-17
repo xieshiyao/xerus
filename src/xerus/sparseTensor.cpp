@@ -38,11 +38,9 @@ namespace xerus {
     SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
     
     SparseTensor::SparseTensor(const FullTensor& _full, const double _eps) : Tensor(_full), entries(new std::map<size_t, value_t>()) {
-        const value_t* const fullDataPtr = _full.data.get();
-        
         for(size_t i = 0; i < _full.size; ++i) {
-            if(std::abs(fullDataPtr[i]) >= _eps) {
-                entries->insert({i, fullDataPtr[i]});
+            if(std::abs(_full[i]) >= _eps) {
+                entries->insert({i, _full[i]});
 //                 entries->emplace_hint(entries->end(), i, fullDataPtr[i]); TODO use this instead
             }
         }
