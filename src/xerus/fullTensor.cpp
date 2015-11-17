@@ -280,6 +280,15 @@ namespace xerus {
 	}
 
         
+        
+        
+	value_t* FullTensor::unsanitized_data_pointer() {
+		return data.get();
+	}
+	
+	const value_t* FullTensor::unsanitized_data_pointer() const {
+		return data.get();
+	}
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     void FullTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {

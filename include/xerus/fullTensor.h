@@ -45,7 +45,7 @@ namespace xerus {
 		 * If the tensor is modified and not sole owner a deep copy is performed.
 		 */
         std::shared_ptr<value_t> data;
-        
+	public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// @brief Empty constructor, which creates an order zero tensor with zero as single entry.
         explicit FullTensor();
@@ -386,7 +386,22 @@ namespace xerus {
 		 */
 		value_t* data_pointer();
         
-        
+		/** 
+		 * @brief Gives access to the internal data pointer, without any checks.
+		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a gloal
+		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return pointer to the internal data array.
+		 */
+        value_t* unsanitized_data_pointer();
+		
+		/** 
+		 * @brief Gives access to the internal data pointer, without any checks.
+		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a gloal
+		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return pointer to the internal data array.
+		 */
+        const value_t* unsanitized_data_pointer() const;
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;
