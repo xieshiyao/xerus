@@ -29,6 +29,7 @@
 #include "basic.h"
 #include "tensorNetwork.h"
 #include "misc/timeMeasure.h"
+#include "misc/histogram.h"
 
 namespace xerus {
 
@@ -45,21 +46,6 @@ namespace xerus {
 			
 			DataPoint(const size_t _itrCount, const size_t _time, const value_t _res, const TensorNetwork::RankTuple _ranks, const size_t _flags) 
 				: iterationCount(_itrCount), elapsedTime(_time), residual(_res), ranks(_ranks), flags(_flags) {}
-		};
-		
-		struct Histogram {
-			value_t base;
-			std::map<int, size_t> buckets;
-			size_t totalTime;
-			
-			///@brief Creates a histogram of convergence rates based on the data given. Assumes that the limit of the residuals is equal to 0!
-			explicit Histogram(const std::vector<DataPoint> &_data, const value_t _base);
-			
-			explicit Histogram(const value_t _base);
-			
-			Histogram operator+=(const Histogram &_other);
-			
-			void dump_to_file(const std::string &_fileName) const;
 		};
 		
 		const bool active;
@@ -140,7 +126,7 @@ namespace xerus {
 		
 		void dump_to_file(const std::string &_fileName) const;
 		
-		Histogram get_histogram(const value_t _base) const;
+		misc::LogHistogram get_histogram(const value_t _base, bool _assumeConvergence = false) const;
 	};
 
 	extern PerformanceData NoPerfData;

@@ -21,6 +21,7 @@ endif
 
 # Set LTO usage
 ifdef USE_LTO
+	DEBUG += -D USE_LTO
 	ifndef USE_CLANG
 		OPTIMIZE += -flto=$(COMPILE_THREADS)	    # Use LTO at compiling using X threads
 		OPTIMIZE += -fno-fat-lto-objects	        # No none LTO code in object files
@@ -31,8 +32,10 @@ endif
 
 # Set optimization options
 ifdef LOW_OPTIMIZATION
+	DEBUG += -D LOW_OPTIMIZATION
 	OPTIMIZE += -O0 
 else ifdef HIGH_OPTIMIZATION
+	DEBUG += -D HIGH_OPTIMIZATION
 	OPTIMIZE += -O3				# Even more optimization, using non iso conform C++ operations
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	
@@ -59,6 +62,7 @@ else ifdef HIGH_OPTIMIZATION
 		OPTIMIZE += -ftree-vectorize			# Perform vectorization on trees.
 	endif
 else ifdef DANGEROUS_OPTIMIZATION
+	DEBUG += -D DANGEROUS_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations
 	
@@ -115,6 +119,7 @@ else ifdef DANGEROUS_OPTIMIZATION
 		OPTIMIZE += -funsafe-loop-optimizations	# This option tells the loop optimizer to assume that loop indices do not overflow, and that loops with nontrivial exit condition are not infinite. 	
 	endif
 else ifdef RIDICULOUS_OPTIMIZATION
+	DEBUG += -D RIDICULOUS_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations
 	

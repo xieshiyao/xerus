@@ -163,8 +163,8 @@ clean:
 # 	.obj/PreCompileSelector
 
 # 	
-# benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) .obj/benchmark.o $(LIB_NAME_STATIC)
-# 	$(CXX) -D CHECK_ $(FLAGS) .obj/benchmark.o $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o Benchmark
+benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)
+	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o Benchmark
 # 
 # benchmarkTest: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark_tests.cxx $(LIB_NAME_STATIC)
 # 	$(CXX) -D CHECK_ $(FLAGS) benchmark_tests.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o BenchmarkTest
@@ -177,6 +177,11 @@ build/.libObjects/%.o: %.cpp $(MINIMAL_DEPS)
 
 # Build rule for test lib objects
 build/.testObjects/%.o: %.cpp $(MINIMAL_DEPS)
+	mkdir -p $(dir $@)
+	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
+
+# Build rule for benchmark objects
+build/%.o: %.cpp $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
 

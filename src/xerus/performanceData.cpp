@@ -29,42 +29,6 @@
 
 namespace xerus {
 	
-	PerformanceData::Histogram::Histogram(const std::vector< xerus::PerformanceData::DataPoint >& _data, const xerus::value_t _base) : base(_base), totalTime(0) {
-		for (size_t i = 1; i<_data.size(); ++i) {
-			if (_data[i].residual >= _data[i-1].residual) {
-				continue;
-			}
-			
-			// assume x_2 = x_1 * 2^(-alpha * delta-t)
-			value_t relativeChange = _data[i].residual/_data[i-1].residual;
-			value_t exponent = log(relativeChange) / log(2);
-			size_t delta_t = _data[i].elapsedTime - _data[i-1].elapsedTime;
-			value_t rate = - exponent / value_t(delta_t);
-			int logRate = int(log(rate)/log(base));
-			buckets[logRate] += delta_t;
-			totalTime += delta_t;
-		}
-	}
-	
-	PerformanceData::Histogram::Histogram(const xerus::value_t _base) : base(_base), totalTime(0) {}
-	
-	PerformanceData::Histogram PerformanceData::Histogram::operator+=(const Histogram &_other) {
-		REQUIRE(misc::approx_equal(_other.base, base), "only histograms of identical base can be added");
-		for (const auto &h : _other.buckets) {
-			buckets[h.first] += h.second;
-		}
-		totalTime += _other.totalTime;
-		return *this;
-	}
-	
-	void PerformanceData::Histogram::dump_to_file(const std::string &_fileName) const {
-		std::ofstream out(_fileName);
-		for (auto &h : buckets) {
-			out << pow(base, h.first) << " " << double(h.second)/double(totalTime) << '\n';
-		}
-		out.close();
-	}
-	
 	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual, const std::vector<size_t> _ranks, const size_t _flags) {
 		if (active) {
 			if (startTime == ~0ul) {
@@ -95,18 +59,44 @@ namespace xerus {
 		header += "# ";
 		header += additionalInformation;
 		misc::replace(header, "\n", "\n# ");
-		header += "\n# \n#itr \ttime[us] \tresidual\n";
+		header += "\n# \n#itr \ttime[us] \tresidual \tflags \tranks...\n";
 		std::ofstream out(_fileName);
 		out << header;
 		for (const DataPoint &d : data) {
-			out << d.iterationCount << " " << d.elapsedTime << " " << d.residual << '\n';
+			out << d.iterationCount << '\t' << d.elapsedTime << '\t' << d.residual << '\t' << d.flags;
+			for (size_t r : d.ranks) {
+				out << '\t' << r;
+			}
+			out << '\n';
 		}
 		out.close();
 	}
 	
-	PerformanceData::Histogram PerformanceData::get_histogram(const xerus::value_t _base) const {
-		return Histogram(data, _base);
+	misc::LogHistogram PerformanceData::get_histogram(const xerus::value_t _base, bool _assumeConvergence) const {
+		misc::LogHistogram hist(_base);
+		std::vector<PerformanceData::DataPoint> convergenceData(data);
+		if (_assumeConvergence) {
+			value_t finalResidual = data.back().residual;
+			convergenceData.pop_back();
+			for (auto &p : convergenceData) {
+				p.residual -= finalResidual;
+			}
+		}
+		
+		for (size_t i = 1; i<convergenceData.size(); ++i) {
+			if (convergenceData[i].residual >= convergenceData[i-1].residual) {
+				continue;
+			}
+			
+			// assume x_2 = x_1 * 2^(-alpha * delta-t)
+			value_t relativeChange = convergenceData[i].residual/convergenceData[i-1].residual;
+			value_t exponent = log(relativeChange) / log(2);
+			size_t delta_t = convergenceData[i].elapsedTime - convergenceData[i-1].elapsedTime;
+			value_t rate = - exponent / value_t(delta_t);
+			hist.add(rate, delta_t);
+		}
+		return hist;
 	}
 
-	PerformanceData NoPerfData(false);
+	PerformanceData NoPerfData(false, false);
 }
