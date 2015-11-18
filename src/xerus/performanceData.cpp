@@ -84,7 +84,8 @@ namespace xerus {
 		}
 		
 		for (size_t i = 1; i<convergenceData.size(); ++i) {
-			if (convergenceData[i].residual >= convergenceData[i-1].residual) {
+			if (convergenceData[i].residual <= 0 || convergenceData[i-1].residual <= 0
+				|| convergenceData[i].residual >= convergenceData[i-1].residual) {
 				continue;
 			}
 			
@@ -92,7 +93,12 @@ namespace xerus {
 			value_t relativeChange = convergenceData[i].residual/convergenceData[i-1].residual;
 			value_t exponent = log(relativeChange) / log(2);
 			size_t delta_t = convergenceData[i].elapsedTime - convergenceData[i-1].elapsedTime;
+			if (delta_t == 0) {
+				LOG(warning, "approximated 0us by 1us");
+				delta_t = 1;
+			}
 			value_t rate = - exponent / value_t(delta_t);
+			REQUIRE(std::isfinite(rate), "infinite rate? " << relativeChange << " " << exponent << " " << delta_t << " " << rate);
 			hist.add(rate, delta_t);
 		}
 		return hist;

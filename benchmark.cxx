@@ -39,7 +39,7 @@ using namespace xerus;
 
 const value_t HISTOGRAM_BASE_CONVERGENCE_RATES = 1.2;
 const value_t HISTOGRAM_BASE_END_RESIDUAL = 1.7;
-const size_t NUM_SOLVES_PER_RUN = 5;
+const size_t NUM_SOLVES_PER_RUN = 10;
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------- benchmark problems ------------------------------------------------------------
@@ -236,7 +236,6 @@ int main() {
 					residualHist.add(perfData.data.back().residual);
 					Index i1,i2;
 					value_t trueRes = frob_norm(A[i](i1/2,i2/2)*xCpy(i2/1)-B[i](i1/1));
-					LOG(kaljsd, perfData.data.size() << " steps, final res: " << perfData.data.back().residual << "\t" << trueRes);
 				}
 				
 				// merge histograms with data on disk

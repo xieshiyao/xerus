@@ -39,8 +39,9 @@ namespace xerus { namespace misc {
 	}
 	
 	void LogHistogram::add(double _value, size_t _count) {
-		int logRate = int(log(_value)/log(base));
-		buckets[logRate] += _count;
+		double logRate = log(_value)/log(base);
+		REQUIRE(std::isfinite(_value), "tried to add illegal value " << _value << " into a histogram");
+		buckets[int(logRate)] += _count;
 		totalCount += _count;
 	}
 	
