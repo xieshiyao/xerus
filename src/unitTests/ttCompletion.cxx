@@ -26,7 +26,7 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 3;
+	const size_t D = 4;
 	const size_t N = 15;
 	const size_t R = 6;
 	const size_t CS = 1; 

@@ -291,13 +291,15 @@ namespace xerus {
 			std::unique_ptr<double[]> Qt, Ct;
 			blasWrapper::qc(Qt, Ct, static_cast<FullTensor*>(reorderedBaseTensor.get())->unsanitized_data_pointer(), lhsSize, rhsSize, rank);
 			
-			// TODO there should be a reset function to use instead of directly accesing those values. -- There is, called reset
-			static_cast<FullTensor*>(Q.tensorObject)->unsanitized_shared_data().reset(Qt.release(), &internal::array_deleter_vt);
-			Q.tensorObject->dimensions.back() = rank; // TODO BROCKEN! TODO BROCKEN! (size nicht neu berechnet)
-			Q.tensorObject->size = misc::product(Q.tensorObject->dimensions);
-			static_cast<FullTensor*>(C.tensorObject)->unsanitized_shared_data().reset(Ct.release(), &internal::array_deleter_vt);
-			C.tensorObject->dimensions.front() = rank; // TODO BROCKEN! TODO BROCKEN! (size nicht neu berechnet)
-			C.tensorObject->size = misc::product(C.tensorObject->dimensions);
+			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
+			
+			std::vector<size_t> newDim = Q.tensorObject->dimensions;
+			newDim.back() = rank;
+			static_cast<FullTensor*>(Q.tensorObject)->reset(newDim, Qt.release());
+			
+			newDim = C.tensorObject->dimensions;
+			newDim.front() = rank;
+			static_cast<FullTensor*>(C.tensorObject)->reset(newDim, Ct.release());
 		}
 		
 		// C has to carry the constant factor

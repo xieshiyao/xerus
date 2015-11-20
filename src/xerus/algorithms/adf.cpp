@@ -175,6 +175,21 @@ namespace xerus {
 	}
 	
 	template<class MeasurmentSet>
+	void ADFVariant::InternalSolver<MeasurmentSet>::resize_stack_tensors() {
+		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
+			for(const size_t i : forwardUpdates[corePosition]) {
+				forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO()); // TODO NOTE this seems to be linked to the error (i.e. remove DONT_SET_ZERO)
+			}
+		}
+		
+		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
+			for(const size_t i : backwardUpdates[corePosition]) {
+				backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
+			}
+		}
+	}
+	
+	template<class MeasurmentSet>
 	std::vector<FullTensor> ADFVariant::InternalSolver<MeasurmentSet>::get_fixed_components(const Tensor& _component) {
 		std::vector<FullTensor> fixedComponents(_component.dimensions[1]);
 		
@@ -189,7 +204,7 @@ namespace xerus {
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
 		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);
 		
-		// Reset the FullTensors
+		// Update the stack
 		for(const size_t i : backwardUpdates[_corePosition]) {
 			contract(*backwardStack[i + _corePosition*numMeasurments], fixedComponents[measurments.positions[i][_corePosition]], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
 		}
@@ -202,7 +217,7 @@ namespace xerus {
 
 		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 		
-		// Reset the FullTensors
+		// Update the stack
 		for(const size_t i : backwardUpdates[_corePosition]) {
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
 			contract(*backwardStack[i + _corePosition*numMeasurments], mixedComponent, false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
@@ -231,21 +246,6 @@ namespace xerus {
 		for(const size_t i : backwardUpdates[_corePosition]) {
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
 			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
-		}
-	}
-	
-	template<class MeasurmentSet>
-	void ADFVariant::InternalSolver<MeasurmentSet>::resize_stack_tensors() {
-		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
-			for(const size_t i : forwardUpdates[corePosition]) {
-				forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO());
-			}
-		}
-		
-		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
-			for(const size_t i : backwardUpdates[corePosition]) {
-				backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
-			}
 		}
 	}
 	
