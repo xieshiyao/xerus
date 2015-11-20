@@ -76,6 +76,8 @@ namespace xerus {
 			
 			void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
 			
+			void resize_stack_tensors();
+			
 			std::vector<FullTensor> get_fixed_components(const Tensor& _component);
 			
 			void update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent);

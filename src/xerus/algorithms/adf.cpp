@@ -162,7 +162,6 @@ namespace xerus {
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				if(calculationMap[i + corePosition*numMeasurments] == i) {
 					_updates[corePosition].emplace_back(i);
-					_stackSaveSlot[usedSlots].reset({x.rank(corePosition - (_forward ? 0 : 1))}, DONT_SET_ZERO()); // TODO brocken -1 and degree
 					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots];
 					usedSlots++;
 				} else {
@@ -235,6 +234,20 @@ namespace xerus {
 		}
 	}
 	
+	template<class MeasurmentSet>
+	void ADFVariant::InternalSolver<MeasurmentSet>::resize_stack_tensors() {
+		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
+			for(const size_t i : forwardUpdates[corePosition]) {
+				forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO());
+			}
+		}
+		
+		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
+			for(const size_t i : backwardUpdates[corePosition]) {
+				backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
+			}
+		}
+	}
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::calculate_residual( const size_t _corePosition ) {
@@ -432,11 +445,13 @@ namespace xerus {
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
 		
-		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack creation).
-		x.cannonicalize_left();
-		
 		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
 		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
+		
+		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack resize).
+		x.cannonicalize_left();
+		
+		resize_stack_tensors();
 		
 		// One inital run
 		solve_with_current_ranks();
@@ -447,15 +462,7 @@ namespace xerus {
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/misc::fp_product(x.dimensions))*TTTensor::ones(x.dimensions));
 			
-			// Resize stacks
-			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
-				for(const size_t i : forwardUpdates[corePosition]) {
-					forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO());
-				}
-				for(const size_t i : backwardUpdates[corePosition]) {
-					backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
-				}
-			}
+			resize_stack_tensors();
 			
 			solve_with_current_ranks();
 			
