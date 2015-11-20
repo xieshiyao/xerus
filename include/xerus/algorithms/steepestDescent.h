@@ -52,13 +52,13 @@ namespace xerus {
 		
 		/// fully defining constructor. alternatively SteepestDescentVariant can be created by copying a predefined variant and modifying it
 		SteepestDescentVariant(size_t _numSteps, value_t _convergenceEpsilon, bool _symPosOp, std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon),
+				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon), printProgress(false),
 				  assumeSymmetricPositiveDefiniteOperator(_symPosOp), preconditioner(nullptr), retraction(_retraction)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
 		SteepestDescentVariant(std::function<void(TTTensor &, const TTTensor &)> _retraction)
-				: numSteps(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), preconditioner(nullptr), retraction(_retraction)
+				: numSteps(0), convergenceEpsilon(0.0), printProgress(false), assumeSymmetricPositiveDefiniteOperator(false), preconditioner(nullptr), retraction(_retraction)
 		{ }
 		
 		/**
@@ -123,8 +123,8 @@ namespace xerus {
 			return solve(nullptr, _x, _b, _numSteps, convergenceEpsilon, _perfData);
 		}
 		
-		double operator()(TTTensor &_x, const TTTensor &_b) const {
-			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, NoPerfData);
+		double operator()(TTTensor &_x, const TTTensor &_b, PerformanceData &_perfData = NoPerfData) const {
+			return solve(nullptr, _x, _b, numSteps, convergenceEpsilon, _perfData);
 		}
 	};
 	

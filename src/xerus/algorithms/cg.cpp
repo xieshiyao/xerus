@@ -63,7 +63,7 @@ namespace xerus {
 			} else {
 				residual = _b - _x;
 			}
-			currResidual = frob_norm(residual)/normB;
+			currResidual = frob_norm(residual);//normB;
 		};
 		
 		auto updatePerfdata = [&]() {

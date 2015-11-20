@@ -60,10 +60,12 @@ namespace xerus {
 		//TODO add local CG solver
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ALSVariant(uint _sites, size_t _numHalfSweeps, value_t _minimumLocalResidual, std::function<void(const TensorNetwork &, Tensor &, const Tensor &)> _localSolver) 
+        ALSVariant(uint _sites, size_t _numHalfSweeps, value_t _minimumLocalResidual, std::function<void(const TensorNetwork &, Tensor &, const Tensor &)> _localSolver,
+			bool _useResidual=false
+		) 
                 : sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
                 minimumLocalResidual(_minimumLocalResidual), printProgress(false), 
-                useResidualForEndCriterion(false), preserveCorePosition(true), localSolver(_localSolver)
+                useResidualForEndCriterion(_useResidual), preserveCorePosition(true), localSolver(_localSolver)
 		{
             REQUIRE(_sites>0, "");
             REQUIRE(_minimumLocalResidual>=0, "");
@@ -131,8 +133,8 @@ namespace xerus {
 			return solve(nullptr, _x, _b, _numHalfSweeps, convergenceEpsilon, _perfData);
 		}
 		
-		double operator()(TTTensor &_x, const TTTensor &_b) const {
-			return solve(nullptr, _x, _b, numHalfSweeps, convergenceEpsilon, NoPerfData);
+		double operator()(TTTensor &_x, const TTTensor &_b, PerformanceData &_perfData = NoPerfData) const {
+			return solve(nullptr, _x, _b, numHalfSweeps, convergenceEpsilon, _perfData);
 		}
     };
 	

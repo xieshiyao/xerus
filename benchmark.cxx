@@ -21,9 +21,10 @@
 #include <string>
 #include <iostream>
 #include <stdio.h>
-
 #include <vector>
 #include <set>
+
+#include <boost/filesystem.hpp>
 
 #include "include/xerus.h"
 
@@ -33,13 +34,26 @@ std::normal_distribution<double> normalDist(0,1);
 
 using namespace xerus;
 
-struct leastSquaresProblem {
+// ---------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------- general settings --------------------------------------------------------------
+
+const value_t HISTOGRAM_BASE_CONVERGENCE_RATES = 1.2;
+const value_t HISTOGRAM_BASE_END_RESIDUAL = 1.7;
+const size_t NUM_SOLVES_PER_RUN = 10;
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------- benchmark problems ------------------------------------------------------------
+
+using LeastSquaresSolver = std::pair<std::string, std::function<double(const TTOperator&, TTTensor&, const TTTensor&, PerformanceData&)>>;
+
+struct LeastSquaresProblem {
 	std::string name;
 	std::vector<size_t> dimensions;
 	std::vector<size_t> x_ranks;
 	std::vector<size_t> b_ranks;
-	leastSquaresProblem(const std::string &_name)
-		: name(_name) {};
+	std::vector<LeastSquaresSolver> solver;
+	LeastSquaresProblem(const std::string &_name, const std::vector<LeastSquaresSolver> &_solver)
+		: name(_name), solver(_solver) {};
 	
 	virtual TTOperator get_a() const {
 		std::vector<size_t> dim(dimensions);
@@ -55,9 +69,9 @@ struct leastSquaresProblem {
 };
 
 namespace ls {
-	struct approximation : public leastSquaresProblem {
-		approximation(size_t _n, size_t _d, size_t _rankB, size_t _rankX)
-			: leastSquaresProblem("approximation")
+	struct approximation : public LeastSquaresProblem {
+		approximation(size_t _n, size_t _d, size_t _rankB, size_t _rankX, const std::vector<LeastSquaresSolver> &_solver)
+			: LeastSquaresProblem("approximation", _solver)
 		{
 			dimensions = std::vector<size_t>(_d, _n);
 			x_ranks = std::vector<size_t>(_d-1, _rankX);
@@ -65,11 +79,11 @@ namespace ls {
 		};
 	};
 	
-	struct random : public leastSquaresProblem {
+	struct random : public LeastSquaresProblem {
 		std::vector<size_t> a_ranks;
 		
-		random(size_t _n, size_t _d, size_t _rankA, size_t _rankB, size_t _rankX)
-			: leastSquaresProblem("random")
+		random(size_t _n, size_t _d, size_t _rankA, size_t _rankB, size_t _rankX, const std::vector<LeastSquaresSolver> &_solver)
+			: LeastSquaresProblem("random", _solver)
 		{
 			dimensions = std::vector<size_t>(_d, _n);
 			a_ranks = std::vector<size_t>(_d-1, _rankA);
@@ -84,31 +98,96 @@ namespace ls {
 		}
 	};
 	
-	
+	struct symmetric_posdef_random : public LeastSquaresProblem {
+		std::vector<size_t> a_ranks;
+		
+		symmetric_posdef_random(size_t _n, size_t _d, size_t _rankA, size_t _rankB, size_t _rankX, const std::vector<LeastSquaresSolver> &_solver)
+			: LeastSquaresProblem("symmetric_posdef_random", _solver)
+		{
+			dimensions = std::vector<size_t>(_d, _n);
+			a_ranks = std::vector<size_t>(_d-1, _rankA);
+			x_ranks = std::vector<size_t>(_d-1, _rankX);
+			b_ranks = std::vector<size_t>(_d-1, _rankB);
+		};
+		
+		TTOperator get_a() const override {
+			std::vector<size_t> dim(dimensions);
+			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
+			TTOperator A = TTOperator::random(dim, a_ranks, rnd, normalDist);
+			Index i,j,k;
+			A(i,j) = A(i,k) * A(j,k);
+			return A;
+		}
+	};
 }
 
 
-
-std::vector<leastSquaresProblem> leastSquaresProblems{
-	ls::approximation(2, 10, 4, 2),
-	ls::random(2, 10, 3, 3, 3)
+std::vector<LeastSquaresSolver> leastSquaresAlgorithms{
+	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true)}, 
+	{"CG", GeometricCGVariant(0, 0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport)}, 
+	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, false, SubmanifoldRetractionII)},
+	{"SteepestDescent_als", SteepestDescentVariant(0, 1e-8, false, ALSRetractionII)},
+	{"SteepestDescent_hosvd", SteepestDescentVariant(0, 1e-8, false, HOSVDRetraction(3))}, //TODO
 };
 
-int main() {
+std::vector<LeastSquaresSolver> leastSquaresAlgorithmsSPD{
+	{"ALS", ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true)}, 
+	{"CG", GeometricCGVariant(0, 0, 1e-8, true, SubmanifoldRetractionI, ProjectiveVectorTransport)}, 
+	{"SteepestDescent_submanifold", SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII)},
+	{"SteepestDescent_als", SteepestDescentVariant(0, 1e-8, true, ALSRetractionII)},
+	{"SteepestDescent_hosvd", SteepestDescentVariant(0, 1e-8, true, HOSVDRetraction(3))}, //TODO
+};
+
+struct Approximation_Variant {
+	std::function<double(TTTensor&, const TTTensor&, PerformanceData&)> solver;
+	Approximation_Variant(std::function<double(TTTensor&, const TTTensor&, PerformanceData&)> _solver)
+		: solver(_solver) {}
+	double operator()(const TTOperator&, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) const {
+		return solver(_x, _b, _pd);
+	}
+};
+
+std::vector<LeastSquaresProblem> leastSquaresProblems{
+	ls::approximation(2, 10, 4, 2, std::vector<LeastSquaresSolver>{
+		{"ALS", Approximation_Variant(ALSVariant(1, 0, 1e-8, ALSVariant::lapack_solver, true))}, 
+		{"CG", Approximation_Variant(GeometricCGVariant(0, 0, 1e-8, true, SubmanifoldRetractionI, ProjectiveVectorTransport))}, 
+		{"SteepestDescent_submanifold", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, SubmanifoldRetractionII))},
+		{"SteepestDescent_als", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, ALSRetractionII))},
+		{"SteepestDescent_hosvd", Approximation_Variant(SteepestDescentVariant(0, 1e-8, true, HOSVDRetraction(2)))}, //TODO
+	}),
+	ls::random(2, 10, 3, 3, 3, leastSquaresAlgorithms),
+	ls::symmetric_posdef_random(2, 10, 2, 3, 3, leastSquaresAlgorithmsSPD)
+};
+
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------- benchmark routines ------------------------------------------------------------
+
+
+std::string generate_profile_name() {
 	std::string profileName;
 #ifdef TEST_COVERAGE_
 	static_assert(false, "test coverage checking nonsensical with benchmark run");
 #endif
-#ifdef LOW_OPTIMIZATION
-	profileName += "lowOpt";
-#elif defined(HIGH_OPTIMIZATION)
-	profileName += "highOpt";
-#elif defined(DANGEROUS_OPTIMIZATION)
-	profileName += "dangerousOpt";
-#elif defined(RIDICULOUS_OPTIMIZATION)
-	profileName += "ridiculousOpt";
+	
+#ifdef XERUS_VERSION
+	profileName += STRINGIFY(XERUS_VERSION);
 #else
-	profileName += "noOpt";
+	profileName += "unknownVersion";
+#endif
+	
+#ifdef LOW_OPTIMIZATION
+	profileName += "_lowOpt";
+#elif defined(HIGH_OPTIMIZATION)
+	profileName += "_highOpt";
+#elif defined(DANGEROUS_OPTIMIZATION)
+	profileName += "_dangerousOpt";
+#elif defined(RIDICULOUS_OPTIMIZATION)
+	profileName += "_ridiculousOpt";
+#else
+	profileName += "_noOpt";
 #endif
 	
 #ifdef USE_LTO
@@ -123,10 +202,62 @@ int main() {
 #ifdef PERFORMANCE_ANALYSIS
 	profileName += "_perfAnalysis";
 #endif
-	
+	return profileName;
+}
+
+
+int main() {
+	std::string profileName(generate_profile_name());
 	LOG(benchmark, "running profile " << profileName);
-	
-	
-	
-	return 0;
+	while (true) {
+		for (const LeastSquaresProblem &prob : leastSquaresProblems) {
+			std::vector<TTOperator> A;
+			std::vector<TTTensor> X;
+			std::vector<TTTensor> B;
+			for (size_t i=0; i< NUM_SOLVES_PER_RUN; ++i) {
+				A.emplace_back(prob.get_a());
+				X.emplace_back(prob.get_x());
+				B.emplace_back(prob.get_b());
+			}
+			for (const LeastSquaresSolver &solver : prob.solver) {
+				LOG(benchmark, "solving " << prob.name << " with " << solver.first);
+				PerformanceData perfData;
+				misc::LogHistogram speedHist(HISTOGRAM_BASE_CONVERGENCE_RATES);
+				misc::LogHistogram residualHist(HISTOGRAM_BASE_END_RESIDUAL);
+				
+				for (size_t i=0; i< NUM_SOLVES_PER_RUN; ++i) {
+					perfData.reset();
+					// solving the system
+					TTTensor xCpy(X[i]);
+					solver.second(A[i], xCpy, B[i], perfData);
+					
+					// generate histograms of this run
+					speedHist += perfData.get_histogram(HISTOGRAM_BASE_CONVERGENCE_RATES, true);
+					residualHist.add(perfData.data.back().residual);
+					Index i1,i2;
+					value_t trueRes = frob_norm(A[i](i1/2,i2/2)*xCpy(i2/1)-B[i](i1/1));
+				}
+				
+				// merge histograms with data on disk
+				std::string fileName = std::string("benchmark/")+profileName+"/"+prob.name+"/"+solver.first;
+				if (boost::filesystem::exists(fileName+"_speed.tsv")) {
+					misc::LogHistogram speedHistFile = misc::LogHistogram::read_from_file(fileName+"_speed.tsv");
+					speedHist += speedHistFile;
+				} else {
+					// will fail silently if the directories already exist
+					boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
+				}
+				speedHist.dump_to_file(fileName+"_speed.tsv");
+				
+				if (boost::filesystem::exists(fileName+"_residual.tsv")) {
+					misc::LogHistogram residualHistFile = misc::LogHistogram::read_from_file(fileName+"_residual.tsv");
+					residualHist += residualHistFile;
+				} else {
+					// will fail silently if the directories already exist
+					boost::filesystem::create_directories(std::string("benchmark/")+profileName+"/"+prob.name);
+				}
+				residualHist.dump_to_file(fileName+"_residual.tsv");
+			}
+		}
+	}
 }
