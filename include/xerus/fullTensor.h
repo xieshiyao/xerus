@@ -37,7 +37,6 @@ namespace xerus {
     
     /// @brief The xerus class used to represent all dense tensor objects.
     class FullTensor final : public Tensor {
-// 	public:
     protected:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
@@ -296,6 +295,7 @@ namespace xerus {
         
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
         
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         virtual void ensure_own_data() override;
         
@@ -369,7 +369,6 @@ namespace xerus {
 		 */
         FullTensor  operator-( const Tensor& _other) const;
         
-		
 		/** 
 		 * @brief Calculates the entrywise multiplication of this FullTensor with a constant @a _factor.
 		 * @details Internally this only results in a change in the global factor.
@@ -378,7 +377,6 @@ namespace xerus {
 		 */
         FullTensor  operator*( const value_t _factor) const;
         
-		
 		/** 
 		 * @brief Calculates the entrywise divison of this FullTensor by a constant @a _divisor.
 		 * @details Internally this only results in a change in the global factor.
@@ -387,6 +385,7 @@ namespace xerus {
 		 */
         FullTensor  operator/( const value_t _divisor) const;
         
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         virtual value_t& operator[](const size_t _position) override;
         virtual value_t operator[](const size_t _position) const override;
@@ -515,6 +514,7 @@ namespace xerus {
 		 */
 		static FullTensor entrywise_product(const FullTensor &_A, const FullTensor &_B);
         
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
         virtual bool is_sparse() const override;
@@ -524,6 +524,7 @@ namespace xerus {
 		virtual bool all_entries_valid() const override;
         
         virtual value_t frob_norm() const override;
+		
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         

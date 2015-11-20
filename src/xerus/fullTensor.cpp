@@ -124,8 +124,13 @@ namespace xerus {
 
     void FullTensor::apply_factor() {
         if(has_factor()) {
-            ensure_own_data();
-            misc::array_scale(data.get(), factor, size);
+			if(data.unique()) {
+				misc::array_scale(data.get(), factor, size);
+			} else {
+				value_t* const oldDataPtr = data.get();
+				data.reset(new value_t[size], internal::array_deleter_vt);
+				misc::array_scaled_copy(data.get(), factor, oldDataPtr, size);
+			}
             factor = 1.0;
         }
     }
@@ -140,9 +145,7 @@ namespace xerus {
         
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator=(const FullTensor& _other) {
-        dimensions = _other.dimensions;
-        size = _other.size;
-        factor = _other.factor;
+		assign(_other); // Delegate to Tensor
         data = _other.data;
         return *this;
     }
@@ -158,10 +161,7 @@ namespace xerus {
     FullTensor& FullTensor::operator=(const Tensor& _other) {
 		if(_other.is_sparse()) {
 			reset(_other.dimensions);
-			value_t* const dataPtr = unsanitized_data_pointer();
-			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
-				dataPtr[entry.first] = entry.second;
-			}
+			operator+=(_other);
 		} else {
 			operator=(static_cast<const FullTensor&>(_other));
 		}
@@ -171,10 +171,7 @@ namespace xerus {
     FullTensor& FullTensor::operator=(Tensor&& _other) {
         if(_other.is_sparse()) {
 			reset(_other.dimensions);
-			value_t* const dataPtr = unsanitized_data_pointer();
-			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
-				dataPtr[entry.first] = entry.second;
-			}
+			operator+=(_other);
 		} else {
 			operator=(std::move(static_cast<FullTensor&&>(_other)));
 		}
@@ -323,6 +320,9 @@ namespace xerus {
 		return data;
 	}
 	
+	
+	// NOTE that we cannot return a const reference because std::shared_ptr<const value_t> is a different type than std::shared_ptr<value_t>,
+	// which would cause an implicte cast and the return of a const reference to a temporary that is directly destroyed...
 	std::shared_ptr<const value_t> FullTensor::unsanitized_shared_data() const {
 		return data;
 	}
@@ -330,7 +330,7 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     void FullTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
-        size_t oldDataSize = size;
+        const size_t oldDataSize = size;
         change_dimensions(_newDim);
         factor = 1.0;
         if(oldDataSize != size) {
@@ -339,7 +339,7 @@ namespace xerus {
     }
     
     void FullTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
-        size_t oldDataSize = size;
+        const size_t oldDataSize = size;
         change_dimensions(std::move(_newDim));
         factor = 1.0;
         if(oldDataSize != size) {
@@ -348,7 +348,7 @@ namespace xerus {
     }
     
     void FullTensor::reset(const std::vector<size_t>&  _newDim) {
-        size_t oldDataSize = size;
+        const size_t oldDataSize = size;
         change_dimensions(_newDim);
         factor = 1.0;
         if(oldDataSize != size) {
@@ -360,7 +360,7 @@ namespace xerus {
     }
     
     void FullTensor::reset(      std::vector<size_t>&& _newDim) {
-        size_t oldDataSize = size;
+        const size_t oldDataSize = size;
         change_dimensions(std::move(_newDim));
         factor = 1.0;
         if(oldDataSize != size) {
