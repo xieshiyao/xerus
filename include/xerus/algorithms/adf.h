@@ -74,7 +74,7 @@ namespace xerus {
 			
 			static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
 			
-			void construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
+			void construct_stacks(std::unique_ptr< xerus::FullTensor[] >& _stackSaveSlot, std::vector< std::vector< size_t > >& _updates, const std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
 			
 			void resize_stack_tensors();
 			
@@ -95,7 +95,7 @@ namespace xerus {
 			void calculate_projected_gradient( const size_t _corePosition);
 			
 			/**
-			* @brief: Calculates ||P_n (A(A^T(b-Ax))))|| = ||P_n (A(A^T(residual))))|| =  ||P_n (A(gradient))|| for each n, 
+			* @brief: Calculates ||P_n (A(E(A^T(b-Ax)))))|| = ||P_n (A(E(A^T(residual)))))|| =  ||P_n (A(E(gradient)))|| for each n, 
 			* where P_n sets all entries equals zero except where the index at _corePosition is equals n. In case of RankOneMeasurments,
 			* the calculation is not slicewise (only n=0 is set).
 			*/

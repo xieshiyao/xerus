@@ -91,7 +91,10 @@ namespace xerus {
 	
 	
 	template<class MeasurmentSet>
-	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward) {
+	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, const std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward) {
+		// Direct reference to the stack (withou Mem)
+		FullTensor** const stack(_stackMem.get()+numMeasurments);
+		
 		// Temporary map. For each stack entry (i.e. measurement number + corePosition) gives a measurement number of a stack entry (at same corePosition) that shall have an equal value (or its own number otherwise). 
 		std::vector<size_t> calculationMap(degree*numMeasurments);
 		
@@ -152,20 +155,23 @@ namespace xerus {
 		
 		// NOTE that _stackMem contains (degree+2)*numMeasurments entries and has an offset of numMeasurments (to have space for corePosition -1).
 		
+		// NOTE Debug
+		memset(stack, 0, degree*numMeasurments*sizeof(FullTensor*)); // TODO rausnehemn
+		
 		// Set links for the special entries -1 and degree
 		for(size_t i = 0; i < numMeasurments; ++i) {
-			_stackMem[i + 0*numMeasurments] = &_stackSaveSlot[0];
-			_stackMem[i + (degree+1)*numMeasurments] = &_stackSaveSlot[0];
+			stack[i - 1*numMeasurments] = &_stackSaveSlot[0];
+			stack[i + degree*numMeasurments] = &_stackSaveSlot[0];
 		}
-		// TODO use stack insteasd of statMem
+		
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				if(calculationMap[i + corePosition*numMeasurments] == i) {
 					_updates[corePosition].emplace_back(i);
-					_stackMem[i + (corePosition+1)*numMeasurments] = &_stackSaveSlot[usedSlots];
+					stack[i + corePosition*numMeasurments] = &_stackSaveSlot[usedSlots];
 					usedSlots++;
 				} else {
-					_stackMem[i + (corePosition+1)*numMeasurments] = _stackMem[calculationMap[i + corePosition*numMeasurments] + (corePosition+1)*numMeasurments];
+					stack[i + corePosition*numMeasurments] = stack[calculationMap[i + corePosition*numMeasurments] + corePosition*numMeasurments];
 				}
 			}
 		}
@@ -202,6 +208,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);
 		
 		// Update the stack
@@ -212,6 +219,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		FullTensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
@@ -227,6 +235,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);		
 		
 		// Update the stack
@@ -237,13 +246,14 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		FullTensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
 		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 		
 		// Reset the FullTensors
-		for(const size_t i : backwardUpdates[_corePosition]) {
+		for(const size_t i : forwardUpdates[_corePosition]) {
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
 			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
 		}
@@ -306,7 +316,7 @@ namespace xerus {
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
 			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
-			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
+			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) { // TODO Maybe scaled copy?
 				value_t* const deltaPtr = projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank;
 				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 				const value_t factor = measurments.positions[i][_corePosition][n]*residual[i];
@@ -460,14 +470,15 @@ namespace xerus {
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
 			
 			// Increase the ranks
-			x = x+((1e-6*frob_norm(x)/misc::fp_product(x.dimensions))*TTTensor::ones(x.dimensions));
+			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
+			
+			// Ensure maximal ranks are not exceeded (may happen if non uniform).
+			x.round(maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 			
 			resize_stack_tensors();
 			
 			solve_with_current_ranks();
 			
-			// Ensure maximal ranks are not exceeded (may happen if non uniform).
-			x.round(maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
 		}
 		return residualNorm;
 	}
