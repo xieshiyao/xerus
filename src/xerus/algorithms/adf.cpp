@@ -182,15 +182,12 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::resize_stack_tensors() {
-		for(size_t corePosition = 0; corePosition+1 < degree; ++corePosition) {
+		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(const size_t i : forwardUpdates[corePosition]) {
-				forwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition)}, DONT_SET_ZERO()); // TODO NOTE this seems to be linked to the error (i.e. remove DONT_SET_ZERO)
+				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, DONT_SET_ZERO());
 			}
-		}
-		
-		for(size_t corePosition = 1; corePosition < degree; ++corePosition) {
 			for(const size_t i : backwardUpdates[corePosition]) {
-				backwardStack[i + corePosition*numMeasurments]->reset({x.rank(corePosition - 1)}, DONT_SET_ZERO());
+				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, DONT_SET_ZERO());
 			}
 		}
 	}
@@ -280,6 +277,7 @@ namespace xerus {
 			}
 		}
 	}
+
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::calculate_projected_gradient( const size_t _corePosition) {
@@ -289,11 +287,11 @@ namespace xerus {
 		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
+			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
 			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
 			value_t* const deltaPtr = projectedGradientComponent.data_pointer()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
-			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 			const value_t factor = residual[i];
 			for(size_t k = 0; k < localLeftRank; ++k) {
 				for(size_t j = 0; j < localRightRank; ++j) {
@@ -313,12 +311,12 @@ namespace xerus {
 		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
 		
 		for(size_t i = 0; i < numMeasurments; ++i) {
+			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
 			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
 			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) { // TODO Maybe scaled copy?
 				value_t* const deltaPtr = projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank;
-				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 				const value_t factor = measurments.positions[i][_corePosition][n]*residual[i];
 				for(size_t k = 0; k < localLeftRank; ++k) {
 					for(size_t j = 0; j < localRightRank; ++j) {
@@ -343,6 +341,8 @@ namespace xerus {
 	inline size_t position_or_zero<RankOneMeasurmentSet>(const RankOneMeasurmentSet& _measurments, const size_t _meas, const size_t _corePosition) {
 		return 0;
 	}
+	
+	
 	
 	template<class MeasurmentSet>
 	std::vector<value_t> ADFVariant::InternalSolver<MeasurmentSet>::calculate_slicewise_norm_A_projGrad( const size_t _corePosition) {
@@ -371,25 +371,25 @@ namespace xerus {
 	}
 	
 	
-// 	template<>
-// 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
-// 		for(size_t j = 0; j < x.dimensions[_corePosition]; ++j) {
-// 			FullTensor localDelta;
-// 			localDelta(r1, r2) = projectedGradientComponent(r1, j, r2);
-// 			const value_t PyR = misc::sqr(frob_norm(localDelta));
-// 			
-// 			// Update
-// 			x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/_normAProjGrad[j])*Tensor::dirac({x.dimensions[_corePosition]}, {j})(i1)*localDelta(r1, r2);
-// 		}
-// 	}
-	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
-		const value_t PyR = misc::sqr(frob_norm(projectedGradientComponent));
-		
-		// Update
-		x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/misc::sum(_normAProjGrad))*projectedGradientComponent(r1, i1, r2);
+		for(size_t j = 0; j < x.dimensions[_corePosition]; ++j) {
+			FullTensor localDelta;
+			localDelta(r1, r2) = projectedGradientComponent(r1, j, r2);
+			const value_t PyR = misc::sqr(frob_norm(localDelta));
+			
+			// Update
+			x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/_normAProjGrad[j])*Tensor::dirac({x.dimensions[_corePosition]}, {j})(i1)*localDelta(r1, r2);
+		}
 	}
+	
+// 	template<>
+// 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
+// 		const value_t PyR = misc::sqr(frob_norm(projectedGradientComponent));
+// 		
+// 		// Update
+// 		x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/misc::sum(_normAProjGrad))*projectedGradientComponent(r1, i1, r2);
+// 	}
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
@@ -483,24 +483,7 @@ namespace xerus {
 		return residualNorm;
 	}
 	
-
-	double ADFVariant::operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData) const {
-	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
-	   return solver.solve();
-	}
-	
-	double ADFVariant::operator()(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-	   InternalSolver<SinglePointMeasurmentSet> solver(_x, _maxRanks, _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
-	   return solver.solve();
-	}
-	
-	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, PerformanceData& _perfData) const {
-		InternalSolver<RankOneMeasurmentSet> solver(_x, _x.ranks(), _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
-		return solver.solve();
-	}
-	
-	double ADFVariant::operator()(TTTensor& _x, const RankOneMeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-		InternalSolver<RankOneMeasurmentSet> solver(_x, _maxRanks, _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
-		return solver.solve();
-	}
+	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
+	template class ADFVariant::InternalSolver<SinglePointMeasurmentSet>;
+	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
 }

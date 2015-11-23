@@ -26,10 +26,10 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 4;
-	const size_t N = 15;
-	const size_t R = 6;
-	const size_t CS = 1; 
+	const size_t D = 8;
+	const size_t N = 10;
+	const size_t R = 8;
+	const size_t CS = 2; 
 // 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());
 	std::mt19937_64 rnd;
@@ -83,8 +83,8 @@ UNIT_TEST(Algorithm, adf_completion,
 	
 	PerformanceData perfData(true);
 	
-	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
-// 	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+// 	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
 	
 	value_t ctrValue = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {

@@ -120,8 +120,14 @@ namespace xerus {
 		}
 		
 		size_t degree() const {
+			IF_CHECK(
+				for(size_t i = 0; i+1 < positions.size(); ++i) {
+					REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsitent degree of the measurments");
+				}
+			);
 			return positions[0].size();
 		}
+		
 	};
 	
 	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos = ~0ul);
