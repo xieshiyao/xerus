@@ -362,4 +362,8 @@ namespace xerus {
         }
     }
 	
+	
+    const ALSVariant ALS(1, 0, EPSILON, ALSVariant::lapack_solver);
+	
+    const ALSVariant DMRG(2, 0, EPSILON, ALSVariant::lapack_solver);
 }

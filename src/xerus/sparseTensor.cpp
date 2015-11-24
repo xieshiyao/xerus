@@ -128,11 +128,13 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     value_t& SparseTensor::operator[](const size_t _position) {
+		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
         apply_factor();
         return (*entries)[_position];
     }
     
     value_t SparseTensor::operator[](const size_t _position) const {
+		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
         const std::map<size_t, value_t>::const_iterator entry = entries->find(_position);
         if(entry == entries->end()) {
             return 0;

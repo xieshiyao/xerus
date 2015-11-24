@@ -135,6 +135,6 @@ namespace xerus {
 	};
 	
 	/// default variant of the steepest descent algorithm using the lapack solver
-	const GeometricCGVariant GeometricCG(0, 0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport);
+	extern const GeometricCGVariant GeometricCG;
 }
 

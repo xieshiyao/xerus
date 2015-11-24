@@ -364,6 +364,17 @@ namespace xerus {
 			}
 		}
 		
+		
+		const std::vector<ContractionHeuristic> contractionHeuristics {
+			&greedy_heuristic<&score_size>,
+			&greedy_heuristic<&score_mn>,
+			&greedy_heuristic<&score_speed>,
+// 			&greedy_heuristic<&score_r>,
+			&greedy_heuristic<&score_big_tensor>,
+			&greedy_heuristic<&score_littlestep>
+// 			,&greedy_best_of_three_heuristic
+			,&exchange_heuristic
+		};
     }
 
 }

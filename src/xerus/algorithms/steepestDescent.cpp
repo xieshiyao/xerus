@@ -134,4 +134,5 @@ namespace xerus {
 		return currResidual;
 	}
 	
+	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetractionII);
 }

@@ -27,8 +27,6 @@
 #include "tensorNetwork.h"
 
 namespace xerus {
-
-    
 	namespace internal {
 		typedef void (*ContractionHeuristic)(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork);
 		
@@ -48,17 +46,7 @@ namespace xerus {
 		void greedy_best_of_three_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network);
 		void exchange_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network);
 		
-		const std::vector<ContractionHeuristic> contractionHeuristics{
-			&greedy_heuristic<&score_size>,
-			&greedy_heuristic<&score_mn>,
-			&greedy_heuristic<&score_speed>,
-// 			&greedy_heuristic<&score_r>,
-			&greedy_heuristic<&score_big_tensor>,
-			&greedy_heuristic<&score_littlestep>
-// 			,&greedy_best_of_three_heuristic
-			,&exchange_heuristic
-		};
+		extern const std::vector<ContractionHeuristic> contractionHeuristics;
 	}
-	
 }
 

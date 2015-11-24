@@ -540,8 +540,11 @@ namespace xerus {
     FullTensor FullTensor::entrywise_product(const FullTensor &_A, const FullTensor &_B) {
 		REQUIRE(_A.dimensions == _B.dimensions, "entrywise product ill-defined for non-equal dimensions");
 		FullTensor result(_A);
-		for (size_t i=0; i<result.size; ++i) {
-			result[i] *= _B[i];
+		value_t* const dataPtrA = result.data_pointer();
+		const value_t* const dataPtrB = _B.unsanitized_data_pointer();
+		result.factor = _B.factor;
+		for (size_t i = 0; i < result.size; ++i) {
+			dataPtrA[i] *= dataPtrB[i];
 		}
 		return result;
 	}

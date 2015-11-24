@@ -41,7 +41,7 @@ namespace xerus {
 	 */
 	typedef double value_t;
 	
-	bool _inline_ approx_equal(const value_t _a, const value_t _b, value_t _eps = 2*std::numeric_limits<value_t>::epsilon()) {
+	bool _inline_ approx_equal(const value_t _a, const value_t _b, value_t _eps = 4*std::numeric_limits<value_t>::epsilon()) {
 		return misc::approx_equal<value_t>(_a, _b, _eps);
 	}
 	

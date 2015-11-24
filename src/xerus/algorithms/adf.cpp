@@ -85,7 +85,7 @@ namespace xerus {
 				}
 			}
 		}
-		LOG(fatal, "Measurments must not appear twice.");
+		LOG(fatal, "Measurments must not appear twice. ");
 		return false;
 	}
 	
@@ -154,9 +154,6 @@ namespace xerus {
 		_stackSaveSlot[usedSlots++] = Tensor::ones({1}); // Special slot reserved for the the position -1 and degree stacks
 		
 		// NOTE that _stackMem contains (degree+2)*numMeasurments entries and has an offset of numMeasurments (to have space for corePosition -1).
-		
-		// NOTE Debug
-		memset(stack, 0, degree*numMeasurments*sizeof(FullTensor*)); // TODO rausnehemn
 		
 		// Set links for the special entries -1 and degree
 		for(size_t i = 0; i < numMeasurments; ++i) {
@@ -468,6 +465,7 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
+// 			x.round(2.5e-2);
 			
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
@@ -486,4 +484,6 @@ namespace xerus {
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 	template class ADFVariant::InternalSolver<SinglePointMeasurmentSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
+	
+	const ADFVariant ADF(0, 1e-8, 5e-4, true);
 }

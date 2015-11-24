@@ -29,6 +29,7 @@
 #include "fullTensor.h"
 
 namespace xerus {
+	template<bool isOperator> class TTNetwork;
 	/** 
 	* @brief Class used to represent a single point measurments.
 	*/
@@ -115,18 +116,11 @@ namespace xerus {
 		
 		void add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue);
 		
-		size_t size() const {
-			return measuredValues.size();
-		}
+		size_t size() const;
 		
-		size_t degree() const {
-			IF_CHECK(
-				for(size_t i = 0; i+1 < positions.size(); ++i) {
-					REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsitent degree of the measurments");
-				}
-			);
-			return positions[0].size();
-		}
+		size_t degree() const;
+		
+		value_t test_solution(const TTNetwork<false>& _solution) const;
 		
 	};
 	

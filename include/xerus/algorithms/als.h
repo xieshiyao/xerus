@@ -139,9 +139,9 @@ namespace xerus {
     };
 	
 	/// default variant of the single-site ALS algorithm using the lapack solver
-    const ALSVariant ALS(1, 0, EPSILON, ALSVariant::lapack_solver);
+    extern const ALSVariant ALS;
 	
 	/// default variant of the two-site DMRG algorithm using the lapack solver
-    const ALSVariant DMRG(2, 0, EPSILON, ALSVariant::lapack_solver);
+    extern const ALSVariant DMRG;
 }
 

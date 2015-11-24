@@ -26,6 +26,9 @@
 #include <xerus/measurments.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/sparseTensor.h>
+#include <xerus/ttNetwork.h>
+#include <xerus/indexedTensor.h>
+#include <xerus/indexedTensor_TN_operators.h>
 
 namespace xerus {
 	// --------------------- SinglePointMeasurment -----------------
@@ -103,6 +106,13 @@ namespace xerus {
 	
 	// --------------------- RankOneMeasurmentSet -----------------
 	
+	size_t RankOneMeasurmentSet::size() const {
+		return measuredValues.size();
+	}
+	
+	size_t RankOneMeasurmentSet::degree() const {
+		return positions[0].size();
+	}
 	
 	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions) {
 		std::vector<FullTensor> zeroPosition;
@@ -123,13 +133,37 @@ namespace xerus {
 			REQUIRE(positions.size() == measuredValues.size(), "Internal Error.");
 			if(size() > 0) {
 				for(size_t i = 0; i < degree(); ++i) {
-					REQUIRE(_position[i].degree() == 1, "Inconsitend dimensions obtained");
 					REQUIRE(positions[0][i].dimensions == _position[i].dimensions, "Inconsitend dimensions obtained");
 				}
+			}
+			for (const FullTensor & f : _position) {
+				REQUIRE(f.degree() == 1, "illegal measurement");
 			}
 		);
 		positions.emplace_back(_position);
 		measuredValues.emplace_back(_measuredValue);
+	}
+	
+	
+	value_t RankOneMeasurmentSet::test_solution(const TTTensor& _solution) const {
+		value_t residualNorm = 0.0;
+		value_t measurementNorm = 0.0;
+		
+		Index r1, r2, i1;
+		
+		FullTensor measure;
+		for(size_t i = 0; i < size(); ++i) {
+			measure = Tensor::ones({1});
+			for(size_t d = 0; d < degree(); ++d) {
+				measure(r2) = measure(r1)* _solution.get_component(d)(r1, i1, r2) * positions[i][d](i1);
+			}
+			REQUIRE(measure.size == 1, "IE");
+
+			residualNorm += misc::sqr(measuredValues[i] - measure[0]);
+			measurementNorm += misc::sqr(measuredValues[i]);
+		}
+		
+		return std::sqrt(residualNorm)/std::sqrt(measurementNorm);
 	}
 	
 	bool RankOneMeasurmentSet::Comparator::operator()(const std::vector<FullTensor>& _lhs, const std::vector<FullTensor>& _rhs) const {

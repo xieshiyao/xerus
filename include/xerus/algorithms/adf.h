@@ -256,6 +256,6 @@ namespace xerus {
 	};
 	
 	/// @brief Default variant of the ADF algorithm
-    const ADFVariant ADF(0, 1e-8, 5e-4, true);
+    extern const ADFVariant ADF;
 }
 

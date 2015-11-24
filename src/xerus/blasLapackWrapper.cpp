@@ -64,8 +64,8 @@ namespace xerus {
     namespace blasWrapper {
 		// the following routines use a work array as temporary storage
 		// to avoid the overhead of repeated reallocation for many small calls, every thread pre-allocates a small scratch-space
-		static const size_t DEFAULT_WORKSPACE_SIZE = 1024*1024;
-		thread_local value_t defaultWorkspace[DEFAULT_WORKSPACE_SIZE];
+// 		const size_t DEFAULT_WORKSPACE_SIZE = 1024*1024;
+// 		thread_local value_t defaultWorkspace[DEFAULT_WORKSPACE_SIZE]; // NOTE recheck compatibility with eigen (dolfin) when reinserting this!
 		
         
         //----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
