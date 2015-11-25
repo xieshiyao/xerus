@@ -452,6 +452,9 @@ namespace xerus {
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
 		
+		// Sanitize maxRanks
+		TTTensor::reduce_to_maximal_ranks(maxRanks, x.dimensions);
+		
 		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
 		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
 		

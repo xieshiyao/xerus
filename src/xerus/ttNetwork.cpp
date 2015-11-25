@@ -475,6 +475,44 @@ namespace xerus {
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	template<bool isOperator>
+	std::vector<size_t> TTNetwork<isOperator>::reduce_to_maximal_ranks(const std::vector<size_t>& _ranks, const std::vector<size_t>& _dimensions) {
+		const size_t numComponents = _dimensions.size()/N;
+		
+		std::vector<size_t> reducedRanks(_ranks);
+		
+		if(numComponents > 0) {
+			// Left to right sweep
+			size_t currMax = 1;
+			for (size_t i = 0; i < numComponents-1; ++i) {
+				currMax *= _dimensions[i];
+				if (isOperator) { currMax *= _dimensions[numComponents+i]; }
+				
+				if (currMax < reducedRanks[i]) { 
+					reducedRanks[i] = currMax;
+				} else {
+					currMax = reducedRanks[i];
+				}
+			}
+		
+			// Right to left sweep
+			currMax = 1;
+			for (size_t i = numComponents-1; i > 0; --i) {
+				currMax *= _dimensions[i];
+				if (isOperator) { currMax *= _dimensions[numComponents+i]; }
+				
+				if (currMax < reducedRanks[i-1]) {
+					reducedRanks[i-1] = currMax;
+				} else {
+					currMax = reducedRanks[i-1];
+				}
+			}
+		}
+		
+		return reducedRanks;
+	}
+		
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
 		REQUIRE(_idx < degree()/N, "illegal index in TTNetwork::get_component");
