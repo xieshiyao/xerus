@@ -139,42 +139,7 @@ namespace xerus {
 			
 			TTNetwork result(_dimensions.size());
 			const size_t numComponents = _dimensions.size()/N;
-			std::vector<size_t> targetRank(_ranks);
-			bool change = false;
-			// Determine all ranks such that they are as close to the given ranks vector as possible without being larger than maximal
-			do {
-				change = false;
-				size_t currMax = 1;
-				// left to right sweep
-				for (size_t i = 0; i < numComponents-1; ++i) {
-					currMax *= _dimensions[i];
-					if (isOperator) {
-						currMax *= _dimensions[numComponents+i];
-					}
-					if (currMax < targetRank[i]) {
-						targetRank[i] = currMax;
-						change = true;
-					} else {
-						currMax = targetRank[i];
-					}
-				}
-				
-				if(numComponents <= 2) { continue; }
-				
-				currMax = 1;
-				// right to left sweep
-				for (size_t i = numComponents-1; i > 0; --i) {
-					currMax *= _dimensions[i];
-					if (isOperator) { currMax *= _dimensions[numComponents+i]; }
-					
-					if (currMax < targetRank[i-1]) {
-						targetRank[i-1] = currMax;
-						change = true;
-					} else {
-						currMax = targetRank[i-1];
-					}
-				}
-			} while(change);
+			const std::vector<size_t> targetRank = reduce_to_maximal_ranks(_ranks, _dimensions);
 			
 			for(size_t i = 0; i < numComponents; ++i) {
 				size_t leftRank = i==0 ? 1 : targetRank[i-1];
@@ -228,6 +193,15 @@ namespace xerus {
 			
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
+		/** 
+		* @brief Reduces the given ransk to the maximal possible.
+		* @details If a given rank is allready smaller or equal it is left unchanged.
+		* @param _ranks the inital ranks to be reduced.
+		* @param _dimensions the dimensions used to calculate the maximal ranks
+		* @return the reduced ranks
+		*/
+		static std::vector<size_t> reduce_to_maximal_ranks(const std::vector<size_t>& _ranks, const std::vector<size_t>& _dimensions);
+		
 		/** 
 		* @brief Tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects.
 		* @details Note that this will NOT check for orthogonality of cannonicalized TTNetworks.

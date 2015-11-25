@@ -40,7 +40,7 @@ namespace xerus {
 		TTTensor residual;
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
-		value_t normB = frob_norm(_b);
+// 		value_t normB = frob_norm(_b);
 		
 		
 		if (_Ap) {

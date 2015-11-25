@@ -184,7 +184,7 @@ namespace xerus {
 							PerformanceData& _perfData ) : 
 				x(_x),
 				degree(_x.degree()),
-				maxRanks(_maxRanks),
+				maxRanks(TTTensor::reduce_to_maximal_ranks(_maxRanks, _x.dimensions)),
 				
 				measurments(_measurments),
 				numMeasurments(_measurments.size()),
