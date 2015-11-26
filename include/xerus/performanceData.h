@@ -28,6 +28,7 @@
 #include <map>
 #include "basic.h"
 #include "tensorNetwork.h"
+#include "ttNetwork.h"
 #include "misc/timeMeasure.h"
 #include "misc/histogram.h"
 
@@ -41,16 +42,19 @@ namespace xerus {
 			size_t iterationCount;
 			size_t elapsedTime;
 			double residual;
+			double error;
 			TensorNetwork::RankTuple ranks;
 			size_t flags;
 			
-			DataPoint(const size_t _itrCount, const size_t _time, const value_t _res, const TensorNetwork::RankTuple _ranks, const size_t _flags) 
-				: iterationCount(_itrCount), elapsedTime(_time), residual(_res), ranks(_ranks), flags(_flags) {}
+			DataPoint(const size_t _itrCount, const size_t _time, const value_t _residual, const value_t _error, const TensorNetwork::RankTuple _ranks, const size_t _flags) 
+				: iterationCount(_itrCount), elapsedTime(_time), residual(_residual), error(_error), ranks(_ranks), flags(_flags) {}
 		};
 		
 		const bool active;
 		
 		bool printProgress;
+		
+		std::function<double(const TTTensor&)> errorFunction;
 		
 		size_t startTime;
 		size_t stopTime;
@@ -59,7 +63,11 @@ namespace xerus {
 		std::string additionalInformation;
 		
 		
-		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : active(_active), printProgress(_printProgress), startTime(~0ul), stopTime(~0ul) {}
+		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : 
+			active(_active), printProgress(_printProgress), startTime(~0ul), stopTime(~0ul) {}
+		
+		explicit PerformanceData(const std::function<double(const TTTensor&)>& _errorFunction, const bool _printProgress = false, const bool _active = true) : 
+			active(_active), printProgress(_printProgress), errorFunction(_errorFunction), startTime(~0ul), stopTime(~0ul) {}
 		
 		void start() {
 			if (active) {
@@ -103,6 +111,8 @@ namespace xerus {
 		}
 		
 		void add(const size_t _itrCount, const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
+		
+		void add(const size_t _itrCount, const xerus::value_t _residual, const TTTensor& _x, const size_t _flags = 0);
 		
 		void add(const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		

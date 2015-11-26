@@ -220,7 +220,10 @@ namespace xerus {
 		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 		
 		// Update the stack
-		for(const size_t i : backwardUpdates[_corePosition]) {
+		const size_t numUpdates = backwardUpdates[_corePosition].size();
+		#pragma omp parallel for
+		for(size_t u = 0; u < numUpdates; ++u) {
+			const size_t i = backwardUpdates[_corePosition][u];
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
 			contract(*backwardStack[i + _corePosition*numMeasurments], mixedComponent, false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
 		}
@@ -307,19 +310,27 @@ namespace xerus {
 		
 		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
 		
+		std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]);
+		
 		for(size_t i = 0; i < numMeasurments; ++i) {
 			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+			
 			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
 			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
-			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) { // TODO Maybe scaled copy?
-				value_t* const deltaPtr = projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank;
-				const value_t factor = measurments.positions[i][_corePosition][n]*residual[i];
-				for(size_t k = 0; k < localLeftRank; ++k) {
-					for(size_t j = 0; j < localRightRank; ++j) {
-						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
-					}
+			
+			for(size_t k = 0; k < localLeftRank; ++k) {
+				for(size_t j = 0; j < localRightRank; ++j) {
+					dyadicComponent[k*localRightRank+j] = leftPtr[k] * rightPtr[j];
 				}
+			}
+			
+			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
+				misc::array_add(projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank, 
+					measurments.positions[i][_corePosition][n]*residual[i],
+					dyadicComponent.get(),
+					localLeftRank*localRightRank
+				);
 			}
 		}
 		
@@ -419,7 +430,7 @@ namespace xerus {
 			}
 			residualNorm = std::sqrt(residualNorm)/normMeasuredValues;
 			
-			perfData.add(iteration, residualNorm, x.ranks(), 0);
+			perfData.add(iteration, residualNorm, x, 0);
 			
 			// Check for termination criteria
 			resDec3 = resDec2; resDec2 = resDec1;
@@ -441,7 +452,6 @@ namespace xerus {
 				// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 				if(corePosition+1 < degree) {
 					x.move_core(corePosition+1, true);
-					
 					update_forward_stack(corePosition, x.get_component(corePosition));
 				}
 			}

@@ -34,13 +34,36 @@ namespace xerus {
 			if (startTime == ~0ul) {
 				start();
 			}
-			data.emplace_back(_itrCount, get_elapsed_time(), _residual, _ranks, _flags);
+			data.emplace_back(_itrCount, get_elapsed_time(), _residual, 0.0, _ranks, _flags);
 			
 			if(printProgress) {
 				LOG(PerformanceData, "Iteration " << std::setw(4) << std::setfill(' ') << _itrCount 
 					<< " Time: " << std::right << std::setw(6) << std::setfill(' ') << std::fixed << std::setprecision(2) << double(data.back().elapsedTime)*1e-6 
-					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << _residual << " Flags: " << _flags << " Ranks: " << _ranks);
+					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << data.back().residual 
+					<< " Flags: " << _flags << " Ranks: " << _ranks);
 			}
+		}
+	}
+	
+	void PerformanceData::add(const size_t _itrCount, const xerus::value_t _residual, const TTTensor& _x, const size_t _flags) {
+		if(!errorFunction) { add(_itrCount, _residual, _x.ranks(), _flags); return; }
+		
+		if (active) {
+			if (startTime == ~0ul) {
+				start();
+			}
+			stop_timer();
+			
+			data.emplace_back(_itrCount, get_elapsed_time(), _residual, errorFunction(_x), _x.ranks(), _flags);
+			
+			if(printProgress) {
+				LOG(PerformanceData, "Iteration " << std::setw(4) << std::setfill(' ') << _itrCount 
+					<< " Time: " << std::right << std::setw(6) << std::setfill(' ') << std::fixed << std::setprecision(2) << double(data.back().elapsedTime)*1e-6 
+					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << data.back().residual 
+					<< " Error: " << std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << data.back().error
+					<< " Flags: " << _flags << " Ranks: " << data.back().ranks);
+			}
+			continue_timer();
 		}
 	}
 	
@@ -59,11 +82,11 @@ namespace xerus {
 		header += "# ";
 		header += additionalInformation;
 		misc::replace(header, "\n", "\n# ");
-		header += "\n# \n#itr \ttime[us] \tresidual \tflags \tranks...\n";
+		header += "\n# \n#itr \ttime[us] \tresidual \terror \tflags \tranks...\n";
 		std::ofstream out(_fileName);
 		out << header;
 		for (const DataPoint &d : data) {
-			out << d.iterationCount << '\t' << d.elapsedTime << '\t' << d.residual << '\t' << d.flags;
+			out << d.iterationCount << '\t' << d.elapsedTime << '\t' << d.residual << '\t' << d.error << '\t' << d.flags;
 			for (size_t r : d.ranks) {
 				out << '\t' << r;
 			}

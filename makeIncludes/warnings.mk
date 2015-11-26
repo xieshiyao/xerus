@@ -42,6 +42,7 @@ endif
 
 # Disabled Warnings
 WARNINGS += -Wno-comment				    # Ignore warning about /* inside /*...*/
+WARNINGS += -Wno-unknown-pragmas			# Allow unknwon pragmas (e.g. openmp)
 WARNINGS += -Wno-unused-parameter			# No warning about unused parameters
 
 ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Error Options - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ##

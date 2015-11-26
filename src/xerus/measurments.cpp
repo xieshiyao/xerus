@@ -25,6 +25,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/measurments.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/ttNetwork.h>
 #include <xerus/indexedTensor.h>
@@ -151,15 +152,29 @@ namespace xerus {
 		
 		Index r1, r2, i1;
 		
-		FullTensor measure;
+		std::unique_ptr<FullTensor[]> stackMem(new FullTensor[degree()+1]);
+		FullTensor* const stack = stackMem.get()+1;
+		stackMem[0] = Tensor::ones({1});
+		
+		std::vector<FullTensor> intermediates(degree());
+		std::vector<FullTensor> reshuffledComponents(degree());
+		for(size_t d = 0; d+1 < degree(); ++d) {
+			stack[d].reset({_solution.rank(d)}, DONT_SET_ZERO());
+		}
+		for(size_t d = 0; d < degree(); ++d) {
+			intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, DONT_SET_ZERO());
+			reshuffledComponents[d](i1, r1, r2) = _solution.get_component(d)(r1, i1, r2);
+		}
+		
 		for(size_t i = 0; i < size(); ++i) {
-			measure = Tensor::ones({1});
 			for(size_t d = 0; d < degree(); ++d) {
-				measure(r2) = measure(r1)* _solution.get_component(d)(r1, i1, r2) * positions[i][d](i1);
+				contract(intermediates[d], positions[i][d], false, reshuffledComponents[d], false, 1);
+				contract(stack[d], stack[d-1], false, intermediates[d], false, 1);
 			}
-			REQUIRE(measure.size == 1, "IE");
-
-			residualNorm += misc::sqr(measuredValues[i] - measure[0]);
+			
+			REQUIRE(stack[degree()-1].size == 1 , "IE");
+			
+			residualNorm += misc::sqr(measuredValues[i] - stack[degree()-1][0]);
 			measurementNorm += misc::sqr(measuredValues[i]);
 		}
 		
