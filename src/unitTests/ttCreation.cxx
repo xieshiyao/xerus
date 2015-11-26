@@ -137,3 +137,62 @@ UNIT_TEST(TT, creation_from_fullTensor_5x5x5x5,
 )
 
 
+UNIT_TEST(TT, named_constructors,
+	//Random numbers
+	std::mt19937_64 rnd(0xDEADBEEF);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+	
+	std::vector<size_t> dimensions(10, 2);
+	std::vector<size_t> operatorDimensions(20,2);
+	std::vector<size_t> ranks(9, 4);
+	ranks[4] = 1;
+	
+	TTTensor X = TTTensor::random(dimensions, ranks, rnd, dist);
+	std::vector<size_t> found_ranks = X.ranks();
+	X.round(1e-16);
+	MTEST(X.ranks() == found_ranks, X.ranks() << " vs " << found_ranks);
+// 	{
+// 		value_t mean = 0;
+// 		FullTensor tmp(X);
+// 		for (size_t i=0; i<tmp.size; ++i) {
+// 			mean += tmp[i];
+// 		}
+// 		mean /= (double)tmp.size;
+// 		MTEST(std::abs(mean) < 0.5, "X mean " << mean);
+// 	}
+	
+	TTOperator Xop = TTOperator::random(operatorDimensions, ranks, rnd, dist);
+	found_ranks = Xop.ranks();
+	Xop.round(1e-16);
+	MTEST(Xop.ranks() == found_ranks, Xop.ranks() << " vs " << found_ranks);
+// 	{
+// 		value_t mean = 0;
+// 		FullTensor tmp(Xop);
+// 		for (size_t i=0; i<tmp.size; ++i) {
+// 			mean += tmp[i];
+// 		}
+// 		mean /= (double)tmp.size;
+// 		MTEST(std::abs(mean) < 0.5, "Xop mean " << mean);
+// 	}
+	
+	TTOperator id = TTOperator::identity(operatorDimensions);
+	MTEST(id.ranks() == std::vector<size_t>(9,1), id.ranks());
+	
+	Index i,j;
+	TTTensor X2;
+	X2(j/1) = id(j/2, i/2) * X(i/1);
+	MTEST(frob_norm(X2-X) < 1e-14*1024, frob_norm(X2-X));
+	
+	TTTensor ttones = TTTensor::ones(dimensions);
+	MTEST(ttones.ranks() == std::vector<size_t>(9,1), ttones.ranks());
+	
+	FullTensor fones(ttones);
+	MTEST(frob_norm(fones - FullTensor::ones(dimensions)) < 1e-14*1024, "tt " << frob_norm(fones - FullTensor::ones(dimensions)) );
+	
+	TTOperator ttopones = TTOperator::ones(dimensions);
+	MTEST(ttopones.ranks() == std::vector<size_t>(4,1), ttopones.ranks());
+	
+	fones = FullTensor(ttopones);
+	MTEST(frob_norm(fones - FullTensor::ones(dimensions)) < 1e-14*1024, "op " << frob_norm(fones - FullTensor::ones(dimensions)) );
+)
+

@@ -112,7 +112,10 @@ namespace xerus {
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
         REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
             << (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
-        IF_CHECK(for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); } );
+#ifdef CHECK_
+		// NOTE no IF_CHECK macro because gcc 4.8.1 throws internal compiler error (seg fault) otherwise
+        for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
+#endif
 		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		
 		dimensions = _tensor.dimensions;
