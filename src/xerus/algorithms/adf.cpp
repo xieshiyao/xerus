@@ -27,6 +27,8 @@
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
 
+#include <omp.h>
+
 namespace xerus {
 	
 	template<class MeasurmentSet>
@@ -214,14 +216,16 @@ namespace xerus {
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		
+		const size_t numUpdates = backwardUpdates[_corePosition].size();
+		
 		FullTensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
 		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 		
 		// Update the stack
-		const size_t numUpdates = backwardUpdates[_corePosition].size();
-		#pragma omp parallel for
+		#pragma omp parallel for firstprivate(mixedComponent) schedule(static)
 		for(size_t u = 0; u < numUpdates; ++u) {
 			const size_t i = backwardUpdates[_corePosition][u];
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
@@ -244,13 +248,18 @@ namespace xerus {
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		
+		const size_t numUpdates = forwardUpdates[_corePosition].size();
+		
 		FullTensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
 		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
-		
-		// Reset the FullTensors
-		for(const size_t i : forwardUpdates[_corePosition]) {
+
+		// Update the stack
+		#pragma omp parallel for firstprivate(mixedComponent) schedule(static)
+		for(size_t u = 0; u < numUpdates; ++u) {
+			const size_t i = forwardUpdates[_corePosition][u];
 			contract(mixedComponent, measurments.positions[i][_corePosition], false, reshuffledComponent, false, 1);
 			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, mixedComponent, false, 1);
 		}
@@ -264,6 +273,7 @@ namespace xerus {
 		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
 			update_forward_stack(_corePosition, x.get_component(_corePosition));
 			
+			#pragma omp parallel for firstprivate(currentValue) schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
 				residual[i] = (measurments.measuredValues[i]-currentValue[0]);
@@ -271,6 +281,7 @@ namespace xerus {
 		} else {
 			update_backward_stack(_corePosition, x.get_component(_corePosition));
 			
+			#pragma omp parallel for firstprivate(currentValue) schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
 				residual[i] = (measurments.measuredValues[i]-currentValue[0]);
@@ -286,17 +297,29 @@ namespace xerus {
 		
 		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
 		
-		for(size_t i = 0; i < numMeasurments; ++i) {
-			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
-			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
-			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
-			value_t* const deltaPtr = projectedGradientComponent.data_pointer()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
-			const value_t factor = residual[i];
-			for(size_t k = 0; k < localLeftRank; ++k) {
-				for(size_t j = 0; j < localRightRank; ++j) {
-					deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
+		#pragma omp parallel
+		{
+			FullTensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
+			
+			#pragma omp for schedule(static)
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
+				const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
+				const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
+				value_t* const deltaPtr = partialProjGradComp.data_pointer()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
+				const value_t factor = residual[i];
+				for(size_t k = 0; k < localLeftRank; ++k) {
+					for(size_t j = 0; j < localRightRank; ++j) {
+						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
+					}
 				}
+			}
+			
+			// Accumulate the partical components
+			#pragma omp critical
+			{
+				projectedGradientComponent += partialProjGradComp;
 			}
 		}
 		
@@ -309,31 +332,42 @@ namespace xerus {
 		const size_t localRightRank = x.get_component(_corePosition).dimensions[2];
 		
 		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
-		
-		std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]);
-		
-		for(size_t i = 0; i < numMeasurments; ++i) {
-			REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 			
-			// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-			const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
-			const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
+		#pragma omp parallel
+		{
+			FullTensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
 			
-			for(size_t k = 0; k < localLeftRank; ++k) {
-				for(size_t j = 0; j < localRightRank; ++j) {
-					dyadicComponent[k*localRightRank+j] = leftPtr[k] * rightPtr[j];
+			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]);
+			
+			#pragma omp for schedule(static)
+			for(size_t i = 0; i < numMeasurments; ++i) {
+				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+				
+				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
+				const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
+				const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
+				
+				for(size_t k = 0; k < localLeftRank; ++k) {
+					for(size_t j = 0; j < localRightRank; ++j) {
+						dyadicComponent[k*localRightRank+j] = leftPtr[k] * rightPtr[j];
+					}
+				}
+				
+				for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
+					misc::array_add(partialProjGradComp.data_pointer() + n*localLeftRank*localRightRank, 
+						measurments.positions[i][_corePosition][n]*residual[i],
+						dyadicComponent.get(),
+						localLeftRank*localRightRank
+					);
 				}
 			}
-			
-			for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
-				misc::array_add(projectedGradientComponent.data_pointer() + n*localLeftRank*localRightRank, 
-					measurments.positions[i][_corePosition][n]*residual[i],
-					dyadicComponent.get(),
-					localLeftRank*localRightRank
-				);
+		
+			// Accumulate the partical components
+			#pragma omp critical
+			{
+				projectedGradientComponent += partialProjGradComp;
 			}
 		}
-		
 		projectedGradientComponent(r1, i1, r2) = projectedGradientComponent(i1, r1, r2);
 	}
 	
@@ -362,16 +396,44 @@ namespace xerus {
 		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
 			update_forward_stack(_corePosition, projectedGradientComponent);
 			
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-				normAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+			#pragma omp parallel firstprivate(currentValue)
+			{
+				std::vector<value_t> partialNormAProjGrad(x.dimensions[_corePosition], 0.0);
+				
+				#pragma omp for schedule(static)
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
+					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+				}
+				
+				// Accumulate the partical components
+				#pragma omp critical
+				{
+					for(size_t i = 0; i < normAProjGrad.size(); ++i) {
+						normAProjGrad[i] += partialNormAProjGrad[i];
+					}
+				}
 			}
 		} else {
 			update_backward_stack(_corePosition, projectedGradientComponent);
 			
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
-				normAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+			#pragma omp parallel firstprivate(currentValue)
+			{
+				std::vector<value_t> partialNormAProjGrad(x.dimensions[_corePosition], 0.0);
+				
+				#pragma omp for schedule(static)
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
+					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+				}
+			
+				// Accumulate the partical components
+				#pragma omp critical
+				{
+					for(size_t i = 0; i < normAProjGrad.size(); ++i) {
+						normAProjGrad[i] += partialNormAProjGrad[i];
+					}
+				}
 			}
 		}
 		
