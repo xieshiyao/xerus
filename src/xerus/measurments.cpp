@@ -152,30 +152,41 @@ namespace xerus {
 		
 		Index r1, r2, i1;
 		
-		std::unique_ptr<FullTensor[]> stackMem(new FullTensor[degree()+1]);
-		FullTensor* const stack = stackMem.get()+1;
-		stackMem[0] = Tensor::ones({1});
-		
-		std::vector<FullTensor> intermediates(degree());
 		std::vector<FullTensor> reshuffledComponents(degree());
-		for(size_t d = 0; d+1 < degree(); ++d) {
-			stack[d].reset({_solution.rank(d)}, DONT_SET_ZERO());
-		}
+		
 		for(size_t d = 0; d < degree(); ++d) {
-			intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, DONT_SET_ZERO());
 			reshuffledComponents[d](i1, r1, r2) = _solution.get_component(d)(r1, i1, r2);
 		}
 		
-		for(size_t i = 0; i < size(); ++i) {
-			for(size_t d = 0; d < degree(); ++d) {
-				contract(intermediates[d], positions[i][d], false, reshuffledComponents[d], false, 1);
-				contract(stack[d], stack[d-1], false, intermediates[d], false, 1);
+		// TODO beautify
+		#pragma omp parallel reduction(+: residualNorm, measurementNorm)
+		{
+			std::unique_ptr<FullTensor[]> stackMem(new FullTensor[degree()+1]);
+			FullTensor* const stack = stackMem.get()+1;
+			stackMem[0] = Tensor::ones({1});
+			
+			for(size_t d = 0; d+1 < degree(); ++d) {
+				stack[d].reset({_solution.rank(d)}, DONT_SET_ZERO());
 			}
 			
-			REQUIRE(stack[degree()-1].size == 1 , "IE");
+			std::vector<FullTensor> intermediates(degree());
 			
-			residualNorm += misc::sqr(measuredValues[i] - stack[degree()-1][0]);
-			measurementNorm += misc::sqr(measuredValues[i]);
+			for(size_t d = 0; d < degree(); ++d) {
+				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, DONT_SET_ZERO());
+			}
+			
+			#pragma omp for schedule(static)
+			for(size_t i = 0; i < size(); ++i) {
+				for(size_t d = 0; d < degree(); ++d) {
+					contract(intermediates[d], positions[i][d], false, reshuffledComponents[d], false, 1);
+					contract(stack[d], stack[d-1], false, intermediates[d], false, 1);
+				}
+				
+				REQUIRE(stack[degree()-1].size == 1 , "IE");
+				
+				residualNorm += misc::sqr(measuredValues[i] - stack[degree()-1][0]);
+				measurementNorm += misc::sqr(measuredValues[i]);
+			}
 		}
 		
 		return std::sqrt(residualNorm)/std::sqrt(measurementNorm);
