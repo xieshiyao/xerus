@@ -56,12 +56,12 @@ namespace xerus {
 			
 			data.emplace_back(_itrCount, get_elapsed_time(), _residual, errorFunction(_x), _x.ranks(), _flags);
 			
-			if(printProgress) {
+			if (printProgress) {
 				LOG(PerformanceData, "Iteration " << std::setw(4) << std::setfill(' ') << _itrCount 
 					<< " Time: " << std::right << std::setw(6) << std::setfill(' ') << std::fixed << std::setprecision(2) << double(data.back().elapsedTime)*1e-6 
 					<< "s Residual: " <<  std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << data.back().residual 
 					<< " Error: " << std::setw(11) << std::setfill(' ') << std::scientific << std::setprecision(6) << data.back().error
-					<< " Flags: " << _flags << " Ranks: " << data.back().ranks);
+					<< " Flags: " << _flags << " Ranks: " << _x.ranks()); // NOTE using data.back().ranks causes segmentation fault in gcc
 			}
 			continue_timer();
 		}
