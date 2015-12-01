@@ -181,6 +181,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::resize_stack_tensors() {
+		#pragma omp parallel for schedule(static)
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(const size_t i : forwardUpdates[corePosition]) {
 				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, DONT_SET_ZERO());
@@ -205,10 +206,15 @@ namespace xerus {
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		
+		const size_t numUpdates = backwardUpdates[_corePosition].size();
+		
 		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);
 		
 		// Update the stack
-		for(const size_t i : backwardUpdates[_corePosition]) {
+		#pragma omp parallel for schedule(static)
+		for(size_t u = 0; u < numUpdates; ++u) {
+			const size_t i = backwardUpdates[_corePosition][u];
 			contract(*backwardStack[i + _corePosition*numMeasurments], fixedComponents[measurments.positions[i][_corePosition]], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
 		}
 	}
@@ -237,10 +243,15 @@ namespace xerus {
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		
+		const size_t numUpdates = forwardUpdates[_corePosition].size();
+		
 		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);		
 		
 		// Update the stack
-		for(const size_t i : forwardUpdates[_corePosition]) {
+		#pragma omp parallel for schedule(static)
+		for(size_t u = 0; u < numUpdates; ++u) {
+			const size_t i = forwardUpdates[_corePosition][u];
 			contract(*forwardStack[i + _corePosition*numMeasurments] , *forwardStack[i + (_corePosition-1)*numMeasurments], false, fixedComponents[measurments.positions[i][_corePosition]], false, 1);
 		}
 	}
@@ -288,46 +299,54 @@ namespace xerus {
 			}
 		}
 	}
-
 	
-	template<>
-	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::calculate_projected_gradient( const size_t _corePosition) {
-		const size_t localLeftRank = x.get_component(_corePosition).dimensions[0];
-		const size_t localRightRank = x.get_component(_corePosition).dimensions[2];
+	template<> template<>
+	inline void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::perform_dyadic_product(	const size_t _localLeftRank,
+																					const size_t _localRightRank,
+																					const value_t* const _leftPtr, 
+																					const value_t* const _rightPtr, 
+																					value_t* const _deltaPtr,
+																					const value_t _residual,
+																					const size_t& _position,
+																					value_t* const _scratchSpace
+																				) {
+		value_t* const shiftedDeltaPtr = _deltaPtr + _position*_localLeftRank*_localRightRank;
 		
-		projectedGradientComponent.reset({x.dimensions[_corePosition], localLeftRank, localRightRank});
-		
-		#pragma omp parallel
-		{
-			FullTensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
-			
-			#pragma omp for schedule(static)
-			for(size_t i = 0; i < numMeasurments; ++i) {
-				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
-				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-				const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
-				const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
-				value_t* const deltaPtr = partialProjGradComp.data_pointer()+measurments.positions[i][_corePosition]*localLeftRank*localRightRank;
-				const value_t factor = residual[i];
-				for(size_t k = 0; k < localLeftRank; ++k) {
-					for(size_t j = 0; j < localRightRank; ++j) {
-						deltaPtr[k*localRightRank+j] += factor * leftPtr[k] * rightPtr[j];
-					}
-				}
-			}
-			
-			// Accumulate the partical components
-			#pragma omp critical
-			{
-				projectedGradientComponent += partialProjGradComp;
+		for(size_t k = 0; k < _localLeftRank; ++k) {
+			for(size_t j = 0; j < _localRightRank; ++j) {
+				shiftedDeltaPtr[k*_localRightRank+j] += _residual * _leftPtr[k] * _rightPtr[j];
 			}
 		}
-		
-		projectedGradientComponent(r1, i1, r2) = projectedGradientComponent(i1, r1, r2);
 	}
 	
-	template<>
-	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::calculate_projected_gradient( const size_t _corePosition) {
+	template<> template<>
+	inline void ADFVariant::InternalSolver<RankOneMeasurmentSet>::perform_dyadic_product(	const size_t _localLeftRank,
+																					const size_t _localRightRank,
+																					const value_t* const _leftPtr, 
+																					const value_t* const _rightPtr, 
+																					value_t* const _deltaPtr,
+																					const value_t _residual,
+																					const FullTensor& _position,
+																					value_t* const _scratchSpace
+																				) {
+		// Create dyadic product without factors in scratch space
+		for(size_t k = 0; k < _localLeftRank; ++k) {
+			for(size_t j = 0; j < _localRightRank; ++j) {
+				_scratchSpace[k*_localRightRank+j] = _leftPtr[k] * _rightPtr[j];
+			}
+		}
+		
+		for(size_t n = 0; n < _position.size; ++n) {
+			misc::array_add(_deltaPtr + n*_localLeftRank*_localRightRank, 
+				_position[n]*_residual,
+				_scratchSpace,
+				_localLeftRank*_localRightRank
+			);
+		}
+	}
+	
+	template<class MeasurmentSet>
+	inline void ADFVariant::InternalSolver<MeasurmentSet>::calculate_projected_gradient( const size_t _corePosition ) {
 		const size_t localLeftRank = x.get_component(_corePosition).dimensions[0];
 		const size_t localRightRank = x.get_component(_corePosition).dimensions[2];
 		
@@ -337,29 +356,22 @@ namespace xerus {
 		{
 			FullTensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
 			
-			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]);
+			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]); // TODO Not needed if SinglePointMeasurmentSet
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
 				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 				
 				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
-				const value_t* const leftPtr = forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer();
-				const value_t* const rightPtr = backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer();
-				
-				for(size_t k = 0; k < localLeftRank; ++k) {
-					for(size_t j = 0; j < localRightRank; ++j) {
-						dyadicComponent[k*localRightRank+j] = leftPtr[k] * rightPtr[j];
-					}
-				}
-				
-				for(size_t n = 0; n < x.dimensions[_corePosition]; ++n) {
-					misc::array_add(partialProjGradComp.data_pointer() + n*localLeftRank*localRightRank, 
-						measurments.positions[i][_corePosition][n]*residual[i],
-						dyadicComponent.get(),
-						localLeftRank*localRightRank
-					);
-				}
+				perform_dyadic_product(	localLeftRank, 
+										localRightRank, 
+										forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer(),
+										backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer(),
+										partialProjGradComp.unsanitized_data_pointer(),
+										residual[i],
+										measurments.positions[i][_corePosition],
+										dyadicComponent.get()
+  									);
 			}
 		
 			// Accumulate the partical components
@@ -368,6 +380,7 @@ namespace xerus {
 				projectedGradientComponent += partialProjGradComp;
 			}
 		}
+		
 		projectedGradientComponent(r1, i1, r2) = projectedGradientComponent(i1, r1, r2);
 	}
 	
@@ -486,11 +499,13 @@ namespace xerus {
 			calculate_residual(0);
 			
 			lastResidualNorm = residualNorm;
-			residualNorm = 0;
+			double residualNormSqr = 0;
+			
+			#pragma omp parallel for schedule(static) reduction(+:residualNormSqr)
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				residualNorm += misc::sqr(residual[i]);
+				residualNormSqr += misc::sqr(residual[i]);
 			}
-			residualNorm = std::sqrt(residualNorm)/normMeasuredValues;
+			residualNorm = std::sqrt(residualNormSqr)/normMeasuredValues;
 			
 			perfData.add(iteration, residualNorm, x, 0);
 			

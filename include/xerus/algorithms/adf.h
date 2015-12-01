@@ -155,6 +155,11 @@ namespace xerus {
 			///@brief (Re-)Calculates the current residual, i.e. Ax-b.
 			void calculate_residual( const size_t _corePosition );
 			
+			///@brief Calculates one internal step of calculate_projected_gradient. In particular the dyadic product of the leftStack, the rightStack and the position vector.
+			template<class PositionType>
+			void perform_dyadic_product(const size_t _localLeftRank, const size_t _localRightRank, const value_t* const _leftPtr,  const value_t* const _rightPtr,  value_t* const _deltaPtr, const value_t _residual, const PositionType& _position, value_t* const _scratchSpace );
+	
+			
 			///@brief: Calculates the component at _corePosition of the projected gradient from the residual, i.e. E(A^T(b-Ax)).
 			void calculate_projected_gradient(const size_t _corePosition);
 			
