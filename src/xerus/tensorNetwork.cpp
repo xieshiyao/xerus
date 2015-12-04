@@ -216,7 +216,7 @@ namespace xerus {
     }
     
     
-	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
+    void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
 		std::vector<TensorNetwork> stack;
 		stack.emplace_back(*this);
 		stack.back().reduce_representation();
@@ -256,6 +256,50 @@ namespace xerus {
 			REQUIRE(stack.size() == degree()+1, "Internal Error");
 			
 			measurment.value = stack.back()[0];
+		}
+	}
+	
+	void TensorNetwork::measure(SinglePointMeasurmentSet& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
+		std::vector<TensorNetwork> stack;
+		stack.emplace_back(*this);
+		stack.back().reduce_representation();
+		
+		// Sort measurements
+// 		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
+		sort(_measurments, degree()-1);
+		
+		bool firstTime = true;
+		std::vector<size_t> previousPosition;
+		for(size_t j = 0; j < _measurments.size(); ++j) {
+			size_t rebuildIndex = ~0ul;
+			if(firstTime) {
+				rebuildIndex = 0;
+				firstTime = false;
+			} else {
+				// Find the maximal recyclable stack position
+				for(size_t i = 0; i < degree(); ++i) {
+					if(previousPosition[i] != _measurments.positions[j][i]) {
+						rebuildIndex = i;
+						break;
+					}
+				}
+			}
+			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
+			previousPosition = _measurments.positions[j];
+			
+			// Trash stack that is not needed anymore
+			stack.resize(rebuildIndex+1);
+			
+			// Rebuild stack
+			for(size_t i = rebuildIndex; i < degree(); ++i) {
+				stack.emplace_back(stack.back());
+				stack.back().fix_slate(0, _measurments.positions[j][i]);
+				stack.back().reduce_representation();
+			}
+			REQUIRE(stack.back().degree() == 0, "Internal Error");
+			REQUIRE(stack.size() == degree()+1, "Internal Error");
+			
+			_measurments.measuredValues[j] = stack.back()[0];
 		}
 	}
     

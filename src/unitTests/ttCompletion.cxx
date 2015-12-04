@@ -28,8 +28,8 @@ using namespace xerus;
 UNIT_TEST(Algorithm, adf_completion,
 	const size_t D = 8;
 	const size_t N = 10;
-	const size_t R = 8;
-	const size_t CS = 2; 
+	const size_t R = 3;
+	const size_t CS = 3; 
 // 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());
 	std::mt19937_64 rnd;
@@ -79,12 +79,14 @@ UNIT_TEST(Algorithm, adf_completion,
 	ctrNorm = std::sqrt(ctrNorm);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
+// 	TTTensor X = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	
 	
 	PerformanceData perfData(true);
 	
-	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
-// 	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+// 	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+// 	iht(X, SinglePointMeasurmentSet(measurements), perfData);
 	
 	value_t ctrValue = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {

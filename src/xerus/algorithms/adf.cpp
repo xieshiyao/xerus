@@ -542,9 +542,14 @@ namespace xerus {
 		// Sanitize maxRanks
 		TTTensor::reduce_to_maximal_ranks(maxRanks, x.dimensions);
 		
-		construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
-		construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
-		
+		#pragma omp parallel sections
+		{
+			#pragma omp section
+				construct_stacks(forwardStackSaveSlots, forwardUpdates, forwardStackMem, true);
+			
+			#pragma omp section
+				construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
+		}
 		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack resize).
 		x.cannonicalize_left();
 		

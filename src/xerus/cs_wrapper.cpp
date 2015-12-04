@@ -36,7 +36,7 @@ namespace xerus {
     
     
     CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N) {
-        REQUIRE(_m < std::numeric_limits<int>::max() && _n < std::numeric_limits<int>::max() && _N < std::numeric_limits<int>::max(), "Sparse Tensor is to large for SuiteSparse");
+        REQUIRE(_m < std::numeric_limits<int>::max() && _n < std::numeric_limits<int>::max() && _N < std::numeric_limits<int>::max(), "Sparse Tensor is to large for SuiteSparse (" << _m << " x " << _n << ", " << _N << ")");
         return CsUniquePtr(cs_spalloc((int) _m, (int) _n, (int) _N, 1, 0), &cs_spfree);
     }
     

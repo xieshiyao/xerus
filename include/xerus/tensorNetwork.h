@@ -246,11 +246,18 @@ namespace xerus {
         value_t operator[](const std::vector<size_t>& _positions) const;
 		
 		/** 
-		* @brief Calculates the value of the tensor at the given positions.
-		* @param _measurments vector of SinglePointMeasurments defining the positions. On output the values are those of the tensor. 
-		* Note that the order of the measurments may be changed.
-		*/
-        void measure(std::vector<SinglePointMeasurment>& _measurments) const;
+		 * @brief Calculates the value of the tensor at the given positions.
+		 * @param _measurments vector of SinglePointMeasurments defining the positions. On output the values are those of the tensor. 
+		 * Note that the order of the measurments may be changed.
+		 */
+		void measure(std::vector<SinglePointMeasurment>& _measurments) const; // TODO remove
+		
+		/** 
+		 * @brief Calculates the value of the tensor at the given positions.
+		 * @param _measurments SinglePointMeasurmentSet defining the positions. On output the values are those of the tensor. 
+		 * Note that the order of the measurments may be changed.
+		 */
+		void measure(SinglePointMeasurmentSet& _measurments) const;
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
