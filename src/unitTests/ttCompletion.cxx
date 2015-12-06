@@ -26,15 +26,15 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 8;
+	const size_t D = 10;
 	const size_t N = 10;
 	const size_t R = 3;
 	const size_t CS = 3; 
-// 	std::random_device rd;
-// 	std::mt19937_64 rnd(rd());
-	std::mt19937_64 rnd;
+	std::random_device rd;
+	std::mt19937_64 rnd(rd());
+// 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
-	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
+	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
 // 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
@@ -79,7 +79,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	ctrNorm = std::sqrt(ctrNorm);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
-// 	TTTensor X = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+// 	TTTensor X = 1e-17*TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	
 	
 	PerformanceData perfData(true);
@@ -94,7 +94,7 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
-	LOG(currError, ctrValue);
+// 	LOG(currError, ctrValue);
 	MTEST(ctrValue < 1e-2, ctrValue);
 // 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-13, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )

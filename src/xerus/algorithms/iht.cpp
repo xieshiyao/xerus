@@ -30,6 +30,7 @@ namespace xerus {
 		const size_t degree = _x.degree();
 		const size_t USER_MEASUREMENTS_PER_ITR = numMeasurments;
 		
+
 		TTTensor largeX(_x);
 		// 		SinglePointMeasurmentSet currentValues(_measurments);
 		std::vector<value_t> currentValues(numMeasurments);
@@ -39,6 +40,12 @@ namespace xerus {
 		_perfData.start();
 		
 		Index i1, i2, i3, i4, i5;
+		
+		value_t normMeasuredValues = 0.0;
+		for(size_t i = 0; i < numMeasurments; ++i) {
+			normMeasuredValues += misc::sqr(_measurments.measuredValues[i]);
+		}
+		normMeasuredValues = std::sqrt(normMeasuredValues);
 		
 		std::mt19937_64 rnd(0x5EED0);
 		
@@ -55,7 +62,7 @@ namespace xerus {
 			});
 			
 			
-			// calculate residual for perfdata
+			// Calculate residual for perfdata
 			if (_perfData) {
 				_perfData.stop_timer();
 				value_t residual = 0;
@@ -63,7 +70,7 @@ namespace xerus {
 					residual += misc::sqr(_measurments.measuredValues[i] - currentValues[i]);
 				}
 				_perfData.continue_timer();
-				_perfData.add(iteration, std::sqrt(residual), _x, 0);
+				_perfData.add(iteration, std::sqrt(residual)/normMeasuredValues, _x, 0);
 			}
 			
 			
@@ -84,7 +91,7 @@ namespace xerus {
 				// Copy sparse part
 				if (d==0) {
 					for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
-						newComp[{0, _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = _measurments.measuredValues[measurementOrder[i]] - currentValues[measurementOrder[i]];
+						newComp[{0, _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = (_measurments.measuredValues[measurementOrder[i]] - currentValues[measurementOrder[i]]);
 					}
 				} else if (d!=degree-1) {
 					for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
@@ -103,8 +110,11 @@ namespace xerus {
 			FullTensor fullX(largeX);
 			
 			_x = TTTensor(fullX, 0.0, _x.ranks());
-			largeX = TTTensor(fullX);
 			
+// 			decomposition_als(_x, fullX);
+			
+// 			largeX = TTTensor(fullX);
+			/*
 			FullTensor doubleComp, U, Vt;
 			SparseTensor S;
 			for(size_t d = 0; d+1 < degree; ++d) {
@@ -117,8 +127,8 @@ namespace xerus {
 			
 			largeX.assume_core_position(degree-1);
 			largeX.cannonicalize_left();
-			largeX.round(_x.ranks());
-			_x = largeX;
+			largeX.round(_x.ranks());*/
+// 			_x = largeX;
 		}
 		
 		value_t residual = 0;

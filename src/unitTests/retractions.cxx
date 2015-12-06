@@ -24,7 +24,7 @@
 using namespace xerus;
 
 
-UNIT_TEST(Algorithms, retractions,
+UNIT_TEST(Algorithm, retractions,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -235,7 +235,7 @@ UNIT_TEST(TTTangentVector, creation,
 )
 
 
-UNIT_TEST(Algorithms, vectorTransport,
+UNIT_TEST(Algorithm, vectorTransport,
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
