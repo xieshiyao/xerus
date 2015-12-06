@@ -50,7 +50,7 @@ namespace xerus {
 		template<class random_engine>
 		static std::vector<SinglePointMeasurment> create_set(size_t _degree, size_t _n, const size_t _numMeasurements, random_engine _rnd) {
 			REQUIRE(misc::pow(_n, _degree) >= _numMeasurements, "it's impossible to perform as many measurements as requested");
-			std::uniform_int_distribution<size_t> indexDist(0,_n-1);
+			std::uniform_int_distribution<size_t> indexDist(0, _n-1);
 			std::set<std::vector<size_t>> measuredPositions;
 			std::vector<SinglePointMeasurment> result;
 			while (result.size() < _numMeasurements) {
