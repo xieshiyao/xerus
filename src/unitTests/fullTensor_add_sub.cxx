@@ -98,11 +98,11 @@ UNIT_TEST(FullTensor, sum_dyadic,
 
     Index i, J, K;
     
-    B[{0}]=1;
-    B[{1}]=2;
+    B[0]=1;
+    B[1]=2;
     
-    C[{0}]=5;
-    C[{1}]=9;
+    C[0]=5;
+    C[1]=9;
     
     FAILTEST(res(i,J) = B(i) + C(J));
 //     TEST(res.compare_to_data({6,10,7,11}));
@@ -116,14 +116,14 @@ UNIT_TEST(FullTensor, sum_threefold_sum,
 
     Index i, J, K;
     
-    B[{0}]=1;
-    B[{1}]=2;
+    B[0]=1;
+    B[1]=2;
     
-    C[{0}]=5;
-    C[{1}]=9;
+    C[0]=5;
+    C[1]=9;
     
-    D[{0}]=7;
-    D[{1}]=13;
+    D[0]=7;
+    D[1]=13;
     
     res(i) = B(i) + C(i) + D(i);
     TEST(res.compare_to_data({13,24}));

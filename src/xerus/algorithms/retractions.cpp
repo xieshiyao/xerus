@@ -191,8 +191,8 @@ namespace xerus {
 				result.set_component(i, newComponent);
 			} else {
 				FullTensor newComponent(4);
-				newComponent(i1,r1,n,r2) = Tensor::dirac({2},{0})(i1) * components[i](r1,n,r2)
-											+Tensor::dirac({2},{1})(i1) * baseComponent(r1,n,r2);
+				newComponent(i1,r1,n,r2) = Tensor::dirac({2},0)(i1) * components[i](r1,n,r2)
+											+Tensor::dirac({2},1)(i1) * baseComponent(r1,n,r2);
 				newComponent.reinterpret_dimensions({components[i].dimensions[0]*2, components[i].dimensions[1], 1});
 				result.set_component(i, newComponent);
 			}
@@ -209,8 +209,8 @@ namespace xerus {
 		TTTensor result = change_direction_incomplete();
 		Index i1,i2,n,r1,r2;
 		FullTensor newComponent(4);
-		newComponent(r1,n,i2,r2) = Tensor::dirac({2},{0})(i2) * baseL.get_component(0)(r1,n,r2)
-									+Tensor::dirac({2},{1})(i2) * components[0](r1,n,r2);
+		newComponent(r1,n,i2,r2) = Tensor::dirac({2},0)(i2) * baseL.get_component(0)(r1,n,r2)
+									+Tensor::dirac({2},1)(i2) * components[0](r1,n,r2);
 		newComponent.reinterpret_dimensions({1, components[0].dimensions[1], components[0].dimensions[2]*2});
 		result.set_component(0, newComponent);
 		result.move_core(0);
@@ -236,8 +236,8 @@ namespace xerus {
 		TTTensor result = change_direction_incomplete();
 		FullTensor newComponent(4);
 		Index i1,i2,n,r1,r2;
-		newComponent(r1,n,i2,r2) = Tensor::dirac({2},{0})(i2) * baseL.get_component(0)(r1,n,r2)
-									+Tensor::dirac({2},{1})(i2) * (baseL.get_component(0)(r1,n,r2) + components[0](r1,n,r2));
+		newComponent(r1,n,i2,r2) = Tensor::dirac({2},0)(i2) * baseL.get_component(0)(r1,n,r2)
+									+Tensor::dirac({2},1)(i2) * (baseL.get_component(0)(r1,n,r2) + components[0](r1,n,r2));
 		newComponent.reinterpret_dimensions({1, components[0].dimensions[1], components[0].dimensions[2]*2});
 		result.set_component(0, newComponent);
 		result.move_core(0);

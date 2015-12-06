@@ -217,9 +217,9 @@ UNIT_TEST(TT, product,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	Index i,j,k,l;
 	
-	TTOperator ttA = TTOperator::random({10,10,10,10}, {1}, rnd, dist);
-	TTOperator ttB = TTOperator::random({10,10,10,10}, {1}, rnd, dist);
-	TTTensor ttD = TTTensor::random({10,10}, {2}, rnd, dist);
+	TTOperator ttA = TTOperator::random({10,10,10,10}, 1, rnd, dist);
+	TTOperator ttB = TTOperator::random({10,10,10,10}, 1, rnd, dist);
+	TTTensor ttD = TTTensor::random({10,10}, 2, rnd, dist);
 	FullTensor A(ttA);
 	FullTensor B(ttB);
 	FullTensor D(ttD);

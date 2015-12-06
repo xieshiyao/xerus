@@ -168,9 +168,9 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        virtual Tensor* get_copy() const;
+        virtual Tensor* get_copy() const override;
         
-        virtual Tensor* get_moved_copy();
+        virtual Tensor* get_moved_copy() override;
         
         virtual Tensor* construct_new() const override;
         
@@ -185,13 +185,13 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        virtual void ensure_own_data();
+        virtual void ensure_own_data() override;
         
-        virtual void ensure_own_data_no_copy();
+        virtual void ensure_own_data_no_copy() override;
         
-        virtual void apply_factor();
+        virtual void apply_factor() override;
         
-        virtual void ensure_own_data_and_apply_factor();
+        virtual void ensure_own_data_and_apply_factor() override;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
@@ -301,23 +301,23 @@ namespace xerus {
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
         
-        virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO);
+        virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;
 		
-        virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO);
+        virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) override;
         
-        virtual void reset(const std::vector<size_t>&  _newDim);
+        virtual void reset(const std::vector<size_t>&  _newDim) override;
 		
-        virtual void reset(      std::vector<size_t>&& _newDim);
+        virtual void reset(      std::vector<size_t>&& _newDim) override;
         
-        virtual bool is_sparse() const;
+        virtual bool is_sparse() const override;
         
         virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
         
 		virtual bool all_entries_valid() const override;
 		
-        virtual value_t frob_norm() const;
+        virtual value_t frob_norm() const override;
         
         virtual std::string to_string() const override;
         
