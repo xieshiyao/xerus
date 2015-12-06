@@ -46,15 +46,15 @@ UNIT_TEST(SparseTensor, Product_Order_1,
     
     Index i,j;
     
-    A[{0}] = 1;
-    A[{1}] = 2;
+    A[0] = 1;
+    A[1] = 2;
     
-    B[{0}] = 3;
-    B[{1}] = 4;
+    B[0] = 3;
+    B[1] = 4;
     
-    C[{0}] = 5;
-    C[{1}] = 6;
-    C[{2}] = 7;
+    C[0] = 5;
+    C[1] = 6;
+    C[2] = 7;
     
     // Same dimensions
     // Contraction with no index being contracted

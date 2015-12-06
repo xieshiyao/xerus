@@ -471,7 +471,7 @@ namespace xerus {
         void remove_slate(uint _indexNb, uint _pos);
 		
 		
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
         
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.

@@ -27,7 +27,9 @@
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 namespace xerus {
 	
@@ -462,7 +464,7 @@ namespace xerus {
 			const value_t PyR = misc::sqr(frob_norm(localDelta));
 			
 			// Update
-			x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/_normAProjGrad[j])*Tensor::dirac({x.dimensions[_corePosition]}, {j})(i1)*localDelta(r1, r2);
+			x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/_normAProjGrad[j])*Tensor::dirac({x.dimensions[_corePosition]}, j)(i1)*localDelta(r1, r2);
 		}
 	}
 	

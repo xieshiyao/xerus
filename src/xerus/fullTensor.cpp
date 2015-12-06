@@ -265,10 +265,12 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     value_t& FullTensor::operator[](const size_t _i) {
         ensure_own_data_and_apply_factor();
+		LOG(asdflkj, "op[size_t]");
         return data.get()[_i];
     }
 
     value_t FullTensor:: operator[](const size_t _i) const {
+		LOG(asdflkj, "op[size_t]");
         return factor*data.get()[_i];
     }
 

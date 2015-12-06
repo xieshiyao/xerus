@@ -103,22 +103,22 @@ namespace xerus {
 			FullTensor fullX(largeX);
 			
 			_x = TTTensor(fullX, 0.0, _x.ranks());
-			largeX = TTTensor(fullX);
-			
-			FullTensor doubleComp, U, Vt;
-			SparseTensor S;
-			for(size_t d = 0; d+1 < degree; ++d) {
-				doubleComp(i1^2 , i3^2) = largeX.get_component(d)(i1^2, i2) * largeX.get_component(d+1)(i2, i3^2); 
-				(U(i1^2, i2), S(i2, i3), Vt(i3, i4^2)) = SVD(doubleComp(i1^2, i4^2), 2*_x.rank(d));
-				largeX.set_component(d, U);
-				doubleComp(i1, i2^2) = S(i1, i3) * Vt(i3, i2^2);
-				largeX.set_component(d+1, doubleComp);
-			}
-			
-			largeX.assume_core_position(degree-1);
-			largeX.cannonicalize_left();
-			largeX.round(_x.ranks());
-			_x = largeX;
+// 			largeX = TTTensor(fullX);
+// 			
+// 			FullTensor doubleComp, U, Vt;
+// 			SparseTensor S;
+// 			for(size_t d = 0; d+1 < degree; ++d) {
+// 				doubleComp(i1^2 , i3^2) = largeX.get_component(d)(i1^2, i2) * largeX.get_component(d+1)(i2, i3^2); 
+// 				(U(i1^2, i2), S(i2, i3), Vt(i3, i4^2)) = SVD(doubleComp(i1^2, i4^2), 2*_x.rank(d));
+// 				largeX.set_component(d, U);
+// 				doubleComp(i1, i2^2) = S(i1, i3) * Vt(i3, i2^2);
+// 				largeX.set_component(d+1, doubleComp);
+// 			}
+// 			
+// 			largeX.assume_core_position(degree-1);
+// 			largeX.cannonicalize_left();
+// 			largeX.round(_x.ranks());
+// 			_x = largeX;
 		}
 		
 		value_t residual = 0;
