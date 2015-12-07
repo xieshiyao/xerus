@@ -26,16 +26,16 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_completion,
-	const size_t D = 8;
-	const size_t N = 10;
+	const size_t D = 15;
+	const size_t N = 2;
 	const size_t R = 3;
-	const size_t CS = 3; 
+	const size_t CS = 2; 
 // 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());
 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-0.5 ,0.5);
-// 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	std::vector<SinglePointMeasurment> measurements;
 	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
 	
@@ -61,8 +61,8 @@ UNIT_TEST(Algorithm, adf_completion,
 	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
 // 	LOG(bla, "Set size " << measurements.size() << " should be " << D*N*CS*R*R << " measured quotient " << double(D*N*CS*R*R)/(double) misc::pow(N, D));
 	
-	examples::completion::inverse_index_ratios(measurements);
-// 	trueSolution.measure(measurements);
+// 	examples::completion::inverse_index_ratios(measurements);
+	trueSolution.measure(measurements);
 // 	bool test = true;
 // 	for (const SinglePointMeasurment &m : measurements) {
 // 		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-10);
@@ -78,15 +78,15 @@ UNIT_TEST(Algorithm, adf_completion,
 	}
 	ctrNorm = std::sqrt(ctrNorm);
 	
-	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
-// 	TTTensor X = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+// 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
+	TTTensor X = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 	
 	
 	PerformanceData perfData(true);
 	
 // 	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
-	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
-// 	iht(X, SinglePointMeasurmentSet(measurements), perfData);
+// 	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+	iht(X, SinglePointMeasurmentSet(measurements), perfData);
 	
 	value_t ctrValue = 0.0;
 	for(const SinglePointMeasurment& meas : ctrSet) {

@@ -29,6 +29,7 @@ namespace xerus {
 		const size_t numMeasurments = _measurments.size();
 		const size_t degree = _x.degree();
 		const size_t USER_MEASUREMENTS_PER_ITR = numMeasurments;
+		const value_t ALPHA_CHG = 1.1;
 		
 		TTTensor largeX(_x);
 		// 		SinglePointMeasurmentSet currentValues(_measurments);
@@ -40,7 +41,18 @@ namespace xerus {
 		
 		Index i1, i2, i3, i4, i5;
 		
-		std::mt19937_64 rnd(0x5EED0);
+		std::random_device rd;
+		std::mt19937_64 rnd(rd());
+		std::uniform_real_distribution<value_t> dist(0, 1);
+		
+		std::vector<size_t> twoR(_x.ranks());
+		for (auto &r : twoR) {
+			r *= 2;
+		}
+		
+		double alpha = 1;
+		
+		value_t residual = 1;
 		
 		for(size_t iteration = 0; iteration < 1000000; ++iteration) {
 // 			_x.measure(currentValues);
@@ -50,81 +62,93 @@ namespace xerus {
 			}
 			
 // 			std::shuffle(measurementOrder.begin(), measurementOrder.end(), rnd);
-			std::sort(measurementOrder.begin(), measurementOrder.end(), [&](size_t a, size_t b){
-				return std::abs(_measurments.measuredValues[a] - currentValues[a]) > std::abs(_measurments.measuredValues[b] - currentValues[b]);
-			});
+// 			std::sort(measurementOrder.begin(), measurementOrder.end(), [&](size_t a, size_t b){
+// 				return std::abs(_measurments.measuredValues[a] - currentValues[a]) > std::abs(_measurments.measuredValues[b] - currentValues[b]);
+// 			});
 			
+			value_t bestResidual = residual*2;
+			value_t newAlpha = alpha;
 			
-			// calculate residual for perfdata
-			if (_perfData) {
-				_perfData.stop_timer();
-				value_t residual = 0;
-				for(size_t i = 0; i < numMeasurments; ++i) {
-					residual += misc::sqr(_measurments.measuredValues[i] - currentValues[i]);
+			for (value_t beta = 1/ALPHA_CHG; beta < ALPHA_CHG*1.5; beta *= ALPHA_CHG) {
+				// Build the largeX
+				for(size_t d = 0; d < degree; ++d) {
+					Tensor& currComp = _x.component(d);
+					SparseTensor newComp({d == 0 ? 1 : (currComp.dimensions[0]+USER_MEASUREMENTS_PER_ITR), currComp.dimensions[1], d == degree-1 ? 1 : (currComp.dimensions[2]+USER_MEASUREMENTS_PER_ITR)});
+					
+					// Copy dense part
+					for(size_t r1 = 0; r1 < currComp.dimensions[0]; ++r1) {
+						for(size_t n = 0; n < currComp.dimensions[1]; ++n) {
+							for(size_t r2 = 0; r2 < currComp.dimensions[2]; ++r2) {
+								newComp[{r1, n, r2}] = currComp[{r1, n, r2}];
+							}
+						}
+					}
+					
+					// Copy sparse part
+					if (d==0) {
+						for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
+							newComp[{0, _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = beta*alpha*(_measurments.measuredValues[measurementOrder[i]] - currentValues[measurementOrder[i]]);
+						}
+					} else if (d!=degree-1) {
+						for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
+							newComp[{i + currComp.dimensions[0], _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = 1.0;
+						}
+					} else {
+						// d == degree-1
+						for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
+							newComp[{i + currComp.dimensions[0], _measurments.positions[measurementOrder[i]][d], 0}] = 1.0;
+						}
+					}
+					
+					
+					largeX.set_component(d, newComp);
 				}
-				_perfData.continue_timer();
-				_perfData.add(iteration, std::sqrt(residual), _x, 0);
-			}
-			
-			
-			// Build the largeX
-			for(size_t d = 0; d < degree; ++d) {
-				Tensor& currComp = _x.component(d);
-				SparseTensor newComp({d == 0 ? 1 : (currComp.dimensions[0]+USER_MEASUREMENTS_PER_ITR), currComp.dimensions[1], d == degree-1 ? 1 : (currComp.dimensions[2]+USER_MEASUREMENTS_PER_ITR)});
-				
-				// Copy dense part
-				for(size_t r1 = 0; r1 < currComp.dimensions[0]; ++r1) {
-					for(size_t n = 0; n < currComp.dimensions[1]; ++n) {
-						for(size_t r2 = 0; r2 < currComp.dimensions[2]; ++r2) {
-							newComp[{r1, n, r2}] = currComp[{r1, n, r2}];
+				// one ALS sweep to 2r
+				TTTensor newX = _x;//TTTensor::random(_x.dimensions, twoR, rnd, dist);
+				for (size_t o=0; o<1; ++o) {
+					newX.move_core(0, true);
+					// build stack from right to left
+					std::vector<FullTensor> stack;
+					stack.emplace_back(Tensor::ones({1,1}));
+					for (size_t i=degree-1; i>0; --i) {
+						FullTensor next;
+						next(i1,i2) = newX.get_component(i)(i1,i5,i3) * largeX.get_component(i)(i2,i5,i4) * stack.back()(i3,i4);
+						stack.emplace_back(next);
+					}
+					FullTensor left = Tensor::ones({1,1});
+					// sweep left to right
+					for (size_t i=0; i<degree; ++i) {
+						newX.component(i)(i1,i2,i3) = left(i1,i4) * largeX.get_component(i)(i4,i2,i5) * stack.back()(i3,i5);
+						if (i+1<degree) {
+							newX.move_core(i+1, true);
+							left(i1,i2) = left(i3,i4) * newX.get_component(i)(i3,i5,i1) * largeX.get_component(i)(i4,i5,i2);
+							stack.pop_back();
 						}
 					}
 				}
+				residual = 0;
 				
-				// Copy sparse part
-				if (d==0) {
-					for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
-						newComp[{0, _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = _measurments.measuredValues[measurementOrder[i]] - currentValues[measurementOrder[i]];
-					}
-				} else if (d!=degree-1) {
-					for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
-						newComp[{i + currComp.dimensions[0], _measurments.positions[measurementOrder[i]][d], i+currComp.dimensions[2]}] = 1.0;
-					}
-				} else {
-					// d == degree-1
-					for(size_t i = 0; i < USER_MEASUREMENTS_PER_ITR; ++i) {
-						newComp[{i + currComp.dimensions[0], _measurments.positions[measurementOrder[i]][d], 0}] = 1.0;
-					}
+				for(size_t i = 0; i < numMeasurments; ++i) {
+					residual += misc::sqr(_measurments.measuredValues[i] - newX[_measurments.positions[i]]);
 				}
+				residual = std::sqrt(residual);
 				
+// 				LOG(best, beta*alpha << " " << residual);
 				
-				largeX.set_component(d, newComp);
+	// 			newX.round(_x.ranks(), 0.0);
+				if (residual <= bestResidual) {
+					_x = newX;
+					bestResidual = residual;
+					newAlpha = alpha * beta;
+				}
 			}
-			FullTensor fullX(largeX);
+			residual = bestResidual;
+			alpha = newAlpha;
+			LOG(newAlpha, alpha);
 			
-			_x = TTTensor(fullX, 0.0, _x.ranks());
-// 			largeX = TTTensor(fullX);
-// 			
-// 			FullTensor doubleComp, U, Vt;
-// 			SparseTensor S;
-// 			for(size_t d = 0; d+1 < degree; ++d) {
-// 				doubleComp(i1^2 , i3^2) = largeX.get_component(d)(i1^2, i2) * largeX.get_component(d+1)(i2, i3^2); 
-// 				(U(i1^2, i2), S(i2, i3), Vt(i3, i4^2)) = SVD(doubleComp(i1^2, i4^2), 2*_x.rank(d));
-// 				largeX.set_component(d, U);
-// 				doubleComp(i1, i2^2) = S(i1, i3) * Vt(i3, i2^2);
-// 				largeX.set_component(d+1, doubleComp);
-// 			}
-// 			
-// 			largeX.assume_core_position(degree-1);
-// 			largeX.cannonicalize_left();
-// 			largeX.round(_x.ranks());
-// 			_x = largeX;
+			_perfData.add(iteration, bestResidual, _x, 0);
 		}
 		
-		value_t residual = 0;
-		for(size_t i = 0; i < numMeasurments; ++i) {
-			residual += misc::sqr(_measurments.measuredValues[i] - currentValues[i]);
-		}
-		return std::sqrt(residual);
+		return residual;
 	}
 }
