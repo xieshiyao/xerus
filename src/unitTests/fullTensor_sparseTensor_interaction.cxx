@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor_SparseTensor_Interaction, Assignment, 
+UNIT_TEST(Tensor, Assignment, 
     SparseTensor A({2,2,3,1,2});
     FullTensor B;
     FullTensor resF;
@@ -68,7 +68,7 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Assignment,
     
 )
 
-UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
+UNIT_TEST(Tensor, Product,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -109,7 +109,7 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Product,
     TEST(approx_equal(check, resFS, 1e-14));
 )
 
-UNIT_TEST(FullTensor_SparseTensor_Interaction, Random_Add_Sub,
+UNIT_TEST(Tensor, Random_Add_Sub,
     std::mt19937_64 rnd(0x938429347);
     std::normal_distribution<value_t> dist (0.0, 10.0);
     std::uniform_int_distribution<size_t> intDist (1, 5);
@@ -240,17 +240,4 @@ UNIT_TEST(FullTensor_SparseTensor_Interaction, Random_Add_Sub,
 		idxPow[idxDist(rnd)]++;
 	}
 )
-	
-// UNIT_TEST(FullTensor_SparseTensor_Interaction, Random_Indexed,
-//     std::mt19937_64 rnd;
-//     std::normal_distribution<value_t> dist (0.0, 10.0);
-//     std::uniform_int_distribution<size_t> intDist (1, 5);
-//     std::uniform_int_distribution<size_t> idxDist (0, 4);
-// 
-//     Index i, j, k, l, m, n, o, p;
-// 	
-// 	std::vector<std::vector<size_t>> dimensionSets(5);
-// 	
-// 	for(size_t d = 0; d < 10; ++d) {
-// 	}
-// )
+

@@ -31,6 +31,7 @@ namespace xerus {
 		const size_t USER_MEASUREMENTS_PER_ITR = numMeasurments;
 		const value_t ALPHA_CHG = 1.1;
 		
+
 		TTTensor largeX(_x);
 		// 		SinglePointMeasurmentSet currentValues(_measurments);
 		std::vector<value_t> currentValues(numMeasurments);

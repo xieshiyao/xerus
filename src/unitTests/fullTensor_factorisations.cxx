@@ -38,9 +38,13 @@ UNIT_TEST(FullTensor, SVD_Identity,
     
     (res1(i,j,m), res2(m,n), res3(n,k,l)) = SVD(A(i,j,k,l));
     TEST(res2.compare_to_data(A.data_pointer()));
+	MTEST(frob_norm(res1(i^2, m)*res1(i^2, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(m, i^2)*res3(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 	
     (res1(m,i,j), res2(n,m), res3(k,n,l)) = SVD(A(i,j,k,l));
     TEST(res2.compare_to_data(A.data_pointer()));
+	MTEST(frob_norm(res1(m, i^2)*res1(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(k,m,l)*res3(k,n,l) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 )
 
 UNIT_TEST(FullTensor, SVD_Random_512x512,
@@ -59,18 +63,26 @@ UNIT_TEST(FullTensor, SVD_Random_512x512,
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(i^3, m)*res1(i^3, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(m, i^3)*res3(n, i^3) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(l,k,m,i,j,n));
     res4(l,k,m,i,j,n) =  res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(i^3, m)*res1(i^3, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(m, i^3)*res3(n, i^3) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(l,i,m,k,j,n));
     res4(k,i,m,l,j,n) =  res1(i,j,l,o)*res2(o,p)*res3(p,k,m,n);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(i^3, m)*res1(i^3, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(m, i^3)*res3(n, i^3) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 	
 	(res1(i,o,k,j), res2(p,o), res3(l,n,m,p)) = SVD(A(l,i,m,k,j,n));
     res4(l,k,m,i,j,n) =  res1(k,o,i,j)*res2(p,o)*res3(l,n,m,p);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(k,o,i,j)*res1(k,p,i,j) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(l,n,m,o)*res3(l,n,m,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
 UNIT_TEST(FullTensor, SVD_soft_thresholding,
@@ -102,6 +114,8 @@ UNIT_TEST(FullTensor, SVD_soft_thresholding,
 	
 	Ax(i,j,k,l,m,n) = U(i,j,k,o)* S(o,p)* V(p,l,m,n);
 	TEST(approx_equal(A, Ax, 1e-12));
+	MTEST(frob_norm(U(i,j,k,o)*U(i,j,k,p) - Tensor::identity(S.dimensions)(o, p)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(V(o,l,m,n)*V(p,l,m,n) - Tensor::identity(S.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
 UNIT_TEST(FullTensor, SVD_Random_Order_Six,
@@ -120,10 +134,14 @@ UNIT_TEST(FullTensor, SVD_Random_Order_Six,
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(i,j,k,o)*res1(i,j,k,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(o,l,m,n)*res3(p,l,m,n) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(A(m,j,k,l,i,n));
     res4(m,j,k,l,i,n) = res1(i,j,k,o)*res2(o,p)*res3(p,l,m,n);
     TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(i,j,k,o)*res1(i,j,k,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(o,l,m,n)*res3(p,l,m,n) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
 UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
@@ -146,6 +164,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
     MTEST(approx_equal(res4, A, 2e-15), "1 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
 	
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
 	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
@@ -154,6 +173,7 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
     MTEST(approx_equal(res4, A, 2e-15), "2 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
     
     (Q2(i,k,l), R2(l,m,j,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
@@ -166,15 +186,18 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 	(Q(i,l,j,k,m), R(l,n,r)) = QR(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
     MTEST(approx_equal(res4, A, 2e-15), "5 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
     
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R(i,j,k,o)*Q(o,m,n,r);
     MTEST(approx_equal(res4, A, 5e-15), "6 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(p,m,n,r)*Q(q,m,n,r) - Tensor::identity({Q.dimensions[0], Q.dimensions[0]})(p, q)) < 1e-12, " Q not orthogonal");
     
     (R(i,j,k,l), Q(l,m,n,r)) = RQ(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = R(i,j,k,o)*Q(o,m,n,r);
     MTEST(approx_equal(res4, A, 5e-15), "7 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(p,m,n,r)*Q(q,m,n,r) - Tensor::identity({Q.dimensions[0], Q.dimensions[0]})(p, q)) < 1e-12, " Q not orthogonal");
     
     (R2(i,m,j,k,l), Q2(l,n,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R2(i,m,j,k,l)*Q2(l,n,r);
@@ -187,11 +210,13 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 	(R(l,i,k), Q(n,m,j,l,r)) = RQ(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = R(o,i,k)*Q(n,m,j,o,r);
     MTEST(approx_equal(res4, A, 2e-15), "10 " << frob_norm(res4-A) << " / " << frob_norm(A));
+	MTEST(frob_norm(Q(n,m,j,q,r)*Q(n,m,j,p,r) - Tensor::identity({Q.dimensions[3], Q.dimensions[3]})(p, q)) < 1e-12, " Q not orthogonal");
     
     
     (R3(i,k,l), Q4(l,j,n,r)) = RQ(A(i,j,k,3,n,r));
     res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
     TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
+	MTEST(frob_norm(Q4(q,j,n,r)*Q4(p,j,n,r) - Tensor::identity({Q4.dimensions[0], Q4.dimensions[0]})(p, q)) < 1e-12, " Q not orthogonal");
 )
 
 
@@ -217,10 +242,12 @@ UNIT_TEST(FullTensor, QC,
     (Q(i,j,k,l), R(l,m,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
     TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
     
     (Q(i,j,k,l), R(l,m,n,r)) = QC(A(i,n,k,m,j,r));
     res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
     TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
     
     (Q2(i,k,l), R2(l,m,j,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
@@ -233,4 +260,5 @@ UNIT_TEST(FullTensor, QC,
 	(Q(i,l,j,k,m), R(l,n,r)) = QC(A(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
     TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
 )
