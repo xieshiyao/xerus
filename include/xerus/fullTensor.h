@@ -44,7 +44,7 @@ namespace xerus {
 		 * @details The data is stored such that indices increase from right to left (row-major order). 
 		 * If the tensor is modified and not sole owner a deep copy is performed.
 		 */
-        std::shared_ptr<value_t> data;
+//         std::shared_ptr<value_t> denseData;
 	public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /// @brief Empty constructor, which creates an order zero tensor with zero as single entry.
@@ -117,7 +117,9 @@ namespace xerus {
 		 * @param _data a shared_ptr to the data the FullTensor shall use. This must be (at least) of the size determined by the dimensions.
 		 */
         template<ADD_MOVE(Vec, std::vector<size_t>), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
-        explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions)), data(std::forward<SPtr>(_data)) { }
+        explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions)) {
+			denseData = std::forward<SPtr>(_data);
+		}
         
         /** 
 		 * @brief Constructs a FullTensor with the given dimensions and uses the provided data as entries.
@@ -143,7 +145,7 @@ namespace xerus {
 		 */
         ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t()>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
-            value_t* realData = data.get();
+            value_t* realData = denseData.get();
             for (size_t i=0; i < size; ++i) {
                 realData[i] = _f();
             }
@@ -157,7 +159,7 @@ namespace xerus {
 		 */
         ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t(const size_t)>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
-            value_t* realData = data.get();
+            value_t* realData = denseData.get();
             for (size_t i=0; i < size; ++i) {
                 realData[i] = _f(i);
             }
@@ -172,7 +174,7 @@ namespace xerus {
 		 */
         ALLOW_MOVE(Vec, std::vector<size_t>)
         explicit FullTensor(Vec&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f) : FullTensor(std::forward<Vec>(_dimensions), DONT_SET_ZERO()) {
-            value_t* realData = data.get();
+            value_t* realData = denseData.get();
             std::vector<size_t> multIdx(degree(), 0);
             size_t idx = 0;
             while (true) {
@@ -203,7 +205,7 @@ namespace xerus {
             FullTensor result(std::forward<Vec>(_dimensions), DONT_SET_ZERO());
 			PA_START;
             for(size_t i=0; i < result.size; ++i) {
-                result.data.get()[i] = _dist(_rnd);
+                result.denseData.get()[i] = _dist(_rnd);
             }
 			PA_END("Random construction", "FullTensor", misc::to_string(result.size));
             return result;

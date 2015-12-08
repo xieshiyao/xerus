@@ -22,6 +22,7 @@
  * @brief Implementation of the FullTensor class.
  */
 
+#include <xerus/tensor.h>
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/tensorNetwork.h>
@@ -33,25 +34,28 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor::FullTensor() : FullTensor(std::vector<size_t>({})) { }
 
-    FullTensor::FullTensor(const FullTensor&  _other) : Tensor(_other), data(_other.data) { }
+    FullTensor::FullTensor(const FullTensor&  _other) : Tensor(_other) { }
 
-    FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)), data(_other.data) { }
+    FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)){ }
     
-    FullTensor::FullTensor(const Tensor&  _other) : Tensor(_other), data(_other.is_sparse() ? std::shared_ptr<value_t>(new value_t[size], internal::array_deleter_vt) : static_cast<const FullTensor&>(_other).data) {
+    FullTensor::FullTensor(const Tensor&  _other) : Tensor(_other){
 		if(_other.is_sparse()) {
-			misc::array_set_zero(data.get(), size);
-			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
-				data.get()[entry.first] = entry.second;
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			misc::array_set_zero(denseData.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
+				denseData.get()[entry.first] = entry.second;
 			}
 		}
 	}
 
-    FullTensor::FullTensor(      Tensor&& _other) : Tensor(std::move(_other)), data(_other.is_sparse() ? std::shared_ptr<value_t>(new value_t[size], internal::array_deleter_vt) : static_cast<FullTensor&>(_other).data) {
+    FullTensor::FullTensor(      Tensor&& _other) : Tensor(std::move(_other)) {
 		if(_other.is_sparse()) {
-			misc::array_set_zero(data.get(), size);
-			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
-				data.get()[entry.first] = entry.second;
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			misc::array_set_zero(denseData.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				denseData.get()[entry.first] = entry.second;
 			}
+			sparseData.reset();
 		}
 	}
     
@@ -59,21 +63,25 @@ namespace xerus {
 
     FullTensor::FullTensor(const size_t _degree) : FullTensor(std::vector<size_t>(_degree, 1)) { }
     
-    FullTensor::FullTensor(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) : Tensor(_dimensions),            data(new value_t[size], internal::array_deleter_vt) { }
+    FullTensor::FullTensor(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) : Tensor(_dimensions) { }
         
-    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : Tensor(std::move(_dimensions)), data(new value_t[size], internal::array_deleter_vt) { }
+    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) : Tensor(std::move(_dimensions)) { }
     
     FullTensor::FullTensor(const std::vector<size_t>&  _dimensions) : FullTensor(_dimensions, DONT_SET_ZERO()) {
-        misc::array_set_zero(data.get(), size);
+        misc::array_set_zero(denseData.get(), size);
     }
     
     FullTensor::FullTensor(      std::vector<size_t>&& _dimensions) : FullTensor(std::move(_dimensions), DONT_SET_ZERO()) {
-        misc::array_set_zero(data.get(), size);
+        misc::array_set_zero(denseData.get(), size);
     }
     
-    FullTensor::FullTensor(const std::vector<size_t> & _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(_dimensions), data(_data.release(), internal::array_deleter_vt) { }
+    FullTensor::FullTensor(const std::vector<size_t> & _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(_dimensions) {
+		denseData.reset(_data.release(), internal::array_deleter_vt);
+	}
         
-    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(std::move(_dimensions)), data(_data.release(), internal::array_deleter_vt) { }
+    FullTensor::FullTensor(      std::vector<size_t>&& _dimensions, std::unique_ptr<value_t[]>&& _data) : Tensor(std::move(_dimensions)) {
+		denseData.reset(_data.release(), internal::array_deleter_vt);
+	}
     
     
     
@@ -108,28 +116,28 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
     void FullTensor::ensure_own_data() {
-        if(!data.unique()) {
-            value_t* const oldDataPtr = data.get();
-            data.reset(new value_t[size], internal::array_deleter_vt);
-            misc::array_copy(data.get(), oldDataPtr, size);
+        if(!denseData.unique()) {
+            value_t* const oldDataPtr = denseData.get();
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
+            misc::array_copy(denseData.get(), oldDataPtr, size);
         }
     }
 
 
     void FullTensor::ensure_own_data_no_copy() {
-        if(!data.unique()) {
-            data.reset(new value_t[size], internal::array_deleter_vt);
+        if(!denseData.unique()) {
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
         }
     }
 
     void FullTensor::apply_factor() {
         if(has_factor()) {
-			if(data.unique()) {
-				misc::array_scale(data.get(), factor, size);
+			if(denseData.unique()) {
+				misc::array_scale(denseData.get(), factor, size);
 			} else {
-				value_t* const oldDataPtr = data.get();
-				data.reset(new value_t[size], internal::array_deleter_vt);
-				misc::array_scaled_copy(data.get(), factor, oldDataPtr, size);
+				value_t* const oldDataPtr = denseData.get();
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+				misc::array_scaled_copy(denseData.get(), factor, oldDataPtr, size);
 			}
             factor = 1.0;
         }
@@ -138,7 +146,7 @@ namespace xerus {
     void FullTensor::ensure_own_data_and_apply_factor() {
         ensure_own_data();
         if(has_factor()) {
-            misc::array_scale(data.get(), factor, size);
+            misc::array_scale(denseData.get(), factor, size);
             factor = 1.0;
         }
     }
@@ -146,7 +154,7 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator=(const FullTensor& _other) {
 		assign(_other); // Delegate to Tensor
-        data = _other.data;
+		denseData = _other.denseData;
         return *this;
     }
 
@@ -154,7 +162,7 @@ namespace xerus {
         std::swap(dimensions, _other.dimensions);
         std::swap(size, _other.size);
         factor = _other.factor;
-        std::swap(data, _other.data);
+		std::swap(denseData, _other.denseData);
         return *this;
     }
     
@@ -182,26 +190,26 @@ namespace xerus {
     FullTensor& FullTensor::operator+=(const Tensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor sum the dimensions must conincde");
         ensure_own_data();
-		value_t* const dataPtr = data.get();
+		value_t* const dataPtr = denseData.get();
 		
 		PA_START;
 		if(_other.is_sparse()) {
 			apply_factor();
 			if(_other.has_factor()) {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
 					dataPtr[entry.first] += _other.factor*entry.second;
 				}
 			} else {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
 					dataPtr[entry.first] += entry.second;
 				}
 			}
 		} else {
 			if(has_factor()) {
-				misc::array_scale_add(factor, dataPtr, _other.factor, static_cast<const FullTensor&>(_other).data.get(), size);
+				misc::array_scale_add(factor, dataPtr, _other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
 				factor = 1.0;
 			} else {
-				misc::array_add(dataPtr, _other.factor, static_cast<const FullTensor&>(_other).data.get(), size);
+				misc::array_add(dataPtr, _other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
 			}
 		}
         PA_END("ADD/SUB", "FullTensor ADD", misc::to_string(size));
@@ -217,26 +225,26 @@ namespace xerus {
     FullTensor& FullTensor::operator-=(const Tensor& _other) {
         REQUIRE(dimensions == _other.dimensions, "In FullTensor subtraction the dimensions must conincde");
 		ensure_own_data();
-		value_t* const dataPtr = data.get();
+		value_t* const dataPtr = denseData.get();
 		
 		PA_START;
 		if(_other.is_sparse()) {
 			apply_factor();
 			if(_other.has_factor()) {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
 					dataPtr[entry.first] -= _other.factor*entry.second;
 				}
 			} else {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).entries) {
+				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
 					dataPtr[entry.first] -= entry.second;
 				}
 			}
 		} else {
 			if(has_factor()) {
-				misc::array_scale_add(factor, data.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).data.get(), size);
+				misc::array_scale_add(factor, denseData.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
 				factor = 1.0;
 			} else {
-				misc::array_add(data.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).data.get(), size);
+				misc::array_add(denseData.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
 			}
 		}
         PA_END("ADD/SUB", "FullTensor SUB", misc::to_string(size));
@@ -265,11 +273,11 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     value_t& FullTensor::operator[](const size_t _i) {
         ensure_own_data_and_apply_factor();
-        return data.get()[_i];
+        return denseData.get()[_i];
     }
 
     value_t FullTensor:: operator[](const size_t _i) const {
-        return factor*data.get()[_i];
+        return factor*denseData.get()[_i];
     }
 
 
@@ -282,7 +290,7 @@ namespace xerus {
             finalIndex *= dimensions[i];
             finalIndex += _indices[i];
         }
-        return data.get()[finalIndex];
+        return denseData.get()[finalIndex];
     }
 
     value_t FullTensor::operator[](const std::vector<size_t>& _indices) const {
@@ -293,38 +301,38 @@ namespace xerus {
             finalIndex *= dimensions[i];
             finalIndex += _indices[i];
         }
-        return factor*data.get()[finalIndex];
+        return factor*denseData.get()[finalIndex];
     }
     
     
 	value_t* FullTensor::data_pointer() {
 		ensure_own_data_and_apply_factor();
-		return data.get();
+		return denseData.get();
 	}
         
 	value_t* FullTensor::unsanitized_data_pointer() {
-		return data.get();
+		return denseData.get();
 	}
 	
 	const value_t* FullTensor::unsanitized_data_pointer() const {
-		return data.get();
+		return denseData.get();
 	}
 	
 	value_t* FullTensor::override_data() {
 		factor = 1.0;
 		ensure_own_data_no_copy();
-		return data.get();
+		return denseData.get();
 	}
 	
 	std::shared_ptr<value_t>& FullTensor::unsanitized_shared_data() {
-		return data;
+		return denseData;
 	}
 	
 	
 	// NOTE that we cannot return a const reference because std::shared_ptr<const value_t> is a different type than std::shared_ptr<value_t>,
 	// which would cause an implicte cast and the return of a const reference to a temporary that is directly destroyed...
 	std::shared_ptr<const value_t> FullTensor::unsanitized_shared_data() const {
-		return data;
+		return denseData;
 	}
 	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -334,7 +342,7 @@ namespace xerus {
         change_dimensions(_newDim);
         factor = 1.0;
         if(oldDataSize != size) {
-            data.reset(new value_t[size], internal::array_deleter_vt);
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
         }
     }
     
@@ -343,7 +351,7 @@ namespace xerus {
         change_dimensions(std::move(_newDim));
         factor = 1.0;
         if(oldDataSize != size) {
-            data.reset(new value_t[size], internal::array_deleter_vt);
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
         }
     }
     
@@ -352,11 +360,11 @@ namespace xerus {
         change_dimensions(_newDim);
         factor = 1.0;
         if(oldDataSize != size) {
-            data.reset(new value_t[size], internal::array_deleter_vt);
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
         } else {
             ensure_own_data_no_copy();
         }
-        memset(data.get(), 0, size*sizeof(value_t));
+        memset(denseData.get(), 0, size*sizeof(value_t));
     }
     
     void FullTensor::reset(      std::vector<size_t>&& _newDim) {
@@ -364,23 +372,23 @@ namespace xerus {
         change_dimensions(std::move(_newDim));
         factor = 1.0;
         if(oldDataSize != size) {
-            data.reset(new value_t[size], internal::array_deleter_vt);
+            denseData.reset(new value_t[size], internal::array_deleter_vt);
         } else {
             ensure_own_data_no_copy();
         }
-        memset(data.get(), 0, size*sizeof(value_t));
+        memset(denseData.get(), 0, size*sizeof(value_t));
     }
     
 	void FullTensor::reset(const std::vector<size_t>&  _newDim, value_t* const _data) {
 		change_dimensions(_newDim);
 		factor = 1.0;
-		data.reset(_data, internal::array_deleter_vt);
+		denseData.reset(_data, internal::array_deleter_vt);
 	}
 	
 	void FullTensor::reset(      std::vector<size_t>&& _newDim, value_t* const _data) {
 		change_dimensions(std::move(_newDim));
 		factor = 1.0;
-		data.reset(_data, internal::array_deleter_vt);
+		denseData.reset(_data, internal::array_deleter_vt);
 	}
 
 	
@@ -410,13 +418,13 @@ namespace xerus {
                 size_t numInsert = (newStepSize-oldStepSize);
                 _cutPos *= oldStepSize / dimensions[_n];
                 for (size_t i=0; i<blockCount; ++i) {
-                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
+                    memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
                     memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
-                    memcpy(tmp+i*newStepSize+_cutPos+numInsert, data.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize+_cutPos+numInsert, denseData.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
                 }
             } else {
                 for (size_t i=0; i<blockCount; ++i) {
-                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
                     memset(tmp+i*newStepSize+oldStepSize, 0, (newStepSize-oldStepSize)*sizeof(double));
                 }
             }
@@ -425,18 +433,18 @@ namespace xerus {
                 _cutPos *= oldStepSize / dimensions[_n];
                 size_t diffSize = newStepSize - _cutPos;
                 for (size_t i=0; i<blockCount; ++i) {
-                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, _cutPos*sizeof(value_t));
-                    memcpy(tmp+i*newStepSize+_cutPos, data.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize+_cutPos, denseData.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
                 }
             } else {
                 for (size_t i=0; i<blockCount; ++i) {
-                    memcpy(tmp+i*newStepSize, data.get()+i*oldStepSize, newStepSize*sizeof(value_t));
+                    memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize*sizeof(value_t));
                 }
             }
         }
         dimensions[_n] = _newDim;
         size = newsize;
-        data.reset(tmp, internal::array_deleter_vt);
+        denseData.reset(tmp, internal::array_deleter_vt);
 
         REQUIRE(size == misc::product(dimensions), "");
     }
@@ -464,12 +472,12 @@ namespace xerus {
 		
 		// Copy data
 		for(size_t i = 0; i < stepCount; ++i) {
-			misc::array_copy(newData+i*blockSize, data.get()+inputPosition, blockSize);
+			misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
 			inputPosition += stepSize;
 		}
 		
 		// Set data
-		data.reset(newData, &internal::array_deleter_vt);
+		denseData.reset(newData, &internal::array_deleter_vt);
 		
 		// Adjust dimensions
 		dimensions.erase(dimensions.begin()+(long)_dimension);
@@ -480,7 +488,7 @@ namespace xerus {
     void FullTensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
         REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
         ensure_own_data_and_apply_factor();
-        value_t* const realData = data.get();
+        value_t* const realData = denseData.get();
         const size_t numDiags = std::min(dimensions[0], dimensions[1]);
         const size_t N = dimensions[1];
         for(size_t i=0; i<numDiags; ++i){
@@ -492,7 +500,7 @@ namespace xerus {
     void FullTensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
         REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
         ensure_own_data_and_apply_factor();
-        value_t* const realData = data.get();
+        value_t* const realData = denseData.get();
         const size_t numDiags = std::min(dimensions[0], dimensions[1]);
         const size_t N = dimensions[1];
         for(size_t i=0; i<numDiags; ++i){
@@ -502,20 +510,20 @@ namespace xerus {
 
     void FullTensor::modify_elements(const std::function<void(value_t&)>& _f) {
         ensure_own_data_and_apply_factor();
-        value_t* const realData = data.get();
+        value_t* const realData = denseData.get();
         for(size_t i=0; i<size; ++i){ _f(realData[i]); }
     }
     
     #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
     void FullTensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
         ensure_own_data_and_apply_factor();
-        value_t* const realData = data.get();
+        value_t* const realData = denseData.get();
         for(size_t i=0; i<size; ++i){ _f(realData[i], i); }
     }
     
     void FullTensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
         ensure_own_data_and_apply_factor();
-        value_t* const realData = data.get();
+        value_t* const realData = denseData.get();
         
         std::vector<size_t> multIdx(degree(), 0);
         size_t idx = 0;
@@ -554,7 +562,7 @@ namespace xerus {
     size_t FullTensor::count_non_zero_entries(const value_t _eps) const {
         size_t count = 0;
         for(size_t i = 0; i < size; ++i) {
-            if(std::abs(data.get()[i]) > _eps ) { count++; } 
+            if(std::abs(denseData.get()[i]) > _eps ) { count++; } 
         }
         return count;
     }
@@ -562,13 +570,13 @@ namespace xerus {
     
 	bool FullTensor::all_entries_valid() const {
 		for(size_t i = 0; i < size; ++i) {
-            if(!std::isfinite(data.get()[i])) { return false; } 
+            if(!std::isfinite(denseData.get()[i])) { return false; } 
         }
         return true;
 	}
     
     value_t FullTensor::frob_norm() const {
-        return std::abs(factor)*blasWrapper::two_norm(data.get(), size);
+        return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
     }
 
 
@@ -579,10 +587,10 @@ namespace xerus {
     }
 
     std::string FullTensor::to_string() const {
-        if (degree() == 0) return xerus::misc::to_string(data.get()[0]);
+        if (degree() == 0) return xerus::misc::to_string(denseData.get()[0]);
         std::string result;
         for (size_t i=0; i<size; ++i) {
-            result += xerus::misc::to_string(factor*data.get()[i]) + " ";
+            result += xerus::misc::to_string(factor*denseData.get()[i]) + " ";
             if ((i+1) % (size / dimensions[0]) == 0) {
                 result += '\n';
             } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
@@ -598,14 +606,14 @@ namespace xerus {
     bool FullTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }
+            if(std::abs(factor*denseData.get()[i]-_values[i]) > _eps) { return false; }
         }
         return true;
     }
 
     bool FullTensor::compare_to_data(const value_t* _values, const double _eps) const {
         for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*data.get()[i]-_values[i]) > _eps) { return false; }
+            if(std::abs(factor*denseData.get()[i]-_values[i]) > _eps) { return false; }
         }
         return true;
     }

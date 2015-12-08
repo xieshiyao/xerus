@@ -1144,20 +1144,20 @@ namespace xerus {
 													static_cast<const FullTensor*>(node2.tensorObject.get())->unsanitized_data_pointer(), trans2);
 				} else if(sparse1 && !sparse2 && !resultSparse) { // Sparse * Full => Full
 					matrix_matrix_product(static_cast<FullTensor*>(newTensor.get())->unsanitized_data_pointer(), leftDim, rightDim, commonFactor, 
-										*static_cast<const SparseTensor*>(node1.tensorObject.get())->entries.get(), trans1, midDim, 
+										*static_cast<const SparseTensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
 										static_cast<const FullTensor*>(node2.tensorObject.get())->unsanitized_data_pointer(), trans2);
 				} else if(!sparse1 && sparse2 && !resultSparse) { // Full * Sparse => Full
 					matrix_matrix_product(static_cast<FullTensor*>(newTensor.get())->unsanitized_data_pointer(), leftDim, rightDim, commonFactor, 
 										static_cast<const FullTensor*>(node1.tensorObject.get())->unsanitized_data_pointer(), trans1, midDim, 
-										*static_cast<const SparseTensor*>(node2.tensorObject.get())->entries.get(), trans2);
+										*static_cast<const SparseTensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
 				} else if(sparse1 && !sparse2 && resultSparse) { // Sparse * Full => Sparse
-					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->entries.get(), leftDim, rightDim, commonFactor, 
-										*static_cast<const SparseTensor*>(node1.tensorObject.get())->entries.get(), trans1, midDim, 
+					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
+										*static_cast<const SparseTensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
 										static_cast<const FullTensor*>(node2.tensorObject.get())->unsanitized_data_pointer(), trans2);
 				} else if(!sparse1 && sparse2 && resultSparse) { // Full * Sparse => Sparse
-					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->entries.get(), leftDim, rightDim, commonFactor, 
+					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
 										static_cast<const FullTensor*>(node1.tensorObject.get())->unsanitized_data_pointer(), trans1, midDim, 
-										*static_cast<const SparseTensor*>(node2.tensorObject.get())->entries.get(), trans2);
+										*static_cast<const SparseTensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
 				} else {
 					LOG(fatal, "ie: Invalid combiantion of sparse/dense tensors in contraction");
 				}

@@ -69,13 +69,13 @@ namespace xerus {
         // We want A (m x n) in compressed coloum storage. We have reordered the tensor to A^T (n x m) and 
         // transform it to compressed row storage. This results in A in compressed coloum storage as demanded.
         
-        CsUniquePtr cs_format = create_cs(m, n, reorderedTensor.entries->size());
+        CsUniquePtr cs_format = create_cs(m, n, reorderedTensor.sparseData->size());
         
         int entryPos = 0;
         int currRow = -1;
         cs_format->i[0] = 0;
         
-        for(const std::pair<size_t, value_t>& entry : *reorderedTensor.entries.get()) {
+        for(const std::pair<size_t, value_t>& entry : *reorderedTensor.sparseData.get()) {
             cs_format->x[entryPos] = entry.second;
             cs_format->i[entryPos] = (int) (entry.first%m);
             while(currRow < (int) (entry.first/m)) {
@@ -83,7 +83,7 @@ namespace xerus {
             }
             entryPos++;
         }
-        REQUIRE(currRow < (int) n && entryPos == (int) reorderedTensor.entries->size(), "Internal Error " << currRow << ", " << (int) n << " | " << entryPos << ", " << (int) reorderedTensor.entries->size());
+        REQUIRE(currRow < (int) n && entryPos == (int) reorderedTensor.sparseData->size(), "Internal Error " << currRow << ", " << (int) n << " | " << entryPos << ", " << (int) reorderedTensor.sparseData->size());
         while(currRow < (int) n) {
             cs_format->p[++currRow] = entryPos;
         }
@@ -99,7 +99,7 @@ namespace xerus {
         
         for(int i = 0; i < _cs_format->n; ++i) {
             for(int j = _cs_format->p[i]; j < _cs_format->p[i+1]; ++j) {
-                IF_CHECK( auto ret = ) reconstructedTensor.entries->insert(std::pair<size_t, value_t>(_cs_format->i[j]*_cs_format->n+i, _cs_format->x[j]));
+                IF_CHECK( auto ret = ) reconstructedTensor.sparseData->insert(std::pair<size_t, value_t>(_cs_format->i[j]*_cs_format->n+i, _cs_format->x[j]));
                 REQUIRE(ret.second, "Internal Error");
             }
         }

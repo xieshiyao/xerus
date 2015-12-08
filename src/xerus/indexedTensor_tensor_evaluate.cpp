@@ -374,7 +374,7 @@ namespace xerus {
 			}
 			
 			// Get the entries and the factor of our base tensor
-			const std::map<size_t, value_t>& baseEntries = *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->entries;
+			const std::map<size_t, value_t>& baseEntries = *static_cast<const SparseTensor*>(_base.tensorObjectReadOnly)->sparseData;
 			const value_t factor = _base.tensorObjectReadOnly->factor;
 			
 			// Start performance analysis for low level part
@@ -383,7 +383,7 @@ namespace xerus {
 			// Check whether _out is sparse
 			if(_out.tensorObjectReadOnly->is_sparse()) {
 				// Ensure that _out is empty
-				std::map<size_t, value_t>& outEntries = *static_cast<SparseTensor*>(_out.tensorObject)->entries;
+				std::map<size_t, value_t>& outEntries = *static_cast<SparseTensor*>(_out.tensorObject)->sparseData;
 				outEntries.clear();
 				
 				if(peacefullIndices) {

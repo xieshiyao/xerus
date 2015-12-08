@@ -30,23 +30,35 @@
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    Tensor::Tensor() : size(1), factor(1.0) {}
-
-    Tensor::Tensor(const  Tensor&  _other ) : dimensions(_other.dimensions), size(_other.size), factor(_other.factor) { }
-    
-    Tensor::Tensor(       Tensor&& _other ) : dimensions(std::move(_other.dimensions)), size(_other.size), factor(_other.factor) { }
-    
-    Tensor::Tensor(const std::vector<size_t>& _dimensions, const value_t _factor) : dimensions(_dimensions), size(misc::product(dimensions)), factor(_factor) {
+	
+	Tensor::Tensor(const Representation _representation) : Tensor(std::vector<size_t>({}), _representation) { } 
+	
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, const Representation _representation, const Initialisation _init) 
+		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
+	{
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+		
+		if(representation == Representation::Dense) {
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+		} else {
+			sparseData.reset(new std::map<size_t, value_t>());
+		}
     }
     
-    Tensor::Tensor(std::vector<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(misc::product(dimensions)), factor(_factor) {
+    Tensor::Tensor(std::vector<size_t>&& _dimensions, const Representation _representation, const Initialisation _init) 
+	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
+	{
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
+		
+		if(representation == Representation::Dense) {
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+		} else {
+			sparseData.reset(new std::map<size_t, value_t>());
+		}
     }
     
-    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor) : dimensions(std::move(_dimensions)), size(misc::product(dimensions)), factor(_factor) {
-        REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-    }
+    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const Representation _representation, const Initialisation _init) 
+	: Tensor(std::vector<size_t>(_dimensions), _representation, _init) {}
     
     FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		FullTensor ret(_dimensions, DONT_SET_ZERO());
@@ -237,7 +249,7 @@ bool approx_entrywise_equal(const Tensor& _a, const Tensor& _b, const value_t _e
             const SparseTensor C = A-B;
             const double factorizedEps = _eps/std::abs(C.factor);
             
-            for(const std::pair<size_t, value_t>& entry : *C.entries) {
+            for(const std::pair<size_t, value_t>& entry : *C.sparseData) {
                 if(std::abs(entry.second)/(std::abs(A[entry.first])+std::abs(B[entry.first])) > factorizedEps) { return false; }
             }
         } else {

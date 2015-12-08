@@ -25,23 +25,26 @@
 #include <xerus/sparseTensor.h>
 
 namespace xerus {
-    SparseTensor::SparseTensor() : Tensor(), entries(new std::map<size_t, value_t>()) {}
+	SparseTensor::SparseTensor() : Tensor(Representation::Sparse) { }
 
-    SparseTensor::SparseTensor( const SparseTensor&  _other) : Tensor(_other), entries(_other.entries) { }
+    SparseTensor::SparseTensor( const SparseTensor&  _other) : Tensor(_other) { }
     
-    SparseTensor::SparseTensor(       SparseTensor&& _other) : Tensor(std::move(_other)), entries(std::move(_other.entries)) { }
+    SparseTensor::SparseTensor(       SparseTensor&& _other) : Tensor(std::move(_other)) { }
     
-    SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions), entries(new std::map<size_t, value_t>()) { }
+    SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions, Representation::Sparse) { }
         
-    SparseTensor::SparseTensor(      std::vector<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
+	SparseTensor::SparseTensor(      std::vector<size_t>&& _dimensions) : Tensor(std::move(_dimensions), Representation::Sparse) { }
     
-    SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions)), entries(new std::map<size_t, value_t>()) { }
+    SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions), Representation::Sparse) { }
     
-    SparseTensor::SparseTensor(const FullTensor& _full, const double _eps) : Tensor(_full), entries(new std::map<size_t, value_t>()) {
+    SparseTensor::SparseTensor(const FullTensor& _full, const double _eps) : Tensor(_full) {
+		denseData.reset();
+		representation = Representation::Sparse;
+		sparseData.reset(new std::map<size_t, value_t>());
         for(size_t i = 0; i < _full.size; ++i) {
             if(std::abs(_full[i]) >= _eps) {
-                entries->insert({i, _full[i]});
-//                 entries->emplace_hint(entries->end(), i, fullDataPtr[i]); TODO use this instead
+                sparseData->insert({i, _full[i]});
+//                 sparseData->emplace_hint(sparseData->end(), i, fullDataPtr[i]); TODO use this instead
             }
         }
     }
@@ -78,22 +81,22 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
     void SparseTensor::ensure_own_data() {
-        if(!entries.unique()) {
-            entries.reset(new std::map<size_t, value_t>(*entries));
+        if(!sparseData.unique()) {
+            sparseData.reset(new std::map<size_t, value_t>(*sparseData));
         }
     }
 
 
     void SparseTensor::ensure_own_data_no_copy() {
-        if(!entries.unique()) {
-            entries.reset(new std::map<size_t, value_t>());
+        if(!sparseData.unique()) {
+            sparseData.reset(new std::map<size_t, value_t>());
         }
     }
 
     void SparseTensor::apply_factor() {
         if(has_factor()) {
             ensure_own_data();
-            for(std::pair<const size_t, value_t>& entry : *entries) {
+            for(std::pair<const size_t, value_t>& entry : *sparseData) {
                 entry.second *= factor;
             }
             factor = 1.0;
@@ -103,7 +106,7 @@ namespace xerus {
     void SparseTensor::ensure_own_data_and_apply_factor() {
         ensure_own_data();
         if(has_factor()) {
-            for(std::pair<const size_t, value_t>& entry : *entries) {
+            for(std::pair<const size_t, value_t>& entry : *sparseData) {
                 entry.second *= factor;
             }
             factor = 1.0;
@@ -114,13 +117,13 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     SparseTensor& SparseTensor::operator=(const SparseTensor&  _other) {
         assign(_other);
-        entries = _other.entries;
+		sparseData = _other.sparseData;
         return *this;
     }
     
     SparseTensor& SparseTensor::operator=(      SparseTensor&& _other) {
         assign(std::move(_other));
-        entries = _other.entries;
+		sparseData = _other.sparseData;
         return *this;
     }
     
@@ -130,13 +133,13 @@ namespace xerus {
     value_t& SparseTensor::operator[](const size_t _position) {
 		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
         apply_factor();
-        return (*entries)[_position];
+        return (*sparseData)[_position];
     }
     
     value_t SparseTensor::operator[](const size_t _position) const {
 		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
-        const std::map<size_t, value_t>::const_iterator entry = entries->find(_position);
-        if(entry == entries->end()) {
+		const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+		if(entry == sparseData->end()) {
             return 0;
         } else {
             return factor*entry->second;
@@ -152,7 +155,7 @@ namespace xerus {
             finalIndex *= dimensions[i];
             finalIndex += _indices[i];
         }
-        return (*entries)[finalIndex];
+        return (*sparseData)[finalIndex];
     }
     
     value_t SparseTensor::operator[](const std::vector<size_t>& _indices) const {
@@ -164,8 +167,8 @@ namespace xerus {
             finalIndex += _indices[i];
         }
         
-        const std::map<size_t, value_t>::const_iterator entry = entries->find(finalIndex);
-        if(entry == entries->end()) {
+        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(finalIndex);
+        if(entry == sparseData->end()) {
             return 0;
         } else {
             return factor*entry->second;
@@ -173,8 +176,8 @@ namespace xerus {
     }
     
     value_t SparseTensor::at(const size_t _position) const {
-        const std::map<size_t, value_t>::const_iterator entry = entries->find(_position);
-        if(entry == entries->end()) {
+        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+        if(entry == sparseData->end()) {
             return 0;
         } else {
             return factor*entry->second;
@@ -190,8 +193,8 @@ namespace xerus {
             finalIndex += _indices[i];
         }
         
-        const std::map<size_t, value_t>::const_iterator entry = entries->find(finalIndex);
-        if(entry == entries->end()) {
+        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(finalIndex);
+        if(entry == sparseData->end()) {
             return 0;
         } else {
             return factor*entry->second;
@@ -203,8 +206,8 @@ namespace xerus {
         ensure_own_data_and_apply_factor();
         
 		PA_START;
-        for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, _other.factor*entry.second);
+        for(const std::pair<size_t, value_t>& entry : *_other.sparseData) {
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = sparseData->emplace(entry.first, _other.factor*entry.second);
             if(!result.second) {
                 result.first->second += _other.factor*entry.second;
             }
@@ -223,8 +226,8 @@ namespace xerus {
         ensure_own_data_and_apply_factor();
         
 		PA_START;
-        for(const std::pair<size_t, value_t>& entry : *_other.entries) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = entries->emplace(entry.first, -_other.factor*entry.second);
+        for(const std::pair<size_t, value_t>& entry : *_other.sparseData) {
+            std::pair<std::map<size_t, value_t>::iterator, bool> result = sparseData->emplace(entry.first, -_other.factor*entry.second);
             if(!result.second) {
                 result.first->second -= _other.factor*entry.second;
             }
@@ -262,40 +265,40 @@ namespace xerus {
     void SparseTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
         change_dimensions(_newDim);
         factor = 1.0;
-        if(entries.unique()) {
-            entries->clear();
+        if(sparseData.unique()) {
+            sparseData->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>());
+            sparseData.reset(new std::map<size_t, value_t>());
         }
     }
     
     void SparseTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
         change_dimensions(std::move(_newDim));
         factor = 1.0;
-        if(entries.unique()) {
-            entries->clear();
+        if(sparseData.unique()) {
+            sparseData->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>());
+            sparseData.reset(new std::map<size_t, value_t>());
         }
     }
     
     void SparseTensor::reset(const std::vector<size_t>&  _newDim) {
         change_dimensions(_newDim);
         factor = 1.0;
-        if(entries.unique()) {
-            entries->clear();
+        if(sparseData.unique()) {
+            sparseData->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>());
+            sparseData.reset(new std::map<size_t, value_t>());
         }
     }
     
     void SparseTensor::reset(      std::vector<size_t>&& _newDim) {
         change_dimensions(std::move(_newDim));
         factor = 1.0;
-        if(entries.unique()) {
-            entries->clear();
+        if(sparseData.unique()) {
+            sparseData->clear();
         } else {
-            entries.reset(new std::map<size_t, value_t>());
+            sparseData.reset(new std::map<size_t, value_t>());
         }
     }
     
@@ -306,14 +309,14 @@ namespace xerus {
 
     size_t SparseTensor::count_non_zero_entries(const value_t _eps) const {
         size_t count = 0;
-        for(const std::pair<size_t, value_t>& entry : *entries) {
+        for(const std::pair<size_t, value_t>& entry : *sparseData) {
             if(std::abs(entry.second) > _eps) { count++; } 
         }
         return count;
     }
     
     bool SparseTensor::all_entries_valid() const {
-        for(const std::pair<size_t, value_t>& entry : *entries) {
+        for(const std::pair<size_t, value_t>& entry : *sparseData) {
             if(!std::isfinite(entry.second)) {return false; } 
         }
         return true;
@@ -321,7 +324,7 @@ namespace xerus {
     
     value_t SparseTensor::frob_norm() const {
         value_t norm = 0;
-        for(const std::pair<size_t, value_t>& entry : *entries) {
+        for(const std::pair<size_t, value_t>& entry : *sparseData) {
             norm += misc::sqr(entry.second);
         }
         return std::abs(factor)*sqrt(norm);
@@ -344,7 +347,7 @@ namespace xerus {
     }
     
     bool SparseTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
-        REQUIRE(entries, "Internal Error");
+		REQUIRE(sparseData, "Internal Error");
         if(size != _values.size()) { return false; }
         for(size_t i=0; i < size; ++i) {
             if(std::abs(at(i)-_values[i]) > _eps) { return false; }

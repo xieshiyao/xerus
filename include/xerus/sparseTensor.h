@@ -40,7 +40,7 @@ namespace xerus {
 		 * @details The entries are stored in a map which uses the position of each entry assuming row-major ordering as key value.
 		 * If the tensor is modified and not sole owner a deep copy is performed.
 		 */
-        std::shared_ptr<std::map<size_t, value_t>> entries;
+//         std::shared_ptr<std::map<size_t, value_t>> sparseData;
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -93,8 +93,8 @@ namespace xerus {
             for (size_t i=0; i < _N; ++i) {
                 std::pair<size_t, value_t> entry = _f(i, size);
                 REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
-                REQUIRE(!misc::contains(*entries, entry.first), "Allready contained " << entry.first);
-                entries->insert(std::move(entry));
+                REQUIRE(!misc::contains(*sparseData, entry.first), "Allready contained " << entry.first);
+                sparseData->insert(std::move(entry));
             } 
             
             REQUIRE(count_non_zero_entries() == _N , "Oo " << _N << " != " << count_non_zero_entries());
@@ -113,8 +113,8 @@ namespace xerus {
             for (size_t i=0; i < _N; ++i) {
                 std::pair<size_t, value_t> entry = _f(i, size);
                 REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
-                REQUIRE(!misc::contains(*entries, entry.first), "Allready contained " << entry.first);
-                entries->insert(std::move(entry));
+                REQUIRE(!misc::contains(*sparseData, entry.first), "Allready contained " << entry.first);
+                sparseData->insert(std::move(entry));
             } 
             
             REQUIRE(count_non_zero_entries() == _N , "Oo " << _N << " != " << count_non_zero_entries());
@@ -135,8 +135,8 @@ namespace xerus {
             
             std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
 			PA_START;
-            while(result.entries->size() < _n) {
-                result.entries->emplace(entryDist(_rnd), _dist(_rnd));
+            while(result.sparseData->size() < _n) {
+                result.sparseData->emplace(entryDist(_rnd), _dist(_rnd));
             }
 			PA_END("Random construction", "SparseTensor", misc::to_string(_n)+"/"+misc::to_string(result.size));
 

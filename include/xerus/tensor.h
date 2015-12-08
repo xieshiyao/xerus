@@ -25,8 +25,10 @@
 #pragma once
 
 #include "basic.h"
+#include "misc/sfinae.h"
 #include <string>
 #include <limits>
+#include <memory>
 #include "indexedTensorReadOnly.h"
 #include "indexedTensor.h"
  
@@ -34,51 +36,86 @@ namespace xerus {
 	class FullTensor;
 	class SparseTensor;
 	
-	/// @brief Abstract class which defines the common functionalities of the actual tensor classes FullTensor and SparseTensor.
+	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor {
 	public:
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary types- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		enum class Representation : bool { Dense, Sparse};
+		
+		enum class Initialisation : bool { Nothing, Zero};
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// @brief Vector containing the individual dimensions of the tensor.
 		std::vector<size_t> dimensions;
 		
 		/// @brief Size of the Tensor -- always equal to the product of the dimensions.
-		size_t size;
+		size_t size = 1;
+		
+		/// @brief The current representation of the Tensor (i.e Dense or Sparse)
+		Representation representation = Representation::Dense;
 		
 		/// @brief Single value representing a constant scaling factor.
-		value_t factor;
+		value_t factor = 1.0;
+		
+		/** 
+		 * @brief Shared pointer to the dense data array, if representation is dense. 
+		 * @details The data is stored such that indices increase from right to left (row-major order). 
+		 * If the tensor is modified and not sole owner a deep copy is performed.
+		 */
+		std::shared_ptr<value_t> denseData;
+		
+		/** 
+		 * @brief Shared pointer to the a map containing the entries of the SparseTensor. 
+		 * @details The entries are stored in a map which uses the position of each entry assuming row-major ordering as key value.
+		 * If the tensor is modified and not sole owner a deep copy is performed.
+		 */
+		std::shared_ptr<std::map<size_t, value_t>> sparseData;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
-		/// @brief Empty constructor which creates an order zero tensor.
-		implicit Tensor();
+		/// @brief Constructs an order zero Tensor with the given inital representation
+		explicit Tensor(const Representation _representation = Representation::Dense);
 		
 		/// @brief Tensors are copy constructable.
-		implicit Tensor( const Tensor& _other );
+		implicit Tensor( const Tensor& _other ) = default;
 		
 		/// @brief Tensors are move constructable.
-		implicit Tensor( Tensor&& _other );
+		implicit Tensor( Tensor&& _other ) = default;
 
 		/** 
-		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _factor (optional) global scaling factor.
+		 * @param _representation (optional) the initial representation of the tensor.
+		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(const std::vector<size_t>& _dimensions, const value_t _factor = 1.0);
+		explicit Tensor(const std::vector<size_t>& _dimensions, const Representation _representation = Representation::Dense, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
-		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _factor (optional) global scaling factor.
+		 * @param _representation (optional) the initial representation of the tensor.
+		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(std::vector<size_t>&& _dimensions, const value_t _factor = 1.0);
+		explicit Tensor(      std::vector<size_t>&& _dimensions, const Representation _representation = Representation::Dense, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
-		 * @brief: Creates a tensor with the given dimensions and (optionally) the given scaling factor.
+		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _factor (optional) global scaling factor.
+		 * @param _representation (optional) the initial representation of the tensor.
+		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(std::initializer_list<size_t>&& _dimensions, const value_t _factor = 1.0);
-
+		explicit Tensor(std::initializer_list<size_t>&& _dimensions, const Representation _representation = Representation::Dense, const Initialisation _init = Initialisation::Zero);
+		
+		/** 
+		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _data inital dense data in row-major order.
+		 */
+		template<ADD_MOVE(Vec, std::vector<size_t>), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
+		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
+		
+		
 		
 		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
 		virtual Tensor* get_copy() const = 0;
