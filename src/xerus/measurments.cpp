@@ -169,11 +169,15 @@ namespace xerus {
 				stack[d].reset({_solution.rank(d)}, DONT_SET_ZERO());
 			}
 			
+			stack[degree()-1].reset({1}, DONT_SET_ZERO());
+			
 			std::vector<FullTensor> intermediates(degree());
 			
 			for(size_t d = 0; d < degree(); ++d) {
 				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, DONT_SET_ZERO());
 			}
+			
+			REQUIRE(stack[degree()-1].size == 1 , "IE");
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < size(); ++i) {
@@ -182,7 +186,6 @@ namespace xerus {
 					contract(stack[d], stack[d-1], false, intermediates[d], false, 1);
 				}
 				
-				REQUIRE(stack[degree()-1].size == 1 , "IE");
 				
 				residualNorm += misc::sqr(measuredValues[i] - stack[degree()-1][0]);
 				measurementNorm += misc::sqr(measuredValues[i]);

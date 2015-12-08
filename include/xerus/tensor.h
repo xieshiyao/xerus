@@ -29,7 +29,7 @@
 #include <limits>
 #include "indexedTensorReadOnly.h"
 #include "indexedTensor.h"
-
+ 
 namespace xerus {
 	class FullTensor;
 	class SparseTensor;
