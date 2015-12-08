@@ -379,11 +379,7 @@ namespace xerus {
         
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        virtual value_t& operator[](const size_t _position) override;
-        virtual value_t operator[](const size_t _position) const override;
-        
-        virtual value_t& operator[](const std::vector<size_t>& _positions) override;
-        virtual value_t operator[](const std::vector<size_t>& _positions) const override;
+
 		
 		/** 
 		 * @brief Returns a pointer for direct access to the data array in row major order. 

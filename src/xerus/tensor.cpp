@@ -132,18 +132,31 @@ namespace xerus {
 	
 	/// @brief Returns whether the current representation is dense.
 	bool Tensor::dense() const {
-		REQUIRE((representation == Representation::Dense && denseData) || (representation == Representation::Sparse && sparseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
 	/// @brief Returns whether the current representation is sparse.
 	bool Tensor::sparse() const {
-		REQUIRE((representation == Representation::Dense && denseData) || (representation == Representation::Sparse && sparseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
+	size_t Tensor::multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions) {
+		REQUIRE(_multiIndex.size() == _dimensions.size(), "MultiIndex has wrong degree. Given " << _multiIndex.size() << ",  expected " << _dimensions.size());
+		
+		size_t finalIndex = 0;
+		for(size_t i = 0; i < _multiIndex.size(); ++i) {
+			REQUIRE(_multiIndex[i] < _dimensions[i], "Index "<< i <<" out of bounds " << _multiIndex[i] << " >=! " << _dimensions[i]);
+			finalIndex *= _dimensions[i];
+			finalIndex += _multiIndex[i];
+		}
+		
+		return finalIndex;
+	}
+	
 	void Tensor::ensure_own_data() {
 		if(dense()) {
 			if(!denseData.unique()) {
@@ -297,6 +310,45 @@ namespace xerus {
         return *this;
     }
     
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	value_t& Tensor::operator[](const size_t _position) {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		
+		ensure_own_data_and_apply_factor();
+		
+		if(dense()) {
+			return denseData.get()[_position];
+		} else {
+			return (*sparseData)[_position];
+		}
+	}
+
+	value_t Tensor::operator[](const size_t _position) const {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		
+		if(dense()) {
+			return factor*denseData.get()[_position];
+		} else {
+			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+			if(entry == sparseData->end()) {
+				return 0.0;
+			} else {
+				return factor*entry->second;
+			}
+		}
+	}
+
+	value_t& Tensor::operator[](const std::vector<size_t>& _positions) {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
+	value_t Tensor::operator[](const std::vector<size_t>& _positions) const {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     

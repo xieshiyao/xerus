@@ -205,6 +205,8 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
+		static size_t multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions);
+		
 		/// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
 		void ensure_own_data();
 		
@@ -271,31 +273,33 @@ namespace xerus {
 		
 		/** 
 		 * @brief Read/Write access a single entry.
+		 * @details Note that the request for write access to this entry requires the a sparse representation to create it, i.e. to lower the sparsity. If only read access
+		 * is required use at() instead.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
 		 * @return a reference to the selected entry.
 		 */
-		virtual value_t& operator[](const size_t _position) = 0;
+		value_t& operator[](const size_t _position);
 		
 		/** 
 		 * @brief Read access a single entry.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
 		 * @return the selected entry.
 		 */
-		virtual value_t operator[](const size_t _position) const = 0;
+		value_t operator[](const size_t _position) const;
 		
 		/** 
 		 * @brief Read/Write access a single entry.
-		 * @param _position the position of the desired entry.
+		 * @param _positions the positions of the desired entry.
 		 * @return a reference to the selected entry.
 		 */
-		virtual value_t& operator[](const std::vector<size_t>& _positions) = 0;
+		value_t& operator[](const std::vector<size_t>& _positions);
 		
 		/** 
 		 * @brief Read access a single entry.
-		 * @param _position the position of the desired entry.
+		 * @param _positions the positions of the desired entry.
 		 * @return the selected entry.
 		 */
-		virtual value_t operator[](const std::vector<size_t>& _positions) const = 0;
+		value_t operator[](const std::vector<size_t>& _positions) const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

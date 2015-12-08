@@ -238,38 +238,7 @@ namespace xerus {
 
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    value_t& FullTensor::operator[](const size_t _i) {
-        ensure_own_data_and_apply_factor();
-        return denseData.get()[_i];
-    }
 
-    value_t FullTensor:: operator[](const size_t _i) const {
-        return factor*denseData.get()[_i];
-    }
-
-
-    value_t& FullTensor::operator[](const std::vector<size_t>& _indices) {
-        REQUIRE(_indices.size() == dimensions.size(), "Wrong number of indices given " << _indices.size() << " != " << dimensions.size());
-        ensure_own_data_and_apply_factor();
-        size_t finalIndex = 0;
-        for(size_t i = 0; i < _indices.size(); ++i) {
-            REQUIRE(_indices[i] < dimensions[i], "Index "<< i <<" out of bounds " << _indices[i] << " >=! " << dimensions[i]);
-            finalIndex *= dimensions[i];
-            finalIndex += _indices[i];
-        }
-        return denseData.get()[finalIndex];
-    }
-
-    value_t FullTensor::operator[](const std::vector<size_t>& _indices) const {
-        REQUIRE(_indices.size() == dimensions.size(), "Wrong number of indices given " << _indices.size() << " != " << dimensions.size());
-        size_t finalIndex = 0;
-        for(size_t i = 0; i < _indices.size(); ++i) {
-            REQUIRE(_indices[i] < dimensions[i], "Index "<< i <<" out of bounds " << _indices[i] << " >=! " << dimensions[i]);
-            finalIndex *= dimensions[i];
-            finalIndex += _indices[i];
-        }
-        return factor*denseData.get()[finalIndex];
-    }
     
     
 	value_t* FullTensor::data_pointer() {

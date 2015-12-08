@@ -201,28 +201,6 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		/** 
-		 * @brief Read/Write access a single entry.
-		 * @details Note that the request for write access to this entry requires the SparseTensor to create it, i.e. to lower the sparsity. If only read access
-		 * is required use at() instead.
-		 * @param _position the position of the desired entry, assuming row-major ordering.
-		 * @return a reference to the selected entry.
-		 */
-        virtual value_t& operator[](const size_t _position) override;
-		
-        virtual value_t  operator[](const size_t _position) const override;
-        
-		/** 
-		 * @brief Read/Write access a single entry.
-		 * @details Note that the request for write access to this entry requires the SparseTensor to create it, i.e. to lower the sparsity. If only read access
-		 * is required use at() instead.
-		 * @param _position the position of the desired entry.
-		 * @return a reference to the selected entry.
-		 */
-        virtual value_t& operator[](const std::vector<size_t>& _positions) override;
-		
-        virtual value_t operator[](const std::vector<size_t>& _positions) const override;
-        
 		
 		/** 
 		 * @brief Read access a single entry.

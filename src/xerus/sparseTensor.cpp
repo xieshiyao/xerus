@@ -94,50 +94,6 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-    value_t& SparseTensor::operator[](const size_t _position) {
-		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
-        apply_factor();
-        return (*sparseData)[_position];
-    }
-    
-    value_t SparseTensor::operator[](const size_t _position) const {
-		REQUIRE(_position < size, "position " << _position << " does not exist in (sparse)tensor of dimensions " << dimensions);
-		const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
-		if(entry == sparseData->end()) {
-            return 0;
-        } else {
-            return factor*entry->second;
-        }
-    }
-    
-    value_t& SparseTensor::operator[](const std::vector<size_t>& _indices) {
-        apply_factor();
-        CHECK(_indices.size() == dimensions.size(), fatal, "Wrong number of indices given");
-        size_t finalIndex = 0;
-        for(size_t i = 0; i < _indices.size(); ++i) {
-            REQUIRE(_indices[i] < dimensions[i], "Index "<< i <<" out of bounds " << _indices[i] << " >=! " << dimensions[i]);
-            finalIndex *= dimensions[i];
-            finalIndex += _indices[i];
-        }
-        return (*sparseData)[finalIndex];
-    }
-    
-    value_t SparseTensor::operator[](const std::vector<size_t>& _indices) const {
-        CHECK(_indices.size() == dimensions.size(), fatal, "Wrong number of indices given");
-        size_t finalIndex = 0;
-        for(size_t i = 0; i < _indices.size(); ++i) {
-            REQUIRE(_indices[i] < dimensions[i], "Index "<< i <<" out of bounds " << _indices[i] << " >=! " << dimensions[i]);
-            finalIndex *= dimensions[i];
-            finalIndex += _indices[i];
-        }
-        
-        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(finalIndex);
-        if(entry == sparseData->end()) {
-            return 0;
-        } else {
-            return factor*entry->second;
-        }
-    }
     
     value_t SparseTensor::at(const size_t _position) const {
         const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
