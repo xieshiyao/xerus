@@ -186,10 +186,10 @@ namespace xerus {
 		#pragma omp parallel for schedule(static)
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(const size_t i : forwardUpdates[corePosition]) {
-				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, DONT_SET_ZERO());
+				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, Tensor::Initialisation::Nothing);
 			}
 			for(const size_t i : backwardUpdates[corePosition]) {
-				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, DONT_SET_ZERO());
+				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, Tensor::Initialisation::Nothing);
 			}
 		}
 	}

@@ -166,15 +166,15 @@ namespace xerus {
 			stackMem[0] = Tensor::ones({1});
 			
 			for(size_t d = 0; d+1 < degree(); ++d) {
-				stack[d].reset({_solution.rank(d)}, DONT_SET_ZERO());
+				stack[d].reset({_solution.rank(d)}, Tensor::Initialisation::Nothing);
 			}
 			
-			stack[degree()-1].reset({1}, DONT_SET_ZERO());
+			stack[degree()-1].reset({1}, Tensor::Initialisation::Nothing);
 			
 			std::vector<FullTensor> intermediates(degree());
 			
 			for(size_t d = 0; d < degree(); ++d) {
-				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, DONT_SET_ZERO());
+				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, Tensor::Initialisation::Nothing);
 			}
 			
 			REQUIRE(stack[degree()-1].size == 1 , "IE");

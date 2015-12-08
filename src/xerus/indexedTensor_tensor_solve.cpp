@@ -33,7 +33,7 @@ namespace xerus {
 
     void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b) {
         // x takes the dimensions of A -- also ensures that every index of x is contained in A
-        _x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), DONT_SET_ZERO());
+		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::Nothing);
         
         const std::vector<Index> AIndices = _a.get_assigned_indices();
         const std::vector<Index> bIndices = _b.get_assigned_indices();

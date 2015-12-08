@@ -38,13 +38,15 @@ namespace xerus {
 
     FullTensor::FullTensor(      FullTensor&& _other) : Tensor(std::move(_other)){ }
     
-    FullTensor::FullTensor(const Tensor&  _other) : Tensor(_other){
+    FullTensor::FullTensor(const Tensor&  _other) : Tensor(_other) {
 		if(_other.is_sparse()) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
 			misc::array_set_zero(denseData.get(), size);
 			for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
 				denseData.get()[entry.first] = entry.second;
 			}
+			sparseData.reset();
+			representation = Representation::Dense;
 		}
 	}
 
@@ -56,6 +58,7 @@ namespace xerus {
 				denseData.get()[entry.first] = entry.second;
 			}
 			sparseData.reset();
+			representation = Representation::Dense;
 		}
 	}
     
@@ -113,43 +116,7 @@ namespace xerus {
         return new FullTensor(std::move(_dimensions), DONT_SET_ZERO());
     }
 
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-    void FullTensor::ensure_own_data() {
-        if(!denseData.unique()) {
-            value_t* const oldDataPtr = denseData.get();
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-            misc::array_copy(denseData.get(), oldDataPtr, size);
-        }
-    }
-
-
-    void FullTensor::ensure_own_data_no_copy() {
-        if(!denseData.unique()) {
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-        }
-    }
-
-    void FullTensor::apply_factor() {
-        if(has_factor()) {
-			if(denseData.unique()) {
-				misc::array_scale(denseData.get(), factor, size);
-			} else {
-				value_t* const oldDataPtr = denseData.get();
-				denseData.reset(new value_t[size], internal::array_deleter_vt);
-				misc::array_scaled_copy(denseData.get(), factor, oldDataPtr, size);
-			}
-            factor = 1.0;
-        }
-    }
-
-    void FullTensor::ensure_own_data_and_apply_factor() {
-        ensure_own_data();
-        if(has_factor()) {
-            misc::array_scale(denseData.get(), factor, size);
-            factor = 1.0;
-        }
-    }
         
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     FullTensor& FullTensor::operator=(const FullTensor& _other) {
@@ -337,60 +304,6 @@ namespace xerus {
 	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-    void FullTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
-        const size_t oldDataSize = size;
-        change_dimensions(_newDim);
-        factor = 1.0;
-        if(oldDataSize != size) {
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-        }
-    }
-    
-    void FullTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
-        const size_t oldDataSize = size;
-        change_dimensions(std::move(_newDim));
-        factor = 1.0;
-        if(oldDataSize != size) {
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-        }
-    }
-    
-    void FullTensor::reset(const std::vector<size_t>&  _newDim) {
-        const size_t oldDataSize = size;
-        change_dimensions(_newDim);
-        factor = 1.0;
-        if(oldDataSize != size) {
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-        } else {
-            ensure_own_data_no_copy();
-        }
-        memset(denseData.get(), 0, size*sizeof(value_t));
-    }
-    
-    void FullTensor::reset(      std::vector<size_t>&& _newDim) {
-        const size_t oldDataSize = size;
-        change_dimensions(std::move(_newDim));
-        factor = 1.0;
-        if(oldDataSize != size) {
-            denseData.reset(new value_t[size], internal::array_deleter_vt);
-        } else {
-            ensure_own_data_no_copy();
-        }
-        memset(denseData.get(), 0, size*sizeof(value_t));
-    }
-    
-	void FullTensor::reset(const std::vector<size_t>&  _newDim, value_t* const _data) {
-		change_dimensions(_newDim);
-		factor = 1.0;
-		denseData.reset(_data, internal::array_deleter_vt);
-	}
-	
-	void FullTensor::reset(      std::vector<size_t>&& _newDim, value_t* const _data) {
-		change_dimensions(std::move(_newDim));
-		factor = 1.0;
-		denseData.reset(_data, internal::array_deleter_vt);
-	}
-
 	
     void FullTensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
         REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());

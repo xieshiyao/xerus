@@ -33,6 +33,8 @@ namespace xerus {
 	
 	Tensor::Tensor(const Representation _representation) : Tensor(std::vector<size_t>({}), _representation) { } 
 	
+	Tensor::Tensor( Tensor&& _other ) : Tensor(_other) {} // TODO improve
+	
 	Tensor::Tensor(const std::vector<size_t>& _dimensions, const Representation _representation, const Initialisation _init) 
 		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
 	{
@@ -59,6 +61,8 @@ namespace xerus {
     
     Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const Representation _representation, const Initialisation _init) 
 	: Tensor(std::vector<size_t>(_dimensions), _representation, _init) {}
+    
+    
     
     FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		FullTensor ret(_dimensions, DONT_SET_ZERO());
@@ -124,6 +128,162 @@ namespace xerus {
     Tensor::~Tensor() {}
     
     
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	/// @brief Returns whether the current representation is dense.
+	bool Tensor::dense() const {
+		REQUIRE((representation == Representation::Dense && denseData) || (representation == Representation::Sparse && sparseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		return representation == Representation::Dense;
+	}
+	
+	/// @brief Returns whether the current representation is sparse.
+	bool Tensor::sparse() const {
+		REQUIRE((representation == Representation::Dense && denseData) || (representation == Representation::Sparse && sparseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		return representation == Representation::Sparse;
+	}
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+	void Tensor::ensure_own_data() {
+		if(dense()) {
+			if(!denseData.unique()) {
+				value_t* const oldDataPtr = denseData.get();
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+				misc::array_copy(denseData.get(), oldDataPtr, size);
+			}
+		} else {
+			if(!sparseData.unique()) {
+				sparseData.reset(new std::map<size_t, value_t>(*sparseData));
+			}
+		}
+	}
+	
+	
+	void Tensor::ensure_own_data_no_copy() {
+		if(dense()) {
+			if(!denseData.unique()) {
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+			}
+		} else {
+			if(!sparseData.unique()) {
+				sparseData.reset(new std::map<size_t, value_t>());
+			}
+		}
+	}
+	
+	void Tensor::apply_factor() {
+		if(has_factor()) {
+			if(dense()) {
+				if(denseData.unique()) {
+					misc::array_scale(denseData.get(), factor, size);
+				} else {
+					value_t* const oldDataPtr = denseData.get();
+					denseData.reset(new value_t[size], internal::array_deleter_vt);
+					misc::array_scaled_copy(denseData.get(), factor, oldDataPtr, size);
+				}
+			} else {
+				if(!sparseData.unique()) {
+					sparseData.reset(new std::map<size_t, value_t>(*sparseData));
+				}
+				
+				for(std::pair<const size_t, value_t>& entry : *sparseData) {
+					entry.second *= factor;
+				}
+			}
+			
+			factor = 1.0;
+		}
+	}
+	
+	void Tensor::ensure_own_data_and_apply_factor() {
+		if(has_factor()) {
+			apply_factor(); 
+		} else {
+			ensure_own_data();
+		}
+	}
+	
+	
+	void Tensor::reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init) {
+		const size_t oldDataSize = size;
+		change_dimensions(_newDim);
+		factor = 1.0;
+		
+		if(_representation == Representation::Dense) {
+			if(dense()) {
+				if(oldDataSize != size || !denseData.unique()) {
+					denseData.reset(new value_t[size], internal::array_deleter_vt);
+				}
+			} else {
+				sparseData.reset();
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+				representation = _representation;
+			}
+			
+			if(_init == Initialisation::Zero) {
+				memset(denseData.get(), 0, size*sizeof(value_t));
+			}
+		} else {
+			if(sparse()) {
+				if(sparseData.unique()) {
+					sparseData->clear();
+				} else {
+					sparseData.reset(new std::map<size_t, value_t>());
+				}
+			} else {
+				denseData.reset();
+				sparseData.reset(new std::map<size_t, value_t>());
+				representation = _representation;
+			}
+		}
+	}
+	
+	void Tensor::reset(const std::vector<size_t>&  _newDim, const Initialisation _init) {
+		const size_t oldDataSize = size;
+		change_dimensions(_newDim);
+		factor = 1.0;
+		
+		if(dense()) {
+			if(oldDataSize != size || !denseData.unique()) {
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+			}
+			
+			if(_init == Initialisation::Zero) {
+				memset(denseData.get(), 0, size*sizeof(value_t));
+			}
+		} else {
+			if(sparseData.unique()) {
+				sparseData->clear();
+			} else {
+				sparseData.reset(new std::map<size_t, value_t>());
+			}
+		}
+	}
+	
+	void Tensor::reset(const std::vector<size_t>& _newDim, const std::shared_ptr<value_t>& _newData) {
+		change_dimensions(_newDim);
+		factor = 1.0;
+		
+		if(sparse()) {
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+		
+		denseData = _newData;
+	}
+	
+	void Tensor::reset(const std::vector<size_t>& _newDim, std::unique_ptr<value_t[]>&& _newData) {
+		change_dimensions(_newDim);
+		factor = 1.0;
+		
+		if(sparse()) {
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+		
+		denseData = std::move(_newData);
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
     Tensor& Tensor::operator*=(const value_t _factor) {
@@ -142,21 +302,25 @@ namespace xerus {
     
     /// Indexes the tensor.
     IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
+		dense(); 
         return IndexedTensor<Tensor>(this, _indices, false);
     }
     
     /// Indexes the tensor.
     IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
+		dense(); 
         return IndexedTensor<Tensor>(this, std::move(_indices), false);
     }
     
     /// Indexes the tensor.
     IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
+		dense(); 
         return IndexedTensorReadOnly<Tensor>(this, _indices);
     }
     
     /// Indexes the tensor.
     IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
+		dense(); 
         return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
     }
     

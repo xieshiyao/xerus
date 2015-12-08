@@ -76,42 +76,6 @@ namespace xerus {
     Tensor* SparseTensor::construct_new(      std::vector<size_t>&& _dimensions, DONT_SET_ZERO) const {
         return new SparseTensor(std::move(_dimensions));
     }
-        
-        
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-    void SparseTensor::ensure_own_data() {
-        if(!sparseData.unique()) {
-            sparseData.reset(new std::map<size_t, value_t>(*sparseData));
-        }
-    }
-
-
-    void SparseTensor::ensure_own_data_no_copy() {
-        if(!sparseData.unique()) {
-            sparseData.reset(new std::map<size_t, value_t>());
-        }
-    }
-
-    void SparseTensor::apply_factor() {
-        if(has_factor()) {
-            ensure_own_data();
-            for(std::pair<const size_t, value_t>& entry : *sparseData) {
-                entry.second *= factor;
-            }
-            factor = 1.0;
-        }
-    }
-
-    void SparseTensor::ensure_own_data_and_apply_factor() {
-        ensure_own_data();
-        if(has_factor()) {
-            for(std::pair<const size_t, value_t>& entry : *sparseData) {
-                entry.second *= factor;
-            }
-            factor = 1.0;
-        }
-    }
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -262,45 +226,6 @@ namespace xerus {
 		LOG(fatal, "Not yet implemented"); // TODO 
 	}
     
-    void SparseTensor::reset(const std::vector<size_t>&  _newDim, DONT_SET_ZERO) {
-        change_dimensions(_newDim);
-        factor = 1.0;
-        if(sparseData.unique()) {
-            sparseData->clear();
-        } else {
-            sparseData.reset(new std::map<size_t, value_t>());
-        }
-    }
-    
-    void SparseTensor::reset(      std::vector<size_t>&& _newDim, DONT_SET_ZERO) {
-        change_dimensions(std::move(_newDim));
-        factor = 1.0;
-        if(sparseData.unique()) {
-            sparseData->clear();
-        } else {
-            sparseData.reset(new std::map<size_t, value_t>());
-        }
-    }
-    
-    void SparseTensor::reset(const std::vector<size_t>&  _newDim) {
-        change_dimensions(_newDim);
-        factor = 1.0;
-        if(sparseData.unique()) {
-            sparseData->clear();
-        } else {
-            sparseData.reset(new std::map<size_t, value_t>());
-        }
-    }
-    
-    void SparseTensor::reset(      std::vector<size_t>&& _newDim) {
-        change_dimensions(std::move(_newDim));
-        factor = 1.0;
-        if(sparseData.unique()) {
-            sparseData->clear();
-        } else {
-            sparseData.reset(new std::map<size_t, value_t>());
-        }
-    }
     
     bool SparseTensor::is_sparse() const {
         return true;

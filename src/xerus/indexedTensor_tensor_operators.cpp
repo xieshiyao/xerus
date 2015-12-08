@@ -36,12 +36,12 @@ namespace xerus {
     void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs) const {
         if(!_rhs.uses_tensor(tensorObject)) {
             // If LHS and RHS object don't coincide we can directly evaluate
-            this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), DONT_SET_ZERO());
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::Nothing);
             evaluate(*this, _rhs);
         } else {
             // If the tensors in fact coincide we have to use a tmp object
             IndexedTensorMoveable<Tensor> tmpTensor(_rhs);
-            this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), DONT_SET_ZERO());
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::Nothing);
             evaluate(*this, tmpTensor);
         }
     }

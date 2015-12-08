@@ -117,9 +117,7 @@ namespace xerus {
 		 * @param _data a shared_ptr to the data the FullTensor shall use. This must be (at least) of the size determined by the dimensions.
 		 */
         template<ADD_MOVE(Vec, std::vector<size_t>), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
-        explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions)) {
-			denseData = std::forward<SPtr>(_data);
-		}
+        explicit FullTensor(Vec&& _dimensions, SPtr&& _data) : Tensor(std::forward<Vec>(_dimensions), _data) { }
         
         /** 
 		 * @brief Constructs a FullTensor with the given dimensions and uses the provided data as entries.
@@ -297,15 +295,7 @@ namespace xerus {
         
         virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
         
-		
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        virtual void ensure_own_data() override;
-        
-        virtual void ensure_own_data_no_copy() override;
-        
-        virtual void apply_factor() override;
-        
-        virtual void ensure_own_data_and_apply_factor() override;
+
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -444,19 +434,7 @@ namespace xerus {
 		
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;
-        
-        virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) override;
-        
-        virtual void reset(const std::vector<size_t>&  _newDim) override;
-        
-        virtual void reset(      std::vector<size_t>&& _newDim) override;
-		
-		void reset(const std::vector<size_t>&  _newDim, value_t* const _data);
-		
-		void reset(      std::vector<size_t>&& _newDim, value_t* const _data);
-        
+
 		/** 
 		 * @brief Resizes a specific dimension of the FullTensor.
 		 * @param _n the dimension to resize.

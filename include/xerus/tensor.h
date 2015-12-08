@@ -65,7 +65,7 @@ namespace xerus {
 		std::shared_ptr<value_t> denseData;
 		
 		/** 
-		 * @brief Shared pointer to the a map containing the entries of the SparseTensor. 
+		 * @brief Shared pointer to the a map containing the non-zero entries, if representation is Sparse. 
 		 * @details The entries are stored in a map which uses the position of each entry assuming row-major ordering as key value.
 		 * If the tensor is modified and not sole owner a deep copy is performed.
 		 */
@@ -80,7 +80,7 @@ namespace xerus {
 		implicit Tensor( const Tensor& _other ) = default;
 		
 		/// @brief Tensors are move constructable.
-		implicit Tensor( Tensor&& _other ) = default;
+		implicit Tensor( Tensor&& _other );
 
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
@@ -192,44 +192,60 @@ namespace xerus {
 		/// @brief Destructor
 		virtual ~Tensor();
 		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		/// @brief Returns whether the current representation is dense.
+		bool dense() const;
+		
+		/// @brief Returns whether the current representation is sparse.
+		bool sparse() const;
+		
+		
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
 		/// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
-		virtual void ensure_own_data() = 0;
+		void ensure_own_data();
 		
 		/// @brief Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
-		virtual void ensure_own_data_no_copy() = 0;
+		void ensure_own_data_no_copy();
 		
 		/// @brief Checks whether there is a non-trivial scaling factor and applies it if nessecary.
-		virtual void apply_factor() = 0;
+		void apply_factor();
 		
 		/// @brief Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
-		virtual void ensure_own_data_and_apply_factor() = 0;
+		void ensure_own_data_and_apply_factor();
 		
 		/** 
-		 * @brief Resets the tensor to the given dimensions, factor equals one and undefined entries.
-		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
-		 * @param _newDim the new dimensions the tensor shall have
+		 * @brief Resets the tensor to the given dimensions and representation.
+		 * @details Leaves the Tensor in the same state as if newly constructed with the the same arguments.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _representation the new representation of the tensor.
+		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) = 0;
+		void reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
-		 * @brief Resets the tensor to the given dimensions, factor equals one and undefined entries.
-		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
-		 * @param _newDim the new dimensions the tensor shall have
+		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		virtual void reset(	  std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) = 0;
+		void reset(const std::vector<size_t>&  _newDim, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
-		 * @brief Resets the tensor to the given dimensions, factor equals one and all entries equals zero.
-		 * @param _newDim the new dimensions the tensor shall have
+		 * @brief Resets the tensor to the given dimensions and uses the given data.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _newData new dense data in row-major order.
 		 */
-		virtual void reset(const std::vector<size_t>&  _newDim) = 0;
+		void reset(const std::vector<size_t>&  _newDim, const std::shared_ptr<value_t>& _newData);
 		
 		/** 
-		 * @brief Resets the tensor to the given dimensions, factor equals one and all entries equals zero.
-		 * @param _newDim the new dimensions the tensor shall have
+		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _newData new dense data in row-major order.
 		 */
-		virtual void reset(	  std::vector<size_t>&& _newDim) = 0;
+		void reset(const std::vector<size_t>&  _newDim, std::unique_ptr<value_t[]>&& _newData);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

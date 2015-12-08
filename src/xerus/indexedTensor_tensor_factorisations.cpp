@@ -128,11 +128,11 @@ namespace xerus {
 		lhsDims.push_back(_rank);
 		rhsDims.insert(rhsDims.begin(), _rank);
 		
-		_lhs.tensorObject->reset(std::move(lhsDims), DONT_SET_ZERO());
+		_lhs.tensorObject->reset(std::move(lhsDims), Tensor::Initialisation::Nothing);
 		_lhs.tensorObject->ensure_own_data_no_copy();
 		IF_CHECK( _lhs.check_indices(false); )
 		
-		_rhs.tensorObject->reset(std::move(rhsDims), DONT_SET_ZERO());
+		_rhs.tensorObject->reset(std::move(rhsDims), Tensor::Initialisation::Nothing);
 		_rhs.tensorObject->ensure_own_data_no_copy();
 		IF_CHECK( _rhs.check_indices(false); )
 		
@@ -295,11 +295,11 @@ namespace xerus {
 			
 			std::vector<size_t> newDim = Q.tensorObject->dimensions;
 			newDim.back() = rank;
-			static_cast<FullTensor*>(Q.tensorObject)->reset(newDim, Qt.release());
+			static_cast<FullTensor*>(Q.tensorObject)->reset(newDim, std::move(Qt));
 			
 			newDim = C.tensorObject->dimensions;
 			newDim.front() = rank;
-			static_cast<FullTensor*>(C.tensorObject)->reset(newDim, Ct.release());
+			static_cast<FullTensor*>(C.tensorObject)->reset(newDim, std::move(Ct));
 		}
 		
 		// C has to carry the constant factor

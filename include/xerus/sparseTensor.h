@@ -183,16 +183,6 @@ namespace xerus {
 		virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
         
         
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        virtual void ensure_own_data() override;
-        
-        virtual void ensure_own_data_no_copy() override;
-        
-        virtual void apply_factor() override;
-        
-        virtual void ensure_own_data_and_apply_factor() override;
-        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
 		 * @brief Standard assignment operator.
@@ -302,14 +292,6 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
-        
-        virtual void reset(const std::vector<size_t>&  _newDim, _unused_ DONT_SET_ZERO) override;
-		
-        virtual void reset(      std::vector<size_t>&& _newDim, _unused_ DONT_SET_ZERO) override;
-        
-        virtual void reset(const std::vector<size_t>&  _newDim) override;
-		
-        virtual void reset(      std::vector<size_t>&& _newDim) override;
         
         virtual bool is_sparse() const override;
         
