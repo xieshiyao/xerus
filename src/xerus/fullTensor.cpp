@@ -87,35 +87,6 @@ namespace xerus {
 	}
     
     
-    
-    Tensor* FullTensor::get_copy() const {
-        return new FullTensor(*this);
-    }
-    
-    Tensor* FullTensor::get_moved_copy() {
-        return new FullTensor(std::move(*this));
-    }
-    
-    Tensor* FullTensor::construct_new() const {
-        return new FullTensor();
-    }
-    
-    Tensor* FullTensor::construct_new(const std::vector<size_t>&  _dimensions) const {
-        return new FullTensor(_dimensions);
-    }
-    
-    Tensor* FullTensor::construct_new(      std::vector<size_t>&& _dimensions) const {
-        return new FullTensor(std::move(_dimensions));
-    }
-    
-    Tensor* FullTensor::construct_new(const std::vector<size_t>&  _dimensions, DONT_SET_ZERO) const {
-        return new FullTensor(_dimensions, DONT_SET_ZERO());
-    }
-    
-    Tensor* FullTensor::construct_new(      std::vector<size_t>&& _dimensions, DONT_SET_ZERO) const {
-        return new FullTensor(std::move(_dimensions), DONT_SET_ZERO());
-    }
-
 
         
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -153,90 +124,6 @@ namespace xerus {
         return *this;
     }
 
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    FullTensor& FullTensor::operator+=(const Tensor& _other) {
-        REQUIRE(dimensions == _other.dimensions, "In FullTensor sum the dimensions must conincde");
-        ensure_own_data();
-		value_t* const dataPtr = denseData.get();
-		
-		PA_START;
-		if(_other.is_sparse()) {
-			apply_factor();
-			if(_other.has_factor()) {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
-					dataPtr[entry.first] += _other.factor*entry.second;
-				}
-			} else {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
-					dataPtr[entry.first] += entry.second;
-				}
-			}
-		} else {
-			if(has_factor()) {
-				misc::array_scale_add(factor, dataPtr, _other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
-				factor = 1.0;
-			} else {
-				misc::array_add(dataPtr, _other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
-			}
-		}
-        PA_END("ADD/SUB", "FullTensor ADD", misc::to_string(size));
-        return *this;
-    }
-
-    FullTensor FullTensor::operator+(const Tensor& _other) const {
-        FullTensor result(*this);
-        result += _other;
-        return result;
-    }
-
-    FullTensor& FullTensor::operator-=(const Tensor& _other) {
-        REQUIRE(dimensions == _other.dimensions, "In FullTensor subtraction the dimensions must conincde");
-		ensure_own_data();
-		value_t* const dataPtr = denseData.get();
-		
-		PA_START;
-		if(_other.is_sparse()) {
-			apply_factor();
-			if(_other.has_factor()) {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
-					dataPtr[entry.first] -= _other.factor*entry.second;
-				}
-			} else {
-				for(const std::pair<size_t, value_t>& entry : *static_cast<const SparseTensor&>(_other).sparseData) {
-					dataPtr[entry.first] -= entry.second;
-				}
-			}
-		} else {
-			if(has_factor()) {
-				misc::array_scale_add(factor, denseData.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
-				factor = 1.0;
-			} else {
-				misc::array_add(denseData.get(), -1.0*_other.factor, static_cast<const FullTensor&>(_other).denseData.get(), size);
-			}
-		}
-        PA_END("ADD/SUB", "FullTensor SUB", misc::to_string(size));
-        return *this;
-    }
-
-    FullTensor FullTensor::operator-(const Tensor& _other) const {
-        FullTensor result(*this);
-        result -= _other;
-        return result;
-    }
-
-    FullTensor FullTensor::operator*(const value_t _factor) const {
-        FullTensor result(*this);
-        result *= _factor;
-        return result;
-    }
-
-    FullTensor FullTensor::operator/(const value_t _divisor) const {
-        FullTensor result(*this);
-        result /= _divisor;
-        return result;
-    }
-
-    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
     
@@ -416,23 +303,9 @@ namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
 
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    bool FullTensor::is_sparse() const {
-        return false;
-    }
-
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-	FullTensor operator+(const SparseTensor& _lhs, const FullTensor& _rhs) { return _rhs +_lhs; }
-    
-    FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs) {
-        FullTensor result(_rhs);
-		result -= _lhs;
-        result.factor *= -1;
-        return result;
-    }
     
     
     void contract(FullTensor& _result, const FullTensor& _lhs, const bool _lhsTrans, const FullTensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {

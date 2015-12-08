@@ -27,9 +27,13 @@
 namespace xerus {
 	SparseTensor::SparseTensor() : Tensor(Representation::Sparse) { }
 
-    SparseTensor::SparseTensor( const SparseTensor&  _other) : Tensor(_other) { }
+    SparseTensor::SparseTensor( const Tensor&  _other) : Tensor(_other) {
+		use_sparse_representation();
+	}
     
-    SparseTensor::SparseTensor(       SparseTensor&& _other) : Tensor(std::move(_other)) { }
+    SparseTensor::SparseTensor(       Tensor&& _other) : Tensor(std::move(_other)) {
+		use_sparse_representation();
+	}
     
     SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions, Representation::Sparse) { }
         
@@ -49,47 +53,19 @@ namespace xerus {
         }
     }
     
-    Tensor* SparseTensor::get_copy() const {
-        return new SparseTensor(*this);
-    }
-        
-    Tensor* SparseTensor::get_moved_copy() {
-        return new SparseTensor(std::move(*this));
-    }
-    
-    Tensor* SparseTensor::construct_new() const {
-        return new SparseTensor();
-    }
-    
-    Tensor* SparseTensor::construct_new(const std::vector<size_t>&  _dimensions) const {
-        return new SparseTensor(_dimensions);
-    }
-    
-    Tensor* SparseTensor::construct_new(      std::vector<size_t>&& _dimensions) const {
-        return new SparseTensor(std::move(_dimensions));
-    }
-    
-    Tensor* SparseTensor::construct_new(const std::vector<size_t>&  _dimensions, DONT_SET_ZERO) const {
-        return new SparseTensor(_dimensions);
-    }
-    
-    Tensor* SparseTensor::construct_new(      std::vector<size_t>&& _dimensions, DONT_SET_ZERO) const {
-        return new SparseTensor(std::move(_dimensions));
-    }
-    
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    SparseTensor& SparseTensor::operator=(const SparseTensor&  _other) {
-        assign(_other);
-		sparseData = _other.sparseData;
-        return *this;
-    }
-    
-    SparseTensor& SparseTensor::operator=(      SparseTensor&& _other) {
-        assign(std::move(_other));
-		sparseData = _other.sparseData;
-        return *this;
-    }
+//     SparseTensor& SparseTensor::operator=(const SparseTensor&  _other) {
+//         assign(_other);
+// 		sparseData = _other.sparseData;
+//         return *this;
+//     }
+//     
+//     SparseTensor& SparseTensor::operator=(      SparseTensor&& _other) {
+//         assign(std::move(_other));
+// 		sparseData = _other.sparseData;
+//         return *this;
+//     }
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -121,67 +97,5 @@ namespace xerus {
         }
     }
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    SparseTensor& SparseTensor::operator+=(const SparseTensor& _other) {
-        ensure_own_data_and_apply_factor();
-        
-		PA_START;
-        for(const std::pair<size_t, value_t>& entry : *_other.sparseData) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = sparseData->emplace(entry.first, _other.factor*entry.second);
-            if(!result.second) {
-                result.first->second += _other.factor*entry.second;
-            }
-        }
-        PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));
-        return *this;
-    }
-    
-    SparseTensor  SparseTensor::operator+(const SparseTensor& _other) const {
-        SparseTensor ret(*this);
-        ret += _other;
-        return ret;
-    }
-    
-    SparseTensor& SparseTensor::operator-=(const SparseTensor& _other) {
-        ensure_own_data_and_apply_factor();
-        
-		PA_START;
-        for(const std::pair<size_t, value_t>& entry : *_other.sparseData) {
-            std::pair<std::map<size_t, value_t>::iterator, bool> result = sparseData->emplace(entry.first, -_other.factor*entry.second);
-            if(!result.second) {
-                result.first->second -= _other.factor*entry.second;
-            }
-        }
-        PA_END("ADD/SUB", "SparseTensor ADD/SUB SparseTensor", misc::to_string(size));
-        return *this;
-    }
-    
-    SparseTensor SparseTensor::operator-(const SparseTensor& _other) const {
-        SparseTensor ret(*this);
-        ret -= _other;
-        return ret;
-    }
-
-    
-    SparseTensor SparseTensor::operator*(const value_t _prod) const {
-        SparseTensor ret(*this);
-        ret.factor *= _prod;
-        return ret;
-    }
-
-    
-    SparseTensor SparseTensor::operator/(const value_t _div) const {
-        SparseTensor ret(*this);
-        ret.factor /= _div;
-        return ret;
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-    
-    
-    bool SparseTensor::is_sparse() const {
-        return true;
-    }
     
 }

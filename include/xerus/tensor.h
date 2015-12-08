@@ -118,39 +118,39 @@ namespace xerus {
 		
 		
 		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
-		virtual Tensor* get_copy() const = 0;
+		Tensor* get_copy() const;
 		
 		/// @brief Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
-		virtual Tensor* get_moved_copy() = 0;
+		Tensor* get_moved_copy();
 		
 		/// @brief Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
-		virtual Tensor* construct_new() const = 0;
+		Tensor* construct_new() const;
 		
 		/** 
 		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const = 0;
+		Tensor* construct_new(const std::vector<size_t>&  _dimensions) const;
 		
 		/** 
 		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		virtual Tensor* construct_new(	  std::vector<size_t>&& _dimensions) const = 0;
-		
-		/** 
-		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
-		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
-		 * @param _dimensions the dimensions of the new tensor.
-		 */
-		virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const = 0;
+		Tensor* construct_new(	  std::vector<size_t>&& _dimensions) const;
 		
 		/** 
 		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		virtual Tensor* construct_new(	  std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const = 0;
+		Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const;
+		
+		/** 
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
+		Tensor* construct_new(	  std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const;
 		
 		/** 
 		 * @brief: Returns a FullTensor with all entries equal to one.
@@ -193,19 +193,45 @@ namespace xerus {
 		virtual ~Tensor();
 		
 		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		/** 
+		 * @brief Standard assignment operator.
+		 * @param _other the Tensor to be assinged to this one.
+		 * @return a reference to this Tensor.
+		 */
+		Tensor& operator=(const Tensor&  _other) = default;
+		
+		/** 
+		 * @brief Standard move-assignment operator.
+		 * @param _other the Tensor to be move-assinged to this one.
+		 * @return a reference to this Tensor.
+		 */
+		Tensor& operator=(      Tensor&& _other);
+		
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/// @brief Returns whether the current representation is dense.
-		bool dense() const;
+		bool is_dense() const;
 		
 		/// @brief Returns whether the current representation is sparse.
-		bool sparse() const;
+		bool is_sparse() const;
 		
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		static size_t multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions);
+		
+		template<int sign>
+		static void plus_minus_equal(Tensor& _me, const Tensor& _other);
+		
+		/// @brief Adds the given sparse data to the given full data
+		static void add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData);
+		
+		/// @brief Adds the given sparse data to the given sparse data
+		static void add_sparse_to_sparse(const std::shared_ptr<std::map<size_t, value_t>>& _sum, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _summand);
 		
 		/// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
 		void ensure_own_data();
@@ -249,9 +275,23 @@ namespace xerus {
 		 */
 		void reset(const std::vector<size_t>&  _newDim, std::unique_ptr<value_t[]>&& _newData);
 		
-		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
+		/** 
+		 * @brief Adds the @a _other Tensor entrywise to this one.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
+		 * @param _other the Tensor to be added to this one.
+		 * @return a reference to this Tensor.
+		 */
+		Tensor& operator+=(const Tensor& _other);
+		
+		/** 
+		 * @brief Subtracts the @a _other Tensor entrywise from this one.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
+		 * @param _other the Tensor to be subtracted to this one.
+		 * @return a reference to this Tensor.
+		 */
+		Tensor& operator-=(const Tensor& _other);
+		
 		/** 
 		 * @brief Performs the entrywise multiplication with a constant @a _factor.
 		 * @details Internally this only results in a change in the global factor.
@@ -268,6 +308,39 @@ namespace xerus {
 		 * @return a reference to this Tensor.
 		 */ 
 		Tensor& operator/=(const value_t _divisor);
+		
+		/** 
+		 * @brief Calculates the entrywise sum of this Tensor and @a _other.
+		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
+		 * @param _other the second summand.
+		 * @return the sum.
+		 */
+		Tensor  operator+( const Tensor& _other) const;
+
+		/** 
+		 * @brief Calculates the entrywise difference between this Tensor and @a _other.
+		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
+		 * @param _other the subtrahend,
+		 * @return the difference.
+		 */
+		Tensor  operator-( const Tensor& _other) const;
+		
+		/** 
+		 * @brief Calculates the entrywise multiplication of this Tensor with a constant @a _factor.
+		 * @details Internally this only results in a change in the global factor.
+		 * @param _factor the factor,
+		 * @return the resulting scaled Tensor.
+		 */
+		Tensor  operator*( const value_t _factor) const;
+		
+		/** 
+		 * @brief Calculates the entrywise divison of this Tensor by a constant @a _divisor.
+		 * @details Internally this only results in a change in the global factor.
+		 * @param _divisor the divisor,
+		 * @return the resulting scaled Tensor.
+		 */
+		Tensor  operator/( const value_t _divisor) const;
+	
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -374,13 +447,6 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
-		 * @brief Checks whether the object is of type SparseTensor.
-		 * @return true is sparse, false if not.
-		 */
-		virtual bool is_sparse() const = 0;
-		
-		
-		/** 
 		 * @brief Returns the degree of the tensor.
 		 * @details The degree is always equals to dimensions.size()
 		 * @return the degree of the tensor
@@ -418,6 +484,18 @@ namespace xerus {
 		 * @return the frobenious norm.
 		 */
 		value_t frob_norm() const;
+		
+		
+		/** 
+		 * @brief Makes the Tensor use a dense representation.
+		 */
+		void use_dense_representation();
+		
+		/** 
+		 * @brief Makes the Tensor use a sparse representation.
+		 */
+		void use_sparse_representation(const value_t _eps = std::numeric_limits<value_t>::epsilon());
+		
 		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
@@ -494,6 +572,16 @@ namespace xerus {
 		/// Internal: Changes the dimensions of the tensor and recalculates the size of the tensor.
 		void change_dimensions(	  std::vector<size_t>&& _newDimensions);
 	};
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	/** 
+	 * @brief Calculates the entrywise multiplication of the FullTensor @a _lhs with a constant @a _rhs.
+	 * @details Internally this only results in a change in the global factor.
+	 * @param _lhs the FullTensor that shall be scaled.
+	 * @param _rhs the factor to be used.
+	 * @return the resulting scaled FullTensor.
+	 */
+	static _inline_ Tensor operator*(const value_t _lhs, const Tensor& _rhs) { return _rhs*_lhs; }
 	
 	
 	/** 

@@ -65,6 +65,60 @@ namespace xerus {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Tensor* Tensor::get_copy() const {
+		return new Tensor(*this);
+	}
+	
+	
+	Tensor* Tensor::get_moved_copy() {
+		return new Tensor(std::move(*this));
+	}
+	
+	
+	Tensor* Tensor::construct_new() const {
+		return new Tensor(representation);
+	}
+	
+	
+	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions) const {
+		return new Tensor(_dimensions, representation);
+	}
+	
+	
+	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions) const {
+		return new Tensor(_dimensions, representation);
+	}
+	
+	
+	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const {
+		return new Tensor(_dimensions, representation, Initialisation::Nothing);
+	}
+	
+	
+	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const {
+		return new Tensor(_dimensions, representation, Initialisation::Nothing);
+	}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		FullTensor ret(_dimensions, DONT_SET_ZERO());
 		value_t* const data = ret.data_pointer();
@@ -129,22 +183,51 @@ namespace xerus {
     Tensor::~Tensor() {}
     
     
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	Tensor& Tensor::operator=( Tensor&& _other) {
+		std::swap(dimensions, _other.dimensions);
+		std::swap(size, _other.size);
+		factor = _other.factor;
+		std::swap(denseData, _other.denseData);
+		std::swap(sparseData, _other.sparseData);
+		
+		return *this;
+	}
+    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	/// @brief Returns whether the current representation is dense.
-	bool Tensor::dense() const {
+	bool Tensor::is_dense() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
 	/// @brief Returns whether the current representation is sparse.
-	bool Tensor::sparse() const {
+	bool Tensor::is_sparse() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
+	void Tensor::add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData) {
+		for(const std::pair<size_t, value_t>& entry : *_sparseData) {
+			_denseData.get()[entry.first] += _factor*entry.second;
+		}
+	}
+	
+	
+	void Tensor::add_sparse_to_sparse(const std::shared_ptr<std::map<size_t, value_t>>& _sum, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _summand) {
+		for(const std::pair<size_t, value_t>& entry : *_summand) {
+			std::pair<std::map<size_t, value_t>::iterator, bool> result = _sum->emplace(entry.first, _factor*entry.second);
+			if(!result.second) {
+				result.first->second += _factor*entry.second;
+			}
+		}
+	}
+	
 	size_t Tensor::multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions) {
 		REQUIRE(_multiIndex.size() == _dimensions.size(), "MultiIndex has wrong degree. Given " << _multiIndex.size() << ",  expected " << _dimensions.size());
 		
@@ -159,7 +242,7 @@ namespace xerus {
 	}
 	
 	void Tensor::ensure_own_data() {
-		if(dense()) {
+		if(is_dense()) {
 			if(!denseData.unique()) {
 				value_t* const oldDataPtr = denseData.get();
 				denseData.reset(new value_t[size], internal::array_deleter_vt);
@@ -174,7 +257,7 @@ namespace xerus {
 	
 	
 	void Tensor::ensure_own_data_no_copy() {
-		if(dense()) {
+		if(is_dense()) {
 			if(!denseData.unique()) {
 				denseData.reset(new value_t[size], internal::array_deleter_vt);
 			}
@@ -187,7 +270,7 @@ namespace xerus {
 	
 	void Tensor::apply_factor() {
 		if(has_factor()) {
-			if(dense()) {
+			if(is_dense()) {
 				if(denseData.unique()) {
 					misc::array_scale(denseData.get(), factor, size);
 				} else {
@@ -224,7 +307,7 @@ namespace xerus {
 		factor = 1.0;
 		
 		if(_representation == Representation::Dense) {
-			if(dense()) {
+			if(is_dense()) {
 				if(oldDataSize != size || !denseData.unique()) {
 					denseData.reset(new value_t[size], internal::array_deleter_vt);
 				}
@@ -238,7 +321,7 @@ namespace xerus {
 				memset(denseData.get(), 0, size*sizeof(value_t));
 			}
 		} else {
-			if(sparse()) {
+			if(is_sparse()) {
 				if(sparseData.unique()) {
 					sparseData->clear();
 				} else {
@@ -257,7 +340,7 @@ namespace xerus {
 		change_dimensions(_newDim);
 		factor = 1.0;
 		
-		if(dense()) {
+		if(is_dense()) {
 			if(oldDataSize != size || !denseData.unique()) {
 				denseData.reset(new value_t[size], internal::array_deleter_vt);
 			}
@@ -278,7 +361,7 @@ namespace xerus {
 		change_dimensions(_newDim);
 		factor = 1.0;
 		
-		if(sparse()) {
+		if(is_sparse()) {
 			sparseData.reset();
 			representation = Representation::Dense;
 		}
@@ -290,7 +373,7 @@ namespace xerus {
 		change_dimensions(_newDim);
 		factor = 1.0;
 		
-		if(sparse()) {
+		if(is_sparse()) {
 			sparseData.reset();
 			representation = Representation::Dense;
 		}
@@ -299,17 +382,78 @@ namespace xerus {
 	}
 	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-    Tensor& Tensor::operator*=(const value_t _factor) {
-        factor *= _factor;
-        return *this;
-    }
     
+	template<int sign>
+	void Tensor::plus_minus_equal(Tensor& _me, const Tensor& _other) {
+		REQUIRE(_me.dimensions == _other.dimensions, "In Tensor sum the dimensions must coincide.");
+		
+		if(_me.is_dense()) {
+			_me.ensure_own_data_and_apply_factor();
+			if(_other.is_dense()) {
+				misc::array_add(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+			} else {
+				add_sparse_to_full(_me.denseData, sign*_other.factor, _other.sparseData);
+			}
+		} else {
+			if(_other.is_dense()) {
+				_me.denseData.reset(new value_t[_me.size], internal::array_deleter_vt);
+				misc::array_scaled_copy(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+				add_sparse_to_full(_me.denseData, _me.factor, _me.sparseData);
+				_me.factor = 1.0;
+				_me.representation = Representation::Dense;
+				_me.sparseData.reset();
+			} else {
+				_me.ensure_own_data_and_apply_factor();
+				add_sparse_to_sparse(_me.sparseData, sign*_other.factor, _other.sparseData);
+			}
+		}
+	}
+	
+	Tensor& Tensor::operator+=(const Tensor& _other) {
+		plus_minus_equal<1>(*this, _other);
+		return *this;
+	}
+	
+	Tensor& Tensor::operator-=(const Tensor& _other) {
+		plus_minus_equal<-1>(*this, _other);
+		return *this;
+	}
+	
+	Tensor& Tensor::operator*=(const value_t _factor) {
+		factor *= _factor;
+		return *this;
+	}
+	
+	Tensor& Tensor::operator/=(const value_t _divisor) {
+		factor /= _divisor;
+		return *this;
+	}
+	
+	Tensor  Tensor::operator+( const Tensor& _other) const {
+		Tensor result(*this);
+		result += _other;
+		return result;
+	}
+	
+	Tensor  Tensor::operator-( const Tensor& _other) const {
+		Tensor result(*this);
+		result -= _other;
+		return result;
+	}
+	
+	Tensor  Tensor::operator*( const value_t _factor) const {
+		Tensor result(*this);
+		result *= _factor;
+		return result;
+	}
+	
+	Tensor  Tensor::operator/( const value_t _divisor) const {
+		Tensor result(*this);
+		result /= _divisor;
+		return result;
+	}
+	
 
-    Tensor& Tensor::operator/=(const value_t _divisor) {
-        factor /= _divisor;
-        return *this;
-    }
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -319,7 +463,7 @@ namespace xerus {
 		
 		ensure_own_data_and_apply_factor();
 		
-		if(dense()) {
+		if(is_dense()) {
 			return denseData.get()[_position];
 		} else {
 			return (*sparseData)[_position];
@@ -329,7 +473,7 @@ namespace xerus {
 	value_t Tensor::operator[](const size_t _position) const {
 		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
 		
-		if(dense()) {
+		if(is_dense()) {
 			return factor*denseData.get()[_position];
 		} else {
 			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
@@ -363,25 +507,25 @@ namespace xerus {
     
     /// Indexes the tensor.
     IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
-		dense(); 
+		is_dense(); 
         return IndexedTensor<Tensor>(this, _indices, false);
     }
     
     /// Indexes the tensor.
     IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
-		dense(); 
+		is_dense(); 
         return IndexedTensor<Tensor>(this, std::move(_indices), false);
     }
     
     /// Indexes the tensor.
     IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
-		dense(); 
+		is_dense(); 
         return IndexedTensorReadOnly<Tensor>(this, _indices);
     }
     
     /// Indexes the tensor.
     IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
-		dense(); 
+		is_dense(); 
         return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
     }
     
@@ -404,6 +548,34 @@ namespace xerus {
     }
     
     
+    
+    void Tensor::use_dense_representation() {
+		if(is_sparse()) {
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			misc::array_set_zero(denseData.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				denseData.get()[entry.first] = entry.second;
+			}
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+	}
+	
+	void Tensor::use_sparse_representation(const value_t _eps) {
+		if(is_dense()) {
+			sparseData.reset(new std::map<size_t, value_t>());
+			for(size_t i = 0; i < size; ++i) {
+				if(std::abs(factor*denseData.get()[i]) >= _eps) {
+					sparseData->insert({i, factor*denseData.get()[i]}); // TODO use emplace_hint
+				}
+			}
+			
+			denseData.reset();
+			representation = Representation::Sparse;
+		}
+	}
+	
+    
     void Tensor::reinterpret_dimensions(const std::vector<size_t>& _newDimensions) {
         REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
         dimensions = _newDimensions;
@@ -420,7 +592,7 @@ namespace xerus {
     
     
     size_t Tensor::count_non_zero_entries(const value_t _eps) const {
-		if(dense()) {
+		if(is_dense()) {
 			size_t count = 0;
 			for(size_t i = 0; i < size; ++i) {
 				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
@@ -436,7 +608,7 @@ namespace xerus {
 	}
 	
 	bool Tensor::all_entries_valid() const {
-		if(dense()) {
+		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) {
 				if(!std::isfinite(denseData.get()[i])) { return false; } 
 			}
@@ -450,7 +622,7 @@ namespace xerus {
 	
 	
 	value_t Tensor::frob_norm() const {
-		if(dense()) {
+		if(is_dense()) {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
 		} else {
 			value_t norm = 0;
@@ -464,7 +636,7 @@ namespace xerus {
 	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
 		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
 		
-		if(dense()) {
+		if(is_dense()) {
 			size_t stepCount = 1, blockSize = 1;
 			for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
 			for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }

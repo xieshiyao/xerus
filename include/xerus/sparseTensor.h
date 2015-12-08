@@ -48,10 +48,10 @@ namespace xerus {
         explicit SparseTensor();
         
         /// @brief Copy Constructors
-        implicit SparseTensor( const SparseTensor&  _other);
+        implicit SparseTensor( const Tensor&  _other);
         
         /// @brief Move Constructors
-        implicit SparseTensor(       SparseTensor&& _other);
+		implicit SparseTensor(       Tensor&& _other);
         
 		/** 
 		 * @brief Constructs a SparseTensor with the given dimensions and no set entries (i.e. completely zero).
@@ -166,37 +166,20 @@ namespace xerus {
 			return SparseTensor::random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
 		}
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        virtual Tensor* get_copy() const override;
-        
-        virtual Tensor* get_moved_copy() override;
-        
-        virtual Tensor* construct_new() const override;
-        
-        virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const override;
-        
-		virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const override;
-        
-        virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const override;
-
-		virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
-        
-        
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		/** 
-		 * @brief Standard assignment operator.
-		 * @param _other the SparseTensor to be assinged to this one.
-		 * @return a reference to this SparseTensor.
-		 */
-        SparseTensor& operator=(const SparseTensor& _other);
-		
-		/** 
-		 * @brief Standard move-assignment operator.
-		 * @param _other the SparseTensor to be move-assinged to this one.
-		 * @return a reference to this SparseTensor.
-		 */
-        SparseTensor& operator=(SparseTensor&& _other);
+// 		/** 
+// 		 * @brief Standard assignment operator.
+// 		 * @param _other the SparseTensor to be assinged to this one.
+// 		 * @return a reference to this SparseTensor.
+// 		 */
+//         SparseTensor& operator=(const SparseTensor& _other);
+// 		
+// 		/** 
+// 		 * @brief Standard move-assignment operator.
+// 		 * @param _other the SparseTensor to be move-assinged to this one.
+// 		 * @return a reference to this SparseTensor.
+// 		 */
+//         SparseTensor& operator=(SparseTensor&& _other);
         
         
         
@@ -216,73 +199,7 @@ namespace xerus {
 		 */
         value_t at(const std::vector<size_t>& _indices) const;
         
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		/** 
-		 * @brief Adds the @a _other SparseTensor entrywise to this one.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the SparseTensor to be added to this one.
-		 * @return a reference to this SparseTensor.
-		 */
-        SparseTensor& operator+=(const SparseTensor& _other);
-		
-		/** 
-		 * @brief Calculates the entrywise sum of this SparseTensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the second summand.
-		 * @return the sum as a SparseTensor.
-		 */
-        SparseTensor  operator+(const SparseTensor& _other) const;
-        
-		/** 
-		 * @brief Subtracts the @a _other SparseTensor entrywise from this one.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the SparseTensor to be subtracted from this one.
-		 * @return a reference to this SparseTensor.
-		 */
-        SparseTensor& operator-=(const SparseTensor& _other);
-		
-		/** 
-		 * @brief Calculates the entrywise difference of this SparseTensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the subtrahend.
-		 * @return the difference as a SparseTensor.
-		 */
-        SparseTensor operator-(const SparseTensor& _other) const;
-        
-		/** 
-		 * @brief Calculates the entrywise multiplication of this SparseTensor with a constant @a _factor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _factor the factor,
-		 * @return the resulting scaled SparseTensor.
-		 */
-        SparseTensor operator*(const value_t _factor) const;
-        
-		/** 
-		 * @brief Calculates the entrywise divison of this SparseTensor by a constant @a _divisor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _divisor the divisor,
-		 * @return the resulting scaled SparseTensor.
-		 */
-        SparseTensor operator/(const value_t _divisor) const;
-        
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        virtual bool is_sparse() const override;
-        
     };
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	/** 
-	* @brief Calculates the entrywise multiplication of the SparseTensor @a _lhs with a constant @a _rhs.
-	* @details Internally this only results in a change in the global factor.
-	* @param _lhs the SparseTensor that shall be scaled.
-	* @param _rhs the factor to be used.
-	* @return the resulting scaled SparseTensor.
-	*/
-    static _inline_ SparseTensor operator*(const value_t _lhs, const SparseTensor& _rhs) {
-        return _rhs*_lhs;
-    }
     
 } 

@@ -61,13 +61,13 @@ namespace xerus {
 		 * @brief Constructs a FullTensor from another Tensor.
 		 * @param _other the Tensor which shall be used.
 		 */
-        explicit FullTensor(const Tensor&  _other);
+         FullTensor(const Tensor&  _other);
 		
 		/** 
 		 * @brief Move-constructs a FullTensor from another Tensor.
 		 * @param _other the Tensor which shall be used.
 		 */
-        explicit FullTensor(      Tensor&& _other);
+         FullTensor(      Tensor&& _other);
 		
 		
 		/** 
@@ -279,24 +279,6 @@ namespace xerus {
         explicit FullTensor(std::initializer_list<size_t>&& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f)  : FullTensor(std::vector<size_t>(_dimensions), _f) {}
         
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Virtual "Constructors" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        virtual Tensor* get_copy() const override;
-
-        virtual Tensor* get_moved_copy() override;
-        
-        virtual Tensor* construct_new() const override;
-        
-        virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions) const override;
-        
-        virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions) const override;
-        
-        virtual Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const override;
-        
-        virtual Tensor* construct_new(      std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const override;
-        
-
-        
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
@@ -326,56 +308,6 @@ namespace xerus {
 		 * @return a reference to this FullTensor.
 		 */
         FullTensor& operator=(      Tensor&& _other);
-        
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        /** 
-		 * @brief Adds the @a _other Tensor entrywise to this one.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the Tensor to be added to this one.
-		 * @return a reference to this FullTensor.
-		 */
-        FullTensor& operator+=(const Tensor& _other);
-        
-		/** 
-		 * @brief Calculates the entrywise sum of this FullTensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the second summand.
-		 * @return the sum.
-		 */
-        FullTensor  operator+( const Tensor& _other) const;
-        
-		/** 
-		 * @brief Subtracts the @a _other FullTensor entrywise from this one.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the Tensor to be subtracted to this one.
-		 * @return a reference to this FullTensor.
-		 */
-        FullTensor& operator-=(const Tensor& _other);
-		
-		/** 
-		 * @brief Calculates the entrywise difference between this FullTensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
-		 * @param _other the subtrahend,
-		 * @return the difference.
-		 */
-        FullTensor  operator-( const Tensor& _other) const;
-        
-		/** 
-		 * @brief Calculates the entrywise multiplication of this FullTensor with a constant @a _factor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _factor the factor,
-		 * @return the resulting scaled FullTensor.
-		 */
-        FullTensor  operator*( const value_t _factor) const;
-        
-		/** 
-		 * @brief Calculates the entrywise divison of this FullTensor by a constant @a _divisor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _divisor the divisor,
-		 * @return the resulting scaled FullTensor.
-		 */
-        FullTensor  operator/( const value_t _divisor) const;
         
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -488,9 +420,6 @@ namespace xerus {
 		static FullTensor entrywise_product(const FullTensor &_A, const FullTensor &_B);
         
 		
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        virtual bool is_sparse() const override;
         
 		
 		
@@ -500,33 +429,7 @@ namespace xerus {
     };
     
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	/** 
-	* @brief Calculates the entrywise multiplication of the FullTensor @a _lhs with a constant @a _rhs.
-	* @details Internally this only results in a change in the global factor.
-	* @param _lhs the FullTensor that shall be scaled.
-	* @param _rhs the factor to be used.
-	* @return the resulting scaled FullTensor.
-	*/
-    static _inline_ FullTensor operator*(const value_t _lhs, const FullTensor& _rhs) { return _rhs*_lhs; }
     
-    /** 
-	* @brief Calculates the entrywise sum of @a _lhs and @a _rhs.
-	* @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
-	* @param _lhs the first summand, in this case a SparseTensor.
-	* @param _rhs the second summand, in this case a FullTensor.
-	* @return the sum as a FullTensor.
-	*/
-    FullTensor operator+(const SparseTensor& _lhs, const FullTensor& _rhs);
-    
-	/** 
-	* @brief Calculates the entrywise difference of @a _lhs and @a _rhs.
-	* @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
-	* @param _lhs the minuend, in this case a SparseTensor.
-	* @param _rhs the subtrahend, in this case a FullTensor.
-	* @return the difference as a FullTensor.
-	*/
-    FullTensor operator-(const SparseTensor& _lhs, const FullTensor& _rhs);
 	
 	
 	/** 
