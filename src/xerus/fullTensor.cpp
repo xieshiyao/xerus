@@ -339,32 +339,6 @@ namespace xerus {
         resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
     }
     
-    
-	void FullTensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
-		
-		size_t stepCount = 1, blockSize = 1;
-		for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
-		for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
-		
-		const size_t stepSize = dimensions[_dimension]*blockSize;
-		size_t inputPosition = _slatePosition*blockSize;
-		
-		value_t * const newData = new value_t[stepCount*blockSize];
-		
-		// Copy data
-		for(size_t i = 0; i < stepCount; ++i) {
-			misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
-			inputPosition += stepSize;
-		}
-		
-		// Set data
-		denseData.reset(newData, &internal::array_deleter_vt);
-		
-		// Adjust dimensions
-		dimensions.erase(dimensions.begin()+(long)_dimension);
-		size = stepCount*blockSize;
-	}
 
     //TODO Allow more 2d
     void FullTensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
@@ -440,27 +414,7 @@ namespace xerus {
 	}
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-    size_t FullTensor::count_non_zero_entries(const value_t _eps) const {
-        size_t count = 0;
-        for(size_t i = 0; i < size; ++i) {
-            if(std::abs(denseData.get()[i]) > _eps ) { count++; } 
-        }
-        return count;
-    }
     
-    
-	bool FullTensor::all_entries_valid() const {
-		for(size_t i = 0; i < size; ++i) {
-            if(!std::isfinite(denseData.get()[i])) { return false; } 
-        }
-        return true;
-	}
-    
-    value_t FullTensor::frob_norm() const {
-        return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
-    }
-
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
@@ -468,37 +422,6 @@ namespace xerus {
         return false;
     }
 
-    std::string FullTensor::to_string() const {
-        if (degree() == 0) return xerus::misc::to_string(denseData.get()[0]);
-        std::string result;
-        for (size_t i=0; i<size; ++i) {
-            result += xerus::misc::to_string(factor*denseData.get()[i]) + " ";
-            if ((i+1) % (size / dimensions[0]) == 0) {
-                result += '\n';
-            } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
-                result += '\t';
-            } else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
-                result += "/ ";
-            }
-        }
-        return result;
-    }
-
-
-    bool FullTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
-        if(size != _values.size()) { return false; }
-        for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*denseData.get()[i]-_values[i]) > _eps) { return false; }
-        }
-        return true;
-    }
-
-    bool FullTensor::compare_to_data(const value_t* _values, const double _eps) const {
-        for(size_t i=0; i < size; ++i) {
-            if(std::abs(factor*denseData.get()[i]-_values[i]) > _eps) { return false; }
-        }
-        return true;
-    }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     

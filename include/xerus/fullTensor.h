@@ -446,9 +446,6 @@ namespace xerus {
 		 */
         void remove_slate(uint _indexNb, uint _pos);
 		
-		
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
-        
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
@@ -495,20 +492,11 @@ namespace xerus {
         
         virtual bool is_sparse() const override;
         
-        virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
-		
-		virtual bool all_entries_valid() const override;
-        
-        virtual value_t frob_norm() const override;
 		
 		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-        virtual std::string to_string() const override;
         
-        virtual bool compare_to_data(const std::vector<value_t>& _values, const double _eps = EPSILON) const override;
-        
-        virtual bool compare_to_data(const value_t* _values, const double _eps = EPSILON) const override;
     };
     
     

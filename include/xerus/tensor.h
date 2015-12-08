@@ -283,7 +283,7 @@ namespace xerus {
 		/** 
 		 * @brief Read access a single entry.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
-		 * @return the selected entry.
+		 * @return the value of the selected entry.
 		 */
 		value_t operator[](const size_t _position) const;
 		
@@ -297,10 +297,24 @@ namespace xerus {
 		/** 
 		 * @brief Read access a single entry.
 		 * @param _positions the positions of the desired entry.
-		 * @return the selected entry.
+		 * @return the value of the selected entry.
 		 */
 		value_t operator[](const std::vector<size_t>& _positions) const;
 		
+		
+		/** 
+		 * @brief Read access a single entry.
+		 * @param _position the position of the desired entry, assuming row-major ordering.
+		 * @return the value of the selected entry.
+		 */
+		value_t at(const size_t _position) const;
+		
+		/** 
+		 * @brief Read access a single entry.
+		 * @param _position the position of the desired entry.
+		 * @return the value of the selected entry.
+		 */
+		value_t at(const std::vector<size_t>& _positions) const;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -384,13 +398,13 @@ namespace xerus {
 		 * @param _eps (optional) epsilon detrmining the maximal value, that is still assumed to be zero.
 		 * @return the number of non-zero entries found.
 		 */
-		virtual size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+		size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const;
 		
 		/** 
 		 * @brief Checks the tensor for illegal entries, e.g. nan, inf,...
 		 * @return TRUE there are no invalid entries, FALSE otherwise.
 		 */
-		virtual bool all_entries_valid() const = 0;
+		bool all_entries_valid() const;
 		
 		/** 
 		 * @brief Approximates the cost to reorder the tensor.
@@ -403,7 +417,7 @@ namespace xerus {
 		 * @brief Calculates the frobenious norm of the tensor.
 		 * @return the frobenious norm.
 		 */
-		virtual value_t frob_norm() const = 0;
+		value_t frob_norm() const;
 		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
@@ -439,13 +453,13 @@ namespace xerus {
 		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
 		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
 		 */
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) = 0;
+		void fix_slate(const size_t _dimension, const size_t _slatePosition);
 		
 		/** 
 		 * @brief Creates a string representation of the Tensor.
-		 * @param _newDimensions the string representation. 
+		 * @return the string representation. 
 		 */
-		virtual std::string to_string() const = 0;
+		std::string to_string() const;
 		
 		
 		/** 
@@ -454,7 +468,7 @@ namespace xerus {
 		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
 		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
 		 */
-		virtual bool compare_to_data(const std::vector<value_t>& _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+		bool compare_to_data(const std::vector<value_t>& _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const;
 		
 		
 		/** 
@@ -463,7 +477,7 @@ namespace xerus {
 		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
 		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
 		 */
-		virtual bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const = 0;
+		bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

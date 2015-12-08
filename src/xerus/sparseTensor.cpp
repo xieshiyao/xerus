@@ -178,68 +178,10 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
-	void SparseTensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		LOG(fatal, "Not yet implemented"); // TODO 
-	}
     
     
     bool SparseTensor::is_sparse() const {
         return true;
     }
     
-
-    size_t SparseTensor::count_non_zero_entries(const value_t _eps) const {
-        size_t count = 0;
-        for(const std::pair<size_t, value_t>& entry : *sparseData) {
-            if(std::abs(entry.second) > _eps) { count++; } 
-        }
-        return count;
-    }
-    
-    bool SparseTensor::all_entries_valid() const {
-        for(const std::pair<size_t, value_t>& entry : *sparseData) {
-            if(!std::isfinite(entry.second)) {return false; } 
-        }
-        return true;
-    }
-    
-    value_t SparseTensor::frob_norm() const {
-        value_t norm = 0;
-        for(const std::pair<size_t, value_t>& entry : *sparseData) {
-            norm += misc::sqr(entry.second);
-        }
-        return std::abs(factor)*sqrt(norm);
-    }
-    
-    std::string SparseTensor::to_string() const {
-        if (degree() == 0) return xerus::misc::to_string(at(0));
-        std::string result;
-        for (size_t i=0; i<size; ++i) {
-            result += xerus::misc::to_string(at(i)) + " ";
-            if ((i+1) % (size / dimensions[0]) == 0) {
-                result += '\n';
-            } else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
-                result += '\t';
-            } else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
-                result += "/ ";
-            }
-        }
-        return result;
-    }
-    
-    bool SparseTensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
-		REQUIRE(sparseData, "Internal Error");
-        if(size != _values.size()) { return false; }
-        for(size_t i=0; i < size; ++i) {
-            if(std::abs(at(i)-_values[i]) > _eps) { return false; }
-        }
-        return true;
-    }
-
-    bool SparseTensor::compare_to_data(const value_t* _values, const double _eps) const {
-        for(size_t i=0; i < size; ++i) {
-            if(std::abs(at(i)-_values[i]) > _eps) { return false; }
-        }
-        return true;
-    }
 }

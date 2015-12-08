@@ -27,6 +27,7 @@
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/fullTensor.h>
 #include <xerus/sparseTensor.h>
+#include <xerus/blasLapackWrapper.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -349,6 +350,14 @@ namespace xerus {
 	}
 	
 	
+	value_t Tensor::at(const size_t _position) const {
+		return operator[](_position);
+	}
+	
+	value_t Tensor::at(const std::vector<size_t>& _positions) const {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     
@@ -409,6 +418,108 @@ namespace xerus {
         reinterpret_dimensions(std::vector<size_t>(std::move(_newDimensions)));
     }
     
+    
+    size_t Tensor::count_non_zero_entries(const value_t _eps) const {
+		if(dense()) {
+			size_t count = 0;
+			for(size_t i = 0; i < size; ++i) {
+				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
+			}
+			return count;
+		} else {
+			size_t count = 0;
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				if(std::abs(entry.second) > _eps) { count++; } 
+			}
+			return count;
+		}
+	}
+	
+	bool Tensor::all_entries_valid() const {
+		if(dense()) {
+			for(size_t i = 0; i < size; ++i) {
+				if(!std::isfinite(denseData.get()[i])) { return false; } 
+			}
+		} else {
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				if(!std::isfinite(entry.second)) {return false; } 
+			}
+		}
+		return true;
+	}
+	
+	
+	value_t Tensor::frob_norm() const {
+		if(dense()) {
+			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
+		} else {
+			value_t norm = 0;
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				norm += misc::sqr(entry.second);
+			}
+			return std::abs(factor)*sqrt(norm);
+		}
+	}
+	
+	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
+		
+		if(dense()) {
+			size_t stepCount = 1, blockSize = 1;
+			for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
+			for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
+			
+			const size_t stepSize = dimensions[_dimension]*blockSize;
+			size_t inputPosition = _slatePosition*blockSize;
+			
+			value_t * const newData = new value_t[stepCount*blockSize];
+			
+			// Copy data
+			for(size_t i = 0; i < stepCount; ++i) {
+				misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
+				inputPosition += stepSize;
+			}
+			
+			// Set data
+			denseData.reset(newData, &internal::array_deleter_vt);
+			
+			// Adjust dimensions
+			dimensions.erase(dimensions.begin()+(long)_dimension);
+			size = stepCount*blockSize;
+		} else {
+			// TODO implement!
+			LOG(fatal, "fix_slate is not yet implemented for sparse representations."); 
+		}
+	}
+	
+	
+	std::string Tensor::to_string() const {
+		if (degree() == 0) return xerus::misc::to_string(operator[](0));
+		
+		std::string result;
+		for (size_t i = 0; i < size; ++i) {
+			result += xerus::misc::to_string(operator[](i)) + " ";
+			if ((i+1) % (size / dimensions[0]) == 0) {
+				result += '\n';
+			} else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
+				result += '\t';
+			} else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
+				result += "/ ";
+			}
+		}
+		return result;
+	}
+	
+	bool Tensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
+		return size == _values.size() && compare_to_data(_values.data(), _eps);
+	}
+	
+	bool Tensor::compare_to_data(const value_t* _values, const double _eps) const {
+		for(size_t i=0; i < size; ++i) {
+			if(std::abs(at(i)-_values[i]) > _eps) { return false; }
+		}
+		return true;
+	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         

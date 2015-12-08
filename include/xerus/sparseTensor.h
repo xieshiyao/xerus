@@ -268,22 +268,9 @@ namespace xerus {
         
         
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
         
         virtual bool is_sparse() const override;
         
-        virtual size_t count_non_zero_entries(const value_t _eps = EPSILON) const override;
-        
-		virtual bool all_entries_valid() const override;
-		
-        virtual value_t frob_norm() const override;
-        
-        virtual std::string to_string() const override;
-        
-        virtual bool compare_to_data(const std::vector<value_t>& _values, const double _eps = EPSILON) const override;
-        
-        virtual bool compare_to_data(const value_t* _values, const double _eps = EPSILON) const override;
     };
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other Direction arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
