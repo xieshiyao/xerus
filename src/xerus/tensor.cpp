@@ -63,10 +63,53 @@ namespace xerus {
     Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const Representation _representation, const Initialisation _init) 
 	: Tensor(std::vector<size_t>(_dimensions), _representation, _init) {}
     
+    Tensor::Tensor(const std::vector<size_t>& _dimensions, std::unique_ptr<value_t[]>&& _data)
+	: dimensions(_dimensions), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::move(_data)) { }
     
     
-    
-    
+    Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t()>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+		value_t* const realData = denseData.get();
+		for (size_t i=0; i < size; ++i) {
+			realData[i] = _f();
+		}
+	}
+	
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const size_t)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+		value_t* const realData = denseData.get();
+		for (size_t i=0; i < size; ++i) {
+			realData[i] = _f(i);
+		}
+	}
+	
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+		value_t* const realData = denseData.get();
+		std::vector<size_t> multIdx(degree(), 0);
+		size_t idx = 0;
+		while (true) {
+			realData[idx] = _f(multIdx);
+			// Increasing indices
+			idx++;
+			size_t changingIndex = degree()-1;
+			multIdx[changingIndex]++;
+			while(multIdx[changingIndex] == dimensions[changingIndex]) {
+				multIdx[changingIndex] = 0;
+				changingIndex--;
+				// Return on overflow 
+				if(changingIndex >= degree()) { return; }
+				multIdx[changingIndex]++;
+			}
+		}
+	}
+	
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N) : Tensor(_dimensions, Representation::Sparse, Initialisation::Zero) {
+		REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
+		for (size_t i=0; i < _N; ++i) {
+			std::pair<size_t, value_t> entry = _f(i, size);
+			REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
+			REQUIRE(!misc::contains(*sparseData, entry.first), "Allready contained " << entry.first);
+			sparseData->insert(std::move(entry));
+		}
+	}
     
     
     

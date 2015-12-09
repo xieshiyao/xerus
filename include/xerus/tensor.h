@@ -115,7 +115,105 @@ namespace xerus {
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
 		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
 		
+		/** 
+		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _data inital dense data in row-major order.
+		 */
+		explicit Tensor(const std::vector<size_t>& _dimensions, std::unique_ptr<value_t[]>&& _data);
 		
+		
+		/** 
+		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
+		 * @details In this overload no value is passed to _f, i.e. _f must determine the values of the entries independend of their position,
+		 * or keep track of the position itself. _f may assume that it is called for the entries in the order they are stored (i.e. row-major order)
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _f the function to use to set the entries of the Tensor. 
+		 */
+		explicit Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t()>& _f);
+		
+		/** 
+		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
+		 * @details In this overload the position of each entry assuming row-major order is passed to  _f.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _f the function to use to set the entries of the Tensor. 
+		 */
+		explicit Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const size_t)>& _f);
+		
+		
+		/** 
+		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
+		 * @details In this overload the complete position of each entry is passed to  _f.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _f the function to use to set the entries of the Tensor. 
+		 */
+		explicit Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f);
+		
+		
+		/** 
+		 * @brief Constructs a Tensor with the given dimensions and uses the given function @a _f to create @a _N non zero entries.
+		 * @details @a _f is called with the current number of entries present and the number of possible entries (i.e. size). @a _f shall return a pair containg the position
+		 * and value of the next entry. @a _f is required not to return a position twice.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _f the function to be used to create each non zero entry. 
+		 * @param _N the number of non-zero entries to be created.
+		 */
+		Tensor(const std::vector<size_t>& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N);
+		
+		
+		
+		/** 
+		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
+		 * @details The entries are assigned in the order they are stored (i.e. row-major order). Each assigned is a seperate call to the random distribution.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _dist the random distribution to be used.
+		 * @param _rnd the random generator to be used.
+		 */
+		template<class generator, class distribution, ADD_MOVE(Vec, std::vector<size_t>)>
+		static Tensor random(Vec&& _dimensions, distribution& _dist, generator& _rnd) {
+			Tensor result(std::forward<Vec>(_dimensions), Representation::Dense, Initialisation::Nothing);
+			for(size_t i = 0; i < result.size; ++i) {
+				result.denseData.get()[i] = _dist(_rnd);
+			}
+			return result;
+		}
+		
+		/** 
+		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
+		 * @details See the std::vector variant for details.
+		 */
+		template<class generator, class distribution>
+		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
+			return Tensor::random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
+		}
+		
+		/** 
+		 * @brief Constructs a random sparse Tensor with the given dimensions.
+		 * @details The given random generator @a _rnd and distribution @a _dist are used to assign the values to @a _n randomly choosen entries.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _N the number of non-zero entries to be created.
+		 * @param _rnd the random generator to be used.
+		 * @param _dist the random distribution to be used.
+		 */
+		template<ADD_MOVE(Vec, std::vector<size_t>), class generator, class distribution>
+		static Tensor random(Vec&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+			Tensor result(std::forward<Vec>(_dimensions), Representation::Sparse, Initialisation::Zero);
+			REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
+			
+			std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
+			while(result.sparseData->size() < _N) {
+				result.sparseData->emplace(entryDist(_rnd), _dist(_rnd));
+			}
+			return result;
+		}
+		/** 
+		 * @brief Constructs a random sparse Tensor with the given dimensions.
+		 * @details See the std::vector variant for details.
+		 */
+		template<class generator, class distribution>
+		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+			return Tensor::random(std::vector<size_t>(_dimensions), _N, _rnd, _dist);
+		}
 		
 		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
 		Tensor* get_copy() const;
