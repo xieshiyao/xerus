@@ -24,10 +24,10 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Assignment_Trivia, 
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res({2,2,3,1,2});
-    SparseTensor res2({2,3,2,1,2});
-    SparseTensor res3({2,3,1,2,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res2({2,3,2,1,2}, Tensor::Representation::Sparse);
+    Tensor res3({2,3,1,2,2}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -87,8 +87,8 @@ UNIT_TEST(SparseTensor, Assignment_Trivia,
 
 
 UNIT_TEST(SparseTensor, Assignment_Const, 
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res({2,2,3,1,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -118,7 +118,7 @@ UNIT_TEST(SparseTensor, Assignment_Const,
     A[{1,1,2,0,1}]=24;
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
-    const SparseTensor resC1(res);
+    const Tensor resC1(res.sparse_copy());
     TEST(resC1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     TEST(misc::approx_equal(resC1[{0,0,0,0,0}], 1.0));
     TEST(misc::approx_equal(resC1[{0,1,2,0,0}], 11.0));
@@ -127,7 +127,7 @@ UNIT_TEST(SparseTensor, Assignment_Const,
     TEST(misc::approx_equal(resC1.at({1,0,1,0,1}), 16.0));
     
     res(j,i,k,l,m) = A(i,j,k,l,m);
-    const SparseTensor resC2(res);
+    const Tensor resC2(res.sparse_copy());
     TEST(resC2.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     TEST(misc::approx_equal(resC2[{0,0,0,0,0}], 1.0));
     TEST(misc::approx_equal(resC2[{0,1,2,0,0}], 17.0));
@@ -137,19 +137,19 @@ UNIT_TEST(SparseTensor, Assignment_Const,
 )
 
 UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res1({2,2,3,1,2});
-    SparseTensor res2({1,3,5,1,7});
-    SparseTensor res3({2,3,2,2,3});
-    SparseTensor res4({13,9,2,5,3});
-    SparseTensor res5({1,1,1,1,1});
-    SparseTensor res6;
-    SparseTensor res7({1,2,3,4,5});
-    SparseTensor res8({5,4,3,2,1});
-    SparseTensor res9({3,2,3,2,3});
-    SparseTensor res10({4,5,3,1,3});
-    SparseTensor res11;
-    SparseTensor res12({1,5,3,1,3});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res1({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res2({1,3,5,1,7}, Tensor::Representation::Sparse);
+    Tensor res3({2,3,2,2,3}, Tensor::Representation::Sparse);
+    Tensor res4({13,9,2,5,3}, Tensor::Representation::Sparse);
+    Tensor res5({1,1,1,1,1}, Tensor::Representation::Sparse);
+    Tensor res6( Tensor::Representation::Sparse );
+    Tensor res7({1,2,3,4,5}, Tensor::Representation::Sparse);
+    Tensor res8({5,4,3,2,1}, Tensor::Representation::Sparse);
+    Tensor res9({3,2,3,2,3}, Tensor::Representation::Sparse);
+    Tensor res10({4,5,3,1,3}, Tensor::Representation::Sparse);
+    Tensor res11( Tensor::Representation::Sparse );
+    Tensor res12({1,5,3,1,3}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -208,8 +208,8 @@ UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
 )
 
 UNIT_TEST(SparseTensor, Assignment_LHS_Equals_RHS, 
-    SparseTensor B({2,2});
-    SparseTensor C({2,2});
+    Tensor B({2,2}, Tensor::Representation::Sparse);
+    Tensor C({2,2}, Tensor::Representation::Sparse);
 
     Index i, J, K;
     
@@ -230,10 +230,10 @@ UNIT_TEST(SparseTensor, Assignment_LHS_Equals_RHS,
 )
 
 UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res1({2,3,1,2});
-    SparseTensor res2;
-    SparseTensor res3;
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res1({2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res2( Tensor::Representation::Sparse );
+    Tensor res3( Tensor::Representation::Sparse );
     
     Index i,j,k,l,m;
     
@@ -294,12 +294,12 @@ UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
 )
 
 UNIT_TEST(SparseTensor, Assignment_Negatives,
-    SparseTensor A({2,2,2,2});
-    SparseTensor A2({2,2,2,2});
-    SparseTensor B({2,2,2});
-    SparseTensor C;
-    SparseTensor D({2,2});
-    SparseTensor E({});
+    Tensor A({2,2,2,2}, Tensor::Representation::Sparse);
+    Tensor A2({2,2,2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2,2}, Tensor::Representation::Sparse);
+    Tensor C( Tensor::Representation::Sparse );
+    Tensor D({2,2}, Tensor::Representation::Sparse);
+    Tensor E({}, Tensor::Representation::Sparse);
     
     Index i,j,k,l;
         

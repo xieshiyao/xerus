@@ -24,13 +24,13 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Arithmetic_Negatives,
-    SparseTensor A({2,2,2});
-    SparseTensor B({2,2});
-    SparseTensor B2({3,3});
-    SparseTensor B3({3,2});
-    SparseTensor B4({2,3});
-    SparseTensor B5({2,2,2});
-    SparseTensor C({2});
+    Tensor A({2,2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2}, Tensor::Representation::Sparse);
+    Tensor B2({3,3}, Tensor::Representation::Sparse);
+    Tensor B3({3,2}, Tensor::Representation::Sparse);
+    Tensor B4({2,3}, Tensor::Representation::Sparse);
+    Tensor B5({2,2,2}, Tensor::Representation::Sparse);
+    Tensor C({2}, Tensor::Representation::Sparse);
     
     Index i,j,k;
 
@@ -48,14 +48,14 @@ UNIT_TEST(SparseTensor, triple_indices,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-	SparseTensor A({1,1,1});
-	SparseTensor B({1,1});
-	SparseTensor C({1,1});
-	SparseTensor D({1,1});
-	SparseTensor F({1,1});
-	SparseTensor E0;
-	SparseTensor E1({1});
-	SparseTensor E2({1});
+	Tensor A({1,1,1}, Tensor::Representation::Sparse);
+	Tensor B({1,1}, Tensor::Representation::Sparse);
+	Tensor C({1,1}, Tensor::Representation::Sparse);
+	Tensor D({1,1}, Tensor::Representation::Sparse);
+	Tensor F({1,1}, Tensor::Representation::Sparse);
+	Tensor E0( Tensor::Representation::Sparse );
+	Tensor E1({1}, Tensor::Representation::Sparse);
+	Tensor E2({1}, Tensor::Representation::Sparse);
 	Index i1,i2,i3,i4;
 	
 	FAILTEST(E0()   = A(i1,i1,i2)*B(i2,i2));

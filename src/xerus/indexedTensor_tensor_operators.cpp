@@ -27,7 +27,7 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/misc/missingFunctions.h>
 
 namespace xerus {

@@ -29,7 +29,7 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/misc/stringUtilities.h>
@@ -119,23 +119,7 @@ namespace xerus {
     
     TensorNetwork::operator Tensor() const {
         std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
-        
-        if(contractedTensor->is_sparse()) {
-            return Tensor(std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get())));
-        } else {
-            return std::move(*static_cast<Tensor*>(fully_contracted_tensor().get()));
-        }
-    }
-    
-    TensorNetwork::operator SparseTensor() const {
-        std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
-        
-        if(contractedTensor->is_sparse()) {
-            return std::move(*static_cast<SparseTensor*>(fully_contracted_tensor().get()));
-        } else {
-            LOG(error, "Casting a TensorNetwork containing Tensors to SparseTensor. This is most likely not usefull.");
-            return SparseTensor(std::move(*static_cast<Tensor*>(fully_contracted_tensor().get())));
-        }
+		return *contractedTensor;
     }
     
     
@@ -607,7 +591,7 @@ namespace xerus {
 		Tensor& tensorB = (*nodes[_nodeB].tensorObject);
 		
 		Tensor X; // TODO Sparse
-		SparseTensor S;
+		Tensor S;
 
 		// TODO eventually use only one QC if only one is usefull.
 		
@@ -973,7 +957,7 @@ namespace xerus {
 					trace_out_self_links(_nodeId2);
 				}
 				
-				newTensor.reset(new SparseTensor(outDimensions));
+				newTensor.reset(new Tensor(outDimensions, Tensor::Tensor::Representation::Sparse, Tensor::Initialisation::None));
 				
 				newTensor->factor = node1.tensorObject->factor*node2.tensorObject->factor;
 				CsUniquePtr lhsCS = to_cs_format((*node1.tensorObject)(lhsCurr), lhsOpen, common);
@@ -1133,7 +1117,7 @@ namespace xerus {
 				value_t commonFactor = node1.tensorObject->factor * node2.tensorObject->factor;
 				
 				if (resultSparse) {
-					newTensor.reset(new SparseTensor(outDimensions));
+					newTensor.reset(new Tensor(outDimensions, Tensor::Tensor::Representation::Sparse, Tensor::Initialisation::None));
 				} else {
 					newTensor.reset(new Tensor(outDimensions, Tensor::Representation::Dense, Tensor::Initialisation::None));
 				}
@@ -1144,20 +1128,20 @@ namespace xerus {
 													static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
 				} else if(sparse1 && !sparse2 && !resultSparse) { // Sparse * Full => Full
 					matrix_matrix_product(static_cast<Tensor*>(newTensor.get())->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, 
-										*static_cast<const SparseTensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
+										*static_cast<const Tensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
 										static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
 				} else if(!sparse1 && sparse2 && !resultSparse) { // Full * Sparse => Full
 					matrix_matrix_product(static_cast<Tensor*>(newTensor.get())->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, 
 										static_cast<const Tensor*>(node1.tensorObject.get())->get_unsanitized_dense_data(), trans1, midDim, 
-										*static_cast<const SparseTensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
+										*static_cast<const Tensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
 				} else if(sparse1 && !sparse2 && resultSparse) { // Sparse * Full => Sparse
-					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
-										*static_cast<const SparseTensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
+					matrix_matrix_product(*static_cast<Tensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
+										*static_cast<const Tensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
 										static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
 				} else if(!sparse1 && sparse2 && resultSparse) { // Full * Sparse => Sparse
-					matrix_matrix_product(*static_cast<SparseTensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
+					matrix_matrix_product(*static_cast<Tensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
 										static_cast<const Tensor*>(node1.tensorObject.get())->get_unsanitized_dense_data(), trans1, midDim, 
-										*static_cast<const SparseTensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
+										*static_cast<const Tensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
 				} else {
 					LOG(fatal, "ie: Invalid combiantion of sparse/dense tensors in contraction");
 				}

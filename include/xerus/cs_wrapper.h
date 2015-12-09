@@ -36,7 +36,8 @@
     #include <cs.h>
 #endif
 
-#include "sparseTensor.h"
+#include "tensor.h"
+
 
 namespace xerus {
     /// Unique_ptr wrapper that should always be used to encapsulate the CS sparse matrix format.
@@ -54,14 +55,14 @@ namespace xerus {
     /// Allocates a CS sparse matrix with given dimensions and number of entries
     CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 
-    // Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
+    // Converts an Indexed Tensor and a given matrification to the CSparse sparse matrix format
     CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices);
     
     /// Calculates the Matrix Matrix product between to CS sparse matrices
     CsUniquePtr matrix_matrix_product(const CsUniquePtr& _lhs, const CsUniquePtr& _rhs);
     
-    /// Retransforms a CS sparse matrix to sparseTensor format
-    SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions);
+    /// Retransforms a CS sparse matrix to sparse Tensor format
+    Tensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions);
     
     /// Prints a matrix in cs format
     void print_cs(const CsUniquePtr& _cs_format);

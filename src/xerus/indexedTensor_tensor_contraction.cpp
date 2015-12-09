@@ -27,7 +27,7 @@
 #include <xerus/index.h>
 #include <xerus/misc/check.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 #include <xerus/blasLapackWrapper.h>
@@ -390,13 +390,13 @@ namespace xerus {
             if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
                 blasWrapper::matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
-                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
+                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, *static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
-                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
+                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
+                matrix_matrix_product(*static_cast<Tensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, *static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
+                matrix_matrix_product(*static_cast<Tensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
             } else {
                 LOG(fatal, "Invalid combiantion of sparse/dense tensors in contraction");
             }
@@ -455,7 +455,7 @@ namespace xerus {
            || (_lhs.tensorObjectReadOnly->is_sparse() && _lhs.tensorObjectReadOnly->count_non_zero_entries() < lhsOpenDim)
            || (_rhs.tensorObjectReadOnly->is_sparse() && _rhs.tensorObjectReadOnly->count_non_zero_entries() < rhsOpenDim)
         ) {
-            resultTensor = new SparseTensor(outDimensions);
+            resultTensor = new Tensor(outDimensions, Tensor::Tensor::Representation::Sparse, Tensor::Initialisation::None);
         } else {
             resultTensor = new Tensor(outDimensions, Tensor::Representation::Dense, Tensor::Initialisation::None);
         }

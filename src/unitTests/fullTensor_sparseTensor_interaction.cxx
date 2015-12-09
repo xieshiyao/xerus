@@ -24,10 +24,10 @@
 using namespace xerus;
 
 UNIT_TEST(Tensor, Assignment, 
-    SparseTensor A({2,2,3,1,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor B;
     Tensor resF;
-    SparseTensor resS;
+    Tensor resS( Tensor::Representation::Sparse );
     
     Index i,j,k,l,m;
     
@@ -74,8 +74,8 @@ UNIT_TEST(Tensor, Product,
 
     Index i,j,k,l,m,n,o,p,q;
     
-    SparseTensor AS = SparseTensor::random({2,3,4,3,5}, 23, rnd, dist);
-    SparseTensor BS = SparseTensor::random({6,3,4,2,3}, 23, rnd, dist);
+    Tensor AS = Tensor::random({2,3,4,3,5}, 23, rnd, dist);
+    Tensor BS = Tensor::random({6,3,4,2,3}, 23, rnd, dist);
     
     Tensor AF(AS);
     Tensor BF(BS);
@@ -125,10 +125,10 @@ UNIT_TEST(Tensor, Random_Add_Sub,
 		opDim.insert(opDim.end(), dimensions.begin(), dimensions.end());
 		std::uniform_int_distribution<size_t> numDist (0, misc::product(dimensions));
 		
-		SparseTensor AS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
-		SparseTensor BS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
-		SparseTensor CS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
-		SparseTensor I = Tensor::identity(opDim);
+		Tensor AS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
+		Tensor BS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
+		Tensor CS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
+		Tensor I = Tensor::identity(opDim);
 		
 		Tensor AF(AS);
 		Tensor BF(BS);
@@ -144,7 +144,7 @@ UNIT_TEST(Tensor, Random_Add_Sub,
 		Tensor resFF;
 		Tensor resFS;
 		Tensor resSF;
-		SparseTensor resSS;
+		Tensor resSS( Tensor::Representation::Sparse );
 		
 		// Simple Addition
 		resFF = AF + BF;

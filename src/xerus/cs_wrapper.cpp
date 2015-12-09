@@ -24,6 +24,8 @@
 
 #include <xerus/cs_wrapper.h>
 #include <xerus/index.h>
+#include <xerus/tensor.h>
+#include <xerus/misc/performanceAnalysis.h>
 
 namespace xerus {
     bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries) {
@@ -61,7 +63,7 @@ namespace xerus {
         std::vector<Index> inverseIndexOrder(_rhsIndices);
         inverseIndexOrder.insert(inverseIndexOrder.end(), _lhsIndices.begin(), _lhsIndices.end());
         
-        SparseTensor reorderedTensor;
+        Tensor reorderedTensor( Tensor::Representation::Sparse );
         reorderedTensor(inverseIndexOrder) = _tensor;
         
         REQUIRE(reorderedTensor.size == m*n, "Internal Error");
@@ -92,10 +94,10 @@ namespace xerus {
     }
     
     
-    SparseTensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions) {
-        REQUIRE(_cs_format, "NullPtr cannot be converted to SparseTensor.");
+    Tensor from_cs_format(const CsUniquePtr& _cs_format, const std::vector<size_t>& _dimensions) {
+        REQUIRE(_cs_format, "NullPtr cannot be converted to Tensor.");
         
-        SparseTensor reconstructedTensor(_dimensions);
+        Tensor reconstructedTensor(_dimensions, Tensor::Representation::Sparse);
         
         for(int i = 0; i < _cs_format->n; ++i) {
             for(int j = _cs_format->p[i]; j < _cs_format->p[i+1]; ++j) {

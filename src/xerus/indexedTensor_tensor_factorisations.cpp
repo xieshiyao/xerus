@@ -25,7 +25,7 @@
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/selectedFunctions.h>
@@ -193,7 +193,7 @@ namespace xerus {
 		S.tensorObject->reset(std::vector<size_t>(2, rank));
 		if(S.tensorObject->is_sparse()) {
 			for(size_t i = 0; i < rank; ++i) {
-				static_cast<SparseTensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
+				static_cast<Tensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
 			}
 		} else {
 			value_t* const dataPtr =  static_cast<Tensor*>(S.tensorObject)->get_unsanitized_dense_data();

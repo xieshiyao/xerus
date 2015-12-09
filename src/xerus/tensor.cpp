@@ -27,8 +27,9 @@
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/selectedFunctions.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/blasLapackWrapper.h>
+#include <xerus/misc/performanceAnalysis.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -120,7 +121,18 @@ namespace xerus {
     
     
     
-    
+    Tensor Tensor::dense_copy() const {
+		Tensor ret(*this);
+		ret.use_dense_representation();
+		return ret;
+	}
+		
+		
+	Tensor Tensor::sparse_copy() const {
+		Tensor ret(*this);
+		ret.use_sparse_representation();
+		return ret;
+	}
     
     
     
@@ -172,11 +184,11 @@ namespace xerus {
 		return ret;
 	}
 		
-	SparseTensor Tensor::identity(const std::vector<size_t>& _dimensions) {
+	Tensor Tensor::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2 == 0, "Identity tensor must have even degree, here: " << _dimensions.size());
 		const size_t d = _dimensions.size();
 		
-		SparseTensor ret(_dimensions);
+		Tensor ret(_dimensions, Representation::Sparse);
 		std::vector<size_t> position(_dimensions.size(), 0);
 		
 		if(d == 0) {
@@ -200,8 +212,8 @@ namespace xerus {
 		return ret;
 	}
 		
-	SparseTensor Tensor::kronecker(const std::vector<size_t>& _dimensions) {
-		SparseTensor ret(_dimensions);
+	Tensor Tensor::kronecker(const std::vector<size_t>& _dimensions) {
+		Tensor ret(_dimensions, Representation::Sparse);
 		if(_dimensions.empty()) {
 			ret[{}] = 1.0;
 		} else {
@@ -212,14 +224,14 @@ namespace xerus {
 		return ret;
 	}
 		
-	SparseTensor Tensor::dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position) {
-		SparseTensor ret(_dimensions);
+	Tensor Tensor::dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position) {
+		Tensor ret(_dimensions, Representation::Sparse);
 		ret[_position] = 1.0;
 		return ret;
 	}
 		
-	SparseTensor Tensor::dirac(const std::vector<size_t>& _dimensions, const size_t _position) {
-		SparseTensor ret(_dimensions);
+	Tensor Tensor::dirac(const std::vector<size_t>& _dimensions, const size_t _position) {
+		Tensor ret(_dimensions, Representation::Sparse);
 		ret[_position] = 1.0;
 		return ret;
 	}
@@ -1007,7 +1019,7 @@ namespace xerus {
 			amb -= _b;
 			return frob_norm(amb) <= _eps*avgNorm;
         } else { // Special treatment if both are sparse, because better asyptotic is possible.
-            return frob_norm(static_cast<const SparseTensor&>(_a) - static_cast<const SparseTensor&>(_b)) <= _eps*avgNorm;
+            return frob_norm(static_cast<const Tensor&>(_a) - static_cast<const Tensor&>(_b)) <= _eps*avgNorm;
         }
     }
     
@@ -1017,9 +1029,9 @@ namespace xerus {
         
         PA_START;
         if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
-            const SparseTensor& A = static_cast<const SparseTensor&>(_a);
-            const SparseTensor& B = static_cast<const SparseTensor&>(_b);
-            const SparseTensor C = A-B;
+            const Tensor& A = static_cast<const Tensor&>(_a);
+            const Tensor& B = static_cast<const Tensor&>(_b);
+            const Tensor C = A-B;
             const double factorizedEps = _eps/std::abs(C.factor);
             
             for(const std::pair<size_t, value_t>& entry : *C.sparseData) {

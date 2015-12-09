@@ -27,7 +27,6 @@
 #include "../ttNetwork.h"
 #include "../performanceData.h"
 #include "../measurments.h"
-#include "../sparseTensor.h"
 
 namespace xerus {
 	double iht(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData);

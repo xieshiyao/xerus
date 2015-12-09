@@ -34,7 +34,6 @@
  
 namespace xerus {
 	class Tensor;
-	class SparseTensor;
 	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor {
@@ -215,6 +214,14 @@ namespace xerus {
 			return Tensor::random(std::vector<size_t>(_dimensions), _N, _rnd, _dist);
 		}
 		
+		/// @brief Returns a copy of this Tensor that uses a dense representation.
+		Tensor dense_copy() const;
+		
+		
+		/// @brief Returns a copy of this Tensor that uses a sparse representation.
+		Tensor sparse_copy() const;
+		
+		
 		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. Tensor or SparseTensor).
 		Tensor* get_copy() const;
 		
@@ -257,32 +264,32 @@ namespace xerus {
 		static Tensor ones(const std::vector<size_t>& _dimensions);
 		
 		/** 
-		 * @brief: Returns a SparseTensor representation of the identity operator with the given dimensions.
+		 * @brief: Returns a Tensor representation of the identity operator with the given dimensions.
 		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
 		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
 		 */
-		static SparseTensor identity(const std::vector<size_t>& _dimensions);
+		static Tensor identity(const std::vector<size_t>& _dimensions);
 		
 		/** 
-		 * @brief: Returns a SparseTensor representation of the kronecker delta.
+		 * @brief: Returns a Tensor representation of the kronecker delta.
 		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static SparseTensor kronecker(const std::vector<size_t>& _dimensions);
+		static Tensor kronecker(const std::vector<size_t>& _dimensions);
 		
 		/** 
-		 * @brief: Returns a SparseTensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static SparseTensor dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position);
+		static Tensor dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position);
 		
 		/** 
-		 * @brief: Returns a SparseTensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static SparseTensor dirac(const std::vector<size_t>& _dimensions, const size_t _position);
+		static Tensor dirac(const std::vector<size_t>& _dimensions, const size_t _position);
 		
 		
 		

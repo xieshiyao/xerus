@@ -31,9 +31,9 @@ UNIT_TEST(SparseTensor, Creation,
     Tensor fullB = Tensor::random({7,13,2,9,3}, rnd, dist);
     Tensor fullX({7,13,2,9,3});
     
-    SparseTensor sparseA = SparseTensor(fullA);
-    SparseTensor sparseB = SparseTensor(fullB);
-    SparseTensor sparseX({7,13,2,9,3});
+    Tensor sparseA = fullA.sparse_copy();
+    Tensor sparseB = fullB.sparse_copy();
+    Tensor sparseX({7,13,2,9,3}, Tensor::Representation::Sparse);
     
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));

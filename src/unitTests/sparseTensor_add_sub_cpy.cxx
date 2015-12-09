@@ -24,9 +24,9 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, sum_matrix_2x2,
-    SparseTensor res({2,2});
-    SparseTensor B({2,2});
-    SparseTensor C({2,2});
+    Tensor res({2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2}, Tensor::Representation::Sparse);
+    Tensor C({2,2}, Tensor::Representation::Sparse);
 
     Index i, J;
     
@@ -47,8 +47,8 @@ UNIT_TEST(SparseTensor, sum_matrix_2x2,
 )
  
 UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
-    SparseTensor B({2,2});
-    SparseTensor C({2,2});
+    Tensor B({2,2}, Tensor::Representation::Sparse);
+    Tensor C({2,2}, Tensor::Representation::Sparse);
 
     Index i, J;
     
@@ -70,9 +70,9 @@ UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
 
 
 UNIT_TEST(SparseTensor, sum_dyadic,
-    SparseTensor res({2,2});
-    SparseTensor B({2});
-    SparseTensor C({2});
+    Tensor res({2,2}, Tensor::Representation::Sparse);
+    Tensor B({2}, Tensor::Representation::Sparse);
+    Tensor C({2}, Tensor::Representation::Sparse);
 
     Index i, J, K;
     
@@ -80,10 +80,10 @@ UNIT_TEST(SparseTensor, sum_dyadic,
 )
 
 UNIT_TEST(SparseTensor, sum_threefold,
-    SparseTensor res({2});
-    SparseTensor B({2});
-    SparseTensor C({2});
-    SparseTensor D({2});
+    Tensor res({2}, Tensor::Representation::Sparse);
+    Tensor B({2}, Tensor::Representation::Sparse);
+    Tensor C({2}, Tensor::Representation::Sparse);
+    Tensor D({2}, Tensor::Representation::Sparse);
 
     Index i, J, K;
     

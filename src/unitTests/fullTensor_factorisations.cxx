@@ -91,7 +91,8 @@ UNIT_TEST(Tensor, SVD_soft_thresholding,
 
     Tensor A = Tensor::random({3,5,2,7,3,12}, rnd, dist);
     Tensor Ax, U, V, Us, Vs;
-    SparseTensor S, Ss;
+    Tensor S(Tensor::Tensor::Representation::Sparse);
+	Tensor Ss(Tensor::Tensor::Representation::Sparse);
     
     Index i, j, k, l, m, n, o, p, r, s;
     

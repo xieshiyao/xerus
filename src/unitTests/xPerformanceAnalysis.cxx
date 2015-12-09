@@ -44,7 +44,7 @@ using namespace xerus;
 			LOG(link, sizeof(TensorNetwork::Link));
 			LOG(tn, sizeof(TensorNetwork));
 			LOG(fulltensor, sizeof(Tensor));
-			LOG(SparseTensor, sizeof(SparseTensor));
+			LOG(Tensor, sizeof(Tensor));
 			LOG(tt, sizeof(TTTensor) << " | " << sizeof(TTOperator));
 			LOG(measurement, sizeof(SinglePointMeasurment));
 		)

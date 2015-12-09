@@ -23,7 +23,7 @@
  */
 
 #include <xerus/algorithms/adf.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/selectedFunctions.h>

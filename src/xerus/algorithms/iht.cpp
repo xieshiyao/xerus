@@ -74,7 +74,7 @@ namespace xerus {
 				// Build the largeX
 				for(size_t d = 0; d < degree; ++d) {
 					Tensor& currComp = _x.component(d);
-					SparseTensor newComp({d == 0 ? 1 : (currComp.dimensions[0]+USER_MEASUREMENTS_PER_ITR), currComp.dimensions[1], d == degree-1 ? 1 : (currComp.dimensions[2]+USER_MEASUREMENTS_PER_ITR)});
+					Tensor newComp({d == 0 ? 1 : (currComp.dimensions[0]+USER_MEASUREMENTS_PER_ITR), currComp.dimensions[1], d == degree-1 ? 1 : (currComp.dimensions[2]+USER_MEASUREMENTS_PER_ITR)});
 					
 					// Copy dense part
 					for(size_t r1 = 0; r1 < currComp.dimensions[0]; ++r1) {

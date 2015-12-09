@@ -24,9 +24,9 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Contraction_Order_0,
-    SparseTensor A({});
-    SparseTensor B({});
-    SparseTensor res1({});
+    Tensor A({}, Tensor::Representation::Sparse);
+    Tensor B({}, Tensor::Representation::Sparse);
+    Tensor res1({}, Tensor::Representation::Sparse);
     
     A[{}] = 42;
     B[{}] = 73;
@@ -36,13 +36,13 @@ UNIT_TEST(SparseTensor, Contraction_Order_0,
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_1,
-    SparseTensor A({2});
-    SparseTensor B({2});
-    SparseTensor C({3});
-    SparseTensor res1({2,2});
-    SparseTensor res2({});
-    SparseTensor res3({2,3});
-    SparseTensor res4({3,2});
+    Tensor A({2}, Tensor::Representation::Sparse);
+    Tensor B({2}, Tensor::Representation::Sparse);
+    Tensor C({3}, Tensor::Representation::Sparse);
+    Tensor res1({2,2}, Tensor::Representation::Sparse);
+    Tensor res2({}, Tensor::Representation::Sparse);
+    Tensor res3({2,3}, Tensor::Representation::Sparse);
+    Tensor res4({3,2}, Tensor::Representation::Sparse);
     
     Index i,j;
     
@@ -93,11 +93,11 @@ UNIT_TEST(SparseTensor, Contraction_Order_1,
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_2_Same_Dimensions,
-    SparseTensor A({2,2});
-    SparseTensor B({2,2});
-    SparseTensor res1({2,2,2,2});
-    SparseTensor res2({2,2});
-    SparseTensor res3({});
+    Tensor A({2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2}, Tensor::Representation::Sparse);
+    Tensor res1({2,2,2,2}, Tensor::Representation::Sparse);
+    Tensor res2({2,2}, Tensor::Representation::Sparse);
+    Tensor res3({}, Tensor::Representation::Sparse);
 
     Index i,j,k,l;
     
@@ -194,11 +194,11 @@ UNIT_TEST(SparseTensor, Contraction_Order_2_Same_Dimensions,
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_2_Different_Dimensions,
-    SparseTensor A({1,2});
-    SparseTensor B({2,3});
-    SparseTensor res1({1,2,2,3});
-    SparseTensor res2({1,3});
-    SparseTensor res3({3,1});
+    Tensor A({1,2}, Tensor::Representation::Sparse);
+    Tensor B({2,3}, Tensor::Representation::Sparse);
+    Tensor res1({1,2,2,3}, Tensor::Representation::Sparse);
+    Tensor res2({1,3}, Tensor::Representation::Sparse);
+    Tensor res3({3,1}, Tensor::Representation::Sparse);
 
     Index i,j,k,l;
     
@@ -232,10 +232,10 @@ UNIT_TEST(SparseTensor, Contraction_Order_2_Different_Dimensions,
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_3_Same_Dimensions,
-    SparseTensor A({2,2,2});
-    SparseTensor B({2,2,2});
-    SparseTensor res2({2,2});
-    SparseTensor res3({});
+    Tensor A({2,2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2,2}, Tensor::Representation::Sparse);
+    Tensor res2({2,2}, Tensor::Representation::Sparse);
+    Tensor res3({}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -264,17 +264,17 @@ UNIT_TEST(SparseTensor, Contraction_Order_3_Same_Dimensions,
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_3_Different_Dimensions,
-    SparseTensor A({1,2,3});
-    SparseTensor B({2,3,4});
-    SparseTensor C({2,1,3});
-    SparseTensor res1({1,2,3,2,3,4});
-    SparseTensor res2({1,3,4,3});
-    SparseTensor res3({1,3,3,4});
-    SparseTensor res4({1,4});
-    SparseTensor res5({1,1});
-    SparseTensor res6({1,3,3,1});
+    Tensor A({1,2,3}, Tensor::Representation::Sparse);
+    Tensor B({2,3,4}, Tensor::Representation::Sparse);
+    Tensor C({2,1,3}, Tensor::Representation::Sparse);
+    Tensor res1({1,2,3,2,3,4}, Tensor::Representation::Sparse);
+    Tensor res2({1,3,4,3}, Tensor::Representation::Sparse);
+    Tensor res3({1,3,3,4}, Tensor::Representation::Sparse);
+    Tensor res4({1,4}, Tensor::Representation::Sparse);
+    Tensor res5({1,1}, Tensor::Representation::Sparse);
+    Tensor res6({1,3,3,1}, Tensor::Representation::Sparse);
     
-    SparseTensor C1;
+    Tensor C1( Tensor::Representation::Sparse );
 
     Index i,j,k,l,m,n;
     

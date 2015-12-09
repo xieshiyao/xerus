@@ -36,7 +36,6 @@
 namespace xerus {
     // Necessary forward declaritons
     class Tensor;
-    class SparseTensor;
 	
     
 	/** 
@@ -207,11 +206,6 @@ namespace xerus {
 		*/
         explicit operator Tensor() const;
         
-		/** 
-		* @brief Explicit cast to SparseTensor
-		* @details Contracts the complete network into a single SparseTensor
-		*/
-        explicit operator SparseTensor() const;
             
         /** 
 		* @brief Fully contract the TensorNetwork

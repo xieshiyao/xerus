@@ -24,8 +24,8 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Assignment_Trivia2, 
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res({2,2,3,1,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -39,10 +39,10 @@ UNIT_TEST(SparseTensor, Assignment_Trivia2,
 )
 
 UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse, 
-    SparseTensor A({2,2,3,1,2});
-    SparseTensor res({2,2,3,1,2});
-    SparseTensor res2({2,3,2,1,2});
-    SparseTensor res3({2,3,1,2,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
+    Tensor res2({2,3,2,1,2}, Tensor::Representation::Sparse);
+    Tensor res3({2,3,1,2,2}, Tensor::Representation::Sparse);
 
     Index i,j,k,l,m;
     
@@ -83,7 +83,7 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse,
 )
 
 UNIT_TEST(SparseTensor, Assignment_Sparse_To_Full, 
-    SparseTensor A({2,2,3,1,2});
+    Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res;
     Tensor res2;
     Tensor res3;

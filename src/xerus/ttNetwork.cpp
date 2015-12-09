@@ -27,12 +27,13 @@
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/blasLapackWrapper.h>
+#include <xerus/misc/performanceAnalysis.h>
 #include <xerus/selectedFunctions.h>
 #include <xerus/misc/check.h>
 
@@ -134,7 +135,7 @@ namespace xerus {
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
 		if (!isOperator) {
 			if(_tensor.is_sparse()) {
-				Tensor tmpTensor(static_cast<const SparseTensor&>(_tensor)); // TODO Sparse SVD?
+				Tensor tmpTensor(_tensor); // TODO Sparse SVD?
 				workingData = tmpTensor.get_internal_dense_data();
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
@@ -1395,15 +1396,15 @@ namespace xerus {
 			const Tensor &otherComponent = *realOther.nodes[1].tensorObject.get();
 			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
 				nextTensor.reset(myComponent.get_copy());
-				*static_cast<SparseTensor*>(nextTensor.get()) += (*static_cast<const SparseTensor*>(&otherComponent));
+				*static_cast<Tensor*>(nextTensor.get()) += (*static_cast<const Tensor*>(&otherComponent));
 			} else { // at most one sparse
 				if(myComponent.is_sparse()){
-					nextTensor.reset(new Tensor(*static_cast<const SparseTensor*>(&myComponent)));
+					nextTensor.reset(new Tensor(*static_cast<const Tensor*>(&myComponent)));
 				} else {
 					nextTensor.reset(new Tensor(*static_cast<const Tensor*>(&myComponent)));
 				}
 				if(otherComponent.is_sparse()){
-					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const SparseTensor&>(otherComponent);
+					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const Tensor&>(otherComponent);
 				} else {
 					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const Tensor&>(otherComponent);
 				}

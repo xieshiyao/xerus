@@ -24,12 +24,12 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Traces,
-    SparseTensor A({2,2});
-    SparseTensor B({2,2,2});
-    SparseTensor C({2,2,2,2});
-    SparseTensor res1({});
-    SparseTensor res2({2});
-    SparseTensor res3({2,2});
+    Tensor A({2,2}, Tensor::Representation::Sparse);
+    Tensor B({2,2,2}, Tensor::Representation::Sparse);
+    Tensor C({2,2,2,2}, Tensor::Representation::Sparse);
+    Tensor res1({}, Tensor::Representation::Sparse);
+    Tensor res2({2}, Tensor::Representation::Sparse);
+    Tensor res3({2,2}, Tensor::Representation::Sparse);
     
     Index i, j, k;
     

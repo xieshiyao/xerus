@@ -25,7 +25,7 @@
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
-#include <xerus/sparseTensor.h>
+ 
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
 
