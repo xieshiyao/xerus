@@ -23,12 +23,12 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, remove_slate,
+UNIT_TEST(Tensor, remove_slate,
     std::mt19937_64 rnd;
     rnd.seed(0X5EED);
     
     double n=0;
-    FullTensor A({3,3}, [&](const std::vector<size_t> &){ n+=1; return n; } );
+    Tensor A({3,3}, [&](const std::vector<size_t> &){ n+=1; return n; } );
     
     A.remove_slate(0,1);
     TEST(A.compare_to_data({1,2,3,7,8,9}, 1e-14));
@@ -40,8 +40,8 @@ UNIT_TEST(FullTensor, remove_slate,
     TEST(A.compare_to_data({2,0,3,0,0,0,8,0,9}, 1e-14));
 )
 
-UNIT_TEST(FullTensor, dimension_reduction,
-    FullTensor A({2,2,2});
+UNIT_TEST(Tensor, dimension_reduction,
+    Tensor A({2,2,2});
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
     A[{0,1,0}] = 3;
@@ -51,8 +51,8 @@ UNIT_TEST(FullTensor, dimension_reduction,
     A[{1,1,0}] = 7;
     A[{1,1,1}] = 8;
     
-    FullTensor B = A;
-    FullTensor C;
+    Tensor B = A;
+    Tensor C;
     C = A;
     
     A.resize_dimension(0,1);
@@ -71,8 +71,8 @@ UNIT_TEST(FullTensor, dimension_reduction,
     TEST(C.size == 4);
 )
 
-UNIT_TEST(FullTensor, dimension_expansion,
-    FullTensor A({2,2,2});
+UNIT_TEST(Tensor, dimension_expansion,
+    Tensor A({2,2,2});
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
     A[{0,1,0}] = 3;
@@ -82,8 +82,8 @@ UNIT_TEST(FullTensor, dimension_expansion,
     A[{1,1,0}] = 7;
     A[{1,1,1}] = 8;
     
-    FullTensor B = A;
-    FullTensor C;
+    Tensor B = A;
+    Tensor C;
     C = A;
     
     A.resize_dimension(0,3);
@@ -102,10 +102,10 @@ UNIT_TEST(FullTensor, dimension_expansion,
     TEST(C.size == 12);
 )
 
-UNIT_TEST(FullTensor, modify_elements,
-    FullTensor A({4,4});
-    FullTensor B({4,4,7});
-    FullTensor C({2,8});
+UNIT_TEST(Tensor, modify_elements,
+    Tensor A({4,4});
+    Tensor B({4,4,7});
+    Tensor C({2,8});
     
     A[{0,0}] = 1;
     A[{0,1}] = 2;

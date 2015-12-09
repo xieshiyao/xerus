@@ -109,14 +109,14 @@ namespace xerus {
 				for (size_t o=0; o<1; ++o) {
 					newX.move_core(0, true);
 					// build stack from right to left
-					std::vector<FullTensor> stack;
+					std::vector<Tensor> stack;
 					stack.emplace_back(Tensor::ones({1,1}));
 					for (size_t i=degree-1; i>0; --i) {
-						FullTensor next;
+						Tensor next;
 						next(i1,i2) = newX.get_component(i)(i1,i5,i3) * largeX.get_component(i)(i2,i5,i4) * stack.back()(i3,i4);
 						stack.emplace_back(next);
 					}
-					FullTensor left = Tensor::ones({1,1});
+					Tensor left = Tensor::ones({1,1});
 					// sweep left to right
 					for (size_t i=0; i<degree; ++i) {
 						newX.component(i)(i1,i2,i3) = left(i1,i4) * largeX.get_component(i)(i4,i2,i5) * stack.back()(i3,i5);

@@ -46,17 +46,17 @@ UNIT_TEST(Tensor, SelfContained,
 			}
 		}
 		
-		FullTensor A1 = FullTensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], rnd, dist);
+		Tensor A1 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], rnd, dist);
 		SparseTensor A2 = SparseTensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/13, rnd, dist);
 		SparseTensor A3 = SparseTensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/20, rnd, dist);
-		FullTensor B1 = FullTensor::random(indexDim[1] | indexDim[4] | indexDim[5] | indexDim[6], rnd, dist);
-		FullTensor C1 = FullTensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
-		FullTensor C2 = FullTensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
-		FullTensor D1 = FullTensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], rnd, dist);
+		Tensor B1 = Tensor::random(indexDim[1] | indexDim[4] | indexDim[5] | indexDim[6], rnd, dist);
+		Tensor C1 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
+		Tensor C2 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
+		Tensor D1 = Tensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], rnd, dist);
 		SparseTensor D2 = SparseTensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], misc::product(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6])/27, rnd, dist);
-		FullTensor E1 = FullTensor::random(indexDim[7] | indexDim[9], rnd, dist);
-		FullTensor F1 = FullTensor::random(indexDim[4], rnd, dist);
-		FullTensor res;
+		Tensor E1 = Tensor::random(indexDim[7] | indexDim[9], rnd, dist);
+		Tensor F1 = Tensor::random(indexDim[4], rnd, dist);
+		Tensor res;
 
 		res(indices[4]^indexSpan[4], indices[9]^indexSpan[9]) = 
 			(A1(indices[0]^indexSpan[0], indices[1]^indexSpan[1], indices[2]^indexSpan[2], indices[3]^indexSpan[3])

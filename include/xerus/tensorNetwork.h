@@ -35,7 +35,7 @@
 
 namespace xerus {
     // Necessary forward declaritons
-    class FullTensor;
+    class Tensor;
     class SparseTensor;
 	
     
@@ -172,7 +172,7 @@ namespace xerus {
         implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
         
 		/** 
-		* @brief Constructs the trivial TensorNetwork containing a FullTensor with the given degree.
+		* @brief Constructs the trivial TensorNetwork containing a Tensor with the given degree.
 		* @details All dimensions are set equals one and the only entry 
 		* of the tensor is zero.
 		*/
@@ -202,10 +202,10 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
         /** 
-		* @brief Explicit cast to FullTensor
-		* @details Contracts the complete network into a single FullTensor
+		* @brief Explicit cast to Tensor
+		* @details Contracts the complete network into a single Tensor
 		*/
-        explicit operator FullTensor() const;
+        explicit operator Tensor() const;
         
 		/** 
 		* @brief Explicit cast to SparseTensor
@@ -230,7 +230,7 @@ namespace xerus {
         /** 
 		* @brief Read the value at a specific position.
 		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
-		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* and then completly contracting the network. Do NOT use this as a manual cast to Tensor (there is an explicit cast for that).
 		* @param _position the position of the entry to be read assuming row-major ordering and a single node.
 		* @returns the calculated value (NO reference)
 		*/
@@ -239,7 +239,7 @@ namespace xerus {
 		/** 
 		* @brief Read the value at a specific position.
 		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
-		* and then completly contracting the network. Do NOT use this as a manual cast to FullTensor (there is an explicit cast for that).
+		* and then completly contracting the network. Do NOT use this as a manual cast to Tensor (there is an explicit cast for that).
 		* @param _position the position of the entry to be read assuming a single node.
 		* @returns the calculated value (NO reference)
 		*/

@@ -8,7 +8,7 @@
 int main() {
 	// construct the stiffness matrix A using a lambda function
 	// and dividing it by h^2 = multiplying it with N^2
-	xerus::FullTensor A({512,512}, [](const std::vector<size_t> &idx){
+	xerus::Tensor A({512,512}, [](const std::vector<size_t> &idx){
 		if (idx[0] == idx[1]) {
 			return 2.0;
 		} else if (idx[1] == idx[0]+1 || idx[1]+1 == idx[0]) {
@@ -28,8 +28,8 @@ int main() {
 	// and verify its rank
 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
 	
-	// the right hand side of the equation both as FullTensor and in (Q)TT format
-	xerus::FullTensor b({512}, []() {
+	// the right hand side of the equation both as Tensor and in (Q)TT format
+	xerus::Tensor b({512}, []() {
 		return 1.0;
 	});
 	
@@ -52,13 +52,13 @@ int main() {
 	double residual = frob_norm( ttA(i^9,j^9)*ttx(j^9) - ttb(i^9) );
 	std::cout << "residual: " << residual << std::endl;
 	
-	// as an comparison solve the system exactly using the FullTensor / operator
-	xerus::FullTensor x;
+	// as an comparison solve the system exactly using the Tensor / operator
+	xerus::Tensor x;
 	x(j^9) = b(i^9) / A(i^9, j^9);
 	
 	// and calculate the Frobenius norm of the difference
 	// here i&0 denotes a multiindex large enough to fully index the respective tensors
-	// the subtraction of different formats will default to FullTensor subtraction such that
-	// the TTTensor ttx will be evaluated to a FullTensor prior to subtraction.
+	// the subtraction of different formats will default to Tensor subtraction such that
+	// the TTTensor ttx will be evaluated to a Tensor prior to subtraction.
 	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
 }

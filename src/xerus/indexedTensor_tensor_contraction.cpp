@@ -19,14 +19,14 @@
 
 /**
  * @file
- * @brief Implementation of the (indexed) FullTensor contraction.
+ * @brief Implementation of the (indexed) Tensor contraction.
  */
 
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/misc/check.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
@@ -338,7 +338,7 @@ namespace xerus {
                 // Add the common indices to the open ones
                 lhsOpenIndices.insert(lhsOpenIndices.end(), commonIndices.begin(), commonIndices.end());
                 
-                lhsSaveSlot.reset(new IndexedTensor<Tensor>(_lhs.tensorObjectReadOnly->construct_new(_lhs.get_evaluated_dimensions(lhsOpenIndices), DONT_SET_ZERO()), std::move(lhsOpenIndices), true));
+				lhsSaveSlot.reset(new IndexedTensor<Tensor>(_lhs.tensorObjectReadOnly->construct_new(_lhs.get_evaluated_dimensions(lhsOpenIndices), Tensor::Initialisation::None), std::move(lhsOpenIndices), true));
                 evaluate(*lhsSaveSlot, _lhs);
                 actualLhs = lhsSaveSlot.get();
             } else {
@@ -351,7 +351,7 @@ namespace xerus {
                 // Add the open indices to the common ones
                 commonIndices.insert(commonIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
                 
-                rhsSaveSlot.reset(new IndexedTensor<Tensor>(_rhs.tensorObjectReadOnly->construct_new(_rhs.get_evaluated_dimensions(commonIndices), DONT_SET_ZERO()), std::move(commonIndices), true));
+				rhsSaveSlot.reset(new IndexedTensor<Tensor>(_rhs.tensorObjectReadOnly->construct_new(_rhs.get_evaluated_dimensions(commonIndices), Tensor::Initialisation::None), std::move(commonIndices), true));
                 evaluate(*rhsSaveSlot, _rhs);
                 actualRhs = rhsSaveSlot.get();
             } else {
@@ -361,7 +361,7 @@ namespace xerus {
             if(reorderResult) {
                 LOG(ContractionDebug, "Creating temporary result tensor");
                 
-                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(_result.tensorObjectReadOnly->construct_new(_result.get_evaluated_dimensions(workingResultIndices), DONT_SET_ZERO()), std::move(workingResultIndices), true));
+                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(_result.tensorObjectReadOnly->construct_new(_result.get_evaluated_dimensions(workingResultIndices), Tensor::Initialisation::None), std::move(workingResultIndices), true));
                 workingResult = workingResultSaveSlot.get();
             } else {
                 workingResult = &_result;
@@ -388,15 +388,15 @@ namespace xerus {
             
             // Select actual case
             if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
-                blasWrapper::matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
+                blasWrapper::matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
-                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
+                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
-                matrix_matrix_product(static_cast<FullTensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
+                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
             } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const FullTensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, *static_cast<const SparseTensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
             } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
-                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, static_cast<const FullTensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
+                matrix_matrix_product(*static_cast<SparseTensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const SparseTensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
             } else {
                 LOG(fatal, "Invalid combiantion of sparse/dense tensors in contraction");
             }
@@ -457,7 +457,7 @@ namespace xerus {
         ) {
             resultTensor = new SparseTensor(outDimensions);
         } else {
-            resultTensor = new FullTensor(outDimensions, DONT_SET_ZERO());
+            resultTensor = new Tensor(outDimensions, Tensor::Representation::Dense, Tensor::Initialisation::None);
         }
         
         IndexedTensorMoveable<Tensor> result(resultTensor, outIndices);

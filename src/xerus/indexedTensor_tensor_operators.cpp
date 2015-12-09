@@ -26,7 +26,7 @@
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/misc/missingFunctions.h>
 
@@ -36,12 +36,12 @@ namespace xerus {
     void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs) const {
         if(!_rhs.uses_tensor(tensorObject)) {
             // If LHS and RHS object don't coincide we can directly evaluate
-			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::Nothing);
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
             evaluate(*this, _rhs);
         } else {
             // If the tensors in fact coincide we have to use a tmp object
             IndexedTensorMoveable<Tensor> tmpTensor(_rhs);
-			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::Nothing);
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
             evaluate(*this, tmpTensor);
         }
     }

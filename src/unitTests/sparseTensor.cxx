@@ -27,9 +27,9 @@ UNIT_TEST(SparseTensor, Creation,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0); 
     
-    FullTensor fullA = FullTensor::random({7,13,2,9,3}, rnd, dist);
-    FullTensor fullB = FullTensor::random({7,13,2,9,3}, rnd, dist);
-    FullTensor fullX({7,13,2,9,3});
+    Tensor fullA = Tensor::random({7,13,2,9,3}, rnd, dist);
+    Tensor fullB = Tensor::random({7,13,2,9,3}, rnd, dist);
+    Tensor fullX({7,13,2,9,3});
     
     SparseTensor sparseA = SparseTensor(fullA);
     SparseTensor sparseB = SparseTensor(fullB);
@@ -38,8 +38,8 @@ UNIT_TEST(SparseTensor, Creation,
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
-    TEST(approx_entrywise_equal(fullA, FullTensor(sparseA), 1e-16));
-    TEST(approx_entrywise_equal(fullB, FullTensor(sparseB), 1e-16));
+    TEST(approx_entrywise_equal(fullA, Tensor(sparseA), 1e-16));
+    TEST(approx_entrywise_equal(fullB, Tensor(sparseB), 1e-16));
     
     fullX += fullA;
     sparseX += sparseA;
@@ -88,43 +88,43 @@ UNIT_TEST(SparseTensor, Creation,
     
     fullX += fullA;
     sparseX += sparseA;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-13));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-13));
     
     fullX -= fullB;
     sparseX -= sparseB;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-12));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-12));
     
     fullX = fullA + fullB;
     sparseX = sparseA + sparseB;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
     
     fullX = fullA - fullB;
     sparseX = sparseA - sparseB;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
     
     fullX = 2.0*fullA;
     sparseX = 2.0*sparseA;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
     
     fullX = 10.0*fullA*2;
     sparseX = 10.0*sparseA*2;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
      
     fullX = fullA/10.0;
     sparseX = sparseA/10.0;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
 
     fullX = 0*fullA + fullB;
     sparseX = 0*sparseA + sparseB;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
     
     fullX = 7.3*fullA + fullB*5;
     sparseX = 7.3*sparseA + sparseB*5;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-12));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-12));
     
     fullX = 7.9*fullA/13.7 + fullB*5;
     sparseX = 7.9*sparseA/13.7 + sparseB*5;
-    TEST(approx_entrywise_equal(fullX, FullTensor(sparseX), 1e-13));
+    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-13));
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));

@@ -26,7 +26,7 @@
 
 #include "basic.h"
 #include "misc/missingFunctions.h"
-#include "fullTensor.h"
+#include "tensor.h"
 
 namespace xerus {
 	template<bool isOperator> class TTNetwork;
@@ -99,7 +99,7 @@ namespace xerus {
 	
 	class RankOneMeasurmentSet {
 	public:
-		std::vector<std::vector<FullTensor>> positions;
+		std::vector<std::vector<Tensor>> positions;
 		std::vector<value_t> measuredValues;
 		
 		RankOneMeasurmentSet() = default;
@@ -111,10 +111,10 @@ namespace xerus {
 		struct Comparator {
 			const size_t split_position;
 			Comparator(const size_t _splitPos) : split_position(_splitPos)  {}
-			bool operator()(const std::vector<FullTensor>& _lhs, const std::vector<FullTensor>& _rhs) const;
+			bool operator()(const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) const;
 		};
 		
-		void add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue);
+		void add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue);
 		
 		size_t size() const;
 		

@@ -67,7 +67,7 @@ namespace xerus {
 		
 		std::vector<std::vector<size_t>> leftTuples;
 		
-		reconstruction.set_component(0, FullTensor({1, _input.dimensions[0], _ranks[0]}, DONT_SET_ZERO()));
+		reconstruction.set_component(0, Tensor({1, _input.dimensions[0], _ranks[0]}, Tensor::Representation::Dense, Tensor::Initialisation::None));
 		std::vector<std::vector<size_t>> tuples = create_random_tuples(_input.dimensions, 0, _ranks[0]);
 		
 		for(size_t i = 0; i < _input.dimensions[0]; ++i) {
@@ -87,7 +87,7 @@ namespace xerus {
 		for(size_t position = 0; position < _input.degree()-1; ++position) {
 // 			std::vector<std::vector<size_t>> tuples = create_random_tuples(_input.dimensions, position, _ranks[position]);
 			
-// 			reconstruction.set_component(position, FullTensor({_ranks[position-1], _input.dimensions[position], _ranks[position]}, DONT_SET_ZERO()));
+// 			reconstruction.set_component(position, Tensor({_ranks[position-1], _input.dimensions[position], _ranks[position]}, Tensor::Initialisation::None));
 		}
 		
 		return reconstruction;

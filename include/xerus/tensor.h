@@ -33,7 +33,7 @@
 #include "indexedTensor.h"
  
 namespace xerus {
-	class FullTensor;
+	class Tensor;
 	class SparseTensor;
 	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
@@ -42,7 +42,7 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary types- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		enum class Representation : bool { Dense, Sparse};
 		
-		enum class Initialisation : bool { Nothing, Zero};
+		enum class Initialisation : bool { None, Zero};
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// @brief Vector containing the individual dimensions of the tensor.
@@ -80,7 +80,7 @@ namespace xerus {
 		implicit Tensor( const Tensor& _other ) = default;
 		
 		/// @brief Tensors are move constructable.
-		implicit Tensor( Tensor&& _other );
+// 		implicit Tensor( Tensor&& _other );
 
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
@@ -166,12 +166,12 @@ namespace xerus {
 		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
 		 * @details The entries are assigned in the order they are stored (i.e. row-major order). Each assigned is a seperate call to the random distribution.
 		 * @param _dimensions the future dimensions of the Tensor.
-		 * @param _dist the random distribution to be used.
 		 * @param _rnd the random generator to be used.
+		 * @param _dist the random distribution to be used.
 		 */
 		template<class generator, class distribution, ADD_MOVE(Vec, std::vector<size_t>)>
-		static Tensor random(Vec&& _dimensions, distribution& _dist, generator& _rnd) {
-			Tensor result(std::forward<Vec>(_dimensions), Representation::Dense, Initialisation::Nothing);
+		static Tensor random(Vec&& _dimensions, generator& _rnd, distribution& _dist) {
+			Tensor result(std::forward<Vec>(_dimensions), Representation::Dense, Initialisation::None);
 			for(size_t i = 0; i < result.size; ++i) {
 				result.denseData.get()[i] = _dist(_rnd);
 			}
@@ -215,46 +215,46 @@ namespace xerus {
 			return Tensor::random(std::vector<size_t>(_dimensions), _N, _rnd, _dist);
 		}
 		
-		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. FullTensor or SparseTensor).
+		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. Tensor or SparseTensor).
 		Tensor* get_copy() const;
 		
-		/// @brief Returns a pointer containing a moved copy of the object with same type (i.e. FullTensor or SparseTensor).
+		/// @brief Returns a pointer containing a moved copy of the object with same type (i.e. Tensor or SparseTensor).
 		Tensor* get_moved_copy();
 		
-		/// @brief Returns a pointer to a newly constructed order zero tensor of same type (i.e. FullTensor or SparseTensor) with entry equals zero.
+		/// @brief Returns a pointer to a newly constructed order zero tensor of same type (i.e. Tensor or SparseTensor) with entry equals zero.
 		Tensor* construct_new() const;
 		
 		/** 
-		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. Tensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
 		Tensor* construct_new(const std::vector<size_t>&  _dimensions) const;
 		
 		/** 
-		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. Tensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
 		Tensor* construct_new(	  std::vector<size_t>&& _dimensions) const;
 		
 		/** 
-		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. Tensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		Tensor* construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const;
+		Tensor* construct_new(const std::vector<size_t>&  _dimensions, const Initialisation _init) const;
 		
 		/** 
-		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. FullTensor or SparseTensor) with all entries set to zero and global factor one.
+		 * @brief: Returns a pointer to a newly constructed tensor of same type (i.e. Tensor or SparseTensor) with all entries set to zero and global factor one.
 		 * @details The second parameter is a DONT_SET_ZERO helper object that is only used to provide the function overload.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		Tensor* construct_new(	  std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const;
+		Tensor* construct_new(	  std::vector<size_t>&& _dimensions, const Initialisation _init) const;
 		
 		/** 
-		 * @brief: Returns a FullTensor with all entries equal to one.
+		 * @brief: Returns a Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static FullTensor ones(const std::vector<size_t>& _dimensions);
+		static Tensor ones(const std::vector<size_t>& _dimensions);
 		
 		/** 
 		 * @brief: Returns a SparseTensor representation of the identity operator with the given dimensions.
@@ -305,7 +305,7 @@ namespace xerus {
 		 * @param _other the Tensor to be move-assinged to this one.
 		 * @return a reference to this Tensor.
 		 */
-		Tensor& operator=(      Tensor&& _other);
+// 		Tensor& operator=(      Tensor&& _other);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -769,11 +769,11 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	/** 
-	 * @brief Calculates the entrywise multiplication of the FullTensor @a _lhs with a constant @a _rhs.
+	 * @brief Calculates the entrywise multiplication of the Tensor @a _lhs with a constant @a _rhs.
 	 * @details Internally this only results in a change in the global factor.
-	 * @param _lhs the FullTensor that shall be scaled.
+	 * @param _lhs the Tensor that shall be scaled.
 	 * @param _rhs the factor to be used.
-	 * @return the resulting scaled FullTensor.
+	 * @return the resulting scaled Tensor.
 	 */
 	static _inline_ Tensor operator*(const value_t _lhs, const Tensor& _rhs) { return _rhs*_lhs; }
 	
@@ -788,7 +788,7 @@ namespace xerus {
 	
 	
 	/** 
-	 * @brief Low-level contraction between FullTensors.
+	 * @brief Low-level contraction between Tensors.
 	 * @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
 	 * @param _result Output for the result of the contraction. Must allready have the right dimensions!
 	 * @param _lhs left hand side of the contraction.

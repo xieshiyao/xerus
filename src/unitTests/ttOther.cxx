@@ -12,18 +12,18 @@ UNIT_TEST(TT, entrywise_product,
 	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
 	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
 	
-	FullTensor Af(A);
-	FullTensor Bf(B);
+	Tensor Af(A);
+	Tensor Bf(B);
 	
 	TTOperator Ao(Af);
 	TTOperator Bo(Bf);
 	
 	TTTensor C = TTTensor::entrywise_product(A, B);
 	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
-	FullTensor Cf = entrywise_product(Af, Bf);
+	Tensor Cf = entrywise_product(Af, Bf);
 	
-	TEST(frob_norm(Cf - FullTensor(Co))/frob_norm(Cf) < 1e-14);
-	TEST(frob_norm(Cf - FullTensor(C))/frob_norm(Cf) < 1e-14);
+	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);
+	TEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-14);
 	
 	
 	TTTensor D1 = TTTensor::entrywise_product(A, A);
@@ -35,12 +35,12 @@ UNIT_TEST(TT, entrywise_product,
 	TTOperator Do2(Ao);
 	Do2.entrywise_square();
 	
-	FullTensor Df = entrywise_product(Af, Af);
+	Tensor Df = entrywise_product(Af, Af);
 
-	TEST(approx_equal(Df, FullTensor(D1), 1e-14));
-	TEST(approx_equal(Df, FullTensor(D2), 1e-14));
-	TEST(approx_equal(Df, FullTensor(Do1), 1e-14));
-	TEST(approx_equal(Df, FullTensor(Do2), 1e-14));
+	TEST(approx_equal(Df, Tensor(D1), 1e-14));
+	TEST(approx_equal(Df, Tensor(D2), 1e-14));
+	TEST(approx_equal(Df, Tensor(Do1), 1e-14));
+	TEST(approx_equal(Df, Tensor(Do2), 1e-14));
 )
 
 UNIT_TEST(TT, soft_thresholding,
@@ -53,16 +53,16 @@ UNIT_TEST(TT, soft_thresholding,
 	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
 	
 	
-	FullTensor Af(A);
-	FullTensor Bf(B);
+	Tensor Af(A);
+	Tensor Bf(B);
 	
 	TTOperator Ao(Af);
 	TTOperator Bo(Bf);
 	
 	TTTensor C = TTTensor::entrywise_product(A, B);
 	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
-	FullTensor Cf = entrywise_product(Af, Bf);
+	Tensor Cf = entrywise_product(Af, Bf);
 	
-	TEST(frob_norm(Cf - FullTensor(Co))/frob_norm(Cf) < 1e-14);
-	TEST(frob_norm(Cf - FullTensor(C))/frob_norm(Cf) < 1e-14);
+	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);
+	TEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-14);
 )

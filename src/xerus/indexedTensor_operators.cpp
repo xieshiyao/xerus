@@ -25,7 +25,7 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/index.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/tensorNetwork.h>
 #include <xerus/misc/check.h>
@@ -41,7 +41,7 @@ namespace xerus {
 			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
 			static_cast<SparseTensor&>(*_lhs.tensorObject) += static_cast<SparseTensor&>(*reorderedRhs);
 		} else {
-			static_cast<FullTensor&>(*_lhs.tensorObject) += *reorderedRhs;
+			static_cast<Tensor&>(*_lhs.tensorObject) += *reorderedRhs;
 		}		
 	}
 	
@@ -53,7 +53,7 @@ namespace xerus {
 			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
 			static_cast<SparseTensor&>(*_lhs.tensorObject) -= static_cast<SparseTensor&>(*reorderedRhs);
 		} else {
-			static_cast<FullTensor&>(*_lhs.tensorObject) -= *reorderedRhs;
+			static_cast<Tensor&>(*_lhs.tensorObject) -= *reorderedRhs;
 		}
 	}
     

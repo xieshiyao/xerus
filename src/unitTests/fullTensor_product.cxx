@@ -26,10 +26,10 @@
 
 using namespace xerus;
 
-UNIT_TEST(FullTensor, Product_Order_0,
-    FullTensor A({});
-    FullTensor B({});
-    FullTensor res1({});
+UNIT_TEST(Tensor, Product_Order_0,
+    Tensor A({});
+    Tensor B({});
+    Tensor res1({});
     
     A[{}] = 42;
     B[{}] = 73;
@@ -38,14 +38,14 @@ UNIT_TEST(FullTensor, Product_Order_0,
     TEST(res1.compare_to_data({42*73}));
 )
 
-UNIT_TEST(FullTensor, Product_Order_1,
-    FullTensor A({2});
-    FullTensor B({2});
-    FullTensor C({3});
-    FullTensor res1({2,2});
-    FullTensor res2({});
-    FullTensor res3({2,3});
-    FullTensor res4({3,2});
+UNIT_TEST(Tensor, Product_Order_1,
+    Tensor A({2});
+    Tensor B({2});
+    Tensor C({3});
+    Tensor res1({2,2});
+    Tensor res2({});
+    Tensor res3({2,3});
+    Tensor res4({3,2});
     
     Index i,j;
     
@@ -95,12 +95,12 @@ UNIT_TEST(FullTensor, Product_Order_1,
     TEST(res3.compare_to_data({5,6,7,10,12,14}));
 )
 
-UNIT_TEST(FullTensor, Product_Order_2_Same_Dimensions,
-    FullTensor A({2,2});
-    FullTensor B({2,2});
-    FullTensor res1({2,2,2,2});
-    FullTensor res2({2,2});
-    FullTensor res3({});
+UNIT_TEST(Tensor, Product_Order_2_Same_Dimensions,
+    Tensor A({2,2});
+    Tensor B({2,2});
+    Tensor res1({2,2,2,2});
+    Tensor res2({2,2});
+    Tensor res3({});
 
     Index i,j,k,l;
     
@@ -196,12 +196,12 @@ UNIT_TEST(FullTensor, Product_Order_2_Same_Dimensions,
     TEST(res3.compare_to_data({70}));
 )
 
-UNIT_TEST(FullTensor, Product_Order_2_Different_Dimensions,
-    FullTensor A({1,2});
-    FullTensor B({2,3});
-    FullTensor res1({1,2,2,3});
-    FullTensor res2({1,3});
-    FullTensor res3({3,1});
+UNIT_TEST(Tensor, Product_Order_2_Different_Dimensions,
+    Tensor A({1,2});
+    Tensor B({2,3});
+    Tensor res1({1,2,2,3});
+    Tensor res2({1,3});
+    Tensor res3({3,1});
 
     Index i,j,k,l;
     
@@ -234,12 +234,12 @@ UNIT_TEST(FullTensor, Product_Order_2_Different_Dimensions,
     TEST(res2.compare_to_data({15,18,21}));
 )
 
-UNIT_TEST(FullTensor, Product_Order_3_Same_Dimensions,
-    FullTensor A({2,2,2});
-    FullTensor B({2,2,2});
-    FullTensor res2({2,2});
-    FullTensor res2a({2});
-    FullTensor res3({});
+UNIT_TEST(Tensor, Product_Order_3_Same_Dimensions,
+    Tensor A({2,2,2});
+    Tensor B({2,2,2});
+    Tensor res2({2,2});
+    Tensor res2a({2});
+    Tensor res3({});
 
     Index i,j,k,l,m;
     
@@ -275,13 +275,13 @@ UNIT_TEST(FullTensor, Product_Order_3_Same_Dimensions,
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
 
-UNIT_TEST(FullTensor, Product_Multiindices, 
-    FullTensor res({2,2,2});
-    FullTensor res2({2,2});
-    FullTensor res4({2});
-    FullTensor res3({});
-    FullTensor B({2,2,2});
-    FullTensor C({2,2,2});
+UNIT_TEST(Tensor, Product_Multiindices, 
+    Tensor res({2,2,2});
+    Tensor res2({2,2});
+    Tensor res4({2});
+    Tensor res3({});
+    Tensor B({2,2,2});
+    Tensor C({2,2,2});
     
 
     Index i,j,k,l,m;
@@ -312,11 +312,11 @@ UNIT_TEST(FullTensor, Product_Multiindices,
     TEST(misc::approx_equal(res3[0],5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
 )
 
-UNIT_TEST(FullTensor, Product_Threefold, 
-    FullTensor res({2,2});
-    FullTensor B({2,2});
-    FullTensor C({2,2});
-    FullTensor D({2,2});
+UNIT_TEST(Tensor, Product_Threefold, 
+    Tensor res({2,2});
+    Tensor B({2,2});
+    Tensor C({2,2});
+    Tensor D({2,2});
 
     Index i, J, K, L;
     
@@ -345,15 +345,15 @@ UNIT_TEST(FullTensor, Product_Threefold,
     TEST(res.compare_to_data({601, 698, 725, 842}));
 )
 
-UNIT_TEST(FullTensor, Product_Many_Degree_2, 
-    FullTensor A({2,2});
-    FullTensor B({2,2});
-    FullTensor C({2,2});
-    FullTensor D({2,2});
-    FullTensor E({2,2});
-    FullTensor F({2,2});
-    FullTensor G({2,2});
-    FullTensor res1({2,2});
+UNIT_TEST(Tensor, Product_Many_Degree_2, 
+    Tensor A({2,2});
+    Tensor B({2,2});
+    Tensor C({2,2});
+    Tensor D({2,2});
+    Tensor E({2,2});
+    Tensor F({2,2});
+    Tensor G({2,2});
+    Tensor res1({2,2});
 
     Index i,j,k,l,m,n,o;
     
@@ -397,11 +397,11 @@ UNIT_TEST(FullTensor, Product_Many_Degree_2,
     TEST(res1.compare_to_data({20596523, 21531582, 46728183, 48849590}));
 )
 
-UNIT_TEST(FullTensor, Product_1000x1000,
-    FullTensor res({1000,1000});
-    FullTensor A({1000,1000}, [] (const std::vector<size_t> &_idx) { return double(_idx[0] + _idx[1]); });
-    FullTensor B({1000,1000}, [] (const std::vector<size_t> &_idx) { return double((1000-_idx[0]) * (1000-_idx[1])); });
-    FullTensor C({1000,1000});
+UNIT_TEST(Tensor, Product_1000x1000,
+    Tensor res({1000,1000});
+    Tensor A({1000,1000}, [] (const std::vector<size_t> &_idx) { return double(_idx[0] + _idx[1]); });
+    Tensor B({1000,1000}, [] (const std::vector<size_t> &_idx) { return double((1000-_idx[0]) * (1000-_idx[1])); });
+    Tensor C({1000,1000});
     Index i, J, K;
 
     blasWrapper::matrix_matrix_product(&C[0], 1000, 1000, 1.0, &A[0], false, 1000, &B[0], false);

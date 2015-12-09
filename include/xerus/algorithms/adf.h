@@ -89,10 +89,10 @@ namespace xerus {
 			std::vector<value_t> residual;
 			
 			///@brief The current projected Gradient component. That is E(A^T(Ax-b))
-			FullTensor projectedGradientComponent;
+			Tensor projectedGradientComponent;
 			
-			///@brief Ownership holder for a (degree+2)*numMeasurments array of FullTensor pointers. (Not used directly)
-			std::unique_ptr<FullTensor*[]> forwardStackMem;
+			///@brief Ownership holder for a (degree+2)*numMeasurments array of Tensor pointers. (Not used directly)
+			std::unique_ptr<Tensor*[]> forwardStackMem;
 			
 			/** @brief Array [numMeasurments][degree]. For positions smaller than the current corePosition and for each measurment, this array contains the pre-computed
 			* contraction of the first _ component tensors and the first _ components of the measurment operator. These tensors are deduplicated in the sense that for each unqiue
@@ -100,17 +100,17 @@ namespace xerus {
 			* scatch space. For convinience the underlying array (forwardStackMem) is larger, wherefore also the positions -1 and degree are allow, all poining to a {1} tensor
 			* containing 1 as only entry. Note that position degree-1 must not be used.
 			**/
-			FullTensor* const * const forwardStack;
+			Tensor* const * const forwardStack;
 			
-			/// @brief Ownership holder for the unqiue FullTensors referenced in forwardStack.
-			std::unique_ptr<FullTensor[]> forwardStackSaveSlots;
+			/// @brief Ownership holder for the unqiue Tensors referenced in forwardStack.
+			std::unique_ptr<Tensor[]> forwardStackSaveSlots;
 			
 			/// @brief Vector containing for each corePosition a vector of the smallest ids of each group of unique forwardStack entries.
 			std::vector<std::vector<size_t>> forwardUpdates;
 			
 			
-			///@brief Ownership holder for a (degree+2)*numMeasurments array of FullTensor pointers. (Not used directly)
-			std::unique_ptr<FullTensor*[]> backwardStackMem;
+			///@brief Ownership holder for a (degree+2)*numMeasurments array of Tensor pointers. (Not used directly)
+			std::unique_ptr<Tensor*[]> backwardStackMem;
 			
 			/** @brief Array [numMeasurments][degree]. For positions larger than the current corePosition and for each measurment, this array contains the pre-computed
 			* contraction of the last _ component tensors and the last _ components of the measurment operator. These tensors are deduplicated in the sense that for each unqiue
@@ -118,10 +118,10 @@ namespace xerus {
 			* scratch space. For convinience the underlying array (forwardStackMem) is larger, wherefore also the positions -1 and degree are allow, all poining to a {1} tensor
 			* containing 1 as only entry. Note that position zero must not be used.
 			**/
-			FullTensor* const * const backwardStack;
+			Tensor* const * const backwardStack;
 
-			/// @brief Ownership holder for the unqiue FullTensors referenced in backwardStack.
-			std::unique_ptr<FullTensor[]> backwardStackSaveSlots;
+			/// @brief Ownership holder for the unqiue Tensors referenced in backwardStack.
+			std::unique_ptr<Tensor[]> backwardStackSaveSlots;
 			
 			/// @brief Vector containing for each corePosition a vector of the smallest ids of each group of unique backwardStack entries.
 			std::vector<std::vector<size_t>> backwardUpdates;
@@ -134,13 +134,13 @@ namespace xerus {
 			static double calculate_norm_of_measured_values(const MeasurmentSet& _measurments);
 			
 			///@brief Constructes either the forward or backward stack. That is, it determines the groups of partially equale measurments. Therby stetting (forward/backward)- Updates, StackMem and SaveSlot.
-			void construct_stacks(std::unique_ptr< xerus::FullTensor[] >& _stackSaveSlot, std::vector< std::vector< size_t > >& _updates, const std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward);
+			void construct_stacks(std::unique_ptr< xerus::Tensor[] >& _stackSaveSlot, std::vector< std::vector< size_t > >& _updates, const std::unique_ptr<Tensor*[]>& _stackMem, const bool _forward);
 			
 			///@brief Resizes the unqiue stack tensors to correspond to the current ranks of x.
 			void resize_stack_tensors();
 			
 			///@brief Returns a vector of tensors containing the slices of @a _component where the second dimension is fixed.
-			std::vector<FullTensor> get_fixed_components(const Tensor& _component);
+			std::vector<Tensor> get_fixed_components(const Tensor& _component);
 			
 			///@brief For each measurment sets the forwardStack at the given _corePosition to the contraction between the forwardStack at the previous corePosition (i.e. -1)
 			/// and the given component contracted with the component of the measurment operator. For _corePosition == corePosition and _currentComponent == x.components(corePosition)
@@ -205,11 +205,11 @@ namespace xerus {
 				
 				residual(numMeasurments),
 				
-				forwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+				forwardStackMem(new Tensor*[numMeasurments*(degree+2)]),
 				forwardStack(forwardStackMem.get()+numMeasurments),
 				forwardUpdates(degree),
 					
-				backwardStackMem(new FullTensor*[numMeasurments*(degree+2)]),
+				backwardStackMem(new Tensor*[numMeasurments*(degree+2)]),
 				backwardStack(backwardStackMem.get()+numMeasurments),
 				backwardUpdates(degree),
 				

@@ -25,8 +25,8 @@ using namespace xerus;
 
 UNIT_TEST(Tensor, Assignment, 
     SparseTensor A({2,2,3,1,2});
-    FullTensor B;
-    FullTensor resF;
+    Tensor B;
+    Tensor resF;
     SparseTensor resS;
     
     Index i,j,k,l,m;
@@ -77,12 +77,12 @@ UNIT_TEST(Tensor, Product,
     SparseTensor AS = SparseTensor::random({2,3,4,3,5}, 23, rnd, dist);
     SparseTensor BS = SparseTensor::random({6,3,4,2,3}, 23, rnd, dist);
     
-    FullTensor AF(AS);
-    FullTensor BF(BS);
+    Tensor AF(AS);
+    Tensor BF(BS);
 
-    FullTensor resSF;
-    FullTensor resFS;
-    FullTensor check;
+    Tensor resSF;
+    Tensor resFS;
+    Tensor check;
     
     check(i,j,k,m,n,o,p,q) = AF(i,j,k,l,m)*BF(n,l,o,p,q);
     resSF(i,j,k,m,n,o,p,q) = AS(i,j,k,l,m)*BF(n,l,o,p,q);
@@ -130,9 +130,9 @@ UNIT_TEST(Tensor, Random_Add_Sub,
 		SparseTensor CS = SparseTensor::random(dimensions, numDist(rnd), rnd, dist);
 		SparseTensor I = Tensor::identity(opDim);
 		
-		FullTensor AF(AS);
-		FullTensor BF(BS);
-		FullTensor CF(CS);
+		Tensor AF(AS);
+		Tensor BF(BS);
+		Tensor CF(CS);
 		
 		TEST(approx_equal(AS, AF));
 		TEST(approx_equal(AF, AS));
@@ -141,9 +141,9 @@ UNIT_TEST(Tensor, Random_Add_Sub,
 		TEST(approx_equal(CS, CF));
 		TEST(approx_equal(CF, CS));
 
-		FullTensor resFF;
-		FullTensor resFS;
-		FullTensor resSF;
+		Tensor resFF;
+		Tensor resFS;
+		Tensor resSF;
 		SparseTensor resSS;
 		
 		// Simple Addition

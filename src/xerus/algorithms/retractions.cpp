@@ -60,13 +60,13 @@ namespace xerus {
 // 		_U.move_core(0);
 	}
 	
-	//TODO this should use low-level calls and then be part of FullTensor
-	static FullTensor pseudoInverse(const FullTensor &_A) {
+	//TODO this should use low-level calls and then be part of Tensor
+	static Tensor pseudoInverse(const Tensor &_A) {
 		Index i1,i2,i3,i4;
-		FullTensor U,S,V;
+		Tensor U,S,V;
 		(U(i1,i2), S(i2,i3), V(i3,i4)) = SVD(_A(i1,i4));
 		S.modify_diag_elements([](value_t &a){ a = 1/a;});
-		FullTensor res;
+		Tensor res;
 		res(i1,i4) = V(i2,i1) * S(i2,i3) * U(i4,i3);
 		
 		return res;
@@ -86,27 +86,27 @@ namespace xerus {
 		baseL.move_core(0, true);
 		
 		Index i1,i2,j1,j2,r,s, s2;
-		std::vector<FullTensor> leftStackUV;
-		std::vector<FullTensor> leftStackUU;
-		FullTensor tmp({1,1}, [](){return 1.0;});
+		std::vector<Tensor> leftStackUV;
+		std::vector<Tensor> leftStackUU;
+		Tensor tmp({1,1}, [](){return 1.0;});
 		leftStackUV.push_back(tmp);
 		leftStackUU.push_back(tmp);
 		for (size_t i=0; i<baseL.degree()-1; ++i) {
-			FullTensor newLeft;
+			Tensor newLeft;
 			newLeft(j1,j2) = leftStackUV.back()(i1,i2) * baseL.get_component(i)(i1,r,j1) * _direction.get_component(i)(i2,r,j2);
 			leftStackUV.emplace_back(std::move(newLeft));
 			newLeft(j1,j2) = leftStackUU.back()(i1,i2) * baseL.get_component(i)(i1,r,j1) * baseL.get_component(i)(i2,r,j2);
 			leftStackUU.emplace_back(std::move(newLeft));
 		}
-		FullTensor right(tmp);
-		FullTensor UTV;
-		std::vector<FullTensor> tmpComponents;
+		Tensor right(tmp);
+		Tensor UTV;
+		std::vector<Tensor> tmpComponents;
 		for (size_t i=baseL.degree(); i>0; --i) {
 			const size_t currIdx = i-1;
-			std::unique_ptr<FullTensor> newComponent(new FullTensor);
+			std::unique_ptr<Tensor> newComponent(new Tensor);
 			const Tensor &UComp = baseL.get_component(currIdx);
-			FullTensor V;
-			FullTensor uuInv = pseudoInverse(leftStackUU.back());
+			Tensor V;
+			Tensor uuInv = pseudoInverse(leftStackUU.back());
 			V(i1,r,j1) =  uuInv(i1,s)* leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 // 			if (i!=baseL.degree()) {
 // 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
@@ -161,7 +161,7 @@ namespace xerus {
 		REQUIRE(components.size() == _other.components.size(), "");
 		Index i1,i2,r,j1,j2;
 		value_t result = 0;
-		FullTensor left({1,1}, [](){return 1.0;});
+		Tensor left({1,1}, [](){return 1.0;});
 		for (size_t i=0; i<components.size(); ++i) {
 			result += value_t(left(i1,i2)*components[i](i1,r,j1)*_other.components[i](i2,r,j1));
 			if (i < components.size()-1) {
@@ -183,14 +183,14 @@ namespace xerus {
 			const Tensor &baseComponent = baseL.get_component(i);
 			REQUIRE(baseComponent.dimensions == components[i].dimensions, "illegal base tensor for this tangent vector (ranks or external dimension do not coincide)");
 			if (i < components.size()-1) {
-				FullTensor newComponent(5);
+				Tensor newComponent;
 				newComponent(i1,r1,n,i2,r2) = Tensor::dirac({2,2},{0,0})(i1,i2) * baseComponent(r1,n,r2)
 											+Tensor::dirac({2,2},{0,1})(i1,i2) * components[i](r1,n,r2)
 											+Tensor::dirac({2,2},{1,1})(i1,i2) * baseComponent(r1,n,r2);
 				newComponent.reinterpret_dimensions({components[i].dimensions[0]*2, components[i].dimensions[1], components[i].dimensions[2]*2});
 				result.set_component(i, newComponent);
 			} else {
-				FullTensor newComponent(4);
+				Tensor newComponent;
 				newComponent(i1,r1,n,r2) = Tensor::dirac({2},0)(i1) * components[i](r1,n,r2)
 											+Tensor::dirac({2},1)(i1) * baseComponent(r1,n,r2);
 				newComponent.reinterpret_dimensions({components[i].dimensions[0]*2, components[i].dimensions[1], 1});
@@ -208,7 +208,7 @@ namespace xerus {
 		}
 		TTTensor result = change_direction_incomplete();
 		Index i1,i2,n,r1,r2;
-		FullTensor newComponent(4);
+		Tensor newComponent;
 		newComponent(r1,n,i2,r2) = Tensor::dirac({2},0)(i2) * baseL.get_component(0)(r1,n,r2)
 									+Tensor::dirac({2},1)(i2) * components[0](r1,n,r2);
 		newComponent.reinterpret_dimensions({1, components[0].dimensions[1], components[0].dimensions[2]*2});
@@ -234,7 +234,7 @@ namespace xerus {
 			return result;
 		}
 		TTTensor result = change_direction_incomplete();
-		FullTensor newComponent(4);
+		Tensor newComponent;
 		Index i1,i2,n,r1,r2;
 		newComponent(r1,n,i2,r2) = Tensor::dirac({2},0)(i2) * baseL.get_component(0)(r1,n,r2)
 									+Tensor::dirac({2},1)(i2) * (baseL.get_component(0)(r1,n,r2) + components[0](r1,n,r2));
@@ -262,7 +262,7 @@ namespace xerus {
 	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const Index i1,j1,r;
 		for (size_t i=0; i<_U.degree(); ++i) { REQUIRE_TEST;
-			std::unique_ptr<FullTensor> newComponent(new FullTensor);
+			std::unique_ptr<Tensor> newComponent(new Tensor);
 			(*newComponent)(i1,r,j1) = _U.get_component(i)(i1,r,j1) + _change.components[i](i1,r,j1);
 			_U.set_component(i, std::move(newComponent));
 		}

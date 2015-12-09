@@ -29,8 +29,8 @@ UNIT_TEST(TT, TTTensor_Rounding,
 
     Index i,j,k;
     
-    FullTensor A1 = FullTensor::random({2}, rnd, dist);
-    FullTensor B1(1);
+    Tensor A1 = Tensor::random({2}, rnd, dist);
+    Tensor B1;
     TTTensor TTA1(A1, 1e-14);
     B1(i) = TTA1(i);
     TEST(approx_equal(B1,A1, 1e-14));
@@ -44,8 +44,8 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TEST(approx_equal(B1,A1, 1e-14));
     
     
-    FullTensor A2 = FullTensor::random({2,2}, rnd, dist);
-    FullTensor B2(2);
+    Tensor A2 = Tensor::random({2,2}, rnd, dist);
+    Tensor B2;
     TTTensor TTA2(A2, 1e-14);
     B2(j,i) = TTA2(j,i);
     TEST(approx_equal(B2,A2, 1e-14));
@@ -59,8 +59,8 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TEST(approx_equal(B2,A2, 1e-14));
     
     
-    FullTensor A3 = FullTensor::random({2,7}, rnd, dist);
-    FullTensor B3(2);
+    Tensor A3 = Tensor::random({2,7}, rnd, dist);
+    Tensor B3;
     TTTensor TTA3(A3, 1e-14);
     B3(j,i) = TTA3(j,i);
     TEST(approx_equal(B3,A3, 1e-14));
@@ -74,8 +74,8 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TEST(approx_equal(B3,A3, 1e-14));
     
     
-    FullTensor A4 = FullTensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
-    FullTensor B4(8);
+    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
+    Tensor B4;
     TTTensor TTA4(A4, 1e-14);
     B4(j,i^7) = TTA4(j,i^7);
     TEST(approx_equal(B4,A4, 1e-14));
@@ -89,8 +89,8 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TEST(approx_equal(B4,A4, 1e-14));
     
     
-    FullTensor A5 = FullTensor::random({5,6,3,1,4,2,8,1}, rnd, dist);
-    FullTensor B5(8);
+    Tensor A5 = Tensor::random({5,6,3,1,4,2,8,1}, rnd, dist);
+    Tensor B5;
     TTTensor TTA5(A5, 1e-14);
     B5(j,i^7) = TTA5(j,i^7);
     TEST(approx_equal(B5,A5, 1e-14));
@@ -113,12 +113,12 @@ UNIT_TEST(TT, no_rounding,
 	TTTensor a = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, rnd, dist);
 	TTTensor b(a);
 	a.round(2);
-	TEST(approx_equal(FullTensor(a),FullTensor(b)));
+	TEST(approx_equal(Tensor(a),Tensor(b)));
 	TTTensor c = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, rnd, dist);
 	a(i&0) = a(i&0) + 0.0*c(i&0);
 	LOG(unit_test, a.ranks());
 	a.round(2);
 	LOG(unit_test, frob_norm(b-a));
-	TEST(approx_equal(FullTensor(a),FullTensor(b)));
+	TEST(approx_equal(Tensor(a),Tensor(b)));
 )
 

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "fullTensor.h"
+#include "tensor.h"
 #include "misc/check.h"
 #include "misc/missingFunctions.h"
 #include "misc/performanceAnalysis.h"
@@ -51,7 +51,7 @@ namespace xerus {
         implicit SparseTensor( const Tensor&  _other);
         
         /// @brief Move Constructors
-		implicit SparseTensor(       Tensor&& _other);
+// 		implicit SparseTensor(       Tensor&& _other);
         
 		/** 
 		 * @brief Constructs a SparseTensor with the given dimensions and no set entries (i.e. completely zero).
@@ -72,12 +72,12 @@ namespace xerus {
         explicit SparseTensor(std::initializer_list<size_t>&& _dimensions);
         
 		/** 
-		 * @brief Constructs a SparseTensor from the given FullTensor.
+		 * @brief Constructs a SparseTensor from the given Tensor.
 		 * @details Every entry of @a _full that is larger than @a _eps is used, all other are truncated to zero.
-		 * @param _full the FullTensor to be used.
+		 * @param _full the Tensor to be used.
 		 * @param _eps (optional) the epsilon to be used to truncate the entries.
 		 */
-        explicit SparseTensor(const FullTensor & _full, const double _eps = EPSILON);
+        explicit SparseTensor(const Tensor & _full, const double _eps);
         
 		/** 
 		 * @brief Constructs a SparseTensor with the given dimensions and uses the given function @a _f to create @a _N non zero entries.
@@ -166,7 +166,13 @@ namespace xerus {
 			return SparseTensor::random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
 		}
         
-        
+        /** 
+		 * @brief Standard assignment operator.
+		 * @param _other the Tensor to be assinged to this one.
+		 * @return a reference to this Tensor.
+		 */
+		SparseTensor& operator=(const Tensor&  _other);
+		
     };
     
     

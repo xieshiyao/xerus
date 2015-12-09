@@ -19,7 +19,7 @@
 
 /**
  * @file
- * @brief Header file for the classes defining factorisations of FullTensors.
+ * @brief Header file for the classes defining factorisations of Tensors.
  */
 
 #pragma once

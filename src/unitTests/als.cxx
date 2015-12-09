@@ -32,10 +32,10 @@ UNIT_TEST(ALS, identity,
     
     Index k,l,m,n,o,p;
     
-    FullTensor X({10, 10, 10});
-    FullTensor B = FullTensor::random({10, 10, 10}, rnd, dist);
+    Tensor X({10, 10, 10});
+    Tensor B = Tensor::random({10, 10, 10}, rnd, dist);
     
-    FullTensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
+    Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
 			return 1.0;
 		} else {
@@ -57,13 +57,13 @@ UNIT_TEST(ALS, identity,
     PerformanceData perfdata;
     
     TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-    TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-13 * 1000);
+    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-13 * 1000);
     perfdata.reset();
 	
     ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
     TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-	LOG(unit_test, "norm: " << frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)));
-    TEST(frob_norm(FullTensor(ttX)(k^3) - FullTensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
+	LOG(unit_test, "norm: " << frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)));
+    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
 )
 
 
@@ -121,7 +121,7 @@ UNIT_TEST(ALS, tutorial,
 
 	value_t max = std::max(A.get_component(0)[0],A.get_component(0)[1]);
 	max = std::max(A.get_component(0)[2], std::max(A.get_component(0)[3], max));
-	A.set_component(0, static_cast<const FullTensor&>(A.get_component(0))/max);
+	A.set_component(0, static_cast<const Tensor&>(A.get_component(0))/max);
 	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);

@@ -23,25 +23,25 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, Factors,
+UNIT_TEST(Tensor, Factors,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({2,7,5,5,2,7}, rnd, dist);
-    FullTensor B = FullTensor::random({2,7,5,5,2,7}, rnd, dist);
-    FullTensor A3 = 3*A;
-    FullTensor B7 = 7*B;
+    Tensor A = Tensor::random({2,7,5,5,2,7}, rnd, dist);
+    Tensor B = Tensor::random({2,7,5,5,2,7}, rnd, dist);
+    Tensor A3 = 3*A;
+    Tensor B7 = 7*B;
 	TEST(!A.has_factor());
 	TEST(!B.has_factor());
 	TEST(A3.has_factor());
 	TEST(B7.has_factor());
 	
-    FullTensor Q(4);
-    FullTensor R(4);
-    FullTensor res1(4);
-    FullTensor res2(2);
-    FullTensor res3(4);
-    FullTensor res4(6);
+    Tensor Q;
+    Tensor R;
+    Tensor res1;
+    Tensor res2;
+    Tensor res3;
+    Tensor res4;
     
 	
     
@@ -56,11 +56,11 @@ UNIT_TEST(FullTensor, Factors,
     TEST(approx_equal(res4, B, 1e-12));
 )
 
-UNIT_TEST(FullTensor, value_t_Product,
-    FullTensor A({4,2,2,7});
-    FullTensor B(4);
-    FullTensor C(4);
-    FullTensor D(4);
+UNIT_TEST(Tensor, value_t_Product,
+    Tensor A({4,2,2,7});
+    Tensor B;
+    Tensor C;
+    Tensor D;
     for(size_t i = 0; i < A.size; ++i) {
         A[i] = 73;
     }

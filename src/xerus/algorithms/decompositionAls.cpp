@@ -35,9 +35,9 @@ namespace xerus {
 
 	void decomposition_als(TTTensor& _x, const Tensor& _b, const double _eps, const size_t _maxIterations) {
 		Index k, iU, iX, iL, rU, rL;
-		FullTensor newXi;
+		Tensor newXi;
 		
-		double lastResidual = frob_norm(FullTensor(_x) - _b);
+		double lastResidual = frob_norm(Tensor(_x) - _b);
 //         LOG(bla, "Initial residual " << lastResidual);
 		
 		for(size_t iteration = 0; iteration < _maxIterations; ++iteration) {
@@ -57,7 +57,7 @@ namespace xerus {
 				_x.component(pos)(rU, iX, rL) = split.first(iU&1, rU)*split.second(rL, iL&1)*_b(iU^pos, iX, iL&(pos+1));
 			}
 			
-			double residual = frob_norm(FullTensor(_x) - _b);
+			double residual = frob_norm(Tensor(_x) - _b);
 // 			LOG(bla, "New residual " << residual << ", residual change " << (lastResidual-residual)/residual);
 			if(residual < EPSILON || (lastResidual-residual)/residual < _eps) { return; }
 			lastResidual = residual;

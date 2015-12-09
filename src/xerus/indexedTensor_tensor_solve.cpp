@@ -24,7 +24,7 @@
 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
@@ -33,14 +33,14 @@ namespace xerus {
 
     void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b) {
         // x takes the dimensions of A -- also ensures that every index of x is contained in A
-		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::Nothing);
+		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::None);
         
         const std::vector<Index> AIndices = _a.get_assigned_indices();
         const std::vector<Index> bIndices = _b.get_assigned_indices();
 		
         IF_CHECK( _x.check_indices(false); )
         
-        REQUIRE(!_x.tensorObjectReadOnly->is_sparse() && !_b.tensorObjectReadOnly->is_sparse(), "At the moment we only allow FullTensors in solve.");
+        REQUIRE(!_x.tensorObjectReadOnly->is_sparse() && !_b.tensorObjectReadOnly->is_sparse(), "At the moment we only allow Tensors in solve.");
         #ifdef _CHECK
             for(size_t i = 0; i < bAssIndices.numIndices; ++i) {
                 REQUIRE(!bAssIndices.indexOpen[i] || contains(AAssIndices.indices, bAssIndices.indices[i]), "Every open index of b must be contained in A.");
@@ -77,11 +77,11 @@ namespace xerus {
         dimensionsA.insert(dimensionsA.end(), dimensionsX.begin(), dimensionsX.end());
         
         //We need tmp objects for A and b, because Lapacke wants to destroys the input
-        IndexedTensor<Tensor> tmpA(new FullTensor(std::move(dimensionsA), DONT_SET_ZERO()), orderA, true);
+		IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), Tensor::Representation::Dense, Tensor::Initialisation::None), orderA, true);
         evaluate(tmpA, _a);
         tmpA.tensorObject->ensure_own_data();
         
-        IndexedTensor<Tensor> tmpB(new FullTensor(std::move(dimensionsB), DONT_SET_ZERO()), orderB, true);
+		IndexedTensor<Tensor> tmpB(new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true);
         evaluate(tmpB, _b);
         tmpB.tensorObject->ensure_own_data();
         
@@ -89,7 +89,7 @@ namespace xerus {
         std::unique_ptr<IndexedTensor<Tensor>> saveSlotX;
         const IndexedTensorWritable<Tensor>* usedX;
         if(orderX != _x.indices) {
-            saveSlotX.reset(new IndexedTensor<Tensor>(new FullTensor(std::move(dimensionsX), DONT_SET_ZERO()), orderX, true));
+			saveSlotX.reset(new IndexedTensor<Tensor>(new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), orderX, true));
             usedX = saveSlotX.get();
         } else {
             usedX = &_x;
@@ -102,7 +102,7 @@ namespace xerus {
         if(tmpA.tensorObjectReadOnly->is_sparse()) {
             LOG(fatal, "Sparse solve not yet implemented.");
         } else {
-            blasWrapper::solve_least_squares_destructive(static_cast<FullTensor*>(usedX->tensorObject)->get_unsanitized_dense_data(), static_cast<FullTensor*>(tmpA.tensorObject)->get_unsanitized_dense_data(), M, N, static_cast<FullTensor*>(tmpB.tensorObject)->get_unsanitized_dense_data());
+            blasWrapper::solve_least_squares_destructive(static_cast<Tensor*>(usedX->tensorObject)->get_unsanitized_dense_data(), static_cast<Tensor*>(tmpA.tensorObject)->get_unsanitized_dense_data(), M, N, static_cast<Tensor*>(tmpB.tensorObject)->get_unsanitized_dense_data());
         }
         
         if(saveSlotX) { evaluate(_x, *usedX); }
@@ -129,7 +129,7 @@ namespace xerus {
                 dimensionsCount += idx.span;
             }
         }
-        IndexedTensorMoveable<Tensor> tmpX(new FullTensor(std::move(dimensionsX), DONT_SET_ZERO()), std::move(indicesX));
+        IndexedTensorMoveable<Tensor> tmpX(new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), std::move(indicesX));
         
         solve(tmpX, _A, _b);
         return tmpX;

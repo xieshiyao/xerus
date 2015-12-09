@@ -25,7 +25,7 @@
 #pragma once
 
 #include <vector>
-#include "../fullTensor.h"
+#include "../tensor.h"
 
 namespace xerus {
 
@@ -37,7 +37,7 @@ namespace xerus {
 		///@note components will not be changed. use a vector transport to update them accordingly instead of calling this function
 		void set_base(const TTTensor &_newBase);
 		
-		std::vector<FullTensor> components;
+		std::vector<Tensor> components;
 		///@brief creates a tangent vector by projecting @a _direction onto the tangent plane located at @a _base
 		TTTangentVector(const TTTensor &_base, const TTTensor &_direction);
 		TTTangentVector &operator+=(const TTTangentVector &_rhs);

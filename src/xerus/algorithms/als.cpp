@@ -33,7 +33,7 @@
 namespace xerus {
 
     void ALSVariant::lapack_solver(const TensorNetwork &_A, Tensor &_x, const Tensor &_b) {
-        FullTensor A(_A);
+        Tensor A(_A);
         Index i,j;
         _x(i&0) = _b(j&0) / A(j/2, i/2);
 //         REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
@@ -63,7 +63,7 @@ namespace xerus {
 			_x.set_component(firstOptimizedIndex+1, std::move(curComponent));
 			
 			//TODO sparse
-			_x.set_component(firstOptimizedIndex, FullTensor(
+			_x.set_component(firstOptimizedIndex, Tensor(
 				{dimensionProd, localDim, newDimensionProd},
 				[&](const std::vector<size_t> &_idx){
 					if (_idx[0]*localDim + _idx[1] == _idx[2]) {
@@ -95,7 +95,7 @@ namespace xerus {
 			_x.set_component(firstNotOptimizedIndex-2, std::move(curComponent));
 			
 			//TODO sparse
-			_x.set_component(firstNotOptimizedIndex-1, FullTensor(
+			_x.set_component(firstNotOptimizedIndex-1, Tensor(
 				{newDimensionProd, localDim, dimensionProd},
 				[&](const std::vector<size_t> &_idx){
 					if (_idx[0] == _idx[1]*dimensionProd + _idx[2]) {
@@ -164,8 +164,8 @@ namespace xerus {
         const size_t d = _x.degree();
         Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
         
-        std::vector<FullTensor> xAxL, xAxR;
-        std::vector<FullTensor> bxL, bxR;
+        std::vector<Tensor> xAxL, xAxR;
+        std::vector<Tensor> bxL, bxR;
         
 		bool cannoAtTheEnd = _x.cannonicalized;
 		size_t corePosAtTheEnd = _x.corePosition;
@@ -173,8 +173,8 @@ namespace xerus {
 		std::pair<size_t, size_t> optimizedRange = prepare_x_for_als(_x);
 
         // Create stacks of contracted network-parts
-		FullTensor tmpA({1,1,1}, [](){return 1.0;});
-		FullTensor tmpB({1,1}, [](){return 1.0;});
+		Tensor tmpA({1,1,1}, [](){return 1.0;});
+		Tensor tmpB({1,1}, [](){return 1.0;});
 		
 		xAxL.emplace_back(tmpA);
 		bxL.emplace_back(tmpB);
@@ -199,7 +199,7 @@ namespace xerus {
         }
         
         TensorNetwork ATilde;
-        FullTensor BTilde;
+        Tensor BTilde;
         value_t lastEnergy2 = 1e102;
         value_t lastEnergy = 1e101;
         value_t energy = 1e100;
@@ -217,7 +217,7 @@ namespace xerus {
 				};
 			} else {
 				energy_f = [&](){
-					FullTensor res;
+					Tensor res;
 					// 0.5*<x,Ax> - <x,b>
 					res() = 0.5*xAxR.back()(cr1, cr2, cr3) 
 							* _x.get_component(currIndex)(r1, n1, cr1) * _A.get_component(currIndex)(r2, n1, n2, cr2) * _x.get_component(currIndex)(r3, n2, cr3) 
@@ -235,7 +235,7 @@ namespace xerus {
 				};
 			} else {
 				energy_f = [&](){
-					FullTensor res;
+					Tensor res;
 					// 0.5*<x,Ax> - <x,b> = 0.5*|x_i|^2 - <x,b>
 					res() = 0.5*_x.get_component(currIndex)(r1, n1, cr1) * _x.get_component(currIndex)(r1, n1, cr1) 
 							- bxR.back()(cr1, cr2) 
@@ -267,7 +267,7 @@ namespace xerus {
 			// Change component tensor if the local residual is large enough
 			if (_Ap) {
 				if (minimumLocalResidual <= 0 || frob_norm(IndexedTensorMoveable<Tensor>(ATilde(r1^3, r2^3)*_x.get_component(currIndex)(r2^3)) - BTilde(r1^3)) > minimumLocalResidual) {
-					FullTensor tmpX;
+					Tensor tmpX;
 					localSolver(ATilde, tmpX, BTilde);
 					_x.set_component(currIndex, tmpX);
 					changedSmth = true;

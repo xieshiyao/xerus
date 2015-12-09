@@ -25,7 +25,8 @@
 #include <xerus/tensor.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
-#include <xerus/fullTensor.h>
+#include <xerus/selectedFunctions.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/blasLapackWrapper.h>
 
@@ -34,7 +35,7 @@ namespace xerus {
 	
 	Tensor::Tensor(const Representation _representation) : Tensor(std::vector<size_t>({}), _representation) { } 
 	
-	Tensor::Tensor( Tensor&& _other ) : Tensor(_other) {} // TODO improve
+// 	Tensor::Tensor( Tensor&& _other ) : Tensor(_other) {} // TODO improve
 	
 	Tensor::Tensor(const std::vector<size_t>& _dimensions, const Representation _representation, const Initialisation _init) 
 		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
@@ -43,6 +44,9 @@ namespace xerus {
 		
 		if(representation == Representation::Dense) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			if(_init == Initialisation::Zero) {
+				misc::array_set_zero(denseData.get(), size);
+			}
 		} else {
 			sparseData.reset(new std::map<size_t, value_t>());
 		}
@@ -55,6 +59,9 @@ namespace xerus {
 		
 		if(representation == Representation::Dense) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			if(_init == Initialisation::Zero) {
+				misc::array_set_zero(denseData.get(), size);
+			}
 		} else {
 			sparseData.reset(new std::map<size_t, value_t>());
 		}
@@ -67,21 +74,21 @@ namespace xerus {
 	: dimensions(_dimensions), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::move(_data)) { }
     
     
-    Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t()>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+    Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t()>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		for (size_t i=0; i < size; ++i) {
 			realData[i] = _f();
 		}
 	}
 	
-	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const size_t)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const size_t)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		for (size_t i=0; i < size; ++i) {
 			realData[i] = _f(i);
 		}
 	}
 	
-	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::Nothing) {
+	Tensor::Tensor(const std::vector<size_t>& _dimensions, const std::function<value_t(const std::vector<size_t>&)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		std::vector<size_t> multIdx(degree(), 0);
 		size_t idx = 0;
@@ -142,13 +149,13 @@ namespace xerus {
 	}
 	
 	
-	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions, _unused_ DONT_SET_ZERO) const {
-		return new Tensor(_dimensions, representation, Initialisation::Nothing);
+	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions, const Initialisation _init) const {
+		return new Tensor(_dimensions, representation, Initialisation::None);
 	}
 	
 	
-	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions, _unused_ DONT_SET_ZERO) const {
-		return new Tensor(_dimensions, representation, Initialisation::Nothing);
+	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions, const Initialisation _init) const {
+		return new Tensor(_dimensions, representation, Initialisation::None);
 	}
     
     
@@ -156,14 +163,8 @@ namespace xerus {
     
     
     
-    
-    
-    
-    
-    
-    
-    FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
-		FullTensor ret(_dimensions, DONT_SET_ZERO());
+    Tensor Tensor::ones(const std::vector<size_t>& _dimensions) {
+		Tensor ret(_dimensions, Representation::Dense, Initialisation::None);
 		value_t* const data = ret.get_dense_data();
 		for(size_t i = 0; i < ret.size; ++i) {
 			data[i] = 1.0;
@@ -229,15 +230,16 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
-	Tensor& Tensor::operator=( Tensor&& _other) {
-		std::swap(dimensions, _other.dimensions);
-		std::swap(size, _other.size);
-		factor = _other.factor;
-		std::swap(denseData, _other.denseData);
-		std::swap(sparseData, _other.sparseData);
-		
-		return *this;
-	}
+// 	Tensor& Tensor::operator=( Tensor&& _other) {
+// 		std::swap(dimensions, _other.dimensions);
+// 		std::swap(size, _other.size);
+// 		factor = _other.factor;
+// 		std::swap(representation, _other.representation);
+// 		std::swap(denseData, _other.denseData);
+// 		std::swap(sparseData, _other.sparseData);
+// 		
+// 		return *this;
+// 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
@@ -995,13 +997,13 @@ namespace xerus {
         
 		const double avgNorm = (_a.frob_norm() + _b.frob_norm())/2.0;
         if (!_a.is_sparse() && !_b.is_sparse()) { // Special treatment for two fullTensors because blas has better accuracy
-            return frob_norm(static_cast<const FullTensor&>(_a) - static_cast<const FullTensor&>(_b)) <= _eps*avgNorm;
+            return frob_norm(static_cast<const Tensor&>(_a) - static_cast<const Tensor&>(_b)) <= _eps*avgNorm;
 		} else if(_a.is_sparse()) {
-			FullTensor bma(_b);
+			Tensor bma(_b);
 			bma -= _a;
 			return frob_norm(bma) <= _eps*avgNorm;
 		} else if(_b.is_sparse()) {
-			FullTensor amb(_a);
+			Tensor amb(_a);
 			amb -= _b;
 			return frob_norm(amb) <= _eps*avgNorm;
         } else { // Special treatment if both are sparse, because better asyptotic is possible.

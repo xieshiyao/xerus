@@ -23,11 +23,11 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, SVD_Identity,
-    FullTensor A({2,2,2,2});
-    FullTensor res1({2,2,4});
-    FullTensor res2({4,4});
-    FullTensor res3({4,2,2});
+UNIT_TEST(Tensor, SVD_Identity,
+    Tensor A({2,2,2,2});
+    Tensor res1({2,2,4});
+    Tensor res2({4,4});
+    Tensor res3({4,2,2});
     
     A[{0,0,0,0}] = 1;
     A[{0,1,0,1}] = 1;
@@ -47,15 +47,15 @@ UNIT_TEST(FullTensor, SVD_Identity,
 	MTEST(frob_norm(res3(k,m,l)*res3(k,n,l) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 )
 
-UNIT_TEST(FullTensor, SVD_Random_512x512,
+UNIT_TEST(Tensor, SVD_Random_512x512,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({8,8,8,8,8,8}, rnd, dist);
-    FullTensor res1(4);
-    FullTensor res2(2);
-    FullTensor res3(4);
-    FullTensor res4(6);
+    Tensor A = Tensor::random({8,8,8,8,8,8}, rnd, dist);
+    Tensor res1;
+    Tensor res2;
+    Tensor res3;
+    Tensor res4;
      
     
     Index i, j, k, l, m, n, o, p, r, s;
@@ -85,12 +85,12 @@ UNIT_TEST(FullTensor, SVD_Random_512x512,
 	MTEST(frob_norm(res3(l,n,m,o)*res3(l,n,m,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
-UNIT_TEST(FullTensor, SVD_soft_thresholding,
+UNIT_TEST(Tensor, SVD_soft_thresholding,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({3,5,2,7,3,12}, rnd, dist);
-    FullTensor Ax, U, V, Us, Vs;
+    Tensor A = Tensor::random({3,5,2,7,3,12}, rnd, dist);
+    Tensor Ax, U, V, Us, Vs;
     SparseTensor S, Ss;
     
     Index i, j, k, l, m, n, o, p, r, s;
@@ -118,15 +118,15 @@ UNIT_TEST(FullTensor, SVD_soft_thresholding,
 	MTEST(frob_norm(V(o,l,m,n)*V(p,l,m,n) - Tensor::identity(S.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
-UNIT_TEST(FullTensor, SVD_Random_Order_Six,
+UNIT_TEST(Tensor, SVD_Random_Order_Six,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({9,7,5,5,9,7}, rnd, dist);
-    FullTensor res1(4);
-    FullTensor res2(2);
-    FullTensor res3(4);
-    FullTensor res4(6);
+    Tensor A = Tensor::random({9,7,5,5,9,7}, rnd, dist);
+    Tensor res1;
+    Tensor res2;
+    Tensor res3;
+    Tensor res4;
      
     
     Index i, j, k, l, m, n, o, p, r, s;
@@ -144,19 +144,19 @@ UNIT_TEST(FullTensor, SVD_Random_Order_Six,
 	MTEST(frob_norm(res3(o,l,m,n)*res3(p,l,m,n) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )
 
-UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
+UNIT_TEST(Tensor, QR_AND_RQ_Random_Order_Six,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({7,5,9,7,5,9}, rnd, dist);
-    FullTensor Q(4);
-    FullTensor R(4);
-    FullTensor Q2(3);
-    FullTensor R2(5);
-    FullTensor Q3(5);
-    FullTensor R3(3);
-    FullTensor Q4(4);
-    FullTensor res4(6);
+    Tensor A = Tensor::random({7,5,9,7,5,9}, rnd, dist);
+    Tensor Q;
+    Tensor R;
+    Tensor Q2;
+    Tensor R2;
+    Tensor Q3;
+    Tensor R3;
+    Tensor Q4;
+    Tensor res4;
     
     Index i, j, k, l, m, n, o, p, q, r;
 
@@ -220,20 +220,20 @@ UNIT_TEST(FullTensor, QR_AND_RQ_Random_Order_Six,
 )
 
 
-UNIT_TEST(FullTensor, QC,
+UNIT_TEST(Tensor, QC,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
-    FullTensor A = FullTensor::random({2,2,2,2,2,2}, rnd, dist);
-	FullTensor B({2,3}, [](size_t i){return double(i);});
-    FullTensor Q(4);
-    FullTensor R(4);
-    FullTensor Q2(3);
-    FullTensor R2(5);
-    FullTensor Q3(5);
-    FullTensor R3(3);
-    FullTensor Q4(4);
-    FullTensor res4(6);
+    Tensor A = Tensor::random({2,2,2,2,2,2}, rnd, dist);
+	Tensor B({2,3}, [](size_t i){return double(i);});
+    Tensor Q;
+    Tensor R;
+    Tensor Q2;
+    Tensor R2;
+    Tensor Q3;
+    Tensor R3;
+    Tensor Q4;
+    Tensor res4;
     
     Index i, j, k, l, m, n, o, p, q, r;
 	

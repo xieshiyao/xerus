@@ -26,7 +26,7 @@
 #include <xerus/tensorNetwork.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensor_TN_operators.h>
@@ -48,7 +48,7 @@ namespace xerus {
 		const size_t numComponents = _degree/N;
 		
 		if (numComponents == 0) {
-			nodes.emplace_back(std::unique_ptr<Tensor>(new FullTensor()));
+			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
 			return;
 		}
 		REQUIRE(nodes.size() == 0, "Internal Error,");
@@ -72,7 +72,7 @@ namespace xerus {
 		neighbors.emplace_back(1,0,1,false);
 		
 		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
+			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
 			std::move(neighbors)
 		);
 		
@@ -85,7 +85,7 @@ namespace xerus {
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
 			nodes.emplace_back(
-				std::unique_ptr<Tensor>(new FullTensor(neighbors.size())), 
+				std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), 
 				std::move(neighbors)
 			);
 		}
@@ -93,7 +93,7 @@ namespace xerus {
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
 		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new FullTensor({1},[](){return 1.0;})), 
+			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
 			std::move(neighbors)
 		);
 		
@@ -134,14 +134,14 @@ namespace xerus {
 		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
 		if (!isOperator) {
 			if(_tensor.is_sparse()) {
-				FullTensor tmpTensor(static_cast<const SparseTensor&>(_tensor)); // TODO Sparse SVD?
+				Tensor tmpTensor(static_cast<const SparseTensor&>(_tensor)); // TODO Sparse SVD?
 				workingData = tmpTensor.get_internal_dense_data();
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
-				misc::array_copy(workingData.get(), static_cast<const FullTensor&>(_tensor).get_unsanitized_dense_data(), _tensor.size);
+				misc::array_copy(workingData.get(), static_cast<const Tensor&>(_tensor).get_unsanitized_dense_data(), _tensor.size);
 			}
 		} else {
-			FullTensor tmpTensor(degree());
+			Tensor tmpTensor(std::vector<size_t>(degree(), 1));
 			std::vector<Index> presentIndices, newIndices;
 			for(size_t i = 0; i < degree(); ++i) { presentIndices.emplace_back(); }
 			for(size_t i = 0; i < numComponents; ++i) {
@@ -173,18 +173,18 @@ namespace xerus {
 				newRank-=1;
 			}
 			
-			// Create a FullTensor for U
+			// Create a Tensor for U
 			std::vector<size_t> constructionDim;
 			constructionDim.emplace_back(oldRank);
 			constructionDim.emplace_back(dimensions[position]);
 			if (isOperator) { constructionDim.emplace_back(dimensions[position+numComponents]); }
 			constructionDim.emplace_back(newRank);
 			if (newRank == maxRank) {
-				nxtTensor.reset(new FullTensor(std::move(constructionDim), std::move(currentU)) );
+				nxtTensor.reset(new Tensor(std::move(constructionDim), std::move(currentU)) );
 			} else {
-				nxtTensor.reset(new FullTensor(std::move(constructionDim), DONT_SET_ZERO()) );
+				nxtTensor.reset(new Tensor(std::move(constructionDim), Tensor::Representation::Dense, Tensor::Initialisation::None) );
 				for (size_t i = 0; i < leftDim; ++i) {
-					misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
+					misc::array_copy(static_cast<Tensor*>(nxtTensor.get())->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
 				}
 			}
 			
@@ -200,13 +200,13 @@ namespace xerus {
 			oldRank = newRank;
 		}
 		
-		// Create FullTensor for Vt
+		// Create Tensor for Vt
 		if (!isOperator) {
-			nxtTensor.reset(new FullTensor({oldRank, dimensions[numComponents-1], 1}, DONT_SET_ZERO()) );
+			nxtTensor.reset(new Tensor({oldRank, dimensions[numComponents-1], 1}, Tensor::Representation::Dense, Tensor::Initialisation::None) );
 		} else {
-			nxtTensor.reset(new FullTensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
+			nxtTensor.reset(new Tensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, Tensor::Representation::Dense, Tensor::Initialisation::None) );
 		}
-		misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
+		misc::array_copy(static_cast<Tensor*>(nxtTensor.get())->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
 		
 		// set last component tensor to Vt
 		set_component(numComponents-1, std::move(nxtTensor));
@@ -255,7 +255,7 @@ namespace xerus {
 				constructionVector.push_back(_dimensions[i+j*numComponents]);
 			}
 			constructionVector.push_back(1);
-			result.set_component(i, std::unique_ptr<Tensor>(new FullTensor(constructionVector, [](const std::vector<size_t> &_idx){
+			result.set_component(i, std::unique_ptr<Tensor>(new Tensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
 				} else {
@@ -681,21 +681,21 @@ namespace xerus {
 		
 		const size_t numComponents = _A.degree() / N;
 		
-		std::unique_ptr<FullTensor> newComponent;
+		std::unique_ptr<Tensor> newComponent;
 		for (size_t i=0; i<numComponents; ++i) {
 			//TODO sparse TT
 			REQUIRE(!_A.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 			REQUIRE(!_B.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
-			const FullTensor &componentA = static_cast<const FullTensor &>(_A.get_component(i));
-			const FullTensor &componentB = static_cast<const FullTensor &>(_B.get_component(i));
+			const Tensor &componentA = static_cast<const Tensor &>(_A.get_component(i));
+			const Tensor &componentB = static_cast<const Tensor &>(_B.get_component(i));
 			size_t externalDim;
 			if (isOperator) {
-				newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], componentA.dimensions[2], 
 											componentA.dimensions.back()*componentB.dimensions.back()   }));
 				externalDim = componentA.dimensions[1] * componentA.dimensions[2];
 			} else {
-				newComponent.reset(new FullTensor({componentA.dimensions.front()*componentB.dimensions.front(), 
+				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], 
 											componentA.dimensions.back()*componentB.dimensions.back()   }));
 				externalDim = componentA.dimensions[1];
@@ -741,9 +741,9 @@ namespace xerus {
 				const size_t newLeftRank = currComp.dimensions.front()*(currComp.dimensions.front()+1)/2;
 				const size_t newRightRank = currComp.dimensions.back()*(currComp.dimensions.back()+1)/2;
 				
-				FullTensor newComponent(isOperator ? 
+				Tensor newComponent(isOperator ? 
 					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), Tensor::Representation::Dense, Tensor::Initialisation::None );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
 				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
@@ -770,9 +770,9 @@ namespace xerus {
 				const size_t newLeftRank = currComp.dimensions.front()*currComp.dimensions.front();
 				const size_t newRightRank = currComp.dimensions.back()*currComp.dimensions.back();
 				
-				FullTensor newComponent(isOperator ? 
+				Tensor newComponent(isOperator ? 
 					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), DONT_SET_ZERO() );
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), Tensor::Representation::Dense, Tensor::Initialisation::None );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
 				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
@@ -783,7 +783,7 @@ namespace xerus {
 					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
 						for (size_t n = 0; n < externalDim; ++n) {
 							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								misc::array_scaled_copy(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const FullTensor&>(currComp).get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
+								misc::array_scaled_copy(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const Tensor&>(currComp).get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
 								newPos += currComp.dimensions.back();
 							}
 						}
@@ -1398,14 +1398,14 @@ namespace xerus {
 				*static_cast<SparseTensor*>(nextTensor.get()) += (*static_cast<const SparseTensor*>(&otherComponent));
 			} else { // at most one sparse
 				if(myComponent.is_sparse()){
-					nextTensor.reset(new FullTensor(*static_cast<const SparseTensor*>(&myComponent)));
+					nextTensor.reset(new Tensor(*static_cast<const SparseTensor*>(&myComponent)));
 				} else {
-					nextTensor.reset(new FullTensor(*static_cast<const FullTensor*>(&myComponent)));
+					nextTensor.reset(new Tensor(*static_cast<const Tensor*>(&myComponent)));
 				}
 				if(otherComponent.is_sparse()){
-					*static_cast<FullTensor*>(nextTensor.get()) += static_cast<const SparseTensor&>(otherComponent);
+					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const SparseTensor&>(otherComponent);
 				} else {
-					*static_cast<FullTensor*>(nextTensor.get()) += static_cast<const FullTensor&>(otherComponent);
+					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const Tensor&>(otherComponent);
 				}
 			}
 			
@@ -1423,14 +1423,14 @@ namespace xerus {
 			// TODO sparse
 			REQUIRE(!realMe.tensorObjectReadOnly->nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
 			REQUIRE(!realOther.nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
-			FullTensor &myComponent = *static_cast<FullTensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
-			FullTensor &otherComponent = *static_cast<FullTensor*>(realOther.nodes[position+1].tensorObject.get());
+			Tensor &myComponent = *static_cast<Tensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
+			Tensor &otherComponent = *static_cast<Tensor*>(realOther.nodes[position+1].tensorObject.get());
 			
 			// Structure has to be (for degree 4)
 			// (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
 			// 			 ( 0  R2 )   ( 0  R3 )   ( R4 )
 			
-			// Create a FullTensor for Node
+			// Create a Tensor for Node
 			std::vector<size_t> nxtDimensions;
 			if (position == 0) { 
 				nxtDimensions.emplace_back(1);
@@ -1445,8 +1445,8 @@ namespace xerus {
 				nxtDimensions.emplace_back(myComponent.dimensions.back()+otherComponent.dimensions.back());
 			}
 			
-			std::unique_ptr<Tensor> newComponent(new FullTensor(std::move(nxtDimensions)) );
-			value_t * const componentData = static_cast<FullTensor*>(newComponent.get())->get_unsanitized_dense_data();
+			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions)) );
+			value_t * const componentData = static_cast<Tensor*>(newComponent.get())->get_unsanitized_dense_data();
 			
 			
 			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();
@@ -1601,7 +1601,7 @@ namespace xerus {
 				}
 			}
 		}
-		// Use FullTensor fallback
+		// Use Tensor fallback
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
 		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
 		std::unique_ptr<Tensor> otherReordered(otherFull->construct_new());

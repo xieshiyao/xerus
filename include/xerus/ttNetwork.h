@@ -25,7 +25,7 @@
 #pragma once
 
 #include "contractionHeuristic.h"
-#include "fullTensor.h"
+#include "tensor.h"
 #include "index.h"
 #include "misc/missingFunctions.h"
 #include "misc/check.h"
@@ -66,7 +66,7 @@ namespace xerus {
 		explicit TTNetwork(const size_t _degree);
 		
 		/** 
-		* @brief Constructs a TTNetwork from the given FullTensor.
+		* @brief Constructs a TTNetwork from the given Tensor.
 		* @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
 		* @param _tensor The Tensor to decompose.
 		* @param _eps the accuracy to be used in the decomposition.
@@ -75,7 +75,7 @@ namespace xerus {
 		explicit TTNetwork(const Tensor& _tensor, const double _eps=EPSILON, const size_t _maxRank=std::numeric_limits<size_t>::max());
 		
 		/** 
-		* @brief Constructs a TTNetwork from the given FullTensor.
+		* @brief Constructs a TTNetwork from the given Tensor.
 		* @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
 		* @param _tensor The Tensor to decompose.
 		* @param _eps the accuracy to be used in the decomposition.
@@ -91,7 +91,7 @@ namespace xerus {
 		
 		/** 
 		* @brief Transforms a given TensorNetwork to a TTNetwork.
-		* @details This is not yet implemented different from casting to FullTensor and then using a HOSVD.
+		* @details This is not yet implemented different from casting to Tensor and then using a HOSVD.
 		* @param _network The network to transform.
 		* @param _eps the accuracy to be used in the transformation.
 		*/
@@ -146,9 +146,9 @@ namespace xerus {
 				size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
 
 				if(isOperator) {
-					result.set_component(i, FullTensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
+					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
 				} else {
-					result.set_component(i, FullTensor::random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
+					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
 				}
 			}
 			result.cannonicalize_left();
@@ -187,7 +187,7 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	protected:
-		static void construct_train_from_full(TensorNetwork& _out, const FullTensor& _A, const double _eps);
+		static void construct_train_from_full(TensorNetwork& _out, const Tensor& _A, const double _eps);
 		
 		static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
 			

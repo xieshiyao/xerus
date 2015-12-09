@@ -6,7 +6,7 @@ using namespace xerus;
 
 
 UNIT_TEST(Tutorials, quick_start,
-	xerus::FullTensor A({512,512}, [](const std::vector<size_t> &idx){
+	xerus::Tensor A({512,512}, [](const std::vector<size_t> &idx){
 		if (idx[0] == idx[1]) {
 			return 2.0;
 		} else if (idx[1] == idx[0]+1 || idx[1]+1 == idx[0]) {
@@ -24,7 +24,7 @@ UNIT_TEST(Tutorials, quick_start,
 // 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
 // 	TEST(ttA.ranks()
 	
-	xerus::FullTensor b({512}, []() {
+	xerus::Tensor b({512}, []() {
 		return 1.0;
 	});
 	
@@ -43,9 +43,9 @@ UNIT_TEST(Tutorials, quick_start,
 	TEST(residual < 1e-9);
 // 	std::cout << "residual: " << residual << std::endl;
 	
-	xerus::FullTensor x;
+	xerus::Tensor x;
 	x(j^9) = b(i^9) / A(i^9, j^9);
 	TEST(frob_norm(x(i&0) - ttx(i&0)) < 1e-9);
-// 	std::cout << FullTensor(ttx).to_string() << std::endl;
+// 	std::cout << Tensor(ttx).to_string() << std::endl;
 // 	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
 )

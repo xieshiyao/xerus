@@ -29,8 +29,8 @@ namespace xerus { namespace examples {
 	TTTensor peaking_diagonals(size_t _degree, size_t _n, value_t _alpha) {
 		REQUIRE(_degree >= 2, "");
 		REQUIRE(_n>=2, "");
-		TTTensor e1(FullTensor({_n}, [](){return 1.0;}));
-		TTTensor cross(FullTensor({_n,_n}, [&](const std::vector<size_t> &idx){
+		TTTensor e1(Tensor({_n}, [](){return 1.0;}));
+		TTTensor cross(Tensor({_n,_n}, [&](const std::vector<size_t> &idx){
 			return 1.0/(double(idx[0]>idx[1]?idx[0]-idx[1]:idx[1]-idx[0]) + _alpha) + 1.0/(double(idx[0])+_alpha) + 1.0/(double(idx[1])+_alpha);
 		}));
 		

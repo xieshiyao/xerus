@@ -26,6 +26,7 @@
 #include <xerus/sparseTensor.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/indexedTensor_TN_operators.h>
+#include <xerus/selectedFunctions.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -95,14 +96,14 @@ namespace xerus {
 	
 	
 	template<class MeasurmentSet>
-	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<FullTensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, const std::unique_ptr<FullTensor*[]>& _stackMem, const bool _forward) {
+	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<Tensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, const std::unique_ptr<Tensor*[]>& _stackMem, const bool _forward) {
 		// Direct reference to the stack (withou Mem)
-		FullTensor** const stack(_stackMem.get()+numMeasurments);
+		Tensor** const stack(_stackMem.get()+numMeasurments);
 		
 		// Temporary map. For each stack entry (i.e. measurement number + corePosition) gives a measurement number of a stack entry (at same corePosition) that shall have an equal value (or its own number otherwise). 
 		std::vector<size_t> calculationMap(degree*numMeasurments);
 		
-		// Count how many FullTensors we need for the stacks
+		// Count how many Tensors we need for the stacks
 		size_t numUniqueStackEntries = 0;
 		
 		// Create a reordering map
@@ -153,7 +154,7 @@ namespace xerus {
 		
 		// Create the stack
 		numUniqueStackEntries++; // +1 for the special positions -1 and degree.
-		_stackSaveSlot.reset(new FullTensor[numUniqueStackEntries]); 
+		_stackSaveSlot.reset(new Tensor[numUniqueStackEntries]); 
 		size_t usedSlots = 0; 
 		_stackSaveSlot[usedSlots++] = Tensor::ones({1}); // Special slot reserved for the the position -1 and degree stacks
 		
@@ -186,17 +187,17 @@ namespace xerus {
 		#pragma omp parallel for schedule(static)
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(const size_t i : forwardUpdates[corePosition]) {
-				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, Tensor::Initialisation::Nothing);
+				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, Tensor::Initialisation::None);
 			}
 			for(const size_t i : backwardUpdates[corePosition]) {
-				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, Tensor::Initialisation::Nothing);
+				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, Tensor::Initialisation::None);
 			}
 		}
 	}
 	
 	template<class MeasurmentSet>
-	std::vector<FullTensor> ADFVariant::InternalSolver<MeasurmentSet>::get_fixed_components(const Tensor& _component) {
-		std::vector<FullTensor> fixedComponents(_component.dimensions[1]);
+	std::vector<Tensor> ADFVariant::InternalSolver<MeasurmentSet>::get_fixed_components(const Tensor& _component) {
+		std::vector<Tensor> fixedComponents(_component.dimensions[1]);
 		
 		for(size_t i = 0; i < _component.dimensions[1]; ++i) {
 			fixedComponents[i](r1, r2) = _component(r1, i, r2);
@@ -211,7 +212,7 @@ namespace xerus {
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
-		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);
+		std::vector<Tensor> fixedComponents = get_fixed_components(_currentComponent);
 		
 		// Update the stack
 		#pragma omp parallel for schedule(static)
@@ -227,10 +228,10 @@ namespace xerus {
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
-		FullTensor reshuffledComponent;
+		Tensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
-		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
+		Tensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 		
 		// Update the stack
 		#pragma omp parallel for firstprivate(mixedComponent) schedule(static)
@@ -248,7 +249,7 @@ namespace xerus {
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
-		std::vector<FullTensor> fixedComponents = get_fixed_components(_currentComponent);		
+		std::vector<Tensor> fixedComponents = get_fixed_components(_currentComponent);		
 		
 		// Update the stack
 		#pragma omp parallel for schedule(static)
@@ -264,10 +265,10 @@ namespace xerus {
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
-		FullTensor reshuffledComponent;
+		Tensor reshuffledComponent;
 		reshuffledComponent(i1, r1, r2) =  _currentComponent(r1, i1, r2);
 
-		FullTensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
+		Tensor mixedComponent({reshuffledComponent.dimensions[1], reshuffledComponent.dimensions[2]});
 
 		// Update the stack
 		#pragma omp parallel for firstprivate(mixedComponent) schedule(static)
@@ -280,7 +281,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::calculate_residual( const size_t _corePosition ) {
-		FullTensor currentValue({});
+		Tensor currentValue({});
 		
 		// Look which side of the stack needs less calculations
 		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
@@ -328,7 +329,7 @@ namespace xerus {
 																					const value_t* const _rightPtr, 
 																					value_t* const _deltaPtr,
 																					const value_t _residual,
-																					const FullTensor& _position,
+																					const Tensor& _position,
 																					value_t* const _scratchSpace
 																				) {
 		// Create dyadic product without factors in scratch space
@@ -356,7 +357,7 @@ namespace xerus {
 			
 		#pragma omp parallel
 		{
-			FullTensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
+			Tensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
 			
 			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]); // TODO Not needed if SinglePointMeasurmentSet
 			
@@ -405,7 +406,7 @@ namespace xerus {
 	std::vector<value_t> ADFVariant::InternalSolver<MeasurmentSet>::calculate_slicewise_norm_A_projGrad( const size_t _corePosition) {
 		std::vector<value_t> normAProjGrad(x.dimensions[_corePosition], 0.0);
 		
-		FullTensor currentValue({});
+		Tensor currentValue({});
 		
 		// Look which side of the stack needs less calculations
 		if(forwardUpdates[_corePosition].size() < backwardUpdates[_corePosition].size()) {
@@ -459,7 +460,7 @@ namespace xerus {
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
 		for(size_t j = 0; j < x.dimensions[_corePosition]; ++j) {
-			FullTensor localDelta;
+			Tensor localDelta;
 			localDelta(r1, r2) = projectedGradientComponent(r1, j, r2);
 			const value_t PyR = misc::sqr(frob_norm(localDelta));
 			

@@ -23,10 +23,10 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, Contraction_Order_0,
-    FullTensor A({});
-    FullTensor B({});
-    FullTensor res1({});
+UNIT_TEST(Tensor, Contraction_Order_0,
+    Tensor A({});
+    Tensor B({});
+    Tensor res1({});
     
     A[{}] = 42;
     B[{}] = 73;
@@ -35,14 +35,14 @@ UNIT_TEST(FullTensor, Contraction_Order_0,
     TEST(res1.compare_to_data({42*73}));
 )
 
-UNIT_TEST(FullTensor, Contraction_Order_1,
-    FullTensor A({2});
-    FullTensor B({2});
-    FullTensor C({3});
-    FullTensor res1({2,2});
-    FullTensor res2({});
-    FullTensor res3({2,3});
-    FullTensor res4({3,2});
+UNIT_TEST(Tensor, Contraction_Order_1,
+    Tensor A({2});
+    Tensor B({2});
+    Tensor C({3});
+    Tensor res1({2,2});
+    Tensor res2({});
+    Tensor res3({2,3});
+    Tensor res4({3,2});
     
     Index i,j;
     
@@ -92,12 +92,12 @@ UNIT_TEST(FullTensor, Contraction_Order_1,
     TEST(res3.compare_to_data({5,6,7,10,12,14}));
 )
 
-UNIT_TEST(FullTensor, Contraction_Order_2_Same_Dimensions,
-    FullTensor A({2,2});
-    FullTensor B({2,2});
-    FullTensor res1({2,2,2,2});
-    FullTensor res2({2,2});
-    FullTensor res3({});
+UNIT_TEST(Tensor, Contraction_Order_2_Same_Dimensions,
+    Tensor A({2,2});
+    Tensor B({2,2});
+    Tensor res1({2,2,2,2});
+    Tensor res2({2,2});
+    Tensor res3({});
 
     Index i,j,k,l;
     
@@ -193,12 +193,12 @@ UNIT_TEST(FullTensor, Contraction_Order_2_Same_Dimensions,
     TEST(res3.compare_to_data({70}));
 )
 
-UNIT_TEST(FullTensor, Contraction_Order_2_Different_Dimensions,
-    FullTensor A({1,2});
-    FullTensor B({2,3});
-    FullTensor res1({1,2,2,3});
-    FullTensor res2({1,3});
-    FullTensor res3({3,1});
+UNIT_TEST(Tensor, Contraction_Order_2_Different_Dimensions,
+    Tensor A({1,2});
+    Tensor B({2,3});
+    Tensor res1({1,2,2,3});
+    Tensor res2({1,3});
+    Tensor res3({3,1});
 
     Index i,j,k,l;
     
@@ -231,12 +231,12 @@ UNIT_TEST(FullTensor, Contraction_Order_2_Different_Dimensions,
     TEST(res2.compare_to_data({15,18,21}));
 )
 
-UNIT_TEST(FullTensor, Contraction_Order_3_Same_Dimensions,
-    FullTensor A({2,2,2});
-    FullTensor B({2,2,2});
-    FullTensor res2({2,2});
-    FullTensor res2a({2});
-    FullTensor res3({});
+UNIT_TEST(Tensor, Contraction_Order_3_Same_Dimensions,
+    Tensor A({2,2,2});
+    Tensor B({2,2,2});
+    Tensor res2({2,2});
+    Tensor res2a({2});
+    Tensor res3({});
 
     Index i,j,k,l,m;
     
@@ -271,18 +271,17 @@ UNIT_TEST(FullTensor, Contraction_Order_3_Same_Dimensions,
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
 
-UNIT_TEST(FullTensor, Contraction_Order_3_Different_Dimensions,
-    FullTensor A({1,2,3});
-    FullTensor B({2,3,4});
-    FullTensor C({2,1,3});
-    FullTensor res1({1,2,3,2,3,4});
-    FullTensor res2({1,3,4,3});
-    FullTensor res3({1,3,3,4});
-    FullTensor res4({1,4});
-    FullTensor res5({1,1});
-    FullTensor res6({1,3,3,1});
+UNIT_TEST(Tensor, Contraction_Order_3_Different_Dimensions,
+	Tensor A({1,2,3}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor B({2,3,4}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor C({2,1,3}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res1({1,2,3,2,3,4}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res2({1,3,4,3}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res3({1,3,3,4}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res4({1,4}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res5({1,1}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
+	Tensor res6({1,3,3,1}, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
     
-    FullTensor C1(4);
 
     Index i,j,k,l,m,n;
     

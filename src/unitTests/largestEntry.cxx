@@ -25,9 +25,9 @@ using namespace xerus;
 
 // UNIT_TEST(Test, bla,
 // 	Index i,j,k,l;
-// 	FullTensor U({2,2});
-// 	FullTensor S({2,2});
-// 	FullTensor Vt({2,2});
+// 	Tensor U({2,2});
+// 	Tensor S({2,2});
+// 	Tensor Vt({2,2});
 // 	
 // 	double eps = 0.001;
 // 	
@@ -50,19 +50,19 @@ using namespace xerus;
 // 	
 // 	
 // 	
-// 	FullTensor UU;
+// 	Tensor UU;
 // 	UU(i,k) = U(j,i) * U(j,k);
 // 	LOG(test, "UU: " << std::endl << UU.to_string());
 // 	
 // 	UU(i,k) = U(i,j) * U(k,j);
 // 	LOG(test, "UU: " << std::endl << UU.to_string());
 // 	
-// 	FullTensor X;
+// 	Tensor X;
 // 	
 // 	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
 // 	LOG(test, "X: " << std::endl << X.to_string());
 // 	
-// 	FullTensor M, P, L;
+// 	Tensor M, P, L;
 // 	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
 // 	
 // 	LOG(test, "M: " << std::endl << M.to_string());
@@ -99,7 +99,7 @@ UNIT_TEST(Algorithm, largestEntry,
 			TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
 			X /= X.frob_norm();
 			
-			FullTensor fullX(X);
+			Tensor fullX(X);
 			
 			size_t posA = 0, posB = 0;
 			for(size_t i = 1; i < fullX.size; ++i) {
@@ -223,7 +223,7 @@ UNIT_TEST(Algorithm, largestEntryData,
 // 		TTTensor X = examples::peaking_diagonals(d, 2);
 		X /= X.frob_norm();
 		
-		FullTensor fullX(X);
+		Tensor fullX(X);
 		
 		size_t posA = 0, posB = 0;
 		for(size_t i = 1; i < fullX.size; ++i) {

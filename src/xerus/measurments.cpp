@@ -25,7 +25,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/measurments.h>
 #include <xerus/misc/missingFunctions.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/ttNetwork.h>
 #include <xerus/indexedTensor.h>
@@ -116,9 +116,9 @@ namespace xerus {
 	}
 	
 	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions) {
-		std::vector<FullTensor> zeroPosition;
+		std::vector<Tensor> zeroPosition;
 		for(size_t j = 0; j < +_other.degree(); ++j) {
-			zeroPosition.emplace_back(FullTensor({_dimensions[j]}));
+			zeroPosition.emplace_back(Tensor({_dimensions[j]}));
 		}
 			
 		for(size_t i = 0; i < _other.size(); ++i) {
@@ -129,7 +129,7 @@ namespace xerus {
 		}
 	}
 	
-	void RankOneMeasurmentSet::add_measurment(const std::vector<FullTensor>& _position, const value_t _measuredValue) {
+	void RankOneMeasurmentSet::add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue) {
 		IF_CHECK(
 			REQUIRE(positions.size() == measuredValues.size(), "Internal Error.");
 			if(size() > 0) {
@@ -137,7 +137,7 @@ namespace xerus {
 					REQUIRE(positions[0][i].dimensions == _position[i].dimensions, "Inconsitend dimensions obtained");
 				}
 			}
-			for (const FullTensor & f : _position) {
+			for (const Tensor & f : _position) {
 				REQUIRE(f.degree() == 1, "illegal measurement");
 			}
 		);
@@ -152,7 +152,7 @@ namespace xerus {
 		
 		Index r1, r2, i1;
 		
-		std::vector<FullTensor> reshuffledComponents(degree());
+		std::vector<Tensor> reshuffledComponents(degree());
 		
 		for(size_t d = 0; d < degree(); ++d) {
 			reshuffledComponents[d](i1, r1, r2) = _solution.get_component(d)(r1, i1, r2);
@@ -161,20 +161,20 @@ namespace xerus {
 		// TODO beautify
 		#pragma omp parallel reduction(+: residualNorm, measurementNorm)
 		{
-			std::unique_ptr<FullTensor[]> stackMem(new FullTensor[degree()+1]);
-			FullTensor* const stack = stackMem.get()+1;
+			std::unique_ptr<Tensor[]> stackMem(new Tensor[degree()+1]);
+			Tensor* const stack = stackMem.get()+1;
 			stackMem[0] = Tensor::ones({1});
 			
 			for(size_t d = 0; d+1 < degree(); ++d) {
-				stack[d].reset({_solution.rank(d)}, Tensor::Initialisation::Nothing);
+				stack[d].reset({_solution.rank(d)}, Tensor::Initialisation::None);
 			}
 			
-			stack[degree()-1].reset({1}, Tensor::Initialisation::Nothing);
+			stack[degree()-1].reset({1}, Tensor::Initialisation::None);
 			
-			std::vector<FullTensor> intermediates(degree());
+			std::vector<Tensor> intermediates(degree());
 			
 			for(size_t d = 0; d < degree(); ++d) {
-				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, Tensor::Initialisation::Nothing);
+				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, Tensor::Initialisation::None);
 			}
 			
 			REQUIRE(stack[degree()-1].size == 1 , "IE");
@@ -195,7 +195,7 @@ namespace xerus {
 		return std::sqrt(residualNorm)/std::sqrt(measurementNorm);
 	}
 	
-	bool RankOneMeasurmentSet::Comparator::operator()(const std::vector<FullTensor>& _lhs, const std::vector<FullTensor>& _rhs) const {
+	bool RankOneMeasurmentSet::Comparator::operator()(const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) const {
 		REQUIRE(_lhs.size() == _rhs.size(), "I.E.");
 		for (size_t i = 0; i < split_position && i < _lhs.size(); ++i) {
 			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");

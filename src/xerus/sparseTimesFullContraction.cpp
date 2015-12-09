@@ -24,6 +24,7 @@
 
 #include <xerus/sparseTimesFullContraction.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/selectedFunctions.h>
 
 namespace xerus {
     

@@ -19,14 +19,14 @@
 
 /**
  * @file
- * @brief Implementation of the (indexed) FullTensor evaluation (ie. generlized transpositions).
+ * @brief Implementation of the (indexed) Tensor evaluation (ie. generlized transpositions).
  */
 
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/misc/check.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <memory>
 #include <xerus/selectedFunctions.h>
@@ -80,7 +80,7 @@ namespace xerus {
 	}
 	
 	/**
-	 * @brief: Performes the low level evaluation of a FullTensor to another FullTensor
+	 * @brief: Performes the low level evaluation of a Tensor to another Tensor
 	 * @param _outTensor: The tensor INTO which the evaluation is performed. The Dimensions must be set correctly
 	 * @param _inputTensor: The tensor which is evalueted. 
 	 * @param _fixedIndexOffset Offset in @a _inputTensor caused by fixed indices, e.g. 50 if the first index of an (7, 10) tensor is fixed to 5.
@@ -93,8 +93,8 @@ namespace xerus {
 	 * @param _traceStepSizes step size of each trace pair, i.e. to added step size of the two indices correspodnign to the pair.
 	 * @param _totalTraceDim basically product of _traceDimensions.
 	 */
-	void full_to_full_evaluation(FullTensor& _outTensor,
-								 const FullTensor& _inputTensor,
+	void full_to_full_evaluation(Tensor& _outTensor,
+								 const Tensor& _inputTensor,
 								 const size_t _fixedIndexOffset,
 								 const size_t _orderedBackDim,
 								 const size_t _numOutIndicesToShuffle,
@@ -226,7 +226,7 @@ namespace xerus {
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
 			REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
-			REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of FullTensor to SparseTensor not implemented and probably not useful.");
+			REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of Tensor to SparseTensor not implemented and probably not useful.");
 			
 			// Check base indices
 			for(size_t i = 0; i < baseIndices.size(); ++i) {
@@ -265,7 +265,7 @@ namespace xerus {
 		// If there is no index reshuffling, we can simplify a lot
 		if(baseIndices == outIndices) {
 			if(!_out.tensorObjectReadOnly->is_sparse()) { // Any => Full
-				static_cast<FullTensor&>(*_out.tensorObject) = *_base.tensorObjectReadOnly;
+				static_cast<Tensor&>(*_out.tensorObject) = *_base.tensorObjectReadOnly;
 				
 			} else if(_out.tensorObjectReadOnly->is_sparse() && _base.tensorObjectReadOnly->is_sparse()) { // Sparse => Sparse
 				static_cast<SparseTensor&>(*_out.tensorObject) = static_cast<const SparseTensor&>(*_base.tensorObjectReadOnly);
@@ -285,7 +285,7 @@ namespace xerus {
 			// Extract out index dimensions
 			const std::unique_ptr<const size_t[]> outIndexDimensions = get_dimension_array(outIndices);
 		
-			// Propagate the constant factor, since we won't apply it for FullTensors
+			// Propagate the constant factor, since we won't apply it for Tensors
 			_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
 			
 			// Count how many indices in the back are already ordered (We know that base has at least as many indices as out)
@@ -324,8 +324,8 @@ namespace xerus {
 				}
 			}
 			
-			full_to_full_evaluation(*static_cast<FullTensor*>(_out.tensorObject),
-				*static_cast<const FullTensor*>(_base.tensorObjectReadOnly),
+			full_to_full_evaluation(*static_cast<Tensor*>(_out.tensorObject),
+				*static_cast<const Tensor*>(_base.tensorObjectReadOnly),
 				fixedIndexOffset,
 				orderedIndexDim,
 				outIndices.size()-numOrderedIndices,
@@ -401,7 +401,7 @@ namespace xerus {
 				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			} else {
 				// Ensure that _out is empty
-				value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->get_unsanitized_dense_data();
+				value_t* const dataPointer = static_cast<Tensor*>(_out.tensorObject)->get_unsanitized_dense_data();
 				misc::array_set_zero(dataPointer, _out.tensorObject->size);
 				
 				if(peacefullIndices) {

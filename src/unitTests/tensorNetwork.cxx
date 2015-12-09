@@ -27,11 +27,11 @@ UNIT_TEST(TensorNetwork, contractions_of_4_to_degree_0,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({100,1}, rnd, dist);
-	FullTensor B = FullTensor::random({100,1}, rnd, dist);
-	FullTensor C = FullTensor::random({100,1}, rnd, dist);
-	FullTensor D = FullTensor::random({100,1}, rnd, dist);
-	FullTensor E(0);
+    Tensor A = Tensor::random({100,1}, rnd, dist);
+	Tensor B = Tensor::random({100,1}, rnd, dist);
+	Tensor C = Tensor::random({100,1}, rnd, dist);
+	Tensor D = Tensor::random({100,1}, rnd, dist);
+	Tensor E;
 	Index i1,i2,i3,i4;
 	
 	
@@ -51,10 +51,10 @@ UNIT_TEST(TensorNetwork, contractions_of_3_to_degree_0,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::random({10,100}, rnd, dist);
-	FullTensor C = FullTensor::random({100,1}, rnd, dist);
-	FullTensor E(0);
+    Tensor A = Tensor::random({1,10}, rnd, dist);
+	Tensor B = Tensor::random({10,100}, rnd, dist);
+	Tensor C = Tensor::random({100,1}, rnd, dist);
+	Tensor E;
 	Index i1,i2,i3,i4;
 	
 	
@@ -73,9 +73,9 @@ UNIT_TEST(TensorNetwork, contraction_single_node_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({1,10,10}, rnd, dist);
-	FullTensor B = FullTensor::random({1}, rnd, dist);
-	FullTensor E(0);
+    Tensor A = Tensor::random({1,10,10}, rnd, dist);
+	Tensor B = Tensor::random({1}, rnd, dist);
+	Tensor E;
 	Index i1,i2,i3;
 	
  	E() = A(i1,i2,i2) * B(i1);
@@ -86,14 +86,14 @@ UNIT_TEST(TensorNetwork, contraction_single_network_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({2,2,2,2}, rnd, dist);
+    Tensor A = Tensor::random({2,2,2,2}, rnd, dist);
 	TensorNetwork ATN(A);
-	FullTensor E(0);
+	Tensor E;
 	TensorNetwork ETN(0);
 	Index i1,i2,i3,i4;
 	
 	ETN() = ATN(i1,i1,i2,i2);
-	E = FullTensor(ETN);
+	E = Tensor(ETN);
 	TEST(std::isnormal(E[{}]));
  	E() = ATN(i1,i1,i2,i2);
 	TEST(std::isnormal(E[{}]));
@@ -112,9 +112,9 @@ UNIT_TEST(TensorNetwork, triple_indices,
 	TensorNetwork C(2);
 	TensorNetwork D(2);
 	TensorNetwork F(2);
-	FullTensor E0(0);
-	FullTensor E1(1);
-	FullTensor E2(2);
+	Tensor E0;
+	Tensor E1;
+	Tensor E2;
 	Index i1,i2,i3,i4;
 	
 	FAILTEST(E0()   = A(i1,i1,i2)*B(i2,i2));
@@ -137,9 +137,9 @@ UNIT_TEST(TensorNetwork, contraction_multi_node_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::random({1,10}, rnd, dist);
-	FullTensor E(0);
+    Tensor A = Tensor::random({1,10}, rnd, dist);
+	Tensor B = Tensor::random({1,10}, rnd, dist);
+	Tensor E;
 	Index i1,i2,i3,i4;
 	
 	TensorNetwork tmp(4);
@@ -152,9 +152,9 @@ UNIT_TEST(TensorNetwork, index_reshuffle,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    FullTensor A = FullTensor::random({1,10}, rnd, dist);
-	FullTensor B = FullTensor::random({1,10}, rnd, dist);
-	FullTensor E(0);
+    Tensor A = Tensor::random({1,10}, rnd, dist);
+	Tensor B = Tensor::random({1,10}, rnd, dist);
+	Tensor E;
 	Index i1,i2,i3,i4;
 	
 	TensorNetwork tmp(4);
@@ -165,21 +165,21 @@ UNIT_TEST(TensorNetwork, index_reshuffle,
 )
 
 UNIT_TEST(TensorNetwork, Save_Network, 
-    FullTensor A({2,2});
-    FullTensor B({2,2});
-    FullTensor C({2,2});
-    FullTensor D({2,2});
-    FullTensor E({2,2});
-    FullTensor F({2,2});
-    FullTensor G({2,2});
+    Tensor A({2,2});
+    Tensor B({2,2});
+    Tensor C({2,2});
+    Tensor D({2,2});
+    Tensor E({2,2});
+    Tensor F({2,2});
+    Tensor G({2,2});
     TensorNetwork res1(2);
     TensorNetwork res1A(6);
-    FullTensor res1AF(6);
+    Tensor res1AF;
     TensorNetwork res2(2);
     TensorNetwork res2A(6);
-    FullTensor res2AF(6);
+    Tensor res2AF;
     TensorNetwork res2B(4);
-    FullTensor res3({2,2});
+    Tensor res3({2,2});
 
     Index i,j,k,l,m,n,o;
     

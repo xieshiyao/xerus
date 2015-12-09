@@ -23,11 +23,11 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, Assignment_Trivia, 
-    FullTensor A({2,2,3,1,2});
-    FullTensor res({2,2,3,1,2});
-    FullTensor res2({2,3,2,1,2});
-    FullTensor res3({2,3,1,2,2});
+UNIT_TEST(Tensor, Assignment_Trivia, 
+    Tensor A({2,2,3,1,2});
+    Tensor res({2,2,3,1,2});
+    Tensor res2({2,3,2,1,2});
+    Tensor res3({2,3,1,2,2});
 
     Index i,j,k,l,m;
     
@@ -85,9 +85,9 @@ UNIT_TEST(FullTensor, Assignment_Trivia,
     TEST(res.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Const, 
-    FullTensor A({2,2,3,1,2});
-    FullTensor res({2,2,3,1,2});
+UNIT_TEST(Tensor, Assignment_Const, 
+    Tensor A({2,2,3,1,2});
+    Tensor res({2,2,3,1,2});
 
     Index i,j,k,l,m;
     
@@ -117,34 +117,34 @@ UNIT_TEST(FullTensor, Assignment_Const,
     A[{1,1,2,0,1}]=24;
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
-    const FullTensor resC1(res);
+    const Tensor resC1(res);
     TEST(resC1.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     TEST(misc::approx_equal(resC1[{0,0,0,0,0}], 1.0));
     TEST(misc::approx_equal(resC1[{0,1,2,0,0}], 11.0));
     TEST(misc::approx_equal(resC1[{1,1,2,0,0}], 23.0));
     
     res(j,i,k,l,m) = A(i,j,k,l,m);
-    const FullTensor resC2(res);
+    const Tensor resC2(res);
     TEST(resC2.compare_to_data({1,2,3,4,5,6,13,14,15,16,17,18,7,8,9,10,11,12,19,20,21,22,23,24}));
     TEST(misc::approx_equal(resC2[{0,0,0,0,0}], 1.0));
     TEST(misc::approx_equal(resC2[{0,1,2,0,0}], 17.0));
     TEST(misc::approx_equal(resC2[{1,1,2,0,0}], 23.0));
 )
 
-UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
-    FullTensor A({2,2,3,1,2});
-    FullTensor res1({2,2,3,1,2});
-    FullTensor res2({1,3,5,1,7});
-    FullTensor res3({2,3,2,2,3});
-    FullTensor res4({13,9,2,5,3});
-    FullTensor res5({1,1,1,1,1});
-    FullTensor res6(5);
-    FullTensor res7({1,2,3,4,5});
-    FullTensor res8({5,4,3,2,1});
-    FullTensor res9({3,2,3,2,3});
-    FullTensor res10({4,5,3,1,3});
-    FullTensor res11(5);
-    FullTensor res12({1,5,3,1,3});
+UNIT_TEST(Tensor, Assignment_Overwriting_Dimensions,
+    Tensor A({2,2,3,1,2});
+    Tensor res1({2,2,3,1,2});
+    Tensor res2({1,3,5,1,7});
+    Tensor res3({2,3,2,2,3});
+    Tensor res4({13,9,2,5,3});
+    Tensor res5({1,1,1,1,1});
+    Tensor res6;
+    Tensor res7({1,2,3,4,5});
+    Tensor res8({5,4,3,2,1});
+    Tensor res9({3,2,3,2,3});
+    Tensor res10({4,5,3,1,3});
+    Tensor res11;
+    Tensor res12({1,5,3,1,3});
 
     Index i,j,k,l,m;
     
@@ -202,9 +202,9 @@ UNIT_TEST(FullTensor, Assignment_Overwriting_Dimensions,
     TEST(res12.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS, 
-    FullTensor B({2,2});
-    FullTensor C({2,2});
+UNIT_TEST(Tensor, Assignment_LHS_Equals_RHS, 
+    Tensor B({2,2});
+    Tensor C({2,2});
 
     Index i, J, K;
     
@@ -224,11 +224,11 @@ UNIT_TEST(FullTensor, Assignment_LHS_Equals_RHS,
     TEST(B.compare_to_data({1,3,2,4}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
-    FullTensor A({2,2,3,1,2});
-    FullTensor res1({2,3,1,2});
-    FullTensor res2;
-    FullTensor res3;
+UNIT_TEST(Tensor, Assignment_Fixed_Indices,
+    Tensor A({2,2,3,1,2});
+    Tensor res1({2,3,1,2});
+    Tensor res2;
+    Tensor res3;
     
     Index i,j,k,l,m;
     
@@ -288,13 +288,13 @@ UNIT_TEST(FullTensor, Assignment_Fixed_Indices,
     TEST(res3.compare_to_data({18,24}));
 )
 
-UNIT_TEST(FullTensor, Assignment_Negatives,
-    FullTensor A({2,2,2,2});
-    FullTensor A2({2,2,2,2});
-    FullTensor B({2,2,2});
-    FullTensor C(2);
-    FullTensor D({2,2});
-    FullTensor E({});
+UNIT_TEST(Tensor, Assignment_Negatives,
+    Tensor A({2,2,2,2});
+    Tensor A2({2,2,2,2});
+    Tensor B({2,2,2});
+    Tensor C;
+    Tensor D({2,2});
+    Tensor E({});
     
     Index i,j,k,l;
         

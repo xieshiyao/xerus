@@ -23,22 +23,22 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, solve_Ax_equals_b,
+UNIT_TEST(Tensor, solve_Ax_equals_b,
     Index i,j,k;
           
-    FullTensor A1({4,2,2});
+    Tensor A1({4,2,2});
     A1[{0,0,0}] = 1;
     A1[{1,0,1}] = 1;
     A1[{2,1,0}] = 1;
     A1[{3,1,1}] = 1;
     
-    FullTensor b1({4});
+    Tensor b1({4});
     b1[0] = 73;
     b1[1] = -73;
     b1[2] = 128;
     b1[3] = 93;
     
-    FullTensor x1({2,2});
+    Tensor x1({2,2});
     
     
     x1(k,i) = (b1(j)/A1(j,k,i));
@@ -48,19 +48,19 @@ UNIT_TEST(FullTensor, solve_Ax_equals_b,
     TEST((b1[2] - x1[{1,0}]) < 1e-14);
     TEST((b1[3] - x1[{1,1}]) < 1e-14);
     
-    FullTensor A2({4,2,2});
+    Tensor A2({4,2,2});
     A2[{0,0,0}] = 1;
     A2[{1,0,1}] = 1;
     A2[{2,1,0}] = 0;
     A2[{3,1,1}] = 0;
     
-    FullTensor b2({4});
+    Tensor b2({4});
     b2[0] = 73;
     b2[1] = -73;
     b2[2] = 0;
     b2[3] = 0;
     
-    FullTensor x2({2,2});
+    Tensor x2({2,2});
     
     x2(k,i) = (b2(j)/A2(j,k,i));
     

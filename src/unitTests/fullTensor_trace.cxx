@@ -23,13 +23,13 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(FullTensor, Traces,
-    FullTensor A({2,2});
-    FullTensor B({2,2,2});
-    FullTensor C({2,2,2,2});
-    FullTensor res1({});
-    FullTensor res2({2});
-    FullTensor res3({2,2});
+UNIT_TEST(Tensor, Traces,
+    Tensor A({2,2});
+    Tensor B({2,2,2});
+    Tensor C({2,2,2,2});
+    Tensor res1({});
+    Tensor res2({2});
+    Tensor res3({2,2});
     
     Index i, j, k;
     

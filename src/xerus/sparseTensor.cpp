@@ -30,10 +30,10 @@ namespace xerus {
     SparseTensor::SparseTensor( const Tensor&  _other) : Tensor(_other) {
 		use_sparse_representation();
 	}
-    
-    SparseTensor::SparseTensor(       Tensor&& _other) : Tensor(std::move(_other)) {
-		use_sparse_representation();
-	}
+//     
+//     SparseTensor::SparseTensor(       Tensor&& _other) : Tensor(std::move(_other)) {
+// 		use_sparse_representation();
+// 	}
     
     SparseTensor::SparseTensor(const std::vector<size_t> & _dimensions) : Tensor(_dimensions, Representation::Sparse) { }
         
@@ -41,18 +41,29 @@ namespace xerus {
     
     SparseTensor::SparseTensor(std::initializer_list<size_t>&& _dimensions) : Tensor(std::move(_dimensions), Representation::Sparse) { }
     
-    SparseTensor::SparseTensor(const FullTensor& _full, const double _eps) : Tensor(_full) {
-		denseData.reset();
-		representation = Representation::Sparse;
-		sparseData.reset(new std::map<size_t, value_t>());
-        for(size_t i = 0; i < _full.size; ++i) {
-            if(std::abs(_full[i]) >= _eps) {
-                sparseData->insert({i, _full[i]});
-//                 sparseData->emplace_hint(sparseData->end(), i, fullDataPtr[i]); TODO use this instead
-            }
-        }
+    SparseTensor::SparseTensor(const Tensor& _full, const double _eps) : Tensor(_full) {
+		use_sparse_representation();
+// 		denseData.reset();
+// 		representation = Representation::Sparse;
+// 		sparseData.reset(new std::map<size_t, value_t>());
+//         for(size_t i = 0; i < _full.size; ++i) {
+//             if(std::abs(_full[i]) >= _eps) {
+//                 sparseData->insert({i, _full[i]});
+// //                 sparseData->emplace_hint(sparseData->end(), i, fullDataPtr[i]); TODO use this instead
+//             }
+//         }
     }
     
+    /** 
+	 * @brief Standard assignment operator.
+	 * @param _other the Tensor to be assinged to this one.
+	 * @return a reference to this Tensor.
+	 */
+	SparseTensor& SparseTensor::operator=(const Tensor&  _other) {
+		static_cast<Tensor&>(*this) = _other;
+		return *this;
+	}
+	
     
     
 }

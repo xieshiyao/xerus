@@ -169,7 +169,8 @@ UNIT_TEST(TTTangentVector, orthogonality,
 	for (size_t n=0; n<stateDims.size(); ++n) {
 		for (size_t i=0; i<X.get_component(n).size; ++i) {
 			TTTensor b(X);
-			b.set_component(n, FullTensor(Tensor::dirac(b.component(n).dimensions, i)));
+			b.set_component(n, Tensor::dirac(b.component(n).dimensions, i));
+			b.component(n).use_dense_representation();
 			b.move_core(0);
 			// check Pb = b
 			TTTensor pb = TTTensor(TTTangentVector(X, b));

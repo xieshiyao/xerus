@@ -19,15 +19,16 @@
 
 /**
  * @file
- * @brief Implementation of the FullTensor factorizations.
+ * @brief Implementation of the Tensor factorizations.
  */
 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/sparseTensor.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
+#include <xerus/selectedFunctions.h>
 
 namespace xerus {
 	
@@ -120,7 +121,7 @@ namespace xerus {
 		}
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);
 		
-		IndexedTensor<Tensor> reorderedBaseTensor(_base.tensorObjectReadOnly->construct_new(std::move(reorderedBaseDimensions), DONT_SET_ZERO()), std::move(reorderedBaseIndices), false);
+		IndexedTensor<Tensor> reorderedBaseTensor(_base.tensorObjectReadOnly->construct_new(std::move(reorderedBaseDimensions), Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
 		evaluate(reorderedBaseTensor, _base);
 		reorderedBaseTensor.tensorObject->ensure_own_data();
 		
@@ -128,11 +129,11 @@ namespace xerus {
 		lhsDims.push_back(_rank);
 		rhsDims.insert(rhsDims.begin(), _rank);
 		
-		_lhs.tensorObject->reset(std::move(lhsDims), Tensor::Initialisation::Nothing);
+		_lhs.tensorObject->reset(std::move(lhsDims), Tensor::Initialisation::None);
 		_lhs.tensorObject->ensure_own_data_no_copy();
 		IF_CHECK( _lhs.check_indices(false); )
 		
-		_rhs.tensorObject->reset(std::move(rhsDims), Tensor::Initialisation::Nothing);
+		_rhs.tensorObject->reset(std::move(rhsDims), Tensor::Initialisation::None);
 		_rhs.tensorObject->ensure_own_data_no_copy();
 		IF_CHECK( _rhs.check_indices(false); )
 		
@@ -147,7 +148,7 @@ namespace xerus {
 		const IndexedTensorWritable<Tensor>& Vt = *_output[2];
 		
 		IF_CHECK(S.check_indices(2, false));
-		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be FullTensors, as they are defenitely not sparse.");
+		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be Tensors, as they are defenitely not sparse.");
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
 		REQUIRE(maxRank > 0, "maxRank must be larger than zero.");
 		
@@ -162,7 +163,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse SVD not yet implemented.");
 		} else {
-			blasWrapper::svd(static_cast<FullTensor*>(U.tensorObject)->override_dense_data(), tmpS.get(), static_cast<FullTensor*>(Vt.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::svd(static_cast<Tensor*>(U.tensorObject)->override_dense_data(), tmpS.get(), static_cast<Tensor*>(Vt.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// Apply factor to the diagonal matrix
@@ -195,14 +196,14 @@ namespace xerus {
 				static_cast<SparseTensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
 			}
 		} else {
-			value_t* const dataPtr =  static_cast<FullTensor*>(S.tensorObject)->get_unsanitized_dense_data();
+			value_t* const dataPtr =  static_cast<Tensor*>(S.tensorObject)->get_unsanitized_dense_data();
 			for(size_t i = 0; i < rank; ++i) {
 				dataPtr[i*rank+i] = tmpS[i];
 			}
 		}
 		
-		static_cast<FullTensor*>(U.tensorObject)->resize_dimension(U.degree()-1, rank);
-		static_cast<FullTensor*>(Vt.tensorObject)->resize_dimension(0, rank);
+		static_cast<Tensor*>(U.tensorObject)->resize_dimension(U.degree()-1, rank);
+		static_cast<Tensor*>(Vt.tensorObject)->resize_dimension(0, rank);
 		
 		// Post evaluate the results
 		std::vector<Index> midPreliminaryIndices({lhsPreliminaryIndices.back(), rhsPreliminaryIndices.front()});
@@ -222,7 +223,7 @@ namespace xerus {
 		const IndexedTensorWritable<Tensor>& Q = *_output[0];
 		const IndexedTensorWritable<Tensor>& R = *_output[1];
 		 
-		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be FullTensors, as they are defenitely not sparse.");
+		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
@@ -232,7 +233,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::qr_destructive(static_cast<FullTensor*>(Q.tensorObject)->override_dense_data(), static_cast<FullTensor*>(R.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::qr_destructive(static_cast<Tensor*>(Q.tensorObject)->override_dense_data(), static_cast<Tensor*>(R.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -249,7 +250,7 @@ namespace xerus {
 		const IndexedTensorWritable<Tensor>& R = *_output[0];
 		const IndexedTensorWritable<Tensor>& Q = *_output[1];
 		
-		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be FullTensors, as they are defenitely not sparse.");
+		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
@@ -260,7 +261,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->override_dense_data(), static_cast<FullTensor*>(Q.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::rq_destructive(static_cast<Tensor*>(R.tensorObject)->override_dense_data(), static_cast<Tensor*>(Q.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -278,7 +279,7 @@ namespace xerus {
 		const IndexedTensorWritable<Tensor>& Q = *_output[0];
 		const IndexedTensorWritable<Tensor>& C = *_output[1];
 		
-		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be FullTensors, as they are definitely not sparse.");
+		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be Tensors, as they are definitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
@@ -289,17 +290,17 @@ namespace xerus {
 			LOG(fatal, "Sparse QC not yet implemented.");
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
 			std::vector<size_t> newDim = Q.tensorObject->dimensions;
 			newDim.back() = rank;
-			static_cast<FullTensor*>(Q.tensorObject)->reset(newDim, std::move(Qt));
+			static_cast<Tensor*>(Q.tensorObject)->reset(newDim, std::move(Qt));
 			
 			newDim = C.tensorObject->dimensions;
 			newDim.front() = rank;
-			static_cast<FullTensor*>(C.tensorObject)->reset(newDim, std::move(Ct));
+			static_cast<Tensor*>(C.tensorObject)->reset(newDim, std::move(Ct));
 		}
 		
 		// C has to carry the constant factor

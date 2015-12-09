@@ -25,8 +25,8 @@
 using namespace xerus;
 
 UNIT_TEST(TensorNetwork, element_access,
-    FullTensor A({1,2});
-    FullTensor B({2,3});
+    Tensor A({1,2});
+    Tensor B({2,3});
     TensorNetwork res;
 
     Index i,j,k,l;
@@ -63,8 +63,8 @@ UNIT_TEST(TensorNetwork, element_access,
 
 
 UNIT_TEST(TensorNetwork, many_element_access,
-    FullTensor A({1,2});
-    FullTensor B({2,3});
+    Tensor A({1,2});
+    Tensor B({2,3});
     TensorNetwork res;
 
     Index i,j,k,l;

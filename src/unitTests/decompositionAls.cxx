@@ -35,7 +35,7 @@ UNIT_TEST(ALS, decomposition_als,
 	const std::vector<size_t> stateDims(d, n);
 	
     xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4, rnd, dist);
-	FullTensor B(TTB);
+	Tensor B(TTB);
 	
 	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4, rnd, dist);
 	

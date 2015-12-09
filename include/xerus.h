@@ -44,7 +44,6 @@
     #include "xerus/indexedTensorMoveable.h"
     #include "xerus/indexedTensorList.h"
     #include "xerus/tensor.h"
-    #include "xerus/fullTensor.h"
     #include "xerus/sparseTensor.h"
     #include "xerus/cs_wrapper.h"
     #include "xerus/sparseTimesFullContraction.h"

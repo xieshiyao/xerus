@@ -25,7 +25,7 @@
 #include <xerus/indexedTensor_TN_operators.h>
 #include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/index.h>
-#include <xerus/fullTensor.h>
+#include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
