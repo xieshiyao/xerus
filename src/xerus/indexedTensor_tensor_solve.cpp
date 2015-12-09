@@ -102,7 +102,7 @@ namespace xerus {
         if(tmpA.tensorObjectReadOnly->is_sparse()) {
             LOG(fatal, "Sparse solve not yet implemented.");
         } else {
-            blasWrapper::solve_least_squares_destructive(static_cast<FullTensor*>(usedX->tensorObject)->unsanitized_data_pointer(), static_cast<FullTensor*>(tmpA.tensorObject)->unsanitized_data_pointer(), M, N, static_cast<FullTensor*>(tmpB.tensorObject)->unsanitized_data_pointer());
+            blasWrapper::solve_least_squares_destructive(static_cast<FullTensor*>(usedX->tensorObject)->get_unsanitized_dense_data(), static_cast<FullTensor*>(tmpA.tensorObject)->get_unsanitized_dense_data(), M, N, static_cast<FullTensor*>(tmpB.tensorObject)->get_unsanitized_dense_data());
         }
         
         if(saveSlotX) { evaluate(_x, *usedX); }

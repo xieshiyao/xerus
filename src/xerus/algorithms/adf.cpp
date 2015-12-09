@@ -367,9 +367,9 @@ namespace xerus {
 				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 				perform_dyadic_product(	localLeftRank, 
 										localRightRank, 
-										forwardStack[i + (_corePosition-1)*numMeasurments]->data_pointer(),
-										backwardStack[i + (_corePosition+1)*numMeasurments]->data_pointer(),
-										partialProjGradComp.unsanitized_data_pointer(),
+										forwardStack[i + (_corePosition-1)*numMeasurments]->get_dense_data(),
+										backwardStack[i + (_corePosition+1)*numMeasurments]->get_dense_data(),
+										partialProjGradComp.get_unsanitized_dense_data(),
 										residual[i],
 										measurments.positions[i][_corePosition],
 										dyadicComponent.get()

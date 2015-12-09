@@ -166,38 +166,6 @@ namespace xerus {
 			return SparseTensor::random(std::vector<size_t>(_dimensions), _n, _rnd, _dist);
 		}
         
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-// 		/** 
-// 		 * @brief Standard assignment operator.
-// 		 * @param _other the SparseTensor to be assinged to this one.
-// 		 * @return a reference to this SparseTensor.
-// 		 */
-//         SparseTensor& operator=(const SparseTensor& _other);
-// 		
-// 		/** 
-// 		 * @brief Standard move-assignment operator.
-// 		 * @param _other the SparseTensor to be move-assinged to this one.
-// 		 * @return a reference to this SparseTensor.
-// 		 */
-//         SparseTensor& operator=(SparseTensor&& _other);
-        
-        
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		/** 
-		 * @brief Read access a single entry.
-		 * @param _position the position of the desired entry, assuming row-major ordering.
-		 * @return the selected entry.
-		 */
-        value_t at(const size_t _position) const;
-		
-		/** 
-		 * @brief Read access a single entry.
-		 * @param _position the position of the desired entry.
-		 * @return the selected entry.
-		 */
-        value_t at(const std::vector<size_t>& _indices) const;
         
     };
     

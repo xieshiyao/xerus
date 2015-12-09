@@ -162,7 +162,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse SVD not yet implemented.");
 		} else {
-			blasWrapper::svd(static_cast<FullTensor*>(U.tensorObject)->override_data(), tmpS.get(), static_cast<FullTensor*>(Vt.tensorObject)->override_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->unsanitized_data_pointer(), lhsSize, rhsSize);
+			blasWrapper::svd(static_cast<FullTensor*>(U.tensorObject)->override_dense_data(), tmpS.get(), static_cast<FullTensor*>(Vt.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// Apply factor to the diagonal matrix
@@ -195,7 +195,7 @@ namespace xerus {
 				static_cast<SparseTensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
 			}
 		} else {
-			value_t* const dataPtr =  static_cast<FullTensor*>(S.tensorObject)->unsanitized_data_pointer();
+			value_t* const dataPtr =  static_cast<FullTensor*>(S.tensorObject)->get_unsanitized_dense_data();
 			for(size_t i = 0; i < rank; ++i) {
 				dataPtr[i*rank+i] = tmpS[i];
 			}
@@ -232,7 +232,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::qr_destructive(static_cast<FullTensor*>(Q.tensorObject)->override_data(), static_cast<FullTensor*>(R.tensorObject)->override_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->unsanitized_data_pointer(), lhsSize, rhsSize);
+			blasWrapper::qr_destructive(static_cast<FullTensor*>(Q.tensorObject)->override_dense_data(), static_cast<FullTensor*>(R.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -260,7 +260,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->override_data(), static_cast<FullTensor*>(Q.tensorObject)->override_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->unsanitized_data_pointer(), lhsSize, rhsSize);
+			blasWrapper::rq_destructive(static_cast<FullTensor*>(R.tensorObject)->override_dense_data(), static_cast<FullTensor*>(Q.tensorObject)->override_dense_data(), static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -289,7 +289,7 @@ namespace xerus {
 			LOG(fatal, "Sparse QC not yet implemented.");
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, static_cast<FullTensor*>(reorderedBaseTensor.get())->unsanitized_data_pointer(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, static_cast<FullTensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			

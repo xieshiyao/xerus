@@ -20,7 +20,7 @@ UNIT_TEST(TT, entrywise_product,
 	
 	TTTensor C = TTTensor::entrywise_product(A, B);
 	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
-	FullTensor Cf = FullTensor::entrywise_product(Af, Bf);
+	FullTensor Cf = entrywise_product(Af, Bf);
 	
 	TEST(frob_norm(Cf - FullTensor(Co))/frob_norm(Cf) < 1e-14);
 	TEST(frob_norm(Cf - FullTensor(C))/frob_norm(Cf) < 1e-14);
@@ -35,7 +35,7 @@ UNIT_TEST(TT, entrywise_product,
 	TTOperator Do2(Ao);
 	Do2.entrywise_square();
 	
-	FullTensor Df = FullTensor::entrywise_product(Af, Af);
+	FullTensor Df = entrywise_product(Af, Af);
 
 	TEST(approx_equal(Df, FullTensor(D1), 1e-14));
 	TEST(approx_equal(Df, FullTensor(D2), 1e-14));
@@ -61,7 +61,7 @@ UNIT_TEST(TT, soft_thresholding,
 	
 	TTTensor C = TTTensor::entrywise_product(A, B);
 	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
-	FullTensor Cf = FullTensor::entrywise_product(Af, Bf);
+	FullTensor Cf = entrywise_product(Af, Bf);
 	
 	TEST(frob_norm(Cf - FullTensor(Co))/frob_norm(Cf) < 1e-14);
 	TEST(frob_norm(Cf - FullTensor(C))/frob_norm(Cf) < 1e-14);

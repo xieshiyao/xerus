@@ -54,48 +54,5 @@ namespace xerus {
     }
     
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-//     SparseTensor& SparseTensor::operator=(const SparseTensor&  _other) {
-//         assign(_other);
-// 		sparseData = _other.sparseData;
-//         return *this;
-//     }
-//     
-//     SparseTensor& SparseTensor::operator=(      SparseTensor&& _other) {
-//         assign(std::move(_other));
-// 		sparseData = _other.sparseData;
-//         return *this;
-//     }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    
-    value_t SparseTensor::at(const size_t _position) const {
-        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
-        if(entry == sparseData->end()) {
-            return 0;
-        } else {
-            return factor*entry->second;
-        }
-    }
-    
-    value_t SparseTensor::at(const std::vector<size_t>& _indices) const {
-        CHECK(_indices.size() == dimensions.size(), fatal, "Wrong number of indices given");
-        size_t finalIndex = 0;
-        for(size_t i = 0; i < _indices.size(); ++i) {
-            REQUIRE(_indices[i] < dimensions[i], "Index "<< i <<" out of bounds " << _indices[i] << " >=! " << dimensions[i]);
-            finalIndex *= dimensions[i];
-            finalIndex += _indices[i];
-        }
-        
-        const std::map<size_t, value_t>::const_iterator entry = sparseData->find(finalIndex);
-        if(entry == sparseData->end()) {
-            return 0;
-        } else {
-            return factor*entry->second;
-        }
-    }
-    
     
 }

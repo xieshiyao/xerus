@@ -121,7 +121,7 @@ namespace xerus {
     
     FullTensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		FullTensor ret(_dimensions, DONT_SET_ZERO());
-		value_t* const data = ret.data_pointer();
+		value_t* const data = ret.get_dense_data();
 		for(size_t i = 0; i < ret.size; ++i) {
 			data[i] = 1.0;
 		}
@@ -502,6 +502,32 @@ namespace xerus {
 		return operator[](multiIndex_to_position(_positions, dimensions));
 	}
 	
+	
+	value_t* Tensor::get_dense_data() {
+		use_dense_representation();
+		ensure_own_data_and_apply_factor();
+		return denseData.get();
+	}
+	
+	value_t* Tensor::get_unsanitized_dense_data() {
+		return denseData.get();
+	}
+	
+	const value_t* Tensor::get_unsanitized_dense_data() const  {
+		return denseData.get();
+	}
+	
+	value_t* Tensor::override_dense_data()  {
+		use_dense_representation();
+		ensure_own_data_no_copy();
+		return denseData.get();
+	}
+	
+	
+	const std::shared_ptr<value_t>& Tensor::get_internal_dense_data() {
+		return denseData;
+	}
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
     
@@ -529,6 +555,150 @@ namespace xerus {
         return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
     }
     
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	
+	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
+		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
+		
+		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
+		
+		size_t newStepSize = 1;
+		size_t blockCount = 1;
+		size_t oldStepSize = 1;
+		for (size_t i=degree()-1; i>_n; --i) {
+			oldStepSize *= dimensions[i];
+		}
+		newStepSize = oldStepSize * _newDim;
+		oldStepSize = oldStepSize * dimensions[_n];
+		blockCount = size / oldStepSize; //  == product of dim[i] for i=0 to _n-1
+		
+		size_t newsize = blockCount*newStepSize;
+		REQUIRE(newsize == size/dimensions[_n] * _newDim, 
+				dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize << " " << blockCount
+				<< size << " " << newsize);
+		value_t *tmp = new value_t[newsize];
+		if (newStepSize > oldStepSize) {
+			if (_cutPos < _newDim) {
+				size_t numInsert = (newStepSize-oldStepSize);
+				_cutPos *= oldStepSize / dimensions[_n];
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
+					memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
+					memcpy(tmp+i*newStepSize+_cutPos+numInsert, denseData.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
+				}
+			} else {
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
+					memset(tmp+i*newStepSize+oldStepSize, 0, (newStepSize-oldStepSize)*sizeof(double));
+				}
+			}
+		} else { // newStepSize <= oldStepSize
+			if (_cutPos < _newDim) {
+				_cutPos *= oldStepSize / dimensions[_n];
+				size_t diffSize = newStepSize - _cutPos;
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t));
+					memcpy(tmp+i*newStepSize+_cutPos, denseData.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
+				}
+			} else {
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize*sizeof(value_t));
+				}
+			}
+		}
+		dimensions[_n] = _newDim;
+		size = newsize;
+		denseData.reset(tmp, internal::array_deleter_vt);
+		
+		REQUIRE(size == misc::product(dimensions), "");
+	}
+	
+	void Tensor::remove_slate(uint _indexNb, uint _pos) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(_indexNb < degree(), "");
+		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
+		REQUIRE(dimensions[_indexNb] > 1, "");
+		
+		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
+	}
+	
+	
+	//TODO Allow more 2d
+	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
+		const size_t N = dimensions[1];
+		for(size_t i=0; i<numDiags; ++i){
+			_f(realData[i+i*N]);
+		}
+	}
+	
+	//TODO Allow more 2d
+	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
+		const size_t N = dimensions[1];
+		for(size_t i=0; i<numDiags; ++i){
+			_f(realData[i+i*N], i);
+		}
+	}
+	
+	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		for(size_t i=0; i<size; ++i){ _f(realData[i]); }
+	}
+	
+	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
+	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		for(size_t i=0; i<size; ++i){ _f(realData[i], i); }
+	}
+	
+	void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		
+		std::vector<size_t> multIdx(degree(), 0);
+		size_t idx = 0;
+		while (true) {
+			_f(realData[idx], multIdx);
+			// increasing indices
+			idx++;
+			size_t changingIndex = degree()-1;
+			multIdx[changingIndex]++;
+			while(multIdx[changingIndex] == dimensions[changingIndex]) {
+				multIdx[changingIndex] = 0;
+				changingIndex--;
+				// Return on overflow 
+				if(changingIndex >= degree()) { return; }
+				multIdx[changingIndex]++;
+			}
+		}
+	}
+	
+	#endif
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
@@ -717,6 +887,65 @@ namespace xerus {
         size = misc::product(dimensions);
     }
     
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+		if(_lhs.is_dense() && _rhs.is_dense()) {
+			REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
+			const size_t leftDim = _lhsTrans ? misc::product(_lhs.dimensions, _numIndices, _lhs.degree()) : misc::product(_lhs.dimensions, 0, _lhs.degree() - _numIndices);
+			const size_t midDim = _lhsTrans ? misc::product(_lhs.dimensions, 0, _numIndices) : misc::product(_lhs.dimensions, _lhs.degree()-_numIndices, _lhs.degree());
+			const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
+			
+			IF_CHECK(
+				std::vector<size_t> resultDims;
+				if(_lhsTrans) {
+					for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
+						resultDims.emplace_back(_lhs.dimensions[i]);
+					}
+				} else {
+					for(size_t i = 0; i < _lhs.degree()-_numIndices; ++i) {
+						resultDims.emplace_back(_lhs.dimensions[i]);
+					}
+				}
+				if(_rhsTrans) {
+					for(size_t i = 0; i < _rhs.degree()-_numIndices; ++i) {
+						resultDims.emplace_back(_rhs.dimensions[i]);
+					}
+				} else {
+					for(size_t i = _numIndices; i < _rhs.degree(); ++i) {
+						resultDims.emplace_back(_rhs.dimensions[i]);
+					}
+				}
+				REQUIRE(resultDims == _result.dimensions, "The given results has wrong dimensions " << _result.dimensions << " should be " << resultDims);
+				
+				for(size_t i = 0; i < _numIndices; ++i) {
+					REQUIRE((_lhsTrans ? _lhs.dimensions[i] : _lhs.dimensions[_lhs.degree()-_numIndices+i]) == (_rhsTrans ? _rhs.dimensions[_rhs.degree()-_numIndices+i] : _rhs.dimensions[i]), "Dimensions of the be contracted indices do not coincide.");
+				}
+			)
+			
+			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, _rhs.get_unsanitized_dense_data(), _rhsTrans);
+		} else {
+			LOG(fatal, "Contract not yet implemented for something other than dense dense");
+		}
+	}
+	
+	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {
+		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
+		if(_A.is_dense() && _B.is_dense()) {
+			Tensor result(_A);
+			value_t* const dataPtrA = result.get_dense_data();
+			const value_t* const dataPtrB = _B.get_unsanitized_dense_data();
+			result.factor = _B.factor;
+			for (size_t i = 0; i < result.size; ++i) {
+				dataPtrA[i] *= dataPtrB[i];
+			}
+			return result;
+		} else {
+			LOG(fatal, "entrywise_product not yet implemented for something other than dense dense");
+		}
+	}
+    
     bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps) {
         REQUIRE(_a.dimensions == _b.dimensions, 
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
@@ -737,7 +966,7 @@ namespace xerus {
         }
     }
     
-bool approx_entrywise_equal(const Tensor& _a, const Tensor& _b, const value_t _eps) {
+	bool approx_entrywise_equal(const Tensor& _a, const Tensor& _b, const value_t _eps) {
         REQUIRE(_a.dimensions == _b.dimensions, 
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
         

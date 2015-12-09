@@ -109,8 +109,8 @@ namespace xerus {
 		PA_START;
 		
 		// Get pointers to the data
-		const value_t* oldPosition = _inputTensor.unsanitized_data_pointer()+_fixedIndexOffset;
-		value_t* const newPosition = _outTensor.unsanitized_data_pointer();
+		const value_t* oldPosition = _inputTensor.get_unsanitized_dense_data()+_fixedIndexOffset;
+		value_t* const newPosition = _outTensor.get_unsanitized_dense_data();
 		
 		// Get specific sizes
 		const size_t numSteps = _outTensor.size/_orderedBackDim;
@@ -401,7 +401,7 @@ namespace xerus {
 				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			} else {
 				// Ensure that _out is empty
-				value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->unsanitized_data_pointer();
+				value_t* const dataPointer = static_cast<FullTensor*>(_out.tensorObject)->get_unsanitized_dense_data();
 				misc::array_set_zero(dataPointer, _out.tensorObject->size);
 				
 				if(peacefullIndices) {

@@ -37,12 +37,12 @@ UNIT_TEST(FullTensor, SVD_Identity,
     Index i, j, k, l, m, n;
     
     (res1(i,j,m), res2(m,n), res3(n,k,l)) = SVD(A(i,j,k,l));
-    TEST(res2.compare_to_data(A.data_pointer()));
+    TEST(res2.compare_to_data(A.get_dense_data()));
 	MTEST(frob_norm(res1(i^2, m)*res1(i^2, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(m, i^2)*res3(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 	
     (res1(m,i,j), res2(n,m), res3(k,n,l)) = SVD(A(i,j,k,l));
-    TEST(res2.compare_to_data(A.data_pointer()));
+    TEST(res2.compare_to_data(A.get_dense_data()));
 	MTEST(frob_norm(res1(m, i^2)*res1(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(k,m,l)*res3(k,n,l) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 )

@@ -389,6 +389,46 @@ namespace xerus {
 		 */
 		value_t at(const std::vector<size_t>& _positions) const;
 		
+		
+		/** 
+		 * @brief Returns a pointer for direct access to the dense data array in row major order. 
+		 * @details Also takes care that this direct access is safe, i.e. that this tensor is using a dense representation, is the sole owner of the data and that no non trivial factor exists.
+		 * @return pointer to the dense data array.
+		 */
+		value_t* get_dense_data();
+		
+		/** 
+		 * @brief Gives access to the internal data pointer, without any checks.
+		 * @details Note that the dense data array might not exist because a sparse representation is used, may shared with other tensors 
+		 * or has to be interpreted considering a gloal factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return pointer to the internal dense data array.
+		 */
+		value_t* get_unsanitized_dense_data();
+		
+		/** 
+		 * @brief Gives access to the internal data pointer, without any checks.
+		 * @details Note that the dense data array might not exist because a sparse representation is used, may shared with other tensors 
+		 * or has to be interpreted considering a gloal factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return pointer to the internal dense data array.
+		 */
+		const value_t* get_unsanitized_dense_data() const;
+		
+		/** 
+		 * @brief Returns a pointer to the internal dense data array for complete rewrite purpose ONLY.
+		 * @details This is equivalent to calling reset() with the current dimensions, dense representation and no initialisation and then
+		 * calling get_unsanitized_dense_data().
+		 * @return pointer to the internal dense data array.
+		 */
+		value_t* override_dense_data();
+		
+		/** 
+		 * @brief Gives access to the internal shared data pointer, without any checks.
+		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a global
+		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * @return The internal shared pointer to the data array.
+		 */
+		const std::shared_ptr<value_t>& get_internal_dense_data();
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
@@ -443,6 +483,62 @@ namespace xerus {
 		 * @return an internal representation of an IndexedTensor.
 		 */
 		IndexedTensorReadOnly<Tensor> operator()(	  std::vector<Index>&& _indices) const;
+		
+		
+		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		/** 
+		 * @brief Resizes a specific dimension of the Tensor.
+		 * @param _n the dimension to resize.
+		 * @param _newDim the new value that resized dimension shall have.
+		 * @param _cutPos the index within the selected dimension after which new slates are inserted or removed, by default the last index.
+		 */
+		void resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos=~0ul);
+		
+		/** 
+		 * @brief Removes a single slate from the Tensor.
+		 * @param _indexNb the dimension to in defining the slate.
+		 * @param _pos the index within the selected dimension for which the slate shall be removed.
+		 */
+		void remove_slate(uint _indexNb, uint _pos);
+		
+		/** 
+		 * @brief Modifies the diagonal entries according to the given function.
+		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
+		 * @param _f the function to call to modify each entry.
+		 */
+		void modify_diag_elements(const std::function<void(value_t&)>& _f);
+		
+		/** 
+		 * @brief Modifies the diagonal entries according to the given function.
+		 * @details In this overload the current diagonal entries are passed to @a _f, one at a time, together with their position on the diagonal. At the moment this is only defined for matricies.
+		 * @param _f the function to call to modify each entry.
+		 */
+		void modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f);
+		
+		/** 
+		 * @brief Modifies every entry according to the given function.
+		 * @details In this overload only the current entry is passed to @a _f.
+		 * @param _f the function to call to modify each entry.
+		 */
+		void modify_elements(const std::function<void(value_t&)>& _f);
+		
+		/** 
+		 * @brief Modifies every entry according to the given function.
+		 * @details In this overload the current entry together with its position, assuming row-major ordering is passed to @a _f.
+		 * @param _f the function to call to modify each entry.
+		 */
+		void modify_elements(const std::function<void(value_t&, const size_t)>& _f);
+		
+		/** 
+		 * @brief Modifies every entry according to the given function.
+		 * @details In this overload the current entry together with its complete position is passed to @a _f.
+		 * @param _f the function to call to modify each entry.
+		 */
+		void modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f);
+		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -590,6 +686,26 @@ namespace xerus {
 	* @return the frobenius norm .
 	*/
 	static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
+	
+	
+	
+	/** 
+	 * @brief Low-level contraction between FullTensors.
+	 * @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
+	 * @param _result Output for the result of the contraction. Must allready have the right dimensions!
+	 * @param _lhs left hand side of the contraction.
+	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
+	 * @param _rhs right hand side of the contraction.
+	 * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
+	 * @param _numIndices number of indices that shall be contracted.
+	 */
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+	
+	
+	/**
+	 * @brief calculates the entrywise product of two Tensors
+	 */
+	Tensor entrywise_product(const Tensor &_A, const Tensor &_B);
 	
 	/** 
 	* @brief Checks whether two Tensors are approximately equal.

@@ -135,10 +135,10 @@ namespace xerus {
 		if (!isOperator) {
 			if(_tensor.is_sparse()) {
 				FullTensor tmpTensor(static_cast<const SparseTensor&>(_tensor)); // TODO Sparse SVD?
-				workingData = tmpTensor.unsanitized_shared_data();
+				workingData = tmpTensor.get_internal_dense_data();
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
-				misc::array_copy(workingData.get(), static_cast<const FullTensor&>(_tensor).unsanitized_data_pointer(), _tensor.size);
+				misc::array_copy(workingData.get(), static_cast<const FullTensor&>(_tensor).get_unsanitized_dense_data(), _tensor.size);
 			}
 		} else {
 			FullTensor tmpTensor(degree());
@@ -149,7 +149,7 @@ namespace xerus {
 				newIndices.emplace_back(presentIndices[i+numComponents]);
 			}
 			tmpTensor(newIndices) = _tensor(presentIndices);
-			workingData = tmpTensor.unsanitized_shared_data();
+			workingData = tmpTensor.get_internal_dense_data();
 		}
 		
 		for(size_t position = 0; position < numComponents-1; ++position) {
@@ -184,7 +184,7 @@ namespace xerus {
 			} else {
 				nxtTensor.reset(new FullTensor(std::move(constructionDim), DONT_SET_ZERO()) );
 				for (size_t i = 0; i < leftDim; ++i) {
-					misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->unsanitized_data_pointer()+i*newRank, currentU.get()+i*maxRank, newRank);
+					misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
 				}
 			}
 			
@@ -206,7 +206,7 @@ namespace xerus {
 		} else {
 			nxtTensor.reset(new FullTensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, DONT_SET_ZERO()) );
 		}
-		misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->unsanitized_data_pointer(), workingData.get(), oldRank*remainingDim);
+		misc::array_copy(static_cast<FullTensor*>(nxtTensor.get())->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
 		
 		// set last component tensor to Vt
 		set_component(numComponents-1, std::move(nxtTensor));
@@ -707,7 +707,7 @@ namespace xerus {
 					offsetA = r1 * externalDim * componentA.dimensions.back();
 					for (size_t n=0; n<externalDim; ++n) {
 						for (size_t r2=0; r2<componentA.dimensions.back(); ++r2) {
-							misc::array_scaled_copy(newComponent->unsanitized_data_pointer()+offsetResult, componentB.factor*componentA.factor*componentA.unsanitized_data_pointer()[offsetA], componentB.unsanitized_data_pointer()+offsetB, stepsize);
+							misc::array_scaled_copy(newComponent->get_unsanitized_dense_data()+offsetResult, componentB.factor*componentA.factor*componentA.get_unsanitized_dense_data()[offsetA], componentB.get_unsanitized_dense_data()+offsetB, stepsize);
 							offsetResult += stepsize;
 							offsetA += 1;
 						}
@@ -783,7 +783,7 @@ namespace xerus {
 					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
 						for (size_t n = 0; n < externalDim; ++n) {
 							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								misc::array_scaled_copy(newComponent.unsanitized_data_pointer()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const FullTensor&>(currComp).unsanitized_data_pointer()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
+								misc::array_scaled_copy(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const FullTensor&>(currComp).get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
 								newPos += currComp.dimensions.back();
 							}
 						}
@@ -1446,7 +1446,7 @@ namespace xerus {
 			}
 			
 			std::unique_ptr<Tensor> newComponent(new FullTensor(std::move(nxtDimensions)) );
-			value_t * const componentData = static_cast<FullTensor*>(newComponent.get())->unsanitized_data_pointer();
+			value_t * const componentData = static_cast<FullTensor*>(newComponent.get())->get_unsanitized_dense_data();
 			
 			
 			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();
@@ -1465,7 +1465,7 @@ namespace xerus {
 						// RightIdx can be copied in one piece
 						misc::array_scaled_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
 												myComponent.factor, 
-												myComponent.unsanitized_data_pointer() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
+												myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
 												myComponent.dimensions.back());
 					}
 				}
@@ -1475,7 +1475,7 @@ namespace xerus {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
 						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-										 myComponent.unsanitized_data_pointer() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
+										 myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
 										 myComponent.dimensions.back());
 					}
 				}
@@ -1489,7 +1489,7 @@ namespace xerus {
 						// RightIdx can be copied as one piece
 						misc::array_scaled_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
 												otherComponent.factor, 
-												otherComponent.unsanitized_data_pointer() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
+												otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
 												otherComponent.dimensions.back());
 					}
 				}
@@ -1499,7 +1499,7 @@ namespace xerus {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
 						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-										 otherComponent.unsanitized_data_pointer() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
+										 otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
 										 otherComponent.dimensions.back());
 					}
 				}
