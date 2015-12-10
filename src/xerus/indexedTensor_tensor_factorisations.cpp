@@ -32,7 +32,7 @@
 
 namespace xerus {
 	
-	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, const IndexedTensorReadOnly<Tensor>& _base, const IndexedTensorWritable<Tensor>& _lhs, const IndexedTensorWritable<Tensor>& _rhs) {
+	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorWritable<Tensor>&& _rhs) {
 		const std::vector<Index> baseIndices = _base.get_assigned_indices();
 		
 		// Calculate the future order of lhs and rhs.
@@ -122,7 +122,7 @@ namespace xerus {
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);
 		
 		IndexedTensor<Tensor> reorderedBaseTensor(new Tensor(std::move(reorderedBaseDimensions), _base.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
-		evaluate(reorderedBaseTensor, _base);
+		evaluate(std::move(reorderedBaseTensor), std::move(_base));
 		reorderedBaseTensor.tensorObject->ensure_own_data();
 		
 		_rank = std::min(_lhsSize, _rhsSize);
@@ -140,12 +140,12 @@ namespace xerus {
 		return std::unique_ptr<Tensor>(reorderedBaseTensor.tensorObject);
 	}
 	
-	void SVD::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+	void SVD::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 3, "SVD requires two output tensors, not " << _output.size());
-		const IndexedTensorReadOnly<Tensor>& A = input;
-		const IndexedTensorWritable<Tensor>& U = *_output[0];
-		const IndexedTensorWritable<Tensor>& S = *_output[1];
-		const IndexedTensorWritable<Tensor>& Vt = *_output[2];
+		IndexedTensorReadOnly<Tensor>& A = *input;
+		IndexedTensorWritable<Tensor>& U = *_output[0];
+		IndexedTensorWritable<Tensor>& S = *_output[1];
+		IndexedTensorWritable<Tensor>& Vt = *_output[2];
 		
 		IF_CHECK(S.check_indices(2, false));
 		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be Tensors, as they are defenitely not sparse.");
@@ -155,7 +155,7 @@ namespace xerus {
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, A, U, Vt);
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(U), std::move(Vt));
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
@@ -217,18 +217,18 @@ namespace xerus {
 	}
 
 
-	void QR::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+	void QR::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QR factorisation requires two output tensors, not " << _output.size());
-		const IndexedTensorReadOnly<Tensor>& A = *input;
-		const IndexedTensorWritable<Tensor>& Q = *_output[0];
-		const IndexedTensorWritable<Tensor>& R = *_output[1];
+		IndexedTensorReadOnly<Tensor>& A = *input;
+		IndexedTensorWritable<Tensor>& Q = *_output[0];
+		IndexedTensorWritable<Tensor>& R = *_output[1];
 		 
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, A, Q, R);
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(R));
 		
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
@@ -244,18 +244,18 @@ namespace xerus {
 		R = (*R.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
 
-	void RQ::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+	void RQ::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "RQ factorisation requires two output tensors, not " << _output.size());
-		const IndexedTensorReadOnly<Tensor>& A = *input;
-		const IndexedTensorWritable<Tensor>& R = *_output[0];
-		const IndexedTensorWritable<Tensor>& Q = *_output[1];
+		IndexedTensorReadOnly<Tensor>& A = *input;
+		IndexedTensorWritable<Tensor>& R = *_output[0];
+		IndexedTensorWritable<Tensor>& Q = *_output[1];
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, A, R, Q);
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(R), std::move(Q));
 		
 		
 		if(reorderedBaseTensor->is_sparse()) {
@@ -273,18 +273,18 @@ namespace xerus {
 	}
 	
 	
-	void QC::operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const {
+	void QC::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QC factorisation requires two output tensors, not " << _output.size());
-		const IndexedTensorReadOnly<Tensor>& A = *input;
-		const IndexedTensorWritable<Tensor>& Q = *_output[0];
-		const IndexedTensorWritable<Tensor>& C = *_output[1];
+		IndexedTensorReadOnly<Tensor>& A = *input;
+		IndexedTensorWritable<Tensor>& Q = *_output[0];
+		IndexedTensorWritable<Tensor>& C = *_output[1];
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be Tensors, as they are definitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, A, Q, C);
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(C));
 		
 		if(reorderedBaseTensor->is_sparse()){
 			LOG(fatal, "Sparse QC not yet implemented.");

@@ -44,7 +44,7 @@ namespace xerus {
     
     
     // Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
-    CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
+    CsUniquePtr to_cs_format(IndexedTensorReadOnly<Tensor>&& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
         REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
         
         size_t m = 1;
@@ -64,7 +64,7 @@ namespace xerus {
         inverseIndexOrder.insert(inverseIndexOrder.end(), _lhsIndices.begin(), _lhsIndices.end());
         
         Tensor reorderedTensor( Tensor::Representation::Sparse );
-        reorderedTensor(inverseIndexOrder) = _tensor;
+        reorderedTensor(inverseIndexOrder) = std::move(_tensor);
         
         REQUIRE(reorderedTensor.size == m*n, "Internal Error");
         

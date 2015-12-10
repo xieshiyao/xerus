@@ -31,7 +31,7 @@
 
 namespace xerus {
 
-    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _a, const IndexedTensorReadOnly<Tensor>& _b) {
+    void solve(IndexedTensorWritable<Tensor>&& _x, IndexedTensorReadOnly<Tensor>&& _a, IndexedTensorReadOnly<Tensor>&& _b) {
         // x takes the dimensions of A -- also ensures that every index of x is contained in A
 		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::None);
         
@@ -78,16 +78,16 @@ namespace xerus {
         
         //We need tmp objects for A and b, because Lapacke wants to destroys the input
 		IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), Tensor::Representation::Dense, Tensor::Initialisation::None), orderA, true);
-        evaluate(tmpA, _a);
+		evaluate(std::move(tmpA), std::move(_a));
         tmpA.tensorObject->ensure_own_data();
         
 		IndexedTensor<Tensor> tmpB(new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true);
-        evaluate(tmpB, _b);
+		evaluate(std::move(tmpB), std::move(_b));
         tmpB.tensorObject->ensure_own_data();
         
         //Save slot for eventual tmpX
         std::unique_ptr<IndexedTensor<Tensor>> saveSlotX;
-        const IndexedTensorWritable<Tensor>* usedX;
+        IndexedTensorWritable<Tensor>* usedX;
         if(orderX != _x.indices) {
 			saveSlotX.reset(new IndexedTensor<Tensor>(new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), orderX, true));
             usedX = saveSlotX.get();
@@ -105,13 +105,13 @@ namespace xerus {
             blasWrapper::solve_least_squares_destructive(static_cast<Tensor*>(usedX->tensorObject)->get_unsanitized_dense_data(), static_cast<Tensor*>(tmpA.tensorObject)->get_unsanitized_dense_data(), M, N, static_cast<Tensor*>(tmpB.tensorObject)->get_unsanitized_dense_data());
         }
         
-        if(saveSlotX) { evaluate(_x, *usedX); }
+        if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
         
         // Propagate the constant factor
         _x.tensorObject->factor = tmpB.tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
     }
 
-    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A) {
+    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A) {
         const std::vector<Index> indicesA = _A.get_assigned_indices();
         const std::vector<Index> indicesB = _b.get_assigned_indices();
         
@@ -131,7 +131,7 @@ namespace xerus {
         }
         IndexedTensorMoveable<Tensor> tmpX(new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), std::move(indicesX));
         
-        solve(tmpX, _A, _b);
+		solve(std::move(tmpX), std::move(_A), std::move(_b));
         return tmpX;
     }
 }

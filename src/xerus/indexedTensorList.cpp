@@ -23,26 +23,27 @@
  */
 
 #include <xerus/indexedTensorList.h>
+#include <xerus/indexedTensor_tensor_factorisations.h>
 
 namespace xerus {
     IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) { } 
     
-    IndexedTensorList::IndexedTensorList(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second) {
+    IndexedTensorList::IndexedTensorList(IndexedTensorWritable<Tensor>&& _first, IndexedTensorWritable<Tensor>&& _second) {
         tensors.emplace_back(&_first);
         tensors.emplace_back(&_second);
     }
     
-    void IndexedTensorList::operator=(std::function<void(const std::vector<const IndexedTensorWritable<Tensor>*>&)> _f) const {
-        _f(tensors);
+    void IndexedTensorList::operator=(TensorFactorisation&& _factorisation) const {
+		_factorisation(tensors);
     }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
-    IndexedTensorList operator,(const IndexedTensorWritable<Tensor>& _first, const IndexedTensorWritable<Tensor>& _second) {
-        return IndexedTensorList(_first, _second);
+    IndexedTensorList operator,(IndexedTensorWritable<Tensor>&& _first, IndexedTensorWritable<Tensor>&& _second) {
+        return IndexedTensorList(std::move(_first), std::move(_second));
     }
 
-    IndexedTensorList operator,(IndexedTensorList &&_first, const IndexedTensorWritable<Tensor> &_second) {
+    IndexedTensorList operator,(IndexedTensorList&& _first, IndexedTensorWritable<Tensor>&& _second) {
         _first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
         return std::move(_first);
     }

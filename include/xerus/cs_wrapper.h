@@ -56,7 +56,7 @@ namespace xerus {
     CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 
     // Converts an Indexed Tensor and a given matrification to the CSparse sparse matrix format
-    CsUniquePtr to_cs_format(const IndexedTensorReadOnly<Tensor>& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices);
+    CsUniquePtr to_cs_format(IndexedTensorReadOnly<Tensor>&& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices);
     
     /// Calculates the Matrix Matrix product between to CS sparse matrices
     CsUniquePtr matrix_matrix_product(const CsUniquePtr& _lhs, const CsUniquePtr& _rhs);

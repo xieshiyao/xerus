@@ -29,7 +29,6 @@
 #include <string>
 #include <limits>
 #include <memory>
-#include "indexedTensorReadOnly.h"
 #include "indexedTensor.h"
  
 namespace xerus {

@@ -28,32 +28,40 @@
 
 namespace xerus {
 
+	/**
+	 * @brief Abstract super class for all tensor factorisations.
+	 */
+	class TensorFactorisation {
+	public:
+		virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const = 0;
+	};
+	
     /**
 	 * @brief Helper class to allow an intuitive syntax for SVD factorisations.
 	 * @details The simplest example is (U(i,r1), S(r1,r2), Vt(r2,j)) = SVD(A(i,j)) to calculate the SVD of A. However A, U, S and Vt can
 	 *  also be a higher order Tensors. In order to calculate the SVD however a matrification imposed by the index order is used.
 	 */
-	class SVD {
+	class SVD : public TensorFactorisation{
     public:
-        const IndexedTensorReadOnly<Tensor>& input;
+        IndexedTensorReadOnly<Tensor>* input;
         const double epsilon;
 		const double softThreshold;
 		const size_t maxRank;
 		const bool preventZero;
 		
-        SVD(const IndexedTensorReadOnly<Tensor>& _input) : 
-			input(_input), epsilon(EPSILON), softThreshold(0.0), maxRank(std::numeric_limits<size_t>::max()), preventZero(false) { }
+        SVD(IndexedTensorReadOnly<Tensor>&& _input) : 
+			input(&_input), epsilon(EPSILON), softThreshold(0.0), maxRank(std::numeric_limits<size_t>::max()), preventZero(false) { }
 			
-        SVD(const IndexedTensorReadOnly<Tensor>& _input, const double _softTreshold, const bool _preventZero = false) : 
-			input(_input), epsilon(0.0), softThreshold(_softTreshold), maxRank(std::numeric_limits<size_t>::max()), preventZero(_preventZero) { }
+        SVD(IndexedTensorReadOnly<Tensor>&& _input, const double _softTreshold, const bool _preventZero = false) : 
+			input(&_input), epsilon(0.0), softThreshold(_softTreshold), maxRank(std::numeric_limits<size_t>::max()), preventZero(_preventZero) { }
 			
-        SVD(const IndexedTensorReadOnly<Tensor>& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
-			input(_input), epsilon(_epsilon), softThreshold(0.0), maxRank(_maxRank), preventZero(false) { }
+        SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
+			input(&_input), epsilon(_epsilon), softThreshold(0.0), maxRank(_maxRank), preventZero(false) { }
 			
-		SVD(const IndexedTensorReadOnly<Tensor>& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
-			input(_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
+		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
+			input(&_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
         
-        void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const ;
+        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
     };
 
 	/**
@@ -61,12 +69,12 @@ namespace xerus {
 	 * @details The simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR of A. However A, Q and R can
 	 *  also be a higher order Tensors. In order to calculate the QR however a matrification imposed by the index order is used.
 	 */
-    class QR {
+	class QR : public TensorFactorisation {
     public:
-        const IndexedTensorReadOnly<Tensor>* input;
-        QR(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
+        IndexedTensorReadOnly<Tensor>* input;
+        QR(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
         
-        void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
+        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
     };
 
     /**
@@ -74,12 +82,12 @@ namespace xerus {
 	 * @details The simplest example is (R(i,k), Q(k,j)) = RQ(A(i,j)) to calculate the RQ of A. However A, Q and R can
 	 *  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
 	 */
-	class RQ {
+	class RQ : public TensorFactorisation {
     public:
-        const IndexedTensorReadOnly<Tensor>* input;
-        RQ(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
+        IndexedTensorReadOnly<Tensor>* input;
+        RQ(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
         
-        void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
+        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
     };
 	
 	/**
@@ -88,11 +96,11 @@ namespace xerus {
 	 * The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and R can
 	 *  also be a higher order Tensors.
 	 */
-	class QC {
+	class QC : public TensorFactorisation {
 	public:
-		const IndexedTensorReadOnly<Tensor>* input;
-		QC(const IndexedTensorReadOnly<Tensor>& _input) : input(&_input) { }
+		IndexedTensorReadOnly<Tensor>* input;
+		QC(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
-		void operator()(const std::vector<const IndexedTensorWritable<Tensor>*>& _output) const;
+		virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
 	};
 }

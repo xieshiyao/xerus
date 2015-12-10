@@ -103,9 +103,10 @@ namespace xerus {
     }
     
     template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::operator=(const IndexedTensorWritable<tensor_type>& _rhs) const {
-        operator=(static_cast<const IndexedTensorReadOnly<tensor_type> &>(_rhs));
+    void IndexedTensorWritable<tensor_type>::operator=(IndexedTensorWritable<tensor_type>&& _rhs) {
+        operator=(static_cast<IndexedTensorReadOnly<tensor_type>&&>(_rhs));
     }
+    
     
     template<>
     void IndexedTensorWritable<Tensor>::perform_traces() {
@@ -121,7 +122,7 @@ namespace xerus {
 			}
 		}
 		if(!allOpen) { 
-			(*this->tensorObject)(openIndices) = *this;
+			(*this->tensorObject)(openIndices) = std::move(*this); // TODO does that make sense?
 			this->indices = openIndices;
 		}
 	}

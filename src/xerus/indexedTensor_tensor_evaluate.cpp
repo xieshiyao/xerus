@@ -216,7 +216,7 @@ namespace xerus {
 	}
 
 
-	void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base) {
+	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base) {
 		// Get the assigned indices
 		const std::vector<Index> baseIndices = _base.get_assigned_indices();
 		const std::vector<Index> outIndices = _out.get_assigned_indices();

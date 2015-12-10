@@ -274,7 +274,7 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::contract_stack(const IndexedTensorWritable<TensorNetwork> &_me) {
+	void TTNetwork<isOperator>::contract_stack(IndexedTensorWritable<TensorNetwork>&& _me) {
 		REQUIRE(_me.tensorObject->is_valid_network(), "cannot contract inconsistent ttStack");
 		const size_t numComponents = _me.degree()/N;
 		const size_t numNodes = _me.degree()/N+2;
@@ -1192,7 +1192,7 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_contraction_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+	bool TTNetwork<isOperator>::specialized_contraction_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(!_out.tensorObject, "Internal Error.");
 		
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
@@ -1245,7 +1245,7 @@ namespace xerus {
 				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
 				_out.reset(res, myIndices, true);
-				TensorNetwork::add_network_to_network(_out, _other);
+				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
 				return true;
 			} else {
 				return false;
@@ -1271,7 +1271,7 @@ namespace xerus {
 				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
 				_out.reset(res, myIndices, true);
-				TensorNetwork::add_network_to_network(_out, _other);
+				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
 				return true;
 			} else {
 				return false;
@@ -1280,7 +1280,7 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(_me.degree() == _other.degree(), "");
 		const std::vector<Index> myIndices = _me.get_assigned_indices();
 		const std::vector<Index> otherIndices = _other.get_assigned_indices();
@@ -1329,29 +1329,29 @@ namespace xerus {
 		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
 		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
 		std::unique_ptr<IndexedTensor<TensorNetwork>> meStorage;
-		const IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
-		const IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_me);
+		IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
+		IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<IndexedTensorMoveable<TensorNetwork> *>(&_me);
 		if (movMe) {
 			internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
 			if (stackMe) {
 				meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
-				(*meStorage) = _me;
+				std::move(*meStorage) = std::move(_me);
 				realMePtr = meStorage.get();
 			}
 		} else {
 			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
 		}
-		const IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
+		IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
 		
 		// If other is in fact a TTTensorStack, we have to evaluate it to tttensor
 		std::unique_ptr<TTNetwork> otherStorage;
 		const TensorNetwork *realOtherPtr = _other.tensorObjectReadOnly;
-		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
+		IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<IndexedTensorMoveable<TensorNetwork> *>(&_other);
 		if (movOther) {
 			internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
 			if (stackOther) {
 				otherStorage.reset(new TTNetwork());
-				(*otherStorage)(otherIndices) = _other;
+				(*otherStorage)(otherIndices) = std::move(_other);
 				if (transposeRHS) {
 					//NOTE will only be called in the operator case and is thus a nop
 					reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
@@ -1364,7 +1364,7 @@ namespace xerus {
 		}
 		if (transposeRHS) {
 			otherStorage.reset(new TTNetwork());
-			(*otherStorage)(otherIndices) = _other;
+			(*otherStorage)(otherIndices) = std::move(_other);
 			//NOTE will only be called in the operator case and is thus a nop
 			reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
 			transposeRHS = false;
@@ -1527,7 +1527,7 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+	void TTNetwork<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(_me.tensorObject == this, "Internal Error.");
 		
 		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
@@ -1539,10 +1539,10 @@ namespace xerus {
 		TTNetwork* const meTTN = dynamic_cast<TTNetwork*>(_me.tensorObject);
 		REQUIRE(meTTN, "Internal Error.");
 		const internal::TTStack<isOperator>* const otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
-		const IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<const IndexedTensorMoveable<TensorNetwork> *>(&_other);
+		IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<IndexedTensorMoveable<TensorNetwork> *>(&_other);
 		if (otherTTStack) {
 			REQUIRE(movOther, "not moveable TTStack encountered...");
-			contract_stack(*movOther);
+			contract_stack(std::move(*movOther));
 		}
 		if(otherTTN || otherTTStack) {
 			// Check whether the index order coincides

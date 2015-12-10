@@ -28,15 +28,15 @@
 
 namespace xerus {
 	template<class tensor_type>
-    static inline IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, const IndexedTensorReadOnly<tensor_type>& _tensor) {
-		IndexedTensorMoveable<tensor_type> result(_tensor);
+    static inline IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, IndexedTensorReadOnly<tensor_type>&& _tensor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
 		*result.tensorObject *= _factor;
 		return result;
 	}
 	
 	template<class tensor_type>
-	static inline IndexedTensorMoveable<tensor_type> operator*(const IndexedTensorReadOnly<tensor_type>& _tensor, const value_t _factor) {
-		return operator*(_factor, _tensor);
+	static inline IndexedTensorMoveable<tensor_type> operator*(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _factor) {
+		return operator*(_factor, std::move(_tensor));
 	}
 	
 	
@@ -53,8 +53,8 @@ namespace xerus {
 	}
 	
     template<class tensor_type>
-	static inline IndexedTensorMoveable<tensor_type> operator/(const IndexedTensorReadOnly<tensor_type> & _tensor, const value_t _divisor) {
-		IndexedTensorMoveable<tensor_type> result(_tensor);
+	static inline IndexedTensorMoveable<tensor_type> operator/(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _divisor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
 		*result.tensorObject /= _divisor;
 		return result;
 	}
@@ -66,34 +66,34 @@ namespace xerus {
 		return result;
 	}
 	
-	void operator+=(IndexedTensorWritable<Tensor> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-	void operator-=(IndexedTensorWritable<Tensor> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
+	void operator+=(IndexedTensorWritable<Tensor> &  _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	void operator-=(IndexedTensorWritable<Tensor> &  _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
 	
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
-	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
-	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
-	
-	
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-// 	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-// 	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
-	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs);
-// 	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-// 	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
 	
-	IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-	IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+// 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+// 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
-	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
-	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	
+	
+	IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<TensorNetwork> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	
+	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 }

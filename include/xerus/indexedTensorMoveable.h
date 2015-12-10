@@ -52,26 +52,15 @@ namespace xerus {
         IndexedTensorMoveable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices);
         
 		///@brief Allow explicit cast to from IndexedTensorReadOnly.
-		explicit IndexedTensorMoveable(const IndexedTensorReadOnly<tensor_type> &  _other);
-		
-		///@brief Allow explicit cast to from IndexedTensorReadOnly.
-		explicit IndexedTensorMoveable(      IndexedTensorReadOnly<tensor_type>&&  _other);
+		explicit IndexedTensorMoveable(IndexedTensorReadOnly<tensor_type>&& _other);
 		
         ///@brief Allow explicit conversions from indexed TensorNetworks to indexed Tensors
 		template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
-        explicit IndexedTensorMoveable(const IndexedTensorReadOnly<TensorNetwork> &  _other );
-		
-        ///@brief Allow explicit conversions from indexed TensorNetworks to indexed Tensors
-		template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
-        explicit IndexedTensorMoveable(      IndexedTensorReadOnly<TensorNetwork> && _other );
+        explicit IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&& _other );
         
         ///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
 		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
-        IndexedTensorMoveable(const IndexedTensorReadOnly<Tensor> &  _other);
-		
-        ///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
-		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
-        IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other);
+        IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&& _other);
 		
     };
 }

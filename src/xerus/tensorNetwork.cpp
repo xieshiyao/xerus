@@ -318,22 +318,22 @@ namespace xerus {
     }
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out , const IndexedTensorReadOnly<TensorNetwork> &_me , const IndexedTensorReadOnly<TensorNetwork> &_other ) const {
+	bool TensorNetwork::specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
-	bool TensorNetwork::specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const {
+	bool TensorNetwork::specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
         return false; // A general tensor Network can't do anything specialized
 	}
 	
-	void TensorNetwork::specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) {
+	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		// If tensorObject is already identical, don't attempt to copy it
 		std::vector<Index> currentIndices(_other.get_assigned_indices());
         if (_other.tensorObjectReadOnly != _me.tensorObject) {
             *_me.tensorObject = *_other.tensorObjectReadOnly;
         } 
-        TensorNetwork::trace_out_double_indices(currentIndices, _me);
-        TensorNetwork::shuffle_indices(currentIndices, _me);
+        TensorNetwork::trace_out_double_indices(currentIndices, std::move(_me));
+		TensorNetwork::shuffle_indices(currentIndices, std::move(_me));
 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -489,7 +489,7 @@ namespace xerus {
     }
     
 
-    void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base) {
+    void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
         
 		REQUIRE(base.is_valid_network(), "Network that is supposed to be traced out is inconsistent.");
@@ -969,7 +969,7 @@ namespace xerus {
 				
 				IndexedTensor<Tensor> resultTmpIndexed(newTensor.get(), resultIndices, false); // TODO ugly as shit. // TODO this without indices
 				
-				evaluate(resultTmpIndexed, from_cs_format(resultCS, resultTmpIndexed.get_evaluated_dimensions(resultIndices))(resultIndices));
+				evaluate(std::move(resultTmpIndexed), from_cs_format(resultCS, resultTmpIndexed.get_evaluated_dimensions(resultIndices))(resultIndices));
 				
 			} else {
 				std::vector<size_t> outDimensions;
@@ -1188,7 +1188,7 @@ namespace xerus {
         return (double) (cost);
     }
 
-    void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert) {
+    void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
         const std::vector<Index> toInsertIndices = _toInsert.get_assigned_indices();
         
         // TODO after trace ensure connectedness (to external indices)
@@ -1227,7 +1227,7 @@ namespace xerus {
         }
         
         // Find traces (former contractions have become traces due to the joining)
-        trace_out_double_indices(_base.indices, _base);
+        trace_out_double_indices(_base.indices, std::move(_base));
 		
 		REQUIRE(_base.tensorObject->is_valid_network(), "ie");
     }

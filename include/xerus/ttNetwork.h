@@ -189,7 +189,7 @@ namespace xerus {
 	protected:
 		static void construct_train_from_full(TensorNetwork& _out, const Tensor& _A, const double _eps);
 		
-		static void contract_stack(const IndexedTensorWritable<TensorNetwork> &_me);
+		static void contract_stack(IndexedTensorWritable<TensorNetwork>&& _me);
 			
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
@@ -475,15 +475,15 @@ namespace xerus {
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-		static bool specialized_contraction_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
-		static bool specialized_sum_f(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
-		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
-			return specialized_contraction_f(_out, _me, _other);
+		static bool specialized_contraction_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
+		static bool specialized_sum_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
+		virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+			return specialized_contraction_f(std::move(_out), std::move(_me), std::move(_other));
 		}
-		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
-			return specialized_sum_f(_out, _me, _other);
+		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+			return specialized_sum_f(std::move(_out), std::move(_me), std::move(_other));
 		}
-		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) override;
+		virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) override;
 		
 	};
 
@@ -523,14 +523,14 @@ namespace xerus {
 			
 		
 			/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-			virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me _unused_ , const IndexedTensorReadOnly<TensorNetwork> &_other _unused_) override {
+			virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me _unused_ , IndexedTensorReadOnly<TensorNetwork>&& _other _unused_) override {
 				LOG(fatal, "TTStack not supported as a storing type");
 			}
-			virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
-				return TTNetwork<isOperator>::specialized_contraction_f(_out, _me, _other);
+			virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+				return TTNetwork<isOperator>::specialized_contraction_f(std::move(_out), std::move(_me), std::move(_other));
 			}
-			virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const override {
-				return TTNetwork<isOperator>::specialized_sum_f(_out, _me, _other);
+			virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+				return TTNetwork<isOperator>::specialized_sum_f(std::move(_out), std::move(_me), std::move(_other));
 			}
 			
 			virtual TensorNetwork* get_copy() const override {

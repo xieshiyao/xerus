@@ -33,7 +33,7 @@
 namespace xerus {
     
     template<> 
-    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<TensorNetwork> &_rhs) const {
+    void IndexedTensorWritable<Tensor>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
         std::vector<Index> rightIndices = _rhs.get_assigned_indices();
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
@@ -73,14 +73,14 @@ namespace xerus {
 	}
 
     
-    template<> void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<Tensor>& _rhs) const {
-		tensorObject->specialized_evaluation(*this, IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
+    template<> void IndexedTensorWritable<TensorNetwork>::operator=(IndexedTensorReadOnly<Tensor>&& _rhs) {
+		tensorObject->specialized_evaluation(std::move(*this), IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
     }
     
     
     /// shuffles the external links of _lhs according to the indices of the indexedTensors
     /// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
-    void TensorNetwork::shuffle_indices(std::vector<Index> &_currentIndices, const IndexedTensorWritable<TensorNetwork> &_lhs) {
+    void TensorNetwork::shuffle_indices(std::vector<Index> &_currentIndices, IndexedTensorWritable<TensorNetwork>&& _lhs) {
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
         // writeable copy of the left indices
         size_t passedDegree1=0;
@@ -108,35 +108,43 @@ namespace xerus {
     }
 
     template<>
-    void IndexedTensorWritable<TensorNetwork>::operator=(const IndexedTensorReadOnly<TensorNetwork>& _rhs) const {
-		tensorObject->specialized_evaluation(*this, _rhs);
+    void IndexedTensorWritable<TensorNetwork>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		tensorObject->specialized_evaluation(std::move(*this), std::move(_rhs));
     }
 
     
-    IndexedTensorMoveable<TensorNetwork> operator*(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
-        if(!_lhs.tensorObjectReadOnly->specialized_contraction(result, _lhs, _rhs) && !_rhs.tensorObjectReadOnly->specialized_contraction(result, _rhs, _lhs)) {
+		if(!_lhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_rhs), std::move(_lhs))) {
             result.tensorObject = new TensorNetwork(*_lhs.tensorObjectReadOnly);
             result.tensorObjectReadOnly = result.tensorObject;
             result.indices = _lhs.get_assigned_indices();
             result.deleteTensorObject = true;
-            TensorNetwork::add_network_to_network(result, _rhs);
+            TensorNetwork::add_network_to_network(std::move(result), std::move(_rhs));
         }
         return result;
     }
 
 
-    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork> &&  _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&&  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
-        if(!_lhs.tensorObjectReadOnly->specialized_contraction(result, std::move(_lhs), _rhs) && !_rhs.tensorObjectReadOnly->specialized_contraction(result, _rhs, std::move(_lhs))) {
+		if(!_lhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_rhs), std::move(_lhs))) {
             result.tensorObject = _lhs.tensorObject;
             result.tensorObjectReadOnly = _lhs.tensorObjectReadOnly;
             result.indices = _lhs.get_assigned_indices();
             result.deleteTensorObject = true;
             _lhs.deleteTensorObject = false;
-            TensorNetwork::add_network_to_network(result, _rhs);
+            TensorNetwork::add_network_to_network(std::move(result), std::move(_rhs));
         }
         return result;
     }
+    
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs) {
+		return operator*(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs) {
+		return operator*(std::move(_lhs), static_cast<IndexedTensorReadOnly<TensorNetwork>&&>(_rhs));
+	}
 
 }

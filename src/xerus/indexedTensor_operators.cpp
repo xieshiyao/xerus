@@ -33,9 +33,9 @@
 
 namespace xerus {
     
-	void operator+=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
+	void operator+=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
-		(*reorderedRhs)(_lhs.indices) = _rhs;
+		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
 		
 		if(_lhs.tensorObjectReadOnly->is_sparse()) {
 			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
@@ -45,9 +45,9 @@ namespace xerus {
 		}		
 	}
 	
-	void operator-=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
+	void operator-=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
-		(*reorderedRhs)(_lhs.indices) = _rhs;
+		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
 		
 		if(_lhs.tensorObjectReadOnly->is_sparse()) {
 			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
@@ -58,44 +58,44 @@ namespace xerus {
 	}
     
     
-    IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
-		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
-			IndexedTensorMoveable<Tensor> result(_lhs);
-			result.perform_traces();
-			operator+=(result, _rhs);
-			return result;
-		} else {
-			IndexedTensorMoveable<Tensor> result(_rhs);
-			result.perform_traces();
-			operator+=(result, _lhs);
-			return result;
-		}
-	}
-	
-	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs) {
+    IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator+=(result, _rhs);
+			operator+=(std::move(result), std::move(_rhs));
 			return result;
 		} else {
-			IndexedTensorMoveable<Tensor> result(_rhs);
+			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator+=(result, _lhs);
+			operator+=(std::move(result), std::move(_lhs));
 			return result;
 		}
 	}
 	
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
+			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+			result.perform_traces();
+			operator+=(std::move(result), std::move(_rhs));
+			return result;
+		} else {
+			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
+			result.perform_traces();
+			operator+=(std::move(result), std::move(_lhs));
+			return result;
+		}
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&&  _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
 		if(!_rhs.tensorObjectReadOnly->is_sparse() || _lhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator+=(result, _lhs);
+			operator+=(std::move(result), std::move(_lhs));
 			return result;
 		} else {
-			IndexedTensorMoveable<Tensor> result(_lhs);
+			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator+=(result, _rhs);
+			operator+=(std::move(result), std::move(_rhs));
 			return result;
 		}
 	}
@@ -104,114 +104,114 @@ namespace xerus {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator+=(result, _rhs);
+			operator+=(std::move(result), std::move(_rhs));
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator+=(result, _lhs);
+			operator+=(std::move(result), std::move(_lhs));
 			return result;
 		}
 	}
 	
 	
 	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
-		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
-			IndexedTensorMoveable<Tensor> result(_lhs);
-			result.perform_traces();
-			operator-=(result, _rhs);
-			return result;
-		} else {
-			IndexedTensorMoveable<Tensor> result(_rhs);
-			result.perform_traces();
-			operator-=(result, _lhs);
-			*result.tensorObject *= -1.0;
-			return result;
-		}
-	}
-	
-	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs) {
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator-=(result, _rhs);
+			operator-=(std::move(result), std::move(_rhs));
 			return result;
 		} else {
-			IndexedTensorMoveable<Tensor> result(_rhs);
+			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator-=(result, _lhs);
+			operator-=(std::move(result), std::move(_lhs));
 			*result.tensorObject *= -1.0;
 			return result;
 		}
 	}
 	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> &  _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
+			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+			result.perform_traces();
+			operator-=(std::move(result), std::move(_rhs));
+			return result;
+		} else {
+			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
+			result.perform_traces();
+			operator-=(std::move(result), std::move(_lhs));
+			*result.tensorObject *= -1.0;
+			return result;
+		}
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&&  _lhs, IndexedTensorMoveable<Tensor> && _rhs){
 		if(!_rhs.tensorObjectReadOnly->is_sparse() || _lhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator-=(result, _lhs);
+			operator-=(std::move(result), std::move(_lhs));
 			*result.tensorObject *= -1.0;
 			return result;
 		} else {
-			IndexedTensorMoveable<Tensor> result(_lhs);
+			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator-=(result, _rhs);
+			operator-=(std::move(result), std::move(_rhs));
 			return result;
 		}
 	}
 	
-	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorMoveable<Tensor> && _rhs){
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {
 			IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 			result.perform_traces();
-			operator-=(result, _rhs);
+			operator-=(std::move(result), std::move(_rhs));
 			return result;
 		} else {
 			IndexedTensorMoveable<Tensor> result(std::move(_rhs));
 			result.perform_traces();
-			operator-=(result, _lhs);
+			operator-=(std::move(result), std::move(_lhs));
 			*result.tensorObject *= -1.0;
 			return result;
 		}
 	}
 	
 	
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		return _lhs+IndexedTensorMoveable<Tensor>(_rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)+IndexedTensorMoveable<Tensor>(std::move(_rhs));
 	}
 	
-	IndexedTensorMoveable<Tensor> operator+(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs) {
-		return IndexedTensorMoveable<Tensor>(_lhs)+_rhs;
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		return IndexedTensorMoveable<Tensor>(std::move(_lhs))+std::move(_rhs);
 	}
 	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<Tensor> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		return _lhs-IndexedTensorMoveable<Tensor>(_rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)-IndexedTensorMoveable<Tensor>(std::move(_rhs));
 	}
 	
-	IndexedTensorMoveable<Tensor> operator-(const IndexedTensorReadOnly<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<Tensor> &  _rhs) {
-		return IndexedTensorMoveable<Tensor>(_lhs)-_rhs;
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		return IndexedTensorMoveable<Tensor>(std::move(_lhs))-std::move(_rhs);
 	}
 	
 	
-    IndexedTensorMoveable<TensorNetwork> operator+(const IndexedTensorReadOnly<TensorNetwork>  &  _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
+    IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
-        if(!_lhs.tensorObjectReadOnly->specialized_sum(result, _lhs, _rhs) && !_rhs.tensorObjectReadOnly->specialized_sum(result, _rhs, _lhs)) {
-            result.assign(IndexedTensorMoveable<TensorNetwork>(IndexedTensorMoveable<Tensor>(_lhs) + IndexedTensorMoveable<Tensor>(_rhs)));
+		if(!_lhs.tensorObjectReadOnly->specialized_sum(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_sum(std::move(result), std::move(_rhs), std::move(_lhs))) {
+            result.assign(IndexedTensorMoveable<TensorNetwork>(IndexedTensorMoveable<Tensor>(std::move(_lhs)) + IndexedTensorMoveable<Tensor>(std::move(_rhs))));
         }
         return result;
     }
     
-    IndexedTensorMoveable<TensorNetwork> operator-(const IndexedTensorReadOnly<TensorNetwork>  & _lhs, const IndexedTensorReadOnly<TensorNetwork>  &  _rhs) {
-        return _lhs+(-1*_rhs);
+    IndexedTensorMoveable<TensorNetwork> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)+(-1*std::move(_rhs));
     }
     
     
-	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		_lhs = _lhs + _rhs;
+	void operator+=(IndexedTensorWritable<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		std::move(_lhs) = std::move(_lhs) + std::move(_rhs); // TODO might be problematic
 	}
 	
-	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, const IndexedTensorReadOnly<TensorNetwork> &  _rhs) {
-		_lhs = _lhs - _rhs;
+	void operator-=(IndexedTensorWritable<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		std::move(_lhs) = std::move(_lhs) - std::move(_rhs); // TODO might be problematic
 	}
 }

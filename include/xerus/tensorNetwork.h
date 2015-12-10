@@ -325,13 +325,13 @@ namespace xerus {
             
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		/// Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
-        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+        virtual bool specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
         
         /// Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
-		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork> &_out, const IndexedTensorReadOnly<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other) const;
+		virtual bool specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
         
         /// Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
-		virtual void specialized_evaluation(const IndexedTensorWritable<TensorNetwork> &_me, const IndexedTensorReadOnly<TensorNetwork> &_other);
+		virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
             
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
@@ -385,13 +385,13 @@ namespace xerus {
         
         /// shuffles the external links of _lhs according to the indices of the indexedTensors
         /// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
-		static void shuffle_indices(std::vector<Index> &_currentIndices, const IndexedTensorWritable<TensorNetwork> &_lhs);
+		static void shuffle_indices(std::vector<Index> &_currentIndices, IndexedTensorWritable<TensorNetwork>&& _lhs);
 		
         // TODO describtion
-		static void add_network_to_network(IndexedTensorWritable<TensorNetwork> & _base, const IndexedTensorReadOnly<TensorNetwork> & _toInsert);
+		static void add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert);
         
         // TODO describtion
-		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, const IndexedTensorWritable<TensorNetwork> & _base);
+		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base);
 	protected:
 		/** 
 		 * @brief Finds the position of a single common edge between two nodes.

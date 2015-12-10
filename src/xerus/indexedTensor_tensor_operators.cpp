@@ -33,18 +33,16 @@
 namespace xerus {
 
     template<>
-    void IndexedTensorWritable<Tensor>::operator=(const IndexedTensorReadOnly<Tensor>&  _rhs) const {
+    void IndexedTensorWritable<Tensor>::operator=( IndexedTensorReadOnly<Tensor>&& _rhs) {
         if(!_rhs.uses_tensor(tensorObject)) {
             // If LHS and RHS object don't coincide we can directly evaluate
 			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
-            evaluate(*this, _rhs);
+			evaluate(std::move(*this), std::move(_rhs));
         } else {
             // If the tensors in fact coincide we have to use a tmp object
-            IndexedTensorMoveable<Tensor> tmpTensor(_rhs);
+			IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
 			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
-            evaluate(*this, tmpTensor);
+			evaluate(std::move(*this), std::move(tmpTensor));
         }
     }
-
-
 }

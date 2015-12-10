@@ -65,11 +65,20 @@ namespace xerus {
         /// Constructs an IndexedTensorReadOnly using the given pointer and indices.
         IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
         
+		
+		/// Destructor must be virtual
+		virtual ~IndexedTensorReadOnly();
+		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     public:
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-        /// Destructor must be virtual
-        virtual ~IndexedTensorReadOnly();
+		
+		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
+		void operator=(const IndexedTensorReadOnly&  _rhs) const = delete;
+		
+		
+		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
+		void operator=(      IndexedTensorReadOnly&& _rhs) const = delete;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		

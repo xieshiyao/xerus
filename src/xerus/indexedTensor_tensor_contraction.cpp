@@ -206,7 +206,7 @@ namespace xerus {
     * precondition: compatible indices for _result = _lhs * _rhs; and correct dimensions in result tensorObject
     * postcondition: _result.tensorObject updated to correcly contain the product
     */
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const std::vector<Index>& _lhsIndices, const IndexedTensorReadOnly<Tensor>& _rhs, const std::vector<Index>& _rhsIndices) {
+    void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs, const std::vector<Index>& _lhsIndices, IndexedTensorReadOnly<Tensor>&& _rhs, const std::vector<Index>& _rhsIndices) {
         // Get the assigned indices for result (we assume that result is already of the right dimensions)
         const std::vector<Index> resultIndices = _result.get_assigned_indices();
 
@@ -316,11 +316,11 @@ namespace xerus {
             // We have to propagate the common factors
             _result.tensorObject->factor = _lhs.tensorObjectReadOnly->factor*_rhs.tensorObjectReadOnly->factor;
             
-            CsUniquePtr lhsCS = to_cs_format(_lhs, lhsOpenIndices, commonIndices);
-            CsUniquePtr rhsCS = to_cs_format(_rhs, commonIndices, rhsOpenIndices);
+			CsUniquePtr lhsCS = to_cs_format(std::move(_lhs), lhsOpenIndices, commonIndices);
+			CsUniquePtr rhsCS = to_cs_format(std::move(_rhs), commonIndices, rhsOpenIndices);
             CsUniquePtr resultCS = matrix_matrix_product(lhsCS, rhsCS);
             
-            evaluate(_result, from_cs_format(resultCS, _result.get_evaluated_dimensions(workingResultIndices))(workingResultIndices));
+			evaluate(std::move(_result), from_cs_format(resultCS, _result.get_evaluated_dimensions(workingResultIndices))(workingResultIndices));
             
         // - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - 
         } else { 
@@ -339,7 +339,7 @@ namespace xerus {
                 lhsOpenIndices.insert(lhsOpenIndices.end(), commonIndices.begin(), commonIndices.end());
                 
 				lhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_lhs.get_evaluated_dimensions(lhsOpenIndices), _lhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(lhsOpenIndices), true));
-                evaluate(*lhsSaveSlot, _lhs);
+				evaluate(std::move(*lhsSaveSlot), std::move(_lhs));
                 actualLhs = lhsSaveSlot.get();
             } else {
                 actualLhs = &_lhs;
@@ -352,7 +352,7 @@ namespace xerus {
                 commonIndices.insert(commonIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
                 
 				rhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_rhs.get_evaluated_dimensions(commonIndices), _rhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(commonIndices), true));
-                evaluate(*rhsSaveSlot, _rhs);
+				evaluate(std::move(*rhsSaveSlot), std::move(_rhs));
                 actualRhs = rhsSaveSlot.get();
             } else {
                 actualRhs = &_rhs;
@@ -403,17 +403,17 @@ namespace xerus {
             
             if(reorderResult) {
                 LOG(ContractionDebug, "Reordering result");
-                evaluate(_result, *workingResultSaveSlot);
+				evaluate(std::move(_result), std::move(*workingResultSaveSlot));
             }
         }
     }
     
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs,  const IndexedTensorReadOnly<Tensor>& _rhs) {
-        contract(_result, _lhs, _lhs.get_assigned_indices(), _rhs, _rhs.get_assigned_indices());
+    void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs,  IndexedTensorReadOnly<Tensor>&& _rhs) {
+		contract(std::move(_result), std::move(_lhs), _lhs.get_assigned_indices(), std::move(_rhs), _rhs.get_assigned_indices());
     }
 
     
-    IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs) {
+    IndexedTensorMoveable<Tensor> contract(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
         const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
         const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
         std::vector<Index> outIndices;
@@ -461,7 +461,7 @@ namespace xerus {
         }
         
         IndexedTensorMoveable<Tensor> result(resultTensor, outIndices);
-        contract(result, _lhs, lhsIndices, _rhs, rhsIndices);
+		contract(std::move(result), std::move(_lhs), lhsIndices, std::move(_rhs), rhsIndices);
         return result;
     }
 }

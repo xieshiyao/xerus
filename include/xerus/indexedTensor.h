@@ -52,16 +52,16 @@ namespace xerus {
 		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
 		 * the assignment.
 		 */
-        void operator=(const IndexedTensorReadOnly<Tensor>&         _rhs);
+        void operator=(IndexedTensorReadOnly<Tensor>&& _rhs);
         
 		/**
 		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
 		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
 		 * the assignment.
 		 */
-        void operator=(const IndexedTensorReadOnly<TensorNetwork>&  _rhs);
+        void operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 		
 		///@brief The following would be deleted due to move constructor and is therefore implemented here, calls the IndexedTensorReadOnly version. 
-        void operator=(const IndexedTensor<tensor_type>& _rhs);
+        void operator=(IndexedTensor<tensor_type>&& _rhs);
     };
 }

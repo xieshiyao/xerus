@@ -30,16 +30,16 @@
 
 namespace xerus {
 	
-    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor> _b, IndexedTensorReadOnly<Tensor> _A);
+    IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A);
     
 
     // The low level functions used by the operators
     
-    void evaluate(const IndexedTensorWritable<Tensor>& _out, const IndexedTensorReadOnly<Tensor>& _base);
+    void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
 
-    void contract(const IndexedTensorWritable<Tensor>& _result, const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
+    void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
     
-    IndexedTensorMoveable<Tensor> contract(const IndexedTensorReadOnly<Tensor>& _lhs, const IndexedTensorReadOnly<Tensor>& _rhs);
+    IndexedTensorMoveable<Tensor> contract(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
     
-    void solve(const IndexedTensorWritable<Tensor>& _x, const IndexedTensorReadOnly<Tensor>& _A, const IndexedTensorReadOnly<Tensor>& _b);
+    void solve(IndexedTensorWritable<Tensor>&& _x, IndexedTensorReadOnly<Tensor>&& _A, IndexedTensorReadOnly<Tensor>&& _b);
 }
