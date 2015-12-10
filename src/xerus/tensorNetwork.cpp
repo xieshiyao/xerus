@@ -58,11 +58,11 @@ namespace xerus {
 	}
     
     TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
-        nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_copy()), init_from_dimension_array());
+        nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
     }
     
     TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-        nodes.emplace_back(std::unique_ptr<Tensor>(_other.get_moved_copy()), init_from_dimension_array());
+        nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(_other)), init_from_dimension_array());
     }
     
     TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
@@ -110,7 +110,7 @@ namespace xerus {
 			internalOrder.emplace_back(externalOrder[link.indexPosition]);
 		}
 		
-		result.reset(cpy.nodes[res].tensorObject->construct_new());
+		result.reset( new Tensor(cpy.nodes[res].tensorObject->representation));
 		
 		(*result)(externalOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
         
@@ -858,7 +858,7 @@ namespace xerus {
 		
 		// Perform the trace
 		if (nodes[_nodeId].tensorObject) {
-			std::unique_ptr<Tensor> newTensor(nodes[_nodeId].tensorObject->construct_new());
+			std::unique_ptr<Tensor> newTensor(new Tensor(nodes[_nodeId].tensorObject->representation));
 			(*newTensor)(idxOut) = (*nodes[_nodeId].tensorObject)(idxIn);
 			nodes[_nodeId].tensorObject = std::move(newTensor);
 		}

@@ -121,7 +121,7 @@ namespace xerus {
 		}
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);
 		
-		IndexedTensor<Tensor> reorderedBaseTensor(_base.tensorObjectReadOnly->construct_new(std::move(reorderedBaseDimensions), Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
+		IndexedTensor<Tensor> reorderedBaseTensor(new Tensor(std::move(reorderedBaseDimensions), _base.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
 		evaluate(reorderedBaseTensor, _base);
 		reorderedBaseTensor.tensorObject->ensure_own_data();
 		

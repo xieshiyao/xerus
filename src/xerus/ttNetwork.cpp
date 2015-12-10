@@ -122,7 +122,7 @@ namespace xerus {
 		dimensions = _tensor.dimensions;
 		
 		if (_tensor.degree() == 0) {
-			nodes[0].tensorObject.reset(_tensor.get_copy());
+			nodes[0].tensorObject.reset( new Tensor(_tensor));
 			return; 
 		}
 		
@@ -535,7 +535,7 @@ namespace xerus {
 		TensorNode &currNode = nodes[_idx+1];
 		REQUIRE(_T.degree() == N+2, "Component must have degree 3 (TTTensor) or 4 (TTOperator). Given: " << _T.degree());
 		REQUIRE(_T.degree() == currNode.degree(), "Degree of _T does not match component tensors degree");
-		currNode.tensorObject.reset(_T.get_copy());
+		currNode.tensorObject.reset( new Tensor(_T));
 		for (size_t i=0; i<currNode.degree(); ++i) {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
 			if (currNode.neighbors[i].external) {
@@ -1395,7 +1395,7 @@ namespace xerus {
 			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[1].tensorObject.get();
 			const Tensor &otherComponent = *realOther.nodes[1].tensorObject.get();
 			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
-				nextTensor.reset(myComponent.get_copy());
+				nextTensor.reset( new Tensor(myComponent));
 				*static_cast<Tensor*>(nextTensor.get()) += (*static_cast<const Tensor*>(&otherComponent));
 			} else { // at most one sparse
 				if(myComponent.is_sparse()){
@@ -1605,7 +1605,7 @@ namespace xerus {
 		// Use Tensor fallback
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
 		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
-		std::unique_ptr<Tensor> otherReordered(otherFull->construct_new());
+		std::unique_ptr<Tensor> otherReordered(new Tensor(otherFull->representation));
 		(*otherReordered)(myIndices) = (*otherFull)(otherIndices);
 		
 		// Cast to TTNetwork

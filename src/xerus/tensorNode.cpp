@@ -30,7 +30,7 @@ namespace xerus {
     
     TensorNetwork::TensorNode::TensorNode() : erased(true) { }
     
-    TensorNetwork::TensorNode::TensorNode(const TensorNetwork::TensorNode&  _other) : tensorObject(_other.tensorObject ? _other.tensorObject->get_copy() : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
+    TensorNetwork::TensorNode::TensorNode(const TensorNetwork::TensorNode&  _other) : tensorObject(_other.tensorObject ? new Tensor(*_other.tensorObject) : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
     
     TensorNetwork::TensorNode::TensorNode(      TensorNetwork::TensorNode&& _other) : tensorObject(std::move(_other.tensorObject)), neighbors(std::move(_other.neighbors)), erased(_other.erased) { }
     
@@ -42,7 +42,7 @@ namespace xerus {
     
     TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(const TensorNetwork::TensorNode&  _other) {
         if(_other.tensorObject) {
-            tensorObject.reset(_other.tensorObject->get_copy());
+            tensorObject.reset( new Tensor(*_other.tensorObject));
         }
         neighbors = _other.neighbors;
         erased = _other.erased;

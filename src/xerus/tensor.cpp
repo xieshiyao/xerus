@@ -68,9 +68,6 @@ namespace xerus {
 		}
     }
     
-    Tensor::Tensor(std::initializer_list<size_t>&& _dimensions, const Representation _representation, const Initialisation _init) 
-	: Tensor(std::vector<size_t>(_dimensions), _representation, _init) {}
-    
     Tensor::Tensor(const std::vector<size_t>& _dimensions, std::unique_ptr<value_t[]>&& _data)
 	: dimensions(_dimensions), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::move(_data)) { }
     
@@ -141,36 +138,7 @@ namespace xerus {
 	}
 	
 	
-	Tensor* Tensor::get_moved_copy() {
-		return new Tensor(std::move(*this));
-	}
 	
-	
-	Tensor* Tensor::construct_new() const {
-		return new Tensor(representation);
-	}
-	
-	
-	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions) const {
-		return new Tensor(_dimensions, representation);
-	}
-	
-	
-	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions) const {
-		return new Tensor(_dimensions, representation);
-	}
-	
-	
-	Tensor* Tensor::construct_new(const std::vector<size_t>&  _dimensions, const Initialisation _init) const {
-		return new Tensor(_dimensions, representation, Initialisation::None);
-	}
-	
-	
-	Tensor* Tensor::construct_new(	  std::vector<size_t>&& _dimensions, const Initialisation _init) const {
-		return new Tensor(_dimensions, representation, Initialisation::None);
-	}
-    
-    
     
     
     
@@ -675,7 +643,7 @@ namespace xerus {
 		REQUIRE(size == misc::product(dimensions), "");
 	}
 	
-	void Tensor::remove_slate(uint _indexNb, uint _pos) {
+	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
 		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
 		
 		REQUIRE(_indexNb < degree(), "");
@@ -813,10 +781,6 @@ namespace xerus {
         dimensions = std::move(_newDimensions);
     }
     
-    void Tensor::reinterpret_dimensions(std::initializer_list<size_t>&& _newDimensions) {
-        reinterpret_dimensions(std::vector<size_t>(std::move(_newDimensions)));
-    }
-    
     
     size_t Tensor::count_non_zero_entries(const value_t _eps) const {
 		if(is_dense()) {
@@ -914,7 +878,7 @@ namespace xerus {
 	}
 	
 	bool Tensor::compare_to_data(const value_t* _values, const double _eps) const {
-		for(size_t i=0; i < size; ++i) {
+		for(size_t i = 0; i < size; ++i) {
 			if(std::abs(at(i)-_values[i]) > _eps) { return false; }
 		}
 		return true;
@@ -922,17 +886,6 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
-    void Tensor::assign(const Tensor& _other) {
-        dimensions = _other.dimensions;
-        size = _other.size;
-        factor = _other.factor;
-    }
-    
-    void Tensor::assign(Tensor&& _other) {
-        dimensions = std::move(_other.dimensions);
-        size = _other.size;
-        factor = _other.factor;
-    }
     
     void Tensor::change_dimensions(const std::vector<size_t>& _newDimensions) {
         dimensions = _newDimensions;

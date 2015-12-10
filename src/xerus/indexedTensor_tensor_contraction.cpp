@@ -338,7 +338,7 @@ namespace xerus {
                 // Add the common indices to the open ones
                 lhsOpenIndices.insert(lhsOpenIndices.end(), commonIndices.begin(), commonIndices.end());
                 
-				lhsSaveSlot.reset(new IndexedTensor<Tensor>(_lhs.tensorObjectReadOnly->construct_new(_lhs.get_evaluated_dimensions(lhsOpenIndices), Tensor::Initialisation::None), std::move(lhsOpenIndices), true));
+				lhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_lhs.get_evaluated_dimensions(lhsOpenIndices), _lhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(lhsOpenIndices), true));
                 evaluate(*lhsSaveSlot, _lhs);
                 actualLhs = lhsSaveSlot.get();
             } else {
@@ -351,7 +351,7 @@ namespace xerus {
                 // Add the open indices to the common ones
                 commonIndices.insert(commonIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
                 
-				rhsSaveSlot.reset(new IndexedTensor<Tensor>(_rhs.tensorObjectReadOnly->construct_new(_rhs.get_evaluated_dimensions(commonIndices), Tensor::Initialisation::None), std::move(commonIndices), true));
+				rhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_rhs.get_evaluated_dimensions(commonIndices), _rhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(commonIndices), true));
                 evaluate(*rhsSaveSlot, _rhs);
                 actualRhs = rhsSaveSlot.get();
             } else {
@@ -361,7 +361,7 @@ namespace xerus {
             if(reorderResult) {
                 LOG(ContractionDebug, "Creating temporary result tensor");
                 
-                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(_result.tensorObjectReadOnly->construct_new(_result.get_evaluated_dimensions(workingResultIndices), Tensor::Initialisation::None), std::move(workingResultIndices), true));
+                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_result.get_evaluated_dimensions(workingResultIndices), _result.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(workingResultIndices), true));
                 workingResult = workingResultSaveSlot.get();
             } else {
                 workingResult = &_result;

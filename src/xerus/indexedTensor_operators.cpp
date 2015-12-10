@@ -34,7 +34,7 @@
 namespace xerus {
     
 	void operator+=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
-		std::unique_ptr<Tensor> reorderedRhs(_rhs.tensorObjectReadOnly->construct_new());
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
 		(*reorderedRhs)(_lhs.indices) = _rhs;
 		
 		if(_lhs.tensorObjectReadOnly->is_sparse()) {
@@ -46,7 +46,7 @@ namespace xerus {
 	}
 	
 	void operator-=(IndexedTensorWritable<Tensor> & _lhs, const IndexedTensorReadOnly<Tensor> & _rhs) {
-		std::unique_ptr<Tensor> reorderedRhs(_rhs.tensorObjectReadOnly->construct_new());
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
 		(*reorderedRhs)(_lhs.indices) = _rhs;
 		
 		if(_lhs.tensorObjectReadOnly->is_sparse()) {

@@ -388,7 +388,7 @@ namespace xerus {
 		void transpose() {
 			Index i,r,l,j;
 			for (size_t n=0; n < degree()/N; ++n) {
-				std::unique_ptr<Tensor> At(nodes[n+1].tensorObject->construct_new());
+				std::unique_ptr<Tensor> At(new Tensor(nodes[n+1].tensorObject->representation));
 				(*At)(l,j,i,r) = get_component(n)(l,i,j,r);
 				set_component(n, std::move(At));
 			}
