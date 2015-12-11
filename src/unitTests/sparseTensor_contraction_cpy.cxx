@@ -32,7 +32,7 @@ UNIT_TEST(SparseTensor, Contraction_Order_0,
     B[{}] = 73;
     
     contract(res1(), A(), B());
-    TEST(res1.compare_to_data({42*73}));
+    TEST(approx_entrywise_equal(res1, {42*73}));
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_1,
@@ -59,37 +59,37 @@ UNIT_TEST(SparseTensor, Contraction_Order_1,
     // Same dimensions
     // Contraction with no index being contracted
     contract(res1(i,j), A(i), B(j));
-    TEST(res1.compare_to_data({3,4,6,8}));
+    TEST(approx_entrywise_equal(res1, {3,4,6,8}));
     contract(res1(j,i), A(j), B(i));
-    TEST(res1.compare_to_data({3,4,6,8}));
+    TEST(approx_entrywise_equal(res1, {3,4,6,8}));
     contract(res1(i,j), A(j), B(i));
-    TEST(res1.compare_to_data({3,6,4,8}));
+    TEST(approx_entrywise_equal(res1, {3,6,4,8}));
     contract(res1(j,i), A(i), B(j));
-    TEST(res1.compare_to_data({3,6,4,8}));
+    TEST(approx_entrywise_equal(res1, {3,6,4,8}));
     
     // Contraction with one index being contracted
     contract(res2(), A(i), B(i));
-    TEST(res2.compare_to_data({11}));
+    TEST(approx_entrywise_equal(res2, {11}));
     
     // Different dimensions
     // Contraction with no index being contracted
     contract(res3(i,j), A(i), C(j));
-    TEST(res3.compare_to_data({5,6,7,10,12,14}));
+    TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
     contract(res3(j,i), A(j), C(i));
-    TEST(res3.compare_to_data({5,6,7,10,12,14}));
+    TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
     contract(res4(i,j), C(i), A(j));
-    TEST(res4.compare_to_data({5,10,6,12,7,14}));
+    TEST(approx_entrywise_equal(res4, {5,10,6,12,7,14}));
     contract(res4(j,i), C(j), A(i));
-    TEST(res4.compare_to_data({5,10,6,12,7,14}));
+    TEST(approx_entrywise_equal(res4, {5,10,6,12,7,14}));
     
     contract(res4(i,j), A(j), C(i));
-    TEST(res4.compare_to_data({5,10,6,12,7,14}));
+    TEST(approx_entrywise_equal(res4, {5,10,6,12,7,14}));
     contract(res4(j,i), A(i), C(j));
-    TEST(res4.compare_to_data({5,10,6,12,7,14}));
+    TEST(approx_entrywise_equal(res4, {5,10,6,12,7,14}));
     contract(res3(i,j), C(j), A(i));
-    TEST(res3.compare_to_data({5,6,7,10,12,14}));
+    TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
     contract(res3(j,i), C(i), A(j));
-    TEST(res3.compare_to_data({5,6,7,10,12,14}));
+    TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_2_Same_Dimensions,
@@ -114,83 +114,83 @@ UNIT_TEST(SparseTensor, Contraction_Order_2_Same_Dimensions,
     //Most possible contractions with no index being contracted
     //Switch pairs (i,j) and (k,l)
     contract(res1(i,j,k,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
     contract(res1(k,l,i,j), A(k,l), B(i,j));
-    TEST(res1.compare_to_data({5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
     contract(res1(i,j,k,l), A(k,l), B(i,j));
-    TEST(res1.compare_to_data({5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
     contract(res1(k,l,i,j), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
     
     //Switch i/j or k/l
     contract(res1(i,j,k,l), A(j,i), B(k,l));
-    TEST(res1.compare_to_data({5,6,7,8,15,18,21,24,10,12,14,16,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,15,18,21,24,10,12,14,16,20,24,28,32}));
     contract(res1(j,i,k,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,6,7,8,15,18,21,24,10,12,14,16,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,15,18,21,24,10,12,14,16,20,24,28,32}));
     contract(res1(i,j,k,l), A(i,j), B(l,k));
-    TEST(res1.compare_to_data({5,7,6,8,10,14,12,16,15,21,18,24,20,28,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,7,6,8,10,14,12,16,15,21,18,24,20,28,24,32}));
     contract(res1(i,j,l,k), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,7,6,8,10,14,12,16,15,21,18,24,20,28,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,7,6,8,10,14,12,16,15,21,18,24,20,28,24,32}));
     
     //Switch i/l or j/k
     contract(res1(i,j,k,l), A(l,j), B(k,i));
-    TEST(res1.compare_to_data({5,15,7,21,10,20,14,28,6,18,8,24,12,24,16,32}));
+    TEST(approx_entrywise_equal(res1, {5,15,7,21,10,20,14,28,6,18,8,24,12,24,16,32}));
     contract(res1(l,j,k,i), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,15,7,21,10,20,14,28,6,18,8,24,12,24,16,32}));
+    TEST(approx_entrywise_equal(res1, {5,15,7,21,10,20,14,28,6,18,8,24,12,24,16,32}));
     contract(res1(i,j,k,l), A(i,k), B(j,l));
-    TEST(res1.compare_to_data({5,6,10,12,7,8,14,16,15,18,20,24,21,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,10,12,7,8,14,16,15,18,20,24,21,24,28,32}));
     contract(res1(i,k,j,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,6,10,12,7,8,14,16,15,18,20,24,21,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,10,12,7,8,14,16,15,18,20,24,21,24,28,32}));
     
     //Switch i/k or j/l
     contract(res1(i,j,k,l), A(k,j), B(i,l));
-    TEST(res1.compare_to_data({5,6,15,18,10,12,20,24,7,8,21,24,14,16,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,15,18,10,12,20,24,7,8,21,24,14,16,28,32}));
     contract(res1(k,j,i,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,6,15,18,10,12,20,24,7,8,21,24,14,16,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,15,18,10,12,20,24,7,8,21,24,14,16,28,32}));
     contract(res1(i,j,k,l), A(i,l), B(k,j));
-    TEST(res1.compare_to_data({5,10,7,14,6,12,8,16,15,20,21,28,18,24,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,7,14,6,12,8,16,15,20,21,28,18,24,24,32}));
     contract(res1(i,l,k,j), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({5,10,7,14,6,12,8,16,15,20,21,28,18,24,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,7,14,6,12,8,16,15,20,21,28,18,24,24,32}));
     
     //Switch pairs using multi indices
     contract(res1(i^2, j^2), A(i^2), B(j^2));
-    TEST(res1.compare_to_data({5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
     contract(res1(j^2, i^2), A(j^2), B(i^2));
-    TEST(res1.compare_to_data({5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
+    TEST(approx_entrywise_equal(res1, {5,6,7,8,10,12,14,16,15,18,21,24,20,24,28,32}));
     contract(res1(i^2, j^2), A(j^2), B(i^2));
-    TEST(res1.compare_to_data({5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
     contract(res1(j^2, i^2), A(i^2), B(j^2));
-    TEST(res1.compare_to_data({5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
+    TEST(approx_entrywise_equal(res1, {5,10,15,20,6,12,18,24,7,14,21,28,8,16,24,32}));
     
     
     //All possible contractions with one index being contracted
     contract(res2(i, k), A(i, j), B(j, k));
-    TEST(res2.compare_to_data({19,22,43,50}));
+    TEST(approx_entrywise_equal(res2, {19,22,43,50}));
     contract(res2(i, k), A(j, i), B(j, k));
-    TEST(res2.compare_to_data({26,30,38,44}));
+    TEST(approx_entrywise_equal(res2, {26,30,38,44}));
     contract(res2(i, k), A(i, j), B(k, j));
-    TEST(res2.compare_to_data({17,23,39,53}));
+    TEST(approx_entrywise_equal(res2, {17,23,39,53}));
     contract(res2(i, k), A(j, i), B(k, j));
-    TEST(res2.compare_to_data({23,31,34,46}));
+    TEST(approx_entrywise_equal(res2, {23,31,34,46}));
     
     contract(res2(k, i), A(i, j), B(j, k));
-    TEST(res2.compare_to_data({19,43,22,50}));
+    TEST(approx_entrywise_equal(res2, {19,43,22,50}));
     contract(res2(k, i), A(j, i), B(j, k));
-    TEST(res2.compare_to_data({26,38,30,44}));
+    TEST(approx_entrywise_equal(res2, {26,38,30,44}));
     contract(res2(k, i), A(i, j), B(k, j));
-    TEST(res2.compare_to_data({17,39,23,53}));
+    TEST(approx_entrywise_equal(res2, {17,39,23,53}));
     contract(res2(k, i), A(j, i), B(k, j));
-    TEST(res2.compare_to_data({23,34,31,46}));
+    TEST(approx_entrywise_equal(res2, {23,34,31,46}));
     
     //All possible contractions with two indices being contracted
     contract(res3(), A(i, j), B(i, j));
-    TEST(res3.compare_to_data({70}));
+    TEST(approx_entrywise_equal(res3, {70}));
     contract(res3(), A(i, j), B(j, i));
-    TEST(res3.compare_to_data({69}));
+    TEST(approx_entrywise_equal(res3, {69}));
     contract(res3(), A(j, i), B(i, j));
-    TEST(res3.compare_to_data({69}));
+    TEST(approx_entrywise_equal(res3, {69}));
     contract(res3(), A(i^2), B(i^2));
-    TEST(res3.compare_to_data({70}));
+    TEST(approx_entrywise_equal(res3, {70}));
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_2_Different_Dimensions,
@@ -214,21 +214,21 @@ UNIT_TEST(SparseTensor, Contraction_Order_2_Different_Dimensions,
     
     //No Index contracted
     contract(res1(i,j,k,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({3,4,5,6,7,8,6,8,10,12,14,16}));
+    TEST(approx_entrywise_equal(res1, {3,4,5,6,7,8,6,8,10,12,14,16}));
     contract(res1(i,j,k,l), A(i,k), B(j,l));
-    TEST(res1.compare_to_data({3,4,5,6,8,10,6,7,8,12,14,16}));
+    TEST(approx_entrywise_equal(res1, {3,4,5,6,8,10,6,7,8,12,14,16}));
     contract(res1(i,k,j,l), A(i,j), B(k,l));
-    TEST(res1.compare_to_data({3,4,5,6,8,10,6,7,8,12,14,16}));
+    TEST(approx_entrywise_equal(res1, {3,4,5,6,8,10,6,7,8,12,14,16}));
     
     //One Index contracted
     contract(res2(i,k), A(i,j), B(j,k));
-    TEST(res2.compare_to_data({15,18,21}));
+    TEST(approx_entrywise_equal(res2, {15,18,21}));
     contract(res3(k,i), A(i,j), B(j,k));
-    TEST(res2.compare_to_data({15,18,21}));
+    TEST(approx_entrywise_equal(res2, {15,18,21}));
     contract(res2(i,k), B(j,k), A(i,j));
-    TEST(res2.compare_to_data({15,18,21}));
+    TEST(approx_entrywise_equal(res2, {15,18,21}));
     contract(res3(k,i), B(j,k), A(i,j));
-    TEST(res2.compare_to_data({15,18,21}));
+    TEST(approx_entrywise_equal(res2, {15,18,21}));
 )
 
 UNIT_TEST(SparseTensor, Contraction_Order_3_Same_Dimensions,
@@ -258,7 +258,7 @@ UNIT_TEST(SparseTensor, Contraction_Order_3_Same_Dimensions,
     B[{1,1,1}]=12;
     
     contract(res2(i,j), A(l,m,j), B(m,i,l));
-    TEST(res2.compare_to_data({5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
+    TEST(approx_entrywise_equal(res2, {5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     contract(res3(), A(i,j,k), B(i,k,j));
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
 )
@@ -319,25 +319,25 @@ UNIT_TEST(SparseTensor, Contraction_Order_3_Different_Dimensions,
     
     //WARNING These results are obtained by an older version of the library and may contain errors themself!
     contract(res1(i,j,k,l,m,n), A(i,j,k), B(l,m,n));
-    TEST(res1.compare_to_data({7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,21,24,27,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180}));
+    TEST(approx_entrywise_equal(res1, {7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,21,24,27,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,42,48,54,60,66,72,78,84,90,96,102,108,114,120,126,132,138,144,150,156,162,168,174,180}));
     
     contract(res1(i,l,m,j,k,n), A(i,j,k), B(l,m,n));
-    TEST(res1.compare_to_data({7,8,9,10,14,16,18,20,21,24,27,30,35,40,45,50,0,0,0,0,42,48,54,60,11,12,13,14,22,24,26,28,33,36,39,42,55,60,65,70,0,0,0,0,66,72,78,84,15,16,17,18,30,32,34,36,45,48,51,54,75,80,85,90,0,0,0,0,90,96,102,108,19,20,21,22,38,40,42,44,57,60,63,66,95,100,105,110,0,0,0,0,114,120,126,132,23,24,25,26,46,48,50,52,69,72,75,78,115,120,125,130,0,0,0,0,138,144,150,156,27,28,29,30,54,56,58,60,81,84,87,90,135,140,145,150,0,0,0,0,162,168,174,180}));
+    TEST(approx_entrywise_equal(res1, {7,8,9,10,14,16,18,20,21,24,27,30,35,40,45,50,0,0,0,0,42,48,54,60,11,12,13,14,22,24,26,28,33,36,39,42,55,60,65,70,0,0,0,0,66,72,78,84,15,16,17,18,30,32,34,36,45,48,51,54,75,80,85,90,0,0,0,0,90,96,102,108,19,20,21,22,38,40,42,44,57,60,63,66,95,100,105,110,0,0,0,0,114,120,126,132,23,24,25,26,46,48,50,52,69,72,75,78,115,120,125,130,0,0,0,0,138,144,150,156,27,28,29,30,54,56,58,60,81,84,87,90,135,140,145,150,0,0,0,0,162,168,174,180}));
     
     contract(res2(i,m,n,k), A(i,j,k), B(j,m,n));
-    TEST(res2.compare_to_data({102,14,135,108,16,144,114,18,153,120,20,162,126,22,171,132,24,180,138,26,189,144,28,198,150,30,207,156,32,216,162,34,225,168,36,234}));
+    TEST(approx_entrywise_equal(res2, {102,14,135,108,16,144,114,18,153,120,20,162,126,22,171,132,24,180,138,26,189,144,28,198,150,30,207,156,32,216,162,34,225,168,36,234}));
     
     contract(res3(i,k,m,n), A(i,j,k), B(j,m,n));
-    TEST(res3.compare_to_data({102,108,114,120,126,132,138,144,150,156,162,168,14,16,18,20,22,24,26,28,30,32,34,36,135,144,153,162,171,180,189,198,207,216,225,234}));
+    TEST(approx_entrywise_equal(res3, {102,108,114,120,126,132,138,144,150,156,162,168,14,16,18,20,22,24,26,28,30,32,34,36,135,144,153,162,171,180,189,198,207,216,225,234}));
     
     contract(res4(i,n), A(i,j,k), B(j,k,n));
-    TEST(res4.compare_to_data({331,348,365,382}));
+    TEST(approx_entrywise_equal(res4, {331,348,365,382}));
     contract(res4(i,n), A(i,j^2), B(j^2,n));
-    TEST(res4.compare_to_data({331,348,365,382}));
+    TEST(approx_entrywise_equal(res4, {331,348,365,382}));
     
     contract(res5(i,n), A(i,j,k), C(j,n,k));
-    TEST(res5.compare_to_data({580}));
+    TEST(approx_entrywise_equal(res5, {580}));
     
     contract(res6(i,j,m,n), A(i,k,m), C(k,n,j));
-    TEST(res6.compare_to_data({201,62,297,207,64,306,213,66,315}));
+    TEST(approx_entrywise_equal(res6, {201,62,297,207,64,306,213,66,315}));
 )

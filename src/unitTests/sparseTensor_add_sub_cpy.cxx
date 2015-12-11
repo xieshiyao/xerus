@@ -41,9 +41,9 @@ UNIT_TEST(SparseTensor, sum_matrix_2x2,
     C[{1,1}]=8;
     
     res(i,J) = B(i,J) + C(i,J);
-    TEST(res.compare_to_data({6,8,10,12}));
+    TEST(approx_entrywise_equal(res, {6,8,10,12}));
     res(i,J) = B(i,J) + C(J,i);
-    TEST(res.compare_to_data({6,9,9,12}));
+    TEST(approx_entrywise_equal(res, {6,9,9,12}));
 )
  
 UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
@@ -63,9 +63,9 @@ UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J) + C(i,J);
-	TEST(B.compare_to_data({6,8,10,12}));
+	TEST(approx_entrywise_equal(B, {6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
-    TEST(B.compare_to_data({12,18,18,24}));
+    TEST(approx_entrywise_equal(B, {12,18,18,24}));
 )
 
 
@@ -97,5 +97,5 @@ UNIT_TEST(SparseTensor, sum_threefold,
     D[1]=13;
     
     res(i) = B(i) + C(i) + D(i);
-    TEST(res.compare_to_data({13,24}));
+    TEST(approx_entrywise_equal(res, {13,24}));
 )

@@ -175,13 +175,13 @@ UNIT_TEST(TT, special_sum_diff,
 	
 	C(i&0) = A(i&0) - B(i&0);
 	ttC(i&0) = ttA(i&0) - ttB(i&0);
-	TEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 5*1e-13);
-	TEST(frob_norm(Tensor(ttC)(i&0) + Tensor(ttB)(i&0)) < 3.1*1e-13);
+	MTEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 5*1e-13, frob_norm(Tensor(ttC)(i&0) - C(i&0)));
+	MTEST(frob_norm(Tensor(ttC)(i&0) + Tensor(ttB)(i&0)) < 3.1*1e-13, frob_norm(Tensor(ttC)(i&0) + Tensor(ttB)(i&0)));
 	
 	C(i&0) = B(i&0) - A(i&0);
 	ttC(i&0) = ttB(i&0) - ttA(i&0);
-	TEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 5*1e-13);
-	TEST(frob_norm(Tensor(ttC)(i&0) - Tensor(ttB)(i&0)) < 3.1*1e-13);
+	MTEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 5*1e-13, frob_norm(Tensor(ttC)(i&0) - C(i&0)));
+	MTEST(frob_norm(Tensor(ttC)(i&0) - Tensor(ttB)(i&0)) < 3.1*1e-13, frob_norm(Tensor(ttC)(i&0) - Tensor(ttB)(i&0)));
 	
 	Tensor X({10});
 	Tensor Y = Tensor::random({10}, rnd, dist);

@@ -133,13 +133,6 @@ namespace xerus {
     
     
     
-    Tensor* Tensor::get_copy() const {
-		return new Tensor(*this);
-	}
-	
-	
-	
-    
     
     
     
@@ -204,22 +197,19 @@ namespace xerus {
 		return ret;
 	}
     
-    Tensor::~Tensor() {}
-    
     
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
-// 	Tensor& Tensor::operator=( Tensor&& _other) {
-// 		std::swap(dimensions, _other.dimensions);
-// 		std::swap(size, _other.size);
-// 		factor = _other.factor;
-// 		std::swap(representation, _other.representation);
-// 		std::swap(denseData, _other.denseData);
-// 		std::swap(sparseData, _other.sparseData);
-// 		
-// 		return *this;
-// 	}
+	Tensor& Tensor::operator=( Tensor&& _other) {
+		std::swap(dimensions, _other.dimensions);
+		std::swap(size, _other.size);
+		std::swap(representation, _other.representation);
+		factor = _other.factor;
+		std::swap(denseData, _other.denseData);
+		std::swap(sparseData, _other.sparseData);
+		return *this;
+	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
@@ -328,7 +318,8 @@ namespace xerus {
 	
 	void Tensor::reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init) {
 		const size_t oldDataSize = size;
-		change_dimensions(_newDim);
+		dimensions = _newDim;
+		size = misc::product(dimensions);
 		factor = 1.0;
 		
 		if(_representation == Representation::Dense) {
@@ -362,7 +353,8 @@ namespace xerus {
 	
 	void Tensor::reset(const std::vector<size_t>&  _newDim, const Initialisation _init) {
 		const size_t oldDataSize = size;
-		change_dimensions(_newDim);
+		dimensions = _newDim;
+		size = misc::product(dimensions);
 		factor = 1.0;
 		
 		if(is_dense()) {
@@ -383,7 +375,8 @@ namespace xerus {
 	}
 	
 	void Tensor::reset(const std::vector<size_t>& _newDim, const std::shared_ptr<value_t>& _newData) {
-		change_dimensions(_newDim);
+		dimensions = _newDim;
+		size = misc::product(dimensions);
 		factor = 1.0;
 		
 		if(is_sparse()) {
@@ -395,7 +388,8 @@ namespace xerus {
 	}
 	
 	void Tensor::reset(const std::vector<size_t>& _newDim, std::unique_ptr<value_t[]>&& _newData) {
-		change_dimensions(_newDim);
+		dimensions = _newDim;
+		size = misc::product(dimensions);
 		factor = 1.0;
 		
 		if(is_sparse()) {
@@ -454,29 +448,6 @@ namespace xerus {
 		return *this;
 	}
 	
-	Tensor  Tensor::operator+( const Tensor& _other) const {
-		Tensor result(*this);
-		result += _other;
-		return result;
-	}
-	
-	Tensor  Tensor::operator-( const Tensor& _other) const {
-		Tensor result(*this);
-		result -= _other;
-		return result;
-	}
-	
-	Tensor  Tensor::operator*( const value_t _factor) const {
-		Tensor result(*this);
-		result *= _factor;
-		return result;
-	}
-	
-	Tensor  Tensor::operator/( const value_t _divisor) const {
-		Tensor result(*this);
-		result /= _divisor;
-		return result;
-	}
 	
 
     
@@ -873,33 +844,39 @@ namespace xerus {
 		return result;
 	}
 	
-	bool Tensor::compare_to_data(const std::vector<value_t>& _values, const double _eps) const {
-		return size == _values.size() && compare_to_data(_values.data(), _eps);
-	}
-	
-	bool Tensor::compare_to_data(const value_t* _values, const double _eps) const {
-		for(size_t i = 0; i < size; ++i) {
-			if(std::abs(at(i)-_values[i]) > _eps) { return false; }
-		}
-		return true;
-	}
-    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         
     
-    void Tensor::change_dimensions(const std::vector<size_t>& _newDimensions) {
-        dimensions = _newDimensions;
-        size = misc::product(dimensions);
-    }
-    
-    void Tensor::change_dimensions(      std::vector<size_t>&& _newDimensions) {
-        dimensions = std::move(_newDimensions);
-        size = misc::product(dimensions);
-    }
-    
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	Tensor operator+(const Tensor& _lhs, const Tensor& _rhs) {
+		Tensor result(_lhs);
+		result += _rhs;
+		return result;
+	}
+	
+	Tensor operator-(const Tensor& _lhs, const Tensor& _rhs) {
+		Tensor result(_lhs);
+		result -= _rhs;
+		return result;
+	}
+	
+	Tensor operator*(const value_t _factor, const Tensor& _tensor) {
+		Tensor result(_tensor);
+		result *= _factor;
+		return result;
+	}
+	
+	Tensor operator/(const Tensor& _tensor, const value_t _divisor) {
+		Tensor result(_tensor);
+		result /= _divisor;
+		return result;
+	}
+	
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
 		if(_lhs.is_dense() && _rhs.is_dense()) {
 			REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
@@ -991,11 +968,19 @@ namespace xerus {
                 if(std::abs(entry.second)/(std::abs(A[entry.first])+std::abs(B[entry.first])) > factorizedEps) { return false; }
             }
         } else {
-            for(size_t i=0; i < _a.size; ++i) {
-                if(std::abs(_a[i]-_b[i])/(std::abs(_a[i])+std::abs(_b[i])) > _eps) { return false; }
+            for(size_t i = 0; i < _a.size; ++i) {
+				if(approx_equal(_a[i], _b[i])) { return false; }
             }
         }
         PA_END("Approx entrywise equal", "", misc::to_string(_a.size));
         return true;
     }
+    
+    bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON) {
+		if(_tensor.size != _values.size()) { return false; }
+		for(size_t i = 0; i < _tensor.size; ++i) {
+			if(!approx_equal(_tensor[i], _values[i], _eps)) { return false; }
+		}
+		return true;
+	}
 }

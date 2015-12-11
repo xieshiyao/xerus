@@ -217,30 +217,30 @@ UNIT_TEST(TensorNetwork, Save_Network,
 	res1 = std::move(res2); // res2 should still be valid but not change res1 in the following
     res2(l,o) = D(l,m) * E(m,n) * F(n,o);
     res3(i,o) = res1(i,l) * res2(l,o);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
     
     res1A(i,j,m,n,k,l) = A(i,j) * E(m,n) * C(k,l); 
     res2A(l,m,j,k,n,o) = D(l,m) * B(j,k) * F(n,o);
     res3(i,o) = res1A(i,j,m,n,k,l) * res2A(l,m,j,k,n,o);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
 	
 	res1A(i,j,m,n,k,l) = A(i,j) * E(m,n) * C(k,l); 
     res2A(l,m,j,k,n,o) = D(l,m) * B(j,k) * F(n,o);
     res3(i,o) = res1A(i,j,m,n,k,l) * res2A(l,m,j,k,n,o);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
     
     res1A(i,l,m,n,j,k) = A(i,j) * E(m,n) * C(k,l); 
     res2A(l,o,m,n,j,k) = D(l,m) * B(j,k) * F(n,o);
     res3(i,o) = res1A(i,l,m,n,j,k) * res2A(l,o,m,n,j,k);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
 
     res1AF(i,l,m,n,j,k) = A(i,j) * E(m,n) * C(k,l); 
     res2AF(l,o,m,n,j,k) = D(l,m) * B(j,k) * F(n,o);
     res3(i,o) = res1AF(i,l,m,n,j,k) * res2AF(l,o,m,n,j,k);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
     
     res1A(i,l,m,n,j,k) = A(i,j) * E(m,n) * C(k,l); 
     res2A(l,o,m,n,j,k) = D(l,m) * B(j,k) * F(n,o);
     res3(i,o) = res1A(i,l,m,n,j,k) * res2A(l,o,m,n,j,k);
-    TEST(res3.compare_to_data({20596523, 21531582, 46728183, 48849590}));
+    TEST(approx_entrywise_equal(res3, {20596523, 21531582, 46728183, 48849590}));
 )

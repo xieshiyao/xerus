@@ -24,18 +24,17 @@
 
 #pragma once
 
+#include <limits>
+
 #include "basic.h"
 #include "misc/sfinae.h"
-#include <string>
-#include <limits>
-#include <memory>
 #include "indexedTensor.h"
- 
+
 namespace xerus {
 	class Tensor;
 	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
-	class Tensor {
+	class Tensor final {
 	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary types- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -95,9 +94,6 @@ namespace xerus {
 		/// @brief Tensors are copy constructable.
 		implicit Tensor( const Tensor& _other ) = default;
 		
-		/// @brief Tensors are move constructable.
-// 		implicit Tensor( Tensor&& _other );
-
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
@@ -201,9 +197,9 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-		template<ADD_MOVE(Vec, std::vector<size_t>), class generator, class distribution>
-		static Tensor random(Vec&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
-			Tensor result(std::forward<Vec>(_dimensions), Representation::Sparse, Initialisation::Zero);
+		template<ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
+		static Tensor random(Dim_T&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Sparse, Initialisation::Zero);
 			REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
 			
 			std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
@@ -219,8 +215,42 @@ namespace xerus {
 		 */
 		template<class generator, class distribution>
 		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
-			return Tensor::random(std::vector<size_t>(_dimensions), _N, _rnd, _dist);
+			return Tensor::random(DimensionTuple(_dimensions), _N, _rnd, _dist);
 		}
+		
+		/** 
+		 * @brief: Returns a Tensor with all entries equal to one.
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
+		static Tensor ones(const DimensionTuple& _dimensions);
+		
+		/** 
+		 * @brief: Returns a Tensor representation of the identity operator with the given dimensions.
+		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
+		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
+		 */
+		static Tensor identity(const DimensionTuple& _dimensions);
+		
+		/** 
+		 * @brief: Returns a Tensor representation of the kronecker delta.
+		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
+		static Tensor kronecker(const DimensionTuple& _dimensions);
+		
+		/** 
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static Tensor dirac(const DimensionTuple& _dimensions, const std::vector<size_t>& _position);
+		
+		/** 
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static Tensor dirac(const DimensionTuple& _dimensions, const size_t _position);
 		
 		
 		
@@ -229,52 +259,6 @@ namespace xerus {
 		
 		/// @brief Returns a copy of this Tensor that uses a sparse representation.
 		Tensor sparse_copy() const;
-		
-		
-		/// @brief Returns a pointer containing a copy of the tensor with same type (i.e. Tensor or SparseTensor).
-		Tensor* get_copy() const;
-		
-		
-		/** 
-		 * @brief: Returns a Tensor with all entries equal to one.
-		 * @param _dimensions the dimensions of the new tensor.
-		 */
-		static Tensor ones(const std::vector<size_t>& _dimensions);
-		
-		/** 
-		 * @brief: Returns a Tensor representation of the identity operator with the given dimensions.
-		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
-		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
-		 */
-		static Tensor identity(const std::vector<size_t>& _dimensions);
-		
-		/** 
-		 * @brief: Returns a Tensor representation of the kronecker delta.
-		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
-		 * @param _dimensions the dimensions of the new tensor.
-		 */
-		static Tensor kronecker(const std::vector<size_t>& _dimensions);
-		
-		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _position The position of the one
-		 */
-		static Tensor dirac(const std::vector<size_t>& _dimensions, const std::vector<size_t>& _position);
-		
-		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _position The position of the one
-		 */
-		static Tensor dirac(const std::vector<size_t>& _dimensions, const size_t _position);
-		
-		
-		
-		
-		/// @brief Destructor
-		virtual ~Tensor();
-		
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -290,10 +274,23 @@ namespace xerus {
 		 * @param _other the Tensor to be move-assinged to this one.
 		 * @return a reference to this Tensor.
 		 */
-// 		Tensor& operator=(      Tensor&& _other);
+		Tensor& operator=(      Tensor&& _other);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		/** 
+		 * @brief Returns the degree of the tensor.
+		 * @details The degree is always equals to dimensions.size()
+		 * @return the degree of the tensor
+		 */
+		size_t degree() const;
+		
+		/** 
+		 * @brief Checks whether the tensor has a non-trivial global scaling factor.
+		 * @return true if there is a non-trivial factor, false if not.
+		 */
+		bool has_factor() const;
 		
 		/// @brief Returns whether the current representation is dense.
 		bool is_dense() const;
@@ -301,7 +298,30 @@ namespace xerus {
 		/// @brief Returns whether the current representation is sparse.
 		bool is_sparse() const;
 		
+		/** 
+		 * @brief Determines the number of non-zero entries.
+		 * @param _eps (optional) epsilon detrmining the maximal value, that is still assumed to be zero.
+		 * @return the number of non-zero entries found.
+		 */
+		size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const;
 		
+		/** 
+		 * @brief Checks the tensor for illegal entries, e.g. nan, inf,...
+		 * @return TRUE there are no invalid entries, FALSE otherwise.
+		 */
+		bool all_entries_valid() const;
+		
+		/** 
+		 * @brief Approximates the cost to reorder the tensor.
+		 * @return the approximated costs.
+		 */
+		size_t reorder_costs() const;
+		
+		/** 
+		 * @brief Calculates the frobenious norm of the tensor.
+		 * @return the frobenious norm.
+		 */
+		value_t frob_norm() const;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -391,38 +411,6 @@ namespace xerus {
 		 */ 
 		Tensor& operator/=(const value_t _divisor);
 		
-		/** 
-		 * @brief Calculates the entrywise sum of this Tensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide.
-		 * @param _other the second summand.
-		 * @return the sum.
-		 */
-		Tensor  operator+( const Tensor& _other) const;
-
-		/** 
-		 * @brief Calculates the entrywise difference between this Tensor and @a _other.
-		 * @details To be well-defined it is required that the dimensions of this and _other coincide.
-		 * @param _other the subtrahend,
-		 * @return the difference.
-		 */
-		Tensor  operator-( const Tensor& _other) const;
-		
-		/** 
-		 * @brief Calculates the entrywise multiplication of this Tensor with a constant @a _factor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _factor the factor,
-		 * @return the resulting scaled Tensor.
-		 */
-		Tensor  operator*( const value_t _factor) const;
-		
-		/** 
-		 * @brief Calculates the entrywise divison of this Tensor by a constant @a _divisor.
-		 * @details Internally this only results in a change in the global factor.
-		 * @param _divisor the divisor,
-		 * @return the resulting scaled Tensor.
-		 */
-		Tensor  operator/( const value_t _divisor) const;
-	
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -567,12 +555,29 @@ namespace xerus {
 		IndexedTensorReadOnly<Tensor> operator()(	  std::vector<Index>&& _indices) const;
 		
 		
-		
-		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
+		 * @brief Reinterprets the dimensions of the tensor.
+		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
+		 * required use resize_dimension() instead.
+		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
+		 */
+		void reinterpret_dimensions(const DimensionTuple& _newDimensions);
+		
+		/** 
+		 * @brief Reinterprets the dimensions of the tensor.
+		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
+		 * required use change_dimensions() instead.
+		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
+		 */
+		void reinterpret_dimensions(	  DimensionTuple&& _newDimensions);
+		
+		/** 
 		 * @brief Resizes a specific dimension of the Tensor.
+		 * @details Use this function only if the contend of the tensor shall stay, otherwise use reset().
 		 * @param _n the dimension to resize.
 		 * @param _newDim the new value that resized dimension shall have.
 		 * @param _cutPos the index within the selected dimension after which new slates are inserted or removed, by default the last index.
@@ -580,8 +585,15 @@ namespace xerus {
 		void resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos=~0ul);
 		
 		/** 
+		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
+		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
+		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
+		 */
+		void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		
+		/** 
 		 * @brief Removes a single slate from the Tensor.
-		 * @param _indexNb the dimension to in defining the slate.
+		 * @param _indexNb the dimension defining the slate.
 		 * @param _pos the index within the selected dimension for which the slate shall be removed.
 		 */
 		void remove_slate(const size_t _indexNb, const size_t _pos);
@@ -621,49 +633,6 @@ namespace xerus {
 		 */
 		void modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f);
 		
-		
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		/** 
-		 * @brief Returns the degree of the tensor.
-		 * @details The degree is always equals to dimensions.size()
-		 * @return the degree of the tensor
-		 */
-		size_t degree() const;
-		
-		/** 
-		 * @brief Checks whether the tensor has a non-trivial global scaling factor.
-		 * @return true if there is a non-trivial factor, false if not.
-		 */
-		bool has_factor() const;
-		
-		/** 
-		 * @brief Determines the number of non-zero entries.
-		 * @param _eps (optional) epsilon detrmining the maximal value, that is still assumed to be zero.
-		 * @return the number of non-zero entries found.
-		 */
-		size_t count_non_zero_entries(const value_t _eps = std::numeric_limits<value_t>::epsilon()) const;
-		
-		/** 
-		 * @brief Checks the tensor for illegal entries, e.g. nan, inf,...
-		 * @return TRUE there are no invalid entries, FALSE otherwise.
-		 */
-		bool all_entries_valid() const;
-		
-		/** 
-		 * @brief Approximates the cost to reorder the tensor.
-		 * @return the approximated costs.
-		 */
-		size_t reorder_costs() const;
-
-		
-		/** 
-		 * @brief Calculates the frobenious norm of the tensor.
-		 * @return the frobenious norm.
-		 */
-		value_t frob_norm() const;
-		
-		
 		/** 
 		 * @brief Makes the Tensor use a dense representation.
 		 */
@@ -674,33 +643,7 @@ namespace xerus {
 		 */
 		void use_sparse_representation(const value_t _eps = std::numeric_limits<value_t>::epsilon());
 		
-		
-		/** 
-		 * @brief Reinterprets the dimensions of the tensor.
-		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
-		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
-		 * required use change_dimensions() instead.
-		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
-		 */
-		void reinterpret_dimensions(const std::vector<size_t>& _newDimensions);
-		
-
-		/** 
-		 * @brief Reinterprets the dimensions of the tensor.
-		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
-		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
-		 * required use change_dimensions() instead.
-		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
-		 */
-		void reinterpret_dimensions(	  std::vector<size_t>&& _newDimensions);
-		
-		
-		/** 
-		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
-		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
-		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
-		 */
-		void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
 		 * @brief Creates a string representation of the Tensor.
@@ -709,42 +652,61 @@ namespace xerus {
 		std::string to_string() const;
 		
 		
-		/** 
-		 * @brief Compares the Tensor entriewise to the given data.
-		 * @param _values data to compare to, must be of the same size as the Tensor has entries (i.e. size).
-		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
-		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
-		 */
-		bool compare_to_data(const std::vector<value_t>& _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const;
-		
-		
-		/** 
-		 * @brief Compares the Tensor entriewise to the given data.
-		 * @param _values data to compare to, must be of the same size as the Tensor has entries (i.e. size).
-		 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
-		 * @return TRUE if all entries deviate by less than _eps from the correspondign data points, FALSE otherwise.
-		 */
-		bool compare_to_data(const value_t* _values, const double _eps = std::numeric_limits<value_t>::epsilon()) const;
-		
-		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	protected:
-		/// Internal: Changes the dimensions of the tensor and recalculates the size of the tensor.
-		void change_dimensions(const std::vector<size_t>& _newDimensions);
-		
-		/// Internal: Changes the dimensions of the tensor and recalculates the size of the tensor.
-		void change_dimensions(	  std::vector<size_t>&& _newDimensions);
+
 	};
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
 	/** 
-	 * @brief Calculates the entrywise multiplication of the Tensor @a _lhs with a constant @a _rhs.
+	 * @brief Calculates the entrywise sum of @a _lhs and @a _rhs.
+	 * @details To be well-defined it is required that the dimensions of  @a _lhs and @a _rhs coincide.
+	 * @param _lhs the first summand.
+	 * @param _rhs the first summand.
+	 * @return the sum.
+	 */
+	Tensor operator+(const Tensor& _lhs, const Tensor& _rhs);
+	
+
+	/** 
+	 * @brief Calculates the entrywise difference between @a _lhs and @a _rhs.
+	 * @details To be well-defined it is required that the dimensions of  @a _lhs and @a _rhs coincide.
+	 * @param _lhs the minuend.
+	 * @param _rhs the subtrahend.
+	 * @return the difference.
+	 */
+	Tensor operator-(const Tensor& _lhs, const Tensor& _rhs);
+	
+	/** 
+	 * @brief Calculates the entrywise multiplication of the Tensor @a _tensor with the constant @a _factor.
 	 * @details Internally this only results in a change in the global factor.
-	 * @param _lhs the Tensor that shall be scaled.
-	 * @param _rhs the factor to be used.
+	 * @param _factor the factor to be used.
+	 * @param _tensor the Tensor that shall be scaled.
 	 * @return the resulting scaled Tensor.
 	 */
-	static _inline_ Tensor operator*(const value_t _lhs, const Tensor& _rhs) { return _rhs*_lhs; }
+	Tensor operator*(const value_t _factor, const Tensor& _tensor);
+	
+	/** 
+	 * @brief Calculates the entrywise multiplication of the Tensor @a _tensor with the constant @a _factor.
+	 * @details Internally this only results in a change in the global factor.
+	 * @param _tensor the Tensor that shall be scaled.
+	 * @param _factor the factor to be used.
+	 * @return the resulting scaled Tensor.
+	 */
+	static _inline_ Tensor operator*(const Tensor& _tensor, const value_t _factor) { return _factor*_tensor; }
+	
+	/** 
+	 * @brief Calculates the entrywise divison of the Tensor @a _tensor with the constant @a _divisor.
+	 * @details Internally this only results in a change in the global factor.
+	 * @param _tensor the Tensor that shall be scaled.
+	 * @param _divisor the factor to be used.
+	 * @return the resulting scaled Tensor.
+	 */
+	Tensor operator/(const Tensor& _tensor, const value_t _divisor);
 	
 	
 	/** 
@@ -784,6 +746,9 @@ namespace xerus {
 	*/
 	bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = EPSILON);
 	
+	
+	
+	
 	/** 
 	* @brief Checks whether two Tensors are approximately entrywise equal.
 	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < _eps is fullfilled for all i.
@@ -793,4 +758,14 @@ namespace xerus {
 	* @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
 	*/
 	bool approx_entrywise_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = EPSILON);
+	
+	
+	/** 
+	 * @brief Compares the given Tensor entriewise to the given data.
+	 * @param _tensor the tensor.
+	 * @param _values the data to compare to, must be of the same size as the Tensor has entries (i.e. size).
+	 * @param _eps (optional) epsilon used to determine whether an entry is equal to a data point. 
+	 * @return TRUE if approx_equal() is true for all entries/data points, FALSE otherwise.
+	 */
+	bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON);
 }
