@@ -262,14 +262,9 @@ namespace xerus {
 			}
 		#endif
 		
-		// If there is no index reshuffling, we can simplify a lot
+		// If there is no index reshuffling, the evalutation is trivial
 		if(baseIndices == outIndices) {
-			if(!_out.tensorObjectReadOnly->is_sparse()) { // Any => Full
-				static_cast<Tensor&>(*_out.tensorObject) = *_base.tensorObjectReadOnly;
-				
-			} else if(_out.tensorObjectReadOnly->is_sparse() && _base.tensorObjectReadOnly->is_sparse()) { // Sparse => Sparse
-				static_cast<Tensor&>(*_out.tensorObject) = static_cast<const Tensor&>(*_base.tensorObjectReadOnly);
-			}
+			*_out.tensorObject = *_base.tensorObjectReadOnly;
 			return; // We are finished here
 		}
 		
@@ -324,8 +319,8 @@ namespace xerus {
 				}
 			}
 			
-			full_to_full_evaluation(*static_cast<Tensor*>(_out.tensorObject),
-				*static_cast<const Tensor*>(_base.tensorObjectReadOnly),
+			full_to_full_evaluation(*_out.tensorObject,
+				*_base.tensorObjectReadOnly,
 				fixedIndexOffset,
 				orderedIndexDim,
 				outIndices.size()-numOrderedIndices,
@@ -374,7 +369,7 @@ namespace xerus {
 			}
 			
 			// Get the entries and the factor of our base tensor
-			const std::map<size_t, value_t>& baseEntries = *static_cast<const Tensor*>(_base.tensorObjectReadOnly)->sparseData;
+			const std::map<size_t, value_t>& baseEntries = _base.tensorObjectReadOnly->get_unsanitized_sparse_data();
 			const value_t factor = _base.tensorObjectReadOnly->factor;
 			
 			// Start performance analysis for low level part
@@ -382,9 +377,7 @@ namespace xerus {
 			
 			// Check whether _out is sparse
 			if(_out.tensorObjectReadOnly->is_sparse()) {
-				// Ensure that _out is empty
-				std::map<size_t, value_t>& outEntries = *static_cast<Tensor*>(_out.tensorObject)->sparseData;
-				outEntries.clear();
+				std::map<size_t, value_t>& outEntries = _out.tensorObject->override_sparse_data();
 				
 				if(peacefullIndices) {
 					for(const std::pair<size_t, value_t>& entry : baseEntries) {
@@ -401,7 +394,7 @@ namespace xerus {
 				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			} else {
 				// Ensure that _out is empty
-				value_t* const dataPointer = static_cast<Tensor*>(_out.tensorObject)->get_unsanitized_dense_data();
+				value_t* const dataPointer = _out.tensorObject->override_dense_data();
 				misc::array_set_zero(dataPointer, _out.tensorObject->size);
 				
 				if(peacefullIndices) {

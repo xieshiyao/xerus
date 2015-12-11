@@ -258,6 +258,7 @@ namespace xerus {
 		rhsOpenIndices.reserve(_rhsIndices.size());
 		commonIndices.reserve(std::min(_lhsIndices.size(), _rhsIndices.size()));
         size_t leftDim = 1, midDim = 1, rightDim = 1;
+		size_t contractedDimCount = 0;
         
         // Set lhs and common indices
         if(lhsNeedsReshuffle) {
@@ -274,6 +275,7 @@ namespace xerus {
                 if(misc::contains(_lhsIndices, idx)) {
                     commonIndices.push_back(idx);
                     midDim *= idx.dimension();
+					contractedDimCount += idx.span;
                 }
             }
         } else {
@@ -284,7 +286,8 @@ namespace xerus {
                     leftDim *= idx.dimension();
                 } else if(misc::contains(_rhsIndices, idx)) {
                     commonIndices.push_back(idx);
-                    midDim *= idx.dimension();
+					midDim *= idx.dimension();
+					contractedDimCount += idx.span;
                 }
             }
         }
@@ -338,7 +341,7 @@ namespace xerus {
                 // Add the common indices to the open ones
                 lhsOpenIndices.insert(lhsOpenIndices.end(), commonIndices.begin(), commonIndices.end());
                 
-				lhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_lhs.get_evaluated_dimensions(lhsOpenIndices), _lhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(lhsOpenIndices), true));
+				lhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_lhs.get_evaluated_dimensions(lhsOpenIndices), _lhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), lhsOpenIndices, true));
 				evaluate(std::move(*lhsSaveSlot), std::move(_lhs));
                 actualLhs = lhsSaveSlot.get();
             } else {
@@ -351,7 +354,7 @@ namespace xerus {
                 // Add the open indices to the common ones
                 commonIndices.insert(commonIndices.end(), rhsOpenIndices.begin(), rhsOpenIndices.end());
                 
-				rhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_rhs.get_evaluated_dimensions(commonIndices), _rhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(commonIndices), true));
+				rhsSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_rhs.get_evaluated_dimensions(commonIndices), _rhs.tensorObjectReadOnly->representation, Tensor::Initialisation::None), commonIndices, true));
 				evaluate(std::move(*rhsSaveSlot), std::move(_rhs));
                 actualRhs = rhsSaveSlot.get();
             } else {
@@ -361,7 +364,7 @@ namespace xerus {
             if(reorderResult) {
                 LOG(ContractionDebug, "Creating temporary result tensor");
                 
-                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_result.get_evaluated_dimensions(workingResultIndices), _result.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(workingResultIndices), true));
+                workingResultSaveSlot.reset(new IndexedTensor<Tensor>(new Tensor(_result.get_evaluated_dimensions(workingResultIndices), _result.tensorObjectReadOnly->representation, Tensor::Initialisation::None), workingResultIndices, true));
                 workingResult = workingResultSaveSlot.get();
             } else {
                 workingResult = &_result;
@@ -386,20 +389,8 @@ namespace xerus {
             const bool rhsSparse = actualRhs->tensorObjectReadOnly->is_sparse();
             const bool resultSparse = workingResult->tensorObjectReadOnly->is_sparse();
             
-            // Select actual case
-            if(!lhsSparse && !rhsSparse && !resultSparse) { // Full * Full => Full
-                blasWrapper::matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
-            } else if(lhsSparse && !rhsSparse && !resultSparse) { // Sparse * Full => Full
-                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, *static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
-            } else if(!lhsSparse && rhsSparse && !resultSparse) { // Full * Sparse => Full
-                matrix_matrix_product(static_cast<Tensor*>(workingResult->tensorObject)->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
-            } else if(lhsSparse && !rhsSparse && resultSparse) { // Sparse * Full => Sparse
-                matrix_matrix_product(*static_cast<Tensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, *static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->sparseData.get(), lhsTrans, midDim, static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), rhsTrans);
-            } else if(!lhsSparse && rhsSparse && resultSparse) { // Full * Sparse => Sparse
-                matrix_matrix_product(*static_cast<Tensor*>(workingResult->tensorObject)->sparseData.get(), leftDim, rightDim, commonFactor, static_cast<const Tensor*>(actualLhs->tensorObjectReadOnly)->get_unsanitized_dense_data(), lhsTrans, midDim, *static_cast<const Tensor*>(actualRhs->tensorObjectReadOnly)->sparseData.get(), rhsTrans);
-            } else {
-                LOG(fatal, "Invalid combiantion of sparse/dense tensors in contraction");
-            }
+			// TODO take full advantage from this line (or delete this function alltogether...)
+			contract(*workingResult->tensorObject, *actualLhs->tensorObjectReadOnly, lhsTrans, *actualRhs->tensorObjectReadOnly, rhsTrans, contractedDimCount);
             
             if(reorderResult) {
                 LOG(ContractionDebug, "Reordering result");

@@ -66,12 +66,13 @@ namespace xerus {
 		/// @brief Size of the Tensor -- always equal to the product of the dimensions.
 		size_t size = 1;
 		
-		/// @brief The current representation of the Tensor (i.e Dense or Sparse)
-		Representation representation = Representation::Dense;
-		
 		/// @brief Single value representing a constant scaling factor.
 		value_t factor = 1.0;
 		
+		/// @brief The current representation of the Tensor (i.e Dense or Sparse)
+		Representation representation = Representation::Dense;
+		
+	private:
 		/** 
 		 * @brief Shared pointer to the dense data array, if representation is dense. 
 		 * @details The data is stored such that indices increase from right to left (row-major order). 
@@ -86,6 +87,7 @@ namespace xerus {
 		 */
 		std::shared_ptr<std::map<size_t, value_t>> sparseData;
 		
+	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/// @brief Constructs an order zero Tensor with the given inital representation
@@ -299,6 +301,13 @@ namespace xerus {
 		bool is_sparse() const;
 		
 		/** 
+		 * @brief Returns the number currently saved entries. 
+		 * @details Note that this is not nessecarily the number of non-zero entries as the saved entries may contain
+		 * zeros. Even more if a dense representation is used size is returned. 
+		 */
+		size_t sparsity() const;
+		
+		/** 
 		 * @brief Determines the number of non-zero entries.
 		 * @param _eps (optional) epsilon detrmining the maximal value, that is still assumed to be zero.
 		 * @return the number of non-zero entries found.
@@ -323,60 +332,6 @@ namespace xerus {
 		 */
 		value_t frob_norm() const;
 		
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		static size_t multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions);
-		
-		template<int sign>
-		static void plus_minus_equal(Tensor& _me, const Tensor& _other);
-		
-		/// @brief Adds the given sparse data to the given full data
-		static void add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData);
-		
-		/// @brief Adds the given sparse data to the given sparse data
-		static void add_sparse_to_sparse(const std::shared_ptr<std::map<size_t, value_t>>& _sum, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _summand);
-		
-		/// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
-		void ensure_own_data();
-		
-		/// @brief Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
-		void ensure_own_data_no_copy();
-		
-		/// @brief Checks whether there is a non-trivial scaling factor and applies it if nessecary.
-		void apply_factor();
-		
-		/// @brief Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
-		void ensure_own_data_and_apply_factor();
-		
-		/** 
-		 * @brief Resets the tensor to the given dimensions and representation.
-		 * @details Leaves the Tensor in the same state as if newly constructed with the the same arguments.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _representation the new representation of the tensor.
-		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
-		 */
-		void reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
-		
-		/** 
-		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
-		 */
-		void reset(const std::vector<size_t>&  _newDim, const Initialisation _init = Initialisation::Zero);
-		
-		/** 
-		 * @brief Resets the tensor to the given dimensions and uses the given data.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _newData new dense data in row-major order.
-		 */
-		void reset(const std::vector<size_t>&  _newDim, const std::shared_ptr<value_t>& _newData);
-		
-		/** 
-		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _newData new dense data in row-major order.
-		 */
-		void reset(const std::vector<size_t>&  _newDim, std::unique_ptr<value_t[]>&& _newData);
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
@@ -520,7 +475,7 @@ namespace xerus {
 		 * may shared with other tensors or has to be interpreted considering a gloal factor. Both can be avoid if using get_sparse_data().
 		 * @return reference to the internal sparse data map.
 		 */
-		const std::map<size_t, value_t>& get_unsanitized_saprse_data() const;
+		const std::map<size_t, value_t>& get_unsanitized_sparse_data() const;
 		
 		/** 
 		 * @brief Returns a pointer to the internal sparse data map for complete rewrite purpose ONLY.
@@ -537,6 +492,7 @@ namespace xerus {
 		 * @return The internal shared pointer to the sparse data map.
 		 */
 		const std::shared_ptr<std::map<size_t, value_t>>& get_internal_sparse_data();
+		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -594,7 +550,38 @@ namespace xerus {
 		IndexedTensorReadOnly<Tensor> operator()(	  std::vector<Index>&& _indices) const;
 		
 		
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Modifiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		/** 
+		 * @brief Resets the tensor to the given dimensions and representation.
+		 * @details Leaves the Tensor in the same state as if newly constructed with the the same arguments.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _representation the new representation of the tensor.
+		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
+		 */
+		void reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
+		
+		/** 
+		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
+		 */
+		void reset(const std::vector<size_t>&  _newDim, const Initialisation _init = Initialisation::Zero);
+		
+		/** 
+		 * @brief Resets the tensor to the given dimensions and uses the given data.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _newData new dense data in row-major order.
+		 */
+		void reset(const std::vector<size_t>&  _newDim, const std::shared_ptr<value_t>& _newData);
+		
+		/** 
+		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _newData new dense data in row-major order.
+		 */
+		void reset(const std::vector<size_t>&  _newDim, std::unique_ptr<value_t[]>&& _newData);
 		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
@@ -691,9 +678,35 @@ namespace xerus {
 		std::string to_string() const;
 		
 		
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		static size_t multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions);
+		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	protected:
-
+		template<int sign>
+		static void plus_minus_equal(Tensor& _me, const Tensor& _other);
+		
+		/// @brief Adds the given sparse data to the given full data
+		static void add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData);
+		
+		/// @brief Adds the given sparse data to the given sparse data
+		static void add_sparse_to_sparse(const std::shared_ptr<std::map<size_t, value_t>>& _sum, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _summand);
+		
+	public:
+		
+		/// @brief Ensures that this tensor is the sole owner of its data. If needed new space is allocated and all entries are copied.
+		void ensure_own_data();
+		
+		/// @brief Ensures that this tensor is the sole owner of its data space. If needed new space is allocated with entries left undefined.
+		void ensure_own_data_no_copy();
+		
+		/// @brief Checks whether there is a non-trivial scaling factor and applies it if nessecary.
+		void apply_factor();
+		
+		/// @brief Checks whether there is a non-trivial factor and applies it. Even if no factor is applied ensure_own_data() is called.
+		void ensure_own_data_and_apply_factor();
 	};
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -759,7 +772,7 @@ namespace xerus {
 	
 	/** 
 	 * @brief Low-level contraction between Tensors.
-	 * @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide.
+	 * @details This function assumes that all dimensions are allready correct and the combination of sparse/dense representation makes sense.
 	 * @param _result Output for the result of the contraction. Must allready have the right dimensions!
 	 * @param _lhs left hand side of the contraction.
 	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).

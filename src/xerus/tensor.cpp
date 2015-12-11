@@ -26,17 +26,15 @@
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/selectedFunctions.h>
-#include <xerus/tensor.h>
  
 #include <xerus/blasLapackWrapper.h>
-#include <xerus/misc/performanceAnalysis.h>
+#include <xerus/cs_wrapper.h>
+#include <xerus/sparseTimesFullContraction.h>
 
 namespace xerus {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	Tensor::Tensor(const Representation _representation) : Tensor(std::vector<size_t>({}), _representation) { } 
-	
-// 	Tensor::Tensor( Tensor&& _other ) : Tensor(_other) {} // TODO improve
 	
 	Tensor::Tensor(const std::vector<size_t>& _dimensions, const Representation _representation, const Initialisation _init) 
 		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
@@ -118,23 +116,6 @@ namespace xerus {
     
     
     
-    Tensor Tensor::dense_copy() const {
-		Tensor ret(*this);
-		ret.use_dense_representation();
-		return ret;
-	}
-		
-		
-	Tensor Tensor::sparse_copy() const {
-		Tensor ret(*this);
-		ret.use_sparse_representation();
-		return ret;
-	}
-    
-    
-    
-    
-    
     
     Tensor Tensor::ones(const std::vector<size_t>& _dimensions) {
 		Tensor ret(_dimensions, Representation::Dense, Initialisation::None);
@@ -198,6 +179,18 @@ namespace xerus {
 	}
     
     
+    Tensor Tensor::dense_copy() const {
+		Tensor ret(*this);
+		ret.use_dense_representation();
+		return ret;
+	}
+	
+	
+	Tensor Tensor::sparse_copy() const {
+		Tensor ret(*this);
+		ret.use_sparse_representation();
+		return ret;
+	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
@@ -213,20 +206,594 @@ namespace xerus {
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
-	/// @brief Returns whether the current representation is dense.
+	size_t Tensor::degree() const {
+		return dimensions.size();
+	}
+	
+	bool Tensor::has_factor() const {
+		#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wfloat-equal"
+			return (factor != 1.0);
+		#pragma GCC diagnostic pop
+	}
+	
 	bool Tensor::is_dense() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
-	/// @brief Returns whether the current representation is sparse.
 	bool Tensor::is_sparse() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
+	
+	size_t Tensor::sparsity() const {
+		REQUIRE(is_sparse(), "IE");
+		return sparseData->size();
+	}
+	
+	
+	size_t Tensor::count_non_zero_entries(const value_t _eps) const {
+		if(is_dense()) {
+			size_t count = 0;
+			for(size_t i = 0; i < size; ++i) {
+				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
+			}
+			return count;
+		} else {
+			size_t count = 0;
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				if(std::abs(entry.second) > _eps) { count++; } 
+			}
+			return count;
+		}
+	}
+	
+	bool Tensor::all_entries_valid() const {
+		if(is_dense()) {
+			for(size_t i = 0; i < size; ++i) {
+				if(!std::isfinite(denseData.get()[i])) { return false; } 
+			}
+		} else {
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				if(!std::isfinite(entry.second)) {return false; } 
+			}
+		}
+		return true;
+	}
+	
+	size_t Tensor::reorder_costs() const {
+		return is_sparse() ? 10*sparsity() : size;
+	}
+	
+	value_t Tensor::frob_norm() const {
+		if(is_dense()) {
+			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
+		} else {
+			value_t norm = 0;
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				norm += misc::sqr(entry.second);
+			}
+			return std::abs(factor)*sqrt(norm);
+		}
+	}
+	
+
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	Tensor& Tensor::operator+=(const Tensor& _other) {
+		plus_minus_equal<1>(*this, _other);
+		return *this;
+	}
+	
+	Tensor& Tensor::operator-=(const Tensor& _other) {
+		plus_minus_equal<-1>(*this, _other);
+		return *this;
+	}
+	
+	Tensor& Tensor::operator*=(const value_t _factor) {
+		factor *= _factor;
+		return *this;
+	}
+	
+	Tensor& Tensor::operator/=(const value_t _divisor) {
+		factor /= _divisor;
+		return *this;
+	}
+
     
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	value_t& Tensor::operator[](const size_t _position) {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		
+		ensure_own_data_and_apply_factor();
+		
+		if(is_dense()) {
+			return denseData.get()[_position];
+		} else {
+			return (*sparseData)[_position];
+		}
+	}
+
+	value_t Tensor::operator[](const size_t _position) const {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		
+		if(is_dense()) {
+			return factor*denseData.get()[_position];
+		} else {
+			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+			if(entry == sparseData->end()) {
+				return 0.0;
+			} else {
+				return factor*entry->second;
+			}
+		}
+	}
+
+	value_t& Tensor::operator[](const std::vector<size_t>& _positions) {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
+	value_t Tensor::operator[](const std::vector<size_t>& _positions) const {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
+	
+	value_t Tensor::at(const size_t _position) const {
+		return operator[](_position);
+	}
+	
+	value_t Tensor::at(const std::vector<size_t>& _positions) const {
+		return operator[](multiIndex_to_position(_positions, dimensions));
+	}
+	
+	
+	value_t* Tensor::get_dense_data() {
+		use_dense_representation();
+		ensure_own_data_and_apply_factor();
+		return denseData.get();
+	}
+	
+	value_t* Tensor::get_unsanitized_dense_data() {
+		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
+		return denseData.get();
+	}
+	
+	const value_t* Tensor::get_unsanitized_dense_data() const  {
+		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
+		return denseData.get();
+	}
+	
+	value_t* Tensor::override_dense_data()  {
+		factor = 1.0;
+		if(!denseData.unique()) {
+			sparseData.reset();
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			representation = Representation::Dense;
+		}
+		return denseData.get();
+	}
+	
+	const std::shared_ptr<value_t>& Tensor::get_internal_dense_data() {
+		REQUIRE(is_dense(), "Internal dense data requested, but representation is not dense!");
+		return denseData;
+	}
+	
+	
+	std::map<size_t, value_t>& Tensor::get_sparse_data() {
+		CHECK(is_sparse(), warning, "Request for sparse data although the Tensor is not sparse.");
+		use_sparse_representation();
+		ensure_own_data_and_apply_factor();
+		return *sparseData.get();
+	}
+	
+	std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() {
+		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
+		return *sparseData.get();
+	}
+	
+	const std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() const  {
+		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
+		return *sparseData.get();
+	}
+	
+	std::map<size_t, value_t>& Tensor::override_sparse_data() {
+		factor = 1.0;
+		if(sparseData.unique()) {
+			REQUIRE(is_sparse(), "Internal Error");
+			sparseData->clear();
+		} else {
+			denseData.reset();
+			sparseData.reset(new std::map<size_t, value_t>());
+			representation = Representation::Sparse;
+		}
+		
+		return *sparseData.get();
+	}
+	
+	const std::shared_ptr<std::map<size_t, value_t>>& Tensor::get_internal_sparse_data() {
+		REQUIRE(is_sparse(), "Internal sparse data requested, but representation is not sparse!");
+		return sparseData;
+	}
+
+	
+	
+	
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
+    /// Indexes the tensor.
+    IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
+		is_dense(); 
+        return IndexedTensor<Tensor>(this, _indices, false);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
+		is_dense(); 
+        return IndexedTensor<Tensor>(this, std::move(_indices), false);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
+		is_dense(); 
+        return IndexedTensorReadOnly<Tensor>(this, _indices);
+    }
+    
+    /// Indexes the tensor.
+    IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
+		is_dense(); 
+        return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
+    }
+    
+    
+    
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	void Tensor::reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init) {
+		const size_t oldDataSize = size;
+		dimensions = _newDim;
+		size = misc::product(dimensions);
+		factor = 1.0;
+		
+		if(_representation == Representation::Dense) {
+			if(is_dense()) {
+				if(oldDataSize != size || !denseData.unique()) {
+					denseData.reset(new value_t[size], internal::array_deleter_vt);
+				}
+			} else {
+				sparseData.reset();
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+				representation = _representation;
+			}
+			
+			if(_init == Initialisation::Zero) {
+				memset(denseData.get(), 0, size*sizeof(value_t));
+			}
+		} else {
+			if(is_sparse()) {
+				if(sparseData.unique()) {
+					sparseData->clear();
+				} else {
+					sparseData.reset(new std::map<size_t, value_t>());
+				}
+			} else {
+				denseData.reset();
+				sparseData.reset(new std::map<size_t, value_t>());
+				representation = _representation;
+			}
+		}
+	}
+	
+	void Tensor::reset(const std::vector<size_t>&  _newDim, const Initialisation _init) {
+		const size_t oldDataSize = size;
+		dimensions = _newDim;
+		size = misc::product(dimensions);
+		factor = 1.0;
+		
+		if(is_dense()) {
+			if(oldDataSize != size || !denseData.unique()) {
+				denseData.reset(new value_t[size], internal::array_deleter_vt);
+			}
+			
+			if(_init == Initialisation::Zero) {
+				memset(denseData.get(), 0, size*sizeof(value_t));
+			}
+		} else {
+			if(sparseData.unique()) {
+				sparseData->clear();
+			} else {
+				sparseData.reset(new std::map<size_t, value_t>());
+			}
+		}
+	}
+	
+	void Tensor::reset(const std::vector<size_t>& _newDim, const std::shared_ptr<value_t>& _newData) {
+		dimensions = _newDim;
+		size = misc::product(dimensions);
+		factor = 1.0;
+		
+		if(is_sparse()) {
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+		
+		denseData = _newData;
+	}
+	
+	void Tensor::reset(const std::vector<size_t>& _newDim, std::unique_ptr<value_t[]>&& _newData) {
+		dimensions = _newDim;
+		size = misc::product(dimensions);
+		factor = 1.0;
+		
+		if(is_sparse()) {
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+		
+		denseData = std::move(_newData);
+	}
+	
+	void Tensor::reinterpret_dimensions(const std::vector<size_t>& _newDimensions) {
+		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
+		dimensions = _newDimensions;
+	}
+	
+	void Tensor::reinterpret_dimensions(      std::vector<size_t>&& _newDimensions) {
+		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
+		dimensions = std::move(_newDimensions);
+	}
+	
+	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
+		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
+		
+		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
+		
+		size_t newStepSize = 1;
+		size_t blockCount = 1;
+		size_t oldStepSize = 1;
+		for (size_t i=degree()-1; i>_n; --i) {
+			oldStepSize *= dimensions[i];
+		}
+		newStepSize = oldStepSize * _newDim;
+		oldStepSize = oldStepSize * dimensions[_n];
+		blockCount = size / oldStepSize; //  == product of dim[i] for i=0 to _n-1
+		
+		size_t newsize = blockCount*newStepSize;
+		REQUIRE(newsize == size/dimensions[_n] * _newDim, 
+				dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize << " " << blockCount
+				<< size << " " << newsize);
+		value_t *tmp = new value_t[newsize];
+		if (newStepSize > oldStepSize) {
+			if (_cutPos < _newDim) {
+				size_t numInsert = (newStepSize-oldStepSize);
+				_cutPos *= oldStepSize / dimensions[_n];
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
+					memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
+					memcpy(tmp+i*newStepSize+_cutPos+numInsert, denseData.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
+				}
+			} else {
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
+					memset(tmp+i*newStepSize+oldStepSize, 0, (newStepSize-oldStepSize)*sizeof(double));
+				}
+			}
+		} else { // newStepSize <= oldStepSize
+			if (_cutPos < _newDim) {
+				_cutPos *= oldStepSize / dimensions[_n];
+				size_t diffSize = newStepSize - _cutPos;
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t));
+					memcpy(tmp+i*newStepSize+_cutPos, denseData.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
+				}
+			} else {
+				for (size_t i=0; i<blockCount; ++i) {
+					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize*sizeof(value_t));
+				}
+			}
+		}
+		dimensions[_n] = _newDim;
+		size = newsize;
+		denseData.reset(tmp, internal::array_deleter_vt);
+		
+		REQUIRE(size == misc::product(dimensions), "");
+	}
+	
+	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
+		
+		if(is_dense()) {
+			size_t stepCount = 1, blockSize = 1;
+			for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
+			for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
+			
+			const size_t stepSize = dimensions[_dimension]*blockSize;
+			size_t inputPosition = _slatePosition*blockSize;
+			
+			value_t * const newData = new value_t[stepCount*blockSize];
+			
+			// Copy data
+			for(size_t i = 0; i < stepCount; ++i) {
+				misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
+				inputPosition += stepSize;
+			}
+			
+			// Set data
+			denseData.reset(newData, &internal::array_deleter_vt);
+			
+			// Adjust dimensions
+			dimensions.erase(dimensions.begin()+_dimension);
+			size = stepCount*blockSize;
+		} else {
+			// TODO implement!
+			LOG(fatal, "fix_slate is not yet implemented for sparse representations."); 
+		}
+	}
+	
+	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(_indexNb < degree(), "");
+		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
+		REQUIRE(dimensions[_indexNb] > 1, "");
+		
+		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
+	}
+	
+	
+	//TODO Allow more 2d
+	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
+		const size_t N = dimensions[1];
+		for(size_t i=0; i<numDiags; ++i){
+			_f(realData[i+i*N]);
+		}
+	}
+	
+	//TODO Allow more 2d
+	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
+		const size_t N = dimensions[1];
+		for(size_t i=0; i<numDiags; ++i){
+			_f(realData[i+i*N], i);
+		}
+	}
+	
+	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
+		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+		
+		ensure_own_data_and_apply_factor();
+		value_t* const realData = denseData.get();
+		for(size_t i=0; i<size; ++i){ _f(realData[i]); }
+	}
+	
+	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
+		void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+			REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+			
+			ensure_own_data_and_apply_factor();
+			value_t* const realData = denseData.get();
+			for(size_t i=0; i<size; ++i){ _f(realData[i], i); }
+		}
+		
+		void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
+			REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
+			
+			ensure_own_data_and_apply_factor();
+			value_t* const realData = denseData.get();
+			
+			std::vector<size_t> multIdx(degree(), 0);
+			size_t idx = 0;
+			while (true) {
+				_f(realData[idx], multIdx);
+				// increasing indices
+				idx++;
+				size_t changingIndex = degree()-1;
+				multIdx[changingIndex]++;
+				while(multIdx[changingIndex] == dimensions[changingIndex]) {
+					multIdx[changingIndex] = 0;
+					changingIndex--;
+					// Return on overflow 
+					if(changingIndex >= degree()) { return; }
+					multIdx[changingIndex]++;
+				}
+			}
+		}
+	#endif
+    
+    void Tensor::use_dense_representation() {
+		if(is_sparse()) {
+			denseData.reset(new value_t[size], internal::array_deleter_vt);
+			misc::array_set_zero(denseData.get(), size);
+			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+				denseData.get()[entry.first] = entry.second;
+			}
+			sparseData.reset();
+			representation = Representation::Dense;
+		}
+	}
+	
+	void Tensor::use_sparse_representation(const value_t _eps) {
+		if(is_dense()) {
+			sparseData.reset(new std::map<size_t, value_t>());
+			for(size_t i = 0; i < size; ++i) {
+				if(std::abs(factor*denseData.get()[i]) >= _eps) {
+					sparseData->insert({i, factor*denseData.get()[i]}); // TODO use emplace_hint
+				}
+			}
+			
+			denseData.reset();
+			representation = Representation::Sparse;
+		}
+	}
+	
+	
+	
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+    
+	std::string Tensor::to_string() const {
+		if (degree() == 0) return xerus::misc::to_string(operator[](0));
+		
+		std::string result;
+		for (size_t i = 0; i < size; ++i) {
+			result += xerus::misc::to_string(operator[](i)) + " ";
+			if ((i+1) % (size / dimensions[0]) == 0) {
+				result += '\n';
+			} else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
+				result += '\t';
+			} else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
+				result += "/ ";
+			}
+		}
+		return result;
+	}
+	
+	
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	template<int sign>
+	void Tensor::plus_minus_equal(Tensor& _me, const Tensor& _other) {
+		REQUIRE(_me.dimensions == _other.dimensions, "In Tensor sum the dimensions must coincide.");
+		
+		if(_me.is_dense()) {
+			_me.ensure_own_data_and_apply_factor();
+			if(_other.is_dense()) {
+				misc::array_add(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+			} else {
+				add_sparse_to_full(_me.denseData, sign*_other.factor, _other.sparseData);
+			}
+		} else {
+			if(_other.is_dense()) {
+				_me.denseData.reset(new value_t[_me.size], internal::array_deleter_vt);
+				misc::array_scaled_copy(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+				add_sparse_to_full(_me.denseData, _me.factor, _me.sparseData);
+				_me.factor = 1.0;
+				_me.representation = Representation::Dense;
+				_me.sparseData.reset();
+			} else {
+				_me.ensure_own_data_and_apply_factor();
+				add_sparse_to_sparse(_me.sparseData, sign*_other.factor, _other.sparseData);
+			}
+		}
+	}
+	
 	void Tensor::add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData) {
 		for(const std::pair<size_t, value_t>& entry : *_sparseData) {
 			_denseData.get()[entry.first] += _factor*entry.second;
@@ -315,570 +882,6 @@ namespace xerus {
 		}
 	}
 	
-	
-	void Tensor::reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init) {
-		const size_t oldDataSize = size;
-		dimensions = _newDim;
-		size = misc::product(dimensions);
-		factor = 1.0;
-		
-		if(_representation == Representation::Dense) {
-			if(is_dense()) {
-				if(oldDataSize != size || !denseData.unique()) {
-					denseData.reset(new value_t[size], internal::array_deleter_vt);
-				}
-			} else {
-				sparseData.reset();
-				denseData.reset(new value_t[size], internal::array_deleter_vt);
-				representation = _representation;
-			}
-			
-			if(_init == Initialisation::Zero) {
-				memset(denseData.get(), 0, size*sizeof(value_t));
-			}
-		} else {
-			if(is_sparse()) {
-				if(sparseData.unique()) {
-					sparseData->clear();
-				} else {
-					sparseData.reset(new std::map<size_t, value_t>());
-				}
-			} else {
-				denseData.reset();
-				sparseData.reset(new std::map<size_t, value_t>());
-				representation = _representation;
-			}
-		}
-	}
-	
-	void Tensor::reset(const std::vector<size_t>&  _newDim, const Initialisation _init) {
-		const size_t oldDataSize = size;
-		dimensions = _newDim;
-		size = misc::product(dimensions);
-		factor = 1.0;
-		
-		if(is_dense()) {
-			if(oldDataSize != size || !denseData.unique()) {
-				denseData.reset(new value_t[size], internal::array_deleter_vt);
-			}
-			
-			if(_init == Initialisation::Zero) {
-				memset(denseData.get(), 0, size*sizeof(value_t));
-			}
-		} else {
-			if(sparseData.unique()) {
-				sparseData->clear();
-			} else {
-				sparseData.reset(new std::map<size_t, value_t>());
-			}
-		}
-	}
-	
-	void Tensor::reset(const std::vector<size_t>& _newDim, const std::shared_ptr<value_t>& _newData) {
-		dimensions = _newDim;
-		size = misc::product(dimensions);
-		factor = 1.0;
-		
-		if(is_sparse()) {
-			sparseData.reset();
-			representation = Representation::Dense;
-		}
-		
-		denseData = _newData;
-	}
-	
-	void Tensor::reset(const std::vector<size_t>& _newDim, std::unique_ptr<value_t[]>&& _newData) {
-		dimensions = _newDim;
-		size = misc::product(dimensions);
-		factor = 1.0;
-		
-		if(is_sparse()) {
-			sparseData.reset();
-			representation = Representation::Dense;
-		}
-		
-		denseData = std::move(_newData);
-	}
-	
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-	template<int sign>
-	void Tensor::plus_minus_equal(Tensor& _me, const Tensor& _other) {
-		REQUIRE(_me.dimensions == _other.dimensions, "In Tensor sum the dimensions must coincide.");
-		
-		if(_me.is_dense()) {
-			_me.ensure_own_data_and_apply_factor();
-			if(_other.is_dense()) {
-				misc::array_add(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
-			} else {
-				add_sparse_to_full(_me.denseData, sign*_other.factor, _other.sparseData);
-			}
-		} else {
-			if(_other.is_dense()) {
-				_me.denseData.reset(new value_t[_me.size], internal::array_deleter_vt);
-				misc::array_scaled_copy(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
-				add_sparse_to_full(_me.denseData, _me.factor, _me.sparseData);
-				_me.factor = 1.0;
-				_me.representation = Representation::Dense;
-				_me.sparseData.reset();
-			} else {
-				_me.ensure_own_data_and_apply_factor();
-				add_sparse_to_sparse(_me.sparseData, sign*_other.factor, _other.sparseData);
-			}
-		}
-	}
-	
-	Tensor& Tensor::operator+=(const Tensor& _other) {
-		plus_minus_equal<1>(*this, _other);
-		return *this;
-	}
-	
-	Tensor& Tensor::operator-=(const Tensor& _other) {
-		plus_minus_equal<-1>(*this, _other);
-		return *this;
-	}
-	
-	Tensor& Tensor::operator*=(const value_t _factor) {
-		factor *= _factor;
-		return *this;
-	}
-	
-	Tensor& Tensor::operator/=(const value_t _divisor) {
-		factor /= _divisor;
-		return *this;
-	}
-	
-	
-
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-	value_t& Tensor::operator[](const size_t _position) {
-		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
-		
-		ensure_own_data_and_apply_factor();
-		
-		if(is_dense()) {
-			return denseData.get()[_position];
-		} else {
-			return (*sparseData)[_position];
-		}
-	}
-
-	value_t Tensor::operator[](const size_t _position) const {
-		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
-		
-		if(is_dense()) {
-			return factor*denseData.get()[_position];
-		} else {
-			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
-			if(entry == sparseData->end()) {
-				return 0.0;
-			} else {
-				return factor*entry->second;
-			}
-		}
-	}
-
-	value_t& Tensor::operator[](const std::vector<size_t>& _positions) {
-		return operator[](multiIndex_to_position(_positions, dimensions));
-	}
-	
-	value_t Tensor::operator[](const std::vector<size_t>& _positions) const {
-		return operator[](multiIndex_to_position(_positions, dimensions));
-	}
-	
-	
-	value_t Tensor::at(const size_t _position) const {
-		return operator[](_position);
-	}
-	
-	value_t Tensor::at(const std::vector<size_t>& _positions) const {
-		return operator[](multiIndex_to_position(_positions, dimensions));
-	}
-	
-	
-	value_t* Tensor::get_dense_data() {
-		use_dense_representation();
-		ensure_own_data_and_apply_factor();
-		return denseData.get();
-	}
-	
-	value_t* Tensor::get_unsanitized_dense_data() {
-		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
-		return denseData.get();
-	}
-	
-	const value_t* Tensor::get_unsanitized_dense_data() const  {
-		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
-		return denseData.get();
-	}
-	
-	value_t* Tensor::override_dense_data()  {
-		use_dense_representation(); // TODO no copy required!
-		ensure_own_data_no_copy();
-		return denseData.get();
-	}
-	
-	const std::shared_ptr<value_t>& Tensor::get_internal_dense_data() {
-		REQUIRE(is_dense(), "Internal dense data requested, but representation is not dense!");
-		return denseData;
-	}
-	
-	
-	std::map<size_t, value_t>& Tensor::get_sparse_data() {
-		CHECK(is_sparse(), warning, "Request for sparse data although the Tensor is not sparse.");
-		use_sparse_representation();
-		ensure_own_data_and_apply_factor();
-		return *sparseData.get();
-	}
-	
-	std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() {
-		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
-		return *sparseData.get();
-	}
-	
-	const std::map<size_t, value_t>& Tensor::get_unsanitized_saprse_data() const  {
-		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
-		return *sparseData.get();
-	}
-	
-	std::map<size_t, value_t>& Tensor::override_sparse_data()  {
-		use_sparse_representation(); // TODO no copy required!
-		ensure_own_data_no_copy();
-		return *sparseData.get();
-	}
-	
-	const std::shared_ptr<std::map<size_t, value_t>>& Tensor::get_internal_sparse_data() {
-		REQUIRE(is_sparse(), "Internal sparse data requested, but representation is not sparse!");
-		return sparseData;
-	}
-	
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    
-    /// Indexes the tensor.
-    IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
-		is_dense(); 
-        return IndexedTensor<Tensor>(this, _indices, false);
-    }
-    
-    /// Indexes the tensor.
-    IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
-		is_dense(); 
-        return IndexedTensor<Tensor>(this, std::move(_indices), false);
-    }
-    
-    /// Indexes the tensor.
-    IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
-		is_dense(); 
-        return IndexedTensorReadOnly<Tensor>(this, _indices);
-    }
-    
-    /// Indexes the tensor.
-    IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
-		is_dense(); 
-        return IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
-    }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-	
-	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
-		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
-		
-		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
-		
-		size_t newStepSize = 1;
-		size_t blockCount = 1;
-		size_t oldStepSize = 1;
-		for (size_t i=degree()-1; i>_n; --i) {
-			oldStepSize *= dimensions[i];
-		}
-		newStepSize = oldStepSize * _newDim;
-		oldStepSize = oldStepSize * dimensions[_n];
-		blockCount = size / oldStepSize; //  == product of dim[i] for i=0 to _n-1
-		
-		size_t newsize = blockCount*newStepSize;
-		REQUIRE(newsize == size/dimensions[_n] * _newDim, 
-				dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize << " " << blockCount
-				<< size << " " << newsize);
-		value_t *tmp = new value_t[newsize];
-		if (newStepSize > oldStepSize) {
-			if (_cutPos < _newDim) {
-				size_t numInsert = (newStepSize-oldStepSize);
-				_cutPos *= oldStepSize / dimensions[_n];
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
-					memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
-					memcpy(tmp+i*newStepSize+_cutPos+numInsert, denseData.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
-				}
-			} else {
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
-					memset(tmp+i*newStepSize+oldStepSize, 0, (newStepSize-oldStepSize)*sizeof(double));
-				}
-			}
-		} else { // newStepSize <= oldStepSize
-			if (_cutPos < _newDim) {
-				_cutPos *= oldStepSize / dimensions[_n];
-				size_t diffSize = newStepSize - _cutPos;
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t));
-					memcpy(tmp+i*newStepSize+_cutPos, denseData.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
-				}
-			} else {
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize*sizeof(value_t));
-				}
-			}
-		}
-		dimensions[_n] = _newDim;
-		size = newsize;
-		denseData.reset(tmp, internal::array_deleter_vt);
-		
-		REQUIRE(size == misc::product(dimensions), "");
-	}
-	
-	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		REQUIRE(_indexNb < degree(), "");
-		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
-		REQUIRE(dimensions[_indexNb] > 1, "");
-		
-		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
-	}
-	
-	
-	//TODO Allow more 2d
-	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
-		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-		const size_t N = dimensions[1];
-		for(size_t i=0; i<numDiags; ++i){
-			_f(realData[i+i*N]);
-		}
-	}
-	
-	//TODO Allow more 2d
-	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
-		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-		const size_t N = dimensions[1];
-		for(size_t i=0; i<numDiags; ++i){
-			_f(realData[i+i*N], i);
-		}
-	}
-	
-	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		for(size_t i=0; i<size; ++i){ _f(realData[i]); }
-	}
-	
-	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
-	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		for(size_t i=0; i<size; ++i){ _f(realData[i], i); }
-	}
-	
-	void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
-		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		
-		std::vector<size_t> multIdx(degree(), 0);
-		size_t idx = 0;
-		while (true) {
-			_f(realData[idx], multIdx);
-			// increasing indices
-			idx++;
-			size_t changingIndex = degree()-1;
-			multIdx[changingIndex]++;
-			while(multIdx[changingIndex] == dimensions[changingIndex]) {
-				multIdx[changingIndex] = 0;
-				changingIndex--;
-				// Return on overflow 
-				if(changingIndex >= degree()) { return; }
-				multIdx[changingIndex]++;
-			}
-		}
-	}
-	
-	#endif
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    size_t Tensor::degree() const {
-        return dimensions.size();
-    }
-    
-    bool Tensor::has_factor() const {
-        #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            return (factor != 1.0);
-        #pragma GCC diagnostic pop
-    }
-    
-    size_t Tensor::reorder_costs() const {
-        return is_sparse() ? 10*count_non_zero_entries() : size;
-    }
-    
-    
-    
-    void Tensor::use_dense_representation() {
-		if(is_sparse()) {
-			denseData.reset(new value_t[size], internal::array_deleter_vt);
-			misc::array_set_zero(denseData.get(), size);
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
-				denseData.get()[entry.first] = entry.second;
-			}
-			sparseData.reset();
-			representation = Representation::Dense;
-		}
-	}
-	
-	void Tensor::use_sparse_representation(const value_t _eps) {
-		if(is_dense()) {
-			sparseData.reset(new std::map<size_t, value_t>());
-			for(size_t i = 0; i < size; ++i) {
-				if(std::abs(factor*denseData.get()[i]) >= _eps) {
-					sparseData->insert({i, factor*denseData.get()[i]}); // TODO use emplace_hint
-				}
-			}
-			
-			denseData.reset();
-			representation = Representation::Sparse;
-		}
-	}
-	
-    
-    void Tensor::reinterpret_dimensions(const std::vector<size_t>& _newDimensions) {
-        REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
-        dimensions = _newDimensions;
-    }
-    
-    void Tensor::reinterpret_dimensions(      std::vector<size_t>&& _newDimensions) {
-        REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
-        dimensions = std::move(_newDimensions);
-    }
-    
-    
-    size_t Tensor::count_non_zero_entries(const value_t _eps) const {
-		if(is_dense()) {
-			size_t count = 0;
-			for(size_t i = 0; i < size; ++i) {
-				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
-			}
-			return count;
-		} else {
-			size_t count = 0;
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
-				if(std::abs(entry.second) > _eps) { count++; } 
-			}
-			return count;
-		}
-	}
-	
-	bool Tensor::all_entries_valid() const {
-		if(is_dense()) {
-			for(size_t i = 0; i < size; ++i) {
-				if(!std::isfinite(denseData.get()[i])) { return false; } 
-			}
-		} else {
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
-				if(!std::isfinite(entry.second)) {return false; } 
-			}
-		}
-		return true;
-	}
-	
-	
-	value_t Tensor::frob_norm() const {
-		if(is_dense()) {
-			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
-		} else {
-			value_t norm = 0;
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
-				norm += misc::sqr(entry.second);
-			}
-			return std::abs(factor)*sqrt(norm);
-		}
-	}
-	
-	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
-		
-		if(is_dense()) {
-			size_t stepCount = 1, blockSize = 1;
-			for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
-			for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
-			
-			const size_t stepSize = dimensions[_dimension]*blockSize;
-			size_t inputPosition = _slatePosition*blockSize;
-			
-			value_t * const newData = new value_t[stepCount*blockSize];
-			
-			// Copy data
-			for(size_t i = 0; i < stepCount; ++i) {
-				misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
-				inputPosition += stepSize;
-			}
-			
-			// Set data
-			denseData.reset(newData, &internal::array_deleter_vt);
-			
-			// Adjust dimensions
-			dimensions.erase(dimensions.begin()+(long)_dimension);
-			size = stepCount*blockSize;
-		} else {
-			// TODO implement!
-			LOG(fatal, "fix_slate is not yet implemented for sparse representations."); 
-		}
-	}
-	
-	
-	std::string Tensor::to_string() const {
-		if (degree() == 0) return xerus::misc::to_string(operator[](0));
-		
-		std::string result;
-		for (size_t i = 0; i < size; ++i) {
-			result += xerus::misc::to_string(operator[](i)) + " ";
-			if ((i+1) % (size / dimensions[0]) == 0) {
-				result += '\n';
-			} else if (degree() > 1 && (i+1) % (size / dimensions[0] / dimensions[1]) == 0) {
-				result += '\t';
-			} else if (degree() > 2 && (i+1) % (size / dimensions[0] / dimensions[1] / dimensions[2]) == 0) {
-				result += "/ ";
-			}
-		}
-		return result;
-	}
-	
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-        
-    
-    
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	
@@ -909,42 +912,65 @@ namespace xerus {
 	}
 	
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		if(_lhs.is_dense() && _rhs.is_dense()) {
-			REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
-			const size_t leftDim = _lhsTrans ? misc::product(_lhs.dimensions, _numIndices, _lhs.degree()) : misc::product(_lhs.dimensions, 0, _lhs.degree() - _numIndices);
-			const size_t midDim = _lhsTrans ? misc::product(_lhs.dimensions, 0, _numIndices) : misc::product(_lhs.dimensions, _lhs.degree()-_numIndices, _lhs.degree());
-			const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
+		bool sparseLhs = _lhs.is_sparse();
+		bool sparseRhs = _rhs.is_sparse();
+		bool sparseResult = _result.is_sparse();
+		
+		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
+		const size_t leftDim = _lhsTrans ? misc::product(_lhs.dimensions, _numIndices, _lhs.degree()) : misc::product(_lhs.dimensions, 0, _lhs.degree() - _numIndices);
+		const size_t midDim = _lhsTrans ? misc::product(_lhs.dimensions, 0, _numIndices) : misc::product(_lhs.dimensions, _lhs.degree()-_numIndices, _lhs.degree());
+		const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
+		
+		IF_CHECK(
+			std::vector<size_t> resultDims;
+			if(_lhsTrans) {
+				for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
+					resultDims.emplace_back(_lhs.dimensions[i]);
+				}
+			} else {
+				for(size_t i = 0; i < _lhs.degree()-_numIndices; ++i) {
+					resultDims.emplace_back(_lhs.dimensions[i]);
+				}
+			}
+			if(_rhsTrans) {
+				for(size_t i = 0; i < _rhs.degree()-_numIndices; ++i) {
+					resultDims.emplace_back(_rhs.dimensions[i]);
+				}
+			} else {
+				for(size_t i = _numIndices; i < _rhs.degree(); ++i) {
+					resultDims.emplace_back(_rhs.dimensions[i]);
+				}
+			}
+			REQUIRE(resultDims == _result.dimensions, "The given results has wrong dimensions " << _result.dimensions << " should be " << resultDims);
 			
-			IF_CHECK(
-				std::vector<size_t> resultDims;
-				if(_lhsTrans) {
-					for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
-						resultDims.emplace_back(_lhs.dimensions[i]);
-					}
-				} else {
-					for(size_t i = 0; i < _lhs.degree()-_numIndices; ++i) {
-						resultDims.emplace_back(_lhs.dimensions[i]);
-					}
-				}
-				if(_rhsTrans) {
-					for(size_t i = 0; i < _rhs.degree()-_numIndices; ++i) {
-						resultDims.emplace_back(_rhs.dimensions[i]);
-					}
-				} else {
-					for(size_t i = _numIndices; i < _rhs.degree(); ++i) {
-						resultDims.emplace_back(_rhs.dimensions[i]);
-					}
-				}
-				REQUIRE(resultDims == _result.dimensions, "The given results has wrong dimensions " << _result.dimensions << " should be " << resultDims);
-				
-				for(size_t i = 0; i < _numIndices; ++i) {
-					REQUIRE((_lhsTrans ? _lhs.dimensions[i] : _lhs.dimensions[_lhs.degree()-_numIndices+i]) == (_rhsTrans ? _rhs.dimensions[_rhs.degree()-_numIndices+i] : _rhs.dimensions[i]), "Dimensions of the be contracted indices do not coincide.");
-				}
-			)
-			
-			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, _rhs.get_unsanitized_dense_data(), _rhsTrans);
+			for(size_t i = 0; i < _numIndices; ++i) {
+				REQUIRE((_lhsTrans ? _lhs.dimensions[i] : _lhs.dimensions[_lhs.degree()-_numIndices+i]) == (_rhsTrans ? _rhs.dimensions[_rhs.degree()-_numIndices+i] : _rhs.dimensions[i]), "Dimensions of the be contracted indices do not coincide.");
+			}
+		)
+		
+		
+		if(!sparseLhs && !sparseRhs && !sparseResult) { // Full * Full => Full
+			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
+											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
+		} else if(sparseLhs && !sparseRhs && !sparseResult) { // Sparse * Full => Full
+			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
+								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+		} else if(!sparseLhs && sparseRhs && !sparseResult) { // Full * Sparse => Full
+			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
+								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+		} else if(sparseLhs && !sparseRhs && sparseResult) { // Sparse * Full => Sparse
+			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
+								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+		} else if(!sparseLhs && sparseRhs && sparseResult) { // Full * Sparse => Sparse
+			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
+								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
 		} else {
-			LOG(fatal, "Contract not yet implemented for something other than dense dense");
+			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensro function)");
 		}
 	}
 	
@@ -963,14 +989,14 @@ namespace xerus {
 		} else if(_A.is_sparse()) {
 			Tensor result(_A);
 			
-			for(std::pair<const size_t, value_t>& entry : *result.sparseData) {
+			for(std::pair<const size_t, value_t>& entry : result.get_unsanitized_sparse_data()) {
 				entry.second *= _B[entry.first];
 			}
 			return result;
 		} else { // _B.is_sparse()
 			Tensor result(_B);
 			
-			for(std::pair<const size_t, value_t>& entry : *result.sparseData) {
+			for(std::pair<const size_t, value_t>& entry : result.get_unsanitized_sparse_data()) {
 				entry.second *= _A[entry.first];
 			}
 			return result;
@@ -989,11 +1015,11 @@ namespace xerus {
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
         
         if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
-			for(const std::pair<size_t, value_t>& entry : *_a.sparseData) {
+			for(const std::pair<size_t, value_t>& entry : _a.get_unsanitized_sparse_data()) {
 				if(!approx_equal(_a.factor*entry.second, _b[entry.first], _eps)) { return false; }
 			}
 			
-			for(const std::pair<size_t, value_t>& entry : *_b.sparseData) {
+			for(const std::pair<size_t, value_t>& entry : _b.get_unsanitized_sparse_data()) {
 				if(!approx_equal(_a[entry.first], _b.factor*entry.second, _eps)) { return false; }
 			}
         } else {

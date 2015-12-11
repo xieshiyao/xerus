@@ -974,6 +974,7 @@ namespace xerus {
 			} else {
 				std::vector<size_t> outDimensions;
 				size_t leftDim = 1, rightDim = 1, midDim = 1;
+				size_t contractedDimCount = 0;
 				
 				// first pass of the links of node1 to determine
 				//   1. the number of links between the two nodes, 
@@ -991,6 +992,7 @@ namespace xerus {
 					} else if (node1.neighbors[d].links(_nodeId2)) {
 						numLinks += 1;
 						midDim *= node1.neighbors[d].dimension;
+						contractedDimCount++;
 						if (!previous) {
 							switches++;
 							previous = true;
@@ -1122,29 +1124,8 @@ namespace xerus {
 					newTensor.reset(new Tensor(outDimensions, Tensor::Representation::Dense, Tensor::Initialisation::None));
 				}
 				
-				if(!sparse1 && !sparse2 && !resultSparse) { // Full * Full => Full
-					blasWrapper::matrix_matrix_product(static_cast<Tensor*>(newTensor.get())->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, 
-													static_cast<const Tensor*>(node1.tensorObject.get())->get_unsanitized_dense_data(), trans1, midDim, 
-													static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
-				} else if(sparse1 && !sparse2 && !resultSparse) { // Sparse * Full => Full
-					matrix_matrix_product(static_cast<Tensor*>(newTensor.get())->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, 
-										*static_cast<const Tensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
-										static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
-				} else if(!sparse1 && sparse2 && !resultSparse) { // Full * Sparse => Full
-					matrix_matrix_product(static_cast<Tensor*>(newTensor.get())->get_unsanitized_dense_data(), leftDim, rightDim, commonFactor, 
-										static_cast<const Tensor*>(node1.tensorObject.get())->get_unsanitized_dense_data(), trans1, midDim, 
-										*static_cast<const Tensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
-				} else if(sparse1 && !sparse2 && resultSparse) { // Sparse * Full => Sparse
-					matrix_matrix_product(*static_cast<Tensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
-										*static_cast<const Tensor*>(node1.tensorObject.get())->sparseData.get(), trans1, midDim, 
-										static_cast<const Tensor*>(node2.tensorObject.get())->get_unsanitized_dense_data(), trans2);
-				} else if(!sparse1 && sparse2 && resultSparse) { // Full * Sparse => Sparse
-					matrix_matrix_product(*static_cast<Tensor*>(newTensor.get())->sparseData.get(), leftDim, rightDim, commonFactor, 
-										static_cast<const Tensor*>(node1.tensorObject.get())->get_unsanitized_dense_data(), trans1, midDim, 
-										*static_cast<const Tensor*>(node2.tensorObject.get())->sparseData.get(), trans2);
-				} else {
-					LOG(fatal, "ie: Invalid combiantion of sparse/dense tensors in contraction");
-				}
+				// TODO rewrite the whole function to take full advantage of this line!
+				xerus::contract(*newTensor, *node1.tensorObject, trans1, *node2.tensorObject, trans2, contractedDimCount);
 			}
         }
         TensorNode newNode(std::move(newTensor), newLinks);
