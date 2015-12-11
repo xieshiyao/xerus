@@ -163,7 +163,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse SVD not yet implemented.");
 		} else {
-			blasWrapper::svd(static_cast<Tensor*>(U.tensorObject)->override_dense_data(), tmpS.get(), static_cast<Tensor*>(Vt.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::svd(U.tensorObject->override_dense_data(), tmpS.get(), Vt.tensorObject->override_dense_data(), reorderedBaseTensor.get()->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// Apply factor to the diagonal matrix
@@ -191,19 +191,12 @@ namespace xerus {
 		
 		// Create tensor from diagonal values
 		S.tensorObject->reset(std::vector<size_t>(2, rank));
-		if(S.tensorObject->is_sparse()) {
-			for(size_t i = 0; i < rank; ++i) {
-				static_cast<Tensor&>(*S.tensorObject)[i*rank+i] = tmpS[i];
-			}
-		} else {
-			value_t* const dataPtr =  static_cast<Tensor*>(S.tensorObject)->get_unsanitized_dense_data();
-			for(size_t i = 0; i < rank; ++i) {
-				dataPtr[i*rank+i] = tmpS[i];
-			}
+		for(size_t i = 0; i < rank; ++i) {
+			(*S.tensorObject)[i*rank+i] = tmpS[i];
 		}
 		
-		static_cast<Tensor*>(U.tensorObject)->resize_dimension(U.degree()-1, rank);
-		static_cast<Tensor*>(Vt.tensorObject)->resize_dimension(0, rank);
+		U.tensorObject->resize_dimension(U.degree()-1, rank);
+		Vt.tensorObject->resize_dimension(0, rank);
 		
 		// Post evaluate the results
 		std::vector<Index> midPreliminaryIndices({lhsPreliminaryIndices.back(), rhsPreliminaryIndices.front()});
@@ -233,7 +226,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::qr_destructive(static_cast<Tensor*>(Q.tensorObject)->override_dense_data(), static_cast<Tensor*>(R.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::qr_destructive(Q.tensorObject->override_dense_data(), R.tensorObject->override_dense_data(), reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -261,7 +254,7 @@ namespace xerus {
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
 		} else {
-			blasWrapper::rq_destructive(static_cast<Tensor*>(R.tensorObject)->override_dense_data(), static_cast<Tensor*>(Q.tensorObject)->override_dense_data(), static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::rq_destructive(R.tensorObject->override_dense_data(), Q.tensorObject->override_dense_data(), reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// R has to carry the constant factor
@@ -290,17 +283,17 @@ namespace xerus {
 			LOG(fatal, "Sparse QC not yet implemented.");
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, static_cast<Tensor*>(reorderedBaseTensor.get())->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
 			std::vector<size_t> newDim = Q.tensorObject->dimensions;
 			newDim.back() = rank;
-			static_cast<Tensor*>(Q.tensorObject)->reset(newDim, std::move(Qt));
+			Q.tensorObject->reset(newDim, std::move(Qt));
 			
 			newDim = C.tensorObject->dimensions;
 			newDim.front() = rank;
-			static_cast<Tensor*>(C.tensorObject)->reset(newDim, std::move(Ct));
+			C.tensorObject->reset(newDim, std::move(Ct));
 		}
 		
 		// C has to carry the constant factor

@@ -55,31 +55,31 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse,
     A[{1,1,2,0,0}]=23;
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     
     res(i&0) = A(i&0);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     
     res(i&0) = A(i^5);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     
     res(i^5) = A(i&0);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     
     res(i^3, j&3) = A(i&2,j^2);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     
     res(j,i,k,l,m) = A(j,i,k,l,m);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
     res(i,j,k,l,m) = A(j,i,k,l,m);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,14,0,0,0,0,0,8,0,0,11,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,14,0,0,0,0,0,8,0,0,11,0,19,0,0,0,23,0}));
     res(j,i,k,l,m) = A(i,j,k,l,m);
-    TEST(approx_entrywise_equal(Tensor(res), {1,0,0,4,0,0,0,14,0,0,0,0,0,8,0,0,11,0,19,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,14,0,0,0,0,0,8,0,0,11,0,19,0,0,0,23,0}));
     
     res2(i,k,j,l,m) = A(i,j,k,l,m);
-    TEST(approx_entrywise_equal(Tensor(res2), {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res2, {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
     res2(i,j,k,l,m) = A(i,k,j,l,m);
-    TEST(approx_entrywise_equal(Tensor(res2), {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
+    TEST(approx_entrywise_equal(res2, {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
 )
 
 UNIT_TEST(SparseTensor, Assignment_Sparse_To_Full, 

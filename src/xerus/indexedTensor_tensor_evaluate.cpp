@@ -306,7 +306,7 @@ namespace xerus {
 				if(outPos < _out.indices.size()) { // If we found it we are basically finished
 					stepSizes[outPos] = baseIndexStepSizes[i];
 				} else if(_base.indices[i].fixed()) { // One reason for an index to not be in _out is to be fixed
-					fixedIndexOffset += size_t(_base.indices[i].valueId)*baseIndexStepSizes[i];
+					fixedIndexOffset += _base.indices[i].valueId*baseIndexStepSizes[i];
 				} else { // If the Index is not fixed, then it has to be part of a trace
 					for(size_t j = i+1; j < _base.indices.size()-numOrderedIndices; ++j) {
 						if(_base.indices[i] == _base.indices[j]) {
@@ -356,7 +356,7 @@ namespace xerus {
 				if(_base.indices[i].fixed()) {
 					fixedFlags[i] = true;
 					traceFlags[i] = false;
-					attributes[i] = (size_t) _base.indices[i].valueId;
+					attributes[i] = _base.indices[i].valueId;
 					peacefullIndices = false;
 					continue;
 				}

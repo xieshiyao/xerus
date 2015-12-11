@@ -383,11 +383,6 @@ namespace xerus {
             
             LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
             
-            const value_t commonFactor = _lhs.tensorObjectReadOnly->factor * _rhs.tensorObjectReadOnly->factor;
-            
-            const bool lhsSparse = actualLhs->tensorObjectReadOnly->is_sparse();
-            const bool rhsSparse = actualRhs->tensorObjectReadOnly->is_sparse();
-            const bool resultSparse = workingResult->tensorObjectReadOnly->is_sparse();
             
 			// TODO take full advantage from this line (or delete this function alltogether...)
 			contract(*workingResult->tensorObject, *actualLhs->tensorObjectReadOnly, lhsTrans, *actualRhs->tensorObjectReadOnly, rhsTrans, contractedDimCount);
