@@ -32,7 +32,7 @@
 
 namespace xerus {
 	
-	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorWritable<Tensor>&& _rhs) {
+	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensor<Tensor>&& _lhs, IndexedTensor<Tensor>&& _rhs) {
 		_base.assign_indices();
 		
 		// Calculate the future order of lhs and rhs.
@@ -142,12 +142,12 @@ namespace xerus {
 		return std::unique_ptr<Tensor>(reorderedBaseTensor.tensorObject);
 	}
 	
-	void SVD::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
+	void SVD::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 3, "SVD requires two output tensors, not " << _output.size());
 		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensorWritable<Tensor>& U = *_output[0];
-		IndexedTensorWritable<Tensor>& S = *_output[1];
-		IndexedTensorWritable<Tensor>& Vt = *_output[2];
+		IndexedTensor<Tensor>& U = *_output[0];
+		IndexedTensor<Tensor>& S = *_output[1];
+		IndexedTensor<Tensor>& Vt = *_output[2];
 		
 		IF_CHECK(S.check_indices(2, false));
 		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be Tensors, as they are defenitely not sparse.");
@@ -212,11 +212,11 @@ namespace xerus {
 	}
 
 
-	void QR::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
+	void QR::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QR factorisation requires two output tensors, not " << _output.size());
 		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensorWritable<Tensor>& Q = *_output[0];
-		IndexedTensorWritable<Tensor>& R = *_output[1];
+		IndexedTensor<Tensor>& Q = *_output[0];
+		IndexedTensor<Tensor>& R = *_output[1];
 		 
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
@@ -239,11 +239,11 @@ namespace xerus {
 		R = (*R.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
 
-	void RQ::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
+	void RQ::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "RQ factorisation requires two output tensors, not " << _output.size());
 		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensorWritable<Tensor>& R = *_output[0];
-		IndexedTensorWritable<Tensor>& Q = *_output[1];
+		IndexedTensor<Tensor>& R = *_output[0];
+		IndexedTensor<Tensor>& Q = *_output[1];
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
@@ -268,11 +268,11 @@ namespace xerus {
 	}
 	
 	
-	void QC::operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const {
+	void QC::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QC factorisation requires two output tensors, not " << _output.size());
 		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensorWritable<Tensor>& Q = *_output[0];
-		IndexedTensorWritable<Tensor>& C = *_output[1];
+		IndexedTensor<Tensor>& Q = *_output[0];
+		IndexedTensor<Tensor>& C = *_output[1];
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be Tensors, as they are definitely not sparse.");
 		

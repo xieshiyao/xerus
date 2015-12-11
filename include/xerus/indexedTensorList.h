@@ -29,7 +29,7 @@
 
 namespace xerus {
     // Necessary forward declaritons
-    template<class tensor_type> class IndexedTensorWritable;
+    template<class tensor_type> class IndexedTensor;
 	class Tensor;
 	class TensorFactorisation;
 	
@@ -40,7 +40,7 @@ namespace xerus {
     class IndexedTensorList {
     public:
 		///@brief Collection of pointers to the Tensor objects referenced by the tuple.
-        std::vector<IndexedTensorWritable<Tensor>*> tensors;
+        std::vector<IndexedTensor<Tensor>*> tensors;
         
 		///@brief No default construction is intended.
         IndexedTensorList() = delete;
@@ -54,7 +54,7 @@ namespace xerus {
 		/**
 		 * @brief constructor initializing an IndexedTensorList with two initial Tensor refrences.
 		 */
-        IndexedTensorList(IndexedTensorWritable<Tensor>&& _first, IndexedTensorWritable<Tensor>&& _second);
+        IndexedTensorList(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second);
         
         /**
 		 * @brief Generic assignment operator that takes any TensorFactorisation object which is in then invoked to perform the assignment.
@@ -68,7 +68,7 @@ namespace xerus {
 	 * @param _second the second element of the tuple.
 	 * @returns an IndexedTensorList representing the desired 2-tuple.
 	 */
-    IndexedTensorList operator,(IndexedTensorWritable<Tensor>&& _first, IndexedTensorWritable<Tensor>&& _second);
+    IndexedTensorList operator,(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second);
 
 	/**
 	 * @brief Using the "," operator tuples of writeable indexed tensor can be created.
@@ -76,5 +76,5 @@ namespace xerus {
 	 * @param _second a further writeable indexed tensor that shall be appended to the existing tuple.
 	 * @returns an IndexedTensorList representing the desired (n+1)-tuple.
 	 */
-    IndexedTensorList operator,(IndexedTensorList &&_first, IndexedTensorWritable<Tensor>&& _second);
+    IndexedTensorList operator,(IndexedTensorList &&_first, IndexedTensor<Tensor>&& _second);
 }

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "indexedTensorWritable.h"
+#include "indexedTensor.h"
 
 namespace xerus {
 
@@ -33,7 +33,7 @@ namespace xerus {
 	 */
 	class TensorFactorisation {
 	public:
-		virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const = 0;
+		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const = 0;
 	};
 	
     /**
@@ -61,7 +61,7 @@ namespace xerus {
 		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
 			input(&_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
         
-        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
+        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
     };
 
 	/**
@@ -74,7 +74,7 @@ namespace xerus {
         IndexedTensorReadOnly<Tensor>* input;
         QR(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
         
-        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
+        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
     };
 
     /**
@@ -87,7 +87,7 @@ namespace xerus {
         IndexedTensorReadOnly<Tensor>* input;
         RQ(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
         
-        virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
+        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
     };
 	
 	/**
@@ -101,6 +101,6 @@ namespace xerus {
 		IndexedTensorReadOnly<Tensor>* input;
 		QC(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
-		virtual void operator()(const std::vector<IndexedTensorWritable<Tensor>*>& _output) const override;
+		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
 	};
 }

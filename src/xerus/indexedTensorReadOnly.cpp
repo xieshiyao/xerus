@@ -23,7 +23,6 @@
  */
 
 #include <xerus/indexedTensorReadOnly.h>
-#include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>
 #include <xerus/misc/missingFunctions.h>
@@ -218,5 +217,4 @@ namespace xerus {
 		}
 		return degree;
 	}
-	
 }

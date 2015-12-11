@@ -47,6 +47,50 @@ namespace xerus {
 		*_lhs.tensorObject -= *reorderedRhs;
 	}
     
+//     IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+// 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+// 		result.perform_traces();
+// 		operator+=(std::move(result), std::move(_rhs));
+// 		return result;
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+// 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+// 		result.perform_traces();
+// 		operator+=(std::move(result), std::move(_rhs));
+// 		return result;
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&&  _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+// 		return operator+(std::move(_rhs), std::move(_lhs));
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+// 		return operator+(static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs), std::move(_rhs));
+// 	}
+// 	
+// 	
+// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+// 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+// 		result.perform_traces();
+// 		operator-=(std::move(result), std::move(_rhs));
+// 		return result;
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+// 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+// 		result.perform_traces();
+// 		operator-=(std::move(result), std::move(_rhs));
+// 		return result;
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&&  _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+// 		return operator-(std::move(_rhs), std::move(_lhs));
+// 	}
+// 	
+// 	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs,       IndexedTensorMoveable<Tensor> && _rhs){
+// 		return operator-(static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs), std::move(_rhs));
+// 	}
     
     IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		if(!_lhs.tensorObjectReadOnly->is_sparse() || _rhs.tensorObjectReadOnly->is_sparse()) {

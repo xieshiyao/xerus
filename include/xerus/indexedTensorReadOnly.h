@@ -41,33 +41,33 @@ namespace xerus {
 	template<class tensor_type>
 	class IndexedTensorReadOnly {
 	public:
-		/// Pointer to the associated Tensor/TensorNetwork object
+		/// @brief Pointer to the associated Tensor/TensorNetwork object.
 		const tensor_type* tensorObjectReadOnly;
 		
-		/// Vector of the associates indices 
+		/// @brief Vector of the associates indices.
 		std::vector<Index> indices;
 		
-		/// Flag indicating whether the indices are assinged.
+		/// @brief Flag indicating whether the indices are assinged.
 		bool indicesAssigned = false;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
-		/// There is no usefull default constructor
+		/// @brief There is no usefull default constructor
 		IndexedTensorReadOnly() = delete;
 		
-		/// There is no usefull copy constructor for IndexedTensors.
+		/// @brief There is no usefull copy constructor for IndexedTensors.
 		IndexedTensorReadOnly(const IndexedTensorReadOnly& _other ) = delete;
 		
-		/// Move-constructor
+		/// @brief Move-constructor
 		IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
 		
-		/// Constructs an IndexedTensorReadOnly using the given pointer and indices.
+		/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
 		IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices);
 		
-		/// Constructs an IndexedTensorReadOnly using the given pointer and indices.
+		/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
 		IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
 		
-		/// Destructor must be virtual
+		/// @brief Destructor must be virtual
 		virtual ~IndexedTensorReadOnly();
 		
 		
@@ -108,8 +108,10 @@ namespace xerus {
 		///@brief Assignes the indices using the current tensorObejct.
 		void assign_index_dimensions();
 		
+		///@brief Checks whether a given index is contained and open in the index vector.
 		bool is_contained_and_open(const Index& idx) const;
 		
+		///@brief Returns the dimensionTuple the evaluation of this IndexedTensor to the given indices would have.
 		std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder);
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_

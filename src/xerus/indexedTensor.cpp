@@ -47,15 +47,15 @@ namespace xerus {
         operator=(static_cast<IndexedTensorReadOnly<tensor_type>&&>(_rhs));
     }
     
-    template<class tensor_type>
-    void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<Tensor>&& _rhs) {
-        static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
-    }
+//     template<class tensor_type>
+//     void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<Tensor>&& _rhs) {
+//         static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
+//     }
     
-    template<class tensor_type>
-    void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-		static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
-    }
+//     template<class tensor_type>
+//     void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+// 		static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
+//     }
     
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensor<Tensor>;
