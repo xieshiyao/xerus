@@ -38,8 +38,8 @@ UNIT_TEST(SparseTensor, Creation,
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
-    TEST(approx_entrywise_equal(fullA, Tensor(sparseA), 1e-16));
-    TEST(approx_entrywise_equal(fullB, Tensor(sparseB), 1e-16));
+    TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
+    TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
     
     fullX += fullA;
     sparseX += sparseA;

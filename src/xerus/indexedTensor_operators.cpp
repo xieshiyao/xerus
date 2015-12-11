@@ -37,24 +37,14 @@ namespace xerus {
 		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
 		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
 		
-		if(_lhs.tensorObjectReadOnly->is_sparse()) {
-			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
-			static_cast<Tensor&>(*_lhs.tensorObject) += static_cast<Tensor&>(*reorderedRhs);
-		} else {
-			static_cast<Tensor&>(*_lhs.tensorObject) += *reorderedRhs;
-		}		
+		*_lhs.tensorObject += *reorderedRhs;
 	}
 	
 	void operator-=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
 		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
 		
-		if(_lhs.tensorObjectReadOnly->is_sparse()) {
-			REQUIRE(reorderedRhs->is_sparse(), "Cannot calculate Sparse += Dense");
-			static_cast<Tensor&>(*_lhs.tensorObject) -= static_cast<Tensor&>(*reorderedRhs);
-		} else {
-			static_cast<Tensor&>(*_lhs.tensorObject) -= *reorderedRhs;
-		}
+		*_lhs.tensorObject -= *reorderedRhs;
 	}
     
     

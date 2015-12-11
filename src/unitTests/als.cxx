@@ -121,7 +121,7 @@ UNIT_TEST(ALS, tutorial,
 
 	value_t max = std::max(A.get_component(0)[0],A.get_component(0)[1]);
 	max = std::max(A.get_component(0)[2], std::max(A.get_component(0)[3], max));
-	A.set_component(0, static_cast<const Tensor&>(A.get_component(0))/max);
+	A.set_component(0, A.get_component(0)/max);
 	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);

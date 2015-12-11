@@ -139,7 +139,7 @@ namespace xerus {
 				workingData = tmpTensor.get_internal_dense_data();
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
-				misc::array_copy(workingData.get(), static_cast<const Tensor&>(_tensor).get_unsanitized_dense_data(), _tensor.size);
+				misc::array_copy(workingData.get(), _tensor.get_unsanitized_dense_data(), _tensor.size);
 			}
 		} else {
 			Tensor tmpTensor(std::vector<size_t>(degree(), 1));
@@ -185,7 +185,7 @@ namespace xerus {
 			} else {
 				nxtTensor.reset(new Tensor(std::move(constructionDim), Tensor::Representation::Dense, Tensor::Initialisation::None) );
 				for (size_t i = 0; i < leftDim; ++i) {
-					misc::array_copy(static_cast<Tensor*>(nxtTensor.get())->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
+					misc::array_copy(nxtTensor->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
 				}
 			}
 			
@@ -207,7 +207,7 @@ namespace xerus {
 		} else {
 			nxtTensor.reset(new Tensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, Tensor::Representation::Dense, Tensor::Initialisation::None) );
 		}
-		misc::array_copy(static_cast<Tensor*>(nxtTensor.get())->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
+		misc::array_copy(nxtTensor->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
 		
 		// set last component tensor to Vt
 		set_component(numComponents-1, std::move(nxtTensor));
@@ -687,8 +687,8 @@ namespace xerus {
 			//TODO sparse TT
 			REQUIRE(!_A.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 			REQUIRE(!_B.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
-			const Tensor &componentA = static_cast<const Tensor &>(_A.get_component(i));
-			const Tensor &componentB = static_cast<const Tensor &>(_B.get_component(i));
+			const Tensor& componentA = _A.get_component(i);
+			const Tensor& componentB = _B.get_component(i);
 			size_t externalDim;
 			if (isOperator) {
 				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
@@ -784,7 +784,7 @@ namespace xerus {
 					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
 						for (size_t n = 0; n < externalDim; ++n) {
 							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								misc::array_scaled_copy(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], static_cast<const Tensor&>(currComp).get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
+								misc::array_scaled_copy(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], currComp.get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
 								newPos += currComp.dimensions.back();
 							}
 						}

@@ -1116,7 +1116,6 @@ namespace xerus {
 					(*node2.tensorObject)(after) = (*node2.tensorObject)(before);
 					trans2 = true;
 				}
-				value_t commonFactor = node1.tensorObject->factor * node2.tensorObject->factor;
 				
 				if (resultSparse) {
 					newTensor.reset(new Tensor(outDimensions, Tensor::Tensor::Representation::Sparse, Tensor::Initialisation::None));

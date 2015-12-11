@@ -627,7 +627,7 @@ namespace xerus {
 			denseData.reset(newData, &internal::array_deleter_vt);
 			
 			// Adjust dimensions
-			dimensions.erase(dimensions.begin()+_dimension);
+			dimensions.erase(dimensions.begin()+long(_dimension));
 			size = stepCount*blockSize;
 		} else {
 			// TODO implement!
