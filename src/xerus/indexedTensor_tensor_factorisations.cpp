@@ -49,22 +49,24 @@ namespace xerus {
 			}
 		}
 		
-		const std::vector<Index> lhsIndices = _lhs.get_assigned_indices(lhsOrder);
-		const std::vector<Index> rhsIndices = _rhs.get_assigned_indices(rhsOrder);
+// 		const std::vector<Index> lhsIndices = _lhs.get_assigned_indices(lhsOrder);
+		_lhs.assign_indices(lhsOrder);
+		_rhs.assign_indices(rhsOrder);
+// 		const std::vector<Index> rhsIndices = _rhs.get_assigned_indices(rhsOrder);
 		
 		std::vector<Index> reorderedBaseIndices;
 		reorderedBaseIndices.reserve(_base.indices.size());
 		
 // 		std::vector<Index> lhsPreliminaryIndices;
-		_lhsPreliminaryIndices.reserve(lhsIndices.size());
+		_lhsPreliminaryIndices.reserve(_lhs.indices.size());
 		
 // 		std::vector<Index> rhsPreliminaryIndices;
-		_rhsPreliminaryIndices.reserve(rhsIndices.size());
+		_rhsPreliminaryIndices.reserve(_rhs.indices.size());
 		
 		std::vector<size_t> reorderedBaseDimensions, lhsDims, rhsDims;
 		reorderedBaseDimensions.reserve(_base.degree());
-		lhsDims.reserve(lhsIndices.size());
-		rhsDims.reserve(rhsIndices.size());
+		lhsDims.reserve(_lhs.indices.size());
+		rhsDims.reserve(_rhs.indices.size());
 		
 		_lhsSize=1;
 		_rhsSize=1;
@@ -73,10 +75,10 @@ namespace xerus {
 
 		// Work through the indices of lhs
 		IF_CHECK(bool foundCommon = false;)
-		for(size_t i = 0; i < lhsIndices.size(); ++i) {
+		for(size_t i = 0; i < _lhs.indices.size(); ++i) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < _base.indices.size() && lhsIndices[i] != _base.indices[j]; ++j) {
+			for(j = 0; j < _base.indices.size() && _lhs.indices[i] != _base.indices[j]; ++j) {
 				dimOffset += _base.indices[j].span;
 			}
 			
@@ -91,17 +93,17 @@ namespace xerus {
 			} else {
 				REQUIRE(!foundCommon, "Left part of factorization must have exactly one index that is not contained in base. Here it is more than one.");
 				IF_CHECK(foundCommon = true;)
-				auxiliaryIndex = lhsIndices[i];
+				auxiliaryIndex = _lhs.indices[i];
 			}
 		}
 		_lhsPreliminaryIndices.push_back(auxiliaryIndex);
 
 		// Work through the indices of rhs
 		IF_CHECK(foundCommon = false;)
-		for(size_t i = 0; i < rhsIndices.size(); ++i) {
+		for(size_t i = 0; i < _rhs.indices.size(); ++i) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < _base.indices.size() && rhsIndices[i] != _base.indices[j]; ++j) {
+			for(j = 0; j < _base.indices.size() && _rhs.indices[i] != _base.indices[j]; ++j) {
 				dimOffset += _base.indices[j].span;
 			}
 			
@@ -116,7 +118,7 @@ namespace xerus {
 			} else {
 				REQUIRE(!foundCommon, "Right part of factorization must have exactly one index that is not contained in base. Here it is more than one.");
 				IF_CHECK(foundCommon = true;)
-				auxiliaryIndex = rhsIndices[i];
+				auxiliaryIndex = _rhs.indices[i];
 			}
 		}
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);

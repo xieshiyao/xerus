@@ -209,6 +209,7 @@ namespace xerus {
     void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs, const std::vector<Index>& _lhsIndices, IndexedTensorReadOnly<Tensor>&& _rhs, const std::vector<Index>& _rhsIndices) {
         // Get the assigned indices for result (we assume that result is already of the right dimensions)
 		_result.assign_indices();
+		_result.assign_index_dimensions();
 
         #ifndef DISABLE_RUNTIME_CHECKS_
             check_input_validity(_result.indices, _lhsIndices, _rhsIndices);
@@ -396,7 +397,9 @@ namespace xerus {
     
     void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs,  IndexedTensorReadOnly<Tensor>&& _rhs) {
 		_lhs.assign_indices();
+		_lhs.assign_index_dimensions();
 		_rhs.assign_indices();
+		_rhs.assign_index_dimensions();
 		contract(std::move(_result), std::move(_lhs), _lhs.indices, std::move(_rhs), _rhs.indices);
     }
 

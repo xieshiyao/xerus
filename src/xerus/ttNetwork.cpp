@@ -1531,7 +1531,7 @@ namespace xerus {
 	void TTNetwork<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(_me.tensorObject == this, "Internal Error.");
 		
-		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
+		_me.assign_indices(_other.degree());
 		_other.assign_indices();
 		const size_t numComponents = _other.degree()/N;
 		
@@ -1547,7 +1547,7 @@ namespace xerus {
 		}
 		if(otherTTN || otherTTStack) {
 			// Check whether the index order coincides
-			if (myIndices == _other.indices) {
+			if (_me.indices == _other.indices) {
 				if (otherTTN) {
 					*meTTN = *otherTTN;
 				} else {
@@ -1564,10 +1564,10 @@ namespace xerus {
 			if (isOperator) {
 				bool transposed = false;
 				
-				auto midIndexItr = myIndices.begin();
+				auto midIndexItr = _me.indices.begin();
 				size_t spanSum = 0;
 				while (spanSum < numComponents) {
-					REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
+					REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
 					spanSum += midIndexItr->span;
 					++midIndexItr;
 				}
@@ -1582,8 +1582,8 @@ namespace xerus {
 					}
 					if (spanSum == numComponents) {
 						// Other tensor also transposable
-						transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end())) 
-						&& (misc::equal(midIndexItr, myIndices.end(), _other.indices.begin(), otherMidIndexItr));
+						transposed = (misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end())) 
+						&& (misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr));
 					}
 				}
 				
@@ -1607,7 +1607,7 @@ namespace xerus {
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
 		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
 		std::unique_ptr<Tensor> otherReordered(new Tensor(otherFull->representation));
-		(*otherReordered)(myIndices) = (*otherFull)(_other.indices);
+		(*otherReordered)(_me.indices) = (*otherFull)(_other.indices);
 		
 		// Cast to TTNetwork
 		*_me.tensorObject = TTNetwork(std::move(*otherReordered));

@@ -56,7 +56,7 @@ namespace xerus {
 		IndexedTensorReadOnly() = delete;
 		
 		/// There is no usefull copy constructor for IndexedTensors.
-		IndexedTensorReadOnly(const IndexedTensorReadOnly & _other ) = delete;
+		IndexedTensorReadOnly(const IndexedTensorReadOnly& _other ) = delete;
 		
 		/// Move-constructor
 		IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
@@ -99,17 +99,18 @@ namespace xerus {
 		///@brief Returns the degree of the associated tensorObejct
 		size_t degree() const;
 		
-		///@brief Assignes the indices using the current tensorObejct.
+		///@brief Assignes the indices using the degree of the tensorObejct.
 		void assign_indices();
 		
 		///@brief Assignes the indices assuming the given degree.
 		void assign_indices(const size_t _degree);
 		
+		///@brief Assignes the indices using the current tensorObejct.
+		void assign_index_dimensions();
+		
 		bool is_contained_and_open(const Index& idx) const;
 		
 		std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder);
-		
-		std::vector<Index> get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions = false) const;
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			/**

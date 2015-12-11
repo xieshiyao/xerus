@@ -56,9 +56,9 @@ namespace xerus {
 			internalOrder.emplace_back(externalOrder[link.indexPosition]);
 		}
 		
-		const std::vector<Index> myIndices = get_assigned_indices(get_eval_degree(rightIndices));
+		assign_indices(get_eval_degree(rightIndices));
 		std::vector<Index> outOrder;
-		for (const Index &idx : myIndices) {
+		for (const Index &idx : indices) {
 			REQUIRE(misc::contains(rightIndices, idx), "Every index on the LHS must appear somewhere on the RHS");
 			size_t spanSum = 0;
 			for (size_t j = 0; rightIndices[j] != idx; ++j) {

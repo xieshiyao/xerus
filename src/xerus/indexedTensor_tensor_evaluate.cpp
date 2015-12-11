@@ -219,7 +219,9 @@ namespace xerus {
 	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base) {
 		// Assign the indices
 		_base.assign_indices();
+		_base.assign_index_dimensions();
 		_out.assign_indices();
+		_out.assign_index_dimensions();
 		
 		// Extract base index dimensions
 		const std::unique_ptr<const size_t[]> baseIndexDimensions = get_dimension_array(_base.indices);

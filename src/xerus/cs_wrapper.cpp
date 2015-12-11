@@ -48,6 +48,7 @@ namespace xerus {
         REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
         
 		_tensor.assign_indices();
+		_tensor.assign_index_dimensions();
 		
         size_t m = 1;
         size_t n = 1;

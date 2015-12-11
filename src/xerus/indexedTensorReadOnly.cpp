@@ -76,21 +76,20 @@ namespace xerus {
 	
 	template<class tensor_type>
 	void IndexedTensorReadOnly<tensor_type>::assign_indices() {
+		assign_indices(degree());
+	}
+	
+	template<class tensor_type>
+	void IndexedTensorReadOnly<tensor_type>::assign_indices(const size_t _degree) {
 		if(!indicesAssigned) {
-			const size_t degree = tensorObjectReadOnly->degree();
 			size_t dimensionCount = 0;
 			for(size_t i = 0; i < indices.size(); ++i) {
 				Index& idx = indices[i];
 				
 				// Set span
-				idx.set_span(degree);
+				idx.set_span(_degree);
 				
-				// Calculate multDimension
-				REQUIRE(dimensionCount+idx.span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large: " << dimensionCount+idx.span << " > " << tensorObjectReadOnly->dimensions.size());
-				idx.assingedDimension = 1;
-				for(size_t j = 0; j < idx.span; ++j) {
-					idx.assingedDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
-				}
+				dimensionCount += idx.span;
 				
 				if(!idx.fixed()) {
 					// Determine whether the index is open
@@ -109,13 +108,32 @@ namespace xerus {
 				IF_CHECK(idx.flags[Index::Flag::ASSINGED] = true;)
 			}
 			
+			REQUIRE(dimensionCount >= _degree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << _degree);
+			REQUIRE(dimensionCount <= _degree, "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << _degree);
+
 			misc::erase(indices, [](const Index& _idx) { return _idx.span == 0; });
-			
-			REQUIRE(dimensionCount >= degree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << degree);
-			REQUIRE(dimensionCount <= degree, "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree);
-		
 			indicesAssigned = true;
 		}
+	}
+	
+	template<class tensor_type>
+	void IndexedTensorReadOnly<tensor_type>::assign_index_dimensions() {
+		REQUIRE(indicesAssigned, "bla");
+		
+		size_t dimensionCount = 0;
+		for(size_t i = 0; i < indices.size(); ++i) {
+			Index& idx = indices[i];
+			
+			// Calculate multDimension
+			REQUIRE(dimensionCount+idx.span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large: " << dimensionCount+idx.span << " > " << tensorObjectReadOnly->dimensions.size());
+			idx.assingedDimension = 1;
+			for(size_t j = 0; j < idx.span; ++j) {
+				idx.assingedDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
+			}
+		}
+		
+		REQUIRE(dimensionCount >= degree(), "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
+		REQUIRE(dimensionCount <= degree(), "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
 	}
 	
 	template<class tensor_type>
@@ -156,59 +174,6 @@ namespace xerus {
 			}
 		}
 		return evalDimensions;
-	}
-	
-	template<class tensor_type>
-	std::vector<Index> IndexedTensorReadOnly<tensor_type>::get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions) const {
-		std::vector<Index> assignedIndices;
-		assignedIndices.reserve(indices.size());
-		
-		size_t dimensionCount = 0;
-		for(const Index& idx : indices) {
-			// We don't look at span zero indices
-			if(idx.actual_span(_futureDegree) == 0) { continue; }
-			
-			// Fixed indices want special treatnment
-			if(idx.fixed()) {
-				if(_assignDimensions) {
-					assignedIndices.emplace_back(idx.valueId, 1, tensorObjectReadOnly->dimensions[dimensionCount++], Index::Flag::OPEN, Index::Flag::FIXED, false);
-				} else {
-					assignedIndices.emplace_back(idx.valueId, 1, 0, Index::Flag::OPEN, Index::Flag::FIXED, false);
-					dimensionCount++;
-				}
-			} else {
-				// Set span
-				const size_t span = idx.actual_span(_futureDegree);
-				
-				// Calculate multDimension
-				size_t multDimension = 1;
-				if(_assignDimensions) {
-					REQUIRE(dimensionCount+span <= tensorObjectReadOnly->dimensions.size(), "Order determined by Indices is to large: " << dimensionCount+span << " > " << tensorObjectReadOnly->dimensions.size());
-					for(size_t i = 0; i < span; ++i) {
-						multDimension *= tensorObjectReadOnly->dimensions[dimensionCount++];
-					}
-				} else {
-					dimensionCount += span;
-				}
-				
-				// Determine whether index is open
-				bool open = true;
-				for(size_t i = 0; i < assignedIndices.size(); ++i) {
-					if(idx == assignedIndices[i]) {
-						REQUIRE(assignedIndices[i].open(), "An index must not appere more than twice!");
-						assignedIndices[i].open(false);
-						open = false;
-						break;
-					}
-				}
-				
-				assignedIndices.emplace_back(idx.valueId, span, multDimension, Index::Flag::OPEN, open);
-			}
-		}
-		
-		REQUIRE(dimensionCount >= _futureDegree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
-		REQUIRE(dimensionCount <= _futureDegree, "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
-		return assignedIndices;
 	}
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
