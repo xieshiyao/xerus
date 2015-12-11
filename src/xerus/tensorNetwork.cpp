@@ -44,55 +44,55 @@
 namespace xerus {
 	const misc::NoCast<bool> TensorNetwork::NoZeroNode(false);
 	
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    TensorNetwork::TensorNetwork(const misc::NoCast<bool> _addZeroNode) {
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	TensorNetwork::TensorNetwork(const misc::NoCast<bool> _addZeroNode) {
 		if(_addZeroNode) {
 			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
 		}
 	}
-    
-    TensorNetwork::TensorNetwork(const TensorNetwork& _cpy) : dimensions(_cpy.dimensions), nodes(_cpy.nodes), externalLinks(_cpy.externalLinks) {}
-    
-    TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)){
+	
+	TensorNetwork::TensorNetwork(const TensorNetwork& _cpy) : dimensions(_cpy.dimensions), nodes(_cpy.nodes), externalLinks(_cpy.externalLinks) {}
+	
+	TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)){
 		_mv = TensorNetwork();
 	}
-    
-    TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
-        nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
-    }
-    
-    TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-        nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(_other)), init_from_dimension_array());
-    }
-    
-    TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
-        nodes.emplace_back(std::move(_tensor), init_from_dimension_array());
-    }
-    
-    /// Constructs the trivial network containing non-specified size-1 Tensor
-    TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree, 1)) {
-        nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor( std::vector<size_t>(_degree, 1))), init_from_dimension_array());
-    }
-    
-    TensorNetwork* TensorNetwork::get_copy() const {
+	
+	TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
+		nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
+	}
+	
+	TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
+		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(_other)), init_from_dimension_array());
+	}
+	
+	TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
+		nodes.emplace_back(std::move(_tensor), init_from_dimension_array());
+	}
+	
+	/// Constructs the trivial network containing non-specified size-1 Tensor
+	TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree, 1)) {
+		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor( std::vector<size_t>(_degree, 1))), init_from_dimension_array());
+	}
+	
+	TensorNetwork* TensorNetwork::get_copy() const {
 		return new TensorNetwork(*this);
 	}
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    std::vector<TensorNetwork::Link> TensorNetwork::init_from_dimension_array() {
-        std::vector<TensorNetwork::Link> newLinks;
-        for (size_t d=0; d<dimensions.size(); ++d) {
-            externalLinks.emplace_back(0, d, dimensions[d], false);
-            newLinks.emplace_back(-1, d, dimensions[d], true);
-        }
-        return newLinks;
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	std::vector<TensorNetwork::Link> TensorNetwork::init_from_dimension_array() {
+		std::vector<TensorNetwork::Link> newLinks;
+		for (size_t d=0; d<dimensions.size(); ++d) {
+			externalLinks.emplace_back(0, d, dimensions[d], false);
+			newLinks.emplace_back(-1, d, dimensions[d], true);
+		}
+		return newLinks;
+	}
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
 		REQUIRE(is_valid_network(), "Cannot fully contract inconsistent network.");
-        std::unique_ptr<Tensor> result;
-        
+		std::unique_ptr<Tensor> result;
+		
 		std::set<size_t> all;
 		TensorNetwork cpy(*this);
 		
@@ -113,42 +113,42 @@ namespace xerus {
 		result.reset( new Tensor(cpy.nodes[res].tensorObject->representation));
 		
 		(*result)(externalOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
-        
-        return result;
-    }
-    
-    TensorNetwork::operator Tensor() const {
-        std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
+		
+		return result;
+	}
+	
+	TensorNetwork::operator Tensor() const {
+		std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
 		return *contractedTensor;
-    }
-    
-    
-    TensorNetwork& TensorNetwork::operator=(const TensorNetwork& _other) {
-        REQUIRE(_other.is_valid_network(), "Cannot assign inconsistent network.");
-        
-        dimensions = _other.dimensions;
-        nodes = _other.nodes;
-        externalLinks = _other.externalLinks;
-        return *this;
-    }
-    
-    TensorNetwork& TensorNetwork::operator=(TensorNetwork &&_mv) {
-        REQUIRE(_mv.is_valid_network(), "Cannot move inconsistent network.");
-        
-        dimensions = std::move(_mv.dimensions);
-        nodes = std::move(_mv.nodes);
-        externalLinks = std::move(_mv.externalLinks);
-        
-        // Ensure that _mv is in a legal state (ugly because _mv is usually deleted directly after move assignement...)
-        _mv.dimensions.clear();
-        _mv.nodes.clear();
-        _mv.externalLinks.clear();
-        return *this;
-    }
-    
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    value_t TensorNetwork::operator[](const size_t _position) const {
+	}
+	
+	
+	TensorNetwork& TensorNetwork::operator=(const TensorNetwork& _other) {
+		REQUIRE(_other.is_valid_network(), "Cannot assign inconsistent network.");
+		
+		dimensions = _other.dimensions;
+		nodes = _other.nodes;
+		externalLinks = _other.externalLinks;
+		return *this;
+	}
+	
+	TensorNetwork& TensorNetwork::operator=(TensorNetwork &&_mv) {
+		REQUIRE(_mv.is_valid_network(), "Cannot move inconsistent network.");
+		
+		dimensions = std::move(_mv.dimensions);
+		nodes = std::move(_mv.nodes);
+		externalLinks = std::move(_mv.externalLinks);
+		
+		// Ensure that _mv is in a legal state (ugly because _mv is usually deleted directly after move assignement...)
+		_mv.dimensions.clear();
+		_mv.nodes.clear();
+		_mv.externalLinks.clear();
+		return *this;
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	value_t TensorNetwork::operator[](const size_t _position) const {
 		REQUIRE(is_valid_network(), "Invalid Network");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node");
 		if (degree() == 0) {
@@ -156,51 +156,51 @@ namespace xerus {
 			REQUIRE(nodes.size() == 1, "Internal Error");
 			return (*nodes[0].tensorObject)[0];
 		}
-        std::vector<size_t> positions(degree());
-        size_t remains = _position;
-        for(size_t i = degree(); i > 1; --i) {
-            positions[i-1] = remains%dimensions[i-1];
-            remains /= dimensions[i-1];
-        }
-        positions[0] = remains;
-        return operator[](positions);
-    }
-    
-    value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
+		std::vector<size_t> positions(degree());
+		size_t remains = _position;
+		for(size_t i = degree(); i > 1; --i) {
+			positions[i-1] = remains%dimensions[i-1];
+			remains /= dimensions[i-1];
+		}
+		positions[0] = remains;
+		return operator[](positions);
+	}
+	
+	value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
 		REQUIRE(is_valid_network(), "Invalid Network");
-        TensorNetwork partialCopy;
-        partialCopy.nodes = nodes;
-        
-        // Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
-        for(TensorNode& node : partialCopy.nodes) {
+		TensorNetwork partialCopy;
+		partialCopy.nodes = nodes;
+		
+		// Set all external indices in copy to the fixed values and evaluate the tensorObject accordingly
+		for(TensorNode& node : partialCopy.nodes) {
 			// Fix slates in external links
 			size_t killedDimensions = 0;
-            for(size_t i = 0; i < node.neighbors.size(); ++i) {
-                if(node.neighbors[i].external) {
-                    node.tensorObject->fix_slate(i-killedDimensions, _positions[node.neighbors[i].indexPosition]);
+			for(size_t i = 0; i < node.neighbors.size(); ++i) {
+				if(node.neighbors[i].external) {
+					node.tensorObject->fix_slate(i-killedDimensions, _positions[node.neighbors[i].indexPosition]);
 					killedDimensions++;
-                }
-            }
-            
-            // Remove all external links, because they don't exist anymore
-            node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNetwork::Link& _test){return _test.external;}), node.neighbors.end());
-            
-            // Adjust the Links
-            for(size_t i = 0; i < node.neighbors.size(); ++i) {
-                partialCopy.nodes[node.neighbors[i].other].neighbors[node.neighbors[i].indexPosition].indexPosition = i;
-            }
-        }
-        
-        // Contract the complete network (there are not external Links)
-        partialCopy.contract_unconnected_subnetworks();
-        
-        REQUIRE(partialCopy.nodes.size() == 1, "Internal Error.");
-        
-        return (*partialCopy.nodes[0].tensorObject)[0];
-    }
-    
-    
-    void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
+				}
+			}
+			
+			// Remove all external links, because they don't exist anymore
+			node.neighbors.erase(std::remove_if(node.neighbors.begin(), node.neighbors.end(), [](const TensorNetwork::Link& _test){return _test.external;}), node.neighbors.end());
+			
+			// Adjust the Links
+			for(size_t i = 0; i < node.neighbors.size(); ++i) {
+				partialCopy.nodes[node.neighbors[i].other].neighbors[node.neighbors[i].indexPosition].indexPosition = i;
+			}
+		}
+		
+		// Contract the complete network (there are not external Links)
+		partialCopy.contract_unconnected_subnetworks();
+		
+		REQUIRE(partialCopy.nodes.size() == 1, "Internal Error.");
+		
+		return (*partialCopy.nodes[0].tensorObject)[0];
+	}
+	
+	
+	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
 		std::vector<TensorNetwork> stack;
 		stack.emplace_back(*this);
 		stack.back().reduce_representation();
@@ -286,7 +286,7 @@ namespace xerus {
 			_measurments.measuredValues[j] = stack.back()[0];
 		}
 	}
-    
+	
 
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -299,52 +299,52 @@ namespace xerus {
 		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
 		*nodes[0].tensorObject /= _divisor;
 	}
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
-        return IndexedTensor<TensorNetwork>(this, _indices, false);
-    }
-    
-    IndexedTensor<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) {
-        return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
-    }
-        
-    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
-        return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
-    }
-    
-    IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(      std::vector<Index>&& _indices) const {
-        return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
+		return IndexedTensor<TensorNetwork>(this, _indices, false);
+	}
+	
+	IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
+		return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
+	}
+		
+	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
+		return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
+	}
+	
+	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
+		return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
+	}
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	bool TensorNetwork::specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	bool TensorNetwork::specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
-        return false; // A general tensor Network can't do anything specialized
+		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		// If tensorObject is already identical, don't attempt to copy it
 		_other.assign_indices();
-        if (_other.tensorObjectReadOnly != _me.tensorObject) {
-            *_me.tensorObject = *_other.tensorObjectReadOnly;
-        } 
-        TensorNetwork::trace_out_double_indices(_other.indices, std::move(_me));
+		if (_other.tensorObjectReadOnly != _me.tensorObject) {
+			*_me.tensorObject = *_other.tensorObjectReadOnly;
+		} 
+		TensorNetwork::trace_out_double_indices(_other.indices, std::move(_me));
 		TensorNetwork::shuffle_indices(_other.indices, std::move(_me));
 	}
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    size_t TensorNetwork::degree() const {
-        REQUIRE(externalLinks.size() == dimensions.size(), "invalid network, " << externalLinks.size() << " vs " << dimensions.size());
-        return dimensions.size();
-    }
-    
-    
-    void TensorNetwork::reshuffle_nodes(const std::map<size_t, size_t> &_map) {
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	size_t TensorNetwork::degree() const {
+		REQUIRE(externalLinks.size() == dimensions.size(), "invalid network, " << externalLinks.size() << " vs " << dimensions.size());
+		return dimensions.size();
+	}
+	
+	
+	void TensorNetwork::reshuffle_nodes(const std::map<size_t, size_t> &_map) {
 		reshuffle_nodes([&](size_t i){return _map.at(i);});
 	}
 	
@@ -369,19 +369,19 @@ namespace xerus {
 		}
 		is_valid_network();
 	}
-    
+	
 #ifndef DISABLE_RUNTIME_CHECKS_
-    /// check whether all links in the network are set consistently and matching the underlying tensor objects
-    bool TensorNetwork::is_valid_network(bool _check_erased) const {
-        REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
+	/// check whether all links in the network are set consistently and matching the underlying tensor objects
+	bool TensorNetwork::is_valid_network(bool _check_erased) const {
+		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
 		// Per external link
 		for (size_t n = 0; n < externalLinks.size(); ++n) {
 			const TensorNetwork::Link &el = externalLinks[n];
 			REQUIRE(el.other < nodes.size(), "n=" << n);
-            REQUIRE(el.dimension > 0, "n=" << n);
-            REQUIRE(el.dimension == dimensions[n], "n=" << n);
+			REQUIRE(el.dimension > 0, "n=" << n);
+			REQUIRE(el.dimension == dimensions[n], "n=" << n);
 			REQUIRE(!el.external, "n=" << n);
 			
 			const TensorNode &other = nodes[el.other];
@@ -422,7 +422,7 @@ namespace xerus {
 	}
 #else
 	/// no checks are performed with disabled checks... 
-    bool TensorNetwork::is_valid_network(bool _check_erased) const {
+	bool TensorNetwork::is_valid_network(bool _check_erased) const {
 		return true;
 	}
 #endif
@@ -430,7 +430,7 @@ namespace xerus {
 	bool TensorNetwork::is_in_expected_format() const {
 		return is_valid_network();
 	}
-    
+	
 	/// Creates a copy of a subnet that only contains nullptr as data pointers
 	TensorNetwork TensorNetwork::stripped_subnet(std::function<bool(size_t)> _idF) const {
 		TensorNetwork cpy(NoZeroNode);
@@ -477,82 +477,82 @@ namespace xerus {
 	TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
 		return stripped_subnet([&](size_t _id){ return _ids.count(_id)>0; });
 	}
-    
-    
-    void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
-        TensorNetwork::Link &li = externalLinks[_i];
-        TensorNetwork::Link &lj = externalLinks[_j];
-        nodes[li.other].neighbors[li.indexPosition].indexPosition = _j;
-        nodes[lj.other].neighbors[lj.indexPosition].indexPosition = _i;
-        std::swap(externalLinks[_i], externalLinks[_j]);
-        std::swap(dimensions[_i], dimensions[_j]);
-    }
-    
+	
+	
+	void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
+		TensorNetwork::Link &li = externalLinks[_i];
+		TensorNetwork::Link &lj = externalLinks[_j];
+		nodes[li.other].neighbors[li.indexPosition].indexPosition = _j;
+		nodes[lj.other].neighbors[lj.indexPosition].indexPosition = _i;
+		std::swap(externalLinks[_i], externalLinks[_j]);
+		std::swap(dimensions[_i], dimensions[_j]);
+	}
+	
 
-    void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
+	void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
-        
+		
 		REQUIRE(base.is_valid_network(), "Network that is supposed to be traced out is inconsistent.");
-        
-        #ifndef DISABLE_RUNTIME_CHECKS_
-            std::set<Index> contractedIndices;
-        #endif
-            
-        size_t j=0;
-        size_t spanSumJ=0;
-        while (j<_modifiedIndices.size()) {
-            Index &ij = _modifiedIndices[j];
-            if (!_base.is_contained_and_open(ij)) {
-                REQUIRE(contractedIndices.count(ij) == 0, "Indices must occur at most twice per contraction");
-                // trace out this index
-                // find the id of the second occurance
-                size_t k=j+1;
-                size_t spanSumK = spanSumJ+ij.span;
-                for (; k<_modifiedIndices.size(); spanSumK+=_modifiedIndices[k].span, ++k) {
-                    if (ij == _modifiedIndices[k]) {
-                        break;
-                    }
-                }
-                REQUIRE(k<_modifiedIndices.size(), "ie " << _modifiedIndices << " k " << k << " j " << j << " ij " << ij << " contained and open? " << _base.is_contained_and_open(ij));
+		
+		#ifndef DISABLE_RUNTIME_CHECKS_
+			std::set<Index> contractedIndices;
+		#endif
+			
+		size_t j=0;
+		size_t spanSumJ=0;
+		while (j<_modifiedIndices.size()) {
+			Index &ij = _modifiedIndices[j];
+			if (!_base.is_contained_and_open(ij)) {
+				REQUIRE(contractedIndices.count(ij) == 0, "Indices must occur at most twice per contraction");
+				// trace out this index
+				// find the id of the second occurance
+				size_t k=j+1;
+				size_t spanSumK = spanSumJ+ij.span;
+				for (; k<_modifiedIndices.size(); spanSumK+=_modifiedIndices[k].span, ++k) {
+					if (ij == _modifiedIndices[k]) {
+						break;
+					}
+				}
+				REQUIRE(k<_modifiedIndices.size(), "ie " << _modifiedIndices << " k " << k << " j " << j << " ij " << ij << " contained and open? " << _base.is_contained_and_open(ij));
 				REQUIRE(ij.span == _modifiedIndices[k].span, "Index spans do not coincide " << ij << " vs " << _modifiedIndices[k]);
-                
-                for (size_t n=0; n<ij.span; ++n) {
-                    TensorNetwork::Link &link1 = base.externalLinks[spanSumJ];
-                    TensorNetwork::Link &link2 = base.externalLinks[spanSumK-n];
+				
+				for (size_t n=0; n<ij.span; ++n) {
+					TensorNetwork::Link &link1 = base.externalLinks[spanSumJ];
+					TensorNetwork::Link &link2 = base.externalLinks[spanSumK-n];
 					REQUIRE(link1.dimension == link2.dimension, "Index dimensions do not coincide: " << link1.dimension << " vs " << link2.dimension);
-                    base.nodes[link1.other].neighbors[link1.indexPosition] = link2;
-                    base.nodes[link2.other].neighbors[link2.indexPosition] = link1;
-                    
-                    // remove external links and dimensions from network
-                    base.externalLinks.erase(base.externalLinks.begin()+(long)(spanSumK-n)); // note that spanSumK > spanSumJ
-                    base.externalLinks.erase(base.externalLinks.begin()+(long)(spanSumJ));
-                    base.dimensions.erase(base.dimensions.begin()+(long)(spanSumK-n)); // note that spanSumK > spanSumJ
-                    base.dimensions.erase(base.dimensions.begin()+(long)(spanSumJ));
-                    
-                    for(size_t i = spanSumJ; i< spanSumK-n-1; ++i) {
-                        base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 1;
-                    }
-                    for(size_t i = spanSumK-n-1; i < base.externalLinks.size(); ++i) {
-                        base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 2;
-                    }
-                }
-                #ifndef DISABLE_RUNTIME_CHECKS_
-                    contractedIndices.insert(ij);
-                #endif
-                // remove index from indexed tensor and mark as contracted
-                _modifiedIndices.erase(_modifiedIndices.begin() + (long)k); // note that k>j
-                _modifiedIndices.erase(_modifiedIndices.begin() + (long)j);
-            } else {
-                spanSumJ += ij.span;
-                j+=1;
-            }
-        }
-        
-        base.contract_unconnected_subnetworks();
+					base.nodes[link1.other].neighbors[link1.indexPosition] = link2;
+					base.nodes[link2.other].neighbors[link2.indexPosition] = link1;
+					
+					// remove external links and dimensions from network
+					base.externalLinks.erase(base.externalLinks.begin()+(long)(spanSumK-n)); // note that spanSumK > spanSumJ
+					base.externalLinks.erase(base.externalLinks.begin()+(long)(spanSumJ));
+					base.dimensions.erase(base.dimensions.begin()+(long)(spanSumK-n)); // note that spanSumK > spanSumJ
+					base.dimensions.erase(base.dimensions.begin()+(long)(spanSumJ));
+					
+					for(size_t i = spanSumJ; i< spanSumK-n-1; ++i) {
+						base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 1;
+					}
+					for(size_t i = spanSumK-n-1; i < base.externalLinks.size(); ++i) {
+						base.nodes[base.externalLinks[i].other].neighbors[base.externalLinks[i].indexPosition].indexPosition -= 2;
+					}
+				}
+				#ifndef DISABLE_RUNTIME_CHECKS_
+					contractedIndices.insert(ij);
+				#endif
+				// remove index from indexed tensor and mark as contracted
+				_modifiedIndices.erase(_modifiedIndices.begin() + (long)k); // note that k>j
+				_modifiedIndices.erase(_modifiedIndices.begin() + (long)j);
+			} else {
+				spanSumJ += ij.span;
+				j+=1;
+			}
+		}
+		
+		base.contract_unconnected_subnetworks();
 		
 		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
-    }
-    void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
+	}
+	void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
 		// Find common Index in nodeA
 		IF_CHECK(bool foundCommon = false;)
 		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
@@ -581,8 +581,8 @@ namespace xerus {
 		_bb.span = _posB;
 		_ab.span = nodes[_nodeB].degree() - _posB - 1;
 	}
-    
-    void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+	
+	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
 		size_t posA, posB;
 		Index ba, aa, bb, ab, c1, c2, k, l;
 		identify_common_edge(posA, posB, ba, aa, bb, ab, _nodeA, _nodeB);
@@ -682,54 +682,54 @@ namespace xerus {
 		contract_unconnected_subnetworks();
 		is_valid_network();
 	}
-    
-    
-    void TensorNetwork::contract_unconnected_subnetworks() {
+	
+	
+	void TensorNetwork::contract_unconnected_subnetworks() {
 		REQUIRE(is_valid_network(), "Invalid TensorNetwork");
-        std::vector<bool> seen(nodes.size(), false);
-        std::vector<size_t> expansionStack;
+		std::vector<bool> seen(nodes.size(), false);
+		std::vector<size_t> expansionStack;
 		expansionStack.reserve(nodes.size());
-        
-        // Starting at every external link...
-        for (TensorNetwork::Link &el : externalLinks) {
-            if(!seen[el.other]) {
-                seen[el.other] = true;
-                expansionStack.push_back(el.other);
-            }
-        }
-        
-        
-        // ...traverse the connected nodes in a depth-first manner.
-        while (!expansionStack.empty()) {
-            const size_t curr = expansionStack.back();
-            expansionStack.pop_back();
-            
-            // Add unseen neighbors
-            for (const TensorNetwork::Link &n : nodes[curr].neighbors) {
-                if ( !n.external && !seen[n.other] ) {
-                    seen[n.other] = true;
-                    expansionStack.push_back(n.other);
-                }
-            }
-        }
-        
-        // Construct set of all unseen nodes...
-        std::set<size_t> toContract;
-        for (size_t i=0; i < nodes.size(); ++i) {
-            if (!seen[i]) {
-                toContract.insert(i);
-            }
-        }
-        
-        const bool keepFinalNode = degree() == 0;
-        
-        // ...and contract them
-        if (!toContract.empty()) {
-            size_t remaining = contract(toContract);
-            
-            // remove contracted degree-0 tensor
-            REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
-            REQUIRE(nodes[remaining].neighbors.empty(), "Internal Error.");
+		
+		// Starting at every external link...
+		for (TensorNetwork::Link &el : externalLinks) {
+			if(!seen[el.other]) {
+				seen[el.other] = true;
+				expansionStack.push_back(el.other);
+			}
+		}
+		
+		
+		// ...traverse the connected nodes in a depth-first manner.
+		while (!expansionStack.empty()) {
+			const size_t curr = expansionStack.back();
+			expansionStack.pop_back();
+			
+			// Add unseen neighbors
+			for (const TensorNetwork::Link &n : nodes[curr].neighbors) {
+				if ( !n.external && !seen[n.other] ) {
+					seen[n.other] = true;
+					expansionStack.push_back(n.other);
+				}
+			}
+		}
+		
+		// Construct set of all unseen nodes...
+		std::set<size_t> toContract;
+		for (size_t i=0; i < nodes.size(); ++i) {
+			if (!seen[i]) {
+				toContract.insert(i);
+			}
+		}
+		
+		const bool keepFinalNode = degree() == 0;
+		
+		// ...and contract them
+		if (!toContract.empty()) {
+			size_t remaining = contract(toContract);
+			
+			// remove contracted degree-0 tensor
+			REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
+			REQUIRE(nodes[remaining].neighbors.empty(), "Internal Error.");
 			if(!keepFinalNode) {
 				for(size_t i =0; i < nodes.size(); ++i) {
 					if(i != remaining && !nodes[i].erased) {
@@ -740,39 +740,39 @@ namespace xerus {
 				}
 				nodes[remaining].erased = true;
 			}
-        }
-        
-        // Remove all erased nodes
-        std::vector<size_t> idMap(nodes.size(), ~0ul);
-        
-        // Move nodes in vector
-        size_t newId=0, oldId=0;
-        for (; oldId < nodes.size(); ++oldId) {
-            if (nodes[oldId].erased) { continue; }
-            idMap[oldId] = newId;
-            if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
-            newId++;
-        }
-        
-        // Update links
-        nodes.resize(newId);
-        for (TensorNode &n : nodes) {
-            for (TensorNetwork::Link &l : n.neighbors) {
-                if (!l.external) l.other = idMap[l.other];
-            }
-        }
-        
-        // Update external links
-        for (TensorNetwork::Link &l : externalLinks) {
-            l.other = idMap[l.other];
-        }
-        
-        REQUIRE(nodes.size() > 0, "Internal error");
+		}
+		
+		// Remove all erased nodes
+		std::vector<size_t> idMap(nodes.size(), ~0ul);
+		
+		// Move nodes in vector
+		size_t newId=0, oldId=0;
+		for (; oldId < nodes.size(); ++oldId) {
+			if (nodes[oldId].erased) { continue; }
+			idMap[oldId] = newId;
+			if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
+			newId++;
+		}
+		
+		// Update links
+		nodes.resize(newId);
+		for (TensorNode &n : nodes) {
+			for (TensorNetwork::Link &l : n.neighbors) {
+				if (!l.external) l.other = idMap[l.other];
+			}
+		}
+		
+		// Update external links
+		for (TensorNetwork::Link &l : externalLinks) {
+			l.other = idMap[l.other];
+		}
+		
+		REQUIRE(nodes.size() > 0, "Internal error");
 		REQUIRE(!keepFinalNode || nodes.size() == 1, "internal error!");
-    }
+	}
 
-    
-    void TensorNetwork::reduce_representation() {
+	
+	void TensorNetwork::reduce_representation() {
 		REQUIRE(is_valid_network(), "");
 		TensorNetwork strippedNet = stripped_subnet();
 		std::vector<std::set<size_t>> contractions(strippedNet.nodes.size());
@@ -828,10 +828,10 @@ namespace xerus {
 		}
 		reshuffle_nodes(idMap);
 	}
-    
-    
-    //TODO do this without indices
-    void TensorNetwork::trace_out_self_links(const size_t _nodeId) {
+	
+	
+	//TODO do this without indices
+	void TensorNetwork::trace_out_self_links(const size_t _nodeId) {
 		LOG(TNContract, "single-node trace of id " << _nodeId);
 		std::vector<Index> idxIn, idxOut;
 		std::vector<TensorNetwork::Link> newLinks;
@@ -866,28 +866,28 @@ namespace xerus {
 		nodes[_nodeId].neighbors = std::move(newLinks);
 	}
 
-    //TODO testcase A(i,j)*B(k,k) of TTtensors
-    /**
-     * contracts the nodes with indices @a _node1 and @a _node2
-     * replaces node1 with the contraction and node2 with an degree-0 tensor
-     */
-    void TensorNetwork::contract(const size_t _nodeId1, const size_t _nodeId2) {
-        TensorNode &node1 = nodes[_nodeId1];
-        TensorNode &node2 = nodes[_nodeId2];
-        
-        REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << "  was already contracted?");
-        REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << "  was already contracted?");
-        REQUIRE(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
-        
-        LOG(TNContract, "contraction of " << _nodeId1 << " and " << _nodeId2 << " size " << nodes.size());
-        
-        std::vector<TensorNetwork::Link> newLinks;
+	//TODO testcase A(i,j)*B(k,k) of TTtensors
+	/**
+	 * contracts the nodes with indices @a _node1 and @a _node2
+	 * replaces node1 with the contraction and node2 with an degree-0 tensor
+	 */
+	void TensorNetwork::contract(const size_t _nodeId1, const size_t _nodeId2) {
+		TensorNode &node1 = nodes[_nodeId1];
+		TensorNode &node2 = nodes[_nodeId2];
+		
+		REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << "  was already contracted?");
+		REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << "  was already contracted?");
+		REQUIRE(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
+		
+		LOG(TNContract, "contraction of " << _nodeId1 << " and " << _nodeId2 << " size " << nodes.size());
+		
+		std::vector<TensorNetwork::Link> newLinks;
 		newLinks.reserve(node1.degree() + node2.degree());
 		
 		
-        // Construct new node
-        std::unique_ptr<Tensor> newTensor;
-        if (!node1.tensorObject) {
+		// Construct new node
+		std::unique_ptr<Tensor> newTensor;
+		if (!node1.tensorObject) {
 			REQUIRE(!node2.tensorObject, "Internal Error.");
 			
 			// determine the links of the resulting tensor (first half)
@@ -1126,193 +1126,193 @@ namespace xerus {
 				// TODO rewrite the whole function to take full advantage of this line!
 				xerus::contract(*newTensor, *node1.tensorObject, trans1, *node2.tensorObject, trans2, contractedDimCount);
 			}
-        }
-        TensorNode newNode(std::move(newTensor), newLinks);
-        
-        // replace node1 and node2
-        nodes[_nodeId1] = newNode;
-        nodes[_nodeId2].erase();
-        
-        // fix indices of other nodes // note that the indices that were previously part of node1 might also have changed
-        for (size_t d=0; d<newLinks.size(); ++d) {
-            TensorNetwork::Link *nn;
-            if (newLinks[d].external) {
-                nn = &externalLinks[newLinks[d].indexPosition];
-            } else {
-                nn = &nodes[newLinks[d].other].neighbors[newLinks[d].indexPosition];
-            }
-            REQUIRE(nn->other == _nodeId2 || nn->other == _nodeId1, "Internal Error."); // consistency check
-            nn->other = _nodeId1;
-            nn->indexPosition = d;
-        }
-        
-        is_valid_network(false);
-    }
+		}
+		TensorNode newNode(std::move(newTensor), newLinks);
+		
+		// replace node1 and node2
+		nodes[_nodeId1] = newNode;
+		nodes[_nodeId2].erase();
+		
+		// fix indices of other nodes // note that the indices that were previously part of node1 might also have changed
+		for (size_t d=0; d<newLinks.size(); ++d) {
+			TensorNetwork::Link *nn;
+			if (newLinks[d].external) {
+				nn = &externalLinks[newLinks[d].indexPosition];
+			} else {
+				nn = &nodes[newLinks[d].other].neighbors[newLinks[d].indexPosition];
+			}
+			REQUIRE(nn->other == _nodeId2 || nn->other == _nodeId1, "Internal Error."); // consistency check
+			nn->other = _nodeId1;
+			nn->indexPosition = d;
+		}
+		
+		is_valid_network(false);
+	}
 
-    double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
-        REQUIRE(!nodes[_nodeId1].erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
-        REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
-        
-        if (_nodeId1 == _nodeId2) {
-            return (double) nodes[_nodeId1].size(); // Costs of a trace
-        }
-        
-        // Assume cost of mxr * rxn = m*n*r (which is a rough approximation of the actual cost for openBlas/Atlas)
-        //TODO add correct calculation for sparse matrices
-        size_t cost = nodes[_nodeId1].size();
+	double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
+		REQUIRE(!nodes[_nodeId1].erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
+		REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
+		
+		if (_nodeId1 == _nodeId2) {
+			return (double) nodes[_nodeId1].size(); // Costs of a trace
+		}
+		
+		// Assume cost of mxr * rxn = m*n*r (which is a rough approximation of the actual cost for openBlas/Atlas)
+		//TODO add correct calculation for sparse matrices
+		size_t cost = nodes[_nodeId1].size();
 		for(const Link& neighbor : nodes[_nodeId2].neighbors) {
 			if(!neighbor.links(_nodeId1)) {
 				cost *= neighbor.dimension;
 			}
 		}
-        return (double) (cost);
-    }
+		return (double) (cost);
+	}
 
-    void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
 		_toInsert.assign_indices();
-        
-        // TODO after trace ensure connectedness (to external indices)
-        TensorNetwork &base = *_base.tensorObject;
-        const TensorNetwork &toInsert = *_toInsert.tensorObjectReadOnly;
-        
-        size_t firstNew = base.nodes.size();
-        size_t firstNewExternal = base.externalLinks.size();
-        
-        // enlarge externalLinks vector by _rhs links
-        for (const TensorNetwork::Link &l : toInsert.externalLinks) {
-            base.externalLinks.emplace_back(l);
-            base.externalLinks.back().other += firstNew;
-        }
-        
-        // Merge indices
-        _base.indices.insert(_base.indices.end(), _toInsert.indices.begin(), _toInsert.indices.end());
-        base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
-        
-        #ifndef DISABLE_RUNTIME_CHECKS_
-        for (const Index &idx : _base.indices) {
-            REQUIRE(misc::count(_base.indices, idx) < 3, "Internal Error.");
-        }
-        #endif
-        
-        // Add network (treating all external links as new external links)
-        for (size_t i=0; i<toInsert.nodes.size(); ++i) {
-            base.nodes.emplace_back(toInsert.nodes[i]);
-            for(TensorNetwork::Link &l : base.nodes.back().neighbors) {
-                if (!l.external) { // Link inside the added network
-                    l.other += firstNew;
-                } else { // External link
-                    l.indexPosition += firstNewExternal;
-                }
-            }
-        }
-        
-        // Find traces (former contractions have become traces due to the joining)
-        trace_out_double_indices(_base.indices, std::move(_base));
+		
+		// TODO after trace ensure connectedness (to external indices)
+		TensorNetwork &base = *_base.tensorObject;
+		const TensorNetwork &toInsert = *_toInsert.tensorObjectReadOnly;
+		
+		size_t firstNew = base.nodes.size();
+		size_t firstNewExternal = base.externalLinks.size();
+		
+		// enlarge externalLinks vector by _rhs links
+		for (const TensorNetwork::Link &l : toInsert.externalLinks) {
+			base.externalLinks.emplace_back(l);
+			base.externalLinks.back().other += firstNew;
+		}
+		
+		// Merge indices
+		_base.indices.insert(_base.indices.end(), _toInsert.indices.begin(), _toInsert.indices.end());
+		base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
+		
+		#ifndef DISABLE_RUNTIME_CHECKS_
+		for (const Index &idx : _base.indices) {
+			REQUIRE(misc::count(_base.indices, idx) < 3, "Internal Error.");
+		}
+		#endif
+		
+		// Add network (treating all external links as new external links)
+		for (size_t i=0; i<toInsert.nodes.size(); ++i) {
+			base.nodes.emplace_back(toInsert.nodes[i]);
+			for(TensorNetwork::Link &l : base.nodes.back().neighbors) {
+				if (!l.external) { // Link inside the added network
+					l.other += firstNew;
+				} else { // External link
+					l.indexPosition += firstNewExternal;
+				}
+			}
+		}
+		
+		// Find traces (former contractions have become traces due to the joining)
+		trace_out_double_indices(_base.indices, std::move(_base));
 		
 		REQUIRE(_base.tensorObject->is_valid_network(), "ie");
-    }
+	}
 
 
-    //TODO contract with std::function
-    size_t TensorNetwork::contract(std::set<size_t> _ids) {
-        LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
-        
-        // TODO this and all the heuristics still assume that all tensors are dense (as there are no sparse tensors at the time of this writing)
-        if (_ids.size() == 0) { return ~0ul; }
-        
-        // trace out all single-node traces
-        for (size_t id : _ids) {
-            bool traceNeeded=false;
-            for (const TensorNetwork::Link &l : nodes[id].neighbors) {
-                if (l.links(id)) {
-                    traceNeeded = true;
-                    break;
-                }
-            }
-            if (traceNeeded) {
-                trace_out_self_links(id);
-            }
-        }
-        
-        if (_ids.size() == 1) { return *_ids.begin(); }
-        if (_ids.size() == 2) {
-            auto secItr = _ids.begin(); ++secItr;
-            contract(*_ids.begin(), *secItr);
-            return *_ids.begin();
-        }
-        
-        if (_ids.size() == 3) {
-            auto idItr = _ids.begin();
-            size_t a=*idItr; TensorNode &na = nodes[a]; ++idItr;
-            size_t b=*idItr; TensorNode &nb = nodes[b]; ++idItr;
-            size_t c=*idItr; TensorNode &nc = nodes[c];
-            double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
-            double sab=1, sbc=1, sac=1; // link dimensions
-            for (size_t d=0; d<na.degree(); ++d) {
-                if (na.neighbors[d].links(b)) {
-                    sab *= (double)na.neighbors[d].dimension;
-                } else if (na.neighbors[d].links(c)) {
-                    sac *= (double)na.neighbors[d].dimension;
-                } else {
-                    sa *= (double)na.neighbors[d].dimension;
-                }
-            }
-            for (size_t d=0; d<nb.degree(); ++d) {
-                if (nb.neighbors[d].links(c)) {
-                    sbc *= (double) nb.neighbors[d].dimension;
-                } else if (!nb.neighbors[d].links(a)) {
-                    sb *= (double) nb.neighbors[d].dimension;
-                }
-            }
-            for (size_t d=0; d<nc.degree(); ++d) {
-//                 size_t other = nc.neighbors[d].other;
-                if (!nc.neighbors[d].links(a) && !nc.neighbors[d].links(b)) {
-                    sc *= (double)nc.neighbors[d].dimension;
-                }
-            }
-            // cost of contraction a-b first etc.
-            double costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
-            double costAC = sa*sc*sab*sbc*(sac+sb); 
-            double costBC = sb*sc*sab*sac*(sbc+sa);
-            if (costAB < costAC && costAB < costBC) {
-                LOG(TNContract, "contraction of ab first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
-                contract(a,b); contract(a,c); return a;
-            } else if (costAC < costBC) {
-                LOG(TNContract, "contraction of ac first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
-                contract(a,c); contract(a,b); return a;
-            } else {
-                LOG(TNContract, "contraction of bc first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
-                contract(b,c); contract(a,b); return a;
-            }
-        }
-        
-        
-        TensorNetwork strippedNetwork = stripped_subnet(_ids); 
-        double bestCost=std::numeric_limits<double>::max();
-        std::vector<std::pair<size_t, size_t>> bestOrder;
-        
-        // ask heuristics
-        for (const internal::ContractionHeuristic &c : internal::contractionHeuristics) {
-            c(bestCost, bestOrder, strippedNetwork);
-        }
-        
-        REQUIRE(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
-        for (const std::pair<size_t,size_t> &c : bestOrder) {
-            contract(c.first, c.second);
-        }
-        
-        // note: no sanitization as eg. TTStacks require the indices not to change after calling this function
-        return bestOrder.back().first;
-    }
+	//TODO contract with std::function
+	size_t TensorNetwork::contract(std::set<size_t> _ids) {
+		LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
+		
+		// TODO this and all the heuristics still assume that all tensors are dense (as there are no sparse tensors at the time of this writing)
+		if (_ids.size() == 0) { return ~0ul; }
+		
+		// trace out all single-node traces
+		for (size_t id : _ids) {
+			bool traceNeeded=false;
+			for (const TensorNetwork::Link &l : nodes[id].neighbors) {
+				if (l.links(id)) {
+					traceNeeded = true;
+					break;
+				}
+			}
+			if (traceNeeded) {
+				trace_out_self_links(id);
+			}
+		}
+		
+		if (_ids.size() == 1) { return *_ids.begin(); }
+		if (_ids.size() == 2) {
+			auto secItr = _ids.begin(); ++secItr;
+			contract(*_ids.begin(), *secItr);
+			return *_ids.begin();
+		}
+		
+		if (_ids.size() == 3) {
+			auto idItr = _ids.begin();
+			size_t a=*idItr; TensorNode &na = nodes[a]; ++idItr;
+			size_t b=*idItr; TensorNode &nb = nodes[b]; ++idItr;
+			size_t c=*idItr; TensorNode &nc = nodes[c];
+			double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
+			double sab=1, sbc=1, sac=1; // link dimensions
+			for (size_t d=0; d<na.degree(); ++d) {
+				if (na.neighbors[d].links(b)) {
+					sab *= (double)na.neighbors[d].dimension;
+				} else if (na.neighbors[d].links(c)) {
+					sac *= (double)na.neighbors[d].dimension;
+				} else {
+					sa *= (double)na.neighbors[d].dimension;
+				}
+			}
+			for (size_t d=0; d<nb.degree(); ++d) {
+				if (nb.neighbors[d].links(c)) {
+					sbc *= (double) nb.neighbors[d].dimension;
+				} else if (!nb.neighbors[d].links(a)) {
+					sb *= (double) nb.neighbors[d].dimension;
+				}
+			}
+			for (size_t d=0; d<nc.degree(); ++d) {
+//				 size_t other = nc.neighbors[d].other;
+				if (!nc.neighbors[d].links(a) && !nc.neighbors[d].links(b)) {
+					sc *= (double)nc.neighbors[d].dimension;
+				}
+			}
+			// cost of contraction a-b first etc.
+			double costAB = sa*sb*sac*sbc*(sab+sc); // (sa*sac)*sab*(sb*sbc) + sa*sb*sac*sbc*sc;
+			double costAC = sa*sc*sab*sbc*(sac+sb); 
+			double costBC = sb*sc*sab*sac*(sbc+sa);
+			if (costAB < costAC && costAB < costBC) {
+				LOG(TNContract, "contraction of ab first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
+				contract(a,b); contract(a,c); return a;
+			} else if (costAC < costBC) {
+				LOG(TNContract, "contraction of ac first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
+				contract(a,c); contract(a,b); return a;
+			} else {
+				LOG(TNContract, "contraction of bc first " << sa << " " << sb << " " << sc << " " << sab << " " << sbc << " " << sac);
+				contract(b,c); contract(a,b); return a;
+			}
+		}
+		
+		
+		TensorNetwork strippedNetwork = stripped_subnet(_ids); 
+		double bestCost=std::numeric_limits<double>::max();
+		std::vector<std::pair<size_t, size_t>> bestOrder;
+		
+		// ask heuristics
+		for (const internal::ContractionHeuristic &c : internal::contractionHeuristics) {
+			c(bestCost, bestOrder, strippedNetwork);
+		}
+		
+		REQUIRE(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
+		for (const std::pair<size_t,size_t> &c : bestOrder) {
+			contract(c.first, c.second);
+		}
+		
+		// note: no sanitization as eg. TTStacks require the indices not to change after calling this function
+		return bestOrder.back().first;
+	}
 
-    value_t TensorNetwork::frob_norm() const {
-        Index i;
-        Tensor res;
-        res() = (*this)(i&0) * (*this)(i&0);
-        return std::sqrt(res[0]);
-    }
-    
-    
+	value_t TensorNetwork::frob_norm() const {
+		Index i;
+		Tensor res;
+		res() = (*this)(i&0) * (*this)(i&0);
+		return std::sqrt(res[0]);
+	}
+	
+	
 	void TensorNetwork::draw(const std::string& _filename) const {
 		std::stringstream graphLayout;
 				

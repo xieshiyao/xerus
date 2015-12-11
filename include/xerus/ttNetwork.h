@@ -99,8 +99,8 @@ namespace xerus {
 		
 		/** 
 		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
-         * @param _dimensions the dimensions of the new tensor.
-         */
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
 		static TTNetwork ones(const std::vector<size_t>& _dimensions) {
 			#ifndef DISABLE_RUNTIME_CHECKS_
 				for (const size_t d : _dimensions) {
@@ -411,11 +411,11 @@ namespace xerus {
 		 */
 		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound = 0.0) const;
 // 		size_t find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount, const value_t _lowerBound = 0.0) const;
-        
-        virtual bool is_in_expected_format() const override;
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
-        /** 
+		
+		virtual bool is_in_expected_format() const override;
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
+		/** 
 		 * @brief Adds a given TTNetwork to this one.
 		 * @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
 		 * The rank of the result are in general the entrywise sum of the ranks of this and @a _other.

@@ -34,33 +34,32 @@ namespace xerus {
 	 * it explicitly or to store variables of this type (unless you really know what you are doing).
 	 */
 	template<class tensor_type>
-    class IndexedTensorMoveable final : public IndexedTensorWritable<tensor_type> {
-    public:
-        ///@brief Creates an empty indexed Tensor, should only be used internally
-        IndexedTensorMoveable();
-        
-        ///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
-        IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete;
-        
-        ///@brief Move constructor
-        IndexedTensorMoveable(      IndexedTensorMoveable &&_other );
-        
-        ///@brief Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject.
-        IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices);
-        
-        ///@brief Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject
-        IndexedTensorMoveable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices);
-        
-		///@brief Allow explicit cast to from IndexedTensorReadOnly.
+	class IndexedTensorMoveable final : public IndexedTensorWritable<tensor_type> {
+	public:
+		///@brief Creates an empty indexed Tensor, should only be used internally
+		IndexedTensorMoveable();
+		
+		///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
+		IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete;
+		
+		///@brief Move constructor
+		IndexedTensorMoveable(      IndexedTensorMoveable &&_other );
+		
+		///@brief Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject.
+		IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices);
+		
+		///@brief Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject
+		IndexedTensorMoveable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices);
+		
+		///@brief Allow explicit cast from IndexedTensorReadOnly.
 		explicit IndexedTensorMoveable(IndexedTensorReadOnly<tensor_type>&& _other);
 		
-        ///@brief Allow explicit conversions from indexed TensorNetworks to indexed Tensors
+		///@brief Allow explicit conversions from indexed TensorNetworks to indexed Tensors
 		template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
-        explicit IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&& _other );
-        
-        ///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
-		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
-        IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&& _other);
+		explicit IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&& _other );
 		
-    };
+		///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
+		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
+		IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&& _other);
+	};
 }
