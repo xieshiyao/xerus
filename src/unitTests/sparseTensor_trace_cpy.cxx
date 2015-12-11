@@ -66,54 +66,54 @@ UNIT_TEST(SparseTensor, Traces,
     C[{1,1,1,1}] = 32768;
     
     res1() = A(i,i);
-    TEST(res1.compare_to_data({9}));
+    TEST(approx_entrywise_equal(res1, {9}));
     
     res2(j) = B(i,i,j);
-    TEST(res2.compare_to_data({65, 130}));
+    TEST(approx_entrywise_equal(res2, {65, 130}));
     res2(j) = B(i,j,i);
-    TEST(res2.compare_to_data({33, 132}));
+    TEST(approx_entrywise_equal(res2, {33, 132}));
     res2(j) = B(j,i,i);
-    TEST(res2.compare_to_data({9, 144}));
+    TEST(approx_entrywise_equal(res2, {9, 144}));
     
     res3(j,k) = C(i,i,j,k);
-    TEST(res3.compare_to_data({4097, 8194, 16388, 32776}));
+    TEST(approx_entrywise_equal(res3, {4097, 8194, 16388, 32776}));
     res3(j,k) = C(i,j,i,k);
-    TEST(res3.compare_to_data({1025, 2050, 16400, 32800}));
+    TEST(approx_entrywise_equal(res3, {1025, 2050, 16400, 32800}));
     res3(j,k) = C(i,j,k,i);
-    TEST(res3.compare_to_data({513, 2052, 8208, 32832}));
+    TEST(approx_entrywise_equal(res3, {513, 2052, 8208, 32832}));
     res3(j,k) = C(j,i,i,k);
-    TEST(res3.compare_to_data({65, 130, 16640, 33280}));
+    TEST(approx_entrywise_equal(res3, {65, 130, 16640, 33280}));
     res3(j,k) = C(j,i,k,i);
-    TEST(res3.compare_to_data({33, 132, 8448, 33792}));
+    TEST(approx_entrywise_equal(res3, {33, 132, 8448, 33792}));
     res3(j,k) = C(j,k,i,i);
-    TEST(res3.compare_to_data({9, 144, 2304, 36864}));
+    TEST(approx_entrywise_equal(res3, {9, 144, 2304, 36864}));
     
     res3(k,j) = C(i,i,j,k);
-    TEST(res3.compare_to_data({4097, 16388, 8194, 32776}));
+    TEST(approx_entrywise_equal(res3, {4097, 16388, 8194, 32776}));
     res3(k,j) = C(i,j,i,k);
-    TEST(res3.compare_to_data({1025, 16400, 2050, 32800}));
+    TEST(approx_entrywise_equal(res3, {1025, 16400, 2050, 32800}));
     res3(k,j) = C(i,j,k,i);
-    TEST(res3.compare_to_data({513, 8208, 2052, 32832}));
+    TEST(approx_entrywise_equal(res3, {513, 8208, 2052, 32832}));
     res3(k,j) = C(j,i,i,k);
-    TEST(res3.compare_to_data({65, 16640, 130, 33280}));
+    TEST(approx_entrywise_equal(res3, {65, 16640, 130, 33280}));
     res3(k,j) = C(j,i,k,i);
-    TEST(res3.compare_to_data({33, 8448, 132, 33792}));
+    TEST(approx_entrywise_equal(res3, {33, 8448, 132, 33792}));
     res3(k,j) = C(j,k,i,i);
-    TEST(res3.compare_to_data({9, 2304, 144, 36864}));
+    TEST(approx_entrywise_equal(res3, {9, 2304, 144, 36864}));
     
     res2(k) = C(0,k,i,i);
-    TEST(res2.compare_to_data({9, 144}));
+    TEST(approx_entrywise_equal(res2, {9, 144}));
     res2(k) = C(1,k,i,i);
-    TEST(res2.compare_to_data({2304,36864}));
+    TEST(approx_entrywise_equal(res2, {2304,36864}));
     res2(j) = C(j,0,i,i);
-    TEST(res2.compare_to_data({9, 2304}));
+    TEST(approx_entrywise_equal(res2, {9, 2304}));
     res2(j) = C(j,1,i,i);
-    TEST(res2.compare_to_data({144, 36864}));
+    TEST(approx_entrywise_equal(res2, {144, 36864}));
     
     res1() = C(i,i,j,j);
-    TEST(res1.compare_to_data({1+8+4096+32768}));
+    TEST(approx_entrywise_equal(res1, {1+8+4096+32768}));
     res1() = C(i,j,i,j);
-    TEST(res1.compare_to_data({1+32+1024+32768}));
+    TEST(approx_entrywise_equal(res1, {1+32+1024+32768}));
     res1() = C(i,j,j,i);
-    TEST(res1.compare_to_data({1+64+512+32768}));
+    TEST(approx_entrywise_equal(res1, {1+64+512+32768}));
 )

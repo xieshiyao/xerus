@@ -470,7 +470,7 @@ namespace xerus {
 		/** 
 		 * @brief Gives access to the internal data pointer, without any checks.
 		 * @details Note that the dense data array might not exist because a sparse representation is used, may shared with other tensors 
-		 * or has to be interpreted considering a gloal factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * or has to be interpreted considering a gloal factor. Both can be avoid if using get_dense_data(). The tensor data itself is stored in row-major ordering.
 		 * @return pointer to the internal dense data array.
 		 */
 		value_t* get_unsanitized_dense_data();
@@ -478,7 +478,7 @@ namespace xerus {
 		/** 
 		 * @brief Gives access to the internal data pointer, without any checks.
 		 * @details Note that the dense data array might not exist because a sparse representation is used, may shared with other tensors 
-		 * or has to be interpreted considering a gloal factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * or has to be interpreted considering a gloal factor. Both can be avoid if using get_dense_data(). The tensor data itself is stored in row-major ordering.
 		 * @return pointer to the internal dense data array.
 		 */
 		const value_t* get_unsanitized_dense_data() const;
@@ -494,10 +494,49 @@ namespace xerus {
 		/** 
 		 * @brief Gives access to the internal shared data pointer, without any checks.
 		 * @details Note that the data array might be shared with other tensors or has to be interpreted considering a global
-		 * factor. Both can be avoid if using data_pointer(). The tensor data itself is stored in row-major ordering.
+		 * factor. Both can be avoid if using get_dense_data(). The tensor data itself is stored in row-major ordering.
 		 * @return The internal shared pointer to the data array.
 		 */
 		const std::shared_ptr<value_t>& get_internal_dense_data();
+		
+		/** 
+		 * @brief Returns a reference for direct access to the sparse data map. 
+		 * @details Also takes care that this direct access is safe, i.e. that this tensor is using a dense representation, is the sole owner of the data and that no non trivial factor exists.
+		 * @return reference to the sparse data map.
+		 */
+		std::map<size_t, value_t>& get_sparse_data();
+		
+		/** 
+		 * @brief Gives access to the internal sparse map, without any checks.
+		 * @details Note that the sparse data map might not exist because no sparse representation is used, 
+		 * may shared with other tensors or has to be interpreted considering a gloal factor. Both can be avoid if using get_sparse_data().
+		 * @return reference to the internal sparse data map.
+		 */
+		std::map<size_t, value_t>& get_unsanitized_sparse_data();
+		
+		/** 
+		 * @brief Gives access to the internal sparse map, without any checks.
+		 * @details Note that the sparse data map might not exist because no sparse representation is used, 
+		 * may shared with other tensors or has to be interpreted considering a gloal factor. Both can be avoid if using get_sparse_data().
+		 * @return reference to the internal sparse data map.
+		 */
+		const std::map<size_t, value_t>& get_unsanitized_saprse_data() const;
+		
+		/** 
+		 * @brief Returns a pointer to the internal sparse data map for complete rewrite purpose ONLY.
+		 * @details This is equivalent to calling reset() with the current dimensions, sparse representation and no initialisation and then
+		 * calling get_unsanitized_sparse_data().
+		 * @return reference to the internal sparse data map.
+		 */
+		std::map<size_t, value_t>& override_sparse_data();
+		
+		/** 
+		 * @brief Gives access to the internal shared sparse data pointer, without any checks.
+		 * @details Note that the sparse data map might not exist because no sparse representation is used, 
+		 * may shared with other tensors or has to be interpreted considering a gloal factor. Both can be avoid if using get_sparse_data().
+		 * @return The internal shared pointer to the sparse data map.
+		 */
+		const std::shared_ptr<std::map<size_t, value_t>>& get_internal_sparse_data();
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -745,9 +784,6 @@ namespace xerus {
 	* @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
 	*/
 	bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps = EPSILON);
-	
-	
-	
 	
 	/** 
 	* @brief Checks whether two Tensors are approximately entrywise equal.

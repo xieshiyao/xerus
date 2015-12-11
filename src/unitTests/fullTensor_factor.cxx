@@ -72,8 +72,8 @@ UNIT_TEST(Tensor, value_t_Product,
     D(j&0) = A(j&0)/73.0;
     A(j&0) = A(j&0)/2;
     
-    TEST(B.compare_to_data(std::vector<value_t>(A.size, 146)));
-    TEST(C.compare_to_data(std::vector<value_t>(A.size, 219)));
-    TEST(D.compare_to_data(std::vector<value_t>(A.size, 1)));
-    TEST(A.compare_to_data(std::vector<value_t>(A.size, 36.5)));
+    TEST(approx_entrywise_equal(B, std::vector<value_t>(A.size, 146)));
+    TEST(approx_entrywise_equal(C, std::vector<value_t>(A.size, 219)));
+    TEST(approx_entrywise_equal(D, std::vector<value_t>(A.size, 1)));
+    TEST(approx_entrywise_equal(A, std::vector<value_t>(A.size, 36.5)));
 )

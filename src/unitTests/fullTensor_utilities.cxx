@@ -31,13 +31,13 @@ UNIT_TEST(Tensor, remove_slate,
     Tensor A({3,3}, [&](const std::vector<size_t> &){ n+=1; return n; } );
     
     A.remove_slate(0,1);
-    TEST(A.compare_to_data({1,2,3,7,8,9}, 1e-14));
+    TEST(approx_entrywise_equal(A, {1,2,3,7,8,9}, 1e-14));
     A.resize_dimension(0,3,1);
-    TEST(A.compare_to_data({1,2,3,0,0,0,7,8,9}, 1e-14));
+    TEST(approx_entrywise_equal(A, {1,2,3,0,0,0,7,8,9}, 1e-14));
     A.remove_slate(1,0);
-    TEST(A.compare_to_data({2,3,0,0,8,9}, 1e-14));
+    TEST(approx_entrywise_equal(A, {2,3,0,0,8,9}, 1e-14));
     A.resize_dimension(1,3,1);
-    TEST(A.compare_to_data({2,0,3,0,0,0,8,0,9}, 1e-14));
+    TEST(approx_entrywise_equal(A, {2,0,3,0,0,0,8,0,9}, 1e-14));
 )
 
 UNIT_TEST(Tensor, dimension_reduction,
@@ -56,17 +56,17 @@ UNIT_TEST(Tensor, dimension_reduction,
     C = A;
     
     A.resize_dimension(0,1);
-    TEST(A.compare_to_data({1,2,3,4}, 1e-13));
+    TEST(approx_entrywise_equal(A, {1,2,3,4}, 1e-13));
     TEST(A.dimensions[0] == 1);
     TEST(A.size == 4);
     
     B.resize_dimension(1,1);
-    TEST(B.compare_to_data({1,2,5,6}, 1e-13));
+    TEST(approx_entrywise_equal(B, {1,2,5,6}, 1e-13));
     TEST(B.dimensions[1] == 1);
     TEST(B.size == 4);
     
     C.resize_dimension(2,1);
-    TEST(C.compare_to_data({1,3,5,7}, 1e-13));
+    TEST(approx_entrywise_equal(C, {1,3,5,7}, 1e-13));
     TEST(C.dimensions[2] == 1);
     TEST(C.size == 4);
 )
@@ -87,17 +87,17 @@ UNIT_TEST(Tensor, dimension_expansion,
     C = A;
     
     A.resize_dimension(0,3);
-    TEST(A.compare_to_data({1,2,3,4,5,6,7,8,0,0,0,0}, 1e-13));
+    TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,0,0,0,0}, 1e-13));
     TEST(A.dimensions[0] == 3);
     TEST(A.size == 12);
     
     B.resize_dimension(1,3);
-    TEST(B.compare_to_data({1,2,3,4,0,0,5,6,7,8,0,0}, 1e-13));
+    TEST(approx_entrywise_equal(B, {1,2,3,4,0,0,5,6,7,8,0,0}, 1e-13));
     TEST(B.dimensions[1] == 3);
     TEST(B.size == 12);
     
     C.resize_dimension(2,3);
-    TEST(C.compare_to_data({1,2,0,3,4,0,5,6,0,7,8,0}, 1e-13));
+    TEST(approx_entrywise_equal(C, {1,2,0,3,4,0,5,6,0,7,8,0}, 1e-13));
     TEST(C.dimensions[2] == 3);
     TEST(C.size == 12);
 )
@@ -125,18 +125,18 @@ UNIT_TEST(Tensor, modify_elements,
     A[{3,3}] = 16;
     
     A.modify_diag_elements([](value_t& _entry){});
-    TEST(A.compare_to_data({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}));
+    TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}));
     
     A.modify_diag_elements([](value_t& _entry){_entry = 73.5*_entry;});
-    TEST(A.compare_to_data({73.5*1,2,3,4,5,73.5*6,7,8,9,10,73.5*11,12,13,14,15,73.5*16}));
+    TEST(approx_entrywise_equal(A, {73.5*1,2,3,4,5,73.5*6,7,8,9,10,73.5*11,12,13,14,15,73.5*16}));
     
     A.modify_diag_elements([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - (value_t)_position;});
-    TEST(A.compare_to_data({73.5*73.5*1,2,3,4,5,73.5*73.5*6-1.0,7,8,9,10,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
+    TEST(approx_entrywise_equal(A, {73.5*73.5*1,2,3,4,5,73.5*73.5*6-1.0,7,8,9,10,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
     
     A.reinterpret_dimensions({2,8});
     
     A.modify_diag_elements([](value_t& _entry){_entry = 0;});
-    TEST(A.compare_to_data({0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
+    TEST(approx_entrywise_equal(A, {0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
     
     FAILTEST(B.modify_diag_elements([](value_t& _entry){return _entry;}));
     FAILTEST(B.modify_diag_elements([](value_t& _entry, const size_t _position){return _entry;}));

@@ -44,9 +44,9 @@ UNIT_TEST(Tensor, sum_matrix_2x2,
     C[{1,1}]=8;
     
     res(i,J) = B(i,J) + C(i,J);
-    TEST(res.compare_to_data({6,8,10,12}));
+    TEST(approx_entrywise_equal(res, {6,8,10,12}));
     res(i,J) = B(i,J) + C(J,i);
-    TEST(res.compare_to_data({6,9,9,12}));
+    TEST(approx_entrywise_equal(res, {6,9,9,12}));
 )
  
 UNIT_TEST(Tensor, sum_lhs_equals_rhs,
@@ -66,9 +66,9 @@ UNIT_TEST(Tensor, sum_lhs_equals_rhs,
     C[{1,1}]=8;
     
     B(i,J) = B(i,J) + C(i,J);
-	TEST(B.compare_to_data({6,8,10,12}));
+	TEST(approx_entrywise_equal(B, {6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
-    TEST(B.compare_to_data({12,18,18,24}));
+    TEST(approx_entrywise_equal(B, {12,18,18,24}));
 )
 
 UNIT_TEST(Tensor, sum_matrix_1000x1000,
@@ -105,7 +105,7 @@ UNIT_TEST(Tensor, sum_dyadic,
     C[1]=9;
     
     FAILTEST(res(i,J) = B(i) + C(J));
-//     TEST(res.compare_to_data({6,10,7,11}));
+//     TEST(approx_entrywise_equal(res, {6,10,7,11}));
 )
 
 UNIT_TEST(Tensor, sum_threefold_sum,
@@ -126,5 +126,5 @@ UNIT_TEST(Tensor, sum_threefold_sum,
     D[1]=13;
     
     res(i) = B(i) + C(i) + D(i);
-    TEST(res.compare_to_data({13,24}));
+    TEST(approx_entrywise_equal(res, {13,24}));
 )

@@ -506,22 +506,53 @@ namespace xerus {
 	}
 	
 	value_t* Tensor::get_unsanitized_dense_data() {
+		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
 		return denseData.get();
 	}
 	
 	const value_t* Tensor::get_unsanitized_dense_data() const  {
+		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
 		return denseData.get();
 	}
 	
 	value_t* Tensor::override_dense_data()  {
-		use_dense_representation();
+		use_dense_representation(); // TODO no copy required!
 		ensure_own_data_no_copy();
 		return denseData.get();
 	}
 	
-	
 	const std::shared_ptr<value_t>& Tensor::get_internal_dense_data() {
+		REQUIRE(is_dense(), "Internal dense data requested, but representation is not dense!");
 		return denseData;
+	}
+	
+	
+	std::map<size_t, value_t>& Tensor::get_sparse_data() {
+		CHECK(is_sparse(), warning, "Request for sparse data although the Tensor is not sparse.");
+		use_sparse_representation();
+		ensure_own_data_and_apply_factor();
+		return *sparseData.get();
+	}
+	
+	std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() {
+		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
+		return *sparseData.get();
+	}
+	
+	const std::map<size_t, value_t>& Tensor::get_unsanitized_saprse_data() const  {
+		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
+		return *sparseData.get();
+	}
+	
+	std::map<size_t, value_t>& Tensor::override_sparse_data()  {
+		use_sparse_representation(); // TODO no copy required!
+		ensure_own_data_no_copy();
+		return *sparseData.get();
+	}
+	
+	const std::shared_ptr<std::map<size_t, value_t>>& Tensor::get_internal_sparse_data() {
+		REQUIRE(is_sparse(), "Internal sparse data requested, but representation is not sparse!");
+		return sparseData;
 	}
 	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -921,15 +952,28 @@ namespace xerus {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
 		if(_A.is_dense() && _B.is_dense()) {
 			Tensor result(_A);
-			value_t* const dataPtrA = result.get_dense_data();
+			result.ensure_own_data();
+			value_t* const dataPtrA = result.get_unsanitized_dense_data();
 			const value_t* const dataPtrB = _B.get_unsanitized_dense_data();
-			result.factor = _B.factor;
-			for (size_t i = 0; i < result.size; ++i) {
+			result *= _B.factor;
+			for(size_t i = 0; i < result.size; ++i) {
 				dataPtrA[i] *= dataPtrB[i];
 			}
 			return result;
-		} else {
-			LOG(fatal, "entrywise_product not yet implemented for something other than dense dense");
+		} else if(_A.is_sparse()) {
+			Tensor result(_A);
+			
+			for(std::pair<const size_t, value_t>& entry : *result.sparseData) {
+				entry.second *= _B[entry.first];
+			}
+			return result;
+		} else { // _B.is_sparse()
+			Tensor result(_B);
+			
+			for(std::pair<const size_t, value_t>& entry : *result.sparseData) {
+				entry.second *= _A[entry.first];
+			}
+			return result;
 		}
 	}
     
@@ -937,46 +981,30 @@ namespace xerus {
         REQUIRE(_a.dimensions == _b.dimensions, 
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
         
-		const double avgNorm = (_a.frob_norm() + _b.frob_norm())/2.0;
-        if (!_a.is_sparse() && !_b.is_sparse()) { // Special treatment for two fullTensors because blas has better accuracy
-            return frob_norm(static_cast<const Tensor&>(_a) - static_cast<const Tensor&>(_b)) <= _eps*avgNorm;
-		} else if(_a.is_sparse()) {
-			Tensor bma(_b);
-			bma -= _a;
-			return frob_norm(bma) <= _eps*avgNorm;
-		} else if(_b.is_sparse()) {
-			Tensor amb(_a);
-			amb -= _b;
-			return frob_norm(amb) <= _eps*avgNorm;
-        } else { // Special treatment if both are sparse, because better asyptotic is possible.
-            return frob_norm(static_cast<const Tensor&>(_a) - static_cast<const Tensor&>(_b)) <= _eps*avgNorm;
-        }
+		return frob_norm(_a - _b) <= _eps*(_a.frob_norm() + _b.frob_norm())/2.0;
     }
     
 	bool approx_entrywise_equal(const Tensor& _a, const Tensor& _b, const value_t _eps) {
         REQUIRE(_a.dimensions == _b.dimensions, 
                 "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
         
-        PA_START;
         if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
-            const Tensor& A = static_cast<const Tensor&>(_a);
-            const Tensor& B = static_cast<const Tensor&>(_b);
-            const Tensor C = A-B;
-            const double factorizedEps = _eps/std::abs(C.factor);
-            
-            for(const std::pair<size_t, value_t>& entry : *C.sparseData) {
-                if(std::abs(entry.second)/(std::abs(A[entry.first])+std::abs(B[entry.first])) > factorizedEps) { return false; }
-            }
+			for(const std::pair<size_t, value_t>& entry : *_a.sparseData) {
+				if(!approx_equal(_a.factor*entry.second, _b[entry.first], _eps)) { return false; }
+			}
+			
+			for(const std::pair<size_t, value_t>& entry : *_b.sparseData) {
+				if(!approx_equal(_a[entry.first], _b.factor*entry.second, _eps)) { return false; }
+			}
         } else {
-            for(size_t i = 0; i < _a.size; ++i) {
-				if(approx_equal(_a[i], _b[i])) { return false; }
+            for(size_t i=0; i < _a.size; ++i) {
+                if(!approx_equal(_a[i], _b[i], _eps)) { return false; }
             }
         }
-        PA_END("Approx entrywise equal", "", misc::to_string(_a.size));
         return true;
     }
     
-    bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON) {
+    bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps) {
 		if(_tensor.size != _values.size()) { return false; }
 		for(size_t i = 0; i < _tensor.size; ++i) {
 			if(!approx_equal(_tensor[i], _values[i], _eps)) { return false; }
