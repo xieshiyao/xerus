@@ -69,7 +69,22 @@ namespace xerus {
         flags[_flag1] = _flagValue1;
         flags[_flag2] = _flagValue2;
     }
-    
+	
+	void Index::set_span(const size_t _degree) {
+		REQUIRE(!flags[Flag::FIXED] || span == 1, "Fixed indices must have span one.");
+		if(flags[Flag::INVERSE_SPAN]) {
+			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have inverse span."); 
+			REQUIRE(span <= _degree, "Index with inverse span would have negative actual span. Tensor degree: " << _degree << ", inverse span " << span);
+			span = _degree-span;
+			flags.reset();
+		} else if( flags[Flag::FRACTIONAL_SPAN] ) {
+			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have fractional span.");
+			REQUIRE(_degree%span == 0, "Fractional span must divide the tensor degree. Here tensor degree = " << _degree << ", span = " << span);
+			span = _degree/span;
+			flags.reset();
+		}
+	}
+	
 	size_t Index::actual_span(const size_t _degree) const {
 		if(flags[Flag::INVERSE_SPAN]) {
 			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have inverse span."); 

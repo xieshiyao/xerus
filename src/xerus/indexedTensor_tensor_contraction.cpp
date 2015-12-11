@@ -208,21 +208,21 @@ namespace xerus {
     */
     void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs, const std::vector<Index>& _lhsIndices, IndexedTensorReadOnly<Tensor>&& _rhs, const std::vector<Index>& _rhsIndices) {
         // Get the assigned indices for result (we assume that result is already of the right dimensions)
-        const std::vector<Index> resultIndices = _result.get_assigned_indices();
+		_result.assign_indices();
 
         #ifndef DISABLE_RUNTIME_CHECKS_
-            check_input_validity(resultIndices, _lhsIndices, _rhsIndices);
+            check_input_validity(_result.indices, _lhsIndices, _rhsIndices);
         #endif
         
         // Check whether both sides are separated and whether their open indices are ordered
         LOG(ContractionDebug, "Checking Index uniqueness, seperation and order...");
         bool lhsNeedsReshuffle, lhsIsOrdered;
         bool rhsNeedsReshuffle, rhsIsOrdered;
-        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, _lhsIndices, resultIndices);
-        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, _rhsIndices, resultIndices);
+        test_seperation_and_order(lhsNeedsReshuffle, lhsIsOrdered, _lhsIndices, _result.indices);
+        test_seperation_and_order(rhsNeedsReshuffle, rhsIsOrdered, _rhsIndices, _result.indices);
         
         // Check compatibility, if either needs a reshuffle, both sides will be compatible afterwards
-        const bool bothSidesAreCompatible = lhsNeedsReshuffle || rhsNeedsReshuffle || check_compatibility(resultIndices, _lhsIndices, _rhsIndices);
+        const bool bothSidesAreCompatible = lhsNeedsReshuffle || rhsNeedsReshuffle || check_compatibility(_result.indices, _lhsIndices, _rhsIndices);
         
         // If both sides ar enot compatible we have to reorder the smaller one
         if(!bothSidesAreCompatible) {
@@ -238,7 +238,7 @@ namespace xerus {
         
         // Check whether it is cheaper to perform pre- or post-ordering
         bool reorderResult = true;
-        if(perfect_order_possible(resultIndices, _lhsIndices, _rhsIndices)) {
+        if(perfect_order_possible(_result.indices, _lhsIndices, _rhsIndices)) {
             LOG(ContractionDebug, "Perfect order is possible. Calculating preorder costs");
             size_t preOrderCosts = 0;
             if(!lhsIsOrdered) { preOrderCosts += _lhs.tensorObjectReadOnly->reorder_costs(); }
@@ -263,7 +263,7 @@ namespace xerus {
         // Set lhs and common indices
         if(lhsNeedsReshuffle) {
             // Add open indices in the order as they appear in the result
-            for(const Index& idx : resultIndices) {
+            for(const Index& idx : _result.indices) {
                 if(misc::contains(_lhsIndices, idx)) {
                     lhsOpenIndices.push_back(idx);
                     leftDim *= idx.dimension();
@@ -281,7 +281,7 @@ namespace xerus {
         } else {
             // Add indices in the order they also appear in LHS
             for(const Index& idx : _lhsIndices) {
-                if(misc::contains(resultIndices, idx)) {
+                if(misc::contains(_result.indices, idx)) {
                     lhsOpenIndices.push_back(idx);
                     leftDim *= idx.dimension();
                 } else if(misc::contains(_rhsIndices, idx)) {
@@ -295,7 +295,7 @@ namespace xerus {
         // Set lhs and common indices
         if(rhsNeedsReshuffle) {
             // Add open indices in the order as they appear in the result
-            for(const Index& idx : resultIndices) {
+            for(const Index& idx : _result.indices) {
                 if(misc::contains(_rhsIndices, idx)) {
                     rhsOpenIndices.push_back(idx);
                     rightDim *= idx.dimension();
@@ -304,7 +304,7 @@ namespace xerus {
         } else {
             // Add indices in the order they also appear in RHS
             for(const Index& idx : _rhsIndices) {
-                if(misc::contains(resultIndices, idx)) {
+                if(misc::contains(_result.indices, idx)) {
                     rhsOpenIndices.push_back(idx);
                     rightDim *= idx.dimension();
                 }
@@ -371,15 +371,15 @@ namespace xerus {
                 _result.tensorObject->ensure_own_data_no_copy();
                 
                 // Check whether both sides have to be swaped to achieve perfect order
-                if(!_result.indices.empty() && !misc::contains(_lhsIndices, resultIndices[0])) {
+                if(!_result.indices.empty() && !misc::contains(_lhsIndices, _result.indices[0])) {
                     std::swap(actualLhs, actualRhs);
                     std::swap(leftDim, rightDim);
                 }
             }
             
             // Check if Matrices have to be transposed
-            const bool lhsTrans = !(actualLhs->indices.empty() || misc::contains(resultIndices, actualLhs->indices[0]));
-            const bool rhsTrans = !(actualRhs->indices.empty() || !misc::contains(resultIndices, actualRhs->indices[0]));
+            const bool lhsTrans = !(actualLhs->indices.empty() || misc::contains(_result.indices, actualLhs->indices[0]));
+            const bool rhsTrans = !(actualRhs->indices.empty() || !misc::contains(_result.indices, actualRhs->indices[0]));
             
             LOG(ContractionDebug, "Performing Matrix multiplication of " << leftDim << "x" << midDim << " * " << midDim << "x" << rightDim << ".");
             
@@ -400,13 +400,15 @@ namespace xerus {
     }
     
     void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs,  IndexedTensorReadOnly<Tensor>&& _rhs) {
-		contract(std::move(_result), std::move(_lhs), _lhs.get_assigned_indices(), std::move(_rhs), _rhs.get_assigned_indices());
+		_lhs.assign_indices();
+		_rhs.assign_indices();
+		contract(std::move(_result), std::move(_lhs), _lhs.indices, std::move(_rhs), _rhs.indices);
     }
 
     
     IndexedTensorMoveable<Tensor> contract(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
-        const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
-        const std::vector<Index> rhsIndices = _rhs.get_assigned_indices();
+		_lhs.assign_indices();
+		_rhs.assign_indices();
         std::vector<Index> outIndices;
 		outIndices.reserve(_lhs.indices.size() + _rhs.indices.size());
         std::vector<size_t> outDimensions;
@@ -414,8 +416,8 @@ namespace xerus {
                 
         size_t lhsOpenDim = 1, rhsOpenDim = 1;
         size_t dimensionCount = 0;
-        for(const Index& idx : lhsIndices) {
-            if(idx.open() && !misc::contains(rhsIndices, idx)) {
+        for(const Index& idx : _lhs.indices) {
+            if(idx.open() && !misc::contains(_rhs.indices, idx)) {
                 outIndices.emplace_back(idx);
                 for(size_t i=0; i < idx.span; ++i) {
                     lhsOpenDim *= _lhs.tensorObjectReadOnly->dimensions[dimensionCount];
@@ -428,8 +430,8 @@ namespace xerus {
         }
         
         dimensionCount = 0;
-        for(const Index& idx : rhsIndices) {
-            if(idx.open() && !misc::contains(lhsIndices, idx)) {
+		for(const Index& idx : _rhs.indices) {
+			if(idx.open() && !misc::contains(_lhs.indices, idx)) {
                 outIndices.emplace_back(idx);
                 for(size_t i=0; i < idx.span; ++i) {
                     rhsOpenDim *= _rhs.tensorObjectReadOnly->dimensions[dimensionCount];
@@ -452,7 +454,7 @@ namespace xerus {
         }
         
         IndexedTensorMoveable<Tensor> result(resultTensor, outIndices);
-		contract(std::move(result), std::move(_lhs), lhsIndices, std::move(_rhs), rhsIndices);
+		contract(std::move(result), std::move(_lhs), _lhs.indices, std::move(_rhs), _rhs.indices);
         return result;
     }
 }

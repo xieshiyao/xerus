@@ -195,7 +195,7 @@ namespace xerus {
 	
 	
     IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-        IndexedTensorMoveable<TensorNetwork> result;
+		IndexedTensorMoveable<TensorNetwork> result(nullptr, std::vector<Index>());
 		if(!_lhs.tensorObjectReadOnly->specialized_sum(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_sum(std::move(result), std::move(_rhs), std::move(_lhs))) {
             result.assign(IndexedTensorMoveable<TensorNetwork>(IndexedTensorMoveable<Tensor>(std::move(_lhs)) + IndexedTensorMoveable<Tensor>(std::move(_rhs))));
         }

@@ -113,7 +113,10 @@ namespace xerus {
         
         /// Indices are default moveable.
         Index& operator=(Index&&) = default;
-        
+		
+		/// Returns the span this index actually represents in a tensor of given order.
+		void set_span(const size_t _degree);
+		
 		/// Returns the span this index actually represents in a tensor of given order.
 		size_t actual_span(const size_t _degree) const;
 		

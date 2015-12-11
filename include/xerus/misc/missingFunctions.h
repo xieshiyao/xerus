@@ -205,8 +205,8 @@ namespace xerus {
         
         ///@brief: Erases all elements specified by @a _rule from the container @a _container.
         template<class rule_t, template<class, class...> class container_t, class item_t, class... rest_t>
-        _pure_ void erase(container_t<item_t, rest_t...>& _container, const rule_t& _rule) {
-			_container.erase(std::remove_if(_container.begin(), _container.end(), _rule));
+        void erase(container_t<item_t, rest_t...>& _container, const rule_t& _rule) {
+			_container.erase(std::remove_if(_container.begin(), _container.end(), _rule), _container.end());
         }
 
         ///@brief: Calculates _a*_a

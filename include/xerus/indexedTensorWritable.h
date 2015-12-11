@@ -48,8 +48,8 @@ namespace xerus {
         bool deleteTensorObject;
         
     protected:
-        ///@brief Creates an empty indexed Tensor, should only be used internally.
-        IndexedTensorWritable();
+		///@brief There is no usefull default constructor;
+        IndexedTensorWritable() = delete;
         
         ///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
         IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;

@@ -1198,8 +1198,8 @@ namespace xerus {
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		if(!isOperator) { return false; }
 		
-		const std::vector<Index> myIndices = _me.get_assigned_indices();
-		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		_me.assign_indices();
+		_other.assign_indices();
 		
 		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
 		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
@@ -1228,10 +1228,10 @@ namespace xerus {
 		// TODO profiler should warn if other->corePosition is not identical to coreAtTheEnd
 		
 		// Determine my first half and second half of indices
-		auto midIndexItr = myIndices.begin();
+		auto midIndexItr = _me.indices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
-			REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
+			REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
 			spanSum += midIndexItr->span;
 			++midIndexItr;
 		}
@@ -1241,10 +1241,10 @@ namespace xerus {
 		
 		if (otherTT) {
 			// ensure fitting indices
-			if (misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherIndices.end()) || misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherIndices.end())) {
+			if (misc::equal(_me.indices.begin(), midIndexItr, _other.indices.begin(), _other.indices.end()) || misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), _other.indices.end())) {
 				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
-				_out.reset(res, myIndices, true);
+				_out.reset(res, _me.indices, true);
 				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
 				return true;
 			} else {
@@ -1252,10 +1252,10 @@ namespace xerus {
 			}
 		} else { // other is operator or operator stack
 			// determine other middle index
-			auto otherMidIndexItr = otherIndices.begin();
+			auto otherMidIndexItr = _other.indices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
+				REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
@@ -1263,14 +1263,14 @@ namespace xerus {
 				return false; // an index spanned some links of the left and some of the right side
 			}
 			// or indices in fitting order to contract the TTOs
-			if (   misc::equal(myIndices.begin(), midIndexItr, otherIndices.begin(), otherMidIndexItr) 
-				|| misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)
-				|| misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-				|| misc::equal(midIndexItr, myIndices.end(), otherMidIndexItr, otherIndices.end())	) 
+			if (   misc::equal(_me.indices.begin(), midIndexItr, _other.indices.begin(), otherMidIndexItr) 
+				|| misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr)
+				|| misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end()) 
+				|| misc::equal(midIndexItr, _me.indices.end(), otherMidIndexItr, _other.indices.end())	) 
 			{
 				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
-				_out.reset(res, myIndices, true);
+				_out.reset(res, _me.indices, true);
 				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
 				return true;
 			} else {
@@ -1282,8 +1282,9 @@ namespace xerus {
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(_me.degree() == _other.degree(), "");
-		const std::vector<Index> myIndices = _me.get_assigned_indices();
-		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		
+		_me.assign_indices();
+		_other.assign_indices();
 		
 		// If the other is not a TT tensor (or stack) fall back to default summation (ie return false)
 		const TTNetwork* otherTT = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
@@ -1291,30 +1292,30 @@ namespace xerus {
 		if (!otherTT && !otherTTStack) { return false; }
 		
 		bool transposeRHS = false;
-		if (!isOperator && myIndices != otherIndices) {
+		if (!isOperator && _me.indices != _other.indices) {
 			return false; //TODO we could do inverse order...
 		} else if (isOperator) {
 			// find index mid-points to compare the halves separately
-			auto midIndexItr = myIndices.begin();
+			auto midIndexItr = _me.indices.begin();
 			size_t spanSum = 0;
 			while (spanSum < _me.degree() / 2) {
-				REQUIRE(midIndexItr != myIndices.end(), "Internal Error.");
+				REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
 				spanSum += midIndexItr->span;
 				++midIndexItr;
 			}
-			auto otherMidIndexItr = otherIndices.begin();
+			auto otherMidIndexItr = _other.indices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
+				REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
 			
-			if (myIndices == otherIndices) { 
+			if (_me.indices == _other.indices) { 
 				REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
 			} else {
-				if (   !misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end()) 
-					|| !misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr)) 
+				if (   !misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end()) 
+					|| !misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr)) 
 				{
 					return false;
 				}
@@ -1334,7 +1335,7 @@ namespace xerus {
 		if (movMe) {
 			internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
 			if (stackMe) {
-				meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), myIndices, true));
+				meStorage.reset(new IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), _me.indices, true));
 				std::move(*meStorage) = std::move(_me);
 				realMePtr = meStorage.get();
 			}
@@ -1351,7 +1352,7 @@ namespace xerus {
 			internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
 			if (stackOther) {
 				otherStorage.reset(new TTNetwork());
-				(*otherStorage)(otherIndices) = std::move(_other);
+				(*otherStorage)(_other.indices) = std::move(_other);
 				if (transposeRHS) {
 					//NOTE will only be called in the operator case and is thus a nop
 					reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
@@ -1364,7 +1365,7 @@ namespace xerus {
 		}
 		if (transposeRHS) {
 			otherStorage.reset(new TTNetwork());
-			(*otherStorage)(otherIndices) = std::move(_other);
+			(*otherStorage)(_other.indices) = std::move(_other);
 			//NOTE will only be called in the operator case and is thus a nop
 			reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
 			transposeRHS = false;
@@ -1381,7 +1382,7 @@ namespace xerus {
 		tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
 		REQUIRE(realOther.dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
 		
-		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, myIndices, true);
+		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, _me.indices, true);
 		TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
 		
 		if (numComponents == 0) {
@@ -1531,7 +1532,7 @@ namespace xerus {
 		REQUIRE(_me.tensorObject == this, "Internal Error.");
 		
 		const std::vector<Index> myIndices = _me.get_assigned_indices(_other.degree()); // TODO this wont work if we have fixed indices in TT tensors.
-		const std::vector<Index> otherIndices = _other.get_assigned_indices();
+		_other.assign_indices();
 		const size_t numComponents = _other.degree()/N;
 		
 		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
@@ -1546,7 +1547,7 @@ namespace xerus {
 		}
 		if(otherTTN || otherTTStack) {
 			// Check whether the index order coincides
-			if (myIndices == otherIndices) {
+			if (myIndices == _other.indices) {
 				if (otherTTN) {
 					*meTTN = *otherTTN;
 				} else {
@@ -1572,17 +1573,17 @@ namespace xerus {
 				}
 				if (spanSum == numComponents) {
 					// Transposition possible on my end
-					auto otherMidIndexItr = otherIndices.begin();
+					auto otherMidIndexItr = _other.indices.begin();
 					spanSum = 0;
 					while (spanSum < numComponents) {
-						REQUIRE(otherMidIndexItr != otherIndices.end(), "Internal Error.");
+						REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 						spanSum += otherMidIndexItr->span;
 						++otherMidIndexItr;
 					}
 					if (spanSum == numComponents) {
 						// Other tensor also transposable
-						transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, otherIndices.end())) 
-									&& (misc::equal(midIndexItr, myIndices.end(), otherIndices.begin(), otherMidIndexItr));
+						transposed = (misc::equal(myIndices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end())) 
+						&& (misc::equal(midIndexItr, myIndices.end(), _other.indices.begin(), otherMidIndexItr));
 					}
 				}
 				
@@ -1606,7 +1607,7 @@ namespace xerus {
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
 		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
 		std::unique_ptr<Tensor> otherReordered(new Tensor(otherFull->representation));
-		(*otherReordered)(myIndices) = (*otherFull)(otherIndices);
+		(*otherReordered)(myIndices) = (*otherFull)(_other.indices);
 		
 		// Cast to TTNetwork
 		*_me.tensorObject = TTNetwork(std::move(*otherReordered));

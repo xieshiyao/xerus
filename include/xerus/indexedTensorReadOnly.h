@@ -28,57 +28,58 @@
 #include <vector>
 
 namespace xerus {
-    // Necessary forward declaritons
-    class Index;
+	// Necessary forward declaritons
+	class Index;
 	template<class tensor_type> class IndexedTensorMoveable;
 
-    
+	
 	/**
 	 * @brief Internal representation of an readable indexed Tensor or TensorNetwork.
 	 * @details This class appears inplicitly by indexing any Tensor or TensorNetwork. It is not recommended to use
 	 * it explicitly or to store variables of this type (unless you really know what you are doing).
 	 */
-    template<class tensor_type>
-    class IndexedTensorReadOnly {
-    public:
-        /// Pointer to the associated Tensor/TensorNetwork object
-        const tensor_type* tensorObjectReadOnly;
-         
-        /// Vector of the associates indices 
-        std::vector<Index> indices;
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    protected:
-        /// Creates an empty IndexedTensorReadOnly, should only be used internally
-        IndexedTensorReadOnly();
-        
-    public:
-        /// There is no usefull copy constructor for IndexedTensors.
-        IndexedTensorReadOnly(const IndexedTensorReadOnly & _other ) = delete;
-        
-        /// Move-constructor
-        IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
-        
-        /// Constructs an IndexedTensorReadOnly using the given pointer and indices.
-        IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices);
-        
-        /// Constructs an IndexedTensorReadOnly using the given pointer and indices.
-        IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
-        
+	template<class tensor_type>
+	class IndexedTensorReadOnly {
+	public:
+		/// Pointer to the associated Tensor/TensorNetwork object
+		const tensor_type* tensorObjectReadOnly;
+		
+		/// Vector of the associates indices 
+		std::vector<Index> indices;
+		
+		/// Flag indicating whether the indices are assinged.
+		bool indicesAssigned = false;
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	public:
+		/// There is no usefull default constructor
+		IndexedTensorReadOnly() = delete;
+		
+		/// There is no usefull copy constructor for IndexedTensors.
+		IndexedTensorReadOnly(const IndexedTensorReadOnly & _other ) = delete;
+		
+		/// Move-constructor
+		IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
+		
+		/// Constructs an IndexedTensorReadOnly using the given pointer and indices.
+		IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices);
+		
+		/// Constructs an IndexedTensorReadOnly using the given pointer and indices.
+		IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
 		
 		/// Destructor must be virtual
 		virtual ~IndexedTensorReadOnly();
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    public:
+	public:
 		
 		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
-		void operator=(const IndexedTensorReadOnly&  _rhs) const = delete;
+		void operator=(const IndexedTensorReadOnly&  _rhs) = delete;
 		
 		
 		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
-		void operator=(      IndexedTensorReadOnly&& _rhs) const = delete;
+		void operator=(      IndexedTensorReadOnly&& _rhs) = delete;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -86,40 +87,47 @@ namespace xerus {
 // 		IndexedTensorMoveable<tensor_type> operator+(const IndexedTensorReadOnly& _other) const;
 		
 // 		IndexedTensorMoveable<tensor_type> operator+(IndexedTensorMoveable<tensor_type>&& _other) const;
-        
-        /*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		///@brief Allows cast to value_t if the degree of the current object is equal to 0.
 		explicit operator value_t() const;
 		
-        bool uses_tensor(const tensor_type *otherTensor) const;
-        
-        size_t degree() const;
-        
-        bool is_contained_and_open(const Index& idx) const;
-        
-        std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder) const;
-        
-        std::vector<Index> get_assigned_indices() const;
-        
-        std::vector<Index> get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions = false) const;
-        
-        #ifndef DISABLE_RUNTIME_CHECKS_
+		///@brief Checks whether _otherTensor is the tensorObejct of this IndexTensor.
+		bool uses_tensor(const tensor_type* _otherTensor) const;
+		
+		///@brief Returns the degree of the associated tensorObejct
+		size_t degree() const;
+		
+		///@brief Assignes the indices using the current tensorObejct.
+		void assign_indices();
+		
+		///@brief Assignes the indices assuming the given degree.
+		void assign_indices(const size_t _degree);
+		
+		bool is_contained_and_open(const Index& idx) const;
+		
+		std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder);
+		
+		std::vector<Index> get_assigned_indices(const size_t _futureDegree, const bool _assignDimensions = false) const;
+		
+		#ifndef DISABLE_RUNTIME_CHECKS_
 			/**
 			* @brief: Checks whether the indices are usefull in combination with the current degree.
 			*/
-            void check_indices(const bool _allowNonOpen = true) const;
+			void check_indices(const bool _allowNonOpen = true) const;
 			
 			/**
 			* @brief: Checks whether the indices are usefull in combination with the given degree.
 			*/
 			void check_indices(const size_t _futureDegree, const bool _allowNonOpen) const;
-        #endif
-    };
-    
-    template<class tensor_type>
-    value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
-    
-    size_t get_eval_degree(const std::vector<Index>& _indices);
+		#endif
+	};
+	
+	///@brief Returns the frobenious norm of the associated tensorObejct.
+	template<class tensor_type>
+	value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
+	
+	size_t get_eval_degree(const std::vector<Index>& _indices);
 	
 }

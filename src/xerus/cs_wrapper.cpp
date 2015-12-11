@@ -47,16 +47,17 @@ namespace xerus {
     CsUniquePtr to_cs_format(IndexedTensorReadOnly<Tensor>&& _tensor, const std::vector<Index>& _lhsIndices, const std::vector<Index>& _rhsIndices) {
         REQUIRE(_tensor.tensorObjectReadOnly->is_sparse(), "Only sparse Tensors can be converted to CS format.");
         
+		_tensor.assign_indices();
+		
         size_t m = 1;
         size_t n = 1;
-        const std::vector<Index> indices = _tensor.get_assigned_indices();
-        for(size_t i = 0; i < indices.size(); ++i) {
-            if(misc::contains(_lhsIndices, indices[i])) {
-                REQUIRE(indices[i].open(), "Internal Error.");
-                m *= indices[i].dimension();
-            } else if(misc::contains(_rhsIndices, indices[i])) {
-                REQUIRE(indices[i].open(), "Internal Error.");
-                n *= indices[i].dimension();
+        for(size_t i = 0; i < _tensor.indices.size(); ++i) {
+            if(misc::contains(_lhsIndices, _tensor.indices[i])) {
+                REQUIRE(_tensor.indices[i].open(), "Internal Error.");
+                m *= _tensor.indices[i].dimension();
+            } else if(misc::contains(_rhsIndices, _tensor.indices[i])) {
+                REQUIRE(_tensor.indices[i].open(), "Internal Error.");
+                n *= _tensor.indices[i].dimension();
             }   
         }
         

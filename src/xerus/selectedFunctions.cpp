@@ -92,6 +92,5 @@ namespace xerus {
         void array_scale_add(const double _alpha, double* const __restrict _x, const double _beta, const double* const _y, const size_t _n) {
             for(size_t i = 0; i < _n; i++ ) { _x[i] = _alpha*_x[i]+_beta*_y[i]; }
         }
-
     }
 }

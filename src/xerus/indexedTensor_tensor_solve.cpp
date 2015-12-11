@@ -35,8 +35,8 @@ namespace xerus {
         // x takes the dimensions of A -- also ensures that every index of x is contained in A
 		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::None);
         
-        const std::vector<Index> AIndices = _a.get_assigned_indices();
-        const std::vector<Index> bIndices = _b.get_assigned_indices();
+		_a.assign_indices();
+		_b.assign_indices();
 		
         IF_CHECK( _x.check_indices(false); )
         
@@ -57,8 +57,8 @@ namespace xerus {
         std::vector<size_t> dimensionsX;
         
         size_t dimensionsCount = 0;
-        for(const Index& idx : AIndices) {
-            if(misc::contains(bIndices, idx)) {
+        for(const Index& idx : _a.indices) {
+            if(misc::contains(_b.indices, idx)) {
                 orderA.push_back(idx);
                 orderB.push_back(idx);
                 for(size_t i = 0; i < idx.span; ++i) {
@@ -112,15 +112,15 @@ namespace xerus {
     }
 
     IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A) {
-        const std::vector<Index> indicesA = _A.get_assigned_indices();
-        const std::vector<Index> indicesB = _b.get_assigned_indices();
+		_A.assign_indices();
+		_b.assign_indices();
         
         std::vector<Index> indicesX;
         std::vector<size_t> dimensionsX;
         
         size_t dimensionsCount = 0;
-        for(const Index& idx : indicesA) {
-            if(!misc::contains(indicesB, idx)) {
+        for(const Index& idx : _A.indices) {
+			if(!misc::contains(_b.indices, idx)) {
                 indicesX.push_back(idx);
                 for(size_t i = 0; i < idx.span; ++i) {
                     dimensionsX.push_back(_A.tensorObjectReadOnly->dimensions[dimensionsCount++]);

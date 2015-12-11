@@ -31,9 +31,6 @@
 
 namespace xerus {
     template<class tensor_type>
-    IndexedTensorWritable<tensor_type>::IndexedTensorWritable() : IndexedTensorReadOnly<tensor_type>(), tensorObject(nullptr), deleteTensorObject(false) {}
-    
-    template<class tensor_type>
     IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
         // Take ownership
         _other.deleteTensorObject = false;
@@ -111,10 +108,10 @@ namespace xerus {
     template<>
     void IndexedTensorWritable<Tensor>::perform_traces() {
 		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
-		const std::vector<Index> assIndices = this->get_assigned_indices();
+		this->assign_indices();
 		std::vector<Index> openIndices;
 		bool allOpen = true;
-		for(const Index& idx : assIndices) {
+		for(const Index& idx : indices) {
 			if(idx.open()) {
 				openIndices.push_back(idx);
 			} else {

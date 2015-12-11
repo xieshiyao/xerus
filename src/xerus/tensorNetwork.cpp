@@ -328,12 +328,12 @@ namespace xerus {
 	
 	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		// If tensorObject is already identical, don't attempt to copy it
-		std::vector<Index> currentIndices(_other.get_assigned_indices());
+		_other.assign_indices();
         if (_other.tensorObjectReadOnly != _me.tensorObject) {
             *_me.tensorObject = *_other.tensorObjectReadOnly;
         } 
-        TensorNetwork::trace_out_double_indices(currentIndices, std::move(_me));
-		TensorNetwork::shuffle_indices(currentIndices, std::move(_me));
+        TensorNetwork::trace_out_double_indices(_other.indices, std::move(_me));
+		TensorNetwork::shuffle_indices(_other.indices, std::move(_me));
 	}
     
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -1170,7 +1170,7 @@ namespace xerus {
     }
 
     void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
-        const std::vector<Index> toInsertIndices = _toInsert.get_assigned_indices();
+		_toInsert.assign_indices();
         
         // TODO after trace ensure connectedness (to external indices)
         TensorNetwork &base = *_base.tensorObject;
@@ -1186,7 +1186,7 @@ namespace xerus {
         }
         
         // Merge indices
-        _base.indices.insert(_base.indices.end(), toInsertIndices.begin(), toInsertIndices.end());
+        _base.indices.insert(_base.indices.end(), _toInsert.indices.begin(), _toInsert.indices.end());
         base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
         
         #ifndef DISABLE_RUNTIME_CHECKS_

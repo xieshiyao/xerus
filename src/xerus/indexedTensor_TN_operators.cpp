@@ -35,7 +35,8 @@ namespace xerus {
     template<> 
     void IndexedTensorWritable<Tensor>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
-        std::vector<Index> rightIndices = _rhs.get_assigned_indices();
+		_rhs.assign_indices();
+		std::vector<Index> rightIndices = _rhs.indices;
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
 		TensorNetwork::trace_out_double_indices(rightIndices, cpy(rightIndices));
         
@@ -81,16 +82,16 @@ namespace xerus {
     /// shuffles the external links of _lhs according to the indices of the indexedTensors
     /// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
     void TensorNetwork::shuffle_indices(std::vector<Index> &_currentIndices, IndexedTensorWritable<TensorNetwork>&& _lhs) {
-        const std::vector<Index> lhsIndices = _lhs.get_assigned_indices();
+		_lhs.assign_indices();
         // writeable copy of the left indices
         size_t passedDegree1=0;
         for (size_t i=0; i<_currentIndices.size(); passedDegree1+=_currentIndices[i].span, ++i) {
-            if (_currentIndices[i]!= lhsIndices[i]) {
+            if (_currentIndices[i]!= _lhs.indices[i]) {
 				// find correct index
 				size_t j=i+1;
 				size_t passedDegree2=passedDegree1+_currentIndices[i].span;
 				for (; j<_currentIndices.size(); passedDegree2+=_currentIndices[j].span, ++j) {
-					if (_currentIndices[j] == lhsIndices[i]) break;
+					if (_currentIndices[j] == _lhs.indices[i]) break;
 				}
 				if (j < _currentIndices.size()) {
 					std::swap(_currentIndices[i],_currentIndices[j]);
@@ -103,7 +104,7 @@ namespace xerus {
 					LOG(fatal, "TN expansion marked as >won't fix<");
 				}
 			}
-            REQUIRE(_currentIndices[i].span == lhsIndices[i].span, "Index span mismatch");
+			REQUIRE(_currentIndices[i].span == _lhs.indices[i].span, "Index span mismatch");
         }
     }
 
@@ -116,9 +117,10 @@ namespace xerus {
     IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
 		if(!_lhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_rhs), std::move(_lhs))) {
-            result.tensorObject = new TensorNetwork(*_lhs.tensorObjectReadOnly);
+            _lhs.assign_indices();
+			result.tensorObject = new TensorNetwork(*_lhs.tensorObjectReadOnly);
             result.tensorObjectReadOnly = result.tensorObject;
-            result.indices = _lhs.get_assigned_indices();
+            result.indices = _lhs.indices;
             result.deleteTensorObject = true;
             TensorNetwork::add_network_to_network(std::move(result), std::move(_rhs));
         }
@@ -129,9 +131,10 @@ namespace xerus {
     IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&&  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
         IndexedTensorMoveable<TensorNetwork> result;
 		if(!_lhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(std::move(result), std::move(_rhs), std::move(_lhs))) {
-            result.tensorObject = _lhs.tensorObject;
+            _lhs.assign_indices();
+			result.tensorObject = _lhs.tensorObject;
             result.tensorObjectReadOnly = _lhs.tensorObjectReadOnly;
-            result.indices = _lhs.get_assigned_indices();
+            result.indices = _lhs.indices;
             result.deleteTensorObject = true;
             _lhs.deleteTensorObject = false;
             TensorNetwork::add_network_to_network(std::move(result), std::move(_rhs));

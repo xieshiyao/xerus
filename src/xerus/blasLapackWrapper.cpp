@@ -52,7 +52,6 @@ extern "C"
 
 #include <memory>
 #include <xerus/misc/standard.h>
-// #include <xerus/misc/lapack.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>

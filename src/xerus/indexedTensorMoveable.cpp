@@ -31,7 +31,7 @@
 
 namespace xerus {
 	template<class tensor_type>
-	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>() { }
+	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>(nullptr, std::vector<Index>(), false) { }
 	
 	template<class tensor_type>
 	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(IndexedTensorMoveable &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }

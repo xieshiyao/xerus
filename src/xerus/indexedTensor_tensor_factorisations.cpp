@@ -33,12 +33,12 @@
 namespace xerus {
 	
 	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorWritable<Tensor>&& _rhs) {
-		const std::vector<Index> baseIndices = _base.get_assigned_indices();
+		_base.assign_indices();
 		
 		// Calculate the future order of lhs and rhs.
 		size_t lhsOrder = 1, rhsOrder = 1; // Start with 1 because there is a new dimension introduced in the split. 
 		
-		for (const Index& idx : baseIndices) {
+		for (const Index& idx : _base.indices) {
 			if (idx.open()) {
 				if(misc::contains(_lhs.indices, idx)) {
 					lhsOrder += idx.span; 
@@ -53,7 +53,7 @@ namespace xerus {
 		const std::vector<Index> rhsIndices = _rhs.get_assigned_indices(rhsOrder);
 		
 		std::vector<Index> reorderedBaseIndices;
-		reorderedBaseIndices.reserve(baseIndices.size());
+		reorderedBaseIndices.reserve(_base.indices.size());
 		
 // 		std::vector<Index> lhsPreliminaryIndices;
 		_lhsPreliminaryIndices.reserve(lhsIndices.size());
@@ -76,14 +76,14 @@ namespace xerus {
 		for(size_t i = 0; i < lhsIndices.size(); ++i) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < baseIndices.size() && lhsIndices[i] != baseIndices[j]; ++j) {
-				dimOffset += baseIndices[j].span;
+			for(j = 0; j < _base.indices.size() && lhsIndices[i] != _base.indices[j]; ++j) {
+				dimOffset += _base.indices[j].span;
 			}
 			
-			if(j < baseIndices.size()) {
-				_lhsPreliminaryIndices.push_back(baseIndices[j]);
-				reorderedBaseIndices.push_back(baseIndices[j]);
-				for(size_t k = 0; k < baseIndices[j].span; ++k) {
+			if(j < _base.indices.size()) {
+				_lhsPreliminaryIndices.push_back(_base.indices[j]);
+				reorderedBaseIndices.push_back(_base.indices[j]);
+				for(size_t k = 0; k < _base.indices[j].span; ++k) {
 					reorderedBaseDimensions.push_back(_base.tensorObjectReadOnly->dimensions.at(dimOffset+k));
 					lhsDims.push_back(_base.tensorObjectReadOnly->dimensions[dimOffset+k]);
 					_lhsSize *= _base.tensorObjectReadOnly->dimensions[dimOffset+k];
@@ -101,14 +101,14 @@ namespace xerus {
 		for(size_t i = 0; i < rhsIndices.size(); ++i) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < baseIndices.size() && rhsIndices[i] != baseIndices[j]; ++j) {
-				dimOffset += baseIndices[j].span;
+			for(j = 0; j < _base.indices.size() && rhsIndices[i] != _base.indices[j]; ++j) {
+				dimOffset += _base.indices[j].span;
 			}
 			
-			if(j < baseIndices.size()) {
-				_rhsPreliminaryIndices.push_back(baseIndices[j]);
-				reorderedBaseIndices.push_back(baseIndices[j]);
-				for(size_t k = 0; k < baseIndices[j].span; ++k) {
+			if(j < _base.indices.size()) {
+				_rhsPreliminaryIndices.push_back(_base.indices[j]);
+				reorderedBaseIndices.push_back(_base.indices[j]);
+				for(size_t k = 0; k < _base.indices[j].span; ++k) {
 					reorderedBaseDimensions.push_back(_base.tensorObjectReadOnly->dimensions.at(dimOffset+k));
 					rhsDims.push_back(_base.tensorObjectReadOnly->dimensions[dimOffset+k]);
 					_rhsSize *= _base.tensorObjectReadOnly->dimensions[dimOffset+k];

@@ -217,59 +217,59 @@ namespace xerus {
 
 
 	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base) {
-		// Get the assigned indices
-		const std::vector<Index> baseIndices = _base.get_assigned_indices();
-		const std::vector<Index> outIndices = _out.get_assigned_indices();
+		// Assign the indices
+		_base.assign_indices();
+		_out.assign_indices();
 		
 		// Extract base index dimensions
-		const std::unique_ptr<const size_t[]> baseIndexDimensions = get_dimension_array(baseIndices);
+		const std::unique_ptr<const size_t[]> baseIndexDimensions = get_dimension_array(_base.indices);
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
 			REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
 			REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of Tensor to SparseTensor not implemented and probably not useful.");
 			
 			// Check base indices
-			for(size_t i = 0; i < baseIndices.size(); ++i) {
+			for(size_t i = 0; i < _base.indices.size(); ++i) {
 				// If the index is fixed we don't expect to find it anywhere
-				if(baseIndices[i].fixed()) {
-					REQUIRE(baseIndices[i].span == 1, "Fixed indices must have span one. Indices are: " << baseIndices << ", total should be " << baseIndices.size() << ". The problem is: " << baseIndices[i] << " -- " << baseIndices[i].fixed());
+				if(_base.indices[i].fixed()) {
+					REQUIRE(_base.indices[i].span == 1, "Fixed indices must have span one. Indices are: " << _base.indices << ", total should be " << _base.indices.size() << ". The problem is: " << _base.indices[i] << " -- " << _base.indices[i].fixed());
 					continue;
 				}
 				
 				// Try to find index in _out
 				size_t j = 0;
-				while(j < outIndices.size() && baseIndices[i] != outIndices[j]) { ++j; }
-				if(j < outIndices.size()) {
-					REQUIRE(baseIndices[i].dimension() == outIndices[j].dimension(), "The indexDimensions in the target and base of evaluation must coincide. Here " << baseIndices[i].dimension() << "!=" << outIndices[j].dimension() << ". For index " << baseIndices[i] << " == " << outIndices[j]);
-					REQUIRE(baseIndices[i].span == outIndices[j].span, "The indexSpans in the target and base of evaluation must coincide.");
-					REQUIRE(baseIndices[i].open(), "Indices appearing in the target of evaluation must not be part of a trace nor be fixed. Base: " << baseIndices << " Out: " << outIndices);
+				while(j < _out.indices.size() && _base.indices[i] != _out.indices[j]) { ++j; }
+				if(j < _out.indices.size()) {
+					REQUIRE(_base.indices[i].dimension() == _out.indices[j].dimension(), "The indexDimensions in the target and base of evaluation must coincide. Here " << _base.indices[i].dimension() << "!=" << _out.indices[j].dimension() << ". For index " << _base.indices[i] << " == " << _out.indices[j]);
+					REQUIRE(_base.indices[i].span == _out.indices[j].span, "The indexSpans in the target and base of evaluation must coincide.");
+					REQUIRE(_base.indices[i].open(), "Indices appearing in the target of evaluation must not be part of a trace nor be fixed. Base: " << _base.indices << " Out: " << _out.indices);
 					continue;
 				}
 				
 				// Try to find index a second time in base
 				j = 0;
-				while(j < baseIndices.size() && (i == j || baseIndices[i] != baseIndices[j])) { ++j; }
-				REQUIRE(j < baseIndices.size(), "All indices of evalutation base must either be fixed, appear in the target or be part of a trace. Base: " << baseIndices << " Out: " << outIndices);
-				REQUIRE(misc::count(baseIndices, baseIndices[i]) == 2, "Indices must appear at most two times. Base: " << baseIndices << " Out: " << outIndices);
-				REQUIRE(baseIndices[i].dimension() == baseIndices[j].dimension(), "The indexDimensions of two traced indices must conince.");
-				REQUIRE(baseIndices[i].span == 1 && baseIndices[j].span == 1, "The indexSpans of traced indices must be one (It is ambigious what a trace of span 2 indices is meant to be).");
+				while(j < _base.indices.size() && (i == j || _base.indices[i] != _base.indices[j])) { ++j; }
+				REQUIRE(j < _base.indices.size(), "All indices of evalutation base must either be fixed, appear in the target or be part of a trace. Base: " << _base.indices << " Out: " << _out.indices);
+				REQUIRE(misc::count(_base.indices, _base.indices[i]) == 2, "Indices must appear at most two times. Base: " << _base.indices << " Out: " << _out.indices);
+				REQUIRE(_base.indices[i].dimension() == _base.indices[j].dimension(), "The indexDimensions of two traced indices must conince.");
+				REQUIRE(_base.indices[i].span == 1 && _base.indices[j].span == 1, "The indexSpans of traced indices must be one (It is ambigious what a trace of span 2 indices is meant to be).");
 			}
 			
 			// Check out indices
-			for(size_t i = 0; i < outIndices.size(); ++i) {
-				REQUIRE(outIndices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation. Base: " << baseIndices << " Out: " << outIndices);
-				REQUIRE(misc::count(baseIndices, outIndices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << baseIndices << " Out: " << outIndices);
+			for(size_t i = 0; i < _out.indices.size(); ++i) {
+				REQUIRE(_out.indices[i].open(),  "Traces and fixed indices are not allowed in the target of evaluation. Base: " << _base.indices << " Out: " << _out.indices);
+				REQUIRE(misc::count(_base.indices, _out.indices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << _base.indices << " Out: " << _out.indices);
 			}
 		#endif
 		
 		// If there is no index reshuffling, the evalutation is trivial
-		if(baseIndices == outIndices) {
+		if(_base.indices == _out.indices) {
 			*_out.tensorObject = *_base.tensorObjectReadOnly;
 			return; // We are finished here
 		}
 		
 		// We need the step sizes of the base indices
-		const std::unique_ptr<const size_t[]> baseIndexStepSizes = get_step_sizes(baseIndices);
+		const std::unique_ptr<const size_t[]> baseIndexStepSizes = get_step_sizes(_base.indices);
 		
 		
 		// In every case we have to ensure that _out has its own data, since we gonna rewrite it.
@@ -278,18 +278,18 @@ namespace xerus {
 		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Full => Full   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		if(!_out.tensorObjectReadOnly->is_sparse() && !_base.tensorObjectReadOnly->is_sparse()) {
 			// Extract out index dimensions
-			const std::unique_ptr<const size_t[]> outIndexDimensions = get_dimension_array(outIndices);
+			const std::unique_ptr<const size_t[]> outIndexDimensions = get_dimension_array(_out.indices);
 		
 			// Propagate the constant factor, since we won't apply it for Tensors
 			_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
 			
 			// Count how many indices in the back are already ordered (We know that base has at least as many indices as out)
 			size_t numOrderedIndices;
-			for(numOrderedIndices = 0; numOrderedIndices < outIndices.size() && baseIndices[baseIndices.size()-1-numOrderedIndices] == outIndices[outIndices.size()-1-numOrderedIndices]; ++numOrderedIndices) { }
+			for(numOrderedIndices = 0; numOrderedIndices < _out.indices.size() && _base.indices[_base.indices.size()-1-numOrderedIndices] == _out.indices[_out.indices.size()-1-numOrderedIndices]; ++numOrderedIndices) { }
 			
-			const size_t orderedIndexDim = baseIndexStepSizes[baseIndices.size()-numOrderedIndices-1];
+			const size_t orderedIndexDim = baseIndexStepSizes[_base.indices.size()-numOrderedIndices-1];
 			
-			VLA(size_t[outIndices.size()-numOrderedIndices], stepSizes); // How much we have to move in base when the i-th index of _out increases
+			VLA(size_t[_out.indices.size()-numOrderedIndices], stepSizes); // How much we have to move in base when the i-th index of _out increases
 			
 			size_t fixedIndexOffset = 0; // Fixed offset in base due to fixed indices
 			
@@ -298,21 +298,21 @@ namespace xerus {
 			size_t totalTraceDim = 1; // Total number of summantions, i.e. Product of all trace dimensions
 			
 			// Calculate stepSizes for our tensor. We will march in steps of orderedIndicesMultDim in _out.data
-			for(size_t i = 0; i < baseIndices.size()-numOrderedIndices; ++i) {
+			for(size_t i = 0; i < _base.indices.size()-numOrderedIndices; ++i) {
 				// First try to find the index in _out (if it is not contained it must be fixed or part of a trace)
 				size_t outPos = 0;
-				while(outPos < outIndices.size() && baseIndices[i] != outIndices[outPos]) { ++outPos; }
+				while(outPos < _out.indices.size() && _base.indices[i] != _out.indices[outPos]) { ++outPos; }
 				
-				if(outPos < outIndices.size()) { // If we found it we are basically finished
+				if(outPos < _out.indices.size()) { // If we found it we are basically finished
 					stepSizes[outPos] = baseIndexStepSizes[i];
-				} else if(baseIndices[i].fixed()) { // One reason for an index to not be in _out is to be fixed
-					fixedIndexOffset += size_t(baseIndices[i].valueId)*baseIndexStepSizes[i];
+				} else if(_base.indices[i].fixed()) { // One reason for an index to not be in _out is to be fixed
+					fixedIndexOffset += size_t(_base.indices[i].valueId)*baseIndexStepSizes[i];
 				} else { // If the Index is not fixed, then it has to be part of a trace
-					for(size_t j = i+1; j < baseIndices.size()-numOrderedIndices; ++j) {
-						if(baseIndices[i] == baseIndices[j]) {
+					for(size_t j = i+1; j < _base.indices.size()-numOrderedIndices; ++j) {
+						if(_base.indices[i] == _base.indices[j]) {
 							traceStepSizes.emplace_back(baseIndexStepSizes[i]+baseIndexStepSizes[j]);
-							traceDimensions.emplace_back(baseIndices[i].dimension());
-							totalTraceDim *= baseIndices[i].dimension();
+							traceDimensions.emplace_back(_base.indices[i].dimension());
+							totalTraceDim *= _base.indices[i].dimension();
 							break;
 						}
 					}
@@ -323,7 +323,7 @@ namespace xerus {
 				*_base.tensorObjectReadOnly,
 				fixedIndexOffset,
 				orderedIndexDim,
-				outIndices.size()-numOrderedIndices,
+				_out.indices.size()-numOrderedIndices,
 				stepSizes,
 				outIndexDimensions.get(),
 				traceDimensions.size(),
@@ -334,18 +334,18 @@ namespace xerus {
 		}
 		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Both  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		else if(_base.tensorObjectReadOnly->is_sparse()) {
-			VLA(bool[baseIndices.size()]  , fixedFlags); // Flag for each index indicating whether the index is fixed
-			VLA(bool[baseIndices.size()]  , traceFlags); // Flag for each index indicating whether the index is part of a trace
-			VLA(size_t[baseIndices.size()], attributes);  // Either the factor in _out, the value of an fixed index or the position of the other part of a trace
+			VLA(bool[_base.indices.size()]  , fixedFlags); // Flag for each index indicating whether the index is fixed
+			VLA(bool[_base.indices.size()]  , traceFlags); // Flag for each index indicating whether the index is part of a trace
+			VLA(size_t[_base.indices.size()], attributes);  // Either the factor in _out, the value of an fixed index or the position of the other part of a trace
 			bool peacefullIndices = true;
 			
 			// Process base indices
-			const std::unique_ptr<const size_t[]> outIndexStepSizes = get_step_sizes(outIndices);
-			for(size_t i = 0; i < baseIndices.size(); ++i) {
+			const std::unique_ptr<const size_t[]> outIndexStepSizes = get_step_sizes(_out.indices);
+			for(size_t i = 0; i < _base.indices.size(); ++i) {
 				// First try to find the index in out
 				size_t outPos = 0;
-				while(outPos < outIndices.size() && outIndices[outPos] != baseIndices[i]) { ++outPos; }
-				if(outPos < outIndices.size()) {
+				while(outPos < _out.indices.size() && _out.indices[outPos] != _base.indices[i]) { ++outPos; }
+				if(outPos < _out.indices.size()) {
 					fixedFlags[i] = false;
 					traceFlags[i] = false;
 					attributes[i] = outIndexStepSizes[outPos];
@@ -353,10 +353,10 @@ namespace xerus {
 				}
 				
 				// Check whether the index is fixed
-				if(baseIndices[i].fixed()) {
+				if(_base.indices[i].fixed()) {
 					fixedFlags[i] = true;
 					traceFlags[i] = false;
-					attributes[i] = (size_t) baseIndices[i].valueId;
+					attributes[i] = (size_t) _base.indices[i].valueId;
 					peacefullIndices = false;
 					continue;
 				}
@@ -365,7 +365,7 @@ namespace xerus {
 				fixedFlags[i] = false;
 				traceFlags[i] = true;
 				peacefullIndices = false;
-				for(attributes[i] = 0; baseIndices[i] != baseIndices[attributes[i]] || attributes[i] == i; ++attributes[i]) { }
+				for(attributes[i] = 0; _base.indices[i] != _base.indices[attributes[i]] || attributes[i] == i; ++attributes[i]) { }
 			}
 			
 			// Get the entries and the factor of our base tensor
@@ -381,12 +381,12 @@ namespace xerus {
 				
 				if(peacefullIndices) {
 					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						outEntries.insert(std::pair<size_t, value_t>(get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, baseIndices.size()), factor*entry.second));
+						outEntries.insert(std::pair<size_t, value_t>(get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, _base.indices.size()), factor*entry.second));
 					}
 				} else {
 					for(const std::pair<size_t, value_t>& entry : baseEntries) {
 						size_t newPosition;
-						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, baseIndices.size())) {
+						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
 							outEntries[newPosition] += factor*entry.second;
 						}
 					}
@@ -399,12 +399,12 @@ namespace xerus {
 				
 				if(peacefullIndices) {
 					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						dataPointer[get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, baseIndices.size())] = factor*entry.second;
+						dataPointer[get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, _base.indices.size())] = factor*entry.second;
 					}
 				} else {
 					for(const std::pair<size_t, value_t>& entry : baseEntries) {
 						size_t newPosition;
-						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, baseIndices.size())) {
+						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
 							dataPointer[newPosition] += factor*entry.second;
 						}
 					}
