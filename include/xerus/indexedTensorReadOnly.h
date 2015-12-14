@@ -81,12 +81,6 @@ namespace xerus {
 		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
 		void operator=(      IndexedTensorReadOnly&& _rhs) = delete;
 		
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		// TODO use these and implement specialized sum for Tensor
-// 		IndexedTensorMoveable<tensor_type> operator+(const IndexedTensorReadOnly& _other) const;
-		
-// 		IndexedTensorMoveable<tensor_type> operator+(IndexedTensorMoveable<tensor_type>&& _other) const;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -126,6 +120,24 @@ namespace xerus {
 			void check_indices(const size_t _futureDegree, const bool _allowNonOpen) const;
 		#endif
 	};
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, IndexedTensorReadOnly<tensor_type>&& _tensor);
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator*(IndexedTensorReadOnly<tensor_type>&&_tensor, const value_t _factor);
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator/(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _divisor);
+	
+	
+	
+	
+	
+	
 	
 	///@brief Returns the frobenious norm of the associated tensorObejct.
 	template<class tensor_type>

@@ -26,9 +26,22 @@
 
 #include "indexedTensorMoveable.h"
 #include "tensor.h"
-#include "indexedTensor_operators.h"
 
 namespace xerus {
+	
+	void operator+=(IndexedTensorWritable<Tensor> &  _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	
+	void operator-=(IndexedTensorWritable<Tensor> &  _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
     IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A);
     

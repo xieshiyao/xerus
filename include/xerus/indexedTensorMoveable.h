@@ -61,5 +61,28 @@ namespace xerus {
 		///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
 		template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
 		IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&& _other);
+		
 	};
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	template<class tensor_type>
+	inline IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, IndexedTensorMoveable<tensor_type>&& _tensor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
+		*result.tensorObject *= _factor;
+		return result;
+	}
+	
+	template<class tensor_type>
+	inline IndexedTensorMoveable<tensor_type> operator*(IndexedTensorMoveable<tensor_type>&& _tensor, const value_t _factor) {
+		return operator*(_factor, std::move(_tensor));
+	}
+	
+	template<class tensor_type>
+	inline IndexedTensorMoveable<tensor_type> operator/(IndexedTensorMoveable<tensor_type>&& _tensor, const value_t _divisor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
+		*result.tensorObject /= _divisor;
+		return result;
+	}
 }

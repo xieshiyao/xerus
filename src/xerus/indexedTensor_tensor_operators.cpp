@@ -23,12 +23,10 @@
  */
 
 #include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/indexedTensorMoveable.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
-#include <xerus/tensor.h>
- 
-#include <xerus/misc/missingFunctions.h>
 
 namespace xerus {
 
@@ -53,13 +51,6 @@ namespace xerus {
 		*_lhs.tensorObject += *reorderedRhs;
 	}
 	
-	void operator-=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
-		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
-		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
-		
-		*_lhs.tensorObject -= *reorderedRhs;
-	}
-	
 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
 		result.perform_traces();
@@ -82,6 +73,14 @@ namespace xerus {
 		return operator+(std::move(_lhs), static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs));
 	}
 	
+	
+	
+	void operator-=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
+		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
+		
+		*_lhs.tensorObject -= *reorderedRhs;
+	}
 	
 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
 		IndexedTensorMoveable<Tensor> result(std::move(_lhs));

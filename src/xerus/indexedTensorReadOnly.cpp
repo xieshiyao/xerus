@@ -23,6 +23,7 @@
  */
 
 #include <xerus/indexedTensorReadOnly.h>
+#include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>
 #include <xerus/misc/missingFunctions.h>
@@ -52,7 +53,6 @@ namespace xerus {
 	
 	template<class tensor_type>
 	IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
-	
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -198,6 +198,40 @@ namespace xerus {
 	// IndexedTensorReadOnly may be instanciated as
 	template class IndexedTensorReadOnly<Tensor>;
 	template class IndexedTensorReadOnly<TensorNetwork>;
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Aritmetic Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator*(const value_t _factor, IndexedTensorReadOnly<tensor_type>&& _tensor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
+		*result.tensorObject *= _factor;
+		return result;
+	}
+	
+	template IndexedTensorMoveable<Tensor> operator*<Tensor>(const value_t _factor, IndexedTensorReadOnly<Tensor>&& _tensor);
+	template IndexedTensorMoveable<TensorNetwork> operator*<TensorNetwork>(const value_t _factor, IndexedTensorReadOnly<TensorNetwork>&& _tensor);
+	
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator*(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _factor) {
+		return operator*(_factor, std::move(_tensor));
+	}
+	
+	template IndexedTensorMoveable<Tensor> operator*(IndexedTensorReadOnly<Tensor>&& _tensor, const value_t _factor);
+	template IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _tensor, const value_t _factor);
+	
+	
+	template<class tensor_type>
+	IndexedTensorMoveable<tensor_type> operator/(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _divisor) {
+		IndexedTensorMoveable<tensor_type> result(std::move(_tensor));
+		*result.tensorObject /= _divisor;
+		return result;
+	}
+	
+	template IndexedTensorMoveable<Tensor> operator/(IndexedTensorReadOnly<Tensor>&& _tensor, const value_t _divisor);
+	template IndexedTensorMoveable<TensorNetwork> operator/(IndexedTensorReadOnly<TensorNetwork>&& _tensor, const value_t _divisor);
+	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
