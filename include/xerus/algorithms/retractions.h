@@ -38,6 +38,7 @@ namespace xerus {
 		void set_base(const TTTensor &_newBase);
 		
 		std::vector<FullTensor> components;
+		TTTangentVector() {};
 		///@brief creates a tangent vector by projecting @a _direction onto the tangent plane located at @a _base
 		TTTangentVector(const TTTensor &_base, const TTTensor &_direction);
 		TTTangentVector &operator+=(const TTTangentVector &_rhs);
