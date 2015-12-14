@@ -25,21 +25,19 @@
 #include <xerus/tensorNetwork.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
-#include <xerus/contractionHeuristic.h>
-#include <xerus/indexedTensor_TN_operators.h>
-#include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/tensor.h>
- 
-#include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/indexedTensorList.h>
-#include <xerus/misc/stringUtilities.h>
+#include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/indexedTensor_tensor_factorisations.h>
+#include <xerus/indexedTensor_TN_operators.h>
+#include <xerus/measurments.h>
+
+#include <xerus/contractionHeuristic.h>
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 #include <xerus/blasLapackWrapper.h>
-#include <algorithm>
-#include <fstream>
-#include <cstdio>
-#include <stdlib.h>
+
+#include <xerus/misc/stringUtilities.h>
 
 namespace xerus {
 	const misc::NoCast<bool> TensorNetwork::NoZeroNode(false);

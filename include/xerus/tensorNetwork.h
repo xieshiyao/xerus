@@ -25,17 +25,12 @@
 #pragma once
 
 #include "indexedTensor.h"
-#include "tensor.h"
-#include "misc/missingFunctions.h"
-#include "measurments.h"
-
-#include <map>
-#include <set>
-#include <memory>
 
 namespace xerus {
     // Necessary forward declaritons
     class Tensor;
+	struct SinglePointMeasurment;
+	class SinglePointMeasurmentSet;
 	
     
 	/** 
@@ -50,7 +45,7 @@ namespace xerus {
 		/**
 		* @brief Class representing a link from a TensorNode to another node or an external index.
 		*/
-		class Link {
+		class Link final {
 		public:
 			///@brief The index of the otherNode this Link links to.
 			size_t other; 
@@ -84,7 +79,7 @@ namespace xerus {
 		/**
 		* @brief The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
 		*/
-		class TensorNode {
+		class TensorNode final {
 		public:
 			///@brief Save slot for the tensorObject associated with this node.
 			std::unique_ptr<Tensor> tensorObject;
@@ -104,6 +99,8 @@ namespace xerus {
 			
 			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors);
 			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors);
+			
+			~TensorNode();
 			
 			TensorNode& operator=(const TensorNode&  _other);
 			TensorNode& operator=(      TensorNode&& _other);
@@ -178,7 +175,7 @@ namespace xerus {
         implicit TensorNetwork(size_t _degree);
         
         ///@brief Destructor
-		virtual ~TensorNetwork() {}
+		virtual ~TensorNetwork() = default;
         
         /** 
 		* @brief Returns a new copy of the network.

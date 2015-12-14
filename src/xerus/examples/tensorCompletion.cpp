@@ -23,6 +23,7 @@
  */
 
 #include <xerus/examples/tensorCompletion.h>
+#include <xerus/measurments.h>
 
 namespace xerus { namespace examples { namespace completion {
 	

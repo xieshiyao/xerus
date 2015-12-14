@@ -88,43 +88,43 @@ UNIT_TEST(SparseTensor, Creation,
     
     fullX += fullA;
     sparseX += sparseA;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-13));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-13));
     
     fullX -= fullB;
     sparseX -= sparseB;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-12));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-12));
     
     fullX = fullA + fullB;
     sparseX = sparseA + sparseB;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
     
     fullX = fullA - fullB;
     sparseX = sparseA - sparseB;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
     
     fullX = 2.0*fullA;
     sparseX = 2.0*sparseA;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
     
     fullX = 10.0*fullA*2;
     sparseX = 10.0*sparseA*2;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
      
     fullX = fullA/10.0;
     sparseX = sparseA/10.0;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
 
     fullX = 0*fullA + fullB;
     sparseX = 0*sparseA + sparseB;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-16));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
     
     fullX = 7.3*fullA + fullB*5;
     sparseX = 7.3*sparseA + sparseB*5;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-12));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-12));
     
     fullX = 7.9*fullA/13.7 + fullB*5;
     sparseX = 7.9*sparseA/13.7 + sparseB*5;
-    TEST(approx_entrywise_equal(fullX, Tensor(sparseX), 1e-13));
+    TEST(approx_entrywise_equal(fullX, sparseX, 1e-13));
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
