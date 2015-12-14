@@ -1192,8 +1192,8 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_contraction_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		REQUIRE(!_out.tensorObject, "Internal Error.");
+	bool TTNetwork<isOperator>::specialized_contraction_f(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
+		REQUIRE(!_out->tensorObject, "Internal Error.");
 		
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		if(!isOperator) { return false; }
@@ -1244,8 +1244,8 @@ namespace xerus {
 			if (misc::equal(_me.indices.begin(), midIndexItr, _other.indices.begin(), _other.indices.end()) || misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), _other.indices.end())) {
 				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
-				_out.reset(res, _me.indices, true);
-				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
+				_out.reset(new IndexedTensorMoveable<TensorNetwork>(res, _me.indices));
+				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
 			} else {
 				return false;
@@ -1270,8 +1270,8 @@ namespace xerus {
 			{
 				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
-				_out.reset(res, _me.indices, true);
-				TensorNetwork::add_network_to_network(std::move(_out), std::move(_other));
+				_out.reset(new IndexedTensorMoveable<TensorNetwork>(res, _me.indices));
+				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
 			} else {
 				return false;
@@ -1280,7 +1280,7 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_sum_f(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
+	bool TTNetwork<isOperator>::specialized_sum_f(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		REQUIRE(_me.degree() == _other.degree(), "");
 		
 		_me.assign_indices();
@@ -1376,14 +1376,13 @@ namespace xerus {
 		// Number of components to create
 		const size_t numComponents = realMe.degree()/N;
 		
-		TTNetwork* tmpPtr = new TTNetwork(realMe.degree());
+		_out.reset( new IndexedTensorMoveable<TensorNetwork>( new TTNetwork(realMe.degree()), _me.indices));
 		
 		//The external dimensions are the same as the ones of the input
-		tmpPtr->dimensions = realMe.tensorObjectReadOnly->dimensions;
+		_out->tensorObject->dimensions = realMe.tensorObjectReadOnly->dimensions;
 		REQUIRE(realOther.dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
 		
-		IndexedTensor<TensorNetwork> tmpOut(tmpPtr, _me.indices, true);
-		TTNetwork& outTensor = *static_cast<TTNetwork*>(tmpOut.tensorObject);
+		TTNetwork& outTensor = *static_cast<TTNetwork*>(_out->tensorObject);
 		
 		if (numComponents == 0) {
 			(*outTensor.nodes[0].tensorObject)[0] = (*_me.tensorObjectReadOnly->nodes[0].tensorObject)[0] +  (*_other.tensorObjectReadOnly->nodes[0].tensorObject)[0];
@@ -1412,7 +1411,6 @@ namespace xerus {
 			}
 			
 			outTensor.set_component(0, std::move(nextTensor));
-			_out.assign(std::move(tmpOut));
 			return true;
 		}
 		
@@ -1521,8 +1519,6 @@ namespace xerus {
 		}
 		
 		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
-		_out.assign(std::move(tmpOut));
-		
 		return true;
 	}
 	

@@ -318,11 +318,11 @@ namespace xerus {
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
+	bool TensorNetwork::specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
-	bool TensorNetwork::specialized_sum(IndexedTensorWritable<TensorNetwork>&& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
+	bool TensorNetwork::specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	

@@ -25,7 +25,6 @@
 #include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>
-#include <xerus/misc/missingFunctions.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 

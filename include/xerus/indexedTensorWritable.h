@@ -72,34 +72,15 @@ namespace xerus {
 		///@brief Check whether the IndexedTensorWritable has ownership of the tensor object.
 		bool is_owner() const;
 		
-		///@brief Deletes the tensor object if this is the owner.
-		void delete_if_owner();
-		
-		///@brief Replacement for the original = operator
-		void assign( IndexedTensorWritable&& _other);
-		
-		///@brief Resets the IndexedTensorWritable
-		void reset(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership = false);
-		
-		///@brief Resets the IndexedTensorWritable
-		void reset(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership = false);
+		/**
+		 * @brief Tensor assignment with indices.
+		 */
+		void indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs);
 		
 		/**
-		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
-		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
-		 * the assignment.
+		 * @brief Tensor assignment with indices.
 		 */
-		void operator=(IndexedTensorReadOnly<Tensor>&& _rhs);
-		
-		/**
-		 * @brief Assignment operators -- Used for tensor assignment WITH indices.
-		 * @details Note that this is NOT a classical assignment operator. In particular this and _rhs are NOT equivalent after
-		 * the assignment.
-		 */
-		void operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
-		
-		///@brief The following would be deleted due to move constructor and is therefore implemented here, calls the IndexedTensorReadOnly version. 
-		void operator=(IndexedTensorWritable<tensor_type>&& _rhs);
+		void indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 		
 		/**
 		 * @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.

@@ -25,7 +25,6 @@
 #include <xerus/indexedTensor.h>
 
 #include <xerus/index.h>
-#include <xerus/misc/missingFunctions.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 
@@ -44,21 +43,20 @@ namespace xerus {
         
     template<class tensor_type>
     void IndexedTensor<tensor_type>::operator=(IndexedTensor<tensor_type>&& _rhs) {
-        operator=(static_cast<IndexedTensorReadOnly<tensor_type>&&>(_rhs));
+		this->indexed_assignement(std::move(_rhs));
     }
     
-//     template<class tensor_type>
-//     void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<Tensor>&& _rhs) {
-//         static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
-//     }
+    template<class tensor_type>
+    void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<Tensor>&& _rhs) {
+		this->indexed_assignement(std::move(_rhs));
+    }
     
-//     template<class tensor_type>
-//     void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-// 		static_cast<IndexedTensorWritable<tensor_type>&&>(*this) = std::move(_rhs);
-//     }
+    template<class tensor_type>
+    void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		this->indexed_assignement(std::move(_rhs));
+    }
     
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensor<Tensor>;
     template class IndexedTensor<TensorNetwork>;
-    
 }

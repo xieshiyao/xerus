@@ -82,18 +82,15 @@ namespace xerus {
 	
 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
-// 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
-// 	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
-// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
-// 	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
 	
+	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	
 	IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	IndexedTensorMoveable<TensorNetwork> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	
-	void operator+=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
-	void operator-=(IndexedTensorWritable<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	
 }

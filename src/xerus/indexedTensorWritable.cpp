@@ -25,7 +25,6 @@
 #include <xerus/indexedTensorWritable.h>
 
 #include <xerus/index.h>
-#include <xerus/misc/missingFunctions.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 
@@ -59,52 +58,6 @@ namespace xerus {
         return deleteTensorObject;
     }
     
-    template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::delete_if_owner() {
-        if(deleteTensorObject) {
-            delete this->tensorObject;
-        }
-    }
-    
-    template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::assign(      IndexedTensorWritable&& _other) {
-        this->tensorObject = _other.tensorObject;
-        this->tensorObjectReadOnly = _other.tensorObjectReadOnly;
-        this->indices = std::move(_other.indices);
-        this->deleteTensorObject = _other.deleteTensorObject;
-        _other.deleteTensorObject = false;
-    }
-    
-    template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::reset(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership) {
-        // Delete old tensorObject
-        delete_if_owner();
-        
-        // Set new parameters
-        this->tensorObject = _tensorObject;
-        this->tensorObjectReadOnly = _tensorObject;
-        this->indices = _indices;
-        this->deleteTensorObject = _takeOwnership;
-    }
-    
-    template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::reset(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership) {
-        // Delete old tensorObject
-        delete_if_owner();
-        
-        // Set new parameters
-        this->tensorObject = _tensorObject;
-        this->tensorObjectReadOnly = _tensorObject;
-        this->indices = std::move(_indices);
-        this->deleteTensorObject = _takeOwnership;
-    }
-    
-    template<class tensor_type>
-    void IndexedTensorWritable<tensor_type>::operator=(IndexedTensorWritable<tensor_type>&& _rhs) {
-        operator=(static_cast<IndexedTensorReadOnly<tensor_type>&&>(_rhs));
-    }
-    
-    
     template<>
     void IndexedTensorWritable<Tensor>::perform_traces() {
 		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
@@ -119,8 +72,9 @@ namespace xerus {
 			}
 		}
 		if(!allOpen) { 
-			(*this->tensorObject)(openIndices) = std::move(*this); // TODO does that make sense?
+			(*this->tensorObject)(openIndices) = std::move(*this);
 			this->indices = openIndices;
+			indicesAssigned = false;
 		}
 	}
     

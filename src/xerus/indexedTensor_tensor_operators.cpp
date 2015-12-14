@@ -32,31 +32,76 @@
 
 namespace xerus {
 
-    template<>
-    void IndexedTensorWritable<Tensor>::operator=( IndexedTensorReadOnly<Tensor>&& _rhs) {
-        if(!_rhs.uses_tensor(tensorObject)) {
-            // If LHS and RHS object don't coincide we can directly evaluate
+	template<>
+	void IndexedTensorWritable<Tensor>::indexed_assignement( IndexedTensorReadOnly<Tensor>&& _rhs) {
+		if(!_rhs.uses_tensor(tensorObject)) {
+			// If LHS and RHS object don't coincide we can directly evaluate
 			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
 			evaluate(std::move(*this), std::move(_rhs));
-        } else {
-            // If the tensors in fact coincide we have to use a tmp object
+		} else {
+			// If the tensors in fact coincide we have to use a tmp object
 			IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
 			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
 			evaluate(std::move(*this), std::move(tmpTensor));
-        }
-    }
-    
-    template<>
-    void IndexedTensor<Tensor>::operator=( IndexedTensorReadOnly<Tensor>&& _rhs) {
-        if(!_rhs.uses_tensor(tensorObject)) {
-            // If LHS and RHS object don't coincide we can directly evaluate
-			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
-			evaluate(std::move(*this), std::move(_rhs));
-        } else {
-            // If the tensors in fact coincide we have to use a tmp object
-			IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
-			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
-			evaluate(std::move(*this), std::move(tmpTensor));
-        }
-    }
+		}
+	}
+	
+	void operator+=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
+		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
+		
+		*_lhs.tensorObject += *reorderedRhs;
+	}
+	
+	void operator-=(IndexedTensorWritable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
+		(*reorderedRhs)(_lhs.indices) = std::move(_rhs);
+		
+		*_lhs.tensorObject -= *reorderedRhs;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		operator+=(std::move(result), std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		operator+=(std::move(result), std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&&  _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator+(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator+(std::move(_lhs), static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs));
+	}
+	
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		operator-=(std::move(result), std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		operator-=(std::move(result), std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&&  _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return (-1.0)*operator-(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator-(std::move(_lhs), static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs));
+	}
 }

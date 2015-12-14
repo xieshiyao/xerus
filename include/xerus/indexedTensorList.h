@@ -25,7 +25,6 @@
 #pragma once
 
 #include <vector>
-#include <functional>
 
 namespace xerus {
     // Necessary forward declaritons
