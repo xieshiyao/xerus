@@ -47,12 +47,7 @@ namespace xerus {
     
 
     // The low level functions used by the operators
-    
     void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
 
-    void contract(IndexedTensorWritable<Tensor>&& _result, IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
-    
-    IndexedTensorMoveable<Tensor> contract(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
-    
     void solve(IndexedTensorWritable<Tensor>&& _x, IndexedTensorReadOnly<Tensor>&& _A, IndexedTensorReadOnly<Tensor>&& _b);
 }
