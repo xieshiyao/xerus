@@ -22,7 +22,6 @@
  * @brief Implementation of the (indexed) Tensor evaluation (ie. generlized transpositions).
  */
 
-#include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/misc/check.h>

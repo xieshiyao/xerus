@@ -30,7 +30,10 @@
 namespace xerus {
 	// Necessary forward declaritons
 	class Index;
+	class Tensor;
+	class TensorNetwork;
 	template<class tensor_type> class IndexedTensorMoveable;
+	template<class tensor_type> class IndexedTensorWritable;
 
 	
 	/**
@@ -133,10 +136,46 @@ namespace xerus {
 	template<class tensor_type>
 	IndexedTensorMoveable<tensor_type> operator/(IndexedTensorReadOnly<tensor_type>&& _tensor, const value_t _divisor);
 	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorMoveable<Tensor>&& _lhs, IndexedTensorMoveable<Tensor>&& _rhs);
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs);
+	
+// 	void operator+=(IndexedTensor<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	
+// 	void operator-=(IndexedTensor<TensorNetwork> &  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	IndexedTensorMoveable<TensorNetwork> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 	
 	
 	
 	
+	
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+    
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+	
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs);
+	
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs);
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A);
+
+    void solve(IndexedTensorWritable<Tensor>&& _x, IndexedTensorReadOnly<Tensor>&& _A, IndexedTensorReadOnly<Tensor>&& _b);
 	
 	
 	///@brief Returns the frobenious norm of the associated tensorObejct.

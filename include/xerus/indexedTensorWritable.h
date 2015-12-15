@@ -82,9 +82,16 @@ namespace xerus {
 		 */
 		void indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 		
+		void indexed_plus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
+		
+		void indexed_minus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
+		
 		/**
 		 * @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.
 		 */
 		void perform_traces();
 	};
+	
+	
+    void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
 }

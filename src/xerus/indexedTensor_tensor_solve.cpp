@@ -24,9 +24,10 @@
 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
+#include <xerus/indexedTensor.h>
+#include <xerus/indexedTensorMoveable.h>
 #include <xerus/tensor.h>
  
-#include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
 
 namespace xerus {

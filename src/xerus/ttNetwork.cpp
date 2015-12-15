@@ -29,8 +29,8 @@
 #include <xerus/tensor.h>
  
 #include <xerus/indexedTensorList.h>
-#include <xerus/indexedTensor_TN_operators.h>
-#include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/indexedTensorMoveable.h>
+ 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/misc/performanceAnalysis.h>

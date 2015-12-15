@@ -23,6 +23,8 @@
  */
 
 #include <xerus/indexedTensorWritable.h>
+#include <xerus/indexedTensor.h>
+#include <xerus/indexedTensorMoveable.h>
 
 #include <xerus/index.h>
 #include <xerus/tensor.h>
@@ -59,6 +61,96 @@ namespace xerus {
     }
     
     template<>
+	void IndexedTensorWritable<Tensor>::indexed_assignement( IndexedTensorReadOnly<Tensor>&& _rhs) {
+		if(!_rhs.uses_tensor(tensorObject)) {
+			// If LHS and RHS object don't coincide we can directly evaluate
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
+			evaluate(std::move(*this), std::move(_rhs));
+		} else {
+			// If the tensors in fact coincide we have to use a tmp object
+			IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
+			this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
+			evaluate(std::move(*this), std::move(tmpTensor));
+		}
+	}
+	
+	template<> 
+    void IndexedTensorWritable<Tensor>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
+		_rhs.assign_indices();
+		std::vector<Index> rightIndices = _rhs.indices;
+		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
+		TensorNetwork::trace_out_double_indices(rightIndices, cpy(rightIndices));
+        
+        std::set<size_t> all;
+        for (size_t i=0; i < cpy.nodes.size(); ++i) {
+            all.insert(i);
+        }
+
+		size_t res = cpy.contract(all);
+		
+		std::vector<Index> externalOrder;
+		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
+		
+		std::vector<Index> internalOrder;
+		for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
+			REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
+			internalOrder.emplace_back(externalOrder[link.indexPosition]);
+		}
+		
+		assign_indices(get_eval_degree(rightIndices));
+		std::vector<Index> outOrder;
+		for (const Index &idx : indices) {
+			REQUIRE(misc::contains(rightIndices, idx), "Every index on the LHS must appear somewhere on the RHS");
+			size_t spanSum = 0;
+			for (size_t j = 0; rightIndices[j] != idx; ++j) {
+				spanSum += rightIndices[j].span;
+			}
+			
+			for (size_t i=0; i < idx.span; ++i) {
+				outOrder.push_back(externalOrder[spanSum+i]);
+			}
+		}
+	
+		(*tensorObject)(outOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
+	}
+	
+	template<> 
+    void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs) {
+		tensorObject->specialized_evaluation(std::move(*this), IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
+    }
+    
+    template<>
+    void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		tensorObject->specialized_evaluation(std::move(*this), std::move(_rhs));
+    }
+	
+	template<>
+	void IndexedTensorWritable<Tensor>::indexed_plus_equal(IndexedTensorReadOnly<Tensor>&& _rhs) {
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
+		(*reorderedRhs)(this->indices) = std::move(_rhs);
+		*this->tensorObject += *reorderedRhs;
+	}
+	
+	template<>
+	void IndexedTensorWritable<Tensor>::indexed_minus_equal(IndexedTensorReadOnly<Tensor>&& _rhs) {
+		std::unique_ptr<Tensor> reorderedRhs(new Tensor(_rhs.tensorObjectReadOnly->representation));
+		(*reorderedRhs)(this->indices) = std::move(_rhs);
+		
+		*this->tensorObject -= *reorderedRhs;
+	}
+	
+	template<>
+	void IndexedTensorWritable<TensorNetwork>::indexed_plus_equal(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		indexed_assignement(std::move(*this) + std::move(_rhs)); // TODO might be problematic
+	}
+	
+	template<>
+	void IndexedTensorWritable<TensorNetwork>::indexed_minus_equal(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		indexed_assignement(std::move(*this) - std::move(_rhs)); // TODO might be problematic
+	}
+    
+    template<>
     void IndexedTensorWritable<Tensor>::perform_traces() {
 		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
 		this->assign_indices();
@@ -77,6 +169,8 @@ namespace xerus {
 			indicesAssigned = false;
 		}
 	}
+	
+	
     
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensorWritable<Tensor>;

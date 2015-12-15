@@ -233,6 +233,121 @@ namespace xerus {
 	template IndexedTensorMoveable<TensorNetwork> operator/(IndexedTensorReadOnly<TensorNetwork>&& _tensor, const value_t _divisor);
 	
 	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		result.indexed_plus_equal(std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		result.indexed_plus_equal(std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&&  _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator+(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator+(std::move(_lhs), static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs));
+	}
+	
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		result.indexed_minus_equal(std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorReadOnly<Tensor>&&  _rhs) {
+		IndexedTensorMoveable<Tensor> result(std::move(_lhs));
+		result.perform_traces();
+		result.indexed_minus_equal(std::move(_rhs));
+		return result;
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&&  _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return (-1.0)*operator-(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(      IndexedTensorMoveable<Tensor> && _lhs, IndexedTensorMoveable<Tensor> && _rhs){
+		return operator-(std::move(_lhs), static_cast<IndexedTensorReadOnly<Tensor>&&>(_rhs));
+	}
+	
+	
+	
+	IndexedTensorMoveable<TensorNetwork> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		std::unique_ptr<IndexedTensorMoveable<TensorNetwork>> result;
+		if(!_lhs.tensorObjectReadOnly->specialized_sum(result, std::move(_lhs), std::move(_rhs)) 
+			&& !_rhs.tensorObjectReadOnly->specialized_sum(result, std::move(_rhs), std::move(_lhs))) {
+			result.reset( new IndexedTensorMoveable<TensorNetwork>(IndexedTensorMoveable<Tensor>(std::move(_lhs)) + IndexedTensorMoveable<Tensor>(std::move(_rhs))));
+			}
+			return std::move(*result);
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)+IndexedTensorMoveable<Tensor>(std::move(_rhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator+(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		return IndexedTensorMoveable<Tensor>(std::move(_lhs))+std::move(_rhs);
+	}
+	
+	IndexedTensorMoveable<TensorNetwork> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)+(-1*std::move(_rhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<Tensor>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		return std::move(_lhs)-IndexedTensorMoveable<Tensor>(std::move(_rhs));
+	}
+	
+	IndexedTensorMoveable<Tensor> operator-(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<Tensor>&& _rhs) {
+		return IndexedTensorMoveable<Tensor>(std::move(_lhs))-std::move(_rhs);
+	}
+	
+	
+	
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		std::unique_ptr<IndexedTensorMoveable<TensorNetwork>> result(new IndexedTensorMoveable<TensorNetwork>());
+		if(!_lhs.tensorObjectReadOnly->specialized_contraction(result, std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(result, std::move(_rhs), std::move(_lhs))) {
+            _lhs.assign_indices();
+			result->tensorObject = new TensorNetwork(*_lhs.tensorObjectReadOnly);
+            result->tensorObjectReadOnly = result->tensorObject;
+            result->indices = _lhs.indices;
+            result->deleteTensorObject = true;
+            TensorNetwork::add_network_to_network(std::move(*result), std::move(_rhs));
+        }
+        return std::move(*result);
+    }
+
+
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&&  _lhs, IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+		std::unique_ptr<IndexedTensorMoveable<TensorNetwork>> result(new IndexedTensorMoveable<TensorNetwork>());
+		if(!_lhs.tensorObjectReadOnly->specialized_contraction(result, std::move(_lhs), std::move(_rhs)) && !_rhs.tensorObjectReadOnly->specialized_contraction(result, std::move(_rhs), std::move(_lhs))) {
+            _lhs.assign_indices();
+			result->tensorObject = _lhs.tensorObject;
+            result->tensorObjectReadOnly = _lhs.tensorObjectReadOnly;
+            result->indices = _lhs.indices;
+            result->deleteTensorObject = true;
+            _lhs.deleteTensorObject = false;
+            TensorNetwork::add_network_to_network(std::move(*result), std::move(_rhs));
+        }
+        return std::move(*result);
+    }
+    
+    IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorReadOnly<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs) {
+		return operator*(std::move(_rhs), std::move(_lhs));
+	}
+	
+	IndexedTensorMoveable<TensorNetwork> operator*(IndexedTensorMoveable<TensorNetwork>&& _lhs, IndexedTensorMoveable<TensorNetwork>&& _rhs) {
+		return operator*(std::move(_lhs), static_cast<IndexedTensorReadOnly<TensorNetwork>&&>(_rhs));
+	}
+	
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	template<class tensor_type>

@@ -27,9 +27,9 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/indexedTensorList.h>
-#include <xerus/indexedTensor_tensor_operators.h>
+#include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/indexedTensor_TN_operators.h>
+ 
 #include <xerus/measurments.h>
 
 #include <xerus/contractionHeuristic.h>
@@ -486,7 +486,35 @@ namespace xerus {
 		std::swap(dimensions[_i], dimensions[_j]);
 	}
 	
-
+	/// shuffles the external links of _lhs according to the indices of the indexedTensors
+	/// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
+	void TensorNetwork::shuffle_indices(std::vector<Index> &_currentIndices, IndexedTensorWritable<TensorNetwork>&& _lhs) {
+		_lhs.assign_indices();
+		// writeable copy of the left indices
+		size_t passedDegree1=0;
+		for (size_t i=0; i<_currentIndices.size(); passedDegree1+=_currentIndices[i].span, ++i) {
+			if (_currentIndices[i]!= _lhs.indices[i]) {
+				// find correct index
+				size_t j=i+1;
+				size_t passedDegree2=passedDegree1+_currentIndices[i].span;
+				for (; j<_currentIndices.size(); passedDegree2+=_currentIndices[j].span, ++j) {
+					if (_currentIndices[j] == _lhs.indices[i]) break;
+				}
+				if (j < _currentIndices.size()) {
+					std::swap(_currentIndices[i],_currentIndices[j]);
+					
+					for (size_t n=0; n<_currentIndices[i].span; ++n) {
+						_lhs.tensorObject->swap_external_links(passedDegree1+n,passedDegree2+n);
+					}
+				} else {
+					// expand...
+					LOG(fatal, "TN expansion marked as >won't fix<");
+				}
+			}
+			REQUIRE(_currentIndices[i].span == _lhs.indices[i].span, "Index span mismatch");
+		}
+	}
+	
 	void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
 		

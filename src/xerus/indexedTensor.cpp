@@ -40,7 +40,8 @@ namespace xerus {
     IndexedTensor<tensor_type>::IndexedTensor(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership) :
         IndexedTensorWritable<tensor_type>(_tensorObject, std::move(_indices), _takeOwnership) {}
         
-        
+       
+       
     template<class tensor_type>
     void IndexedTensor<tensor_type>::operator=(IndexedTensor<tensor_type>&& _rhs) {
 		this->indexed_assignement(std::move(_rhs));
@@ -55,6 +56,16 @@ namespace xerus {
     void IndexedTensor<tensor_type>::operator=(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		this->indexed_assignement(std::move(_rhs));
     }
+    
+    template<class tensor_type>
+	void IndexedTensor<tensor_type>::operator+=(IndexedTensorReadOnly<tensor_type>&& _rhs) {
+		this->indexed_plus_equal(std::move(_rhs));
+	}
+	
+    template<class tensor_type>
+	void IndexedTensor<tensor_type>::operator-=(IndexedTensorReadOnly<tensor_type>&& _rhs) {
+		this->indexed_minus_equal(std::move(_rhs));
+	}
     
     // IndexedTensorReadOnly may be instanciated as
     template class IndexedTensor<Tensor>;

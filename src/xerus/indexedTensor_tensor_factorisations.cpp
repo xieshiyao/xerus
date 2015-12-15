@@ -26,7 +26,6 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
  
-#include <xerus/indexedTensor_tensor_operators.h>
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/selectedFunctions.h>
 

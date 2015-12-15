@@ -29,7 +29,7 @@
  
 #include <xerus/ttNetwork.h>
 #include <xerus/indexedTensor.h>
-#include <xerus/indexedTensor_TN_operators.h>
+ 
 
 namespace xerus {
 	// --------------------- SinglePointMeasurment -----------------

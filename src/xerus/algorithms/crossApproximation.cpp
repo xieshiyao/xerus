@@ -25,8 +25,7 @@
 #include <xerus/algorithms/als.h>
 #include <xerus/basic.h>
 #include <xerus/tensorNetwork.h>
-#include <xerus/indexedTensor_TN_operators.h>
-#include <xerus/indexedTensor_tensor_operators.h>
+ 
 #include <xerus/indexedTensor_tensor_factorisations.h>
 
 namespace xerus {
