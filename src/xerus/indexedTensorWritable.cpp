@@ -31,36 +31,36 @@
 #include <xerus/tensorNetwork.h>
 
 namespace xerus {
-    template<class tensor_type>
-    IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
-        // Take ownership
-        _other.deleteTensorObject = false;
-    }
-    
-    template<class tensor_type>
-    IndexedTensorWritable<tensor_type>::IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership) :
-        IndexedTensorReadOnly<tensor_type>(_tensorObject, _indices), tensorObject(_tensorObject), deleteTensorObject(_takeOwnership) {}
-        
-        
-    template<class tensor_type>
-    IndexedTensorWritable<tensor_type>::IndexedTensorWritable(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership) :
-        IndexedTensorReadOnly<tensor_type>(_tensorObject, std::move(_indices)), tensorObject(_tensorObject), deleteTensorObject(_takeOwnership) {}
+	template<class tensor_type>
+	IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
+		// Take ownership
+		_other.deleteTensorObject = false;
+	}
+	
+	template<class tensor_type>
+	IndexedTensorWritable<tensor_type>::IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>& _indices, const bool _takeOwnership) :
+		IndexedTensorReadOnly<tensor_type>(_tensorObject, _indices), tensorObject(_tensorObject), deleteTensorObject(_takeOwnership) {}
+		
+		
+	template<class tensor_type>
+	IndexedTensorWritable<tensor_type>::IndexedTensorWritable(tensor_type* const _tensorObject, std::vector<Index>&& _indices, const bool _takeOwnership) :
+		IndexedTensorReadOnly<tensor_type>(_tensorObject, std::move(_indices)), tensorObject(_tensorObject), deleteTensorObject(_takeOwnership) {}
 
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    template<class tensor_type>
-    IndexedTensorWritable<tensor_type>::~IndexedTensorWritable() { 
-        if(deleteTensorObject) {
-            delete this->tensorObject;
-        }
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    template<class tensor_type>
-    bool IndexedTensorWritable<tensor_type>::is_owner() const {
-        return deleteTensorObject;
-    }
-    
-    template<>
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	template<class tensor_type>
+	IndexedTensorWritable<tensor_type>::~IndexedTensorWritable() { 
+		if(deleteTensorObject) {
+			delete this->tensorObject;
+		}
+	}
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	template<class tensor_type>
+	bool IndexedTensorWritable<tensor_type>::is_owner() const {
+		return deleteTensorObject;
+	}
+	
+	template<>
 	void IndexedTensorWritable<Tensor>::indexed_assignement( IndexedTensorReadOnly<Tensor>&& _rhs) {
 		if(!_rhs.uses_tensor(tensorObject)) {
 			// If LHS and RHS object don't coincide we can directly evaluate
@@ -75,17 +75,17 @@ namespace xerus {
 	}
 	
 	template<> 
-    void IndexedTensorWritable<Tensor>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+	void IndexedTensorWritable<Tensor>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
 		_rhs.assign_indices();
 		std::vector<Index> rightIndices = _rhs.indices;
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
 		TensorNetwork::trace_out_double_indices(rightIndices, cpy(rightIndices));
-        
-        std::set<size_t> all;
-        for (size_t i=0; i < cpy.nodes.size(); ++i) {
-            all.insert(i);
-        }
+		
+		std::set<size_t> all;
+		for (size_t i=0; i < cpy.nodes.size(); ++i) {
+			all.insert(i);
+		}
 
 		size_t res = cpy.contract(all);
 		
@@ -116,14 +116,14 @@ namespace xerus {
 	}
 	
 	template<> 
-    void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs) {
+	void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs) {
 		tensorObject->specialized_evaluation(std::move(*this), IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
-    }
-    
-    template<>
-    void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
+	}
+	
+	template<>
+	void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		tensorObject->specialized_evaluation(std::move(*this), std::move(_rhs));
-    }
+	}
 	
 	template<>
 	void IndexedTensorWritable<Tensor>::indexed_plus_equal(IndexedTensorReadOnly<Tensor>&& _rhs) {
@@ -149,9 +149,9 @@ namespace xerus {
 	void IndexedTensorWritable<TensorNetwork>::indexed_minus_equal(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 		indexed_assignement(std::move(*this) - std::move(_rhs)); // TODO might be problematic
 	}
-    
-    template<>
-    void IndexedTensorWritable<Tensor>::perform_traces() {
+	
+	template<>
+	void IndexedTensorWritable<Tensor>::perform_traces() {
 		REQUIRE(deleteTensorObject, "IndexedTensorMoveable must own its tensor object");
 		this->assign_indices();
 		std::vector<Index> openIndices;
@@ -171,8 +171,7 @@ namespace xerus {
 	}
 	
 	
-    
-    // IndexedTensorReadOnly may be instanciated as
-    template class IndexedTensorWritable<Tensor>;
-    template class IndexedTensorWritable<TensorNetwork>;
+	// IndexedTensorReadOnly may be instanciated as
+	template class IndexedTensorWritable<Tensor>;
+	template class IndexedTensorWritable<TensorNetwork>;
 }

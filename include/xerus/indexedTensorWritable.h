@@ -82,8 +82,14 @@ namespace xerus {
 		 */
 		void indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
 		
+		/**
+		 * @brief Tensor add_assignment with indices.
+		 */
 		void indexed_plus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
 		
+		/**
+		 * @brief Tensor subtract_assignment with indices.
+		 */
 		void indexed_minus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
 		
 		/**
