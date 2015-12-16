@@ -2,6 +2,12 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-01-?? v2.0
+ * !Merged FullTensor and SparseTensor into a single Tensor class.
+ * !Removed all support for stored IndexedTensor*s.
+ * !Reworked the IndexedTensor* index assignment.
+ * Several bug fixes, including SVD factor handling and SparseTensor summation.
+
 * 2015-10-?? v1.4.3
  * TT::random no longer uses size_t to measure the size of the tensor and no longer exceeds maximal ranks.
 
