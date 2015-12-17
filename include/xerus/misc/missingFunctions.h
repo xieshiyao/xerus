@@ -43,19 +43,19 @@
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & name = name##_store.get();
 
 namespace xerus {
-    namespace misc {
+	namespace misc {
 
-        template<class T>
-        std::unique_ptr<T> make_unique(T* _ptr) {
-            return std::unique_ptr<T>(_ptr);
-        }
+		template<class T>
+		std::unique_ptr<T> make_unique(T* _ptr) {
+			return std::unique_ptr<T>(_ptr);
+		}
 
-        template<class T>
-        std::unique_ptr<T[]> make_unique_array(T* _ptr) {
-            return std::unique_ptr<T[]>(_ptr);
-        }
+		template<class T>
+		std::unique_ptr<T[]> make_unique_array(T* _ptr) {
+			return std::unique_ptr<T[]>(_ptr);
+		}
 
-        GENERATE_HAS_MEMBER(count)
+		GENERATE_HAS_MEMBER(count)
 		
 		/**
 		 * @brief Execute a given command.
@@ -84,147 +84,153 @@ namespace xerus {
 		};
 		
 
-        ///@brief: Counts how often an element is contained in an arbitary container
-        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-        size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-            size_t count = 0;
-            for(const item_t& otherItem : _container) {
-                if(otherItem == _item) { count++; }
-            }
-            return count;
-        }
+		///@brief: Counts how often an element is contained in an arbitary container
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			size_t count = 0;
+			for(const item_t& otherItem : _container) {
+				if(otherItem == _item) { count++; }
+			}
+			return count;
+		}
 
-        ///@brief: Counts how often an element is contained in an arbitary container
-        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-        size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-            return _container.count(_item);
-        }
+		///@brief: Counts how often an element is contained in an arbitary container
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return _container.count(_item);
+		}
 
-        ///@brief: Checks whether an arbitary container contains a certain element.
-        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-        bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-            return std::find(_container.begin(), _container.end(), _item) != _container.end();
-        }
+		///@brief: Checks whether an arbitary container contains a certain element.
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return std::find(_container.begin(), _container.end(), _item) != _container.end();
+		}
 
-        ///@brief: Checks whether an arbitary container contains a certain element.
-        template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
-        bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
-            return _container.find(_item) != _container.end();
-        }
-
-
-        ///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
-        template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
-        bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
-            for(const item_t &item : _smallContainer) {
-                if(!contains(_largeContainer, item)) { return false; }
-            }
-            return true;
-        }
-
-        ///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        bool disjunct(const container_t<item_t, rest_t...>& _containerA, const container_t<item_t, rest_t...>& _containerB) {
-            for(const item_t& item : _containerA) {
-                if(contains(_containerB, item)) { return false; }
-            }
-            return true;
-        }
+		///@brief: Checks whether an arbitary container contains a certain element.
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return _container.find(_item) != _container.end();
+		}
 
 
-        ///@brief: Checks whether all object in two iterator ranges coincide.
-        template< class InputIt1, class InputIt2 >
-        bool equal( InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2 ) 
-        {
-            while (first1 != last1) {
-                if (first2 == last2 || *first1 != *first2) return false;
-                ++first1; ++ first2;
-            }
-            return first2 == last2;
-        }
+		///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
+		template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
+		bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
+			for(const item_t &item : _smallContainer) {
+				if(!contains(_largeContainer, item)) { return false; }
+			}
+			return true;
+		}
 
-        ///@brief: Selects the maximal element from an arbitary container.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        item_t max(const container_t<item_t, rest_t...>& _container) {
-            REQUIRE(!_container.empty(), "max must not be invoked with empty container");
-            item_t result = *_container.begin();
-            for(const item_t &item : _container) {
-                if(item > result) { result = item; }
-            }
-            return result;
-        }
-
-        ///@brief: Selects the minimal element from an arbitary container.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        item_t min(const container_t<item_t, rest_t...>& _container) {
-            REQUIRE(!_container.empty(), "min must not be invoked with empty container");
-            item_t result = *_container.begin();
-            for(const item_t &item : _container) {
-                if(item < result) { result = item; }
-            }
-            return result;
-        }
+		///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		bool disjunct(const container_t<item_t, rest_t...>& _containerA, const container_t<item_t, rest_t...>& _containerB) {
+			for(const item_t& item : _containerA) {
+				if(contains(_containerB, item)) { return false; }
+			}
+			return true;
+		}
 
 
-        ///@brief: Calculates the sum of all entries of an arbitary container.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        _pure_ item_t sum(const container_t<item_t, rest_t...>& _container) {
-            item_t sum = item_t(0);
-            for(const item_t& item : _container){
-                sum += item;
-            }
-            return sum;
-        }
+		///@brief: Checks whether all object in two iterator ranges coincide.
+		template< class InputIt1, class InputIt2 >
+		bool equal( InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2 ) 
+		{
+			while (first1 != last1) {
+				if (first2 == last2 || *first1 != *first2) return false;
+				++first1; ++ first2;
+			}
+			return first2 == last2;
+		}
 
-        ///@brief: Calculates the floating point product of all entries of an arbitary container.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        _pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
-            item_t product = item_t(1);
-            for(const item_t& item : _container){ product *= item; }
-            return product;
-        }
-        
-        ///@brief: Calculates the product of all entries of an arbitary container.
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        _pure_ double fp_product(const container_t<item_t, rest_t...>& _container) {
-            double product = 1.0;
-            for(const item_t& item : _container){ product *= double(item); }
-            return product;
-        }
-        
-        ///@brief: Calculates the product the entries in the range [_first, _last).
-        template<template<class, class...> class container_t, class item_t, class... rest_t>
-        _pure_ item_t product(const container_t<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
+		///@brief: Selects the maximal element from an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		item_t max(const container_t<item_t, rest_t...>& _container) {
+			REQUIRE(!_container.empty(), "max must not be invoked with empty container");
+			item_t result = *_container.begin();
+			for(const item_t &item : _container) {
+				if(item > result) { result = item; }
+			}
+			return result;
+		}
+
+		///@brief: Selects the minimal element from an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		item_t min(const container_t<item_t, rest_t...>& _container) {
+			REQUIRE(!_container.empty(), "min must not be invoked with empty container");
+			item_t result = *_container.begin();
+			for(const item_t &item : _container) {
+				if(item < result) { result = item; }
+			}
+			return result;
+		}
+
+
+		///@brief: Calculates the sum of all entries of an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		_pure_ item_t sum(const container_t<item_t, rest_t...>& _container) {
+			item_t sum = item_t(0);
+			for(const item_t& item : _container){
+				sum += item;
+			}
+			return sum;
+		}
+
+		///@brief: Calculates the floating point product of all entries of an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		_pure_ item_t product(const container_t<item_t, rest_t...>& _container) {
+			item_t product = item_t(1);
+			for(const item_t& item : _container){ product *= item; }
+			return product;
+		}
+		
+		///@brief: Calculates the product of all entries of an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		_pure_ double fp_product(const container_t<item_t, rest_t...>& _container) {
+			double product = 1.0;
+			for(const item_t& item : _container){ product *= double(item); }
+			return product;
+		}
+		
+		///@brief: Calculates the product the entries in the range [_first, _last).
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		_pure_ item_t product(const container_t<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
 			REQUIRE(_first <= _last && _last <= _container.size(), "Invalid range " << _first << "-" << _last << " given (Contaienr size " << _container.size() << ")"); 
-            item_t product = item_t(1);
+			item_t product = item_t(1);
 			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+(long)_first; item != _container.begin()+(long)_last; ++item) { 
 				product *= *item; 
 			}
-            return product;
-        }
-        
-        ///@brief: Erases all elements specified by @a _rule from the container @a _container.
-        template<class rule_t, template<class, class...> class container_t, class item_t, class... rest_t>
-        void erase(container_t<item_t, rest_t...>& _container, const rule_t& _rule) {
+			return product;
+		}
+		
+		///@brief: Erases all elements specified by @a _rule from the container @a _container.
+		template<class rule_t, template<class, class...> class container_t, class item_t, class... rest_t>
+		void erase(container_t<item_t, rest_t...>& _container, const rule_t& _rule) {
 			_container.erase(std::remove_if(_container.begin(), _container.end(), _rule), _container.end());
-        }
+		}
 
-        ///@brief: Calculates _a*_a
-        template<class T>
-        T sqr(const T &_a) {
-            return _a*_a;
-        }
+		///@brief: Calculates the signum (-1, 0, 1) of a given value.
+		template<class T> 
+		int sgn(const T _value) {
+			return (T(0) < _value) - (_value < T(0));
+		}
+		
+		///@brief: Calculates _a*_a
+		template<class T>
+		T sqr(const T &_a) {
+			return _a*_a;
+		}
 
-        ///@brief: Calculates _base^_exp by binary exponentiation
-        template<class T> 
-        constexpr T pow(const T &_base, const uint64 _exp) {
-            return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
-        }
-        
-        ///@brief: Calculates _base^_exp by binary exponentiation
-        template<class T> 
-        constexpr T pow(const T &_base, const int64 _exp) {
-            return _exp==0 ? 
+		///@brief: Calculates _base^_exp by binary exponentiation
+		template<class T> 
+		constexpr T pow(const T &_base, const uint64 _exp) {
+			return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
+		}
+		
+		///@brief: Calculates _base^_exp by binary exponentiation
+		template<class T> 
+		constexpr T pow(const T &_base, const int64 _exp) {
+			return _exp==0 ? 
 						1 :
 						(
 							_exp<0 ? (
@@ -234,12 +240,12 @@ namespace xerus {
 								_exp%2==0 ? pow(_base*_base, _exp/2) : _base*pow(_base, _exp-1)
 							)
 						);
-        }
-        
-        ///@brief: Calculates _base^_exp by binary exponentiation
-        template<class T> 
-        constexpr T pow(const T &_base, const int _exp) {
-            return _exp==0 ? 
+		}
+		
+		///@brief: Calculates _base^_exp by binary exponentiation
+		template<class T> 
+		constexpr T pow(const T &_base, const int _exp) {
+			return _exp==0 ? 
 						1 :
 						(
 							_exp<0 ? (
@@ -249,13 +255,13 @@ namespace xerus {
 								_exp%2==0 ? pow(_base*_base, _exp/2) : _base*pow(_base, _exp-1)
 							)
 						);
-        }
+		}
 
-        ///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
-        template<class T, typename std::enable_if<std::is_floating_point<T>::value, bool>::type = true>
-        bool approx_equal(T _a, T _b, T _eps = 4*std::numeric_limits<T>::epsilon()) {
-            return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
-        }
+		///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
+		template<class T, typename std::enable_if<std::is_floating_point<T>::value, bool>::type = true>
+		bool approx_equal(T _a, T _b, T _eps = 4*std::numeric_limits<T>::epsilon()) {
+			return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
+		}
 		
 		template<class T, class Comparator>
 		std::vector<size_t> create_sort_permutation(const std::vector<T>& _vec, Comparator _comp) {
@@ -297,25 +303,25 @@ namespace std {
 		return both;
 	}
 		
-    /// Pipe normal containers to ostreams
-    template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
-                std::is_base_of<std::vector<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{} 
-                || std::is_base_of<std::set<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{}, 
-                int>::type = 0>
-    std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
-        if(_container.size() == 0) { _out << "{ }"; return _out; }
-        _out << "{ ";
-        for(const item_t& item : _container) { _out << item << ", "; }
-        _out << "\b\b }";
-        return _out;
-    }
+	/// Pipe normal containers to ostreams
+	template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
+				std::is_base_of<std::vector<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{} 
+				|| std::is_base_of<std::set<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{}, 
+				int>::type = 0>
+	std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
+		if(_container.size() == 0) { _out << "{ }"; return _out; }
+		_out << "{ ";
+		for(const item_t& item : _container) { _out << item << ", "; }
+		_out << "\b\b }";
+		return _out;
+	}
 
-    template<class T, class U>
-    std::ostream& operator<<(std::ostream& _out, const std::map<T,U>& _set) {
-        if(_set.size() == 0) { _out << "{ }"; return _out; }
-        _out << "{ ";
-        for(const std::pair<T,U>& item : _set) {  _out << "(" << item.first << ", " << item.second << "), "; }
-        _out << "\b\b }";
-        return _out;
-    }
+	template<class T, class U>
+	std::ostream& operator<<(std::ostream& _out, const std::map<T,U>& _set) {
+		if(_set.size() == 0) { _out << "{ }"; return _out; }
+		_out << "{ ";
+		for(const std::pair<T,U>& item : _set) {  _out << "(" << item.first << ", " << item.second << "), "; }
+		_out << "\b\b }";
+		return _out;
+	}
 }

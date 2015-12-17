@@ -31,7 +31,7 @@
 
 namespace xerus {
 	
-	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensor<Tensor>&& _lhs, IndexedTensor<Tensor>&& _rhs) {
+	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, size_t& _splitPos, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensor<Tensor>&& _lhs, IndexedTensor<Tensor>&& _rhs) {
 		_base.assign_indices();
 		
 		// Calculate the future order of lhs and rhs.
@@ -48,18 +48,16 @@ namespace xerus {
 			}
 		}
 		
-// 		const std::vector<Index> lhsIndices = _lhs.get_assigned_indices(lhsOrder);
+		_splitPos = lhsOrder-1;
+		
 		_lhs.assign_indices(lhsOrder);
 		_rhs.assign_indices(rhsOrder);
-// 		const std::vector<Index> rhsIndices = _rhs.get_assigned_indices(rhsOrder);
 		
 		std::vector<Index> reorderedBaseIndices;
 		reorderedBaseIndices.reserve(_base.indices.size());
 		
-// 		std::vector<Index> lhsPreliminaryIndices;
 		_lhsPreliminaryIndices.reserve(_lhs.indices.size());
 		
-// 		std::vector<Index> rhsPreliminaryIndices;
 		_rhsPreliminaryIndices.reserve(_rhs.indices.size());
 		
 		std::vector<size_t> reorderedBaseDimensions, lhsDims, rhsDims;
@@ -153,10 +151,35 @@ namespace xerus {
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
 		REQUIRE(maxRank > 0, "maxRank must be larger than zero.");
 		
-		size_t lhsSize, rhsSize, rank;
+		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(U), std::move(Vt));
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(U), std::move(Vt));
+		
+		
+		
+// 		svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
+// 		
+// 		size_t newRank = rank;
+// 		if(softThreshold > 0) {
+// 			for(size_t i = 0; i < rank; ++i) {
+// 				if((*S.tensorObject)[i] < softThreshold) {
+// 					newRank = i;
+// 					break;
+// 				} else {
+// 					(*S.tensorObject)[i] -= softThreshold;
+// 				}
+// 			}
+// 			
+// 			if(newRank != rank) {
+// 				S.tensorObject->resize_dimension(0, newRank);
+// 				S.tensorObject->resize_dimension(1, newRank);
+// 				U.tensorObject->resize_dimension(U.degree()-1, newRank);
+// 				Vt.tensorObject->resize_dimension(0, newRank);
+// 			}
+// 		}
+		
+		
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
@@ -219,10 +242,10 @@ namespace xerus {
 		 
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
-		size_t lhsSize, rhsSize, rank;
+		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(R));
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(R));
 		
 		if(reorderedBaseTensor->is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented.");
@@ -246,10 +269,10 @@ namespace xerus {
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
-		size_t lhsSize, rhsSize, rank;
+		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(R), std::move(Q));
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(R), std::move(Q));
 		
 		
 		if(reorderedBaseTensor->is_sparse()) {
@@ -275,10 +298,10 @@ namespace xerus {
 		
 		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be Tensors, as they are definitely not sparse.");
 		
-		size_t lhsSize, rhsSize, rank;
+		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
-		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(C));
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(C));
 		
 		if(reorderedBaseTensor->is_sparse()){
 			LOG(fatal, "Sparse QC not yet implemented.");

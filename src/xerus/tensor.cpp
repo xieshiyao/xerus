@@ -977,13 +977,16 @@ namespace xerus {
 	
 	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
 		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
-		REQUIRE(_maxRank < 1, "Epsilon must be smaller than one.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
 		const size_t rhsSize = misc::product(_input.dimensions, _splitPos, _input.degree());
 		size_t rank = std::min(lhsSize, rhsSize);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
+		
+		
+		REQUIRE(_U.size == lhsSize*rank, "Err");
+		REQUIRE(_Vt.size == rhsSize*rank, "Err");
 		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
@@ -993,13 +996,14 @@ namespace xerus {
 		}
 		
 		// Apply factor to the diagonal matrix
-		misc::array_scale(tmpS.get(), _input.factor, rank); // TODO Wrong! (negative values)
+		misc::array_scale(tmpS.get(), std::abs(_input.factor), rank);
 		
 		// Account for hard threshold
 		if(_maxRank != 0) {
 			rank = std::min(rank, _maxRank);
 		}
 		
+		// Find rank due to the Epsilon (NOTE the scaling factor can be ignored, as it does not change the ratios).
 		for(size_t j = 1; j < rank; ++j) {
 			if (tmpS[j] <= _eps*tmpS[0]) {
 				rank = j;
@@ -1010,7 +1014,12 @@ namespace xerus {
 		// Create tensor from diagonal values
 		_S.reset(std::vector<size_t>(2, rank), Tensor::Representation::Sparse);
 		for(size_t i = 0; i < rank; ++i) {
-			_S[i*rank+i] = tmpS[i];
+			_S[i*rank+i] = std::abs(_input.factor)*tmpS[i];
+		}
+		
+		// Account for a negative factor
+		if(_input.factor < 0.0) {
+			_U *= -1;
 		}
 		
 		_U.resize_dimension(_U.degree()-1, rank);
