@@ -168,7 +168,7 @@ namespace xerus {
 		}
 		
 		// Apply factor to the diagonal matrix
-		misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank);
+		misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank); // TODO Wrong! (negative values)
 		
 		// Account for hard threshold
 		rank = std::min(rank, maxRank);

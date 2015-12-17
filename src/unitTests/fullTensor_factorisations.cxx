@@ -83,8 +83,15 @@ UNIT_TEST(Tensor, SVD_Random_512x512,
 	MTEST(frob_norm(res3(m, i^3)*res3(n, i^3) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 	
 	(res1(i,o,k,j), res2(p,o), res3(l,n,m,p)) = SVD(A(l,i,m,k,j,n));
-    res4(l,k,m,i,j,n) =  res1(k,o,i,j)*res2(p,o)*res3(l,n,m,p);
-    TEST(approx_equal(res4, A, 1e-14));
+	res4(l,k,m,i,j,n) =  res1(k,o,i,j)*res2(p,o)*res3(l,n,m,p);
+	TEST(approx_equal(res4, A, 1e-14));
+	MTEST(frob_norm(res1(k,o,i,j)*res1(k,p,i,j) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(l,n,m,o)*res3(l,n,m,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
+	
+	
+	(res1(i,o,k,j), res2(p,o), res3(l,n,m,p)) = SVD(-1*A(l,i,m,k,j,n));
+	res4(l,k,m,i,j,n) =  res1(k,o,i,j)*res2(p,o)*res3(l,n,m,p);
+	TEST(approx_equal(-1*res4, A, 1e-14));
 	MTEST(frob_norm(res1(k,o,i,j)*res1(k,p,i,j) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(l,n,m,o)*res3(l,n,m,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
 )

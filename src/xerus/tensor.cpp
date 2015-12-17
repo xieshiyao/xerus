@@ -974,6 +974,49 @@ namespace xerus {
 		}
 	}
 	
+	
+	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
+		REQUIRE(_maxRank < 1, "Epsilon must be smaller than one.");
+		
+		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
+		const size_t rhsSize = misc::product(_input.dimensions, _splitPos, _input.degree());
+		size_t rank = std::min(lhsSize, rhsSize);
+		
+		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
+		
+		// Calculate the actual SVD
+		if(_input.is_sparse()) {
+			LOG(fatal, "Sparse SVD not yet implemented.");
+		} else {
+			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+		}
+		
+		// Apply factor to the diagonal matrix
+		misc::array_scale(tmpS.get(), _input.factor, rank); // TODO Wrong! (negative values)
+		
+		// Account for hard threshold
+		if(_maxRank != 0) {
+			rank = std::min(rank, _maxRank);
+		}
+		
+		for(size_t j = 1; j < rank; ++j) {
+			if (tmpS[j] <= _eps*tmpS[0]) {
+				rank = j;
+				break;
+			}
+		}
+		
+		// Create tensor from diagonal values
+		_S.reset(std::vector<size_t>(2, rank), Tensor::Representation::Sparse);
+		for(size_t i = 0; i < rank; ++i) {
+			_S[i*rank+i] = tmpS[i];
+		}
+		
+		_U.resize_dimension(_U.degree()-1, rank);
+		_Vt.resize_dimension(0, rank);
+	}
+	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
 		if(_A.is_dense() && _B.is_dense()) {

@@ -782,6 +782,16 @@ namespace xerus {
 	 */
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
 	
+	/** 
+	 * @brief Low-Level SVD calculation of a given Tensor @a _A = @a _U @a _S @a _Vt.
+	 * @param _U Output Tensor for the resulting U.
+	 * @param _S Output Tensor for the resulting S.
+	 * @param _Vt Output Tensor for the resulting Vt.
+	 * @param _A input Tensor of which the SVD shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the SVD is calculated.
+	 */
+	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos);
+	
 	
 	/**
 	 * @brief calculates the entrywise product of two Tensors
