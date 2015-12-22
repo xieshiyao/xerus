@@ -158,27 +158,30 @@ namespace xerus {
 		
 		
 		
-// 		svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
-// 		
-// 		size_t newRank = rank;
-// 		if(softThreshold > 0) {
-// 			for(size_t i = 0; i < rank; ++i) {
-// 				if((*S.tensorObject)[i] < softThreshold) {
-// 					newRank = i;
-// 					break;
-// 				} else {
-// 					(*S.tensorObject)[i] -= softThreshold;
-// 				}
-// 			}
-// 			
-// 			if(newRank != rank) {
-// 				S.tensorObject->resize_dimension(0, newRank);
-// 				S.tensorObject->resize_dimension(1, newRank);
-// 				U.tensorObject->resize_dimension(U.degree()-1, newRank);
-// 				Vt.tensorObject->resize_dimension(0, newRank);
-// 			}
-// 		}
+		svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
 		
+		
+		
+		if(softThreshold > 0.0) {
+			const size_t oldRank = S.tensorObjectReadOnly->dimensions[0];
+			(*S.tensorObject)[0] = std::max((*S.tensorObject)[0] - softThreshold, 0.0);
+			for(size_t i = 1; i < oldRank; ++i) {
+				if((*S.tensorObject)[i+i*oldRank] < softThreshold) {
+					rank = i;
+					break;
+				} else {
+					(*S.tensorObject)[i+i*oldRank] -= softThreshold;
+				}
+			}
+			
+			if(rank != oldRank) {
+				S.tensorObject->resize_dimension(0, rank);
+				S.tensorObject->resize_dimension(1, rank);
+				U.tensorObject->resize_dimension(U.degree()-1, rank);
+				Vt.tensorObject->resize_dimension(0, rank);
+			}
+		}
+		/*
 		
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
@@ -220,7 +223,7 @@ namespace xerus {
 		}
 		
 		U.tensorObject->resize_dimension(U.degree()-1, rank);
-		Vt.tensorObject->resize_dimension(0, rank);
+		Vt.tensorObject->resize_dimension(0, rank);*/
 		
 		// Post evaluate the results
 		std::vector<Index> midPreliminaryIndices({lhsPreliminaryIndices.back(), rhsPreliminaryIndices.front()});

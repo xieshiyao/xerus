@@ -627,11 +627,11 @@ namespace xerus {
 			for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
 				// Decode the position as i*oldStepSize + j*DimStepSize + k
 				const size_t k = entry.first%dimStepSize;
-				const size_t j = (entry.first/dimStepSize)%dimensions[_n];
-				const size_t i = (entry.first/dimStepSize)/dimensions[_n];
+				const size_t j = (entry.first%oldStepSize)/dimStepSize;
+				const size_t i = entry.first/oldStepSize;
 				
 				// Only add if within the new range
-				if(j <= _newDim) {
+				if(j < _newDim) {
 					newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
 				}
 			}
