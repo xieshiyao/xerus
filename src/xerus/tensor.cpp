@@ -618,21 +618,37 @@ namespace xerus {
 			}
 			
 			denseData.reset(tmp, internal::array_deleter_vt);
-			
+		
 		} else {
-			REQUIRE(_cutPos >= dimensions[_n], "Support for dimension resize at arbitary position not yet ther efor Sparse Tensor");
-			
 			std::map<size_t, value_t>* newData = new std::map<size_t, value_t>();
 			
-			for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
-				// Decode the position as i*oldStepSize + j*DimStepSize + k
-				const size_t k = entry.first%dimStepSize;
-				const size_t j = (entry.first%oldStepSize)/dimStepSize;
-				const size_t i = entry.first/oldStepSize;
-				
-				// Only add if within the new range
-				if(j < _newDim) {
-					newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
+			if (_newDim > dimensions[_n]) {
+				const size_t slatesAdded = _newDim-dimensions[_n];
+				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+					// Decode the position as i*oldStepSize + j*DimStepSize + k
+					const size_t k = entry.first%dimStepSize;
+					const size_t j = (entry.first%oldStepSize)/dimStepSize;
+					const size_t i = entry.first/oldStepSize;
+					
+					if(j <= _cutPos) { // Entry remains at current position j
+						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
+					} else { // Entry backdrops in position j
+						newData->emplace(i*newStepSize+(j+slatesAdded)*dimStepSize+k, entry.second);
+					}
+				}
+			} else {
+				const size_t slatesRemoved = dimensions[_n]-_newDim;
+				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+					// Decode the position as i*oldStepSize + j*DimStepSize + k
+					const size_t k = entry.first%dimStepSize;
+					const size_t j = (entry.first%oldStepSize)/dimStepSize;
+					const size_t i = entry.first/oldStepSize;
+					
+					if(j < _cutPos-slatesRemoved+1) { // Entry remains at current position j
+						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
+					} else if(j > _cutPos) { // Entry advances in position j
+						newData->emplace(i*newStepSize+(j-slatesRemoved)*dimStepSize+k, entry.second);
+					}
 				}
 			}
 			
