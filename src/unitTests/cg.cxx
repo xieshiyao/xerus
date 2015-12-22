@@ -43,12 +43,12 @@ UNIT_TEST(algorithms, cg,
 // 	cg.restartInterval = 20;
 	cg.convergenceEpsilon = 0;
 	
-	cg(A, X, B, pdata);
+// 	cg(A, X, B, pdata);
 	
 	SteepestDescentVariant alsGrad(ALSRetractionII);
-	alsGrad.printProgress = true;
+	alsGrad.printProgress = false;
 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
 	
-	alsGrad(A, X, B);
+// 	alsGrad(A, X, B);
 )
 

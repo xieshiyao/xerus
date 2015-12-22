@@ -42,7 +42,7 @@ namespace xerus {
 		value_t gradientNorm = 1.0;
 		value_t lastResidual=1e100;
 		value_t currResidual=1e100;
-// 		value_t normB = frob_norm(_b);
+		value_t normB = frob_norm(_b);
 		
 		if (_Ap) {
 			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
