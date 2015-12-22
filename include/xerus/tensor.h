@@ -371,8 +371,6 @@ namespace xerus {
 		
 		/** 
 		 * @brief Read/Write access a single entry.
-		 * @details Note that the request for write access to this entry requires the a sparse representation to create it, i.e. to lower the sparsity. If only read access
-		 * is required use at() instead.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
 		 * @return a reference to the selected entry.
 		 */
@@ -400,20 +398,22 @@ namespace xerus {
 		value_t operator[](const MultiIndex& _positions) const;
 		
 		
+	protected:
 		/** 
-		 * @brief Read access a single entry.
+		 * @brief Unsanitized access to a single entry.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
 		 * @return the value of the selected entry.
 		 */
-		value_t at(const size_t _position) const;
+		value_t& at(const size_t _position);
 		
 		/** 
-		 * @brief Read access a single entry.
-		 * @param _position the position of the desired entry.
+		 * @brief Unsanitized read access to a single entry.
+		 * @param _position the position of the desired entry, assuming row-major ordering.
 		 * @return the value of the selected entry.
 		 */
-		value_t at(const MultiIndex& _positions) const;
+		value_t cat(const size_t _position) const;
 		
+	public:
 		
 		/** 
 		 * @brief Returns a pointer for direct access to the dense data array in row major order. 
@@ -606,9 +606,10 @@ namespace xerus {
 		 * @details Use this function only if the contend of the tensor shall stay, otherwise use reset().
 		 * @param _n the dimension to resize.
 		 * @param _newDim the new value that resized dimension shall have.
-		 * @param _cutPos the index within the selected dimension after which new slates are inserted or removed, by default the last index.
+		 * @param _cutPos the index within the selected dimension after which new slates are inserted 
+		 * or at which index the removal of slates is started (moving to smaller ones), by default the last index.
 		 */
-		void resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos=~0ul);
+		void resize_dimension(const size_t _n, const size_t _newDim, const size_t _cutPos=~0ul);
 		
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.

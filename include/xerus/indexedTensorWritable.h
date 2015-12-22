@@ -27,10 +27,6 @@
 #include "indexedTensorReadOnly.h"
 
 namespace xerus {
-	// Necessary forward declaritons
-	class Tensor;
-	class TensorNetwork;
-	
 	/**
 	 * @brief Abstract internal representation of an read and writeable indexed Tensor or TensorNetwork.
 	 * @details This class (without specialization) should not appear or be used anywhere.
@@ -99,5 +95,5 @@ namespace xerus {
 	};
 	
 	
-    void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
+	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
 }

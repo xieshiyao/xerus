@@ -28,7 +28,7 @@ UNIT_TEST(Tensor, remove_slate,
     rnd.seed(0X5EED);
     
     double n=0;
-    Tensor A({3,3}, [&](const std::vector<size_t> &){ n+=1; return n; } );
+    Tensor A({3,3}, [&](const std::vector<size_t> &){ n += 1; return n; } );
     
     A.remove_slate(0,1);
     TEST(approx_entrywise_equal(A, {1,2,3,7,8,9}, 1e-14));

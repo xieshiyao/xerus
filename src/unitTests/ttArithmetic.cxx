@@ -401,31 +401,31 @@ UNIT_TEST(TT, operator_times_tensor,
 	Index i,j,k,l,m;
 	ttD(i^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(j^2,k^2) * C(k^2);
-	MTEST(approx_equal(D, Tensor(ttD), 2e-15), "1 " << frob_norm(D-Tensor(ttD)) << " / " << frob_norm(D));
+	MTEST(approx_equal(D, Tensor(ttD), 3e-15), "1 " << frob_norm(D-Tensor(ttD)) << " / " << frob_norm(D));
 	
 	ttD(i^2) = ttA(i^2,j^2) * ttB(k^2,j^2) * ttC(k^2);
 	D(i^2) = A(i^2,j^2) * B(k^2,j^2) * C(k^2);
-	MTEST(approx_equal(D, Tensor(ttD), 2e-15), "1 " << frob_norm(D-Tensor(ttD)) << " / " << frob_norm(D));
+	MTEST(approx_equal(D, Tensor(ttD), 2e-15), "2 " << frob_norm(D-Tensor(ttD)) << " / " << frob_norm(D));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttB(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * B(j^2,k^2);
-	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "1 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
+	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "3 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,k^2) = ttA(i^2,j^2) * ttA(j^2,k^2);
 	Do(i^2,k^2) = A(i^2,j^2) * A(j^2,k^2);
-	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "1 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
+	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "4 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttA(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * A(l^2,k^2);
-	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "1 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
+	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "5 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,l^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2);
 	Do(i^2,l^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2);
-	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "1 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
+	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "6 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
 	
 	ttDo(i^2,m^2) = ttA(i^2,j^2) * ttB(j^2,k^2) * ttB(l^2,k^2) * ttA(l^2,m^2);
 	Do(i^2,m^2) = A(i^2,j^2) * B(j^2,k^2) * B(l^2,k^2) * A(l^2,m^2);
-	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "1 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
+	MTEST(approx_equal(Do, Tensor(ttDo), 2e-15), "7 " << frob_norm(Do-Tensor(ttDo)) << " / " << frob_norm(Do));
 )
 
 UNIT_TEST(TT, full_contraction,

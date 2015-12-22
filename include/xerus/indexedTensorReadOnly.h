@@ -83,6 +83,7 @@ namespace xerus {
 		///@brief: IndexedTensorReadOnly cannot be assigned as they are read only.
 		void operator=(      IndexedTensorReadOnly&& _rhs) = delete;
 		
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		///@brief Allows cast to value_t if the degree of the current object is equal to 0.

@@ -341,13 +341,34 @@ namespace xerus {
 	}
 	
 	
-	value_t Tensor::at(const size_t _position) const {
-		return operator[](_position);
+	value_t& Tensor::at(const size_t _position) {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		REQUIRE(!has_factor(), "at() must not be called if there is a factor.");
+		REQUIRE((is_dense() && denseData.unique()) || (is_sparse() && sparseData.unique()) , "Data must be unique to call at().");
+		
+		if(is_dense()) {
+			return denseData.get()[_position];
+		} else {
+			return (*sparseData)[_position];
+		}
 	}
 	
-	value_t Tensor::at(const std::vector<size_t>& _positions) const {
-		return operator[](multiIndex_to_position(_positions, dimensions));
+	value_t Tensor::cat(const size_t _position) const {
+		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
+		REQUIRE(!has_factor(), "at() must not be called if there is a factor.");
+		
+		if(is_dense()) {
+			return denseData.get()[_position];
+		} else {
+			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+			if(entry == sparseData->end()) {
+				return 0.0;
+			} else {
+				return entry->second;
+			}
+		}
 	}
+	
 	
 	
 	value_t* Tensor::get_dense_data() {
@@ -545,63 +566,81 @@ namespace xerus {
 		dimensions = std::move(_newDimensions);
 	}
 	
-	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, size_t _cutPos) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
+	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, const size_t _cutPos) {
 		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
 		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
+		REQUIRE(_newDim >= dimensions[_n] || _cutPos >= dimensions[_n] -_newDim -1, "Cannot remove " << dimensions[_n] -_newDim << " slates starting at cut position " << _cutPos);
 		
 		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
 		
-		size_t newStepSize = 1;
-		size_t blockCount = 1;
-		size_t oldStepSize = 1;
-		for (size_t i=degree()-1; i>_n; --i) {
-			oldStepSize *= dimensions[i];
-		}
-		newStepSize = oldStepSize * _newDim;
-		oldStepSize = oldStepSize * dimensions[_n];
-		blockCount = size / oldStepSize; //  == product of dim[i] for i=0 to _n-1
+		const size_t dimStepSize = misc::product(dimensions, _n+1, degree());
+		const size_t oldStepSize = dimensions[_n]*dimStepSize;
+		const size_t newStepSize = _newDim*dimStepSize;
+		const size_t blockCount = size / oldStepSize; //  == misc::product(dimensions, 0, _n);
+		const size_t newsize = blockCount*newStepSize;
 		
-		size_t newsize = blockCount*newStepSize;
 		REQUIRE(newsize == size/dimensions[_n] * _newDim, 
-				dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize << " " << blockCount
-				<< size << " " << newsize);
-		value_t *tmp = new value_t[newsize];
-		if (newStepSize > oldStepSize) {
-			if (_cutPos < _newDim) {
-				size_t numInsert = (newStepSize-oldStepSize);
-				_cutPos *= oldStepSize / dimensions[_n];
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t)); // TODO use array_copy
-					memset(tmp+i*newStepSize+_cutPos, 0, numInsert*sizeof(double));
-					memcpy(tmp+i*newStepSize+_cutPos+numInsert, denseData.get()+i*oldStepSize+_cutPos, (oldStepSize-_cutPos)*sizeof(value_t));
+					dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize 
+					<< " " << blockCount << size << " " << newsize);
+		
+		if(is_dense()) {
+			value_t* const tmp = new value_t[newsize];
+			const size_t cutOffset = _cutPos*dimStepSize;
+			
+			if (_newDim > dimensions[_n]) {
+				if (_cutPos < dimensions[_n]) {
+					const size_t numInsert = (newStepSize-oldStepSize);
+					for (size_t i = 0; i < blockCount; ++i) {
+						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, cutOffset);
+						misc::array_set_zero(tmp+i*newStepSize+cutOffset, numInsert);
+						misc::array_copy(tmp+i*newStepSize+cutOffset+numInsert, denseData.get()+i*oldStepSize+cutOffset, (oldStepSize-cutOffset));
+					}
+				} else {
+					for (size_t i = 0; i < blockCount; ++i) {
+						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize);
+						misc::array_set_zero(tmp+i*newStepSize+oldStepSize, (newStepSize-oldStepSize));
+					}
 				}
-			} else {
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize*sizeof(value_t));
-					memset(tmp+i*newStepSize+oldStepSize, 0, (newStepSize-oldStepSize)*sizeof(double));
+			} else { // _newDim < dimensions[_n]
+				if (_cutPos < dimensions[_n]) {
+					const size_t removedSize = (dimensions[_n]-_newDim)*dimStepSize;
+					const size_t firstSize = cutOffset+dimStepSize-removedSize;
+					const size_t secondSize = oldStepSize-cutOffset-dimStepSize;
+					for (size_t i = 0; i < blockCount; ++i) {
+						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, firstSize);
+						misc::array_copy(tmp+i*newStepSize+firstSize, denseData.get()+i*oldStepSize+cutOffset+dimStepSize, secondSize);
+					}
+				} else {
+					for (size_t i = 0; i < blockCount; ++i) {
+						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize);
+					}
 				}
 			}
-		} else { // newStepSize <= oldStepSize
-			if (_cutPos < _newDim) {
-				_cutPos *= oldStepSize / dimensions[_n];
-				size_t diffSize = newStepSize - _cutPos;
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, _cutPos*sizeof(value_t));
-					memcpy(tmp+i*newStepSize+_cutPos, denseData.get()+(i+1)*oldStepSize-diffSize, diffSize*sizeof(value_t));
-				}
-			} else {
-				for (size_t i=0; i<blockCount; ++i) {
-					memcpy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize*sizeof(value_t));
+			
+			denseData.reset(tmp, internal::array_deleter_vt);
+			
+		} else {
+			REQUIRE(_cutPos >= dimensions[_n], "Support for dimension resize at arbitary position not yet ther efor Sparse Tensor");
+			
+			std::map<size_t, value_t>* newData = new std::map<size_t, value_t>();
+			
+			for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+				// Decode the position as i*oldStepSize + j*DimStepSize + k
+				const size_t k = entry.first%dimStepSize;
+				const size_t j = (entry.first/dimStepSize)%dimensions[_n];
+				const size_t i = (entry.first/dimStepSize)/dimensions[_n];
+				
+				// Only add if within the new range
+				if(j <= _newDim) {
+					newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
 				}
 			}
+			
+			sparseData.reset(newData);
 		}
+		
 		dimensions[_n] = _newDim;
 		size = newsize;
-		denseData.reset(tmp, internal::array_deleter_vt);
-		
-		REQUIRE(size == misc::product(dimensions), "");
 	}
 	
 	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
@@ -636,8 +675,6 @@ namespace xerus {
 	}
 	
 	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
 		REQUIRE(_indexNb < degree(), "");
 		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
 		REQUIRE(dimensions[_indexNb] > 1, "");
@@ -648,60 +685,86 @@ namespace xerus {
 	
 	//TODO Allow more 2d
 	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
 		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
 		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
 		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
 		const size_t N = dimensions[1];
-		for(size_t i=0; i<numDiags; ++i){
-			_f(realData[i+i*N]);
+		for(size_t i = 0; i < numDiags; ++i){
+			_f(at(i+i*N));
 		}
 	}
 	
 	//TODO Allow more 2d
 	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
 		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
 		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
 		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
 		const size_t N = dimensions[1];
-		for(size_t i=0; i<numDiags; ++i){
-			_f(realData[i+i*N], i);
+		for(size_t i = 0; i < numDiags; ++i){
+			_f(at(i+i*N), i);
 		}
 	}
 	
 	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
-		REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-		
 		ensure_own_data_and_apply_factor();
-		value_t* const realData = denseData.get();
-		for(size_t i=0; i<size; ++i){ _f(realData[i]); }
+		if(is_dense()) {
+			for(size_t i = 0; i < size; ++i) { _f(at(i)); }
+		} else {
+			for(size_t i = 0; i < size; ++i) {
+				value_t val = cat(i);
+				const value_t oldVal = val;
+				_f(val);
+				if(val != 0.0) {
+					at(i) = val;
+				} else if( oldVal != 0.0) {
+					IF_CHECK( size_t succ =) sparseData->erase(i);
+					REQUIRE(succ == 1, "Internal Error");
+				}
+			}
+		}
 	}
 	
 	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
 		void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
-			REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-			
 			ensure_own_data_and_apply_factor();
-			value_t* const realData = denseData.get();
-			for(size_t i=0; i<size; ++i){ _f(realData[i], i); }
+			if(is_dense()) {
+				for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
+			} else {
+				for(size_t i = 0; i < size; ++i) {
+					value_t val = cat(i);
+					const value_t oldVal = val;
+					_f(val, i);
+					if(val != 0.0) {
+						at(i) = val;
+					} else if( oldVal != 0.0) {
+						IF_CHECK( size_t succ =) sparseData->erase(i);
+						REQUIRE(succ == 1, "Internal Error");
+					}
+				}
+			}
 		}
 		
 		void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
-			REQUIRE(is_dense(), "Not yet implemented for sparse!"); // TODO
-			
 			ensure_own_data_and_apply_factor();
-			value_t* const realData = denseData.get();
 			
 			std::vector<size_t> multIdx(degree(), 0);
 			size_t idx = 0;
 			while (true) {
-				_f(realData[idx], multIdx);
-				// increasing indices
+				if(is_dense()) {
+					_f(at(idx), multIdx);
+				} else {
+					value_t val = cat(idx);
+					const value_t oldVal = val;
+					_f(val, multIdx);
+					if(val != 0.0) {
+						at(idx) = val;
+					} else if( oldVal != 0.0) {
+						IF_CHECK( size_t succ =) sparseData->erase(idx);
+						REQUIRE(succ == 1, "Internal Error");
+					}
+				}
+				
+				// Increase indices
 				idx++;
 				size_t changingIndex = degree()-1;
 				multIdx[changingIndex]++;
