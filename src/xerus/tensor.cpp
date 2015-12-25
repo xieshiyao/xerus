@@ -569,9 +569,10 @@ namespace xerus {
 	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, const size_t _cutPos) {
 		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
 		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
-		REQUIRE(_newDim >= dimensions[_n] || _cutPos >= dimensions[_n] -_newDim -1, "Cannot remove " << dimensions[_n] -_newDim << " slates starting at cut position " << _cutPos);
 		
 		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
+		
+		REQUIRE(_newDim >= dimensions[_n] || _cutPos >= dimensions[_n] -_newDim-1, "Cannot remove " << dimensions[_n] -_newDim << " slates starting at cut position " << _cutPos);
 		
 		const size_t dimStepSize = misc::product(dimensions, _n+1, degree());
 		const size_t oldStepSize = dimensions[_n]*dimStepSize;
@@ -631,22 +632,28 @@ namespace xerus {
 					const size_t i = entry.first/oldStepSize;
 					
 					if(j <= _cutPos) { // Entry remains at current position j
+						REQUIRE(i*newStepSize+j*dimStepSize+k < newsize, "IE");
 						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
-					} else { // Entry backdrops in position j
+					} else { // Entry moves to position j+slatesAdded
+						REQUIRE(i*newStepSize+(j+slatesAdded)*dimStepSize+k < newsize, "IE");
 						newData->emplace(i*newStepSize+(j+slatesAdded)*dimStepSize+k, entry.second);
 					}
 				}
 			} else {
 				const size_t slatesRemoved = dimensions[_n]-_newDim;
+				const size_t actualCutPos = std::min(dimensions[_n]-1, _cutPos);
+				
 				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
 					// Decode the position as i*oldStepSize + j*DimStepSize + k
 					const size_t k = entry.first%dimStepSize;
 					const size_t j = (entry.first%oldStepSize)/dimStepSize;
 					const size_t i = entry.first/oldStepSize;
 					
-					if(j < _cutPos-slatesRemoved+1) { // Entry remains at current position j
+					if(j < actualCutPos-slatesRemoved+1) { // Entry remains at current position j
+						REQUIRE(i*newStepSize+j*dimStepSize+k < newsize, "IE " << i << ", "<< j << ", "<< k << ", " << actualCutPos << " Size " << i*newStepSize+j*dimStepSize+k << "/" << newsize << ", " << dimensions);
 						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
-					} else if(j > _cutPos) { // Entry advances in position j
+					} else if(j > actualCutPos) { // Entry advances in position j
+						REQUIRE(i*newStepSize+(j-slatesRemoved)*dimStepSize+k < newsize, "IE" << i << ", "<< j << ", "<< k << ", " << actualCutPos);
 						newData->emplace(i*newStepSize+(j-slatesRemoved)*dimStepSize+k, entry.second);
 					}
 				}
@@ -1063,9 +1070,8 @@ namespace xerus {
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
-		
-		REQUIRE(_U.size == lhsSize*rank, "Err");
-		REQUIRE(_Vt.size == rhsSize*rank, "Err");
+		REQUIRE(_U.size == lhsSize*rank, "Error");
+		REQUIRE(_Vt.size == rhsSize*rank, "Error");
 		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
@@ -1073,9 +1079,6 @@ namespace xerus {
 		} else {
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
-		
-		// Apply factor to the diagonal matrix
-		misc::array_scale(tmpS.get(), std::abs(_input.factor), rank);
 		
 		// Account for hard threshold
 		if(_maxRank != 0) {
@@ -1098,7 +1101,7 @@ namespace xerus {
 		
 		// Account for a negative factor
 		if(_input.factor < 0.0) {
-			_U *= -1;
+			_Vt *= -1;
 		}
 		
 		_U.resize_dimension(_U.degree()-1, rank);

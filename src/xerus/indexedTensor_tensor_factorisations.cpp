@@ -156,15 +156,14 @@ namespace xerus {
 		
 		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(U), std::move(Vt));
 		
-		
-		
 		svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
-		
-		
 		
 		if(softThreshold > 0.0) {
 			const size_t oldRank = S.tensorObjectReadOnly->dimensions[0];
-			(*S.tensorObject)[0] = std::max((*S.tensorObject)[0] - softThreshold, 0.0);
+			rank = oldRank;
+			
+			(*S.tensorObject)[0] = std::max((*S.tensorObject)[0]-softThreshold, preventZero ? EPSILON*(*S.tensorObject)[0] : 0.0);
+			
 			for(size_t i = 1; i < oldRank; ++i) {
 				if((*S.tensorObject)[i+i*oldRank] < softThreshold) {
 					rank = i;
@@ -175,8 +174,14 @@ namespace xerus {
 			}
 			
 			if(rank != oldRank) {
-				S.tensorObject->resize_dimension(0, rank);
-				S.tensorObject->resize_dimension(1, rank);
+				Tensor newS({rank, rank}, Tensor::Representation::Sparse);
+				for(size_t i = 0; i < rank; ++i) {
+					newS[i+i*rank] = (*S.tensorObject)[i+i*oldRank];
+				}
+				*S.tensorObject = newS;
+				
+// 				S.tensorObject->resize_dimension(0, rank);
+// 				S.tensorObject->resize_dimension(1, rank);
 				U.tensorObject->resize_dimension(U.degree()-1, rank);
 				Vt.tensorObject->resize_dimension(0, rank);
 			}

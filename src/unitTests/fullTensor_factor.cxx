@@ -43,13 +43,11 @@ UNIT_TEST(Tensor, Factors,
     Tensor res3;
     Tensor res4;
     
-	
-    
     Index i, j, k, l, m, n, o, p, r, s;
     
     (res1(i,j,k,o), res2(o,p), res3(p,l,m,n)) = SVD(3*A(i,j,k,l,m,n));
     res4(i,j,k,l,m,n) = 3.7*res1(i,j,k,o)*(res2(o,p)/3.7)*res3(p,l,m,n);
-    TEST(approx_equal(res4, A3, 1e-12));
+    TEST(approx_equal(res4, A3, 1e-11));
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(B7(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = (Q(i,j,k,o)/12.5)*(12.5*R(o,m,n,r)/7);
