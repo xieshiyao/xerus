@@ -26,6 +26,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <tuple>
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -303,10 +304,33 @@ namespace std {
 		return both;
 	}
 		
+		
+	/// Pipe tuples
+	template<size_t I = 0, typename... Tp>
+	inline typename std::enable_if<I+1 == sizeof...(Tp), void>::type
+	print(std::ostream& _out, const std::tuple<Tp...>& t) {
+		_out << std::get<I>(t);
+	}
+
+	template<size_t I = 0, typename... Tp>
+	inline typename std::enable_if<I+1 < sizeof...(Tp), void>::type
+	print(std::ostream& _out, const std::tuple<Tp...>& t) {
+		_out << std::get<I>(t) << ", ";
+		print<I + 1, Tp...>(_out, t);
+	} 
+	
+	template<class... Tp>
+	std::ostream& operator<<(std::ostream& _out, const std::tuple<Tp...>& _tuple) {
+		_out << "<";
+		print<0, Tp...>(_out, _tuple);
+		_out << ">";
+		return _out;
+	}
+	
 	/// Pipe normal containers to ostreams
 	template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
-				std::is_base_of<std::vector<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{} 
-				|| std::is_base_of<std::set<item_t, rest_t...>, typename std::decay<container_t<item_t, rest_t...>>::type>{}, 
+				std::is_base_of<std::vector<item_t>, typename std::decay<container_t<item_t>>::type>{} 
+				|| std::is_base_of<std::set<item_t>, typename std::decay<container_t<item_t>>::type>{}, 
 				int>::type = 0>
 	std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
 		if(_container.size() == 0) { _out << "{ }"; return _out; }
@@ -324,4 +348,5 @@ namespace std {
 		_out << "\b\b }";
 		return _out;
 	}
+	
 }
