@@ -3,10 +3,15 @@
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
 * 2016-01-?? v2.0
+ * !Changed language standard to C++14, thereby dropping support for GCC < 4.8.
  * !Merged FullTensor and SparseTensor into a single Tensor class.
+ * Implemented several FullTensor functions also for sparse representations (modify(_diag)_elements, fix_slate, resize_dimension,...)
  * !Removed all support for stored IndexedTensor*s.
  * !Reworked the IndexedTensor* index assignment.
- * Several bug fixes, including SVD factor handling and SparseTensor summation.
+ * !Changed resize_dimension to allow slate insertion at the first position.
+ * Support for low level factorisation calls for Tensor class.
+ * Several bug fixes, including SVD factor handling, SparseTensor summation, Tensor resize_dimension.
+ * Added several test cases.
 
 * 2015-10-?? v1.4.3
  * TT::random no longer uses size_t to measure the size of the tensor and no longer exceeds maximal ranks.

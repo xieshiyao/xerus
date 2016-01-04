@@ -858,8 +858,6 @@ namespace xerus {
 		}
 	}
 	
-	
-	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
     
 	std::string Tensor::to_string() const {
