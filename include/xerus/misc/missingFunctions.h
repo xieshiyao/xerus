@@ -274,6 +274,24 @@ namespace xerus {
 			return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
 		}
 		
+		///@brief: Checks for hard equality ( == operator) without compiler warnings.
+		template<class T>
+		bool hard_equal(T _a, T _b) {
+			#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wfloat-equal"
+				return _a == _b;
+			#pragma GCC diagnostic pop
+		}
+		
+		///@brief: Checks for hard equality ( == operator) without compiler warnings.
+		template<class T>
+		bool hard_not_equal(T _a, T _b) {
+			#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wfloat-equal"
+				return _a != _b;
+			#pragma GCC diagnostic pop
+		}
+		
 		template<class T, class Comparator>
 		std::vector<size_t> create_sort_permutation(const std::vector<T>& _vec, Comparator _comp) {
 			std::vector<size_t> permutation(_vec.size());

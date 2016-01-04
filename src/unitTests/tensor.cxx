@@ -101,7 +101,7 @@ UNIT_TEST2(Tensor, Constructors) {
 		}
 		
 		// Test zero Initialisation
-		if(i < 6 || (i >= 8 && i < 10) || i == 28 || i == 29) {
+		if(i < 8 || (i >= 12 && i < 14) || i == 28 || i == 29) {
 			MTEST(approx_entrywise_equal(tensors[i], std::vector<value_t>(tensors[i].size, 0.0)), i);
 		}
 		

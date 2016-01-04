@@ -769,9 +769,9 @@ namespace xerus {
 				value_t val = cat(i);
 				const value_t oldVal = val;
 				_f(val);
-				if(val != 0.0) {
+				if(misc::hard_not_equal(val, 0.0)) {
 					at(i) = val;
-				} else if( oldVal != 0.0) {
+				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
 					REQUIRE(succ == 1, "Internal Error");
 				}
@@ -788,9 +788,9 @@ namespace xerus {
 				value_t val = cat(i);
 				const value_t oldVal = val;
 				_f(val, i);
-				if(val != 0.0) {
+				if(misc::hard_not_equal(val, 0.0)) {
 					at(i) = val;
-				} else if( oldVal != 0.0) {
+				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
 					REQUIRE(succ == 1, "Internal Error");
 				}
@@ -810,9 +810,9 @@ namespace xerus {
 				value_t val = cat(idx);
 				const value_t oldVal = val;
 				_f(val, multIdx);
-				if(val != 0.0) {
+				if(misc::hard_not_equal(val, 0.0)) {
 					at(idx) = val;
-				} else if( oldVal != 0.0) {
+				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(idx);
 					REQUIRE(succ == 1, "Internal Error");
 				}
@@ -1091,6 +1091,7 @@ namespace xerus {
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
+		// TODO check and adjust dimensions of U and VT
 		REQUIRE(_U.size == lhsSize*rank, "Error");
 		REQUIRE(_Vt.size == rhsSize*rank, "Error");
 		
