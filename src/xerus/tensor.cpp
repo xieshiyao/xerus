@@ -1040,6 +1040,7 @@ namespace xerus {
 		
 		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
 		
+		
 		// Check whether _result has to be reset
 		if( _result.degree() != lhsRemainOrder + rhsRemainOrder 
 			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
@@ -1056,10 +1057,12 @@ namespace xerus {
 		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
 		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
 		
-		if(!_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Full * Full => Full
+		if(!_lhs.is_sparse() && !_rhs.is_sparse()) { // Full * Full => Full
 			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
+		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse
+			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensor function)"); // TODO
 		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Sparse * Full => Full
 			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
@@ -1076,24 +1079,41 @@ namespace xerus {
 			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
-		} else {
-			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensor function)"); // TODO
 		}
 	}
 	
 	
 	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+		REQUIRE(_splitPos < _input.degree(), "_splitPos must smaller than the degree.");
 		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
 		const size_t rhsSize = misc::product(_input.dimensions, _splitPos, _input.degree());
 		size_t rank = std::min(lhsSize, rhsSize);
 		
-		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
+		if( !_U.is_dense()
+			|| _U.degree() != _splitPos+1 
+			|| rank != _U.dimensions.back() 
+			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _U.dimensions.begin())) 
+		{
+			Tensor::DimensionTuple newDimU;
+			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
+			newDimU.push_back(rank);
+			_U.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
 		
-		// TODO check and adjust dimensions of U and VT
-		REQUIRE(_U.size == lhsSize*rank, "Error");
-		REQUIRE(_Vt.size == rhsSize*rank, "Error");
+		if(!_Vt.is_dense()
+			|| _Vt.degree() != _input.degree()-_splitPos+1 
+			|| rank != _Vt.dimensions.front() 
+			|| !std::equal(_input.dimensions.begin()+_splitPos, _input.dimensions.end(), _Vt.dimensions.begin()+1)) 
+		{
+			Tensor::DimensionTuple newDimVt;
+			newDimVt.push_back(rank);
+			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
+			_Vt.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
