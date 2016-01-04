@@ -56,7 +56,7 @@ namespace xerus { namespace misc { namespace internal {
 		static bool ensure_bfd_loaded(Dl_info &_info) {
 			// load the corresponding bfd file (from file or map)
 			if (bfds.count(_info.dli_fbase) == 0) {
-				std::unique_ptr<storedBfd> newBfd(new storedBfd(bfd_openr(_info.dli_fname, 0), &bfd_close));
+				std::unique_ptr<storedBfd> newBfd(new storedBfd(bfd_openr(_info.dli_fname, nullptr), &bfd_close));
 				if (!newBfd->abfd) {
 					return false;
 				}

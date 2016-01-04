@@ -99,6 +99,10 @@ help:
 	\t\tbenchmark \t\t -- Build a loosly related benchmark program.\n \
 	\t\tselectFunctions \t -- Performe tests to determine the best basic array functions to use on this machine.\n"
 
+	
+opt:
+	$(CXX) $(FLAGS) -Q --help=optimizers
+	
 # Fake rule to create arbitary headers, to prevent errors if files are moved/renamed
 %.h: 
 	
