@@ -71,7 +71,8 @@ namespace xerus {
 	/** 
 	* @brief Class used to represent a single point measurments.
 	*/
-    struct SinglePointMeasurmentSet {
+    class SinglePointMeasurmentSet {
+	public:
 		std::vector<std::vector<size_t>> positions;
 		std::vector<value_t> measuredValues;
 		

@@ -1036,7 +1036,7 @@ namespace xerus {
 		const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
 		
 		IF_CHECK(
-			DimensionTuple resultDims;
+			Tensor::DimensionTuple resultDims;
 			if(_lhsTrans) {
 				for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
 					resultDims.emplace_back(_lhs.dimensions[i]);
@@ -1122,7 +1122,7 @@ namespace xerus {
 		}
 		
 		// Create tensor from diagonal values
-		_S.reset(DimensionTuple(2, rank), Tensor::Representation::Sparse);
+		_S.reset(Tensor::DimensionTuple(2, rank), Tensor::Representation::Sparse);
 		for(size_t i = 0; i < rank; ++i) {
 			_S[i*rank+i] = std::abs(_input.factor)*tmpS[i];
 		}
