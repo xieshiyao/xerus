@@ -55,6 +55,16 @@
 			(*tests)[_group][_name] = _f;
 		}
 		
+		UnitTest::UnitTest(std::string _group, std::string _name, std::function<void(bool&)> _f) {
+			if (!tests) {
+				tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
+			}
+			if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
+				LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
+			}
+			(*tests)[_group][_name] = [=]()->bool{bool passed = true; _f(passed); return passed;} ;
+		}
+		
 		#ifdef TEST_COVERAGE_
 			std::map<RequiredTest::Identifier, size_t> *RequiredTest::tests;
 			

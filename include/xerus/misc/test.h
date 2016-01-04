@@ -85,6 +85,16 @@
 				return passed;\
 			});
 			
+			
+	#define UNIT_TEST2(grp, name) \
+		xerus::misc::internal::UnitTest PASTE(grp,name)(#grp, #name, [](bool& passed) {\
+				std::mt19937_64 rnd;\
+				rnd.seed(0xC0CAC01A);\
+				\
+				std::normal_distribution<value_t> normalDist (0.0, 1.0);\
+				std::uniform_real_distribution<value_t> uniformDist (-1.0, 1.0);\
+			
+			
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
 
     namespace xerus { namespace misc { namespace internal {
@@ -93,6 +103,7 @@
 			static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
 			
 			UnitTest(std::string _group, std::string _name, std::function<bool ()> _f);
+			UnitTest(std::string _group, std::string _name, std::function<void(bool&)> _f);
 		};
 
 		#ifdef TEST_COVERAGE_
@@ -116,5 +127,6 @@
 	}}}
 #else
 	#define UNIT_TEST(grp, name, ...)
+	#define UNIT_TEST2(grp, name, ...)
 	#define REQUIRE_TEST (void)0
 #endif
