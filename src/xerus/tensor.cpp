@@ -566,135 +566,149 @@ namespace xerus {
 		dimensions = std::move(_newDimensions);
 	}
 	
-	void Tensor::resize_dimension(const size_t _n, const size_t _newDim, const size_t _cutPos) {
-		REQUIRE(_n < degree(), "Can't resize dimension " << _n << " as the tensor is only order " << degree());
+	void Tensor::resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos) {
+		REQUIRE(_dimPos < degree(), "Can't resize dimension " << _dimPos << " as the tensor is only order " << degree());
+
+		if (dimensions[_dimPos] == _newDim) { return; }  // Trivial case: Nothing to do
+
+		const size_t oldDim = dimensions[_dimPos];
+		_cutPos = std::min(_cutPos, oldDim);
+		
 		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
+		REQUIRE(_newDim > oldDim || _cutPos >= oldDim -_newDim, "Cannot remove " << oldDim -_newDim << " slates starting (exclusivly) at position " << _cutPos);
 		
-		if (dimensions[_n] == _newDim) { return; }  // Trivial case: Nothing to do
-		
-		REQUIRE(_newDim >= dimensions[_n] || _cutPos >= dimensions[_n] -_newDim-1, "Cannot remove " << dimensions[_n] -_newDim << " slates starting at cut position " << _cutPos);
-		
-		const size_t dimStepSize = misc::product(dimensions, _n+1, degree());
-		const size_t oldStepSize = dimensions[_n]*dimStepSize;
+		const size_t dimStepSize = misc::product(dimensions, _dimPos+1, degree());
+		const size_t oldStepSize = oldDim*dimStepSize;
 		const size_t newStepSize = _newDim*dimStepSize;
 		const size_t blockCount = size / oldStepSize; //  == misc::product(dimensions, 0, _n);
 		const size_t newsize = blockCount*newStepSize;
 		
-		REQUIRE(newsize == size/dimensions[_n] * _newDim, 
-					dimensions[_n] << " " << _newDim << " " << oldStepSize << " " << newStepSize 
-					<< " " << blockCount << size << " " << newsize);
-		
 		if(is_dense()) {
-			value_t* const tmp = new value_t[newsize];
-			const size_t cutOffset = _cutPos*dimStepSize;
+			std::unique_ptr<value_t[]> tmpData(new value_t[newsize]);
 			
-			if (_newDim > dimensions[_n]) {
-				if (_cutPos < dimensions[_n]) {
-					const size_t numInsert = (newStepSize-oldStepSize);
-					for (size_t i = 0; i < blockCount; ++i) {
-						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, cutOffset);
-						misc::array_set_zero(tmp+i*newStepSize+cutOffset, numInsert);
-						misc::array_copy(tmp+i*newStepSize+cutOffset+numInsert, denseData.get()+i*oldStepSize+cutOffset, (oldStepSize-cutOffset));
+			if (_newDim > oldDim) { // Add new slates
+				const size_t insertBlockSize = (_newDim-oldDim)*dimStepSize;
+				if(_cutPos == 0) {
+					for ( size_t i = 0; i < blockCount; ++i ) {
+						value_t* const currData = tmpData.get()+i*newStepSize;
+						misc::array_set_zero(currData, insertBlockSize);
+						misc::array_copy(currData+insertBlockSize, denseData.get()+i*oldStepSize, oldStepSize);
+					}
+				} else if(_cutPos == oldDim) {
+					for ( size_t i = 0; i < blockCount; ++i ) {
+						value_t* const currData = tmpData.get()+i*newStepSize;
+						misc::array_copy(currData, denseData.get()+i*oldStepSize, oldStepSize);
+						misc::array_set_zero(currData+oldStepSize, insertBlockSize);
 					}
 				} else {
+					const size_t preBlockSize = _cutPos*dimStepSize;
+					const size_t postBlockSize = (oldDim-_cutPos)*dimStepSize;
 					for (size_t i = 0; i < blockCount; ++i) {
-						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, oldStepSize);
-						misc::array_set_zero(tmp+i*newStepSize+oldStepSize, (newStepSize-oldStepSize));
+						value_t* const currData = tmpData.get()+i*newStepSize;
+						misc::array_copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
+						misc::array_set_zero(currData+preBlockSize, insertBlockSize);
+						misc::array_copy(currData+preBlockSize+insertBlockSize, denseData.get()+i*oldStepSize+preBlockSize, postBlockSize);
 					}
 				}
-			} else { // _newDim < dimensions[_n]
-				if (_cutPos < dimensions[_n]) {
-					const size_t removedSize = (dimensions[_n]-_newDim)*dimStepSize;
-					const size_t firstSize = cutOffset+dimStepSize-removedSize;
-					const size_t secondSize = oldStepSize-cutOffset-dimStepSize;
+			} else { // Remove slates
+				if (_cutPos < oldDim) {
+					const size_t removedSlates = (oldDim-_newDim);
+					const size_t removedBlockSize = removedSlates*dimStepSize;
+					const size_t preBlockSize = (_cutPos-removedSlates)*dimStepSize;
+					const size_t postBlockSize = (oldDim-_cutPos)*dimStepSize;
+					
+					REQUIRE(removedBlockSize+preBlockSize+postBlockSize == oldStepSize && preBlockSize+postBlockSize == newStepSize, "IE");
+					
 					for (size_t i = 0; i < blockCount; ++i) {
-						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, firstSize);
-						misc::array_copy(tmp+i*newStepSize+firstSize, denseData.get()+i*oldStepSize+cutOffset+dimStepSize, secondSize);
+						value_t* const currData = tmpData.get()+i*newStepSize;
+						misc::array_copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
+						misc::array_copy(currData+preBlockSize, denseData.get()+i*oldStepSize+preBlockSize+removedBlockSize, postBlockSize);
 					}
 				} else {
 					for (size_t i = 0; i < blockCount; ++i) {
-						misc::array_copy(tmp+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize);
+						misc::array_copy(tmpData.get()+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize);
 					}
 				}
 			}
-			
-			denseData.reset(tmp, internal::array_deleter_vt);
+			denseData.reset(tmpData.release(), internal::array_deleter_vt);
 		
 		} else {
-			std::map<size_t, value_t>* newData = new std::map<size_t, value_t>();
+			std::unique_ptr<std::map<size_t, value_t>> tmpData(new std::map<size_t, value_t>());
 			
-			if (_newDim > dimensions[_n]) {
-				const size_t slatesAdded = _newDim-dimensions[_n];
+			if (_newDim > oldDim) { // Add new slates
+				const size_t slatesAdded = _newDim-oldDim;
 				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
 					// Decode the position as i*oldStepSize + j*DimStepSize + k
 					const size_t k = entry.first%dimStepSize;
 					const size_t j = (entry.first%oldStepSize)/dimStepSize;
 					const size_t i = entry.first/oldStepSize;
 					
-					if(j <= _cutPos) { // Entry remains at current position j
-						REQUIRE(i*newStepSize+j*dimStepSize+k < newsize, "IE");
-						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
+					if(j < _cutPos) { // Entry remains at current position j
+						tmpData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
 					} else { // Entry moves to position j+slatesAdded
-						REQUIRE(i*newStepSize+(j+slatesAdded)*dimStepSize+k < newsize, "IE");
-						newData->emplace(i*newStepSize+(j+slatesAdded)*dimStepSize+k, entry.second);
+						tmpData->emplace(i*newStepSize+(j+slatesAdded)*dimStepSize+k, entry.second);
 					}
 				}
-			} else {
-				const size_t slatesRemoved = dimensions[_n]-_newDim;
-				const size_t actualCutPos = std::min(dimensions[_n]-1, _cutPos);
-				
+			} else { // Remove slates
+				const size_t slatesRemoved = oldDim-_newDim;
 				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
 					// Decode the position as i*oldStepSize + j*DimStepSize + k
 					const size_t k = entry.first%dimStepSize;
 					const size_t j = (entry.first%oldStepSize)/dimStepSize;
 					const size_t i = entry.first/oldStepSize;
 					
-					if(j < actualCutPos-slatesRemoved+1) { // Entry remains at current position j
-						REQUIRE(i*newStepSize+j*dimStepSize+k < newsize, "IE " << i << ", "<< j << ", "<< k << ", " << actualCutPos << " Size " << i*newStepSize+j*dimStepSize+k << "/" << newsize << ", " << dimensions);
-						newData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
-					} else if(j > actualCutPos) { // Entry advances in position j
-						REQUIRE(i*newStepSize+(j-slatesRemoved)*dimStepSize+k < newsize, "IE" << i << ", "<< j << ", "<< k << ", " << actualCutPos);
-						newData->emplace(i*newStepSize+(j-slatesRemoved)*dimStepSize+k, entry.second);
+					if(j < _cutPos-slatesRemoved) { // Entry remains at current position j
+						tmpData->emplace(i*newStepSize+j*dimStepSize+k, entry.second);
+					} else if(j >= _cutPos) { // Entry advances in position j
+						tmpData->emplace(i*newStepSize+(j-slatesRemoved)*dimStepSize+k, entry.second);
 					}
 				}
 			}
-			
-			sparseData.reset(newData);
+			sparseData.reset(tmpData.release());
 		}
 		
-		dimensions[_n] = _newDim;
+		dimensions[_dimPos] = _newDim;
 		size = newsize;
 	}
 	
-	void Tensor::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_dimension], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimension]);
+	void Tensor::fix_slate(const size_t _dimPos, const size_t _slatePosition) {
+		REQUIRE(_slatePosition < dimensions[_dimPos], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimPos]);
+		
+		const size_t stepCount = misc::product(dimensions, 0, _dimPos);
+		const size_t blockSize = misc::product(dimensions, _dimPos+1, degree());
+		const size_t stepSize = dimensions[_dimPos]*blockSize;
+		const size_t slateOffset = _slatePosition*blockSize;
 		
 		if(is_dense()) {
-			size_t stepCount = 1, blockSize = 1;
-			for(size_t i = 0; i < _dimension; ++i) { stepCount *= dimensions[i]; }
-			for(size_t i = _dimension+1; i < dimensions.size(); ++i) { blockSize *= dimensions[i]; }
-			
-			const size_t stepSize = dimensions[_dimension]*blockSize;
-			size_t inputPosition = _slatePosition*blockSize;
-			
-			value_t * const newData = new value_t[stepCount*blockSize];
+			std::unique_ptr<value_t[]> tmpData(new value_t[stepCount*blockSize]);
 			
 			// Copy data
 			for(size_t i = 0; i < stepCount; ++i) {
-				misc::array_copy(newData+i*blockSize, denseData.get()+inputPosition, blockSize);
-				inputPosition += stepSize;
+				misc::array_copy(tmpData.get()+i*blockSize, denseData.get()+i*stepSize+slateOffset, blockSize);
 			}
 			
-			// Set data
-			denseData.reset(newData, &internal::array_deleter_vt);
-			
-			// Adjust dimensions
-			dimensions.erase(dimensions.begin()+long(_dimension));
-			size = stepCount*blockSize;
+			denseData.reset(tmpData.release(), &internal::array_deleter_vt);
 		} else {
-			// TODO implement!
-			LOG(fatal, "fix_slate is not yet implemented for sparse representations."); 
+			std::unique_ptr<std::map<size_t, value_t>> tmpData(new std::map<size_t, value_t>());
+			
+			for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+				// Decode the position as i*stepSize + j*blockSize + k
+				const size_t k = entry.first%blockSize;
+				const size_t j = (entry.first%stepSize)/blockSize;
+				const size_t i = entry.first/stepSize;
+				
+				if(j == _slatePosition) {
+					tmpData->emplace(i*blockSize+k, entry.second);
+				}
+			}
+			
+			sparseData.reset(tmpData.release());
 		}
+		
+		
+		// Adjust dimensions
+		dimensions.erase(dimensions.begin()+long(_dimPos));
+		size = stepCount*blockSize;
 	}
 	
 	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
@@ -702,7 +716,7 @@ namespace xerus {
 		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
 		REQUIRE(dimensions[_indexNb] > 1, "");
 		
-		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos);
+		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos+1);
 	}
 	
 	

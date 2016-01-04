@@ -604,19 +604,20 @@ namespace xerus {
 		/** 
 		 * @brief Resizes a specific dimension of the Tensor.
 		 * @details Use this function only if the contend of the tensor shall stay, otherwise use reset().
-		 * @param _n the dimension to resize.
+		 * @param _dimPos the dimension to resize.
 		 * @param _newDim the new value that resized dimension shall have.
-		 * @param _cutPos the index within the selected dimension after which new slates are inserted 
-		 * or at which index the removal of slates is started (moving to smaller ones), by default the last index.
+		 * @param _cutPos the position within the selected dimension in front of which slates are inserted 
+		 * or removed. By default the current dimension, i.e new slates are added after the last current one
+		 * and removed starting from the last one.
 		 */
-		void resize_dimension(const size_t _n, const size_t _newDim, const size_t _cutPos=~0ul);
+		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul);
 		
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
-		 * @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
+		 * @param _dimPos the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
 		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
 		 */
-		void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		void fix_slate(const size_t _dimPos, const size_t _slatePosition);
 		
 		/** 
 		 * @brief Removes a single slate from the Tensor.

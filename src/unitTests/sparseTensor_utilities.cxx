@@ -23,47 +23,48 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, remove_slate,
-		  std::mt19937_64 rnd;
-		  rnd.seed(0X5EED);
-		  
-		  double n = 0.0;
-		  Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
-		  
-		  TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
-		  
-		  A.remove_slate(0,1);
-		  TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 19,20,21,22,23,24,25,26,27}, 1e-14));
-		  
-		  A.resize_dimension(0,3,1);
-		  TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 0,0,0,0,0,0,0,0,0, 19,20,21,22,23,24,25,26,27}, 1e-14));
-		  
-		  A.remove_slate(1,0);
-		  TEST(approx_entrywise_equal(A, {4,5,6,7,8,9, 0,0,0,0,0,0, 22,23,24,25,26,27}, 1e-14));
-		  
-		  A.resize_dimension(1,3,1);
-		  TEST(approx_entrywise_equal(A, {4,5,6,0,0,0,7,8,9, 0,0,0,0,0,0,0,0,0, 22,23,24,0,0,0,25,26,27}, 1e-14));
+UNIT_TEST(SparseTensor, remove_slate,
+    std::mt19937_64 rnd;
+    rnd.seed(0X5EED);
+    
+    double n = 0;
+    Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1; return n; } );
+	A.use_sparse_representation();
+    
+	TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
+	
+	A.remove_slate(0,1);
+	TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 19,20,21,22,23,24,25,26,27}, 1e-14));
+	
+	A.resize_dimension(0,3,1);
+	TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 0,0,0,0,0,0,0,0,0, 19,20,21,22,23,24,25,26,27}, 1e-14));
+	
+	A.remove_slate(1,0);
+	TEST(approx_entrywise_equal(A, {4,5,6,7,8,9, 0,0,0,0,0,0, 22,23,24,25,26,27}, 1e-14));
+	
+	A.resize_dimension(1,3,1);
+	TEST(approx_entrywise_equal(A, {4,5,6,0,0,0,7,8,9, 0,0,0,0,0,0,0,0,0, 22,23,24,0,0,0,25,26,27}, 1e-14));
 )
 
-UNIT_TEST(Tensor, fix_slate,
-		  std::mt19937_64 rnd;
-		  rnd.seed(0X5EED);
-		  
-		  double n = 0.0;
-		  Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
-		  
-		  TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
-		  
-		  A.fix_slate(0,1);
-		  TEST(approx_entrywise_equal(A, {10,11,12,13,14,15,16,17,18}, 1e-14));
-		  
-		  A.fix_slate(1,2);
-		  TEST(approx_entrywise_equal(A, {12,15,18}, 1e-14));
+UNIT_TEST(SparseTensor, fix_slate,
+		std::mt19937_64 rnd;
+		rnd.seed(0X5EED);
+		
+		double n = 0.0;
+		Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
+		A.use_sparse_representation();
+		
+		TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
+		
+		A.fix_slate(0,1);
+		TEST(approx_entrywise_equal(A, {10,11,12,13,14,15,16,17,18}, 1e-14));
+		
+		A.fix_slate(1,2);
+		TEST(approx_entrywise_equal(A, {12,15,18}, 1e-14));
 )
 
-
-UNIT_TEST(Tensor, dimension_reduction,
-    Tensor A({2,2,2});
+UNIT_TEST(SparseTensor, dimension_reduction,
+    Tensor A({2,2,2}, Tensor::Representation::Sparse);
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
     A[{0,1,0}] = 3;
@@ -93,8 +94,8 @@ UNIT_TEST(Tensor, dimension_reduction,
     TEST(C.size == 4);
 )
 
-UNIT_TEST(Tensor, dimension_expansion,
-    Tensor A({2,2,2});
+UNIT_TEST(SparseTensor, dimension_expansion,
+	Tensor A({2,2,2}, Tensor::Representation::Sparse);
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
     A[{0,1,0}] = 3;
@@ -124,10 +125,10 @@ UNIT_TEST(Tensor, dimension_expansion,
     TEST(C.size == 12);
 )
 
-UNIT_TEST(Tensor, modify_elements,
-    Tensor A({4,4});
-    Tensor B({4,4,7});
-    Tensor C({2,8});
+UNIT_TEST(SparseTensor, modify_elements,
+	Tensor A({4,4}, Tensor::Representation::Sparse);
+	Tensor B({4,4,7}, Tensor::Representation::Sparse);
+	Tensor C({2,8}, Tensor::Representation::Sparse);
     
     A[{0,0}] = 1;
     A[{0,1}] = 2;
