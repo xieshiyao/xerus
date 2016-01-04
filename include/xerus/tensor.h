@@ -771,10 +771,8 @@ namespace xerus {
 	static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 	
 	
-	
 	/** 
 	 * @brief Low-level contraction between Tensors.
-	 * @details This function assumes that all dimensions are allready correct and the combination of sparse/dense representation makes sense.
 	 * @param _result Output for the result of the contraction. Must allready have the right dimensions!
 	 * @param _lhs left hand side of the contraction.
 	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).

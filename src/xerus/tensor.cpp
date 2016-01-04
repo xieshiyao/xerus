@@ -1026,65 +1026,58 @@ namespace xerus {
 	}
 	
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		bool sparseLhs = _lhs.is_sparse();
-		bool sparseRhs = _rhs.is_sparse();
-		bool sparseResult = _result.is_sparse();
+		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than each involdes has.");
 		
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "_numIndices must not be larger than one of the degrees. here " << _numIndices << " > " << _lhs.degree() << "/" << _rhs.degree());
-		const size_t leftDim = _lhsTrans ? misc::product(_lhs.dimensions, _numIndices, _lhs.degree()) : misc::product(_lhs.dimensions, 0, _lhs.degree() - _numIndices);
-		const size_t midDim = _lhsTrans ? misc::product(_lhs.dimensions, 0, _numIndices) : misc::product(_lhs.dimensions, _lhs.degree()-_numIndices, _lhs.degree());
-		const size_t rightDim = _rhsTrans ? misc::product(_rhs.dimensions, 0, _rhs.degree()-_numIndices) : misc::product(_rhs.dimensions, _numIndices, _rhs.degree());
+		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
+		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;
+		const size_t lhsContractStart = _lhsTrans ? 0 : lhsRemainOrder;
+		const size_t lhsRemainEnd = lhsRemainStart + lhsRemainOrder;
 		
-		IF_CHECK(
-			Tensor::DimensionTuple resultDims;
-			if(_lhsTrans) {
-				for(size_t i = _numIndices; i < _lhs.degree(); ++i) {
-					resultDims.emplace_back(_lhs.dimensions[i]);
-				}
-			} else {
-				for(size_t i = 0; i < _lhs.degree()-_numIndices; ++i) {
-					resultDims.emplace_back(_lhs.dimensions[i]);
-				}
-			}
-			if(_rhsTrans) {
-				for(size_t i = 0; i < _rhs.degree()-_numIndices; ++i) {
-					resultDims.emplace_back(_rhs.dimensions[i]);
-				}
-			} else {
-				for(size_t i = _numIndices; i < _rhs.degree(); ++i) {
-					resultDims.emplace_back(_rhs.dimensions[i]);
-				}
-			}
-			REQUIRE(resultDims == _result.dimensions, "The given results has wrong dimensions " << _result.dimensions << " should be " << resultDims);
-			
-			for(size_t i = 0; i < _numIndices; ++i) {
-				REQUIRE((_lhsTrans ? _lhs.dimensions[i] : _lhs.dimensions[_lhs.degree()-_numIndices+i]) == (_rhsTrans ? _rhs.dimensions[_rhs.degree()-_numIndices+i] : _rhs.dimensions[i]), "Dimensions of the be contracted indices do not coincide.");
-			}
-		)
+		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
+		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
+		IF_CHECK( const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0; )
+		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
+		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
 		
-		if(!sparseLhs && !sparseRhs && !sparseResult) { // Full * Full => Full
+		// Check whether _result has to be reset
+		if( _result.degree() != lhsRemainOrder + rhsRemainOrder 
+			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
+			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin())
+		) {
+			Tensor::DimensionTuple resultDim;
+			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
+			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd);
+			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
+			_result.reset(std::move(resultDim), Tensor::Initialisation::None);
+		}
+		
+		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
+		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
+		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
+		
+		if(!_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Full * Full => Full
 			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
-		} else if(sparseLhs && !sparseRhs && !sparseResult) { // Sparse * Full => Full
+		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Sparse * Full => Full
 			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
-		} else if(!sparseLhs && sparseRhs && !sparseResult) { // Full * Sparse => Full
+		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && !_result.is_sparse()) { // Full * Sparse => Full
 			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
-		} else if(sparseLhs && !sparseRhs && sparseResult) { // Sparse * Full => Sparse
+		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && _result.is_sparse()) { // Sparse * Full => Sparse
 			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
-		} else if(!sparseLhs && sparseRhs && sparseResult) { // Full * Sparse => Sparse
+		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && _result.is_sparse()) { // Full * Sparse => Sparse
 			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
 		} else {
-			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensro function)");
+			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensor function)"); // TODO
 		}
 	}
 	
