@@ -158,10 +158,10 @@ namespace xerus {
 		 * @details @a _f is called with the current number of entries present and the number of possible entries (i.e. size). @a _f shall return a pair containg the position
 		 * and value of the next entry. @a _f is required not to return a position twice.
 		 * @param _dimensions the future dimensions of the Tensor.
-		 * @param _f the function to be used to create each non zero entry. 
 		 * @param _N the number of non-zero entries to be created.
+		 * @param _f the function to be used to create each non zero entry. 
 		 */
-		Tensor(const DimensionTuple& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N);
+		Tensor(const DimensionTuple& _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
 		
 		
 		

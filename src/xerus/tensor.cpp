@@ -104,7 +104,7 @@ namespace xerus {
 		}
 	}
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f, const size_t _N) : Tensor(_dimensions, Representation::Sparse, Initialisation::Zero) {
+	Tensor::Tensor(const DimensionTuple& _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f) : Tensor(_dimensions, Representation::Sparse, Initialisation::Zero) {
 		REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
 		for (size_t i=0; i < _N; ++i) {
 			std::pair<size_t, value_t> entry = _f(i, size);
