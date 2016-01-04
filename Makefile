@@ -64,7 +64,7 @@ include makeIncludes/optimization.mk
 # OPTIMIZE += -fprofile-generate	# Generate Profile output for optimization 
 # OPTIMIZE += -fprofile-use		# Use a previously generated profile output
 
-OTHER += -std=c++11			# Use old C++11 standard
+OTHER += -std=c++1y			# Use current C++14 standard
 OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
 
 # ------------------------------------------------------------------------------------------------------

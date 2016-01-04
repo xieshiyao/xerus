@@ -49,29 +49,19 @@
 #define ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>{}, int>::type = 0
 
 
+// template void
+template<class...> using void_t = void;
 
 /**
  * @def GENERATE_HAS_MEMBER(member)
  * @brief Macro to create a template class that checks for the existence of member functions. To be used in other template definitions in a SFINAE fashion.
  */
-#define GENERATE_HAS_MEMBER(member)                                               \
-                                                                                  \
-template < class T >                                                              \
-class HasMember_##member                                                          \
-{                                                                                 \
-private:                                                                          \
-    typedef char (& yes)[1];							\
-    typedef char (& no)[2];							\
-										\
-    template <typename C> static yes check(decltype(&C::member));		\
-    template <typename> static no check(...);					\
-										\
-public: 									\
-    static constexpr bool RESULT = sizeof(check<T>(0)) == sizeof(yes);		\
-};                                                                                \
-                                                                                  \
-template < class T >                                                              \
-struct has_member_##member                                                        \
-: public std::integral_constant<bool, HasMember_##member<T>::RESULT>              \
-{ };                                                                              \
+#define GENERATE_HAS_FUNCTION(function)\
+\
+template<class, class, class = void>\
+struct has_##function : std::false_type {};\
+\
+template<class clas, class arg>\
+struct has_##function<clas, arg, void_t<decltype(std::declval<clas>().function(std::declval<arg>()))>> : std::true_type {};\
+\
 

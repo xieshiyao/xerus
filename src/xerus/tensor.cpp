@@ -720,25 +720,43 @@ namespace xerus {
 	}
 	
 	
-	//TODO Allow more 2d
 	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
-		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
 		ensure_own_data_and_apply_factor();
-		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-		const size_t N = dimensions[1];
-		for(size_t i = 0; i < numDiags; ++i){
-			_f(at(i+i*N));
+		
+		if(degree() == 0) {
+			_f(at(0)); 
+		} else {
+			size_t stepSize = 1;
+			for(size_t i = 1; i < degree(); ++i) {
+				stepSize *= dimensions[i];
+				stepSize += 1;
+			}
+			
+			const size_t numDiags = misc::min(dimensions);
+			
+			for(size_t i = 0; i < numDiags; ++i){
+				_f(at(i*stepSize));
+			}
 		}
 	}
 	
-	//TODO Allow more 2d
 	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
-		REQUIRE(degree() == 2, "Diagonal elements are only well defined if degree equals two. Here: "  << degree());
 		ensure_own_data_and_apply_factor();
-		const size_t numDiags = std::min(dimensions[0], dimensions[1]);
-		const size_t N = dimensions[1];
-		for(size_t i = 0; i < numDiags; ++i){
-			_f(at(i+i*N), i);
+		
+		if(degree() == 0) {
+			_f(at(0), 0); 
+		} else {
+			size_t stepSize = 1;
+			for(size_t i = 1; i < degree(); ++i) {
+				stepSize *= dimensions[i];
+				stepSize += 1;
+			}
+			
+			const size_t numDiags = misc::min(dimensions);
+			
+			for(size_t i = 0; i < numDiags; ++i){
+				_f(at(i*stepSize), i);
+			}
 		}
 	}
 	
@@ -760,61 +778,59 @@ namespace xerus {
 			}
 		}
 	}
+
+	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+		ensure_own_data_and_apply_factor();
+		if(is_dense()) {
+			for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
+		} else {
+			for(size_t i = 0; i < size; ++i) {
+				value_t val = cat(i);
+				const value_t oldVal = val;
+				_f(val, i);
+				if(val != 0.0) {
+					at(i) = val;
+				} else if( oldVal != 0.0) {
+					IF_CHECK( size_t succ =) sparseData->erase(i);
+					REQUIRE(succ == 1, "Internal Error");
+				}
+			}
+		}
+	}
 	
-	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 7) || defined(__clang__)
-		void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
-			ensure_own_data_and_apply_factor();
-			if(is_dense()) {
-				for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
-			} else {
-				for(size_t i = 0; i < size; ++i) {
-					value_t val = cat(i);
-					const value_t oldVal = val;
-					_f(val, i);
-					if(val != 0.0) {
-						at(i) = val;
-					} else if( oldVal != 0.0) {
-						IF_CHECK( size_t succ =) sparseData->erase(i);
-						REQUIRE(succ == 1, "Internal Error");
-					}
-				}
-			}
-		}
+	void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
+		ensure_own_data_and_apply_factor();
 		
-		void Tensor::modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f) {
-			ensure_own_data_and_apply_factor();
-			
-			std::vector<size_t> multIdx(degree(), 0);
-			size_t idx = 0;
-			while (true) {
-				if(is_dense()) {
-					_f(at(idx), multIdx);
-				} else {
-					value_t val = cat(idx);
-					const value_t oldVal = val;
-					_f(val, multIdx);
-					if(val != 0.0) {
-						at(idx) = val;
-					} else if( oldVal != 0.0) {
-						IF_CHECK( size_t succ =) sparseData->erase(idx);
-						REQUIRE(succ == 1, "Internal Error");
-					}
-				}
-				
-				// Increase indices
-				idx++;
-				size_t changingIndex = degree()-1;
-				multIdx[changingIndex]++;
-				while(multIdx[changingIndex] == dimensions[changingIndex]) {
-					multIdx[changingIndex] = 0;
-					changingIndex--;
-					// Return on overflow 
-					if(changingIndex >= degree()) { return; }
-					multIdx[changingIndex]++;
+		std::vector<size_t> multIdx(degree(), 0);
+		size_t idx = 0;
+		while (true) {
+			if(is_dense()) {
+				_f(at(idx), multIdx);
+			} else {
+				value_t val = cat(idx);
+				const value_t oldVal = val;
+				_f(val, multIdx);
+				if(val != 0.0) {
+					at(idx) = val;
+				} else if( oldVal != 0.0) {
+					IF_CHECK( size_t succ =) sparseData->erase(idx);
+					REQUIRE(succ == 1, "Internal Error");
 				}
 			}
+			
+			// Increase indices
+			idx++;
+			size_t changingIndex = degree()-1;
+			multIdx[changingIndex]++;
+			while(multIdx[changingIndex] == dimensions[changingIndex]) {
+				multIdx[changingIndex] = 0;
+				changingIndex--;
+				// Return on overflow 
+				if(changingIndex >= degree()) { return; }
+				multIdx[changingIndex]++;
+			}
 		}
-	#endif
+	}
     
     void Tensor::use_dense_representation() {
 		if(is_sparse()) {
@@ -833,7 +849,7 @@ namespace xerus {
 			sparseData.reset(new std::map<size_t, value_t>());
 			for(size_t i = 0; i < size; ++i) {
 				if(std::abs(factor*denseData.get()[i]) >= _eps) {
-					sparseData->insert({i, factor*denseData.get()[i]}); // TODO use emplace_hint
+					sparseData->emplace_hint(sparseData->end(), i, factor*denseData.get()[i]);
 				}
 			}
 			

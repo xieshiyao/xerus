@@ -126,7 +126,6 @@ UNIT_TEST(Tensor, dimension_expansion,
 
 UNIT_TEST(Tensor, modify_elements,
     Tensor A({4,4});
-    Tensor B({4,4,7});
     Tensor C({2,8});
     
     A[{0,0}] = 1;
@@ -159,9 +158,6 @@ UNIT_TEST(Tensor, modify_elements,
     
     A.modify_diag_elements([](value_t& _entry){_entry = 0;});
     TEST(approx_entrywise_equal(A, {0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
-    
-    FAILTEST(B.modify_diag_elements([](value_t& _entry){return _entry;}));
-    FAILTEST(B.modify_diag_elements([](value_t& _entry, const size_t _position){return _entry;}));
 )
 
 
