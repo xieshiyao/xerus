@@ -113,12 +113,14 @@ UNIT_TEST2(Tensor, Constructors) {
 		}
 		
 		// Test equivalence
-		if(i%2 == 0) {
-			MTEST(approx_equal(tensors[i], tensors[i+1]), i);
-			MTEST(approx_entrywise_equal(tensors[i], tensors[i+1]), i);
-		} else {
-			MTEST(approx_equal(tensors[i], tensors[i-1]), i);
-			MTEST(approx_entrywise_equal(tensors[i], tensors[i-1]), i);
+		if(!(8 <= i && i < 12) && !(16 <= i && i < 20)) { // Skip uninitialized tensors (inf, and nan may occur)
+			if(i%2 == 0) {
+				MTEST(approx_equal(tensors[i], tensors[i+1]), i);
+				MTEST(approx_entrywise_equal(tensors[i], tensors[i+1]), i);
+			} else {
+				MTEST(approx_equal(tensors[i], tensors[i-1]), i);
+				MTEST(approx_entrywise_equal(tensors[i], tensors[i-1]), i);
+			}
 		}
 	}
 }});
