@@ -188,7 +188,7 @@ namespace xerus {
 		 */
 		template<class generator, class distribution>
 		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
-			return Tensor::random(std::vector<size_t>(std::move(_dimensions)), _rnd, _dist);
+			return Tensor::random(DimensionTuple(std::move(_dimensions)), _rnd, _dist);
 		}
 		
 		/** 
@@ -245,7 +245,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor dirac(const DimensionTuple& _dimensions, const std::vector<size_t>& _position);
+		static Tensor dirac(const DimensionTuple& _dimensions, const MultiIndex& _position);
 		
 		/** 
 		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
@@ -560,28 +560,28 @@ namespace xerus {
 		 * @param _representation the new representation of the tensor.
 		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		void reset(const std::vector<size_t>&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
+		void reset(const DimensionTuple&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		void reset(const std::vector<size_t>&  _newDim, const Initialisation _init = Initialisation::Zero);
+		void reset(const DimensionTuple&  _newDim, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions and uses the given data.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _newData new dense data in row-major order.
 		 */
-		void reset(const std::vector<size_t>&  _newDim, const std::shared_ptr<value_t>& _newData);
+		void reset(const DimensionTuple&  _newDim, const std::shared_ptr<value_t>& _newData);
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _newData new dense data in row-major order.
 		 */
-		void reset(const std::vector<size_t>&  _newDim, std::unique_ptr<value_t[]>&& _newData);
+		void reset(const DimensionTuple&  _newDim, std::unique_ptr<value_t[]>&& _newData);
 		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
@@ -659,7 +659,7 @@ namespace xerus {
 		 * @details In this overload the current entry together with its complete position is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&, const std::vector<size_t>&)>& _f);
+		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
 		/** 
 		 * @brief Makes the Tensor use a dense representation.
@@ -682,7 +682,7 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
-		static size_t multiIndex_to_position(const std::vector<size_t>& _multiIndex, const std::vector<size_t>& _dimensions);
+		static size_t multiIndex_to_position(const MultiIndex& _multiIndex, const DimensionTuple& _dimensions);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
