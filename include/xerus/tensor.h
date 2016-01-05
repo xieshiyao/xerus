@@ -770,6 +770,11 @@ namespace xerus {
 	*/
 	static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 	
+	/**
+	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
+	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
+	 */
+	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
 	
 	/** 
 	 * @brief Low-level contraction between Tensors.

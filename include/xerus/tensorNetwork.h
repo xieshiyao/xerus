@@ -200,27 +200,29 @@ namespace xerus {
 
     public:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-            
-        /** 
-		* @brief Explicit cast to Tensor.
-		* @details Contracts the complete network into a single Tensor
-		*/
-        explicit operator Tensor() const;
-        
-            
-        /** 
-		* @brief Fully contract the TensorNetwork
-		* @details The complete TensorNetwork is contracted. The result can be both full or sparse.
-		* @returns a pointer to the resulting single Tensor.
-		*/
-		std::unique_ptr<Tensor> fully_contracted_tensor() const;
+          
         
         ///@brief TensorNetworks are copy assignable.
-		TensorNetwork& operator=(const TensorNetwork &_cpy);
+        TensorNetwork& operator=(const TensorNetwork &_cpy) = default;
             
         ///@brief TensorNetworks are move assignable.
-		TensorNetwork& operator=(TensorNetwork &&_mv);
-            
+		TensorNetwork& operator=(TensorNetwork &&_mv) = default;
+        
+		
+		/** 
+		 * @brief Explicit cast to Tensor.
+		 * @details Contracts the complete network into a single Tensor
+		 */
+		explicit operator Tensor() const;
+		
+		
+		/** 
+		 * @brief Fully contract the TensorNetwork
+		 * @details The complete TensorNetwork is contracted. The result can be both full or sparse.
+		 * @returns a pointer to the resulting single Tensor.
+		 */
+		std::unique_ptr<Tensor> fully_contracted_tensor() const;
+		
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
         /** 
 		* @brief Read the value at a specific position.
@@ -353,12 +355,11 @@ namespace xerus {
 		/** 
 		 * @brief Sanity checks the network.
 		 * @details Checks whether all links in the network are set consistently and matching the 
-		 * underlying tensor objects. Note that this only checks whether the TensorNetwork is valid
-		 * not whether the additional constrains of a specific format are fullfilled. For this purpose
-		 * use is_in_expected_format().
-		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
+		 * underlying tensor objects. If not an exception is throws and the function does not return. 
+		 * Note that this only checks whether the TensorNetwork is valid not whether the additional
+		 * constrains of a specific format are fullfilled. For this purpose use is_in_expected_format(). 
 		 */
-		bool is_valid_network(const bool _check_erased = true) const;
+		void require_valid_network(const bool _check_erased = true) const;
         
 		/** 
 		 * @brief Creates a dataless copy of a subnet.

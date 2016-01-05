@@ -80,75 +80,44 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
+	
 	TensorNetwork::operator Tensor() const {
-		std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
-		return *contractedTensor;
+		return *fully_contracted_tensor();
 	}
 	
 	std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
-		REQUIRE(is_valid_network(), "Cannot fully contract inconsistent network.");
-		std::unique_ptr<Tensor> result;
+		require_valid_network();
 		
 		std::set<size_t> all;
-		TensorNetwork cpy(*this);
+		for(size_t i = 0; i < nodes.size(); ++i) { all.emplace_hint(all.end(), i); }
 		
-		for (size_t i = 0; i < nodes.size(); ++i) {
-			if (!nodes[i].erased) all.insert(i);
-		}
+		TensorNetwork cpy(*this);
 		size_t res = cpy.contract(all);
 		
-		std::vector<Index> externalOrder;
-		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
-		
-		std::vector<Index> internalOrder;
-		for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
-			REQUIRE(link.external, "Internal Error");
-			internalOrder.emplace_back(externalOrder[link.indexPosition]);
+		std::vector<size_t> shuffle(degree());
+		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) {
+			REQUIRE(cpy.nodes[res].neighbors[i].external, "Internal Error");
+			shuffle[i] = cpy.nodes[res].neighbors[i].indexPosition;
 		}
+		std::unique_ptr<Tensor> result(new Tensor(cpy.nodes[res].tensorObject->representation));
 		
-		result.reset( new Tensor(cpy.nodes[res].tensorObject->representation));
-		
-		(*result)(externalOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
+		reshuffle(*result, *cpy.nodes[res].tensorObject, shuffle);
 		
 		return result;
 	}
 	
 	
-	
-	
-	TensorNetwork& TensorNetwork::operator=(const TensorNetwork& _other) {
-		REQUIRE(_other.is_valid_network(), "Cannot assign inconsistent network.");
-		
-		dimensions = _other.dimensions;
-		nodes = _other.nodes;
-		externalLinks = _other.externalLinks;
-		return *this;
-	}
-	
-	TensorNetwork& TensorNetwork::operator=(TensorNetwork &&_mv) {
-		REQUIRE(_mv.is_valid_network(), "Cannot move inconsistent network.");
-		
-		dimensions = std::move(_mv.dimensions);
-		nodes = std::move(_mv.nodes);
-		externalLinks = std::move(_mv.externalLinks);
-		
-		// Ensure that _mv is in a legal state (ugly because _mv is usually deleted directly after move assignement...)
-		_mv.dimensions.clear();
-		_mv.nodes.clear();
-		_mv.externalLinks.clear();
-		return *this;
-	}
-	
-	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	value_t TensorNetwork::operator[](const size_t _position) const {
-		REQUIRE(is_valid_network(), "Invalid Network");
-		REQUIRE(nodes.size() > 0, "There must always be at least one node");
+		require_valid_network();
+		
 		if (degree() == 0) {
 			REQUIRE(_position == 0, "Tried to access non-existing entry of TN");
-			REQUIRE(nodes.size() == 1, "Internal Error");
-			return (*nodes[0].tensorObject)[0];
+			value_t value = 1.0;
+			for(const TensorNode& node : nodes) { value *= (*node.tensorObject)[0]; }
+			return value;
 		}
+		
 		std::vector<size_t> positions(degree());
 		size_t remains = _position;
 		for(size_t i = degree(); i > 1; --i) {
@@ -159,8 +128,9 @@ namespace xerus {
 		return operator[](positions);
 	}
 	
-	value_t TensorNetwork::operator[](const std::vector<size_t>& _positions) const {
-		REQUIRE(is_valid_network(), "Invalid Network");
+	value_t TensorNetwork::operator[](const Tensor::MultiIndex& _positions) const {
+		require_valid_network();
+		
 		TensorNetwork partialCopy;
 		partialCopy.nodes = nodes;
 		
@@ -360,11 +330,11 @@ namespace xerus {
 		for (size_t i=0; i<externalLinks.size(); ++i) {
 			externalLinks[i].other = _f(externalLinks[i].other);
 		}
-		is_valid_network();
+		require_valid_network();
 	}
 	
 #ifndef DISABLE_RUNTIME_CHECKS_
-	bool TensorNetwork::is_valid_network(const bool _check_erased) const {
+	void TensorNetwork::require_valid_network(const bool _check_erased) const {
 		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
@@ -409,18 +379,15 @@ namespace xerus {
 				}
 			}
 		}
-		
-		return true;
 	}
 #else
-	/// no checks are performed with disabled checks... 
-	bool TensorNetwork::is_valid_network(bool _check_erased) const {
-		return true;
-	}
+	/// No checks are performed with disabled checks... 
+	inline bool TensorNetwork::is_valid_network(bool _check_erased) const { }
 #endif
 	
 	bool TensorNetwork::is_in_expected_format() const {
-		return is_valid_network();
+		require_valid_network();
+		return true;
 	}
 	
 	/// Creates a copy of a subnet that only contains nullptr as data pointers
@@ -462,7 +429,7 @@ namespace xerus {
 			cpy.externalLinks.erase(cpy.externalLinks.begin()+(long)toErase[i-1]);
 		}
 		
-		cpy.is_valid_network(false);
+		cpy.require_valid_network(false);
 		return cpy;
 	}
 	
@@ -512,7 +479,7 @@ namespace xerus {
 	void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
 		
-		REQUIRE(base.is_valid_network(), "Network that is supposed to be traced out is inconsistent.");
+		base.require_valid_network();
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			std::set<Index> contractedIndices;
@@ -570,7 +537,7 @@ namespace xerus {
 		
 		base.contract_unconnected_subnetworks();
 		
-		REQUIRE(base.is_valid_network(), "Network was broken in the process of tracing out double indices.");
+		base.require_valid_network();
 	}
 	void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
 		// Find common Index in nodeA
@@ -676,7 +643,7 @@ namespace xerus {
 	
 	
 	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		is_valid_network();
+		require_valid_network();
 		const size_t extNode = externalLinks[_dimension].other;
 		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
 		
@@ -700,12 +667,13 @@ namespace xerus {
 		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + (long)extNodeIndexPos);
 		
 		contract_unconnected_subnetworks();
-		is_valid_network();
+		require_valid_network();
 	}
 	
 	
 	void TensorNetwork::contract_unconnected_subnetworks() {
-		REQUIRE(is_valid_network(), "Invalid TensorNetwork");
+		require_valid_network();
+
 		std::vector<bool> seen(nodes.size(), false);
 		std::vector<size_t> expansionStack;
 		expansionStack.reserve(nodes.size());
@@ -793,7 +761,8 @@ namespace xerus {
 
 	
 	void TensorNetwork::reduce_representation() {
-		REQUIRE(is_valid_network(), "");
+		require_valid_network();
+		
 		TensorNetwork strippedNet = stripped_subnet();
 		std::vector<std::set<size_t>> contractions(strippedNet.nodes.size());
 		for (size_t id1=0; id1 < strippedNet.nodes.size(); ++id1) {
@@ -834,7 +803,7 @@ namespace xerus {
 		}
 		
 		sanitize();
-		is_valid_network();
+		require_valid_network();
 	}
 	
 	
@@ -1111,7 +1080,7 @@ namespace xerus {
 			nn->indexPosition = d;
 		}
 		
-		is_valid_network(false);
+		require_valid_network(false);
 	}
 
 	double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
@@ -1174,7 +1143,7 @@ namespace xerus {
 		// Find traces (former contractions have become traces due to the joining)
 		trace_out_double_indices(_base.indices, std::move(_base));
 		
-		REQUIRE(_base.tensorObject->is_valid_network(), "ie");
+		_base.tensorObject->require_valid_network();
 	}
 
 	size_t TensorNetwork::contract(const std::set<size_t>& _ids) {

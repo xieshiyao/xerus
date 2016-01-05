@@ -275,7 +275,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::contract_stack(IndexedTensorWritable<TensorNetwork>&& _me) {
-		REQUIRE(_me.tensorObject->is_valid_network(), "cannot contract inconsistent ttStack");
+		_me.tensorObject->require_valid_network();
 		const size_t numComponents = _me.degree()/N;
 		const size_t numNodes = _me.degree()/N+2;
 		std::set<size_t> toContract;
@@ -291,7 +291,7 @@ namespace xerus {
 		// so modulus gives the correct wanted id
 		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
 		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
-		REQUIRE(_me.tensorObject->is_valid_network(), "ie: something went wrong in contract_stack");
+		IF_CHECK(_me.tensorObject->require_valid_network();)
 		
 		// reset to new external links
 		_me.tensorObject->externalLinks.clear();
@@ -721,7 +721,8 @@ namespace xerus {
 		}
 		
 		REQUIRE(result.is_valid_tt(), "Internal Error.");
-		REQUIRE(result.is_valid_network(), "Internal Error.");
+		result.require_valid_network();
+		
 		if (_A.cannonicalized) {
 			result.move_core(_A.corePosition);
 		}
@@ -863,8 +864,8 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(left.is_valid_network(), "Internal Error");
-		REQUIRE(right.is_valid_network(), "Internal Error");
+		IF_CHECK(left.require_valid_network();)
+		IF_CHECK(right.require_valid_network();)
 		
 		return std::pair<TensorNetwork, TensorNetwork>(std::move(left), std::move(right));
 	}

@@ -76,7 +76,7 @@ namespace xerus {
 	
 	template<> 
 	void IndexedTensorWritable<Tensor>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-		REQUIRE(_rhs.tensorObjectReadOnly->is_valid_network(), "Invald Network");
+		_rhs.tensorObjectReadOnly->require_valid_network();
 		_rhs.assign_indices();
 		std::vector<Index> rightIndices = _rhs.indices;
 		TensorNetwork cpy(*_rhs.tensorObjectReadOnly);

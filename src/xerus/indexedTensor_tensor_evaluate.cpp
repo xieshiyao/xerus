@@ -61,12 +61,12 @@ namespace xerus {
 		)
 		
 		// Count how many indices in the back do not change and calculate blockSize
-		size_t lastShuffled = 0;
-		for(size_t i = 1; i < _shuffle.size(); ++i) {
-			if(_shuffle[i] != i) { lastShuffled = i ; }
+		long lastShuffled = -1;
+		for(size_t i = 0; i < _shuffle.size(); ++i) {
+			if(_shuffle[i] != i) { lastShuffled = long(i) ; }
 		}
 		
-		const size_t numToShuffle = lastShuffled+1;
+		const size_t numToShuffle = size_t(lastShuffled+1);
 		const size_t blockSize = misc::product(_base.dimensions, numToShuffle, _base.dimensions.size());
 		
 		if(blockSize == _base.size) { // No actual reshuffling
