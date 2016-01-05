@@ -34,6 +34,106 @@
 
 namespace xerus {
 
+	void increase_indices(const size_t _i, value_t*& _outPosition, const std::vector<size_t>& _stepSizes, const std::vector<size_t>& _baseDimensions ) {
+		size_t index = _stepSizes.size()-1;
+		_outPosition += _stepSizes[index];
+		size_t multStep = _baseDimensions[index];
+		while(_i%multStep == 0) {
+			_outPosition -= _baseDimensions[index]*_stepSizes[index]; // "reset" current index to 0
+			--index; // Advance to next index
+			_outPosition += _stepSizes[index]; // increase next index
+			multStep *= _baseDimensions[index]; // next stepSize
+		}
+	}
+	
+	/**
+	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
+	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
+	 */
+	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle) {
+		IF_CHECK(
+			REQUIRE(&_out != &_base, "reshuffle does not work if _out and _base coincide");
+			REQUIRE(_shuffle.size() == _base.degree(), "IE");
+			for(size_t x = 0; x < _base.degree(); ++x) {
+				REQUIRE(_shuffle[x] < _base.degree(), _shuffle[x] << " is no valid new position!");
+				REQUIRE(misc::count(_shuffle, x) == 1, x << " illegally appeared twice.");
+			}
+		)
+		
+		// Count how many indices in the back do not change and calculate blockSize
+		size_t lastShuffled = 0;
+		for(size_t i = 1; i < _shuffle.size(); ++i) {
+			if(_shuffle[i] != i) { lastShuffled = i ; }
+		}
+		
+		const size_t numToShuffle = lastShuffled+1;
+		const size_t blockSize = misc::product(_base.dimensions, numToShuffle, _base.dimensions.size());
+		
+		if(blockSize == _base.size) { // No actual reshuffling
+			_out = _base;
+			return;
+		}
+		
+		std::vector<size_t> outDimensions(_base.degree());
+		for( size_t i = 0; i < _base.degree(); ++i ) {
+			outDimensions[_shuffle[i]] = _base.dimensions[i];
+		}
+		
+		std::vector<size_t> stepSizes(numToShuffle);
+		for( size_t i = 0; i < numToShuffle; ++i ) {
+			stepSizes[i] = misc::product(outDimensions, _shuffle[i]+1, numToShuffle)*blockSize;
+		}
+		
+		_out.reset(std::move(outDimensions), _base.representation, Tensor::Initialisation::None);
+		
+		if(_base.is_dense()) {
+			const size_t numBlocks = misc::product(_base.dimensions, 0, numToShuffle);
+			value_t* outPosition = _out.override_dense_data();
+			const value_t* basePosition = _base.get_unsanitized_dense_data();
+			
+			if(blockSize == 1) {
+				*outPosition = *basePosition;
+				for(size_t b = 1; b < numBlocks; ++b) {
+					increase_indices(b, outPosition, stepSizes, _base.dimensions);
+					*outPosition = *(basePosition + b*blockSize);
+				}
+			} else {
+				misc::array_copy(outPosition, basePosition, blockSize);
+				for(size_t b = 1; b < numBlocks; ++b) {
+					increase_indices(b, outPosition, stepSizes, _base.dimensions);
+					misc::array_copy(outPosition, basePosition + b*blockSize, blockSize);
+				}
+			}
+			_out.factor = _base.factor;
+			
+		} else {
+			const std::map<size_t, value_t>& baseEntries = _base.get_unsanitized_sparse_data();
+			std::map<size_t, value_t>& outEntries = _out.override_sparse_data();
+			
+			for(const std::pair<size_t, value_t>& entry : baseEntries) {
+				size_t basePosition = entry.first;
+				size_t position = basePosition%blockSize;
+				basePosition /= blockSize;
+				
+				for(size_t i = numToShuffle; i > 0; --i) {
+					position += (basePosition%_base.dimensions[i-1])*stepSizes[i-1];
+					basePosition /= _base.dimensions[i-1];
+				}
+				outEntries.emplace(position, _base.factor*entry.second);
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/** 
 	 * "increases" the imaginary indices that lead to the current pointer position of oldPosition to match the index i
 	 * precondition: oldPosition corresponding to index (i-1)
@@ -269,6 +369,24 @@ namespace xerus {
 			return; // We are finished here
 		}
 		
+		if(_base.degree() == _out.degree()) { // Only reshuffling happening
+			std::vector<size_t> shuffle(_base.degree());
+			size_t pos = 0;
+			for(const Index& idx : _base.indices) {
+				size_t j = 0, jPos = 0;
+				while(idx != _out.indices[j]) {  jPos += _out.indices[j].span; ++j; }
+				
+				for(size_t k = 0; k < idx.span; ++k) {
+					REQUIRE(pos < _base.degree(), "IE");
+					shuffle[pos++] = jPos+k;
+				}
+			}
+			
+			reshuffle(*_out.tensorObject, *_base.tensorObjectReadOnly, shuffle);
+			return;
+		}
+		
+		
 		// We need the step sizes of the base indices
 		const std::unique_ptr<const size_t[]> baseIndexStepSizes = get_step_sizes(_base.indices);
 		
@@ -414,4 +532,6 @@ namespace xerus {
 			}
 		}
 	}
+	
+	
 }
