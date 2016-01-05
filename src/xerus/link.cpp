@@ -23,8 +23,6 @@
  */
 
 #include <xerus/tensorNetwork.h>
-#include <xerus/tensor.h>
-
 
 namespace xerus {
 	TensorNetwork::Link::Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) : other(_other), indexPosition(_indexPos), dimension(_dim), external(_external) {}

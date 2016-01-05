@@ -1035,7 +1035,7 @@ namespace xerus {
 		
 		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
 		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
-		IF_CHECK( const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0; )
+		const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
 		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
@@ -1061,20 +1061,27 @@ namespace xerus {
 			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
+			
 		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse
-			LOG(fatal, "Sparse times Sparse contraction not implemented (as Tensor function)"); // TODO
+			internal::matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim,
+								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+			
 		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Sparse * Full => Full
 			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+			
 		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && !_result.is_sparse()) { // Full * Sparse => Full
 			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+			
 		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && _result.is_sparse()) { // Sparse * Full => Sparse
 			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+			
 		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && _result.is_sparse()) { // Full * Sparse => Sparse
 			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
