@@ -130,8 +130,8 @@ UNIT_TEST2(Tensor, Constructors) {
 	FAILTEST(Tensor(fixedDimensions, Tensor::Representation::Sparse, Tensor::Initialisation::Zero));
 	FAILTEST(Tensor::random(fixedDimensions, rnd, normalDist));
 	FAILTEST(Tensor::random(fixedDimensions, 7, rnd, normalDist));
-	FAILTEST(Tensor::random(random_dimensions(10, 4, rnd), rnd, normalDist));
-	FAILTEST(Tensor::random(random_dimensions(10, 4, rnd), 7, rnd, normalDist));
+	FAILTEST(Tensor::random(fixedDimensions, rnd, normalDist));
+	FAILTEST(Tensor::random(fixedDimensions, 7, rnd, normalDist));
 	FAILTEST(Tensor(fixedDimensions, []()->value_t{ return 0.0; }));
 	FAILTEST(Tensor(fixedDimensions, misc::product(fixedDimensions), [](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n, value_t(_n)); }));
 	FAILTEST(Tensor(fixedDimensions, [](const size_t _i)->value_t{ return value_t(_i); }));
