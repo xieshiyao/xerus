@@ -1082,36 +1082,46 @@ namespace xerus {
 		}
 	}
 	
-	
-	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+	_inline_ std::tuple<size_t, size_t, size_t> prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos) {
 		REQUIRE(_splitPos < _input.degree(), "_splitPos must smaller than the degree.");
-		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
 		const size_t rhsSize = misc::product(_input.dimensions, _splitPos, _input.degree());
-		size_t rank = std::min(lhsSize, rhsSize);
+		const size_t rank = std::min(lhsSize, rhsSize);
 		
-		if( !_U.is_dense()
-			|| _U.degree() != _splitPos+1 
-			|| rank != _U.dimensions.back() 
-			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _U.dimensions.begin())) 
+		_lhs.factor = 1.0;
+		_rhs.factor = 1.0;
+		
+		if( !_lhs.is_dense()
+			|| _lhs.degree() != _splitPos+1
+			|| rank != _lhs.dimensions.back() 
+			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
 		{
 			Tensor::DimensionTuple newDimU;
 			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
 			newDimU.push_back(rank);
-			_U.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
+			_lhs.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
 		
-		if(!_Vt.is_dense()
-			|| _Vt.degree() != _input.degree()-_splitPos+1 
-			|| rank != _Vt.dimensions.front() 
-			|| !std::equal(_input.dimensions.begin()+_splitPos, _input.dimensions.end(), _Vt.dimensions.begin()+1)) 
+		if(!_rhs.is_dense()
+			|| _rhs.degree() != _input.degree()-_splitPos+1 
+			|| rank != _rhs.dimensions.front() 
+			|| !std::equal(_input.dimensions.begin()+_splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
 		{
 			Tensor::DimensionTuple newDimVt;
 			newDimVt.push_back(rank);
 			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
-			_Vt.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
+			_rhs.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
+		
+		return std::make_tuple(lhsSize, rhsSize, rank);
+	}
+	
+	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
+		
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, _input, _splitPos);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
@@ -1148,6 +1158,49 @@ namespace xerus {
 		
 		_U.resize_dimension(_U.degree()-1, rank);
 		_Vt.resize_dimension(0, rank);
+	}
+	
+	
+	void calculate_qr(Tensor& _Q, Tensor& _R, const Tensor& _input, const size_t _splitPos) {
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, _input, _splitPos);
+		
+		if(_input.is_sparse()) {
+			LOG(fatal, "Sparse SVD not yet implemented.");
+		} else {
+			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+		}
+		
+		_R.factor = _input.factor;
+	}
+	
+	
+	void calculate_rq(Tensor& _R, Tensor& _Q, const Tensor& _input, const size_t _splitPos) {
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, _input, _splitPos);
+		
+		if(_input.is_sparse()) {
+			LOG(fatal, "Sparse SVD not yet implemented.");
+		} else {
+			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+		}
+		
+		_R.factor = _input.factor;
+	}
+	
+	
+	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos, const value_t _eps) {
+		LOG(fatal, "Not yet Implemented."); // TODO
+	}
+	
+	
+	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos, const value_t _eps) {
+		LOG(fatal, "Not yet Implemented."); // TODO
+	}
+	
+	
+	void solve_least_squares(Tensor& _x, const Tensor& _A, const Tensor& _b) {
+		LOG(fatal, "Not yet Implemented."); // TODO
 	}
 	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {

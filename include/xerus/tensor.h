@@ -773,7 +773,7 @@ namespace xerus {
 	
 	/** 
 	 * @brief Low-level contraction between Tensors.
-	 * @param _result Output for the result of the contraction. Must allready have the right dimensions!
+	 * @param _result Output for the result of the contraction.
 	 * @param _lhs left hand side of the contraction.
 	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
 	 * @param _rhs right hand side of the contraction.
@@ -783,14 +783,63 @@ namespace xerus {
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
 	
 	/** 
-	 * @brief Low-Level SVD calculation of a given Tensor @a _A = @a _U @a _S @a _Vt.
+	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.
 	 * @param _U Output Tensor for the resulting U.
 	 * @param _S Output Tensor for the resulting S.
 	 * @param _Vt Output Tensor for the resulting Vt.
-	 * @param _A input Tensor of which the SVD shall be calculated.
+	 * @param _input input Tensor of which the SVD shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the SVD is calculated.
 	 */
-	void svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps);
+	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps);
+	
+	/** 
+	 * @brief Low-Level QR calculation of a given Tensor @a _input = @a _Q @a _R.
+	 * @param _Q Output Tensor for the resulting Q.
+	 * @param _R Output Tensor for the resulting R.
+	 * @param _input input Tensor of which the QR shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the QR is calculated.
+	 */
+	void calculate_qr(Tensor& _Q, Tensor& _R, const Tensor& _input, const size_t _splitPos);
+	
+	/** 
+	 * @brief Low-Level RQ calculation of a given Tensor @a _input = @a _R @a _Q.
+	 * @param _R Output Tensor for the resulting R.
+	 * @param _Q Output Tensor for the resulting Q.
+	 * @param _input input Tensor of which the RQ shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the RQ is calculated.
+	 */
+	void calculate_rq(Tensor& _R, Tensor& _Q, const Tensor& _input, const size_t _splitPos);
+	
+	/** 
+	 * @brief Low-Level QC calculation of a given Tensor @a _input = @a _Q @a _C.
+	 * @details This is a rank revealing QR decomposition with coloum pivoting. In contrast to an QR
+	 * the C is not nessecarily upper triangular.
+	 * @param _Q Output Tensor for the resulting Q.
+	 * @param _C Output Tensor for the resulting R.
+	 * @param _input input Tensor of which the QC shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the QC is calculated.
+	 */
+	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos, const value_t _eps);
+	
+	/** 
+	 * @brief Low-Level CQ calculation of a given Tensor @a _input = @a _C @a _Q.
+	 * @details This is a rank revealing RQ decomposition with coloum pivoting. In contrast to an RQ
+	 * the C is not nessecarily upper triangular.
+	 * @param _C Output Tensor for the resulting R.
+	 * @param _Q Output Tensor for the resulting Q.
+	 * @param _input input Tensor of which the CQ shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the CQ is calculated.
+	 */
+	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos, const value_t _eps);
+	
+	/** 
+	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.
+	 * @details The matrification of @a _A is completely defined by the order of @a _b.
+	 * @param _x Output Tensor for the resulting x.
+	 * @param _A input Tensor A.
+	 * @param _b input Tensor b.
+	 */
+	void solve_least_squares(Tensor& _x, const Tensor& _A, const Tensor& _b);
 	
 	
 	/**

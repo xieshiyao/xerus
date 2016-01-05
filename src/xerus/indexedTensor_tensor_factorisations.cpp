@@ -156,7 +156,7 @@ namespace xerus {
 		
 		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(U), std::move(Vt));
 		
-		svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
+		calculate_svd(*U.tensorObject, *S.tensorObject, *Vt.tensorObject, *reorderedBaseTensor, splitPos, maxRank, epsilon);
 		
 		if(softThreshold > 0.0) {
 			const size_t oldRank = S.tensorObjectReadOnly->dimensions[0];
@@ -180,65 +180,16 @@ namespace xerus {
 				}
 				*S.tensorObject = newS;
 				
-// 				S.tensorObject->resize_dimension(0, rank);
-// 				S.tensorObject->resize_dimension(1, rank);
 				U.tensorObject->resize_dimension(U.degree()-1, rank);
 				Vt.tensorObject->resize_dimension(0, rank);
 			}
 		}
-		/*
-		
-		
-		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
-		
-		// Calculate the actual SVD
-		if(reorderedBaseTensor->is_sparse()) {
-			LOG(fatal, "Sparse SVD not yet implemented.");
-		} else {
-			blasWrapper::svd(U.tensorObject->override_dense_data(), tmpS.get(), Vt.tensorObject->override_dense_data(), reorderedBaseTensor.get()->get_unsanitized_dense_data(), lhsSize, rhsSize);
-		}
-		
-		// Apply factor to the diagonal matrix
-		misc::array_scale(tmpS.get(), reorderedBaseTensor->factor, rank); // TODO Wrong! (negative values)
-		
-		// Account for hard threshold
-		rank = std::min(rank, maxRank);
-		
-		// Apply soft threshold and determine the real rank
-		double realSoftThreshold;
-		if(preventZero) {
-			realSoftThreshold = std::min((1-EPSILON)*tmpS[0], softThreshold);
-		} else {
-			realSoftThreshold = softThreshold;
-		}
-		
-		tmpS[0] = std::max(0.0, tmpS[0] - realSoftThreshold);
-		for(size_t j = 1; j < rank; ++j) {
-			tmpS[j] -= realSoftThreshold;
-			if (tmpS[j] <= epsilon*tmpS[0]) {
-				rank = j;
-				break;
-			}
-		}
-		
-		// Create tensor from diagonal values
-		S.tensorObject->reset(std::vector<size_t>(2, rank));
-		for(size_t i = 0; i < rank; ++i) {
-			(*S.tensorObject)[i*rank+i] = tmpS[i];
-		}
-		
-		U.tensorObject->resize_dimension(U.degree()-1, rank);
-		Vt.tensorObject->resize_dimension(0, rank);*/
 		
 		// Post evaluate the results
 		std::vector<Index> midPreliminaryIndices({lhsPreliminaryIndices.back(), rhsPreliminaryIndices.front()});
 		U = (*U.tensorObjectReadOnly)(lhsPreliminaryIndices);
 		S = (*S.tensorObjectReadOnly)(midPreliminaryIndices);
 		Vt = (*Vt.tensorObjectReadOnly)(rhsPreliminaryIndices);
-		
-		REQUIRE(U.tensorObject->all_entries_valid(), "Internal Error");
-		REQUIRE(S.tensorObject->all_entries_valid(), "Internal Error");
-		REQUIRE(Vt.tensorObject->all_entries_valid(), "Internal Error");
 	}
 
 
@@ -247,22 +198,13 @@ namespace xerus {
 		IndexedTensorReadOnly<Tensor>& A = *input;
 		IndexedTensor<Tensor>& Q = *_output[0];
 		IndexedTensor<Tensor>& R = *_output[1];
-		 
-		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
 		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
 		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(R));
 		
-		if(reorderedBaseTensor->is_sparse()) {
-			LOG(fatal, "Sparse QR not yet implemented.");
-		} else {
-			blasWrapper::qr_destructive(Q.tensorObject->override_dense_data(), R.tensorObject->override_dense_data(), reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
-		}
-		
-		// R has to carry the constant factor
-		R.tensorObject->factor = reorderedBaseTensor->factor;
+		calculate_qr(*Q.tensorObject, *R.tensorObject, *reorderedBaseTensor, splitPos);
 		
 		// Post evaluate the results
 		Q = (*Q.tensorObjectReadOnly)(lhsPreliminaryIndices);
@@ -275,22 +217,12 @@ namespace xerus {
 		IndexedTensor<Tensor>& R = *_output[0];
 		IndexedTensor<Tensor>& Q = *_output[1];
 		
-		REQUIRE(!Q.tensorObject->is_sparse() && !R.tensorObject->is_sparse(), "Q and R have to be Tensors, as they are defenitely not sparse.");
-		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
 		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(R), std::move(Q));
 		
-		
-		if(reorderedBaseTensor->is_sparse()) {
-			LOG(fatal, "Sparse QR not yet implemented.");
-		} else {
-			blasWrapper::rq_destructive(R.tensorObject->override_dense_data(), Q.tensorObject->override_dense_data(), reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
-		}
-		
-		// R has to carry the constant factor
-		R.tensorObject->factor = reorderedBaseTensor->factor;
+		calculate_rq(*R.tensorObject, *Q.tensorObject, *reorderedBaseTensor, splitPos);
 		
 		// Post evaluate the results
 		R = (*R.tensorObjectReadOnly)(lhsPreliminaryIndices);

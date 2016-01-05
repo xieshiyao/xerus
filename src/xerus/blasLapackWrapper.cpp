@@ -301,7 +301,7 @@ namespace xerus {
         
         
         
-        void qr( double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n) {
+        void qr(double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n) {
             // Create tmp copy of A since Lapack wants to destroy it
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
             misc::array_copy(tmpA.get(), _A, _m*_n);
