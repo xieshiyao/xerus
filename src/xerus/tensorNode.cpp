@@ -45,8 +45,14 @@ namespace xerus {
     
     TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(const TensorNetwork::TensorNode&  _other) {
         if(_other.tensorObject) {
-            tensorObject.reset( new Tensor(*_other.tensorObject));
-        }
+			if(tensorObject) {
+				*tensorObject = *_other.tensorObject;
+			} else {
+				tensorObject.reset( new Tensor(*_other.tensorObject));
+			}
+        } else {
+			tensorObject.reset();
+		}
         neighbors = _other.neighbors;
         erased = _other.erased;
         return *this;
@@ -80,5 +86,4 @@ namespace xerus {
         neighbors.clear();
         tensorObject.reset();
     }
-    
 }

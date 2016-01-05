@@ -40,7 +40,9 @@ namespace xerus {
 	class TensorNetwork {
     public:
 		
+		///@brief: Represention of the ranks of a TensorNetwork.
 		using RankTuple = std::vector<size_t>; 
+		
 		
 		/**
 		* @brief Class representing a link from a TensorNode to another node or an external index.
@@ -75,7 +77,8 @@ namespace xerus {
 			 */
 			bool links(const size_t _other) const;
 		};
-			
+		
+		
 		/**
 		* @brief The TensorNode class is used by the class TensorNetwork to store the componentent tensors defining the network.
 		*/
@@ -133,7 +136,8 @@ namespace xerus {
             
         /** 
 		* @brief Constructs an order zero TensorNetwork.
-		* @details The order of an empty TN is zero. The network will contain one node with the single
+		* @details The order of an empty TN is zero.
+		* @param _addZeroNode If TRUE the network will contain one degree zero node with the single
 		* entry zero.
 		*/
 		explicit TensorNetwork(const misc::NoCast<bool> _addZeroNode = true);
@@ -146,10 +150,10 @@ namespace xerus {
 	public:
         
         ///@brief Copy Constructor
-        implicit TensorNetwork(const TensorNetwork& _cpy);
+        implicit TensorNetwork(const TensorNetwork& _cpy) = default;
         
         ///@brief Move Constructor
-        implicit TensorNetwork(TensorNetwork&& _mv);
+        implicit TensorNetwork(TensorNetwork&& _mv) = default;
         
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
@@ -186,7 +190,7 @@ namespace xerus {
             
     private:
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		//TODO describtion
+		///@brief: Sets the externalLinks and returns an Link vector for a node, assuming that this node is the only node there is and all given dimensions are open.
 		std::vector<Link> init_from_dimension_array();
         
 		/** 
@@ -198,7 +202,7 @@ namespace xerus {
         /*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
             
         /** 
-		* @brief Explicit cast to Tensor
+		* @brief Explicit cast to Tensor.
 		* @details Contracts the complete network into a single Tensor
 		*/
         explicit operator Tensor() const;
@@ -347,14 +351,14 @@ namespace xerus {
 		void reshuffle_nodes(std::function<size_t(size_t)> _f);
 		
 		/** 
-		 * @brief Sanity check for the network.
+		 * @brief Sanity checks the network.
 		 * @details Checks whether all links in the network are set consistently and matching the 
 		 * underlying tensor objects. Note that this only checks whether the TensorNetwork is valid
 		 * not whether the additional constrains of a specific format are fullfilled. For this purpose
 		 * use is_in_expected_format().
 		 * @return TRUE if the sanity check passes. If not an exception is throws and the function does not return.
 		 */
-		bool is_valid_network(bool _check_erased=true) const;
+		bool is_valid_network(const bool _check_erased = true) const;
         
 		/** 
 		 * @brief Creates a dataless copy of a subnet.
@@ -468,7 +472,7 @@ namespace xerus {
 		* replaces all but one node with degree-0 tensor
 		* @returns the id of the contracted tensor
 		*/
-		size_t contract(std::set<size_t> _ids);
+		size_t contract(const std::set<size_t>& _ids);
 		
 		/** 
 		 * @brief Calculates the frobenious norm of the TensorNetwork.

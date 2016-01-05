@@ -49,18 +49,12 @@ namespace xerus {
 		}
 	}
 	
-	TensorNetwork::TensorNetwork(const TensorNetwork& _cpy) : dimensions(_cpy.dimensions), nodes(_cpy.nodes), externalLinks(_cpy.externalLinks) {}
-	
-	TensorNetwork::TensorNetwork(TensorNetwork&& _mv) : dimensions(std::move(_mv.dimensions)), nodes(std::move(_mv.nodes)), externalLinks(std::move(_mv.externalLinks)){
-		_mv = TensorNetwork();
-	}
-	
 	TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
 		nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
 	}
 	
 	TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(_other)), init_from_dimension_array());
+		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(std::move(_other))), init_from_dimension_array());
 	}
 	
 	TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
@@ -79,7 +73,7 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	std::vector<TensorNetwork::Link> TensorNetwork::init_from_dimension_array() {
 		std::vector<TensorNetwork::Link> newLinks;
-		for (size_t d=0; d<dimensions.size(); ++d) {
+		for (size_t d = 0; d < dimensions.size(); ++d) {
 			externalLinks.emplace_back(0, d, dimensions[d], false);
 			newLinks.emplace_back(-1, d, dimensions[d], true);
 		}
@@ -87,6 +81,12 @@ namespace xerus {
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	
+	TensorNetwork::operator Tensor() const {
+		std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
+		return *contractedTensor;
+	}
+	
 	std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
 		REQUIRE(is_valid_network(), "Cannot fully contract inconsistent network.");
 		std::unique_ptr<Tensor> result;
@@ -94,7 +94,7 @@ namespace xerus {
 		std::set<size_t> all;
 		TensorNetwork cpy(*this);
 		
-		for (size_t i=0; i < nodes.size(); ++i) {
+		for (size_t i = 0; i < nodes.size(); ++i) {
 			if (!nodes[i].erased) all.insert(i);
 		}
 		size_t res = cpy.contract(all);
@@ -115,10 +115,7 @@ namespace xerus {
 		return result;
 	}
 	
-	TensorNetwork::operator Tensor() const {
-		std::unique_ptr<Tensor> contractedTensor = fully_contracted_tensor();
-		return *contractedTensor;
-	}
+	
 	
 	
 	TensorNetwork& TensorNetwork::operator=(const TensorNetwork& _other) {
@@ -369,8 +366,7 @@ namespace xerus {
 	}
 	
 #ifndef DISABLE_RUNTIME_CHECKS_
-	/// check whether all links in the network are set consistently and matching the underlying tensor objects
-	bool TensorNetwork::is_valid_network(bool _check_erased) const {
+	bool TensorNetwork::is_valid_network(const bool _check_erased) const {
 		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 		
@@ -1240,7 +1236,7 @@ namespace xerus {
 
 
 	//TODO contract with std::function
-	size_t TensorNetwork::contract(std::set<size_t> _ids) {
+	size_t TensorNetwork::contract(const std::set<size_t>& _ids) {
 		LOG(TNContract, "contraction of " << _ids.size() << " nodes called");
 		
 		// TODO this and all the heuristics still assume that all tensors are dense (as there are no sparse tensors at the time of this writing)
