@@ -1098,7 +1098,7 @@ namespace xerus {
 			matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
-		}*/
+		}*/ // TODO use sprase_result.
 		
 		
 		if(tmpResult) {
