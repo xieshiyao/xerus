@@ -18,9 +18,9 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Header file for a large number of helper functions that should either be part of the standard library or are too small to warrant a new compilation unit.
- */
+* @file
+* @brief Header file for a large number of helper functions that should either be part of the standard library or are too small to warrant a new compilation unit.
+*/
 
 #pragma once
 #include <vector>
@@ -38,9 +38,9 @@
 #include "check.h"
 
 /**
- * @def VLA(T, name)
- * @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but is created on the heap.
- */
+* @def VLA(T, name)
+* @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but is created on the heap.
+*/
 #define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & name = name##_store.get();
 
 namespace xerus {
@@ -59,22 +59,22 @@ namespace xerus {
 		
 		
 		/**
-		 * @brief Execute a given command.
-		 * @param _cmd the command to execute
-		 * @return the cout return of the command.
-		 */
+		* @brief Execute a given command.
+		* @param _cmd the command to execute
+		* @return the cout return of the command.
+		*/
 		std::string exec(const std::string &_cmd);
 		
 		/**
-		 * @brief Execute a given command and pipe _stdin to its std input,
-		 * @param _cmd the command to execute
-		 * @param _stdin the input for the program
-		 */
+		* @brief Execute a given command and pipe _stdin to its std input,
+		* @param _cmd the command to execute
+		* @param _stdin the input for the program
+		*/
 		void exec(const std::string & _cmd, const std::string &_stdin);
 
 		/**
-		 * @brief Wrapper class to disallow implicit cast (e.g. from everything to bool).
-		 */
+		* @brief Wrapper class to disallow implicit cast (e.g. from everything to bool).
+		*/
 		template<class T>
 		struct NoCast{ 
 			const T value;
@@ -318,7 +318,7 @@ namespace xerus {
 			apply_permutation(_keyVector, permutation);
 			apply_permutation(_dataVector, permutation);
 		}
-		 
+		
 	}
 }
 

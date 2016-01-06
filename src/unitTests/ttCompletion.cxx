@@ -116,12 +116,12 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 
-	std::vector<SinglePointMeasurment> measurements = SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd);
+	SinglePointMeasurmentSet measurements(SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd));
 	trueSolution.measure(measurements);
 	
 	bool test = true;
-	for (const SinglePointMeasurment &m : measurements) {
-		test = test && misc::approx_equal(m.value, trueSolution[m.positions], 1e-10);
+	for(size_t m = 0; m < measurements.size(); ++m) {
+		test = test && misc::approx_equal(measurements.measuredValues[m], trueSolution[measurements.positions[m]], 1e-10);
 	}
 	TEST(test);
 	
@@ -130,7 +130,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	PerformanceData perfData([&](const TTTensor& _x) {return frob_norm(_x - trueSolution)/frob_norm(trueSolution);}, true, false);
 	
-	ourADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+	ourADF(X, measurements, std::vector<size_t>(D-1, R), perfData);
 	
 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 	
@@ -139,7 +139,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	X = TTTensor::ones(std::vector<size_t>(D, N));
 	perfData.reset();
 	
-	ourADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ourADF(X, RankOneMeasurmentSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )

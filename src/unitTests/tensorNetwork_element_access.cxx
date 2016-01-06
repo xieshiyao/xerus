@@ -82,23 +82,23 @@ UNIT_TEST(TensorNetwork, many_element_access,
     //No Index contracted
     res(i,j,k,l) = A(i,j) * B(k,l);
 
-	std::vector<SinglePointMeasurment> measurments(12);
-	measurments[0].positions = {0,0,0,0};
-	measurments[1].positions = {0,0,0,1};
-	measurments[2].positions = {0,0,0,2};
-	measurments[3].positions = {0,0,1,0};
-	measurments[4].positions = {0,0,1,1};
-	measurments[5].positions = {0,0,1,2};
-	measurments[6].positions = {0,1,0,0};
-	measurments[7].positions = {0,1,0,1};
-	measurments[8].positions = {0,1,0,2};
-	measurments[9].positions = {0,1,1,0};
-	measurments[10].positions = {0,1,1,1};
-	measurments[11].positions = {0,1,1,2};
+	SinglePointMeasurmentSet measurments;
+	measurments.add_measurment({0,0,0,0}, 0);
+	measurments.add_measurment({0,0,0,1}, 0);
+	measurments.add_measurment({0,0,0,2}, 0);
+	measurments.add_measurment({0,0,1,0}, 0);
+	measurments.add_measurment({0,0,1,1}, 0);
+	measurments.add_measurment({0,0,1,2}, 0);
+	measurments.add_measurment({0,1,0,0}, 0);
+	measurments.add_measurment({0,1,0,1}, 0);
+	measurments.add_measurment({0,1,0,2}, 0);
+	measurments.add_measurment({0,1,1,0}, 0);
+	measurments.add_measurment({0,1,1,1}, 0);
+	measurments.add_measurment({0,1,1,2}, 0);
 	
 	res.measure(measurments);
 	
-    for(const SinglePointMeasurment& meas : measurments) {
-        TEST(misc::approx_equal(meas.value, res[meas.positions]));
+	for(size_t m = 0; m < measurments.size(); ++m) {
+		TEST(misc::approx_equal(measurments.measuredValues[m], res[measurments.positions[m]]));
     }
 )

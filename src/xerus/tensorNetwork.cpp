@@ -18,9 +18,9 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Implementation of the TensorNetwork class.
- */
+* @file
+* @brief Implementation of the TensorNetwork class.
+*/
 
 #include <xerus/tensorNetwork.h>
 #include <xerus/basic.h>
@@ -29,7 +29,7 @@
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
- 
+
 #include <xerus/measurments.h>
 
 #include <xerus/contractionHeuristic.h>
@@ -163,88 +163,39 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::measure(std::vector<SinglePointMeasurment>& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
-		std::vector<TensorNetwork> stack;
-		stack.emplace_back(*this);
-		stack.back().reduce_representation();
+	void TensorNetwork::measure(SinglePointMeasurmentSet& _measurments) const {
+		std::vector<TensorNetwork> stack(degree()+1);
+		stack[0] = *this;
+		stack[0].reduce_representation();
 		
 		// Sort measurements
-		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
-		
-		bool firstTime = true;
-		std::vector<size_t> previousPosition;
-		for(SinglePointMeasurment& measurment : _measurments) {
-			size_t rebuildIndex = ~0ul;
-			if(firstTime) {
-				rebuildIndex = 0;
-				firstTime = false;
-			} else {
-				// Find the maximal recyclable stack position
-				for(size_t i = 0; i < degree(); ++i) {
-					if(previousPosition[i] != measurment.positions[i]) {
-						rebuildIndex = i;
-						break;
-					}
-				}
-			}
-			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
-			previousPosition = measurment.positions;
-			
-			// Trash stack that is not needed anymore
-			stack.resize(rebuildIndex+1);
-			
-			// Rebuild stack
-			for(size_t i = rebuildIndex; i < degree(); ++i) {
-				stack.emplace_back(stack.back());
-				stack.back().fix_slate(0, measurment.positions[i]);
-				stack.back().reduce_representation();
-			}
-			REQUIRE(stack.back().degree() == 0, "Internal Error");
-			REQUIRE(stack.size() == degree()+1, "Internal Error");
-			
-			measurment.value = stack.back()[0];
-		}
-	}
-	
-	void TensorNetwork::measure(SinglePointMeasurmentSet& _measurments) const { // TODO improve (i.e. pre fix slates, specialise for TT?)
-		std::vector<TensorNetwork> stack;
-		stack.emplace_back(*this);
-		stack.back().reduce_representation();
-		
-		// Sort measurements
-// 		std::sort(_measurments.begin(), _measurments.end(), SinglePointMeasurment::Comparator(degree()-1));
 		sort(_measurments, degree()-1);
 		
-		bool firstTime = true;
-		std::vector<size_t> previousPosition;
-		for(size_t j = 0; j < _measurments.size(); ++j) {
-			size_t rebuildIndex = ~0ul;
-			if(firstTime) {
-				rebuildIndex = 0;
-				firstTime = false;
-			} else {
-				// Find the maximal recyclable stack position
-				for(size_t i = 0; i < degree(); ++i) {
-					if(previousPosition[i] != _measurments.positions[j][i]) {
-						rebuildIndex = i;
-						break;
-					}
+		// Handle first measurment
+		for(size_t i = 0; i < degree(); ++i) {
+			stack[i+1] = stack[i];
+			stack[i+1].fix_slate(0, _measurments.positions[0][i]);
+			stack[i+1].reduce_representation();
+		}
+		_measurments.measuredValues[0] = stack.back()[0];
+		
+		for(size_t j = 1; j < _measurments.size(); ++j) {
+			REQUIRE(_measurments.positions[j-1] != _measurments.positions[j], "There were two identical measurements?");
+			
+			// Find the maximal recyclable stack position
+			size_t rebuildIndex = 0;
+			for(; rebuildIndex < degree(); ++rebuildIndex) {
+				if(_measurments.positions[j-1][rebuildIndex] != _measurments.positions[j][rebuildIndex]) {
+					break;
 				}
 			}
-			REQUIRE(rebuildIndex != ~0ul, "There were two identical measurements? pos: " << previousPosition);
-			previousPosition = _measurments.positions[j];
-			
-			// Trash stack that is not needed anymore
-			stack.resize(rebuildIndex+1);
 			
 			// Rebuild stack
 			for(size_t i = rebuildIndex; i < degree(); ++i) {
-				stack.emplace_back(stack.back());
-				stack.back().fix_slate(0, _measurments.positions[j][i]);
-				stack.back().reduce_representation();
+				stack[i+1] = stack[i];
+				stack[i+1].fix_slate(0, _measurments.positions[j][i]);
+				stack[i+1].reduce_representation();
 			}
-			REQUIRE(stack.back().degree() == 0, "Internal Error");
-			REQUIRE(stack.size() == degree()+1, "Internal Error");
 			
 			_measurments.measuredValues[j] = stack.back()[0];
 		}
@@ -290,13 +241,37 @@ namespace xerus {
 	}
 	
 	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		// If tensorObject is already identical, don't attempt to copy it
-		_other.assign_indices();
-		if (_other.tensorObjectReadOnly != _me.tensorObject) {
+		// If tensorObject is not already identical copy it.
+		if (_me.tensorObjectReadOnly != _other.tensorObjectReadOnly) {
 			*_me.tensorObject = *_other.tensorObjectReadOnly;
-		} 
+		}
+		
+		_other.assign_indices();
 		TensorNetwork::trace_out_double_indices(_other.indices, std::move(_me));
-		TensorNetwork::shuffle_indices(_other.indices, std::move(_me));
+		
+		_me.assign_indices();
+
+		// Swap indices accordingly
+		size_t passedDegree1 = 0;
+		for (size_t i = 0; i < _me.indices.size(); passedDegree1 += _me.indices[i].span, ++i) {
+			if (_other.indices[i] != _me.indices[i]) {
+				// Find the correct index in other
+				size_t j = i+1;
+				size_t passedDegree2 = passedDegree1+_other.indices[i].span;
+				while(_other.indices[j] != _me.indices[i]) {
+					passedDegree2 += _other.indices[j].span;
+					++j;
+					REQUIRE( j < _other.indices.size(), "RHS Index " << _other.indices[j] << " not found in LHS " << _me.indices);
+				}
+				
+				std::swap(_other.indices[i], _other.indices[j]);
+				
+				for (size_t n = 0; n < _other.indices[i].span; ++n) {
+					_me.tensorObject->swap_external_links(passedDegree1+n, passedDegree2+n);
+				}
+			}
+			REQUIRE(_other.indices[i].span == _me.indices[i].span, "Index span mismatch");
+		}
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -311,26 +286,25 @@ namespace xerus {
 		reshuffle_nodes([&](size_t i){return _map.at(i);});
 	}
 	
-	void TensorNetwork::reshuffle_nodes(std::function<size_t(size_t)> _f) {
-		std::vector<TensorNode> newOrder(nodes.size());
+	void TensorNetwork::reshuffle_nodes(const std::function<size_t(size_t)>& _f) {
+		std::vector<TensorNode> newNodes(nodes.size());
 		size_t newSize = 0;
-		for (size_t i=0; i<nodes.size(); ++i) {
+		for (size_t i = 0; i < nodes.size(); ++i) {
 			if (nodes[i].erased) { continue; }
 			size_t newIndex = _f(i);
 			newSize = std::max(newSize, newIndex+1);
-			TensorNode &newNode = newOrder[ newIndex];
-			REQUIRE(newNode.erased, "tried to shuffle two nodes to the same new position " << newIndex << " i= " << i);
-			newNode = nodes[i];
-			for (TensorNetwork::Link &l : newNode.neighbors) {
+			REQUIRE(newNodes[newIndex].erased, "Tried to shuffle two nodes to the same new position " << newIndex << " i= " << i);
+			newNodes[newIndex] = nodes[i];
+			for (TensorNetwork::Link &l : newNodes[newIndex].neighbors) {
 				if (!l.external) { l.other = _f(l.other); }
 			}
 		}
-		nodes = newOrder;
+		nodes = newNodes;
 		nodes.resize(newSize);
-		for (size_t i=0; i<externalLinks.size(); ++i) {
+		
+		for (size_t i = 0; i < externalLinks.size(); ++i) {
 			externalLinks[i].other = _f(externalLinks[i].other);
 		}
-		require_valid_network();
 	}
 	
 #ifndef DISABLE_RUNTIME_CHECKS_
@@ -353,8 +327,8 @@ namespace xerus {
 			REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
 		}
 		
-		// per node
-		for (size_t n=0; n<nodes.size(); ++n) {
+		// Per node
+		for (size_t n = 0; n < nodes.size(); ++n) {
 			const TensorNode &currNode = nodes[n];
 			REQUIRE(!_check_erased || !currNode.erased, "n=" << n);
 			if (currNode.tensorObject) {
@@ -382,7 +356,7 @@ namespace xerus {
 	}
 #else
 	/// No checks are performed with disabled checks... 
-	inline bool TensorNetwork::is_valid_network(bool _check_erased) const { }
+	void TensorNetwork::require_valid_network(bool _check_erased) const { }
 #endif
 	
 	bool TensorNetwork::is_in_expected_format() const {
@@ -390,16 +364,15 @@ namespace xerus {
 		return true;
 	}
 	
-	/// Creates a copy of a subnet that only contains nullptr as data pointers
-	TensorNetwork TensorNetwork::stripped_subnet(std::function<bool(size_t)> _idF) const {
+	TensorNetwork TensorNetwork::stripped_subnet(const std::function<bool(size_t)>& _idF) const {
 		TensorNetwork cpy(NoZeroNode);
 		cpy.nodes.resize(nodes.size());
 		cpy.dimensions = dimensions;
 		cpy.externalLinks = externalLinks;
-		for (size_t id =0; id<nodes.size(); ++id) {
+		for (size_t id = 0; id < nodes.size(); ++id) {
 			if (!_idF(id)) continue;
 			cpy.nodes[id] = nodes[id].strippped_copy();
-			for (size_t i=0; i<cpy.nodes[id].neighbors.size(); ++i) {
+			for (size_t i = 0; i < cpy.nodes[id].neighbors.size(); ++i) {
 				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
 				if (!l.external) { // Link was not external before
 					if (!_idF(l.other)) { // ...but is "external" to this subnet
@@ -411,12 +384,13 @@ namespace xerus {
 				}
 			}
 		}
+		
 		size_t correction = 0;
-		std::vector<size_t> toErase;
-		for (size_t eid=0; eid<cpy.externalLinks.size(); ++eid) {
+		std::vector<long> toErase;
+		for (size_t eid = 0; eid < cpy.externalLinks.size(); ++eid) {
 			TensorNetwork::Link &l = cpy.externalLinks[eid];
 			if (!_idF(l.other)) {
-				toErase.emplace_back(eid);
+				toErase.emplace_back(long(eid));
 				correction++;
 			} else {
 				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
@@ -424,17 +398,18 @@ namespace xerus {
 				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
 			}
 		}
-		for (size_t i=toErase.size(); i>0; --i) {
-			cpy.dimensions.erase(cpy.dimensions.begin()+(long)toErase[i-1]);
-			cpy.externalLinks.erase(cpy.externalLinks.begin()+(long)toErase[i-1]);
+		
+		for (size_t i = toErase.size(); i > 0; --i) {
+			cpy.dimensions.erase(cpy.dimensions.begin()+toErase[i-1]);
+			cpy.externalLinks.erase(cpy.externalLinks.begin()+toErase[i-1]);
 		}
 		
 		cpy.require_valid_network(false);
 		return cpy;
 	}
 	
-	TensorNetwork TensorNetwork::stripped_subnet(std::set<size_t> _ids) const {
-		return stripped_subnet([&](size_t _id){ return _ids.count(_id)>0; });
+	TensorNetwork TensorNetwork::stripped_subnet(const std::set<size_t>& _ids) const {
+		return stripped_subnet([&](size_t _id){ return misc::contains(_ids, _id); });
 	}
 	
 	
@@ -447,34 +422,50 @@ namespace xerus {
 		std::swap(dimensions[_i], dimensions[_j]);
 	}
 	
-	/// shuffles the external links of _lhs according to the indices of the indexedTensors
-	/// lhs contains a copy of rhs, thus we have to swap the rhs.indices to resemble those of the lhs
-	void TensorNetwork::shuffle_indices(std::vector<Index> &_currentIndices, IndexedTensorWritable<TensorNetwork>&& _lhs) {
-		_lhs.assign_indices();
-		// writeable copy of the left indices
-		size_t passedDegree1=0;
-		for (size_t i=0; i<_currentIndices.size(); passedDegree1+=_currentIndices[i].span, ++i) {
-			if (_currentIndices[i]!= _lhs.indices[i]) {
-				// find correct index
-				size_t j=i+1;
-				size_t passedDegree2=passedDegree1+_currentIndices[i].span;
-				for (; j<_currentIndices.size(); passedDegree2+=_currentIndices[j].span, ++j) {
-					if (_currentIndices[j] == _lhs.indices[i]) break;
-				}
-				if (j < _currentIndices.size()) {
-					std::swap(_currentIndices[i],_currentIndices[j]);
-					
-					for (size_t n=0; n<_currentIndices[i].span; ++n) {
-						_lhs.tensorObject->swap_external_links(passedDegree1+n,passedDegree2+n);
-					}
-				} else {
-					// expand...
-					LOG(fatal, "TN expansion marked as >won't fix<");
+	
+	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+		_toInsert.assign_indices();
+		
+		TensorNetwork &base = *_base.tensorObject;
+		const TensorNetwork &toInsert = *_toInsert.tensorObjectReadOnly;
+		
+		const size_t firstNew = base.nodes.size();
+		const size_t firstNewExternal = base.externalLinks.size();
+		
+		// Insert everything
+		_base.indices.insert(_base.indices.end(), _toInsert.indices.begin(), _toInsert.indices.end());
+		base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
+		base.externalLinks.insert(base.externalLinks.end(), toInsert.externalLinks.begin(), toInsert.externalLinks.end());
+		base.nodes.insert(base.nodes.end(), toInsert.nodes.begin(), toInsert.nodes.end());
+		
+		IF_CHECK (
+			for (const Index &idx : _base.indices) {
+				REQUIRE(misc::count(_base.indices, idx) < 3, "Index must not appear three (or more) times.");
+			}
+		)
+		
+		// Sanitize the externalLinks
+		for (size_t i = firstNewExternal; i < base.externalLinks.size(); ++i) {
+			base.externalLinks[i].other += firstNew;
+		}
+		
+		// Sanitize the nodes (treating all external links as new external links)
+		for (size_t i = 0; i < toInsert.nodes.size(); ++i) {
+			for(TensorNetwork::Link &l : base.nodes[firstNew+i].neighbors) {
+				if (!l.external) { // Link inside the added network
+					l.other += firstNew;
+				} else { // External link
+					l.indexPosition += firstNewExternal;
 				}
 			}
-			REQUIRE(_currentIndices[i].span == _lhs.indices[i].span, "Index span mismatch");
 		}
+		
+		// Find traces (former contractions have become traces due to the joining)
+		trace_out_double_indices(_base.indices, std::move(_base));
+		
+		_base.tensorObject->require_valid_network();
 	}
+	
 	
 	void TensorNetwork::trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
@@ -485,9 +476,9 @@ namespace xerus {
 			std::set<Index> contractedIndices;
 		#endif
 			
-		size_t j=0;
+		size_t j = 0;
 		size_t spanSumJ=0;
-		while (j<_modifiedIndices.size()) {
+		while (j < _modifiedIndices.size()) {
 			Index &ij = _modifiedIndices[j];
 			if (!_base.is_contained_and_open(ij)) {
 				REQUIRE(contractedIndices.count(ij) == 0, "Indices must occur at most twice per contraction");
@@ -584,7 +575,7 @@ namespace xerus {
 		
 		// Check whether prior QR makes sense
 		if (tensorA.size > misc::sqr(tensorA.dimensions[posA]) 
-		 || tensorB.size > misc::sqr(tensorB.dimensions[posB])) {
+		|| tensorB.size > misc::sqr(tensorB.dimensions[posB])) {
 			// Calculate the cores
 			Tensor coreA, coreB;
 			(tensorA(ba, c1, aa), coreA(c1, k)) = QC(tensorA(ba, k, aa));
@@ -808,9 +799,9 @@ namespace xerus {
 	
 	
 	void TensorNetwork::sanitize() {
-		size_t idCount=0;
+		size_t idCount = 0;
 		std::map<size_t, size_t> idMap;
-		for (size_t i=0; i<nodes.size(); ++i) {
+		for (size_t i = 0; i < nodes.size(); ++i) {
 			if (!nodes[i].erased) {
 				idMap[i] = idCount++;
 			}
@@ -857,9 +848,9 @@ namespace xerus {
 
 	//TODO testcase A(i,j)*B(k,k) of TTtensors
 	/**
-	 * contracts the nodes with indices @a _node1 and @a _node2
-	 * replaces node1 with the contraction and node2 with an degree-0 tensor
-	 */
+	* contracts the nodes with indices @a _node1 and @a _node2
+	* replaces node1 with the contraction and node2 with an degree-0 tensor
+	*/
 	void TensorNetwork::contract(const size_t _nodeId1, const size_t _nodeId2) {
 		TensorNode &node1 = nodes[_nodeId1];
 		TensorNode &node2 = nodes[_nodeId2];
@@ -1083,7 +1074,7 @@ namespace xerus {
 		require_valid_network(false);
 	}
 
-	double TensorNetwork::contraction_cost(size_t _nodeId1, size_t _nodeId2) {  
+	double TensorNetwork::contraction_cost(const size_t _nodeId1, const size_t _nodeId2) const {  
 		REQUIRE(!nodes[_nodeId1].erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
 		REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
 		
@@ -1102,49 +1093,6 @@ namespace xerus {
 		return (double) (cost);
 	}
 
-	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
-		_toInsert.assign_indices();
-		
-		// TODO after trace ensure connectedness (to external indices)
-		TensorNetwork &base = *_base.tensorObject;
-		const TensorNetwork &toInsert = *_toInsert.tensorObjectReadOnly;
-		
-		size_t firstNew = base.nodes.size();
-		size_t firstNewExternal = base.externalLinks.size();
-		
-		// enlarge externalLinks vector by _rhs links
-		for (const TensorNetwork::Link &l : toInsert.externalLinks) {
-			base.externalLinks.emplace_back(l);
-			base.externalLinks.back().other += firstNew;
-		}
-		
-		// Merge indices
-		_base.indices.insert(_base.indices.end(), _toInsert.indices.begin(), _toInsert.indices.end());
-		base.dimensions.insert(base.dimensions.end(), toInsert.dimensions.begin(), toInsert.dimensions.end());
-		
-		#ifndef DISABLE_RUNTIME_CHECKS_
-		for (const Index &idx : _base.indices) {
-			REQUIRE(misc::count(_base.indices, idx) < 3, "Internal Error.");
-		}
-		#endif
-		
-		// Add network (treating all external links as new external links)
-		for (size_t i=0; i<toInsert.nodes.size(); ++i) {
-			base.nodes.emplace_back(toInsert.nodes[i]);
-			for(TensorNetwork::Link &l : base.nodes.back().neighbors) {
-				if (!l.external) { // Link inside the added network
-					l.other += firstNew;
-				} else { // External link
-					l.indexPosition += firstNewExternal;
-				}
-			}
-		}
-		
-		// Find traces (former contractions have become traces due to the joining)
-		trace_out_double_indices(_base.indices, std::move(_base));
-		
-		_base.tensorObject->require_valid_network();
-	}
 
 	size_t TensorNetwork::contract(const std::set<size_t>& _ids) {
 		// Trace out all single-node traces
@@ -1246,7 +1194,7 @@ namespace xerus {
 				
 		graphLayout << "graph G {" << std::endl;
 		graphLayout << "graph [mclimit=1000, maxiter=1000, overlap = false, splines = true]" << std::endl;
-		 
+		
 		for(size_t i = 0; i < nodes.size(); ++i) {
 			// Create the Nodes
 			if(nodes[i].erased) {
