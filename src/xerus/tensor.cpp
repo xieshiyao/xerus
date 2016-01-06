@@ -1040,9 +1040,11 @@ namespace xerus {
 		
 		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
 		
-		
-		// Check whether _result has to be reset
-		if( _result.degree() != lhsRemainOrder + rhsRemainOrder 
+		// Check whether _result has to be reset and prevent deletion of _lhs or _rhs due to being the same object as _result.
+		std::unique_ptr<Tensor> tmpResult;
+		Tensor* usedResult;
+		if( &_result == &_lhs || &_result == &_rhs
+			|| _result.degree() != lhsRemainOrder + rhsRemainOrder 
 			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
 			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin())
 		) {
@@ -1050,42 +1052,57 @@ namespace xerus {
 			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
 			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd);
 			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
-			_result.reset(std::move(resultDim), Tensor::Initialisation::None);
+			
+			if(&_result == &_lhs || &_result == &_rhs) {
+				tmpResult.reset(new Tensor(std::move(resultDim), _result.representation, Tensor::Initialisation::None));
+				usedResult = tmpResult.get();
+			} else {
+				_result.reset(std::move(resultDim), Tensor::Initialisation::None);
+				usedResult = &_result;
+			}
+		} else {
+			usedResult = &_result;
 		}
+		
 		
 		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
 		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
 		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
 		
 		if(!_lhs.is_sparse() && !_rhs.is_sparse()) { // Full * Full => Full
-			blasWrapper::matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+			blasWrapper::matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
 			
 		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse
-			internal::matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+			internal::matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim,
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
 			
-		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && !_result.is_sparse()) { // Sparse * Full => Full
-			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+		} else if(_lhs.is_sparse() && !_rhs.is_sparse()) { // Sparse * Full => Full
+			matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
 			
-		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && !_result.is_sparse()) { // Full * Sparse => Full
-			matrix_matrix_product(_result.override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+		} else if(!_lhs.is_sparse() && _rhs.is_sparse()) { // Full * Sparse => Full
+			matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
 			
-		} else if(_lhs.is_sparse() && !_rhs.is_sparse() && _result.is_sparse()) { // Sparse * Full => Sparse
-			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+		}/* else if(_lhs.is_sparse() && !_rhs.is_sparse() && usedResult->is_sparse()) { // Sparse * Full => Sparse
+			matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
 			
-		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && _result.is_sparse()) { // Full * Sparse => Sparse
-			matrix_matrix_product(_result.override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && usedResult->is_sparse()) { // Full * Sparse => Sparse
+			matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+		}*/
+		
+		
+		if(tmpResult) {
+			_result = std::move(*tmpResult);
 		}
 	}
 	

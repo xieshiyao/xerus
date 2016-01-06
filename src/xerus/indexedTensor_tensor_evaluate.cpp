@@ -52,7 +52,6 @@ namespace xerus {
 	 */
 	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle) {
 		IF_CHECK(
-			REQUIRE(&_out != &_base, "reshuffle does not work if _out and _base coincide");
 			REQUIRE(_shuffle.size() == _base.degree(), "IE");
 			for(size_t x = 0; x < _base.degree(); ++x) {
 				REQUIRE(_shuffle[x] < _base.degree(), _shuffle[x] << " is no valid new position!");
@@ -84,30 +83,40 @@ namespace xerus {
 			stepSizes[i] = misc::product(outDimensions, _shuffle[i]+1, numToShuffle)*blockSize;
 		}
 		
-		_out.reset(std::move(outDimensions), _base.representation, Tensor::Initialisation::None);
+		// Rescue _base from reset in case _out and _base coincide
+		std::unique_ptr<Tensor> rescueSlot;
+		const Tensor* usedBase;
+		if(&_out == &_base) {
+			rescueSlot.reset(new Tensor(std::move(_out)));
+			usedBase = rescueSlot.get();
+		} else {
+			usedBase = &_base;
+		}
 		
-		if(_base.is_dense()) {
-			const size_t numBlocks = misc::product(_base.dimensions, 0, numToShuffle);
+		_out.reset(std::move(outDimensions), usedBase->representation, Tensor::Initialisation::None);
+		
+		if(usedBase->is_dense()) {
+			const size_t numBlocks = misc::product(usedBase->dimensions, 0, numToShuffle);
 			value_t* outPosition = _out.override_dense_data();
-			const value_t* basePosition = _base.get_unsanitized_dense_data();
+			const value_t* basePosition = usedBase->get_unsanitized_dense_data();
 			
 			if(blockSize == 1) {
 				*outPosition = *basePosition;
 				for(size_t b = 1; b < numBlocks; ++b) {
-					increase_indices(b, outPosition, stepSizes, _base.dimensions);
+					increase_indices(b, outPosition, stepSizes, usedBase->dimensions);
 					*outPosition = *(basePosition + b*blockSize);
 				}
 			} else {
 				misc::array_copy(outPosition, basePosition, blockSize);
 				for(size_t b = 1; b < numBlocks; ++b) {
-					increase_indices(b, outPosition, stepSizes, _base.dimensions);
+					increase_indices(b, outPosition, stepSizes, usedBase->dimensions);
 					misc::array_copy(outPosition, basePosition + b*blockSize, blockSize);
 				}
 			}
-			_out.factor = _base.factor;
+			_out.factor = usedBase->factor;
 			
 		} else {
-			const std::map<size_t, value_t>& baseEntries = _base.get_unsanitized_sparse_data();
+			const std::map<size_t, value_t>& baseEntries = usedBase->get_unsanitized_sparse_data();
 			std::map<size_t, value_t>& outEntries = _out.override_sparse_data();
 			
 			for(const std::pair<size_t, value_t>& entry : baseEntries) {
@@ -116,10 +125,10 @@ namespace xerus {
 				basePosition /= blockSize;
 				
 				for(size_t i = numToShuffle; i > 0; --i) {
-					position += (basePosition%_base.dimensions[i-1])*stepSizes[i-1];
-					basePosition /= _base.dimensions[i-1];
+					position += (basePosition%usedBase->dimensions[i-1])*stepSizes[i-1];
+					basePosition /= usedBase->dimensions[i-1];
 				}
-				outEntries.emplace(position, _base.factor*entry.second);
+				outEntries.emplace(position, usedBase->factor*entry.second);
 			}
 		}
 	}

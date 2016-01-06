@@ -374,9 +374,6 @@ namespace xerus {
 		*/
 		TensorNetwork stripped_subnet(const std::function<bool(size_t)>& _idF = [](size_t){ return true;}) const;
 		
-		
-		
-		
 		/** 
 		* @brief Swaps the external indices @a _i and @a _j, effectively changing those indices for the
 		* represented Tensor (e.g. a transposition for matrices).
@@ -389,9 +386,10 @@ namespace xerus {
 		static void add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert);
 		
 		/** 
-		* @brief TODO
-		*/
-		static void trace_out_double_indices(std::vector<Index> &_modifiedIndices, IndexedTensorWritable<TensorNetwork>&& _base);
+		 * @brief Finds traces defined by the indices and Internally links the corresponding indices.
+		 * @details For each trace this reduces the degree of the TN by two and removes two indices from the IndexedTensor.
+		 */
+		static void link_traces(IndexedTensorWritable<TensorNetwork>&& _base);
 		
 	protected:
 		/** 
@@ -421,23 +419,22 @@ namespace xerus {
 		* @details The given nodes must be joined by a single edge. Both nodes are contracted and an SVD is calculated to perform the thresholding.
 		* The obtained core is contracted to nodeB, i.e. nodeA remains orthogonal in the used matrification.
 		* @param _nodeA First node that takes part in the rank thresholding. This node remains orthogonalized.
-		* @param _nodeB Second node that takes part in the rank thresholding. This nodes carries the core.
+		* @param _nodeB Second node that takes part in the rank thresholding. This nodes carries the core afterwards.
 		* @param _maxRank Maximal allowed rank.
 		* @param _eps Epsilion to be used in the SVD to determine zero singular values.
 		* @param _softThreshold Softthreshold that is to be applied.
 		* @param _preventZero Flag set to prevent the result to become the zero tensor.
 		*/
-		void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
+		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
 		
 		/**
 		* @brief Transfers the core from one given node to another.
 		* @details The given nodes must be joined by a single edge. A QR decomposition of the first node is calculated and the core contracted to the second one.
 		* @param _nodeA First node, which remains orthogonalized.
-		* @param _nodeB Second node, which carries the core.
+		* @param _nodeB Second node, which carries the core afterwards.
 		* @param _allowRankReduction Flag indicating whether a rank revealing decomposition is to be used which allows the reduction of the rank.
 		*/
-		void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
-		
+		virtual void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
 		
 		/**
 		* @brief contracts all nodes that are joined by a full-rank edge.
@@ -465,7 +462,6 @@ namespace xerus {
 		* @return The approxiamted contraction cost.
 		*/
 		double contraction_cost(const size_t _nodeId1, const size_t _nodeId2) const;
-		
 		
 		/**
 		* contracts the nodes with indices included in the set
