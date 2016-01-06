@@ -33,12 +33,12 @@ UNIT_TEST(algorithms, cg,
 	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
 	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
 	
-// 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
-// 	B(i&0) = A(i/2,j/2) * B(j&0);
+	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
+	B(i&0) = A(i/2,j/2) * B(j&0);
 
 	PerformanceData pdata(true);
 	GeometricCGVariant cg(GeometricCG);
-// 	cg.assumeSymmetricPositiveDefiniteOperator = true;
+	cg.assumeSymmetricPositiveDefiniteOperator = true;
 	cg.retraction = ALSRetractionI;
 // 	cg.restartInterval = 20;
 	cg.convergenceEpsilon = 0;

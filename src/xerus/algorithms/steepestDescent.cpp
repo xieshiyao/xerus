@@ -33,6 +33,52 @@
 
 namespace xerus {
 	
+	void line_search(TTTensor &_x, value_t &_alpha, const TTTangentVector &_direction, value_t _angle, value_t &_residual,
+					 std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
+					 std::function<value_t()> _calculate_residual,
+					 value_t _changeInAlpha)
+	{
+		value_t dirNorm = _direction.frob_norm();
+		value_t currAlpha = _alpha / _changeInAlpha;
+		TTTensor oldX(_x);
+		_retraction(_x, currAlpha/dirNorm * _direction);
+		value_t bestResidual = _calculate_residual();
+		value_t bestAlpha = currAlpha;
+		TTTensor bestX = _x;
+		
+		do {
+			currAlpha *= _changeInAlpha;
+			_x = oldX;
+			_retraction(_x, currAlpha/dirNorm * _direction);
+			value_t newResidual = _calculate_residual();
+			LOG(line_search, currAlpha << " -> " << newResidual);
+			if (newResidual < bestResidual) {
+				bestResidual = newResidual;
+				bestAlpha = currAlpha;
+				bestX = _x;
+			} else {
+				break;
+			}
+		} while(true);
+		
+		_x = std::move(bestX);
+		_alpha = bestAlpha;
+		
+// 		// armijo backtracking
+// 		const value_t min_decrease = 1e-4;
+// 		LOG(pre_armijo, bestResidual << " > " << _residual << " - " << min_decrease << " * " << _alpha << " * " << _angle << " / " << dirNorm);
+// 		while (_alpha > 1e-16 && bestResidual > _residual - min_decrease * _alpha/dirNorm * _angle) {
+// 			LOG(huch, _alpha << " " << bestResidual);
+// 			_alpha *= _changeInAlpha;
+// 			_x = oldX;
+// 			_retraction(_x, _alpha/dirNorm * _direction);
+// 			bestResidual = _calculate_residual();
+// 		}
+		
+		_residual = bestResidual;
+	}
+	
+	
 	value_t SteepestDescentVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numSteps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		const TTOperator &_A = *_Ap;
 		static const Index i,j;

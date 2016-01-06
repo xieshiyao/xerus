@@ -24,6 +24,7 @@
 
 #include <xerus/algorithms/cg.h>
 #include <xerus/algorithms/als.h>
+#include <xerus/algorithms/steepestDescent.h>
 #include <xerus/basic.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/tensorNetwork.h>
@@ -59,13 +60,13 @@ namespace xerus {
 					<< "convergence epsilon: " << _convergenceEpsilon << '\n';
 		_perfData.start();
 		
-		auto updateResidual = [&]() {
+		auto calculateResidual = [&]()->value_t {
 			if (_Ap) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
 			}
-			currResidual = frob_norm(residual);//normB;
+			return frob_norm(residual);//normB;
 		};
 		auto updateGradient = [&]() {
 			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
@@ -78,18 +79,19 @@ namespace xerus {
 			gradientNorm = gradient.frob_norm();
 		};
 		
-		updateResidual();
+		currResidual = calculateResidual();
 		_perfData.add(stepCount, currResidual, _x);
 		
 		updateGradient();
 		TTTangentVector direction = gradient;
-		value_t alpha = 100;
+		value_t alpha = 1;
 		while ((_numSteps == 0 || stepCount < _numSteps)
 			&& currResidual/normB > _convergenceEpsilon
 			&& std::abs(lastResidual-currResidual)/normB > _convergenceEpsilon
 			&& std::abs(1-currResidual/lastResidual)/normB > _convergenceEpsilon) 
 		{
 			stepCount += 1;
+			size_t stepFlags = 0;
 			
 			// check the angle between gradient and current direction
 			value_t angle = gradient.scalar_product(direction);
@@ -97,27 +99,14 @@ namespace xerus {
 			// if movement in the given direction would increase the residual rather than decrease it, perform one steepest descent step instead
 			if (angle <= 0) {
 				direction = gradient;
-				angle = 1;
+				angle = gradient.frob_norm();
+				alpha = 1;
+				stepFlags |= 1;
 			}
 			
-			// TODO line searches
+			line_search(_x, alpha, direction, angle, currResidual, retraction, calculateResidual, 0.8);
 			
-			TTTensor oldX(_x);
-			retraction(_x, direction * alpha);
-			lastResidual = currResidual;
-			updateResidual();
-			
-			// armijo backtracking
-			const value_t min_decrease = 0.5;
-			while (alpha > 1e-20 && currResidual > lastResidual - min_decrease * alpha * angle) {
-// 				LOG(huch, alpha << " " << currResidual);
-				alpha /= 2;
-				_x = oldX;
-				retraction(_x, direction * alpha);
-				updateResidual();
-			}
-			
-			_perfData.add(stepCount, currResidual, _x);
+			_perfData.add(stepCount, currResidual, _x, stepFlags);
 			
 // 			direction(i&0) = residual(i&0) + beta * direction(i&0);
 			TTTangentVector oldDirection(direction);

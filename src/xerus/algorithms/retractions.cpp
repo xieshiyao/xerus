@@ -157,6 +157,12 @@ namespace xerus {
 		return result;
 	}
 	
+	TTTangentVector operator*(value_t _alpha, const TTTangentVector &_rhs) {
+		TTTangentVector result(_rhs);
+		result *= _alpha;
+		return result;
+	}
+	
 	value_t TTTangentVector::scalar_product(const TTTangentVector& _other) const {
 		REQUIRE(components.size() == _other.components.size(), "");
 		Index i1,i2,r,j1,j2;

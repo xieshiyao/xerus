@@ -36,7 +36,7 @@ else
 	WARNINGS += -Wlogical-op				# Warn about suspicious uses of logical operators in expressions
 	WARNINGS += -Wtrampolines				# Warn about trampolines
 	WARNINGS += -Wzero-as-null-pointer-constant			# Warn when a literal '0' is used as null pointer constant.
-	WARNINGS += -Wsuggest-override					# Suggest functions that do override
+	#WARNINGS += -Wsuggest-override					# Suggest functions that do override
 
 	ifdef SUGGEST_ATTRIBUTES
 		WARNINGS += -Wsuggest-attribute=pure 			# Suggest functions that can be pure

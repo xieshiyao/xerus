@@ -54,6 +54,8 @@ namespace xerus {
 		TTTensor added_to_base() const;
 	};
 	
+	TTTangentVector operator*(value_t _alpha, const TTTangentVector &_rhs);
+	
 	/// retraction that performs a HOSVD to project back onto the Manifold
 	struct HOSVDRetraction {
 		bool roundByVector;
