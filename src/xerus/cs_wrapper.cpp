@@ -34,8 +34,17 @@ namespace xerus {
 			const size_t rhsSize = _midDim*_rhsDim;
 			const size_t upperBound = std::min(_lhsDim*_rhsEntries, _rhsDim*_lhsEntries);
 			const size_t finalSize = _lhsDim*_rhsDim;
+			const size_t expectation = size_t(double(finalSize)*(1.0 - misc::pow(1.0 - double(_lhsEntries*_rhsEntries)/double(_lhsDim*_midDim*_midDim*_rhsDim), _midDim)));
 			return finalSize > 100*upperBound || (lhsSize > 100*_lhsEntries && rhsSize > 100*_rhsEntries);
 		}
+/*		
+		bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries) {
+			const size_t lhsSize = _lhsDim*_midDim;
+			const size_t rhsSize = _midDim*_rhsDim;
+			const size_t upperBound = std::min(_lhsDim*_rhsEntries, _rhsDim*_lhsEntries);
+			const size_t finalSize = _lhsDim*_rhsDim;
+			return finalSize > 100*upperBound || (lhsSize > 100*_lhsEntries && rhsSize > 100*_rhsEntries);
+		}*/
 		
 		
 		CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N) {

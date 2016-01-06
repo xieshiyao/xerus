@@ -86,6 +86,9 @@ namespace xerus {
 		
 		template<class...> using void_t = void;
 		
+		
+		#if __GNUC__ > 4 || defined(__clang__)
+		
 		GENERATE_HAS_FUNCTION(count)
 		GENERATE_HAS_FUNCTION(find)
 		
@@ -123,6 +126,39 @@ namespace xerus {
 			return std::find(_container.begin(), _container.end(), _item) != _container.end();
 		}
 
+		#else 
+		
+		GENERATE_HAS_MEMBER(count)
+		
+		///@brief: Counts how often an element is contained in an arbitary container
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			size_t count = 0;
+			for(const item_t& otherItem : _container) {
+				if(otherItem == _item) { count++; }
+			}
+			return count;
+		}
+		
+		///@brief: Counts how often an element is contained in an arbitary container
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return _container.count(_item);
+		}
+		
+		///@brief: Checks whether an arbitary container contains a certain element.
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<!has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return std::find(_container.begin(), _container.end(), _item) != _container.end();
+		}
+		
+		///@brief: Checks whether an arbitary container contains a certain element.
+		template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<has_member_count<container_t<item_t, rest_t...>>::value, int>::type = 0>
+		bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			return _container.find(_item) != _container.end();
+		}
+		
+		#endif
 		
 		///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
 		template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
@@ -132,6 +168,8 @@ namespace xerus {
 			}
 			return true;
 		}
+		
+		
 
 		
 		///@brief: Checks whether two arbitary containers are disjunct, i.e. share no object.
