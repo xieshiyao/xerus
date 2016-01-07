@@ -33,7 +33,7 @@
 
 namespace xerus {
 	
-	void line_search(TTTensor &_x, value_t &_alpha, const TTTangentVector &_direction, value_t _angle, value_t &_residual,
+	void line_search(TTTensor &_x, value_t &_alpha, const TTTangentVector &_direction, value_t _derivative, value_t &_residual,
 					 std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
 					 std::function<value_t()> _calculate_residual,
 					 value_t _changeInAlpha)
@@ -51,7 +51,7 @@ namespace xerus {
 			_x = oldX;
 			_retraction(_x, currAlpha/dirNorm * _direction);
 			value_t newResidual = _calculate_residual();
-			LOG(line_search, currAlpha << " -> " << newResidual);
+// 			LOG(line_search, currAlpha << " -> " << newResidual);
 			if (newResidual < bestResidual) {
 				bestResidual = newResidual;
 				bestAlpha = currAlpha;
@@ -64,16 +64,16 @@ namespace xerus {
 		_x = std::move(bestX);
 		_alpha = bestAlpha;
 		
-// 		// armijo backtracking
-// 		const value_t min_decrease = 1e-4;
-// 		LOG(pre_armijo, bestResidual << " > " << _residual << " - " << min_decrease << " * " << _alpha << " * " << _angle << " / " << dirNorm);
-// 		while (_alpha > 1e-16 && bestResidual > _residual - min_decrease * _alpha/dirNorm * _angle) {
-// 			LOG(huch, _alpha << " " << bestResidual);
-// 			_alpha *= _changeInAlpha;
-// 			_x = oldX;
-// 			_retraction(_x, _alpha/dirNorm * _direction);
-// 			bestResidual = _calculate_residual();
-// 		}
+		// armijo backtracking
+		const value_t min_decrease = 1e-4;
+// 		LOG(armijo, bestResidual << " > " << _residual << " - " << min_decrease << " * " << _alpha << " * " << _derivative << " / " << dirNorm);
+		while (_alpha > 1e-16 && bestResidual > _residual - min_decrease * _alpha/dirNorm * _derivative) {
+// 			LOG(armijo, _alpha << " " << bestResidual);
+			_alpha *= _changeInAlpha;
+			_x = oldX;
+			_retraction(_x, _alpha/dirNorm * _direction);
+			bestResidual = _calculate_residual();
+		}
 		
 		_residual = bestResidual;
 	}

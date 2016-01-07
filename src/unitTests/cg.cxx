@@ -29,21 +29,25 @@ UNIT_TEST(algorithms, cg,
     
     Index i,j,k;
     
-    TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, rnd, dist);
+    TTTensor X = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
 	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
-	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
+	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {1,1,1}, rnd, dist);
+	
+	TTTensor trueX(B);
 	
 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
 	B(i&0) = A(i/2,j/2) * B(j&0);
 
-	PerformanceData pdata(true);
+	PerformanceData pdata([&](const TTTensor &_x){
+		return frob_norm(_x - trueX);
+	}, true);
 	GeometricCGVariant cg(GeometricCG);
-	cg.assumeSymmetricPositiveDefiniteOperator = true;
-	cg.retraction = ALSRetractionI;
+// 	cg.assumeSymmetricPositiveDefiniteOperator = true;
+// 	cg.retraction = ALSRetractionI;
 // 	cg.restartInterval = 20;
 	cg.convergenceEpsilon = 0;
 	
-// 	cg(A, X, B, pdata);
+	cg(A, X, B, pdata);
 	
 	SteepestDescentVariant alsGrad(ALSRetractionII);
 	alsGrad.printProgress = false;

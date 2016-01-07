@@ -1151,7 +1151,7 @@ namespace xerus {
 		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
-			LOG(fatal, "Sparse SVD not yet implemented.");
+			LOG(fatal, "Sparse SVD not yet implemented."); // TODO
 		} else {
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
@@ -1190,7 +1190,7 @@ namespace xerus {
 		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, _input, _splitPos);
 		
 		if(_input.is_sparse()) {
-			LOG(fatal, "Sparse SVD not yet implemented.");
+			LOG(fatal, "Sparse QR not yet implemented."); // TODO
 		} else {
 			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
@@ -1204,7 +1204,7 @@ namespace xerus {
 		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, _input, _splitPos);
 		
 		if(_input.is_sparse()) {
-			LOG(fatal, "Sparse SVD not yet implemented.");
+			LOG(fatal, "Sparse RQ not yet implemented."); // TODO
 		} else {
 			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}

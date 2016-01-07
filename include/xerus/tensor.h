@@ -31,8 +31,6 @@
 #include "indexedTensor.h"
 
 namespace xerus {
-	class Tensor;
-	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor final {
 	public:
@@ -43,7 +41,7 @@ namespace xerus {
 		 * @details None means that no initialisation is performed, i.e. the data can be random.
 		 * Zero means that the data is zero initialized.
 		 */
-		enum class Initialisation : bool { None, Zero};
+		enum class Initialisation : bool { None, Zero };
 		
 		/** 
 		 * @brief Flags indicating the internal representation of the data of Tensor objects. 
@@ -51,7 +49,7 @@ namespace xerus {
 		 * using row-major order. Sparse means that only the non-zero entries are stored explicitly in a set containing
 		 * their value and position.
 		 */
-		enum class Representation : bool { Dense, Sparse};
+		enum class Representation : bool { Dense, Sparse };
 		
 		///@brief: Represention of the dimensions of a Tensor.
 		typedef std::vector<size_t> DimensionTuple;

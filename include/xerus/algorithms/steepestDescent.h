@@ -31,7 +31,7 @@
 namespace xerus {
 
 	
-	void line_search(TTTensor &_x, value_t &_alpha, const TTTangentVector &_direction, value_t _angle, value_t &_residual,
+	void line_search(TTTensor &_x, value_t &_alpha, const TTTangentVector &_direction, value_t _derivative, value_t &_residual,
 					 std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
 					 std::function<value_t()> _calculate_residual,
 					 value_t _changeInAlpha = 0.5

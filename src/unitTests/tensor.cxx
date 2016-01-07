@@ -139,3 +139,35 @@ UNIT_TEST2(Tensor, Constructors) {
 }});
 
 
+
+UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
+	Tensor n({3,3,3,3});
+	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor");
+	
+	std::vector<Tensor> columns;
+	for (size_t i=0; i<10; ++i) {
+		columns.emplace_back(std::vector<size_t>({10,10}), 10, [&](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n*10+i, 1.0); });
+		MTEST(columns.back().representation == Tensor::Representation::Sparse, "sparse constructor should construct sparse tensor");
+	}
+	
+	Index i1,i2,i3;
+	Tensor res({10,10}, Tensor::Representation::Sparse);
+	
+	res({i1,i3}) = columns[0](i1,i2) * columns[0](i3,i2);
+	MTEST(frob_norm(res - Tensor::ones({10,10})) < 1e-14, "dyadic product should result in ones tensor");
+	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
+	
+	res = Tensor({10,10}, Tensor::Representation::Dense);
+	res({i1,i3}) = columns[1](i1,i2) * columns[0](i3,i2);
+	MTEST(frob_norm(res) < 1e-20, "this should be a sparse tensor with no entries, so frob norm exactly = 0!");
+	MTEST(res.representation == Tensor::Representation::Sparse, "this should be a sparse tensor with no entries");
+	
+	res = Tensor({10,10}, Tensor::Representation::Sparse);
+	for (size_t i=0; i<10; ++i) {
+		res({i1,i2}) = res({i1,i2}) + columns[i]({i1,i2});
+	}
+	MTEST(frob_norm(res - Tensor::ones({10,10})) < 1e-14, "sum of columns should result in ones tensor");
+	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
+}});
+
+

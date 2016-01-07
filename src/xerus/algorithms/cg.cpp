@@ -93,18 +93,18 @@ namespace xerus {
 			stepCount += 1;
 			size_t stepFlags = 0;
 			
-			// check the angle between gradient and current direction
-			value_t angle = gradient.scalar_product(direction);
+			// check the derivative along the current direction
+			value_t derivative = gradient.scalar_product(direction) / direction.frob_norm();
 			
 			// if movement in the given direction would increase the residual rather than decrease it, perform one steepest descent step instead
-			if (angle <= 0) {
+			if (derivative <= 0) {
 				direction = gradient;
-				angle = gradient.frob_norm();
+				derivative = gradient.frob_norm();
 				alpha = 1;
 				stepFlags |= 1;
 			}
 			
-			line_search(_x, alpha, direction, angle, currResidual, retraction, calculateResidual, 0.8);
+			line_search(_x, alpha, direction, derivative, currResidual, retraction, calculateResidual, 0.8);
 			
 			_perfData.add(stepCount, currResidual, _x, stepFlags);
 			
