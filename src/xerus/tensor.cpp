@@ -37,7 +37,7 @@ namespace xerus {
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
 	
 	Tensor::Tensor(const DimensionTuple& _dimensions, const Representation _representation, const Initialisation _init) 
-		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
+		: dimensions(_dimensions), size(misc::product(_dimensions)), representation(_representation)
 	{
         REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
 		

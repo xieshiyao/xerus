@@ -242,12 +242,13 @@ namespace xerus {
 		}
 		
 		///@brief: Calculates the product the entries in the range [_first, _last).
-		template<template<class, class...> class container_t, class item_t, class... rest_t>
-		_pure_ item_t product(const container_t<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
-			REQUIRE(_first <= _last && _last <= _container.size(), "Invalid range " << _first << "-" << _last << " given (Contaienr size " << _container.size() << ")"); 
+		///@note: as this function takes indices it is only useful for vectors
+		template<class item_t, class... rest_t>
+		_pure_ item_t product(const std::vector<item_t, rest_t...>& _container, const size_t _first, const size_t _last) {
+			REQUIRE(_first <= _last && _last <= _container.size(), "Invalid range " << _first << "-" << _last << " given (Container size " << _container.size() << ")"); 
 			item_t product = item_t(1);
-			for(typename container_t<item_t, rest_t...>::const_iterator item = _container.begin()+(long)_first; item != _container.begin()+(long)_last; ++item) { 
-				product *= *item; 
+			for (size_t i=_first; i<_last; ++i) {
+				product *= _container[i];
 			}
 			return product;
 		}

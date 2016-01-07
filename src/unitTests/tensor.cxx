@@ -38,6 +38,7 @@ UNIT_TEST2(Tensor, Constructors) {
 	tensors.push_back(tensors.back());
 	
 	Tensor::DimensionTuple fixedDimensions = random_dimensions(10, 4, rnd);
+	const size_t dimensionProduct = misc::product(fixedDimensions); // NOTE it is necessary to calculate this here to prevent internal segfault in gcc 4.8.1
 	
 	tensors.emplace_back(fixedDimensions, Tensor::Representation::Dense, Tensor::Initialisation::Zero);
 	tensors.push_back(tensors.back());
@@ -69,7 +70,7 @@ UNIT_TEST2(Tensor, Constructors) {
 	
 	tensors.emplace_back(fixedDimensions, []()->value_t{ return 0.0; });
 	tensors.push_back(tensors.back());
-	tensors.emplace_back(Tensor(fixedDimensions, misc::product(fixedDimensions), [](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n, value_t(_n)); }));
+	tensors.emplace_back(Tensor(fixedDimensions, dimensionProduct, [](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n, value_t(_n)); }));
 	tensors.push_back(tensors.back());
 	
 	tensors.emplace_back(fixedDimensions, [](const size_t _i)->value_t{ return value_t(_i); });
@@ -142,6 +143,7 @@ UNIT_TEST2(Tensor, Constructors) {
 
 UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	Tensor n({3,3,3,3});
+	MTEST(frob_norm(n) < 1e-20, "this should be a sparse tensor with no entries, so frob norm exactly = 0!");
 	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor");
 	
 	std::vector<Tensor> columns;
@@ -168,6 +170,13 @@ UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	}
 	MTEST(frob_norm(res - Tensor::ones({10,10})) < 1e-14, "sum of columns should result in ones tensor");
 	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
+	
+	res = Tensor({10,10}, Tensor::Representation::Dense);
+	Tensor d = Tensor::random({1}, rnd, normalDist);
+	Tensor e = columns[0];
+	e.reinterpret_dimensions({10,10,1});
+	res({i1,i2}) = e(i1,i2,i3) * d(i3);
+	MTEST(res.representation == Tensor::Representation::Sparse, "Sparse * full == sparse contractions?");
 }});
 
 

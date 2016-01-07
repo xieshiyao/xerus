@@ -52,10 +52,10 @@ namespace xerus {
 		enum class Representation : bool { Dense, Sparse };
 		
 		///@brief: Represention of the dimensions of a Tensor.
-		typedef std::vector<size_t> DimensionTuple;
+		typedef std::vector<size_t> DimensionTuple; // NOTE must not be declared as "using.." (internal segfault in gcc4.8.1)
 		
 		///@brief: Represention of a MultiIndex, i.e. the tuple of positions for each dimension determining a single position in a Tensor.
-		typedef std::vector<size_t> MultiIndex;
+		typedef std::vector<size_t> MultiIndex; // NOTE must not be declared as "using.." (internal segfault in gcc4.8.1)
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/// @brief Vector containing the individual dimensions of the tensor.
@@ -117,7 +117,8 @@ namespace xerus {
 		 */
 		template<ADD_MOVE(Vec, DimensionTuple), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
-		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(_dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
+		// NOTE must not be misc::product(dimensions) (without _) as that causes internal segfaults in gcc 4.8.1
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.

@@ -66,7 +66,8 @@ namespace xerus {
 		}
 		
 		const size_t numToShuffle = size_t(lastShuffled+1);
-		const size_t blockSize = misc::product(_base.dimensions, numToShuffle, _base.dimensions.size());
+		const size_t lastToShuffle = _base.dimensions.size(); // NOTE inlining this into the next line causes an internal segfault in gcc 4.8.1
+		const size_t blockSize = misc::product(_base.dimensions, numToShuffle, lastToShuffle);
 		
 		if(blockSize == _base.size) { // No actual reshuffling
 			_out = _base;
