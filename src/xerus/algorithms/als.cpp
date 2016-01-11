@@ -75,7 +75,7 @@ namespace xerus {
 				})
 			);
 			
-			REQUIRE(_x.is_in_expected_format(), "ie");
+			_x.require_correct_format();
 			
 			firstOptimizedIndex += 1;
 			dimensionProd = newDimensionProd;
@@ -107,7 +107,7 @@ namespace xerus {
 				})
 			);
 
-			REQUIRE(_x.is_in_expected_format(), "ie");
+			_x.require_correct_format();
 			
 			firstNotOptimizedIndex -= 1;
 			dimensionProd = newDimensionProd;

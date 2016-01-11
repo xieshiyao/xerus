@@ -379,7 +379,7 @@ namespace xerus {
 		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound = 0.0) const;
 // 		size_t find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount, const value_t _lowerBound = 0.0) const;
 		
-		virtual bool is_in_expected_format() const override;
+		virtual void require_correct_format() const override;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		/** 

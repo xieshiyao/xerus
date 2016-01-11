@@ -25,6 +25,7 @@
 
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/stringUtilities.h>
 #include <xerus/sparseTimesFullContraction.h>
 #include <xerus/selectedFunctions.h>
 

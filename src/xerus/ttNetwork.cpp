@@ -216,7 +216,7 @@ namespace xerus {
 		component(0) *= _tensor.factor; // NOTE this needs to be removed if the loop above does not use low-level calls anymore
 		
 		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
-		REQUIRE(is_in_expected_format(), "Internal Error.");
+		require_correct_format();
 	}
 	
 	
@@ -389,7 +389,7 @@ namespace xerus {
 		
 		// NOTE core position according to information in TTStack is set in evaluation
 		
-		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
+		_me.tensorObject->require_correct_format();
 	}
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
@@ -592,8 +592,8 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-		REQUIRE(_lhs.is_in_expected_format(), "");
-		REQUIRE(_rhs.is_in_expected_format(), "");
+		_lhs.require_correct_format();
+		_rhs.require_correct_format();
 		
 		if (_lhs.degree() == 0) {
 			TTNetwork result(_rhs);
@@ -1142,8 +1142,8 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	bool TTNetwork<isOperator>::is_in_expected_format() const {
-		return is_valid_tt();
+	void TTNetwork<isOperator>::require_correct_format() const {
+		is_valid_tt();
 	}
 	
 	

@@ -355,13 +355,13 @@ namespace xerus {
 		void require_valid_network(const bool _check_erased = true) const;
 		
 		/** 
-		* @brief Creates a dataless copy of a subnet.
-		* @details Creates a copy of this TensorNetwork containing the specified nodes,
-		* but does not propagate the data. Instead it uses the nullptr as data for all nodes.
-		* @param _ids the indices of the nodes to be copied. 
-		* @return the new TensorNetwork.
-		*/
-		TensorNetwork stripped_subnet(const std::set<size_t>& _ids) const;
+		 * @brief Sanity check for the TensorNetwork and if applicable for the specific format.
+		 * @details Checks whether all links in the network are set consistently and matching the 
+		 * underlying tensor objects. This also checks whether the additional constrains of the specific 
+		 * format (if any) are fullfilled.
+		 * @return TRUE if the sanity check passes. If not an exception is thrown.
+		 */
+		virtual void require_correct_format() const;
 		
 		/** 
 		* @brief Creates a dataless copy of a subnet.
@@ -402,6 +402,8 @@ namespace xerus {
 		* @param _nodeB The second node.
 		*/
 		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
+		
+		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
 		
 		/**
 		* @brief Removes the erased nodes. 
@@ -474,14 +476,7 @@ namespace xerus {
 		*/
 		virtual value_t frob_norm() const;
 		
-		/** 
-		* @brief Sanity check for the TensorNetwork and if applicable for the specific format.
-		* @details Checks whether all links in the network are set consistently and matching the 
-		* underlying tensor objects. This also checks whether the additional constrains of the specific 
-		* format (if any) are fullfilled.
-		* @return TRUE if the sanity check passes. If not an exception is thrown.
-		*/
-		virtual bool is_in_expected_format() const;
+		
 		
 		/**
 		* @brief Draws a graph representation of the TensorNetwork.

@@ -1053,7 +1053,7 @@ namespace xerus {
 		const size_t sparsityExpectation = size_t(double(finalSize)*(1.0 - misc::pow(1.0 - double(_lhs.sparsity()*_rhs.sparsity())/(double(_lhs.size)*double(_rhs.size)), midDim)));
 		REQUIRE(sparsityExpectation <= std::min(leftDim*_rhs.sparsity(), rightDim*_lhs.sparsity()), "IE");
 		// TODO allow Sparse*sparse --> Full
-		const bool sparseResult = !(!_lhs.is_sparse() && !_rhs.is_sparse()) && ( (_lhs.is_sparse() && _rhs.is_sparse()) || (finalSize > 64 && 25*sparsityExpectation < finalSize) );
+		const bool sparseResult = (_lhs.is_sparse() && _rhs.is_sparse()) || (finalSize > 64 && 25*sparsityExpectation < finalSize) ;
 		const Tensor::Representation resultRepresentation = sparseResult ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 		
 		
@@ -1125,6 +1125,8 @@ namespace xerus {
 		if(tmpResult) {
 			_result = std::move(*tmpResult);
 		}
+		
+		// TODO test for sparsity
 	}
 	
 	_inline_ std::tuple<size_t, size_t, size_t> prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos) {
@@ -1139,7 +1141,7 @@ namespace xerus {
 		
 		if( !_lhs.is_dense()
 			|| _lhs.degree() != _splitPos+1
-			|| rank != _lhs.dimensions.back() 
+			|| _lhs.dimensions.back() != rank 
 			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
 		{
 			Tensor::DimensionTuple newDimU;
@@ -1234,12 +1236,32 @@ namespace xerus {
 	}
 	
 	
-	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos, const value_t _eps) {
-		LOG(fatal, "Not yet Implemented."); // TODO
+	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos) {
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, _input, _splitPos);
+		
+		if(_input.is_sparse()) {
+			LOG(fatal, "Sparse RQ not yet implemented."); // TODO
+		} else {
+			std::unique_ptr<double[]> Qt, Ct;
+			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			
+			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
+			
+			std::vector<size_t> newDim = _Q.dimensions;
+			newDim.back() = rank;
+			_Q.reset(newDim, std::move(Qt));
+			
+			newDim = _C.dimensions;
+			newDim.front() = rank;
+			_C.reset(newDim, std::move(Ct));
+		}
+		
+		_C.factor = _input.factor;
 	}
 	
 	
-	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos, const value_t _eps) {
+	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos) {
 		LOG(fatal, "Not yet Implemented."); // TODO
 	}
 	
