@@ -21,15 +21,16 @@
  * @file
  * @brief Implementation of sparse matrix times dense matrix wrapper functions.
  */
+#include <memory>
 
-#include <xerus/sparseTimesFullContraction.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/misc/check.h>
+#include <xerus/sparseTimesFullContraction.h>
 #include <xerus/selectedFunctions.h>
 
 namespace xerus {
     
-    //TODO this is most likely not efficent
-    void transpose(double* const __restrict _out, const double* const __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+    _inline_ void transpose(double* const __restrict _out, const double* const __restrict _in, const size_t _leftDim, const size_t _rightDim) {
         for(size_t i = 0; i < _leftDim; ++i) {
             for(size_t j = 0; j < _rightDim; ++j) {
                 _out[j*_leftDim+i] = _in[i*_rightDim+j];
@@ -37,14 +38,14 @@ namespace xerus {
         }
     }
     
-    std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
+    _inline_ std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
         std::unique_ptr<double[]> AT(new double[_leftDim*_rightDim]);
         transpose(AT.get(), _A, _leftDim, _rightDim);
         return AT;
     }
     
     
-    void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+    _inline_ void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
         for(const std::pair<size_t, double>& entry : _in) {
             const size_t i = entry.first/_rightDim;
             const size_t j = entry.first%_rightDim;
@@ -52,7 +53,7 @@ namespace xerus {
         }
     }
     
-    std::map<size_t, double> transpose(const std::map<size_t, double>& _A, const size_t _leftDim, const size_t _rightDim) {
+    _inline_ std::map<size_t, double> transpose(const std::map<size_t, double>& _A, const size_t _leftDim, const size_t _rightDim) {
         std::map<size_t, double> AT;
         transpose(AT, _A, _leftDim, _rightDim);
         return AT;
@@ -213,7 +214,7 @@ namespace xerus {
                                 const size_t _midDim,
                                 const std::map<size_t, double>& _B,
                                 const bool _transposeB) {
-        // It is significantly faster to calculate (B^T * A*T)^T (TODO this is only benchmarked for mix -> Full yet...)
+        // It is significantly faster to calculate (B^T * A*T)^T (this is only benchmarked for mix -> Full yet...)
         std::map<size_t, double> CT;
         matrix_matrix_product(CT, _rightDim, _leftDim, _alpha, _B, !_transposeB, _midDim, _A, !_transposeA);
         transpose(_C, CT, _rightDim, _leftDim);

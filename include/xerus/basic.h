@@ -26,8 +26,6 @@
 
 #include "misc/allocator.h"
 #include "misc/standard.h"
-#include "misc/missingFunctions.h"
-#include "tensorLogger.h"
 
 /**
 * @brief The main namespace of xerus.
@@ -41,21 +39,12 @@ namespace xerus {
 	 */
 	typedef double value_t;
 	
-	static bool _inline_ approx_equal(const value_t _a, const value_t _b, value_t _eps = 4*std::numeric_limits<value_t>::epsilon()) {
-		return misc::approx_equal<value_t>(_a, _b, _eps);
-	}
-	
-	static bool _inline_ approx_equal(const size_t _a, const size_t _b) {
-		return _a == _b;
-	}
-	
-	
 	/**
 	 * @brief The default epsilon value in xerus.
 	 * @details This value is used as a default value by all xerus routines that work up to a certain accuracy,
 	 * e.g. the singluar value decompostion or the ALS algorithm.
 	 */
-	const double EPSILON = 1e-14;
+	constexpr const double EPSILON = 1e-14;
     
 	/**
 	* @brief Namespace for function and classes designated only for internal use.
@@ -70,7 +59,4 @@ namespace xerus {
 		/// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
 		void array_deleter_st(size_t* const _toDelete);
 	}
-	
-	/// @brief Helper class to provide possible overloads of several Tensor constructors.
-	class DONT_SET_ZERO {};
 }

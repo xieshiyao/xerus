@@ -228,8 +228,11 @@ namespace xerus {
 	}
 	
 	size_t Tensor::sparsity() const {
-		REQUIRE(is_sparse(), "IE");
-		return sparseData->size();
+		if(is_sparse()) {
+			return sparseData->size();
+		} else {
+			return size;
+		}
 	}
 	
 	
@@ -1025,8 +1028,9 @@ namespace xerus {
 		return result;
 	}
 	
+	
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than each involdes has.");
+		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have.");
 		
 		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
 		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;
@@ -1040,13 +1044,28 @@ namespace xerus {
 		
 		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
 		
+		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
+		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
+		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
+		
+		
+		const size_t finalSize = leftDim*rightDim;
+		const size_t sparsityExpectation = size_t(double(finalSize)*(1.0 - misc::pow(1.0 - double(_lhs.sparsity()*_rhs.sparsity())/(double(_lhs.size)*double(_rhs.size)), midDim)));
+		REQUIRE(sparsityExpectation <= std::min(leftDim*_rhs.sparsity(), rightDim*_lhs.sparsity()), "IE");
+		// TODO allow Sparse*sparse --> Full
+		const bool sparseResult = !(!_lhs.is_sparse() && !_rhs.is_sparse()) && ( (_lhs.is_sparse() && _rhs.is_sparse()) || (finalSize > 64 && 25*sparsityExpectation < finalSize) );
+		const Tensor::Representation resultRepresentation = sparseResult ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+		
+		
 		// Check whether _result has to be reset and prevent deletion of _lhs or _rhs due to being the same object as _result.
 		std::unique_ptr<Tensor> tmpResult;
 		Tensor* usedResult;
 		if( &_result == &_lhs || &_result == &_rhs
-			|| _result.degree() != lhsRemainOrder + rhsRemainOrder 
+			|| _result.representation != resultRepresentation
+			|| _result.degree() != lhsRemainOrder + rhsRemainOrder
+			|| _result.size != leftDim*rightDim
 			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
-			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin())
+			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin() + (lhsRemainEnd-lhsRemainStart))
 		) {
 			Tensor::DimensionTuple resultDim;
 			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
@@ -1054,10 +1073,10 @@ namespace xerus {
 			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
 			
 			if(&_result == &_lhs || &_result == &_rhs) {
-				tmpResult.reset(new Tensor(std::move(resultDim), _result.representation, Tensor::Initialisation::None));
+				tmpResult.reset(new Tensor(std::move(resultDim), resultRepresentation, Tensor::Initialisation::None));
 				usedResult = tmpResult.get();
 			} else {
-				_result.reset(std::move(resultDim), Tensor::Initialisation::None);
+				_result.reset(std::move(resultDim), resultRepresentation, Tensor::Initialisation::None);
 				usedResult = &_result;
 			}
 		} else {
@@ -1065,40 +1084,42 @@ namespace xerus {
 		}
 		
 		
-		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
-		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
-		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
-		
 		if(!_lhs.is_sparse() && !_rhs.is_sparse()) { // Full * Full => Full
 			blasWrapper::matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 											   _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
 											   _rhs.get_unsanitized_dense_data(), _rhsTrans);
 			
-		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse
+		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse 
 			internal::matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim,
 								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
 			
-		} else if(_lhs.is_sparse() && !_rhs.is_sparse()) { // Sparse * Full => Full
-			matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
-								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
-								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
-			
-		} else if(!_lhs.is_sparse() && _rhs.is_sparse()) { // Full * Sparse => Full
-			matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
-								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
-								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
-			
-		}/* else if(_lhs.is_sparse() && !_rhs.is_sparse() && usedResult->is_sparse()) { // Sparse * Full => Sparse
-			matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
-								  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
-								  _rhs.get_unsanitized_dense_data(), _rhsTrans);
-			
-		} else if(!_lhs.is_sparse() && _rhs.is_sparse() && usedResult->is_sparse()) { // Full * Sparse => Sparse
-			matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
-								  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
-								  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
-		}*/ // TODO use sprase_result.
+		} else {
+			if(sparseResult) {
+				if(_lhs.is_sparse() && !_rhs.is_sparse() && usedResult->is_sparse()) { // Sparse * Full => Sparse
+					matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+										  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
+										  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+					
+				} else { // Full * Sparse => Sparse
+					matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+										  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
+										  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+				}
+			} else {
+				if(_lhs.is_sparse() && !_rhs.is_sparse()) { // Sparse * Full => Full
+					matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+										  _lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim, 
+										  _rhs.get_unsanitized_dense_data(), _rhsTrans);
+					
+				} else { // Full * Sparse => Full
+					matrix_matrix_product(usedResult->override_dense_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+										  _lhs.get_unsanitized_dense_data(), _lhsTrans, midDim, 
+										  _rhs.get_unsanitized_sparse_data(), _rhsTrans);
+					
+				}
+			}
+		}
 		
 		
 		if(tmpResult) {
@@ -1269,15 +1290,15 @@ namespace xerus {
         
         if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
 			for(const std::pair<size_t, value_t>& entry : _a.get_unsanitized_sparse_data()) {
-				if(!approx_equal(_a.factor*entry.second, _b[entry.first], _eps)) { return false; }
+				if(!misc::approx_equal(_a.factor*entry.second, _b[entry.first], _eps)) { return false; }
 			}
 			
 			for(const std::pair<size_t, value_t>& entry : _b.get_unsanitized_sparse_data()) {
-				if(!approx_equal(_a[entry.first], _b.factor*entry.second, _eps)) { return false; }
+				if(!misc::approx_equal(_a[entry.first], _b.factor*entry.second, _eps)) { return false; }
 			}
         } else {
             for(size_t i=0; i < _a.size; ++i) {
-                if(!approx_equal(_a[i], _b[i], _eps)) { return false; }
+				if(!misc::approx_equal(_a[i], _b[i], _eps)) { return false; }
             }
         }
         return true;
@@ -1286,7 +1307,7 @@ namespace xerus {
     bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps) {
 		if(_tensor.size != _values.size()) { return false; }
 		for(size_t i = 0; i < _tensor.size; ++i) {
-			if(!approx_equal(_tensor[i], _values[i], _eps)) { return false; }
+			if(!misc::approx_equal(_tensor[i], _values[i], _eps)) { return false; }
 		}
 		return true;
 	}

@@ -97,6 +97,8 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::construct_stacks(std::unique_ptr<Tensor[]>& _stackSaveSlot, std::vector<std::vector<size_t>>& _updates, const std::unique_ptr<Tensor*[]>& _stackMem, const bool _forward) {
+		using misc::approx_equal;
+		
 		// Direct reference to the stack (withou Mem)
 		Tensor** const stack(_stackMem.get()+numMeasurments);
 		
@@ -126,6 +128,7 @@ namespace xerus {
 			
 			size_t position = 0;
 			size_t corePosition = _forward ? position : degree-1-position;
+			
 			for( ; 
 				position < degree && approx_equal(measurments.positions[realId][corePosition], measurments.positions[realPreviousId][corePosition]);
 				++position, corePosition = _forward ? position : degree-1-position) 

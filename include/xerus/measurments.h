@@ -26,10 +26,11 @@
 
 #include "basic.h"
 #include "misc/missingFunctions.h"
-#include "tensor.h"
 
 namespace xerus {
+	class Tensor;
 	template<bool isOperator> class TTNetwork;
+	
 	/** 
 	* @brief Class used to represent a single point measurments.
 	*/

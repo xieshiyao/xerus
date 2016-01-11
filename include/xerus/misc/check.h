@@ -18,27 +18,27 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Header file for CHECK and REQUIRE macros.
- */
+* @file
+* @brief Header file for CHECK and REQUIRE macros.
+*/
 
 #pragma once
 
 /**
- * @def CHECK(condition, level, message)
- * @brief Checks whether @a condition is true and calls LOG(level, message) otherwise.
- * @details The check is omitted if level is not logged anyways.
- */
+* @def CHECK(condition, level, message)
+* @brief Checks whether @a condition is true and calls LOG(level, message) otherwise.
+* @details The check is omitted if level is not logged anyways.
+*/
 
 /**
- * @def REQUIRE(condition, message)
- * @brief Checks whether @a condition is true. logs a fatal error otherwise via LOG(fatal, message).
- */
+* @def REQUIRE(condition, message)
+* @brief Checks whether @a condition is true. logs a fatal error otherwise via LOG(fatal, message).
+*/
 
 /**
- * @def IF_CHECK(expression)
- * @brief Executes @a expression only if the compilation was without DISABLE_RUNTIME_CHECKS_ set.
- */
+* @def IF_CHECK(expression)
+* @brief Executes @a expression only if the compilation was without DISABLE_RUNTIME_CHECKS_ set.
+*/
 
 #ifdef TEST_COVERAGE_
 	#include "test.h"
@@ -58,9 +58,9 @@
 
 	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
 	
-    #define IF_CHECK(expression) expression
+	#define IF_CHECK(expression) expression
 #else
 	#define CHECK(condition, level, message) void(0)
 	#define REQUIRE(condition, message) void(0)
-    #define IF_CHECK(expression)
+	#define IF_CHECK(expression)
 #endif

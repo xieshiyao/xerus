@@ -18,12 +18,13 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Implementation of the PerformanceData class.
- */
+* @file
+* @brief Implementation of the PerformanceData class.
+*/
 
 #include <string>
 #include <fstream>
+#include <xerus/ttNetwork.h>
 #include <xerus/performanceData.h>
 #include <xerus/misc/missingFunctions.h>
 

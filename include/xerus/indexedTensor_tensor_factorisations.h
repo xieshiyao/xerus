@@ -18,84 +18,90 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Header file for the classes defining factorisations of Tensors.
- */
+* @file
+* @brief Header file for the classes defining factorisations of Tensors.
+*/
 
 #pragma once
 
-#include "indexedTensor.h"
+#include <vector>
+#include <limits>
+
+#include "basic.h"
 
 namespace xerus {
-
+	class Tensor;
+	template<class tensor_type> class IndexedTensorReadOnly;
+	template<class tensor_type> class IndexedTensor;
+	
 	/**
-	 * @brief Abstract super class for all tensor factorisations.
-	 */
+	* @brief Abstract super class for all tensor factorisations.
+	*/
 	class TensorFactorisation {
 	public:
 		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const = 0;
 	};
 	
-    /**
-	 * @brief Helper class to allow an intuitive syntax for SVD factorisations.
-	 * @details The simplest example is (U(i,r1), S(r1,r2), Vt(r2,j)) = SVD(A(i,j)) to calculate the SVD of A. However A, U, S and Vt can
-	 *  also be a higher order Tensors. In order to calculate the SVD however a matrification imposed by the index order is used.
-	 */
+	/**
+	* @brief Helper class to allow an intuitive syntax for SVD factorisations.
+	* @details The simplest example is (U(i,r1), S(r1,r2), Vt(r2,j)) = SVD(A(i,j)) to calculate the SVD of A. However A, U, S and Vt can
+	*  also be a higher order Tensors. In order to calculate the SVD however a matrification imposed by the index order is used.
+	*/
 	class SVD : public TensorFactorisation{
-    public:
-        IndexedTensorReadOnly<Tensor>* input;
-        const double epsilon;
+	public:
+		IndexedTensorReadOnly<Tensor>* input;
+		const double epsilon;
 		const double softThreshold;
 		const size_t maxRank;
 		const bool preventZero;
 		
-        SVD(IndexedTensorReadOnly<Tensor>&& _input) : 
+		SVD(IndexedTensorReadOnly<Tensor>&& _input) : 
 			input(&_input), epsilon(EPSILON), softThreshold(0.0), maxRank(std::numeric_limits<size_t>::max()), preventZero(false) { }
 			
-        SVD(IndexedTensorReadOnly<Tensor>&& _input, const double _softTreshold, const bool _preventZero = false) : 
+		SVD(IndexedTensorReadOnly<Tensor>&& _input, const double _softTreshold, const bool _preventZero = false) : 
 			input(&_input), epsilon(0.0), softThreshold(_softTreshold), maxRank(std::numeric_limits<size_t>::max()), preventZero(_preventZero) { }
 			
-        SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
+		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
 			input(&_input), epsilon(_epsilon), softThreshold(0.0), maxRank(_maxRank), preventZero(false) { }
 			
 		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
 			input(&_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
-        
-        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
-    };
+		
+		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+	};
 
 	/**
-	 * @brief Helper class to allow an intuitive syntax for QR factorisations.
-	 * @details The simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR of A. However A, Q and R can
-	 *  also be a higher order Tensors. In order to calculate the QR however a matrification imposed by the index order is used.
-	 */
+	* @brief Helper class to allow an intuitive syntax for QR factorisations.
+	* @details The simplest example is (Q(i,k), R(k,j)) = QR(A(i,j)) to calculate the QR of A. However A, Q and R can
+	*  also be a higher order Tensors. In order to calculate the QR however a matrification imposed by the index order is used.
+	*/
 	class QR : public TensorFactorisation {
-    public:
-        IndexedTensorReadOnly<Tensor>* input;
-        QR(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
-        
-        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
-    };
+	public:
+		IndexedTensorReadOnly<Tensor>* input;
+		QR(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		
+		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+	};
 
-    /**
-	 * @brief Helper class to allow an intuitive syntax for RQ factorisations.
-	 * @details The simplest example is (R(i,k), Q(k,j)) = RQ(A(i,j)) to calculate the RQ of A. However A, Q and R can
-	 *  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
-	 */
+	/**
+	* @brief Helper class to allow an intuitive syntax for RQ factorisations.
+	* @details The simplest example is (R(i,k), Q(k,j)) = RQ(A(i,j)) to calculate the RQ of A. However A, Q and R can
+	*  also be a higher order Tensors. In order to calculate the RQ however a matrification imposed by the index order is used.
+	*/
 	class RQ : public TensorFactorisation {
-    public:
-        IndexedTensorReadOnly<Tensor>* input;
-        RQ(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
-        
-        virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
-    };
+	public:
+		IndexedTensorReadOnly<Tensor>* input;
+		RQ(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		
+		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+	};
 	
 	/**
-	 * @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
-	 * @details This calculates a factorisation QC=A with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A.
-	 * The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and R can
-	 *  also be a higher order Tensors.
-	 */
+	* @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
+	* @details This calculates a factorisation QC=A with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A.
+	* The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and R can
+	*  also be a higher order Tensors.
+	*/
 	class QC : public TensorFactorisation {
 	public:
 		IndexedTensorReadOnly<Tensor>* input;

@@ -24,10 +24,14 @@
 
 #pragma once
 
+#include <map>
 #include <limits>
+#include <memory>
+#include <random>
 
 #include "basic.h"
 #include "misc/sfinae.h"
+#include "misc/missingFunctions.h"
 #include "indexedTensor.h"
 
 namespace xerus {
@@ -118,8 +122,6 @@ namespace xerus {
 		template<ADD_MOVE(Vec, DimensionTuple), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
 		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
-		// NOTE must not be misc::product(dimensions) (without _) as that causes internal segfaults in gcc 4.8.1
-		// TODO MUST be misc::product(dimensions) because misc::product(_dimensions) is undefined behaviour (_dimensions is moved just before).
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.

@@ -235,6 +235,29 @@ namespace xerus {
 		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
 	}
 
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
+		#ifndef DISABLE_RUNTIME_CHECKS_
+		for (const size_t d : _dimensions) {
+			REQUIRE(d > 0, "Trying to construct a TTTensor with dimension 0 is not possible.");
+		}
+		#endif
+		
+		TTNetwork result(_dimensions.size());
+		const size_t numNodes = _dimensions.size()/N;
+		std::vector<size_t> dimensions;
+		for(size_t i = 0; i < numNodes; ++i) {
+			dimensions = {1, _dimensions[i]};
+			if (isOperator) {
+				dimensions.emplace_back(_dimensions[i+numNodes]);
+			}
+			dimensions.emplace_back(1);
+			result.set_component(i, Tensor::ones(dimensions));
+		}
+		result.cannonicalize_left();
+		REQUIRE(result.is_valid_tt(), "Internal Error.");
+		return result;
+	}
 	
 	template<> template<>
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
@@ -1610,7 +1633,20 @@ namespace xerus {
 		*_me.tensorObject = TTNetwork(std::move(*otherReordered));
 	}
 	
+	
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 	template class TTNetwork<false>;
 	template class TTNetwork<true>;
+	
+	
+	
+	
+	
+	template<bool isOperator>
+	value_t internal::TTStack<isOperator>::frob_norm() const {
+		Index i;
+		TTNetwork<isOperator> tmp(this->degree());
+		tmp(i&0) = (*this)(i&0);
+		return tmp.frob_norm();
+	}
 }

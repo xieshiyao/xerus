@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include <memory>
+
+#include "misc/missingFunctions.h"
 #include "indexedTensor.h"
 
 namespace xerus {
@@ -31,7 +34,6 @@ namespace xerus {
 	class Tensor;
 	struct SinglePointMeasurment;
 	class SinglePointMeasurmentSet;
-	
 	
 	/** 
 	* @brief Very general class used to represent arbitary tensor networks.

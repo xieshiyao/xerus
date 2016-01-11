@@ -23,6 +23,7 @@
  */
 
 #include <xerus/contractionHeuristic.h>
+#include <xerus/tensorNetwork.h>
 
 namespace xerus {
     namespace internal {

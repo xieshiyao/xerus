@@ -24,6 +24,7 @@
 
 #include <xerus/algorithms/decompositionAls.h>
 #include <xerus/basic.h>
+#include <xerus/index.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/tensorNetwork.h>
  
