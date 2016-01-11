@@ -41,10 +41,8 @@ namespace xerus {
 	*/
 	class TensorNetwork {
 	public:
-		
 		///@brief: Represention of the ranks of a TensorNetwork.
 		using RankTuple = std::vector<size_t>; 
-		
 		
 		/**
 		* @brief Class representing a link from a TensorNode to another node or an external index.
@@ -203,13 +201,14 @@ namespace xerus {
 	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
-		
 		///@brief TensorNetworks are copy assignable.
 		TensorNetwork& operator=(const TensorNetwork &_cpy) = default;
 			
 		///@brief TensorNetworks are move assignable.
 		TensorNetwork& operator=(TensorNetwork &&_mv) = default;
 		
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Conversions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
 		* @brief Explicit cast to Tensor.
@@ -343,9 +342,6 @@ namespace xerus {
 		*/
 		size_t degree() const;
 		
-		/// @brief reshuffled the nodes according to the given (from, to) map
-		void reshuffle_nodes(const std::map<size_t, size_t> &_map);
-		
 		/// @brief reshuffled the nodes according to the given function
 		void reshuffle_nodes(const std::function<size_t(size_t)>& _f);
 		
@@ -408,7 +404,7 @@ namespace xerus {
 		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
 		
 		/**
-		* @brief removes the erased nodes. 
+		* @brief Removes the erased nodes. 
 		* @note this will change the node ids
 		*/
 		void sanitize();

@@ -30,7 +30,6 @@
  
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/misc/namedLogger.h>
 
 namespace xerus {
 

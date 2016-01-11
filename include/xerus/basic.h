@@ -26,6 +26,8 @@
 
 #include "misc/allocator.h"
 #include "misc/standard.h"
+#include "misc/namedLogger.h"
+#include "tensorLogger.h"
 
 /**
 * @brief The main namespace of xerus.

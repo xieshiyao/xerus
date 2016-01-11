@@ -1039,7 +1039,7 @@ namespace xerus {
 		
 		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
 		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
-		const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;
+		IF_CHECK(const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;)
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
 		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
