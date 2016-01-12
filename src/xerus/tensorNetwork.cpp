@@ -36,30 +36,36 @@
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {
-	const misc::NoCast<bool> TensorNetwork::NoZeroNode(false);
-	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	TensorNetwork::TensorNetwork(const misc::NoCast<bool> _addZeroNode) {
-		if(_addZeroNode) {
-			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
-		}
+	TensorNetwork::TensorNetwork() {
+		nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
 	}
+	
 	
 	TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
 		nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
 	}
 	
+	
 	TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
 		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(std::move(_other))), init_from_dimension_array());
 	}
+	
 	
 	TensorNetwork::TensorNetwork( std::unique_ptr<Tensor>&& _tensor) : dimensions(_tensor->dimensions) {
 		nodes.emplace_back(std::move(_tensor), init_from_dimension_array());
 	}
 	
-	/// Constructs the trivial network containing non-specified size-1 Tensor
+	
 	TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree, 1)) {
 		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor( std::vector<size_t>(_degree, 1))), init_from_dimension_array());
+	}
+	
+	
+	TensorNetwork::TensorNetwork(const ZeroNode _nodeStatus) {
+		if(_nodeStatus == ZeroNode::Add) {
+			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
+		}
 	}
 	
 	TensorNetwork* TensorNetwork::get_copy() const {
@@ -77,6 +83,52 @@ namespace xerus {
 		}
 		return newLinks;
 	}
+	
+	
+	TensorNetwork TensorNetwork::stripped_subnet(const std::function<bool(size_t)>& _idF) const {
+		TensorNetwork cpy(ZeroNode::None);
+		cpy.nodes.resize(nodes.size());
+		cpy.dimensions = dimensions;
+		cpy.externalLinks = externalLinks;
+		for (size_t id = 0; id < nodes.size(); ++id) {
+			if (!_idF(id)) continue;
+			cpy.nodes[id] = nodes[id].strippped_copy();
+			for (size_t i = 0; i < cpy.nodes[id].neighbors.size(); ++i) {
+				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
+				if (!l.external) { // Link was not external before
+					if (!_idF(l.other)) { // ...but is "external" to this subnet
+						l.external = true;
+						l.indexPosition = cpy.externalLinks.size();
+						cpy.dimensions.emplace_back(l.dimension);
+						cpy.externalLinks.emplace_back(id, i, l.dimension, false);
+					} 
+				}
+			}
+		}
+		
+		size_t correction = 0;
+		std::vector<long> toErase;
+		for (size_t eid = 0; eid < cpy.externalLinks.size(); ++eid) {
+			TensorNetwork::Link &l = cpy.externalLinks[eid];
+			if (!_idF(l.other)) {
+				toErase.emplace_back(long(eid));
+				correction++;
+			} else {
+				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
+				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
+				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
+			}
+		}
+		
+		for (size_t i = toErase.size(); i > 0; --i) {
+			cpy.dimensions.erase(cpy.dimensions.begin()+toErase[i-1]);
+			cpy.externalLinks.erase(cpy.externalLinks.begin()+toErase[i-1]);
+		}
+		
+		cpy.require_valid_network(false);
+		return cpy;
+	}
+	
 	
 	void TensorNetwork::contract_unconnected_subnetworks() {
 		require_valid_network();
@@ -144,12 +196,94 @@ namespace xerus {
 		REQUIRE(nodes.size() > 0, "Internal error");
 	}
 	
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Conversions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	TensorNetwork::operator Tensor() const {
-		return *fully_contracted_tensor();
+	
+	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
+		size_t posA, posB;
+		
+		// Find common edge in nodeA
+		IF_CHECK(bool foundCommon = false;)
+		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
+			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
+				posA = i;
+				REQUIRE(!foundCommon, "TN round/move core does not work if the two nodes share more than one link.");
+				IF_CHECK( foundCommon = true; )
+				IF_NO_CHECK( break; )
+			}
+		}
+		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
+		
+		posB = nodes[_nodeA].neighbors[posA].indexPosition;
+		
+		return std::tuple<size_t, size_t>(posA, posB);
 	}
 	
-	std::unique_ptr<Tensor> TensorNetwork::fully_contracted_tensor() const {
+	
+	void TensorNetwork::perform_traces(const size_t _nodeId) {
+		for (size_t i = 0; i < nodes[_nodeId].degree(); ++i) {
+			const TensorNetwork::Link &link = nodes[_nodeId].neighbors[i];
+			if (link.links(_nodeId)) {
+				nodes[_nodeId].tensorObject->perform_trace(i, link.indexPosition);
+				
+				const std::vector<Link> linkCopy(nodes[_nodeId].neighbors);
+				
+				for(size_t j = i+1; j < link.indexPosition; ++j) {
+					const Link& otherLink = linkCopy[j];
+					if(otherLink.external) {
+						externalLinks[otherLink.indexPosition].indexPosition -= 1; 
+					} else {
+						nodes[otherLink.other].neighbors[otherLink.indexPosition].indexPosition -= 1;
+					}
+				}
+				
+				for(size_t j = link.indexPosition+1; j < nodes[_nodeId].degree(); ++j) {
+					const Link& otherLink = linkCopy[j];
+					if(otherLink.external) {
+						externalLinks[otherLink.indexPosition].indexPosition -= 2; 
+					} else {
+						nodes[otherLink.other].neighbors[otherLink.indexPosition].indexPosition -= 2;
+					}
+				}
+				
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+link.indexPosition);
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+i);
+				
+				//Redo this index
+				i -= 1;
+			}
+		}
+	}
+	
+	
+	void TensorNetwork::sanitize() {
+		std::vector<size_t> idMap(nodes.size(), ~0ul);
+		
+		// Move nodes
+		size_t newId = 0, oldId = 0;
+		for (; oldId < nodes.size(); ++oldId) {
+			if (!nodes[oldId].erased) {
+				idMap[oldId] = newId;
+				if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
+				newId++;
+			}
+		}
+		
+		// Update links
+		nodes.resize(newId);
+		for (TensorNode &n : nodes) {
+			for (TensorNetwork::Link &l : n.neighbors) {
+				if (!l.external) l.other = idMap[l.other];
+			}
+		}
+		
+		// Update external links
+		for (TensorNetwork::Link &l : externalLinks) {
+			l.other = idMap[l.other];
+		}
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Conversions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+	TensorNetwork::operator Tensor() const {
 		require_valid_network();
 		
 		std::set<size_t> all;
@@ -163,9 +297,9 @@ namespace xerus {
 			REQUIRE(cpy.nodes[res].neighbors[i].external, "Internal Error");
 			shuffle[i] = cpy.nodes[res].neighbors[i].indexPosition;
 		}
-		std::unique_ptr<Tensor> result(new Tensor());
+		Tensor result;
 		
-		reshuffle(*result, *cpy.nodes[res].tensorObject, shuffle);
+		reshuffle(result, *cpy.nodes[res].tensorObject, shuffle);
 		
 		return result;
 	}
@@ -191,6 +325,7 @@ namespace xerus {
 		positions[0] = remains;
 		return operator[](positions);
 	}
+	
 	
 	value_t TensorNetwork::operator[](const Tensor::MultiIndex& _positions) const {
 		require_valid_network();
@@ -274,37 +409,45 @@ namespace xerus {
 		*nodes[0].tensorObject *= _factor;
 	}
 	
+	
 	void TensorNetwork::operator/=(const value_t _divisor) {
 		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
 		REQUIRE(!nodes[0].erased, "There must not be an erased node.");
 		*nodes[0].tensorObject /= _divisor;
 	}
 	
+	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
 		return IndexedTensor<TensorNetwork>(this, _indices, false);
 	}
 	
+	
 	IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
 		return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
 	}
-		
+	
+	
 	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
 		return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
 	}
 	
+	
 	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
 		return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
 	}
+	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	bool TensorNetwork::specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
+	
 	bool TensorNetwork::specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
+	
 	
 	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		// If tensorObject is not already identical copy it.
@@ -424,49 +567,7 @@ namespace xerus {
 		require_valid_network();
 	}
 	
-	TensorNetwork TensorNetwork::stripped_subnet(const std::function<bool(size_t)>& _idF) const {
-		TensorNetwork cpy(NoZeroNode);
-		cpy.nodes.resize(nodes.size());
-		cpy.dimensions = dimensions;
-		cpy.externalLinks = externalLinks;
-		for (size_t id = 0; id < nodes.size(); ++id) {
-			if (!_idF(id)) continue;
-			cpy.nodes[id] = nodes[id].strippped_copy();
-			for (size_t i = 0; i < cpy.nodes[id].neighbors.size(); ++i) {
-				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
-				if (!l.external) { // Link was not external before
-					if (!_idF(l.other)) { // ...but is "external" to this subnet
-						l.external = true;
-						l.indexPosition = cpy.externalLinks.size();
-						cpy.dimensions.emplace_back(l.dimension);
-						cpy.externalLinks.emplace_back(id, i, l.dimension, false);
-					} 
-				}
-			}
-		}
-		
-		size_t correction = 0;
-		std::vector<long> toErase;
-		for (size_t eid = 0; eid < cpy.externalLinks.size(); ++eid) {
-			TensorNetwork::Link &l = cpy.externalLinks[eid];
-			if (!_idF(l.other)) {
-				toErase.emplace_back(long(eid));
-				correction++;
-			} else {
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
-				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
-			}
-		}
-		
-		for (size_t i = toErase.size(); i > 0; --i) {
-			cpy.dimensions.erase(cpy.dimensions.begin()+toErase[i-1]);
-			cpy.externalLinks.erase(cpy.externalLinks.begin()+toErase[i-1]);
-		}
-		
-		cpy.require_valid_network(false);
-		return cpy;
-	}
+	
 	
 	
 	void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
@@ -583,25 +684,6 @@ namespace xerus {
 	}
 	
 	
-	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
-		size_t posA, posB;
-		
-		// Find common edge in nodeA
-		IF_CHECK(bool foundCommon = false;)
-		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
-			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
-				posA = i;
-				REQUIRE(!foundCommon, "TN round/move core does not work if the two nodes share more than one link.");
-				IF_CHECK( foundCommon = true; )
-				IF_NO_CHECK( break; )
-			}
-		}
-		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
-		
-		posB = nodes[_nodeA].neighbors[posA].indexPosition;
-		
-		return std::tuple<size_t, size_t>(posA, posB);
-	}
 	
 	void TensorNetwork::round_edge(const size_t _from, const size_t _to, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
 		require_valid_network();
@@ -910,74 +992,6 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::sanitize() {
-		std::vector<size_t> idMap(nodes.size(), ~0ul);
-		
-		// Move nodes
-		size_t newId = 0, oldId = 0;
-		for (; oldId < nodes.size(); ++oldId) {
-			if (!nodes[oldId].erased) {
-				idMap[oldId] = newId;
-				if (newId != oldId) { std::swap(nodes[newId], nodes[oldId]); }
-				newId++;
-			}
-		}
-		
-		// Update links
-		nodes.resize(newId);
-		for (TensorNode &n : nodes) {
-			for (TensorNetwork::Link &l : n.neighbors) {
-				if (!l.external) l.other = idMap[l.other];
-			}
-		}
-		
-		// Update external links
-		for (TensorNetwork::Link &l : externalLinks) {
-			l.other = idMap[l.other];
-		}
-	}
-	
-	
-	//TODO do this without indices
-	void TensorNetwork::trace_out_self_links(const size_t _nodeId) {
-		std::vector<Index> idxIn, idxOut;
-		std::vector<TensorNetwork::Link> newLinks;
-		size_t correction = 0;
-		for (size_t i = 0; i < nodes[_nodeId].neighbors.size(); ++i) {
-			const TensorNetwork::Link &l = nodes[_nodeId].neighbors[i];
-			if (!l.links(_nodeId)) {
-				idxIn.emplace_back();
-				idxOut.emplace_back(idxIn.back());
-				newLinks.emplace_back(l);
-				if (l.external) {
-					externalLinks[l.indexPosition].indexPosition -= correction;
-				} else {
-					nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
-				}
-			} else if (l.indexPosition > i) {
-				idxIn.emplace_back();
-				correction += 1;
-			} else {
-				idxIn.emplace_back(idxIn[l.indexPosition]);
-				correction += 1;
-			}
-		}
-		
-		// Perform the trace
-		if (nodes[_nodeId].tensorObject) {
-			std::unique_ptr<Tensor> newTensor(new Tensor(nodes[_nodeId].tensorObject->representation));
-			(*newTensor)(idxOut) = (*nodes[_nodeId].tensorObject)(idxIn);
-			nodes[_nodeId].tensorObject = std::move(newTensor);
-		}
-		
-		nodes[_nodeId].neighbors = std::move(newLinks);
-	}
-
-	//TODO testcase A(i,j)*B(k,k) of TTtensors
-	/**
-	* contracts the nodes with indices @a _node1 and @a _node2
-	* replaces node1 with the contraction and node2 with an degree-0 tensor
-	*/
 	void TensorNetwork::contract(const size_t _nodeId1, const size_t _nodeId2) {
 		TensorNode &node1 = nodes[_nodeId1];
 		TensorNode &node2 = nodes[_nodeId2];
@@ -1172,6 +1186,7 @@ namespace xerus {
 		require_valid_network(false);
 	}
 
+	
 	double TensorNetwork::contraction_cost(const size_t _nodeId1, const size_t _nodeId2) const {  
 		REQUIRE(!nodes[_nodeId1].erased, "It appears node1 = " << _nodeId1 << " was already contracted?");
 		REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
@@ -1180,8 +1195,9 @@ namespace xerus {
 			return (double) nodes[_nodeId1].size(); // Costs of a trace
 		}
 		
-		// Assume cost of mxr * rxn = m*n*r (which is a rough approximation of the actual cost for openBlas/Atlas)
 		//TODO add correct calculation for sparse matrices
+		
+		// Assume cost of mxr * rxn = m*n*r (which is a rough approximation of the actual cost for openBlas/Atlas)
 		size_t cost = nodes[_nodeId1].size();
 		for(const Link& neighbor : nodes[_nodeId2].neighbors) {
 			if(!neighbor.links(_nodeId1)) {
@@ -1193,18 +1209,12 @@ namespace xerus {
 
 
 	size_t TensorNetwork::contract(const std::set<size_t>& _ids) {
-		
-		if (_ids.size() == 0) { return ~0ul; }
-		
 		// Trace out all single-node traces
 		for ( const size_t id : _ids ) {
-			for ( const TensorNetwork::Link &l : nodes[id].neighbors ) {
-				if (l.links(id)) {
-					trace_out_self_links(id);
-					break;
-				}
-			}
+			perform_traces(id);
 		}
+		
+		if (_ids.size() == 0) { return ~0ul; }
 		
 		if (_ids.size() == 1) { return *_ids.begin(); }
 
@@ -1219,8 +1229,8 @@ namespace xerus {
 			const size_t a = *idItr; TensorNode &na = nodes[a]; ++idItr;
 			const size_t b = *idItr; TensorNode &nb = nodes[b]; ++idItr;
 			const size_t c = *idItr; TensorNode &nc = nodes[c];
-			double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
-			double sab=1, sbc=1, sac=1; // link dimensions
+			double sa  = 1, sb  = 1, sc  = 1; // sizes devided by the link dimensions between a,b,c
+			double sab = 1, sbc = 1, sac = 1; // link dimensions
 			for (size_t d = 0; d < na.degree(); ++d) {
 				if (na.neighbors[d].links(b)) {
 					sab *= (double) na.neighbors[d].dimension;
@@ -1279,7 +1289,8 @@ namespace xerus {
 		// Note: no sanitization as eg. TTStacks require the indices not to change after calling this function
 		return bestOrder.back().first;
 	}
-
+	
+	
 	value_t TensorNetwork::frob_norm() const {
 		Index i;
 		Tensor res;

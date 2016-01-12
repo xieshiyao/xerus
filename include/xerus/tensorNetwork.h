@@ -119,8 +119,15 @@ namespace xerus {
 			void erase();
 		};
 		
+	protected:
 		
-
+		/** 
+		 * @brief Internal indicator to prevent the creation of an degree zero node in TensorNetwork constructor.
+		 */
+		enum class ZeroNode : bool { None, Add };
+		
+		
+	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Member variables - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 			
 		///@brief Dimensions of the external indices, i.e. the dimensions of the tensor represented by the network.
@@ -140,36 +147,35 @@ namespace xerus {
 		* @param _addZeroNode If TRUE the network will contain one degree zero node with the single
 		* entry zero.
 		*/
-		explicit TensorNetwork(const misc::NoCast<bool> _addZeroNode = true);
+		explicit TensorNetwork();
 		
-	protected:
-		
-		///@brief Internal indicator to avoid magic false
-		static const misc::NoCast<bool> NoZeroNode;
-		
-	public:
 		
 		///@brief Copy Constructor
 		implicit TensorNetwork(const TensorNetwork& _cpy) = default;
 		
+		
 		///@brief Move Constructor
 		implicit TensorNetwork(TensorNetwork&& _mv) = default;
+		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
 		implicit TensorNetwork(const Tensor& _other);
 		
+		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
 		implicit TensorNetwork(Tensor&& _other);
+		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		* The TN takes the ownership of the pointer.
 		*/
 		implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
+		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing a Tensor with the given degree.
@@ -178,8 +184,18 @@ namespace xerus {
 		*/
 		implicit TensorNetwork(size_t _degree);
 		
+		/** 
+		 * @brief (Internal) Constructs an order zero TensorNetwork.
+		 * @details The order of an empty TN is zero.
+		 * @param _addZeroNode If TRUE the network will contain one degree zero node with the single
+		 * entry zero.
+		 */
+		explicit TensorNetwork(const ZeroNode _nodeStatus);
+		
+		
 		///@brief Destructor
 		virtual ~TensorNetwork() = default;
+		
 		
 		/** 
 		* @brief Returns a new copy of the network.
@@ -193,11 +209,46 @@ namespace xerus {
 		///@brief: Sets the externalLinks and returns an Link vector for a node, assuming that this node is the only node there is and all given dimensions are open.
 		std::vector<Link> init_from_dimension_array();
 		
+		
+		/** 
+		 * @brief Creates a dataless copy of a subnet.
+		 * @details Creates a copy of this TensorNetwork containing the specified nodes,
+		 * but does not propagate the data. Instead it uses the nullptr as data for all nodes.
+		 * @param _idF a function returning true if its argument should be part of the stripped subnet. defaults to selecting all nodes.
+		 * @return the new TensorNetwork.
+		 */
+		TensorNetwork stripped_subnet(const std::function<bool(size_t)>& _idF = [](size_t){ return true;}) const;
+		
+		
 		/** 
 		* @brief Contracts all nodes that are not connected to any external links.
 		*/
 		void contract_unconnected_subnetworks();
+		
+		
+		/** 
+		 * @brief Finds the position of a single common edge between two nodes.
+		 * @param _nodeA The first node.
+		 * @param _nodeB The second node.
+		 * @return Tuple containing the two positions in @a _nodeA and @a _nodeB.
+		 */
+		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
+		
+		
+		/**
+		 * @brief Performs all traces in the given node.
+		 * @param _nodeId id of the node for which the traces shall be performed.
+		 */
+		void perform_traces(const size_t _nodeId);
+		
+		
+		/**
+		 * @brief Removes the erased nodes. 
+		 * @note this will change the node ids
+		 */
+		void sanitize();
 
+		
 	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
@@ -216,14 +267,6 @@ namespace xerus {
 		*/
 		explicit operator Tensor() const;
 		
-		
-		/** 
-		* @brief Fully contract the TensorNetwork
-		* @details The complete TensorNetwork is contracted. The result can be both full or sparse.
-		* @returns a pointer to the resulting single Tensor.
-		*/
-		std::unique_ptr<Tensor> fully_contracted_tensor() const;
-		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
 		* @brief Read the value at a specific position.
@@ -233,6 +276,7 @@ namespace xerus {
 		* @returns the calculated value (NO reference)
 		*/
 		value_t operator[](const size_t _position) const;
+		
 		
 		/** 
 		* @brief Read the value at a specific position.
@@ -280,8 +324,9 @@ namespace xerus {
 		*/
 		template<typename... args>
 		IndexedTensor<TensorNetwork> operator()(args... _args) {
-				return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
+			return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
 		}
+		
 		
 		/** 
 		* @brief Indexes the TensorNetwork for read only use.
@@ -290,8 +335,9 @@ namespace xerus {
 		*/
 		template<typename... args>
 		IndexedTensorReadOnly<TensorNetwork> operator()(args... _args) const {
-				return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
+			return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
 		}
+		
 		
 		/** 
 		* @brief Indexes the TensorNetwork for read/write use.
@@ -300,13 +346,15 @@ namespace xerus {
 		*/
 		IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
 		
+		
 		/** 
 		* @brief Indexes the TensorNetwork for read/write use.
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
 		IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
-			
+		
+		
 		/** 
 		* @brief Indexes the TensorNetwork for read only use.
 		* @param _args several [indices](@ref Index) determining the desired index order.
@@ -314,20 +362,24 @@ namespace xerus {
 		*/
 		IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
 		
+		
 		/** 
 		* @brief Indexes the TensorNetwork for read only use.
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
 		IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
-			
+		
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		
 		///@brief (Internal) Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual bool specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
 		
+		
 		///@brief (Internal) Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
+		
 		
 		///@brief (Internal) Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
 		virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
@@ -342,8 +394,10 @@ namespace xerus {
 		*/
 		size_t degree() const;
 		
+		
 		/// @brief reshuffled the nodes according to the given function
 		void reshuffle_nodes(const std::function<size_t(size_t)>& _f);
+		
 		
 		/** 
 		* @brief Sanity checks the network.
@@ -354,6 +408,7 @@ namespace xerus {
 		*/
 		void require_valid_network(const bool _check_erased = true) const;
 		
+		
 		/** 
 		 * @brief Sanity check for the TensorNetwork and if applicable for the specific format.
 		 * @details Checks whether all links in the network are set consistently and matching the 
@@ -363,14 +418,6 @@ namespace xerus {
 		 */
 		virtual void require_correct_format() const;
 		
-		/** 
-		* @brief Creates a dataless copy of a subnet.
-		* @details Creates a copy of this TensorNetwork containing the specified nodes,
-		* but does not propagate the data. Instead it uses the nullptr as data for all nodes.
-		* @param _idF a function returning true if its argument should be part of the stripped subnet. defaults to selecting all nodes.
-		* @return the new TensorNetwork.
-		*/
-		TensorNetwork stripped_subnet(const std::function<bool(size_t)>& _idF = [](size_t){ return true;}) const;
 		
 		/** 
 		* @brief Swaps the external indices @a _i and @a _j, effectively changing those indices for the
@@ -378,10 +425,12 @@ namespace xerus {
 		*/
 		void swap_external_links(const size_t _i, const size_t _j);
 		
+		
 		/** 
 		* @brief Inserts all nodes from @a _toInsert into @a _base, creating links where demanded by the indices.
 		*/
 		static void add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert);
+		
 		
 		/** 
 		 * @brief Finds traces defined by the indices and Internally links the corresponding indices.
@@ -389,30 +438,7 @@ namespace xerus {
 		 */
 		static void link_traces(IndexedTensorWritable<TensorNetwork>&& _base);
 		
-	protected:
-		/** 
-		* @brief Finds the position of a single common edge between two nodes.
-		* @param _posA position of the common edge in the first node.
-		* @param _posB position of the common edge in the second node.
-		* @param _ba Index whose span is set equals the number of dimensions before the common edge in first node.
-		* @param _aa Index whose span is set equals the number of dimensions after the common edge in first node.
-		* @param _bb Index whose span is set equals the number of dimensions before the common edge in second node.
-		* @param _ab Index whose span is set equals the number of dimensions after the common edge in second node.
-		* @param _nodeA The first node.
-		* @param _nodeB The second node.
-		*/
-		void identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const;
 		
-		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
-		
-		/**
-		* @brief Removes the erased nodes. 
-		* @note this will change the node ids
-		*/
-		void sanitize();
-		
-		
-		void trace_out_self_links(size_t _nodeId);
 	public:
 		/**
 		* @brief Thresholds the rank between two given nodes.
@@ -427,6 +453,7 @@ namespace xerus {
 		*/
 		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
 		
+		
 		/**
 		* @brief Transfers the core from one given node to another.
 		* @details The given nodes must be joined by a single edge. A QR decomposition of the first node is calculated and the core contracted to the second one.
@@ -436,24 +463,30 @@ namespace xerus {
 		*/
 		virtual void transfer_core(const size_t _from, const size_t _to, const bool _allowRankReduction = true);
 		
+		
 		/**
-		* @brief contracts all nodes that are joined by a full-rank edge.
+		* @brief Contracts all nodes that are joined by a full-rank edge.
 		* @details This reduces the overall storage requirements and can be useful to store intermediate results e.g. after fixing one of several indices.
 		*/
 		void reduce_representation();
+		
 		
 		/** 
 		* @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
 		* @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
 		* @param _slatePosition the position in the corresponding dimensions that shall be used.
 		*/
-		void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		
 		
 		/**
-		* contracts the nodes with indices @a _node1 and @a _node2
-		* replaces node1 with the contraction and node2 with an degree-0 tensor
+		 * @brief Contracts the nodes with indices @a _nodeId1 and @a _nodeId2.
+		 * @details Replaces @a _nodeId1 with the contraction and erases @a _nodeId2.
+		 * @param _nodeId1 The first node, that will contain the result afterwards.
+		 * @param _nodeId2 The second node, that will be erased afterwards.
 		*/
 		void contract(const size_t _nodeId1, const size_t _nodeId2);
+		
 		
 		/** 
 		* @brief Approximates the cost of contraction two given nodes.
@@ -463,19 +496,21 @@ namespace xerus {
 		*/
 		double contraction_cost(const size_t _nodeId1, const size_t _nodeId2) const;
 		
+		
 		/**
-		* contracts the nodes with indices included in the set
-		* replaces all but one node with degree-0 tensor
-		* @returns the id of the contracted tensor
-		*/
+		 * @brief Contracts the nodes with with indices included in the given set @a _ids.
+		 * @details Erases all nodes but one, which id is returned.
+		 * @param _ids set with all ids to be erased.
+		 * @return The id in which the result of the contraction is stored.
+		 */
 		size_t contract(const std::set<size_t>& _ids);
+		
 		
 		/** 
 		* @brief Calculates the frobenious norm of the TensorNetwork.
 		* @return the frobenious norm of the TensorNetwork.
 		*/
 		virtual value_t frob_norm() const;
-		
 		
 		
 		/**
@@ -492,7 +527,6 @@ namespace xerus {
 	* @return the frobenious norm.
 	*/
 	static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
-	
 	
 	std::ostream &operator<<(std::ostream &_out, const TensorNetwork::Link &_rhs);
 }

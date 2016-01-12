@@ -722,6 +722,40 @@ namespace xerus {
 		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos+1);
 	}
 	
+	void Tensor::perform_trace(size_t _firstIndex, size_t _secondIndex) {
+		REQUIRE(_firstIndex != _secondIndex, "Given indices must not coincide");
+		REQUIRE(dimensions[_firstIndex] == dimensions[_secondIndex], "Dimensions of trace indices must coincide.");
+		REQUIRE(is_dense(), "Not yet available for Sprase"); // TODO
+		
+		if(_firstIndex > _secondIndex) { std::swap(_firstIndex, _secondIndex); }
+		
+		const size_t front = misc::product(dimensions, 0, _firstIndex);
+		const size_t mid = misc::product(dimensions, _firstIndex+1, _secondIndex);
+		const size_t back = misc::product(dimensions, _secondIndex+1, degree());
+		const size_t traceDim = dimensions[_firstIndex];
+		const size_t frontStepSize = traceDim*mid*traceDim*back;
+		const size_t traceStepSize = mid*traceDim*back+back;
+		const size_t midStepSize = traceDim*back;
+		
+		size = front*mid*back;
+		
+		std::unique_ptr<value_t[]> newData(new value_t[size]);
+		misc::array_set_zero(newData.get(), size);
+		
+		for(size_t f = 0; f < front; ++f) {
+			for(size_t t = 0; t < traceDim; ++t) {
+				for(size_t m = 0; m < mid; ++m) {
+					misc::array_add(newData.get()+(f*mid+m)*back, factor, denseData.get()+f*frontStepSize+t*traceStepSize+m*midStepSize, back);
+				}
+			}
+		}
+		
+		dimensions.erase(dimensions.begin()+_secondIndex);
+		dimensions.erase(dimensions.begin()+_firstIndex);
+		factor = 1.0;
+		denseData.reset(newData.release(), internal::array_deleter_vt);
+	}
+	
 	
 	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();

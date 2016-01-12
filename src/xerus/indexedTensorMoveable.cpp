@@ -55,7 +55,7 @@ namespace xerus {
 
 	template<>template<>
 	IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork> && _other ) : 
-		IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->fully_contracted_tensor().release(), std::move(_other.indices), true) { }
+		IndexedTensorWritable<Tensor>(new Tensor(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
 	
 	
 	// IndexedTensorReadOnly may be instanciated as

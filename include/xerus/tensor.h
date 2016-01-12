@@ -628,6 +628,14 @@ namespace xerus {
 		 */
 		void remove_slate(const size_t _indexNb, const size_t _pos);
 		
+		
+		/** 
+		 * @brief Performs the trace over the given indices
+		 * @param _firstIndex the first index involved in the trace.
+		 * @param _secondIndex the second index involved in the trace.
+		 */
+		void perform_trace(size_t _firstIndex, size_t _secondIndex);
+		
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.

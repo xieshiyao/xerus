@@ -44,7 +44,7 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(NoZeroNode), cannonicalized(true), corePosition(0) {
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
 		
@@ -52,7 +52,6 @@ namespace xerus {
 			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
 			return;
 		}
-		REQUIRE(nodes.size() == 0, "Internal Error,");
 		
 		dimensions = std::vector<size_t>(_degree, 1);
 		
@@ -60,6 +59,7 @@ namespace xerus {
 		for (size_t i = 1; i <= numComponents; ++i) {
 			externalLinks.emplace_back(i, 1, 1, false);
 		}
+		
 		if (isOperator) {
 			for (size_t i = 1; i <= numComponents; ++i) {
 				externalLinks.emplace_back(i, 2, 1, false);
@@ -72,33 +72,21 @@ namespace xerus {
 		
 		neighbors.emplace_back(1,0,1,false);
 		
-		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
-			std::move(neighbors)
-		);
+		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors) );
 		
-		for (size_t i=0; i<numComponents; ++i) {
+		for (size_t i = 0; i < numComponents; ++i) {
 			neighbors.clear();
 			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
-			for (size_t j=0; j< N; ++j) { 
-				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
-			}
+			neighbors.emplace_back(-1, i, 1, true);
+			if(isOperator) { neighbors.emplace_back(-1, i+numComponents, 1, true); }
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
-			nodes.emplace_back(
-				std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), 
-				std::move(neighbors)
-			);
+			nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), std::move(neighbors) );
 		}
 		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
-		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
-			std::move(neighbors)
-		);
-		
-		REQUIRE(is_valid_tt(), "Internal Error.");
+		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
 	}
 	
 	
@@ -113,10 +101,11 @@ namespace xerus {
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
         REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
             << (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
-#ifdef CHECK_
-		// NOTE no IF_CHECK macro because gcc 4.8.1 throws internal compiler error (seg fault) otherwise
-        for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
-#endif
+
+		IF_CHECK(
+			for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
+		)
+		
 		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		
 		dimensions = _tensor.dimensions;
@@ -219,22 +208,13 @@ namespace xerus {
 		require_correct_format();
 	}
 	
-	
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) 
-		: TensorNetwork(_cpy), cannonicalized(_cpy.cannonicalized), corePosition(_cpy.corePosition)
-	{ }
-	
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(TTNetwork&& _mov) 
-		: TensorNetwork(std::move(_mov)), cannonicalized(_mov.cannonicalized), corePosition(_mov.corePosition) 
-	{ }
 
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TensorNetwork(_network) {
-		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
+	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TTNetwork(Tensor(_network)) {
+		LOG(warning, "Cast of arbitrary tensor network to TT not yet supported. Casting to Tensor first"); // TODO
 	}
 
+	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
 		#ifndef DISABLE_RUNTIME_CHECKS_
@@ -258,6 +238,7 @@ namespace xerus {
 		REQUIRE(result.is_valid_tt(), "Internal Error.");
 		return result;
 	}
+	
 	
 	template<> template<>
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
@@ -693,7 +674,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
-		REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
+		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise_product ill-defined for non equal dimensions");
 		
 		if(_A.degree() == 0) {
 			TTNetwork result(_A);
@@ -832,8 +813,8 @@ namespace xerus {
 		REQUIRE(_position < numComponents, "Can't split a " << numComponents << " component TTNetwork at position " << _position);
 		
 		// Create the resulting TNs
-		TensorNetwork left(NoZeroNode);
-		TensorNetwork right(NoZeroNode);
+		TensorNetwork left(ZeroNode::None);
+		TensorNetwork right(ZeroNode::None);
 		
 		left.nodes.push_back(nodes[0]);
 		for (size_t i = 0; i < _position; ++i) {
@@ -1625,12 +1606,12 @@ namespace xerus {
 		}
 		// Use Tensor fallback
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
-		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
-		std::unique_ptr<Tensor> otherReordered(new Tensor(otherFull->representation));
-		(*otherReordered)(_me.indices) = (*otherFull)(_other.indices);
+		Tensor otherFull(*_other.tensorObjectReadOnly);
+		Tensor otherReordered;
+		otherReordered(_me.indices) = otherFull(_other.indices);
 		
 		// Cast to TTNetwork
-		*_me.tensorObject = TTNetwork(std::move(*otherReordered));
+		*_me.tensorObject = TTNetwork(std::move(otherReordered));
 	}
 	
 	

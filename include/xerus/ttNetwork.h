@@ -83,10 +83,10 @@ namespace xerus {
 		explicit TTNetwork(const Tensor& _tensor, const double _eps, const RankTuple& _maxRanks);
 		
 		///@brief Copy constructor for TTNetworks.
-		implicit TTNetwork(const TTNetwork & _cpy);
+		implicit TTNetwork(const TTNetwork & _cpy) = default;
 		
 		///@brief Move constructor for TTNetworks.
-		implicit TTNetwork(	  TTNetwork&& _mov);
+		implicit TTNetwork(TTNetwork&& _mov) = default;
 		
 		/** 
 		* @brief Transforms a given TensorNetwork to a TTNetwork.
