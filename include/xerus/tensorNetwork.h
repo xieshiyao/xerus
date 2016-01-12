@@ -430,11 +430,11 @@ namespace xerus {
 		/**
 		* @brief Transfers the core from one given node to another.
 		* @details The given nodes must be joined by a single edge. A QR decomposition of the first node is calculated and the core contracted to the second one.
-		* @param _nodeA First node, which remains orthogonalized.
-		* @param _nodeB Second node, which carries the core afterwards.
+		* @param _from First node, which remains orthogonalized.
+		* @param _to Second node, which carries the core afterwards.
 		* @param _allowRankReduction Flag indicating whether a rank revealing decomposition is to be used which allows the reduction of the rank.
 		*/
-		virtual void transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction = true);
+		virtual void transfer_core(const size_t _from, const size_t _to, const bool _allowRankReduction = true);
 		
 		/**
 		* @brief contracts all nodes that are joined by a full-rank edge.

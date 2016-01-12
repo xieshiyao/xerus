@@ -1042,7 +1042,8 @@ namespace xerus {
 		IF_CHECK(const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;)
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
-		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
+		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), 
+				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numIndices);
 		
 		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
 		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
@@ -1130,7 +1131,7 @@ namespace xerus {
 	}
 	
 	_inline_ std::tuple<size_t, size_t, size_t> prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos) {
-		REQUIRE(_splitPos < _input.degree(), "_splitPos must smaller than the degree.");
+		REQUIRE(_splitPos <= _input.degree(), "Split position must be in range.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
 		const size_t rhsSize = misc::product(_input.dimensions, _splitPos, _input.degree());
@@ -1165,7 +1166,7 @@ namespace xerus {
 	}
 	
 	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
-		REQUIRE(_eps < 1, "Epsilon must be smaller than one.");
+		REQUIRE(0 <= _eps && _eps < 1, "Epsilon must be fullfill 0 <= _eps < 1.");
 		
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, _input, _splitPos);
@@ -1209,55 +1210,88 @@ namespace xerus {
 	
 	
 	void calculate_qr(Tensor& _Q, Tensor& _R, const Tensor& _input, const size_t _splitPos) {
-		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, _input, _splitPos);
+		std::unique_ptr<Tensor> saveSlot;
+		const Tensor* Ap;
+		if(&_input == &_Q || &_input == &_R) {
+			saveSlot.reset(new Tensor(_input));
+			Ap = saveSlot.get();
+		} else {
+			Ap = &_input;
+		}
+		const Tensor& A = *Ap;
 		
-		if(_input.is_sparse()) {
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, A, _splitPos);
+		
+		REQUIRE(A.size == misc::product(A.dimensions), "woot!!");
+		REQUIRE(A.size == lhsSize*rhsSize, "woot " << _splitPos << " | " << A.degree());
+		
+		if(A.is_sparse()) {
 			LOG(fatal, "Sparse QR not yet implemented."); // TODO
 		} else {
-			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
-		_R.factor = _input.factor;
+		_R.factor = A.factor;
 	}
 	
 	
 	void calculate_rq(Tensor& _R, Tensor& _Q, const Tensor& _input, const size_t _splitPos) {
-		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, _input, _splitPos);
+		std::unique_ptr<Tensor> saveSlot;
+		const Tensor* Ap;
+		if(&_input == &_Q || &_input == &_R) {
+			saveSlot.reset(new Tensor(_input));
+			Ap = saveSlot.get();
+		} else {
+			Ap = &_input;
+		}
+		const Tensor& A = *Ap;
 		
-		if(_input.is_sparse()) {
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, A, _splitPos);
+		
+		if(A.is_sparse()) {
 			LOG(fatal, "Sparse RQ not yet implemented."); // TODO
 		} else {
-			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
-		_R.factor = _input.factor;
+		_R.factor = A.factor;
 	}
 	
 	
 	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos) {
-		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, _input, _splitPos);
+		std::unique_ptr<Tensor> saveSlot;
+		const Tensor* Ap;
+		if(&_input == &_Q || &_input == &_C) {
+			saveSlot.reset(new Tensor(_input));
+			Ap = saveSlot.get();
+		} else {
+			Ap = &_input;
+		}
+		const Tensor& A = *Ap;
 		
-		if(_input.is_sparse()) {
-			LOG(fatal, "Sparse RQ not yet implemented."); // TODO
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, A, _splitPos);
+		
+		if(A.is_sparse()) {
+			LOG(fatal, "Sparse QC not yet implemented."); // TODO
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, A.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
 			std::vector<size_t> newDim = _Q.dimensions;
 			newDim.back() = rank;
-			_Q.reset(newDim, std::move(Qt));
+			_Q.reset(std::move(newDim), std::move(Qt));
 			
 			newDim = _C.dimensions;
 			newDim.front() = rank;
-			_C.reset(newDim, std::move(Ct));
+			_C.reset(std::move(newDim), std::move(Ct));
 		}
 		
-		_C.factor = _input.factor;
+		_C.factor = A.factor;
 	}
 	
 	

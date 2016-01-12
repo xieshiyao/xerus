@@ -583,78 +583,6 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::identify_common_edge(size_t& _posA, size_t& _posB, Index& _ba, Index& _aa, Index& _bb, Index& _ab, const size_t _nodeA, const size_t _nodeB) const {
-		// Find common edge in nodeA
-		IF_CHECK(bool foundCommon = false;)
-		for(size_t i = 0; i < nodes[_nodeA].neighbors.size(); ++i) {
-			if(nodes[_nodeA].neighbors[i].other == _nodeB) {
-				_posA = i;
-				REQUIRE(!foundCommon, "TN round/move core does not work if the two nodes share more than one link.");
-				IF_CHECK( foundCommon = true; )
-				IF_NO_CHECK( break; )
-			}
-		}
-		REQUIRE(foundCommon, "TN round does not work if the two nodes share no link.");
-		
-		_posB = nodes[_nodeA].neighbors[_posA].indexPosition;
-		
-		// Set the spans of the indices
-		_ba.span = _posA;
-		_aa.span = nodes[_nodeA].degree() - _posA - 1;
-		_bb.span = _posB;
-		_ab.span = nodes[_nodeB].degree() - _posB - 1;
-	}
-	
-	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
-		size_t posA, posB;
-		Index ba, aa, bb, ab, c1, c2, k, l;
-		identify_common_edge(posA, posB, ba, aa, bb, ab, _nodeA, _nodeB);
-		
-		Tensor& tensorA = (*nodes[_nodeA].tensorObject);
-		Tensor& tensorB = (*nodes[_nodeB].tensorObject);
-		
-		Tensor X; // TODO Sparse
-		Tensor S;
-
-		// TODO eventually use only one QC if only one is usefull.
-		
-		// Check whether prior QR makes sense
-		if (tensorA.size > misc::sqr(tensorA.dimensions[posA]) 
-		|| tensorB.size > misc::sqr(tensorB.dimensions[posB])) {
-			// Calculate the cores
-			Tensor coreA, coreB;
-			(tensorA(ba, c1, aa), coreA(c1, k)) = QC(tensorA(ba, k, aa));
-			(tensorB(bb, c2, ab), coreB(k, c2)) = QC(tensorB(bb, k, ab)); // TODO use CQ when available
-			
-			// Contract the cores
-			X(c1, c2) = coreA(c1, k)*coreB(k, c2);
-			
-			// Calculate SVD
-			(coreA(c1, k), S(k,l), coreB(l, c2)) = SVD(X(c1, c2), _maxRank, _eps, _softThreshold, _preventZero);
-			
-			// Contract diagnonal matrix to coreB
-			coreB(l, c2) = S(l, k) * coreB(k, c2);
-			
-			// Contract the "cores" back to their sides
-			tensorA(ba, k, aa) = tensorA(ba, c1, aa) * coreA(c1, k);
-			tensorB(bb, k, ab) = coreB(k, c2) * tensorB(bb, c2, ab);
-			
-		} else {
-			// Contract the two
-			X(ba, aa, bb, ab) = (*nodes[_nodeA].tensorObject)(ba, c1, aa) * (*nodes[_nodeB].tensorObject)(bb, c1, ab);
-			
-			// Calculate SVD
-			(((*nodes[_nodeA].tensorObject)(ba, c1, aa)), S(c1, c2), ((*nodes[_nodeB].tensorObject)(bb, c2, ab))) = SVD(X(ba, aa, bb, ab), _maxRank, _eps, _softThreshold, _preventZero);
-			
-			// Contract diagnonal matrix to NodeB
-			(*nodes[_nodeB].tensorObject)(bb, c1, ab) = S(c1, c2) * ((*nodes[_nodeB].tensorObject)(bb, c2, ab));
-		}
-		
-		// Set the new dimension in the nodes
-		nodes[_nodeA].neighbors[posA].dimension = S.dimensions[0];
-		nodes[_nodeB].neighbors[posB].dimension = S.dimensions[0];
-	}
-	
 	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
 		size_t posA, posB;
 		
@@ -675,6 +603,149 @@ namespace xerus {
 		return std::tuple<size_t, size_t>(posA, posB);
 	}
 	
+	void TensorNetwork::round_edge(const size_t _from, const size_t _to, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+		require_valid_network();
+		
+		size_t fromPos, toPos;
+		std::tie(fromPos, toPos) = find_common_edge(_from, _to);
+		
+		Tensor& fromTensor = *nodes[_from].tensorObject;
+		Tensor& toTensor = *nodes[_to].tensorObject;
+		
+		const size_t fromDegree = fromTensor.degree();
+		const size_t toDegree = toTensor.degree();
+		
+		const size_t currRank = fromTensor.dimensions[fromPos];
+		
+		// Reshuffle From if nessecary
+		const bool transFrom = (fromPos == 0);
+		const bool reshuffleFrom = (!transFrom && fromPos != fromDegree-1);
+		std::vector<size_t> forwardShuffleFrom;
+		std::vector<size_t> backwardShuffleFrom;
+		if(reshuffleFrom) {
+			forwardShuffleFrom.resize(fromDegree);
+			backwardShuffleFrom.resize(fromDegree);
+			
+			for(size_t i = 0; i < fromPos; ++i) { 
+				forwardShuffleFrom[i] = i;
+				backwardShuffleFrom[i] = i;
+			}
+			
+			for(size_t i = fromPos; i+1 < fromDegree; ++i) {
+				forwardShuffleFrom[i+1] = i;
+				backwardShuffleFrom[i] = i+1;
+			}
+			
+			forwardShuffleFrom[fromPos] = fromDegree-1;
+			backwardShuffleFrom[fromDegree-1] = fromPos;
+			
+			reshuffle(fromTensor, fromTensor, forwardShuffleFrom);
+		}
+		
+		// Reshuffle To if nessecary
+		const bool transTo = (toPos == toDegree-1);
+		const bool reshuffleTo = (!transTo && toPos != 0);
+		std::vector<size_t> forwardShuffleTo;
+		std::vector<size_t> backwardShuffleTo;
+		if(reshuffleTo) {
+			forwardShuffleTo.resize(toDegree);
+			backwardShuffleTo.resize(toDegree);
+			
+			for(size_t i = 0; i < toPos; ++i) {
+				forwardShuffleTo[i] = i+1;
+				backwardShuffleTo[i+1] = i;
+			}
+			
+			for(size_t i = toPos+1; i < toDegree; ++i) {
+				forwardShuffleTo[i] = i;
+				backwardShuffleTo[i] = i;
+			}
+			
+			forwardShuffleTo[toPos] = 0;
+			backwardShuffleTo[0] = toPos;
+			
+			reshuffle(toTensor, toTensor, forwardShuffleTo);
+		}
+		
+		Tensor X, S;
+		
+		// Check whether prior QR makes sense
+		if (5*fromTensor.size*toTensor.size >= 6*misc::pow(currRank, 4) ) {
+			// Seperate the cores ...
+			Tensor coreA, coreB;
+			if(transFrom) {
+				calculate_rq(coreA, fromTensor, fromTensor, 1);
+			} else {
+				calculate_qc(fromTensor, coreA, fromTensor, fromDegree-1);
+			}
+			
+			if(transTo) {
+				calculate_qc(toTensor, coreB, toTensor, toDegree-1);
+			} else {
+				calculate_rq(coreB, toTensor, toTensor, 1);
+			}
+			
+			// ... contract them ...
+			xerus::contract(X, coreA, transFrom, coreB, transTo, 1);
+			
+			// ... calculate svd ...
+			calculate_svd(coreA, S, coreB, X, 1, _maxRank, _eps);
+			
+			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			
+			// ... contract S to the right ...
+			xerus::contract(coreB, S, false, coreB, false, 1);
+			
+			// ... and contract the cores back to their origins.
+			if(transFrom) {
+				xerus::contract(fromTensor, coreA, true, fromTensor, false, 1);
+			} else {
+				xerus::contract(fromTensor, fromTensor, false, coreA, false, 1);
+			}
+			
+			if(transTo) {
+				xerus::contract(toTensor, toTensor, false, coreB, true, 1);
+			} else {
+				xerus::contract(toTensor, coreB, false, toTensor, false, 1);
+			}
+		} else {
+			xerus::contract(X, fromTensor, transFrom, toTensor, transTo, 1);
+			
+			calculate_svd(fromTensor, S, toTensor, X, fromDegree-1, _maxRank, _eps);
+			
+			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			
+			if(transTo) {
+				xerus::contract(toTensor, toTensor, true, S, true, 1);
+			} else {
+				xerus::contract(toTensor, S, false, toTensor, false, 1);
+			}
+			
+			if(transFrom) {
+				backwardShuffleFrom.resize(fromDegree);
+				for(size_t i = 0; i+1 < fromDegree; ++i) { 
+					backwardShuffleFrom[i] = i+1;
+				}
+				backwardShuffleFrom[fromDegree-1] = 0;
+				reshuffle(fromTensor, fromTensor, backwardShuffleFrom);
+			}
+		}
+		
+		
+		if(reshuffleFrom) {
+			reshuffle(fromTensor, fromTensor, backwardShuffleFrom);
+		}
+		
+		if(reshuffleTo) {
+			reshuffle(toTensor, toTensor, backwardShuffleTo);
+		}
+		
+		// Set the new dimension in the nodes
+		nodes[_from].neighbors[fromPos].dimension = nodes[_from].tensorObject->dimensions[fromPos];
+		nodes[_to].neighbors[toPos].dimension = nodes[_to].tensorObject->dimensions[toPos];
+	}
+	
+	
 	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
 		require_valid_network();
 		
@@ -685,7 +756,7 @@ namespace xerus {
 		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
 		Tensor& toTensor = *nodes[_nodeB].tensorObject;
 		
-		bool transR = false; // TODO
+		bool transR = false; // TODO use CQ when available
 		if(posA == 0 && !_allowRankReduction) {
 			calculate_rq(R, Q, fromTensor, 1);
 			fromTensor = Q;

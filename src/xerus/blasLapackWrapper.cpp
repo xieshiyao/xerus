@@ -332,7 +332,7 @@ namespace xerus {
             const std::unique_ptr<double[]> tau(new double[rank]);
             
             // Calculate QR factorisations
-    //         LOG(Lapacke, "Call to dorgqr with parameters: " << LAPACK_ROW_MAJOR << ", " << (int) _m  << ", " << (int) _n  << ", " << _A << ", " << (int) _n  << ", " << tau.get());
+//             LOG(Lapacke, "Call to dorgqr with parameters: " << LAPACK_ROW_MAJOR << ", " << (int) _m  << ", " << (int) _n  << ", " << _A << ", " << (int) _n  << ", " << tau.get());
             IF_CHECK( int lapackAnswer = ) LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, (int) _m, (int) _n, _A, (int) _n, tau.get());
             CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton. Lapacke says: " << lapackAnswer );
             
