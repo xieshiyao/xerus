@@ -750,8 +750,8 @@ namespace xerus {
 			}
 		}
 		
-		dimensions.erase(dimensions.begin()+_secondIndex);
-		dimensions.erase(dimensions.begin()+_firstIndex);
+		dimensions.erase(dimensions.begin()+(long)_secondIndex);
+		dimensions.erase(dimensions.begin()+(long)_firstIndex);
 		factor = 1.0;
 		denseData.reset(newData.release(), internal::array_deleter_vt);
 	}
@@ -1099,13 +1099,13 @@ namespace xerus {
 			|| _result.representation != resultRepresentation
 			|| _result.degree() != lhsRemainOrder + rhsRemainOrder
 			|| _result.size != leftDim*rightDim
-			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
-			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin() + (lhsRemainEnd-lhsRemainStart))
+			|| !std::equal(_lhs.dimensions.begin() + (long)lhsRemainStart, _lhs.dimensions.begin() + (long)lhsRemainEnd, _result.dimensions.begin())
+			|| !std::equal(_rhs.dimensions.begin() + (long)rhsRemainStart, _rhs.dimensions.begin() + (long)rhsRemainEnd, _result.dimensions.begin() + (long)(lhsRemainEnd-lhsRemainStart))
 		) {
 			Tensor::DimensionTuple resultDim;
 			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
-			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd);
-			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
+			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + (long)lhsRemainStart, _lhs.dimensions.begin() + (long)lhsRemainEnd);
+			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + (long)rhsRemainStart, _rhs.dimensions.begin() + (long)rhsRemainEnd);
 			
 			if(&_result == &_lhs || &_result == &_rhs) {
 				tmpResult.reset(new Tensor(std::move(resultDim), resultRepresentation, Tensor::Initialisation::None));
@@ -1177,10 +1177,10 @@ namespace xerus {
 		if( !_lhs.is_dense()
 			|| _lhs.degree() != _splitPos+1
 			|| _lhs.dimensions.back() != rank 
-			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
+			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + (long)_splitPos, _lhs.dimensions.begin())) 
 		{
 			Tensor::DimensionTuple newDimU;
-			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
+			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + (long)_splitPos);
 			newDimU.push_back(rank);
 			_lhs.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
@@ -1188,11 +1188,11 @@ namespace xerus {
 		if(!_rhs.is_dense()
 			|| _rhs.degree() != _input.degree()-_splitPos+1 
 			|| rank != _rhs.dimensions.front() 
-			|| !std::equal(_input.dimensions.begin()+_splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
+			|| !std::equal(_input.dimensions.begin()+(long)_splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
 		{
 			Tensor::DimensionTuple newDimVt;
 			newDimVt.push_back(rank);
-			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
+			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + (long)_splitPos, _input.dimensions.end());
 			_rhs.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
 		

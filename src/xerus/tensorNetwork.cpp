@@ -198,7 +198,7 @@ namespace xerus {
 	
 	
 	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
-		size_t posA, posB;
+		size_t posA=~0ul, posB=~0ul;
 		
 		// Find common edge in nodeA
 		IF_CHECK(bool foundCommon = false;)
@@ -244,8 +244,8 @@ namespace xerus {
 					}
 				}
 				
-				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+link.indexPosition);
-				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+i);
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+(long)link.indexPosition);
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+(long)i);
 				
 				//Redo this index
 				i -= 1;

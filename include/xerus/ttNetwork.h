@@ -32,6 +32,7 @@
 #include "tensor.h"
 #include "tensorNetwork.h"
 #include "indexedTensorMoveable.h"
+#include "indexedTensorList.h"
 
 namespace xerus {
 	/**
