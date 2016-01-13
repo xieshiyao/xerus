@@ -24,10 +24,14 @@
 
 #pragma once
 
+#include <map>
 #include <limits>
+#include <memory>
+#include <random>
 
 #include "basic.h"
 #include "misc/sfinae.h"
+#include "misc/missingFunctions.h"
 #include "indexedTensor.h"
 
 namespace xerus {
@@ -118,8 +122,6 @@ namespace xerus {
 		template<ADD_MOVE(Vec, DimensionTuple), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
 		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
-		// NOTE must not be misc::product(dimensions) (without _) as that causes internal segfaults in gcc 4.8.1
-		// TODO MUST be misc::product(dimensions) because misc::product(_dimensions) is undefined behaviour (_dimensions is moved just before).
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
@@ -626,6 +628,14 @@ namespace xerus {
 		 */
 		void remove_slate(const size_t _indexNb, const size_t _pos);
 		
+		
+		/** 
+		 * @brief Performs the trace over the given indices
+		 * @param _firstIndex the first index involved in the trace.
+		 * @param _secondIndex the second index involved in the trace.
+		 */
+		void perform_trace(size_t _firstIndex, size_t _secondIndex);
+		
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
@@ -824,7 +834,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the QC shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the QC is calculated.
 	 */
-	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos, const value_t _eps);
+	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Low-Level CQ calculation of a given Tensor @a _input = @a _C @a _Q.
@@ -835,7 +845,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the CQ shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the CQ is calculated.
 	 */
-	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos, const value_t _eps);
+	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.

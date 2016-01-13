@@ -1,4 +1,4 @@
-// // Xerus - A General Purpose Tensor Library
+// // // Xerus - A General Purpose Tensor Library
 // Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
@@ -23,11 +23,12 @@
  */
 
 #include <xerus/ttNetwork.h>
-#include <xerus/tensorNetwork.h>
+
 #include <xerus/basic.h>
 #include <xerus/index.h>
 #include <xerus/tensor.h>
- 
+
+#include <xerus/ttStack.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensorMoveable.h>
  
@@ -44,7 +45,7 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(NoZeroNode), cannonicalized(true), corePosition(0) {
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
 		
@@ -52,7 +53,6 @@ namespace xerus {
 			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
 			return;
 		}
-		REQUIRE(nodes.size() == 0, "Internal Error,");
 		
 		dimensions = std::vector<size_t>(_degree, 1);
 		
@@ -60,6 +60,7 @@ namespace xerus {
 		for (size_t i = 1; i <= numComponents; ++i) {
 			externalLinks.emplace_back(i, 1, 1, false);
 		}
+		
 		if (isOperator) {
 			for (size_t i = 1; i <= numComponents; ++i) {
 				externalLinks.emplace_back(i, 2, 1, false);
@@ -72,33 +73,21 @@ namespace xerus {
 		
 		neighbors.emplace_back(1,0,1,false);
 		
-		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
-			std::move(neighbors)
-		);
+		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors) );
 		
-		for (size_t i=0; i<numComponents; ++i) {
+		for (size_t i = 0; i < numComponents; ++i) {
 			neighbors.clear();
 			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
-			for (size_t j=0; j< N; ++j) { 
-				neighbors.emplace_back(-1, i+j*numComponents, 1, true);
-			}
+			neighbors.emplace_back(-1, i, 1, true);
+			if(isOperator) { neighbors.emplace_back(-1, i+numComponents, 1, true); }
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
-			nodes.emplace_back(
-				std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), 
-				std::move(neighbors)
-			);
+			nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), std::move(neighbors) );
 		}
 		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
-		nodes.emplace_back(
-			std::unique_ptr<Tensor>(new Tensor({1},[](){return 1.0;})), 
-			std::move(neighbors)
-		);
-		
-		REQUIRE(is_valid_tt(), "Internal Error.");
+		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
 	}
 	
 	
@@ -113,10 +102,11 @@ namespace xerus {
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
         REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
             << (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
-#ifdef CHECK_
-		// NOTE no IF_CHECK macro because gcc 4.8.1 throws internal compiler error (seg fault) otherwise
-        for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
-#endif
+
+		IF_CHECK(
+			for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
+		)
+		
 		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		
 		dimensions = _tensor.dimensions;
@@ -216,46 +206,49 @@ namespace xerus {
 		component(0) *= _tensor.factor; // NOTE this needs to be removed if the loop above does not use low-level calls anymore
 		
 		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
-		REQUIRE(is_in_expected_format(), "Internal Error.");
+		require_correct_format();
 	}
 	
-	
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TTNetwork & _cpy) 
-		: TensorNetwork(_cpy), cannonicalized(_cpy.cannonicalized), corePosition(_cpy.corePosition)
-	{ }
-	
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(TTNetwork&& _mov) 
-		: TensorNetwork(std::move(_mov)), cannonicalized(_mov.cannonicalized), corePosition(_mov.corePosition) 
-	{ }
 
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TensorNetwork(_network) {
-		LOG(fatal, "Cast of arbitrary tensor network to TT not yet supported"); // TODO
+	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TTNetwork(Tensor(_network)) {
+		LOG(warning, "Cast of arbitrary tensor network to TT not yet supported. Casting to Tensor first"); // TODO
 	}
 
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
+		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		
+		TTNetwork result(_dimensions.size());
+		const size_t numNodes = _dimensions.size()/N;
+		std::vector<size_t> dimensions(isOperator ? 4 : 3, 1);
+		for(size_t i = 0; i < numNodes; ++i) {
+			dimensions[1] = _dimensions[i];
+			if (isOperator) {
+				dimensions[2] = _dimensions[i+numNodes];
+			}
+			result.set_component(i, Tensor::ones(dimensions));
+		}
+		result.cannonicalize_left();
+		return result;
+	}
+	
 	
 	template<> template<>
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
-		#ifndef DISABLE_RUNTIME_CHECKS_
-			for (size_t d : _dimensions) {
-				REQUIRE(d > 0, "trying to construct TTOperator with dimension 0");
-			}
-		#endif
-		
-		TTNetwork result(_dimensions.size());
+		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
 		
 		const size_t numComponents = _dimensions.size()/N;
 		
-		for (size_t i=0; i<numComponents; ++i) {
-			std::vector<size_t> constructionVector;
-			constructionVector.push_back(1);
-			for (size_t j=0; j < N; ++j) { 
-				constructionVector.push_back(_dimensions[i+j*numComponents]);
-			}
-			constructionVector.push_back(1);
+		TTNetwork result(_dimensions.size());
+		
+		std::vector<size_t> constructionVector(4, 1);
+		for (size_t i = 0; i < numComponents; ++i) {
+			constructionVector[1] = _dimensions[i];
+			constructionVector[2] = _dimensions[i+numComponents];
 			result.set_component(i, std::unique_ptr<Tensor>(new Tensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
@@ -265,7 +258,6 @@ namespace xerus {
 			})));
 		}
 		
-		REQUIRE(result.is_valid_tt(), "Internal Error.");
 		result.cannonicalize_left();
 		return result;
 	}
@@ -366,12 +358,12 @@ namespace xerus {
 		
 		// NOTE core position according to information in TTStack is set in evaluation
 		
-		REQUIRE(_me.tensorObject->is_in_expected_format(), "something went wrong in contract_stack");
+		_me.tensorObject->require_correct_format();
 	}
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		template<bool isOperator>
-		bool TTNetwork<isOperator>::is_valid_tt() const {
+		void TTNetwork<isOperator>::require_correct_format() const {
 			const size_t numComponents = degree()/N;
 			const size_t numNodes = degree()==0 ? 1 : degree()/N + 2;
 			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
@@ -451,14 +443,10 @@ namespace xerus {
 				REQUIRE(!nodes[n+2].neighbors.empty(), "n=" << n);
 				REQUIRE(node.neighbors.back().dimension == nodes[n+2].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
 			}
-			
-			return true;
 		}
 	#else
 		template<bool isOperator>
-		bool TTNetwork<isOperator>::is_valid_tt() const {
-			return true;
-		}
+		void TTNetwork<isOperator>::require_correct_format() const { }
 	#endif
 	
 	template<bool isOperator>
@@ -569,8 +557,8 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-		REQUIRE(_lhs.is_in_expected_format(), "");
-		REQUIRE(_rhs.is_in_expected_format(), "");
+		_lhs.require_correct_format();
+		_rhs.require_correct_format();
 		
 		if (_lhs.degree() == 0) {
 			TTNetwork result(_rhs);
@@ -584,12 +572,13 @@ namespace xerus {
 			return result;
 		}
 		
-		// add all nodes of rhs and fix neighbor relations
-		result.nodes.pop_back();
 		const size_t lhsNumComponents = _lhs.degree()/N;
-		const size_t rhsNodesSize = _rhs.nodes.size();
 		const size_t rhsNumComponents = _rhs.degree()/N;
-		for (size_t i=1; i<rhsNodesSize; ++i) {
+		
+		// Add all nodes of rhs and fix neighbor relations
+		result.nodes.pop_back();
+		result.nodes.reserve(_lhs.degree()+_rhs.degree()+2);
+		for (size_t i = 1; i < _rhs.nodes.size(); ++i) {
 			const TensorNode &n = _rhs.nodes[i];
 			result.nodes.emplace_back(n);
 			for (TensorNetwork::Link &l : result.nodes.back().neighbors) {
@@ -608,21 +597,24 @@ namespace xerus {
 			}
 		}
 		
-		// add all external indices of rhs
+		// Add all external indices of rhs
 		result.externalLinks.clear();
 		result.dimensions.clear();
-		for (size_t i=0; i<lhsNumComponents; ++i) {
+		
+		for (size_t i = 0; i < lhsNumComponents; ++i) {
 			const size_t d=_lhs.dimensions[i];
 			result.externalLinks.emplace_back(i+1, 1, d, false);
 			result.dimensions.push_back(d);
 		}
-		for (size_t i=0; i<rhsNumComponents; ++i) {
+		
+		for (size_t i = 0; i < rhsNumComponents; ++i) {
 			const size_t d=_rhs.dimensions[i];
 			result.externalLinks.emplace_back(lhsNumComponents+i+1, 1, d, false);
 			result.dimensions.push_back(d);
 		}
+		
 		if (isOperator) {
-			for (size_t i=0; i<lhsNumComponents; ++i) {
+			for (size_t i = 0; i < lhsNumComponents; ++i) {
 				const size_t d=_lhs.dimensions[i];
 				result.externalLinks.emplace_back(i+1, 2, d, false);
 				result.dimensions.push_back(d);
@@ -649,7 +641,7 @@ namespace xerus {
 			result.cannonicalized = false;
 		}
 		
-		REQUIRE(result.is_valid_tt(), "Internal Error.");
+		result.require_correct_format();
 		return result;
 	}
 	
@@ -670,7 +662,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
-		REQUIRE(_A.dimensions == _B.dimensions, "entrywise_product ill-defined for non equal dimensions");
+		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise_product ill-defined for non equal dimensions");
 		
 		if(_A.degree() == 0) {
 			TTNetwork result(_A);
@@ -720,8 +712,7 @@ namespace xerus {
 			result.set_component(i, std::move(newComponent));
 		}
 		
-		REQUIRE(result.is_valid_tt(), "Internal Error.");
-		result.require_valid_network();
+		result.require_correct_format();
 		
 		if (_A.cannonicalized) {
 			result.move_core(_A.corePosition);
@@ -803,14 +794,14 @@ namespace xerus {
 	
 	template<bool isOperator>
 	std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {
-		REQUIRE(is_valid_tt(), "Invalid TT cannot be chopped.");
+		require_correct_format();
 		
 		const size_t numComponents = degree()/N;
 		REQUIRE(_position < numComponents, "Can't split a " << numComponents << " component TTNetwork at position " << _position);
 		
 		// Create the resulting TNs
-		TensorNetwork left(NoZeroNode);
-		TensorNetwork right(NoZeroNode);
+		TensorNetwork left(ZeroNode::None);
+		TensorNetwork right(ZeroNode::None);
 		
 		left.nodes.push_back(nodes[0]);
 		for (size_t i = 0; i < _position; ++i) {
@@ -875,7 +866,7 @@ namespace xerus {
 		const size_t numComponents = degree()/N;
 		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
 		REQUIRE(_maxRanks.size() == numComponents-1, "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << numComponents-1 << " are given.");
-		REQUIRE(is_valid_tt(), "round called on illegal TT tensor");
+		require_correct_format();
 		
 		const bool initialCanonicalization = cannonicalized;
 		const size_t initialCorePosition = corePosition;
@@ -892,8 +883,6 @@ namespace xerus {
 		if(initialCanonicalization) {
 			move_core(initialCorePosition);
 		}
-		
-		REQUIRE(is_valid_tt(), "Internal Error.");
 	}
 	
 	template<bool isOperator>
@@ -916,7 +905,7 @@ namespace xerus {
 	template<bool isOperator>
 	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool _preventZero) {
 		const size_t numComponents = degree()/N;
-		REQUIRE(is_valid_tt(), "Cannot apply soft thresholding to invalid TTNetwork.");
+		require_correct_format();
 		REQUIRE(_taus.size()+1 == numComponents, "We need exactly " << numComponents << " taus but got " << _taus.size());
 		
 		const bool initialCanonicalization = cannonicalized;
@@ -939,8 +928,6 @@ namespace xerus {
 		if(initialCanonicalization) {
 			move_core(initialCorePosition);
 		}
-		
-		is_valid_tt();
 	}
 	
 	template<bool isOperator>
@@ -976,7 +963,7 @@ namespace xerus {
 	template<bool isOperator>
 	void TTNetwork<isOperator>::move_core(const size_t _position, const bool _keepRank) {
 		const size_t numComponents = degree()/N;
-		REQUIRE(is_valid_tt(), "Cannot cannonicalize invalid TT");
+		require_correct_format();
 		REQUIRE(_position < numComponents, "Illegal position for core chosen");
 		
 		if(cannonicalized) {
@@ -1021,7 +1008,6 @@ namespace xerus {
 		cannonicalized = true;
 		corePosition = _position;
 		
-		REQUIRE(is_valid_tt(), "Core movement failed!");
 		REQUIRE(!exceeds_maximal_ranks(), "dim: " << dimensions << " rank: " << ranks());
 	}
 	
@@ -1049,7 +1035,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	value_t TTNetwork<isOperator>::frob_norm() const {
-		REQUIRE(is_valid_tt(), "frob_norm of illegal TT");
+		require_correct_format();
 		if (cannonicalized) {
 			return get_component(corePosition).frob_norm();
 		} else {
@@ -1059,10 +1045,9 @@ namespace xerus {
 	}
 		
 	template<bool isOperator>
-// 	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, size_t& _maxRank, size_t& _interationCount, const value_t _lowerBound) const {
 	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
 		REQUIRE(!isOperator, "Not yet implemented for TTOperators"); // TODO
-		REQUIRE(is_valid_tt(), "Invalid TT");
+		require_correct_format();
 		
 // 		size_t dummyA, dummyB;
 		// There is actual work to be done
@@ -1118,10 +1103,6 @@ namespace xerus {
 		}
 	}
 	
-	template<bool isOperator>
-	bool TTNetwork<isOperator>::is_in_expected_format() const {
-		return is_valid_tt();
-	}
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1519,7 +1500,6 @@ namespace xerus {
 			REQUIRE(!outTensor.exceeds_maximal_ranks(), outTensor.dimensions << " rank: " << outTensor.ranks());
 		}
 		
-		REQUIRE(outTensor.is_valid_tt(), "Internal Error.");
 		return true;
 	}
 	
@@ -1594,7 +1574,7 @@ namespace xerus {
 							meTTN->move_core(otherTTStack->futureCorePosition);
 						}
 					}
-					REQUIRE(is_valid_tt(), "Internal Error.");
+					require_correct_format();
 					dynamic_cast<TTOperator*>(_me.tensorObject)->transpose(); // NOTE will never be called if !isOperator
 					return;
 				}
@@ -1602,15 +1582,17 @@ namespace xerus {
 		}
 		// Use Tensor fallback
 		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
-		std::unique_ptr<Tensor> otherFull(_other.tensorObjectReadOnly->fully_contracted_tensor());
-		std::unique_ptr<Tensor> otherReordered(new Tensor(otherFull->representation));
-		(*otherReordered)(_me.indices) = (*otherFull)(_other.indices);
+		Tensor otherFull(*_other.tensorObjectReadOnly);
+		Tensor otherReordered;
+		otherReordered(_me.indices) = otherFull(_other.indices);
 		
 		// Cast to TTNetwork
-		*_me.tensorObject = TTNetwork(std::move(*otherReordered));
+		*_me.tensorObject = TTNetwork(std::move(otherReordered));
 	}
+	
 	
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 	template class TTNetwork<false>;
 	template class TTNetwork<true>;
+	
 }

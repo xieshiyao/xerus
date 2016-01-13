@@ -24,12 +24,12 @@
 
 #include <xerus/algorithms/decompositionAls.h>
 #include <xerus/basic.h>
+#include <xerus/index.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/tensorNetwork.h>
  
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/misc/namedLogger.h>
 
 namespace xerus {
 

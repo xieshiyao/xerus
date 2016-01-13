@@ -24,11 +24,13 @@
 
 #pragma once
 
+#include "../index.h"
 #include "../ttNetwork.h"
 #include "../performanceData.h"
 #include "../measurments.h"
 
 namespace xerus {
+	
 	/**
 	 * @brief Wrapper class for all ADF variants.
 	 * @details By creating a new object of this class and modifying the member variables, the behaviour of the solver can be modified.
@@ -215,7 +217,7 @@ namespace xerus {
 				
 				perfData(_perfData) 
 				{
-					REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+					_x.require_correct_format();
 					REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
 					REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
 				}

@@ -28,25 +28,25 @@
 #include <fstream>
 #include <map>
 
+namespace xerus { 
+	namespace misc {
 
-namespace xerus { namespace misc {
-
-/**
- * @brief A logarithmic histogram, i.e. the size of all buckets is given by a constant factor [x - x*base)
- */
-class LogHistogram {
-public:
-	double base;
-	std::map<int, size_t> buckets;
-	size_t totalCount;
-	
-	explicit LogHistogram(const double _base);
-	
-	LogHistogram &operator+=(const LogHistogram &_other);
-	void add(double _value, size_t _count=1);
-	
-	static LogHistogram read_from_file(const std::string &_fileName);
-	void dump_to_file(const std::string &_fileName) const;
-};
-
-}}
+		/**
+		* @brief A logarithmic histogram, i.e. the size of all buckets is given by a constant factor [x - x*base)
+		*/
+		class LogHistogram {
+		public:
+			double base;
+			std::map<int, size_t> buckets;
+			size_t totalCount;
+			
+			explicit LogHistogram(const double _base);
+			
+			LogHistogram &operator+=(const LogHistogram &_other);
+			void add(double _value, size_t _count = 1);
+			
+			static LogHistogram read_from_file(const std::string &_fileName);
+			void dump_to_file(const std::string &_fileName) const;
+		};
+	}
+}

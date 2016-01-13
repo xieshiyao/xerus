@@ -163,7 +163,7 @@ UNIT_TEST(TT, named_constructors,
 	
 	TTOperator Xop = TTOperator::random(operatorDimensions, ranks, rnd, dist);
 	found_ranks = Xop.ranks();
-	Xop.round(1e-16);
+	Xop.round(1e-15);
 	MTEST(Xop.ranks() == found_ranks, Xop.ranks() << " vs " << found_ranks);
 // 	{
 // 		value_t mean = 0;

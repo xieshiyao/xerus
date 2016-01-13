@@ -143,8 +143,8 @@ UNIT_TEST2(Tensor, Constructors) {
 
 UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	Tensor n({3,3,3,3});
-	MTEST(frob_norm(n) < 1e-20, "this should be a sparse tensor with no entries, so frob norm exactly = 0!");
-	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor");
+	MTEST(frob_norm(n) < 1e-20, "This should be a sparse tensor with no entries, so frob norm exactly = 0!");
+	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor"); //TODO Should it?
 	
 	std::vector<Tensor> columns;
 	for (size_t i=0; i<10; ++i) {

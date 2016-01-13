@@ -23,6 +23,7 @@
 */
 
 #pragma once
+
 #include <vector>
 #include <set>
 #include <map>
@@ -55,7 +56,6 @@ namespace xerus {
 		std::unique_ptr<T[]> make_unique_array(T* _ptr) {
 			return std::unique_ptr<T[]>(_ptr);
 		}
-
 		
 		
 		/**
@@ -311,6 +311,12 @@ namespace xerus {
 		template<class T, typename std::enable_if<std::is_floating_point<T>::value, bool>::type = true>
 		bool approx_equal(T _a, T _b, T _eps = 4*std::numeric_limits<T>::epsilon()) {
 			return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
+		}
+		
+		///@brief: Checks whether @a _a and @a _b are equal (for non floating point types).
+		template<class T, typename std::enable_if<!std::is_floating_point<T>::value, bool>::type = true>
+		bool approx_equal(T _a, T _b) {
+			return _a == _b;
 		}
 		
 		///@brief: Checks for hard equality ( == operator) without compiler warnings.

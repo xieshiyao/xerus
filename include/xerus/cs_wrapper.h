@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include <memory>
+#include <map>
+
 #ifdef __has_include
 	#if __has_include(<cs.h>)
 		#include <cs.h>
@@ -36,33 +39,24 @@
 	#include <cs.h>
 #endif
 
-#include "tensor.h"
-
 
 namespace xerus {
+	class Tensor;
+	
 	namespace internal {
-		/// Unique_ptr wrapper that should always be used to encapsulate the CS sparse matrix format.
+		///@brief Unique_ptr wrapper that should always be used to encapsulate the CS sparse matrix format.
 		typedef std::unique_ptr<cs_di, cs_di*(*)(cs_di*)> CsUniquePtr;
-		
-		/** @brief: Function that estimates whether a contraction result is sparse.
-		* @param _lhsDim the first dimension of the left matrix and the result, i.e. N in an NxM * MxK contraction.
-		* @param _midDim the second dimension of the left matrix and the first dimension of the right matrix, i.e. M in an NxM * MxK contraction.
-		* @param _rhsDim the second dimension of the right matrix and the result, i.e. K in an NxM * MxK contraction.
-		* @param _lhsEntries number of non-zero entries of the left matrix.
-		* @param _rhsEntries number of non-zero entries of the right matrix.
-		*/
-		bool sparse_result(const size_t _lhsDim, const size_t _midDim, const size_t _rhsDim, const size_t _lhsEntries, const size_t _rhsEntries);
-		
+
 		///@brief Allocates a CS sparse matrix with given dimensions and number of entries.
 		CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 
-		///@brief: Converts the given @a _tensor to the CS format using the given matrification.
+		///@brief Converts the given @a _tensor to the CS format using the given matrification.
 		CsUniquePtr to_cs_format(const Tensor& _tensor, const size_t _splitPos, const bool _transpose);
 		
-		///@brief: Retransforms a CS sparse matrix to sparse Tensor format
+		///@brief Retransforms a CS sparse matrix to sparse Tensor format.
 		void from_cs_format(Tensor& _output, const CsUniquePtr& _cs_format);
 		
-		///@brief: Calculates the Matrix Matrix product between to sparse matrices
+		///@brief Calculates the Matrix Matrix product between to sparse matrices.
 		void matrix_matrix_product( std::map<size_t, double>& _C,
 									const size_t _leftDim,
 							const size_t _rightDim,
@@ -73,7 +67,7 @@ namespace xerus {
 							const std::map<size_t, double>& _B,
 							const bool _transposeB );
 		
-		/// Prints a matrix in cs format
+		///@brief Prints a matrix in cs format.
 		void print_cs(const CsUniquePtr& _cs_format);
 	}
 }

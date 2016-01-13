@@ -18,23 +18,27 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Header file for the PerformanceData class.
- */
+* @file
+* @brief Header file for the PerformanceData class.
+*/
 
 #pragma once
+
 #include <string>
-#include <fstream>
-#include <map>
-#include "basic.h"
-#include "tensorNetwork.h"
-#include "ttNetwork.h"
+#include <vector>
+
 #include "misc/timeMeasure.h"
 #include "misc/histogram.h"
 
+#include "basic.h"
+#include "tensorNetwork.h"
+
 namespace xerus {
-
-
+	template<bool isOperator> class TTNetwork;
+	
+	typedef TTNetwork<false> TTTensor;
+	typedef TTNetwork<true> TTOperator;
+	
 	/// @brief Storage class for the performance data collected during an algorithm (typically iteration count, time and residual)
 	class PerformanceData {
 	public:
@@ -140,5 +144,4 @@ namespace xerus {
 	};
 
 	extern PerformanceData NoPerfData;
-
 }

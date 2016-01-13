@@ -24,9 +24,13 @@
 
 #pragma once
 
-#include "tensorNetwork.h"
+#include <vector>
+
+#include "basic.h"
 
 namespace xerus {
+	class TensorNetwork;
+	
 	namespace internal {
 		typedef void (*ContractionHeuristic)(double &, std::vector<std::pair<size_t,size_t>> &, TensorNetwork);
 		
@@ -49,4 +53,3 @@ namespace xerus {
 		extern const std::vector<ContractionHeuristic> contractionHeuristics;
 	}
 }
-
