@@ -27,8 +27,11 @@
 #include "misc/missingFunctions.h"
 #include "misc/check.h"
 
+#include "index.h"
+#include "indexedTensor_tensor_factorisations.h"
 #include "tensor.h"
 #include "tensorNetwork.h"
+#include "indexedTensorMoveable.h"
 
 namespace xerus {
 	/**
@@ -135,6 +138,39 @@ namespace xerus {
 			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
 		}
 		
+		/**
+		 * @brief Random constructs a TTNetwork with the given dimensions and ranks. 
+		 *  The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
+		 *  the singular values of all matricisations M(1..n,n+1..N) are fixed according to the given function a posteriori
+		 *  The callback function is assumed to take a reference to a diagonal tensor and modify it to represent the desired singular values.
+		 */
+		template<class generator, class distribution, class aloc = std::allocator<size_t>>
+		static TTNetwork random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, 
+								generator& _rnd, distribution& _dist,
+								const std::function<void(Tensor&)> &_modifySingularValues) 
+		{
+			TTNetwork result = random(_dimensions, _ranks, _rnd, _dist);
+			
+			Index i,j,k,l,m;
+			
+			for (size_t pos=0; pos+1<result.degree(); ++pos) {
+				Tensor A;
+				A(i,j^N,k^N,l) = result.component(pos)(i,j^N,m) * result.component(pos+1)(m,k^N,l);
+				Tensor U,S,Vt;
+				(U(i&1,j),S(j,k),Vt(k,l&1)) = SVD(A(i/2,l/2));
+				_modifySingularValues(S);
+				Vt(j,l&1) = S(j,k) * Vt(k,l&1);
+				result.set_component(pos, U);
+				result.set_component(pos+1, Vt);
+				result.assume_core_position(pos+1);
+			}
+			
+			result.cannonicalize_left();
+			REQUIRE(result.is_valid_tt(), "Internal Error.");
+			REQUIRE(!result.exceeds_maximal_ranks(), "Internal Error");
+			return result;
+		}
+		
 		/** 
 		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
@@ -144,11 +180,6 @@ namespace xerus {
 		/// Construct a TTOperator with the given dimensions representing the identity. (Only applicable for TTOperators, i.e. not for TTtensors).
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
 		static TTNetwork identity(const std::vector<size_t>& _dimensions);
-		
-		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
-		_deprecated_ static TTNetwork construct_identity(const std::vector<size_t>& _dimensions) {
-			return TTNetwork::identity(_dimensions);
-		}
 		
 		TTNetwork& operator=(const TTNetwork& _other) = default;
 		
