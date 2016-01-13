@@ -1038,20 +1038,20 @@ namespace xerus {
 		const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
-		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), "Dimensions of the be contracted indices do not coincide.");
+		REQUIRE(std::equal(_lhs.dimensions.begin() + long(lhsContractStart), _lhs.dimensions.begin() + long(lhsContractStart + _numIndices), _rhs.dimensions.begin() + long(rhsContractStart)), "Dimensions of the be contracted indices do not coincide.");
 		
 		// Check whether _result has to be reset and prevent deletion of _lhs or _rhs due to being the same object as _result.
 		std::unique_ptr<Tensor> tmpResult;
 		Tensor* usedResult;
 		if( &_result == &_lhs || &_result == &_rhs
 			|| _result.degree() != lhsRemainOrder + rhsRemainOrder 
-			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
-			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin())
+			|| !std::equal(_lhs.dimensions.begin() + long(lhsRemainStart), _lhs.dimensions.begin() + long(lhsRemainEnd), _result.dimensions.begin())
+			|| !std::equal(_rhs.dimensions.begin() + long(rhsRemainStart), _rhs.dimensions.begin() + long(rhsRemainEnd), _result.dimensions.begin())
 		) {
 			Tensor::DimensionTuple resultDim;
 			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
-			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd);
-			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
+			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + long(lhsRemainStart), _lhs.dimensions.begin() + long(lhsRemainEnd));
+			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + long(rhsRemainStart), _rhs.dimensions.begin() + long(rhsRemainEnd));
 			
 			if(&_result == &_lhs || &_result == &_rhs) {
 				tmpResult.reset(new Tensor(std::move(resultDim), _result.representation, Tensor::Initialisation::None));
@@ -1119,10 +1119,10 @@ namespace xerus {
 		if( !_lhs.is_dense()
 			|| _lhs.degree() != _splitPos+1
 			|| rank != _lhs.dimensions.back() 
-			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
+			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + long(_splitPos), _lhs.dimensions.begin())) 
 		{
 			Tensor::DimensionTuple newDimU;
-			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
+			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + long(_splitPos));
 			newDimU.push_back(rank);
 			_lhs.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
@@ -1130,11 +1130,11 @@ namespace xerus {
 		if(!_rhs.is_dense()
 			|| _rhs.degree() != _input.degree()-_splitPos+1 
 			|| rank != _rhs.dimensions.front() 
-			|| !std::equal(_input.dimensions.begin()+_splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
+			|| !std::equal(_input.dimensions.begin()+long(_splitPos), _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
 		{
 			Tensor::DimensionTuple newDimVt;
 			newDimVt.push_back(rank);
-			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
+			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + long(_splitPos), _input.dimensions.end());
 			_rhs.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
 		
