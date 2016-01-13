@@ -130,14 +130,14 @@ namespace xerus {
 		const TTOperator &_A = *_Ap;
         LOG(ALS, "ALS("<< sites << ", " << minimumLocalResidual <<") called");
 		#ifndef DISABLE_RUNTIME_CHECKS_
-			REQUIRE(_x.is_valid_tt(), "");
-			REQUIRE(_b.is_valid_tt(), "");
+			_x.require_correct_format();
+			_b.require_correct_format();
 			REQUIRE(_x.degree() > 0, "");
 			REQUIRE(_x.dimensions == _b.dimensions, "");
 			REQUIRE(sites == 1, "DMRG and n-site-dmrg not yet implemented!"); // TODO
 			
 			if (_Ap) {
-				REQUIRE(_A.is_valid_tt(), "");
+				_A.require_correct_format();
 				REQUIRE(_A.dimensions.size() == _b.dimensions.size()*2, "");
 				for (size_t i=0; i<_x.dimensions.size(); ++i) {
 					REQUIRE(_A.dimensions[i] == _x.dimensions[i], "");
