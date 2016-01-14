@@ -23,32 +23,32 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(algorithms, cg,
-	std::mt19937_64 rnd(0xDEADBEEF);
-	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
-    
-    Index i,j,k;
-    
-    TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, rnd, dist);
-	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
-	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
-	
-// 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
-// 	B(i&0) = A(i/2,j/2) * B(j&0);
-
-	PerformanceData pdata(true);
-	GeometricCGVariant cg(GeometricCG);
-// 	cg.assumeSymmetricPositiveDefiniteOperator = true;
-	cg.retraction = ALSRetractionI;
-// 	cg.restartInterval = 20;
-	cg.convergenceEpsilon = 0;
-	
-	cg(A, X, B, pdata);
-	
-	SteepestDescentVariant alsGrad(ALSRetractionII);
-	alsGrad.printProgress = true;
-	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
-	
-	alsGrad(A, X, B);
-)
+// UNIT_TEST(algorithms, cg,
+// 	std::mt19937_64 rnd(0xDEADBEEF);
+// 	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
+//     
+//     Index i,j,k;
+//     
+//     TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, rnd, dist);
+// 	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
+// 	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
+// 	
+// // 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
+// // 	B(i&0) = A(i/2,j/2) * B(j&0);
+// 
+// 	PerformanceData pdata(true);
+// 	GeometricCGVariant cg(GeometricCG);
+// // 	cg.assumeSymmetricPositiveDefiniteOperator = true;
+// 	cg.retraction = ALSRetractionI;
+// // 	cg.restartInterval = 20;
+// 	cg.convergenceEpsilon = 0;
+// 	
+// 	cg(A, X, B, pdata);
+// 	
+// 	SteepestDescentVariant alsGrad(ALSRetractionII);
+// 	alsGrad.printProgress = true;
+// 	alsGrad.assumeSymmetricPositiveDefiniteOperator = true;
+// 	
+// 	alsGrad(A, X, B);
+// )
 

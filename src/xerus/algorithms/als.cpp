@@ -205,7 +205,6 @@ namespace xerus {
         value_t energy = 1e100;
         bool walkingRight = true;
         bool changedSmth = false;
-		bool done = false;
         size_t currIndex = optimizedRange.first;
 		size_t halfSweepCount = 0;
 		
@@ -274,6 +273,7 @@ namespace xerus {
 				}
 			} else {
 				_x.set_component(currIndex, std::move(BTilde));
+				changedSmth = true;
 			}
 			
             if (_perfData) {
@@ -287,15 +287,6 @@ namespace xerus {
 					std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
                 }
             }
-			if (done && (corePosAtTheEnd == currIndex 
-						|| (corePosAtTheEnd < optimizedRange.first && currIndex == optimizedRange.first)
-						|| (corePosAtTheEnd >= optimizedRange.second && currIndex == optimizedRange.second-1))) {
-				_x.move_core(corePosAtTheEnd);
-				if (!_perfData) {
-					energy = energy_f();
-				}
-				return energy;
-			}
             
             // Are we done with the sweep?
             if ((!walkingRight && currIndex==optimizedRange.first) 
@@ -316,8 +307,10 @@ namespace xerus {
                 if (!changedSmth || halfSweepCount == _numHalfSweeps || std::abs(lastEnergy-energy) < _convergenceEpsilon || std::abs(lastEnergy2-energy) < _convergenceEpsilon || (optimizedRange.second - optimizedRange.first<=sites)) {
                     // we are done! yay
                     LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
-					if (!cannoAtTheEnd || !preserveCorePosition || currIndex == corePosAtTheEnd) return energy;
-					done = true;
+					if (cannoAtTheEnd && preserveCorePosition) {
+						_x.move_core(corePosAtTheEnd, true);
+					}
+					return energy;
                 }
                 
                 lastEnergy2 = lastEnergy;

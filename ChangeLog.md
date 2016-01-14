@@ -2,8 +2,11 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2015-10-?? v1.4.3
+* 2016-01-14 v1.5.0
+ * Added the ADF algorithm for rank one measurements instead of point evaluations.
+ * Parallelized the ADF algorithm using openmp (note: at this point not compatible with the replacement allocator!)
  * TT::random no longer uses size_t to measure the size of the tensor and no longer exceeds maximal ranks.
+ * Fixed a bug in the ALS that caused the algorithm to always stop after one sweep if called without operator A.
 
 * 2015-10-20 v1.4.2
  * The custom allocator now enforces memory alignment even if the underlying malloc does not.
