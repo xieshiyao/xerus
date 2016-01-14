@@ -217,7 +217,7 @@ namespace xerus {
 				
 				perfData(_perfData) 
 				{
-					REQUIRE(_x.is_valid_tt(), "_x must be a valid TT-Tensor.");
+					_x.require_correct_format();
 					REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
 					REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
 				}

@@ -545,9 +545,6 @@ namespace xerus {
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
 		
-		// Sanitize maxRanks
-		TTTensor::reduce_to_maximal_ranks(maxRanks, x.dimensions);
-		
 		#pragma omp parallel sections
 		{
 			#pragma omp section
