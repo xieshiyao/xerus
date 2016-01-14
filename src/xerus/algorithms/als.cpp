@@ -309,7 +309,7 @@ namespace xerus {
                     // we are done! yay
                     LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
 					if (cannoAtTheEnd && preserveCorePosition) {
-						_x.move_core(corePosAtTheEnd);
+						_x.move_core(corePosAtTheEnd, true);
 					}
 					return energy;
                 }
