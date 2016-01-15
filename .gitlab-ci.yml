@@ -8,36 +8,27 @@ stages:
 
 job_make_gcc:
   stage: build_gcc
-  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make XerusTest"
+  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make XerusTest; cp XerusTest ../"
   when: always
-  cache:
-    paths:
-    - XerusTest
 
 job_test_gcc:
   stage: test_gcc
-  script: "./XerusTest all"
+  script: "cp ../XerusTest .; ./XerusTest all"
 
 job_make_gcc_nocheck:
   stage: build_gcc_nocheck
-  script: "g++ --version; cp .config.mk.ci.gcc.nocheck config.mk; make XerusTest"
-  cache:
-    paths:
-    - XerusTest
+  script: "g++ --version; cp .config.mk.ci.gcc.nocheck config.mk; make XerusTest; cp XerusTest ../"
 
 job_test_gcc_nocheck:
   stage: test_gcc_nocheck
-  script: "./XerusTest all"
+  script: "cp ../XerusTest .; ./XerusTest all"
 
 job_make_clang:
   stage: build_clang
-  script: "clang++ --version; cp .config.mk.ci.clang config.mk; make XerusTest"
+  script: "clang++ --version; cp .config.mk.ci.clang config.mk; make XerusTest; cp XerusTest ../"
   when: always
-  cache:
-    paths:
-    - XerusTest
 
 job_test_clang:
   stage: test_clang
-  script: "./XerusTest all"
+  script: "cp ../XerusTest .; ./XerusTest all"
 
