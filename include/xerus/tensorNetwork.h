@@ -36,7 +36,7 @@ namespace xerus {
 	class SinglePointMeasurmentSet;
 	
 	/** 
-	* @brief Very general class used to represent arbitary tensor networks.
+	* @brief Very general class used to represent arbitary tensor networks. 
 	* @details Used as a basis for tensor decompositions like the TTNetwork but also used for the lazy evaluation of Tensor contractions.
 	*/
 	class TensorNetwork {
