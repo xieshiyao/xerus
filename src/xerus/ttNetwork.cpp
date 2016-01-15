@@ -57,6 +57,7 @@ namespace xerus {
 		dimensions = std::vector<size_t>(_degree, 1);
 		
 		// ExternalLinks
+		externalLinks.reserve(_degree);
 		for (size_t i = 1; i <= numComponents; ++i) {
 			externalLinks.emplace_back(i, 1, 1, false);
 		}
@@ -71,7 +72,7 @@ namespace xerus {
 		
 		std::vector<TensorNetwork::Link> neighbors;
 		
-		neighbors.emplace_back(1,0,1,false);
+		neighbors.emplace_back(1, 0, 1,false);
 		
 		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors) );
 		
