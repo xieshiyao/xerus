@@ -1,6 +1,34 @@
+stages:
+- build_gcc
+- test_gcc
+- build_gcc_nocheck
+- test_gcc_nocheck
+- build_clang
+- test_clang
+
 job_make_gcc:
-  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make fullTest"
+  stage: build_gcc
+  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make XerusTest; cp XerusTest ../"
+  when: always
+
+job_test_gcc:
+  stage: test_gcc
+  script: "cp ../XerusTest .; ./XerusTest all"
+
+job_make_gcc_nocheck:
+  stage: build_gcc_nocheck
+  script: "g++ --version; cp .config.mk.ci.gcc.nocheck config.mk; make XerusTest; cp XerusTest ../"
+
+job_test_gcc_nocheck:
+  stage: test_gcc_nocheck
+  script: "cp ../XerusTest .; ./XerusTest all"
 
 job_make_clang:
-  script: "clang++ --version; cp .config.mk.ci.clang config.mk; make fullTest"
+  stage: build_clang
+  script: "clang++ --version; cp .config.mk.ci.clang config.mk; make XerusTest; cp XerusTest ../"
+  when: always
+
+job_test_clang:
+  stage: test_clang
+  script: "cp ../XerusTest .; ./XerusTest all"
 
