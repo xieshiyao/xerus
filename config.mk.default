@@ -23,7 +23,7 @@ HIGH_OPTIMIZATION = TRUE          # Activates -O3 -march=native and some others
 COMPILE_THREADS = 8					# Number of threads to use during link time optimization.
 
 # Some parts of xerus can use parallelization. This can be aktivated by using openMP
-OTHER += -fopenmp
+# OTHER += -fopenmp
 
 #=================================================================================================
 # Debug and Logging   
