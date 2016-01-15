@@ -1,13 +1,6 @@
-stages:
-- test
-- cleanup
+job_make_gcc:
+  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make fullTest"
 
-job_make_test:
-  stage: test
-  script: "cp config.mk.default config.mk; make fullTest"
-
-job_make_clean:
-  stage: cleanup
-  when: always
-  script: "make clean; rm config.mk"
+job_make_clang:
+  script: "clang++ --version; cp .config.mk.ci.clang config.mk; make fullTest"
 
