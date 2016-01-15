@@ -5,7 +5,7 @@
 ifdef USE_CLANG
 	CXX = clang++
 else
-	CXX = g++-4.9.3
+	CXX = g++
 endif
 
 
