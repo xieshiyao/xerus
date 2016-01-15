@@ -163,13 +163,15 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Higher functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	IndexedTensorMoveable<Tensor> operator/ (IndexedTensorReadOnly<Tensor>&& _b, IndexedTensorReadOnly<Tensor>&& _A);
-
+	
+	
 	void solve(IndexedTensorWritable<Tensor>&& _x, IndexedTensorReadOnly<Tensor>&& _A, IndexedTensorReadOnly<Tensor>&& _b);
 	
 	
 	///@brief Returns the frobenious norm of the associated tensorObejct.
 	template<class tensor_type>
 	value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
+	
 	
 	size_t get_eval_degree(const std::vector<Index>& _indices);
 }
