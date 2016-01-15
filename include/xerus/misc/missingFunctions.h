@@ -369,6 +369,12 @@ namespace xerus {
 
 namespace std {
 	
+	///@brief Add a + operator for iterators and size_t to avoid signed/unsigned errors
+	template<class IteratorType, typename std::enable_if<std::is_same<typename std::iterator_traits<IteratorType>::difference_type, long>::value, bool>::type = true>
+	IteratorType operator+(const IteratorType& _iterator, const size_t _add) {
+		return _iterator + typename std::iterator_traits<IteratorType>::difference_type(_add);
+	}
+	
 	///@brief: Concatenates two given cointainers.
 	template<template<class, class...> class container_t, class item_t, class... rest_t>
 	container_t<item_t, rest_t...> operator |(const container_t<item_t, rest_t...> & _left, const container_t<item_t, rest_t...> & _right) {
