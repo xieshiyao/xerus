@@ -1,0 +1,20 @@
+stages:
+	- init
+	- test
+	- cleanup
+
+job_create_config:
+	stage: init
+	script: "cp config.mk.default config.mk"
+
+job_make_test:
+	stage: test
+	script: "make fullTest"
+
+job_make_clean:
+	stage: cleanup
+	when: always
+	script: 
+		- make clean
+		- rm config.mk
+
