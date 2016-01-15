@@ -31,6 +31,7 @@
 #include "indexedTensor_tensor_factorisations.h"
 #include "tensor.h"
 #include "tensorNetwork.h"
+#include "indexedTensor.h"
 #include "indexedTensorMoveable.h"
 #include "indexedTensorList.h"
 
