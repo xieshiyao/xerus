@@ -18,9 +18,9 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Implementation of the TTNetwork class (and thus TTTensor and TTOperator).
- */
+* @file
+* @brief Implementation of the TTNetwork class (and thus TTTensor and TTOperator).
+*/
 
 #include <xerus/ttNetwork.h>
 
@@ -31,7 +31,7 @@
 #include <xerus/ttStack.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensorMoveable.h>
- 
+
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/misc/performanceAnalysis.h>
@@ -91,17 +91,17 @@ namespace xerus {
 	}
 	
 	
-    template<bool isOperator>
-    TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
-        TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
+		TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
 	
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const xerus::Tensor& _tensor, const double _eps, const xerus::TensorNetwork::RankTuple& _maxRanks): TTNetwork(_tensor.degree()) {
-        const size_t numComponents = degree()/N;
-        
+		const size_t numComponents = degree()/N;
+		
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
-        REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
-            << (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
+		REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
+			<< (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
 
 		IF_CHECK(
 			for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
@@ -264,102 +264,6 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-	template<bool isOperator>
-	void TTNetwork<isOperator>::contract_stack(IndexedTensorWritable<TensorNetwork>&& _me) {
-		_me.tensorObject->require_valid_network();
-		const size_t numComponents = _me.degree()/N;
-		const size_t numNodes = _me.degree()/N+2;
-		std::set<size_t> toContract;
-		for (size_t currentNode=0; currentNode < numNodes; ++currentNode) {
-			toContract.clear();
-			for (size_t i=currentNode; i<_me.tensorObject->nodes.size(); i+=numNodes) {
-				toContract.insert(i);
-			}
-			_me.tensorObject->contract(toContract);
-		}
-		// all are contracted, reshuffle them to be in the correct order
-		// after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction)
-		// so modulus gives the correct wanted id
-		_me.tensorObject->reshuffle_nodes([numNodes](size_t i){return i%(numNodes);});
-		REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
-		IF_CHECK(_me.tensorObject->require_valid_network();)
-		
-		// reset to new external links
-		_me.tensorObject->externalLinks.clear();
-		for(size_t i = 0; i < numComponents; ++i) {
-			_me.tensorObject->externalLinks.emplace_back(i+1, 1, _me.tensorObject->dimensions[i], false);
-		}
-		if(N == 2) {
-			for(size_t i = 0; i < numComponents; ++i) {
-				_me.tensorObject->externalLinks.emplace_back(i+1, 2, _me.tensorObject->dimensions[numComponents+i], false);
-			}
-		}
-		
-		// ensure right amount and order of links
-		Index ext[N];
-		size_t lastRank, externalDim[N], newRank=1;
-		std::vector<Index> lastIndices, lastRight;
-		std::vector<Index> oldIndices, newRight; // newLeft == lastRight
-		std::vector<Index> newIndices;
-		std::vector<size_t> newDimensions;
-		_me.tensorObject->nodes.front().neighbors = std::vector<TensorNetwork::Link>({TensorNetwork::Link(1,0,1,false)});
-		_me.tensorObject->nodes.front().tensorObject->reinterpret_dimensions({1});
-		_me.tensorObject->nodes.back().neighbors = std::vector<TensorNetwork::Link>({TensorNetwork::Link(numComponents,N+1,1,false)});
-		_me.tensorObject->nodes.back().tensorObject->reinterpret_dimensions({1});
-		for (size_t i=0; i<numComponents; ++i) {
-			lastIndices = std::move(oldIndices); oldIndices.clear();
-			lastRight = std::move(newRight); newRight.clear();
-			lastRank = newRank; newRank=1;
-			TensorNode &n = _me.tensorObject->nodes[i+1];
-			for (TensorNetwork::Link &l : n.neighbors) {
-				if (l.external) {
-					size_t externalNumber = 0;
-					if (isOperator) {
-						externalNumber = l.indexPosition>=numComponents?1:0;
-					}
-					oldIndices.push_back(ext[externalNumber]);
-					externalDim[externalNumber] = l.dimension;
-				} else if (l.links(i)) {
-					if (i==0) {
-						lastRight.emplace_back();
-						oldIndices.push_back(lastRight.back());
-					} else {
-						REQUIRE(lastIndices.size() > l.indexPosition, "ie " << i << " " << lastIndices.size() << " " << l.indexPosition);
-						oldIndices.push_back(lastIndices[l.indexPosition]);
-					}
-				} else if (l.links(i+2)) {
-					oldIndices.emplace_back();
-					newRight.push_back(oldIndices.back());
-					newRank *= l.dimension;
-				} else  {
-					LOG(fatal, "Internal Error.");
-				}
-			}
-			newIndices = std::move(lastRight);
-			newIndices.insert(newIndices.end(), ext, ext+N);
-			newIndices.insert(newIndices.end(), newRight.begin(), newRight.end());
-			
-			(*n.tensorObject)(newIndices) = (*n.tensorObject)(oldIndices);
-			
-			newDimensions.clear();
-			n.neighbors.clear();
-			n.neighbors.emplace_back(i, i==0?0:N+1,lastRank, false);
-			newDimensions.push_back(lastRank);
-			for (size_t j=0; j<N; ++j) {
-				REQUIRE(_me.tensorObject->dimensions[i+j*numComponents] == externalDim[j], "Internal Error.");
-				n.neighbors.emplace_back(0,i+j*numComponents,externalDim[j], true);
-				newDimensions.push_back(externalDim[j]);
-			}
-			n.neighbors.emplace_back(i+2,0,newRank, false);
-			newDimensions.push_back(newRank);
-			n.tensorObject->reinterpret_dimensions(newDimensions);
-		}
-		
-		// NOTE core position according to information in TTStack is set in evaluation
-		
-		_me.tensorObject->require_correct_format();
-	}
 	
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		template<bool isOperator>
@@ -750,7 +654,7 @@ namespace xerus {
 								for (size_t s2 = 0; s2 <= s1; ++s2) {
 									newComponent[newPos++] = (s1 == s2 ? 1.0 : 2.0) * currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
 								}
- 							}
+							}
 						}
 					}
 				}
@@ -1457,8 +1361,8 @@ namespace xerus {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
 						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-										 myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
-										 myComponent.dimensions.back());
+										myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
+										myComponent.dimensions.back());
 					}
 				}
 			}
@@ -1481,8 +1385,8 @@ namespace xerus {
 					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
 						// RightIdx can be copied as one piece
 						misc::array_copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-										 otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
-										 otherComponent.dimensions.back());
+										otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
+										otherComponent.dimensions.back());
 					}
 				}
 			}
@@ -1520,7 +1424,7 @@ namespace xerus {
 		IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<IndexedTensorMoveable<TensorNetwork> *>(&_other);
 		if (otherTTStack) {
 			REQUIRE(movOther, "not moveable TTStack encountered...");
-			contract_stack(std::move(*movOther));
+			internal::TTStack<isOperator>::contract_stack(std::move(*movOther));
 		}
 		if(otherTTN || otherTTStack) {
 			// Check whether the index order coincides

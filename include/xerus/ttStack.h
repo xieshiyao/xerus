@@ -24,15 +24,10 @@
 
 #pragma once
 
-#include "misc/missingFunctions.h"
 #include "misc/check.h"
 
-#include "index.h"
-#include "indexedTensor_tensor_factorisations.h"
-#include "tensor.h"
 #include "tensorNetwork.h"
 #include "indexedTensorMoveable.h"
-#include "indexedTensorList.h"
 
 namespace xerus {
 	namespace internal {
@@ -40,49 +35,41 @@ namespace xerus {
 		///@brief Internal class used to represent stacks of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
 		class TTStack final : public TensorNetwork {
 		public:
+			///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
+			static constexpr const size_t N = isOperator?2:1;
+		
 			const bool cannonicalization_required;
 			
 			const size_t futureCorePosition;
 			
 			explicit TTStack(const bool _canno, const size_t _corePos = 0) : cannonicalization_required(_canno), futureCorePosition(_corePos) {};
 			
-			virtual void operator*=(const value_t _factor) override {
-				REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
-				
-				if(cannonicalization_required) {
-					*nodes[futureCorePosition+1].tensorObject *= _factor;
-				} else if(degree() > 0) {
-					*nodes[1].tensorObject *= _factor;
-				} else {
-					*nodes[0].tensorObject *= _factor;
-				}
-			}
+			TTStack(const TTStack&  _other) = default;
 			
-			virtual void operator/=(const value_t _divisor) override {
-				operator*=(1/_divisor);
-			}
+			TTStack(      TTStack&& _other) = default;
+			
+			virtual TensorNetwork* get_copy() const override;
+			
+			TTStack& operator= (const TTStack&  _other) = delete;
+			
+			TTStack& operator= (      TTStack&& _other) = delete;
+			
+			virtual void operator*=(const value_t _factor) override;
+			
+			virtual void operator/=(const value_t _divisor) override;
+			
 			
 			/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-			virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me _unused_ , IndexedTensorReadOnly<TensorNetwork>&& _other _unused_) override {
-				LOG(fatal, "TTStack not supported as a storing type");
-			}
-			virtual bool specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
-				return TTNetwork<isOperator>::specialized_contraction_f(_out, std::move(_me), std::move(_other));
-			}
-			virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
-				return TTNetwork<isOperator>::specialized_sum_f(_out, std::move(_me), std::move(_other));
-			}
+			virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me _unused_ , IndexedTensorReadOnly<TensorNetwork>&& _other _unused_) override;
 			
-			virtual TensorNetwork* get_copy() const override {
-				return new TTStack(*this);
-			}
+			virtual bool specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override;
 			
-			virtual value_t frob_norm() const override {
-				Index i;
-				TTNetwork<isOperator> tmp(this->degree());
-				tmp(i&0) = (*this)(i&0);
-				return tmp.frob_norm();
-			}
+			virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override;
+			
+			
+			static void contract_stack(IndexedTensorWritable<TensorNetwork>&& _me);
+			
+			virtual value_t frob_norm() const override;
 		};
 	}
 }

@@ -3,8 +3,6 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-
-
 UNIT_TEST(Tutorials, quick_start,
 	xerus::Tensor A({512,512}, [](const std::vector<size_t> &idx){
 		if (idx[0] == idx[1]) {
@@ -22,7 +20,6 @@ UNIT_TEST(Tutorials, quick_start,
 	xerus::TTOperator ttA(A);
 	
 // 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
-// 	TEST(ttA.ranks()
 	
 	xerus::Tensor b({512}, []() {
 		return 1.0;
@@ -40,12 +37,12 @@ UNIT_TEST(Tutorials, quick_start,
 	xerus::Index i,j,k;
 	
 	double residual = frob_norm( ttA(i^9,j^9)*ttx(j^9) - ttb(i^9) );
-	TEST(residual < 1e-9);
+	MTEST(residual < 2e-9, residual);
 // 	std::cout << "residual: " << residual << std::endl;
 	
 	xerus::Tensor x;
 	x(j^9) = b(i^9) / A(i^9, j^9);
-	TEST(frob_norm(x(i&0) - ttx(i&0)) < 1e-9);
+	MTEST(frob_norm(x(i&0) - ttx(i&0)) < 2e-9, frob_norm(x(i&0) - ttx(i&0)));
 // 	std::cout << Tensor(ttx).to_string() << std::endl;
 // 	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
 )

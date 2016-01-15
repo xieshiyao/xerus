@@ -224,10 +224,6 @@ namespace xerus {
 		static void construct_train_from_full(TensorNetwork& _out, const Tensor& _A, const double _eps);
 		
 		
-		///@brief TODO
-		static void contract_stack(IndexedTensorWritable<TensorNetwork>&& _me);
-		
-		
 		/** 
 		 * @brief Tests whether any rank exceeds the theoretic maximal value it should have.
 		 * @details Does not check for the actual minimal rank for this tensor. But if any rank exceeds the theoretic maximum it is guaranteed not to be the minimal rank.
