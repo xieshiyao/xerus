@@ -4,14 +4,10 @@ stages:
 
 job_make_test:
   stage: test
-  script: 
-  - cp config.mk.default config.mk
-  - make fullTest
+  script: "cp config.mk.default config.mk; make fullTest"
 
 job_make_clean:
   stage: cleanup
   when: always
-  script: 
-  - make clean
-  - rm config.mk
+  script: "make clean; rm config.mk"
 
