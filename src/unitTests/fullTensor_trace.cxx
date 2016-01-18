@@ -33,12 +33,14 @@ UNIT_TEST(Tensor, Traces,
     
     Index i, j, k;
     
+	TEST(A.is_sparse());
     A[{0,0}] = 1;
     A[{0,1}] = 2;
     A[{1,0}] = 4;
     A[{1,1}] = 8;
+	TEST(!A.is_sparse());
     
-    
+    TEST(B.is_sparse());
     B[{0,0,0}] = 1;
     B[{0,0,1}] = 2;
     B[{0,1,0}] = 4;
@@ -47,6 +49,7 @@ UNIT_TEST(Tensor, Traces,
     B[{1,0,1}] = 32;
     B[{1,1,0}] = 64;
     B[{1,1,1}] = 128;
+	TEST(!B.is_sparse());
     
     C[{0,0,0,0}] = 1;
     C[{0,0,0,1}] = 2;
@@ -76,30 +79,30 @@ UNIT_TEST(Tensor, Traces,
     MTEST(approx_entrywise_equal(res2, {9, 144}), res2.to_string());
     
     res3(j,k) = C(i,i,j,k);
-    MTEST(approx_entrywise_equal(res3, {4097, 8194, 16388, 32776}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {4097, 8194, 16388, 32776}), res3.to_string());
     res3(j,k) = C(i,j,i,k);
-    MTEST(approx_entrywise_equal(res3, {1025, 2050, 16400, 32800}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {1025, 2050, 16400, 32800}), res3.to_string());
     res3(j,k) = C(i,j,k,i);
-    MTEST(approx_entrywise_equal(res3, {513, 2052, 8208, 32832}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {513, 2052, 8208, 32832}), res3.to_string());
     res3(j,k) = C(j,i,i,k);
-    MTEST(approx_entrywise_equal(res3, {65, 130, 16640, 33280}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {65, 130, 16640, 33280}), res3.to_string());
     res3(j,k) = C(j,i,k,i);
-    MTEST(approx_entrywise_equal(res3, {33, 132, 8448, 33792}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {33, 132, 8448, 33792}), res3.to_string());
     res3(j,k) = C(j,k,i,i);
-    MTEST(approx_entrywise_equal(res3, {9, 144, 2304, 36864}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {9, 144, 2304, 36864}), res3.to_string());
     
     res3(k,j) = C(i,i,j,k);
-    MTEST(approx_entrywise_equal(res3, {4097, 16388, 8194, 32776}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {4097, 16388, 8194, 32776}), res3.to_string());
     res3(k,j) = C(i,j,i,k);
-    MTEST(approx_entrywise_equal(res3, {1025, 16400, 2050, 32800}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {1025, 16400, 2050, 32800}), res3.to_string());
     res3(k,j) = C(i,j,k,i);
-    MTEST(approx_entrywise_equal(res3, {513, 8208, 2052, 32832}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {513, 8208, 2052, 32832}), res3.to_string());
     res3(k,j) = C(j,i,i,k);
-    MTEST(approx_entrywise_equal(res3, {65, 16640, 130, 33280}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {65, 16640, 130, 33280}), res3.to_string());
     res3(k,j) = C(j,i,k,i);
-    MTEST(approx_entrywise_equal(res3, {33, 8448, 132, 33792}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {33, 8448, 132, 33792}), res3.to_string());
     res3(k,j) = C(j,k,i,i);
-    MTEST(approx_entrywise_equal(res3, {9, 2304, 144, 36864}), res2.to_string());
+    MTEST(approx_entrywise_equal(res3, {9, 2304, 144, 36864}), res3.to_string());
     
     res2(k) = C(0,k,i,i);
     MTEST(approx_entrywise_equal(res2, {9, 144}), res2.to_string());
@@ -111,9 +114,9 @@ UNIT_TEST(Tensor, Traces,
     MTEST(approx_entrywise_equal(res2, {144, 36864}), res2.to_string());
     
     res1() = C(i,i,j,j);
-    MTEST(approx_entrywise_equal(res1, {1+8+4096+32768}), res2.to_string());
+    MTEST(approx_entrywise_equal(res1, {1+8+4096+32768}), res1.to_string());
     res1() = C(i,j,i,j);
-    MTEST(approx_entrywise_equal(res1, {1+32+1024+32768}), res2.to_string());
+    MTEST(approx_entrywise_equal(res1, {1+32+1024+32768}), res1.to_string());
     res1() = C(i,j,j,i);
-    MTEST(approx_entrywise_equal(res1, {1+64+512+32768}), res2.to_string());
+    MTEST(approx_entrywise_equal(res1, {1+64+512+32768}), res1.to_string());
 )

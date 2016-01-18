@@ -11,7 +11,6 @@ TEST_NAME = XerusTest
 
 # xerus version from VERSION file
 XERUS_VERSION = $(shell git describe --tags --always)
-XERUS_VERSION := $(XERUS_VERSION)-M$(shell git diff --shortstat | cut -c1-2 | xargs)
 DEBUG += -D XERUS_VERSION="$(XERUS_VERSION)"
 
 # ------------------------------------------------------------------------------------------------------
