@@ -95,7 +95,7 @@ UNIT_TEST2(Tensor, Constructors) {
 		MTEST(tensors[i].size == misc::product(tensors[i].dimensions), i);
 		
 		// Test representation
-		if((i/2)%2 == 0 || i >= 32) {
+		if ((i>=2 && (i/2)%2 == 0) || i >= 32) {
 			MTEST(tensors[i].is_dense() && !tensors[i].is_sparse(), i);
 		} else {
 			MTEST(!tensors[i].is_dense() && tensors[i].is_sparse(), i);
@@ -144,7 +144,7 @@ UNIT_TEST2(Tensor, Constructors) {
 UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	Tensor n({3,3,3,3});
 	MTEST(frob_norm(n) < 1e-20, "This should be a sparse tensor with no entries, so frob norm exactly = 0!");
-	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor"); //TODO Should it?
+	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor");
 	
 	std::vector<Tensor> columns;
 	for (size_t i=0; i<10; ++i) {

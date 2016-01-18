@@ -33,7 +33,7 @@
 	namespace xm = xerus::misc;
 
 	thread_local xerus::misc::AllocatorStorage xm::astore;
-	static bool programIsRunning = true;
+	thread_local bool programIsRunning = true;
 
 	xerus::misc::AllocatorStorage::AllocatorStorage() {
 		for (unsigned long i=0; i<xma::NUM_BUCKETS; ++i) {

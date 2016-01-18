@@ -26,7 +26,7 @@ using namespace xerus;
 
 
 UNIT_TEST(Algorithm, adf_inverse_index_ratios,
-	const size_t D = 10;
+	const size_t D = 6;
 	const size_t N = 10;
 	const size_t R = 3;
 	const size_t CS = 3;
@@ -86,7 +86,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	}
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
-	MTEST(ctrValue < 1e-2, ctrValue);
+	MTEST(ctrValue < 2e-2, ctrValue);
 
 	
 	perfData.reset();
@@ -100,7 +100,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	}
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
-	MTEST(ctrValue < 1e-2, ctrValue);
+	MTEST(ctrValue < 2e-2, ctrValue);
 )
 
 

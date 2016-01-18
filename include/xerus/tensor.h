@@ -72,7 +72,7 @@ namespace xerus {
 		value_t factor = 1.0;
 		
 		/// @brief The current representation of the Tensor (i.e Dense or Sparse)
-		Representation representation = Representation::Dense;
+		Representation representation = Representation::Sparse;
 		
 	private:
 		/** 
@@ -93,7 +93,7 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/// @brief Constructs an order zero Tensor with the given inital representation
-		explicit Tensor(const Representation _representation = Representation::Dense);
+		explicit Tensor(const Representation _representation = Representation::Sparse);
 		
 		/// @brief Tensors are copy constructable.
 		implicit Tensor( const Tensor& _other ) = default;
@@ -104,7 +104,7 @@ namespace xerus {
 		 * @param _representation (optional) the initial representation of the tensor.
 		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const Representation _representation = Representation::Dense, const Initialisation _init = Initialisation::Zero);
+		explicit Tensor(const DimensionTuple& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
@@ -112,7 +112,7 @@ namespace xerus {
 		 * @param _representation (optional) the initial representation of the tensor.
 		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(      DimensionTuple&& _dimensions, const Representation _representation = Representation::Dense, const Initialisation _init = Initialisation::Zero);
+		explicit Tensor(      DimensionTuple&& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
@@ -121,7 +121,7 @@ namespace xerus {
 		 */
 		template<ADD_MOVE(Vec, DimensionTuple), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
-		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Sparse), denseData(std::forward<SPtr>(_data)) { }
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
