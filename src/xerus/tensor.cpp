@@ -32,6 +32,8 @@
 #include <xerus/sparseTimesFullContraction.h>
 
 namespace xerus {
+	size_t Tensor::sparsityFactor = 4;
+	
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
@@ -316,7 +318,13 @@ namespace xerus {
 		if(is_dense()) {
 			return denseData.get()[_position];
 		} else {
-			return (*sparseData)[_position];
+			value_t& result = (*sparseData)[_position];
+			use_dense_representation_if_desirable();
+			if (is_dense()) {
+				return denseData.get()[_position];
+			} else {
+				return result;
+			}
 		}
 	}
 
@@ -352,7 +360,13 @@ namespace xerus {
 		if(is_dense()) {
 			return denseData.get()[_position];
 		} else {
-			return (*sparseData)[_position];
+			value_t& result = (*sparseData)[_position];
+			use_dense_representation_if_desirable();
+			if (is_dense()) {
+				return denseData.get()[_position];
+			} else {
+				return result;
+			}
 		}
 	}
 	
@@ -881,6 +895,12 @@ namespace xerus {
 		}
 	}
 	
+	void Tensor::use_dense_representation_if_desirable() {
+		if (is_sparse() && sparsity() * sparsityFactor >= size) {
+			use_dense_representation();
+		}
+	}
+	
 	void Tensor::use_sparse_representation(const value_t _eps) {
 		if(is_dense()) {
 			sparseData.reset(new std::map<size_t, value_t>());
@@ -941,6 +961,7 @@ namespace xerus {
 			} else {
 				_me.ensure_own_data_and_apply_factor();
 				add_sparse_to_sparse(_me.sparseData, sign*_other.factor, _other.sparseData);
+				_me.use_dense_representation_if_desirable();
 			}
 		}
 	}
@@ -1088,7 +1109,7 @@ namespace xerus {
 		const size_t sparsityExpectation = size_t(double(finalSize)*(1.0 - misc::pow(1.0 - double(_lhs.sparsity()*_rhs.sparsity())/(double(_lhs.size)*double(_rhs.size)), midDim)));
 		REQUIRE(sparsityExpectation <= std::min(leftDim*_rhs.sparsity(), rightDim*_lhs.sparsity()), "IE");
 		// TODO allow Sparse*sparse --> Full
-		const bool sparseResult = (_lhs.is_sparse() && _rhs.is_sparse()) || (finalSize > 64 && 25*sparsityExpectation < finalSize) ;
+		const bool sparseResult = (_lhs.is_sparse() && _rhs.is_sparse()) || (finalSize > 64 && Tensor::sparsityFactor*sparsityExpectation < finalSize*2) ;
 		const Tensor::Representation resultRepresentation = sparseResult ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 		
 		
@@ -1156,12 +1177,13 @@ namespace xerus {
 			}
 		}
 		
+		if (sparseResult) {
+			usedResult->use_dense_representation_if_desirable();
+		}
 		
 		if(tmpResult) {
 			_result = std::move(*tmpResult);
 		}
-		
-		// TODO test for sparsity
 	}
 	
 	_inline_ std::tuple<size_t, size_t, size_t> prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos) {

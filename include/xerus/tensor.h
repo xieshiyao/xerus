@@ -38,6 +38,8 @@ namespace xerus {
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor final {
 	public:
+		static size_t sparsityFactor; // NOTE not const so that users can modify this value!
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Auxiliary types- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		/** 
@@ -672,12 +674,18 @@ namespace xerus {
 		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
 		/** 
-		 * @brief Makes the Tensor use a dense representation.
+		 * @brief Converts the Tensor to a dense representation.
 		 */
 		void use_dense_representation();
 		
 		/** 
-		 * @brief Makes the Tensor use a sparse representation.
+		 * @brief Converts the Tensor to a dense representation if sparsity * sparsityFactor >= size
+		 */
+		void use_dense_representation_if_desirable();
+		
+		
+		/** 
+		 * @brief Converts the Tensor to a sparse representation.
 		 */
 		void use_sparse_representation(const value_t _eps = std::numeric_limits<value_t>::epsilon());
 		
@@ -685,6 +693,7 @@ namespace xerus {
 		
 		/** 
 		 * @brief Creates a string representation of the Tensor.
+		 * @note the mapping is not unique and can thus not be used to recreate the original tensor
 		 * @return the string representation. 
 		 */
 		std::string to_string() const;
