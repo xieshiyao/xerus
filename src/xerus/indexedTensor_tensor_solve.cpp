@@ -41,7 +41,7 @@ namespace xerus {
 		
         IF_CHECK( _x.check_indices(false); )
         
-        REQUIRE(!_x.tensorObjectReadOnly->is_sparse() && !_b.tensorObjectReadOnly->is_sparse(), "At the moment we only allow Tensors in solve.");
+        REQUIRE(!_x.tensorObjectReadOnly->is_sparse() && !_b.tensorObjectReadOnly->is_sparse(), "At the moment we only allow dense Tensors in solve.");
         #ifdef _CHECK
             for(size_t i = 0; i < bAssIndices.numIndices; ++i) {
                 REQUIRE(!bAssIndices.indexOpen[i] || contains(AAssIndices.indices, bAssIndices.indices[i]), "Every open index of b must be contained in A.");

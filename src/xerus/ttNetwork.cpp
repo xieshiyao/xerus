@@ -588,15 +588,17 @@ namespace xerus {
 			const Tensor& componentA = _A.get_component(i);
 			const Tensor& componentB = _B.get_component(i);
 			size_t externalDim;
+			Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+			REQUIRE(newRep == Tensor::Representation::Dense, "entrywise product of sparse TT not yet implemented!");
 			if (isOperator) {
 				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], componentA.dimensions[2], 
-											componentA.dimensions.back()*componentB.dimensions.back()   }));
+											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
 				externalDim = componentA.dimensions[1] * componentA.dimensions[2];
 			} else {
 				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], 
-											componentA.dimensions.back()*componentB.dimensions.back()   }));
+											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
 				externalDim = componentA.dimensions[1];
 			}
 			size_t offsetA = 0, offsetB = 0, offsetResult = 0;
@@ -669,9 +671,12 @@ namespace xerus {
 				const size_t newLeftRank = currComp.dimensions.front()*currComp.dimensions.front();
 				const size_t newRightRank = currComp.dimensions.back()*currComp.dimensions.back();
 				
+				Tensor::Representation newRep = currComp.representation;
+				REQUIRE(newRep == Tensor::Representation::Dense, "entrywise product of sparse TT not yet implemented!");
+				
 				Tensor newComponent(isOperator ? 
 					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), Tensor::Representation::Dense, Tensor::Initialisation::None );
+					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), newRep, Tensor::Initialisation::None );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
 				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
@@ -1333,7 +1338,9 @@ namespace xerus {
 				nxtDimensions.emplace_back(myComponent.dimensions.back()+otherComponent.dimensions.back());
 			}
 			
-			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions)) );
+			Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+			REQUIRE(newRep == Tensor::Representation::Dense, "Sparse TT sum not yet implemented!");
+			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep) );
 			value_t * const componentData = static_cast<Tensor*>(newComponent.get())->get_unsanitized_dense_data();
 			
 			

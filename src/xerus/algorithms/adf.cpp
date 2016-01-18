@@ -360,7 +360,7 @@ namespace xerus {
 			
 		#pragma omp parallel
 		{
-			Tensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank});
+			Tensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank}, Tensor::Representation::Dense);
 			
 			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]); // TODO Not needed if SinglePointMeasurmentSet
 			

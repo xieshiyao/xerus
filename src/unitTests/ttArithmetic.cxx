@@ -332,12 +332,13 @@ UNIT_TEST(TT, ax_b,
 			return 0.0;
 		}
 	});
-    
+	
 	TTOperator A(I);
 	TTTensor T;
 	TTTensor S;
     
 	Index i,j,k;
+	
 	
 	T(i^3) = A(i^3, j^3) * X(j^3);
 	T(i^3) = T(i^3) - B(i^3);

@@ -235,8 +235,6 @@ namespace xerus {
 		IndexedTensor<Tensor>& Q = *_output[0];
 		IndexedTensor<Tensor>& C = *_output[1];
 		
-		REQUIRE(!Q.tensorObject->is_sparse() && !C.tensorObject->is_sparse(), "Q and C have to be Tensors, as they are definitely not sparse.");
-		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
 		
