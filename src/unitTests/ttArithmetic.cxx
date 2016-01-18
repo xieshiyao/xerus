@@ -225,11 +225,12 @@ UNIT_TEST(TT, product,
 	Tensor D(ttD);
 	
 	Tensor C;
+	TTTensor ttCt;
 	TTOperator ttC;
 	
 	C(i^2) = A(i^2,j^2) * D(j^2);
-	ttC(i^2) = ttA(i^2,j^2) * ttD(j^2);
-	double fnorm = frob_norm(Tensor(ttC)(i&0) - C(i&0));
+	ttCt(i^2) = ttA(i^2,j^2) * ttD(j^2);
+	double fnorm = frob_norm(Tensor(ttCt)(i&0) - C(i&0));
 	LOG(unit_tests, "frob_norm " << fnorm);
 	TEST(fnorm < 10*10*10*10*1e-15);
 	

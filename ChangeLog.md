@@ -3,7 +3,6 @@
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
 * 2016-01-?? v2.0
- * ! Changed language standard to C++14, thereby dropping support for GCC < 4.8.
  * ! Merged FullTensor and SparseTensor into a single Tensor class.
  * Implemented several FullTensor functions also for sparse representations (modify(_diag)_elements, fix_slate, resize_dimension,...)
  * ! Removed all support for stored IndexedTensor*s.

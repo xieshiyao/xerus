@@ -1,11 +1,13 @@
-# Sets: CXX, LOCAL_HEADERS, LOCAL_HPP, TEST_HXX
+# Sets: CXX, CALLSTACK_LIBS, LOCAL_HEADERS, LOCAL_HPP, TEST_HXX
 # Uses: USE_CLANG, 
 
 # Set Compiler used
-ifdef USE_CLANG
-	CXX = clang++
-else
-	CXX = g++
+ifndef CXX
+	ifdef USE_CLANG
+		CXX = clang++
+	else
+		CXX = g++
+	endif
 endif
 
 
