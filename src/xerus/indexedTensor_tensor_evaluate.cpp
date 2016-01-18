@@ -134,15 +134,7 @@ namespace xerus {
 		}
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	
 	/** 
 	 * "increases" the imaginary indices that lead to the current pointer position of oldPosition to match the index i
@@ -337,7 +329,6 @@ namespace xerus {
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
 			REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
-			REQUIRE(!_out.tensorObjectReadOnly->is_sparse() || _base.tensorObjectReadOnly->is_sparse(), "Evaluation of Tensor to SparseTensor not implemented and probably not useful.");
 			
 			// Check base indices
 			for(size_t i = 0; i < _base.indices.size(); ++i) {

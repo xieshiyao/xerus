@@ -147,7 +147,6 @@ namespace xerus {
 		IndexedTensor<Tensor>& Vt = *_output[2];
 		
 		IF_CHECK(S.check_indices(2, false));
-		REQUIRE(!U.tensorObject->is_sparse() && !Vt.tensorObject->is_sparse(), "U and Vt have to be Tensors, as they are defenitely not sparse.");
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
 		REQUIRE(maxRank > 0, "maxRank must be larger than zero.");
 		

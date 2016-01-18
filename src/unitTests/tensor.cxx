@@ -143,40 +143,71 @@ UNIT_TEST2(Tensor, Constructors) {
 
 UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	Tensor n({3,3,3,3});
+	const size_t dim = 100;
 	MTEST(frob_norm(n) < 1e-20, "This should be a sparse tensor with no entries, so frob norm exactly = 0!");
 	MTEST(n.representation == Tensor::Representation::Sparse, "0-Tensor should be stored as sparse tensor");
 	
 	std::vector<Tensor> columns;
-	for (size_t i=0; i<10; ++i) {
-		columns.emplace_back(std::vector<size_t>({10,10}), 10, [&](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n*10+i, 1.0); });
+	for (size_t i=0; i<dim; ++i) {
+		columns.emplace_back(std::vector<size_t>({dim,dim}), dim, [&](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n*dim+i, 1.0); });
 		MTEST(columns.back().representation == Tensor::Representation::Sparse, "sparse constructor should construct sparse tensor");
 	}
 	
-	Index i1,i2,i3;
-	Tensor res({10,10}, Tensor::Representation::Sparse);
+	Index i1,i2,i3,i4,i5;
+	Tensor res({dim,dim}, Tensor::Representation::Sparse);
 	
 	res({i1,i3}) = columns[0](i1,i2) * columns[0](i3,i2);
-	MTEST(frob_norm(res - Tensor::ones({10,10})) < 1e-14, "dyadic product should result in ones tensor");
+	MTEST(frob_norm(res - Tensor::ones({dim,dim})) < 1e-14, "dyadic product should result in ones tensor");
 	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
 	
-	res = Tensor({10,10}, Tensor::Representation::Dense);
+	res = Tensor({dim,dim}, Tensor::Representation::Dense);
 	res({i1,i3}) = columns[1](i1,i2) * columns[0](i3,i2);
 	MTEST(frob_norm(res) < 1e-20, "this should be a sparse tensor with no entries, so frob norm exactly = 0!");
 	MTEST(res.representation == Tensor::Representation::Sparse, "this should be a sparse tensor with no entries");
 	
-	res = Tensor({10,10}, Tensor::Representation::Sparse);
-	for (size_t i=0; i<10; ++i) {
+	res = Tensor({dim,dim}, Tensor::Representation::Sparse);
+	for (size_t i=0; i<dim; ++i) {
 		res({i1,i2}) = res({i1,i2}) + columns[i]({i1,i2});
 	}
-	MTEST(frob_norm(res - Tensor::ones({10,10})) < 1e-14, "sum of columns should result in ones tensor");
+	MTEST(frob_norm(res - Tensor::ones({dim,dim})) < 1e-14, "sum of columns should result in ones tensor");
 	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
 	
-	res = Tensor({10,10}, Tensor::Representation::Dense);
+	res = Tensor({dim,dim}, Tensor::Representation::Dense);
 	Tensor d = Tensor::random({1}, rnd, normalDist);
 	Tensor e = columns[0];
-	e.reinterpret_dimensions({10,10,1});
+	e.reinterpret_dimensions({dim,dim,1});
 	res({i1,i2}) = e(i1,i2,i3) * d(i3);
 	MTEST(res.representation == Tensor::Representation::Sparse, "Sparse * full == sparse contractions?");
+	
+	// assigning sparse to dense tensors and vice versa
+	d = Tensor::random({dim,dim}, rnd, normalDist);
+	TEST(d.representation == Tensor::Representation::Dense);
+	d(i1,i2) = columns[2](i2,i1);
+	MTEST(d.representation == Tensor::Representation::Sparse, "sparse tensor assignment");
+	d = columns[2];
+	MTEST(d.representation == Tensor::Representation::Sparse, "sparse tensor assignment 2");
+	
+	e = Tensor::random({dim,dim}, rnd, normalDist);
+	MTEST(e.representation == Tensor::Representation::Dense, "dense tensor assignment");
+	d(i1,i2) = e(i2,i1);
+	MTEST(d.representation == Tensor::Representation::Dense, "dense tensor assignment 2");
+	d = e;
+	MTEST(d.representation == Tensor::Representation::Dense, "dense tensor assignment 3");
+	
+	// decompositions
+	Tensor U({dim,dim}, Tensor::Representation::Sparse);
+	Tensor Vt({dim,dim}, Tensor::Representation::Sparse);
+	Tensor S({dim,dim}, Tensor::Representation::Dense);
+	(U(i1,i2), S(i2,i3), Vt(i3,i4)) = SVD(e(i1,i4));
+	MTEST(U.representation == Tensor::Representation::Dense, "singular vectors of SVD 1");
+	MTEST(Vt.representation == Tensor::Representation::Dense, "singular vectors of SVD 2");
+	MTEST(S.representation == Tensor::Representation::Sparse, "singular values of SVD");
+	
+	Tensor Q({dim,dim}, Tensor::Representation::Sparse);
+	Tensor R({dim,dim}, Tensor::Representation::Sparse);
+	(Q(i1,i2), R(i2,i3)) = QR(e(i1,i3));
+	TEST(Q.representation == Tensor::Representation::Dense);
+	TEST(R.representation == Tensor::Representation::Dense);
 }});
 
 
