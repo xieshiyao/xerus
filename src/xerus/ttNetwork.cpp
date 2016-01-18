@@ -127,6 +127,7 @@ namespace xerus {
 		if (!isOperator) {
 			if(_tensor.is_sparse()) {
 				Tensor tmpTensor(_tensor); // TODO Sparse SVD?
+				tmpTensor.use_dense_representation();
 				workingData = tmpTensor.get_internal_dense_data();
 			} else {
 				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
