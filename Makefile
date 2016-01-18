@@ -210,7 +210,12 @@ build/.tutorialObjects/%: %.cpp $(MINIMAL_DEPS) $(LIB_NAME_STATIC)
 	$(CXX) -I include $< $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) $(FLAGS) -MMD -o $@
 
 # Build rule for the preCompileHeader
-build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS)
+build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS) .git/ORIG_HEAD
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
+
+# dummy rule in case files were downloaded without git
+.git/ORIG_HEAD:
+	mkdir -p .git
+	touch .git/ORIG_HEAD
 
