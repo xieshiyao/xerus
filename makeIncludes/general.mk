@@ -2,10 +2,11 @@
 # Uses: USE_CLANG, 
 
 # Set Compiler used
-ifndef CXX
-	ifdef USE_CLANG
-		CXX = clang++
-	else
+
+ifdef USE_CLANG
+	CXX = clang++
+else
+	ifndef CXX
 		CXX = g++
 	endif
 endif
