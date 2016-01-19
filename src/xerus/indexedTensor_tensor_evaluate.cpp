@@ -134,15 +134,8 @@ namespace xerus {
 		}
 	}
 	
-
-	
-	/** 
-	 * "increases" the imaginary indices that lead to the current pointer position of oldPosition to match the index i
-	 * precondition: oldPosition corresponding to index (i-1)
-	 * postcondition: oldPosition corresponding to index i
-	 */
-	void increase_indices(const size_t _i, const value_t*& _oldPosition, const size_t _numIndices, const size_t* const _steps, const size_t* const _multDimensions) {
-		size_t index = _numIndices-1;
+	inline void increase_indices(const size_t _i, const value_t*& _oldPosition, const std::vector<size_t>& _steps, const std::vector<size_t>& _multDimensions) {
+		size_t index = _steps.size()-1;
 		_oldPosition += _steps[index];
 		size_t multStep = _multDimensions[index];
 		while(_i%multStep == 0) {
@@ -153,103 +146,33 @@ namespace xerus {
 		}
 	}
 
-	void sum_traces(   value_t* const _newPosition,
-								const value_t* _oldPosition,
-								const size_t* const _doubleSteps,
-								const size_t* const _doubleMultDimensions,
-								const size_t _numDoubleIndexPairs,
-								const size_t _numSummations) {
+	inline void sum_traces(	value_t* const _newPosition,
+							const value_t* _oldPosition,
+							const std::vector<size_t>& _doubleSteps,
+							const std::vector<size_t>& _doubleMultDimensions,
+							const size_t _numSummations) {
 		*_newPosition = *_oldPosition;
 		for(size_t k = 1; k < _numSummations; ++k) {
-			increase_indices(k, _oldPosition, _numDoubleIndexPairs, _doubleSteps, _doubleMultDimensions);
+			increase_indices(k, _oldPosition, _doubleSteps, _doubleMultDimensions);
 			*_newPosition += *_oldPosition;
 		}
 	}
 	
-	void sum_traces(   value_t* const _newPosition,
-								const value_t* _oldPosition,
-								const size_t* const _doubleSteps,
-								const size_t* const _doubleMultDimensions,
-								const size_t _numDoubleIndexPairs,
-								const size_t _numSummations,
-								const size_t _orderedIndicesMultDim ) {
+	inline void sum_traces(	value_t* const _newPosition,
+							const value_t* _oldPosition,
+							const std::vector<size_t>& _doubleSteps,
+							const std::vector<size_t>& _doubleMultDimensions,
+							const size_t _numSummations,
+							const size_t _orderedIndicesMultDim ) {
 		misc::array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
 		for(size_t k = 1; k < _numSummations; ++k) {
-			increase_indices(k, _oldPosition, _numDoubleIndexPairs, _doubleSteps, _doubleMultDimensions);
+			increase_indices(k, _oldPosition, _doubleSteps, _doubleMultDimensions);
 			misc::array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
 		}
 	}
 	
-	/**
-	 * @brief: Performes the low level evaluation of a Tensor to another Tensor
-	 * @param _outTensor: The tensor INTO which the evaluation is performed. The Dimensions must be set correctly
-	 * @param _inputTensor: The tensor which is evalueted. 
-	 * @param _fixedIndexOffset Offset in @a _inputTensor caused by fixed indices, e.g. 50 if the first index of an (7, 10) tensor is fixed to 5.
-	 * @param _orderedBackDim: the combined dimension of all allready ordered indices at the back, e.g. of i and k in A(j,l,k,i) = B(l,j,k,i);
-	 * @param _numOutIndicesToShuffle Number of indices in @a _outTensor minus the number of allready ordered indices in the back.
-	 * @param _stepSizes The step of the indices, e.g. [21,3,1] for an (73, 7, 3) tensor.
-	 * @param _outIndexDimensions Dimensions of the indices in @a _outTensor.
-	 * @param _numTracedDimensions Number of trace PAIRS (e.g. 1 if there is one pair).
-	 * @param _traceDimensions Dimension of each trace pair.
-	 * @param _traceStepSizes step size of each trace pair, i.e. to added step size of the two indices correspodnign to the pair.
-	 * @param _totalTraceDim basically product of _traceDimensions.
-	 */
-	void full_to_full_evaluation(Tensor& _outTensor,
-								 const Tensor& _inputTensor,
-								 const size_t _fixedIndexOffset,
-								 const size_t _orderedBackDim,
-								 const size_t _numOutIndicesToShuffle,
-								 const size_t* const _stepSizes, 
-								 const size_t* const _outIndexDimensions,
-								 const size_t _numTracedDimensions,
-								 const size_t* const _traceDimensions,
-								 const size_t* const _traceStepSizes,
-								 const size_t _totalTraceDim
-								) {
-		// Start performance analysis for low level part
-		PA_START;
-		
-		// Get pointers to the data
-		const value_t* oldPosition = _inputTensor.get_unsanitized_dense_data()+_fixedIndexOffset;
-		value_t* const newPosition = _outTensor.get_unsanitized_dense_data();
-		
-		// Get specific sizes
-		const size_t numSteps = _outTensor.size/_orderedBackDim;
-		
-		if(_orderedBackDim == 1) { // We have to copy/add single entries
-			if(_totalTraceDim == 1) { // We don't need to sum any traces
-				newPosition[0] = *oldPosition;
-				for(size_t i = 1; i < numSteps; ++i) {
-					increase_indices(i, oldPosition, _numOutIndicesToShuffle, _stepSizes, _outIndexDimensions);
-					newPosition[i] = *oldPosition;
-				}
-			} else { // We have to add traces
-				sum_traces(newPosition, oldPosition, _traceStepSizes, _traceDimensions, _numTracedDimensions, _totalTraceDim);
-				for(size_t i = 1; i < numSteps; ++i) {
-					increase_indices(i, oldPosition, _numOutIndicesToShuffle, _stepSizes, _outIndexDimensions);
-					sum_traces(newPosition+i, oldPosition, _traceStepSizes, _traceDimensions, _numTracedDimensions, _totalTraceDim);
-				}
-			}
-		} else { // We can copy/add larger blocks
-			if(_totalTraceDim == 1) { // We don't need to sum any traces
-				misc::array_copy(newPosition, oldPosition, _orderedBackDim);
-				for(size_t i = 1; i < numSteps; ++i) {
-					increase_indices(i, oldPosition, _numOutIndicesToShuffle, _stepSizes, _outIndexDimensions);
-					misc::array_copy(newPosition + i*_orderedBackDim, oldPosition, _orderedBackDim);
-				}
-			} else { // We have to add traces
-				sum_traces(newPosition, oldPosition, _traceStepSizes, _traceDimensions, _numTracedDimensions, _totalTraceDim, _orderedBackDim);
-				for(size_t i = 1; i < numSteps; ++i) {
-					increase_indices(i, oldPosition, _numOutIndicesToShuffle, _stepSizes, _outIndexDimensions);
-					sum_traces(newPosition + i*_orderedBackDim, oldPosition, _traceStepSizes, _traceDimensions, _numTracedDimensions, _totalTraceDim, _orderedBackDim);
-				}
-			}
-		}
-		PA_END("Evaluation", "Full->Full", misc::to_string(_inputTensor.dimensions)+" ==> " + misc::to_string(_outTensor.dimensions));
-	}
 	
-	
-	size_t get_position(const std::pair<size_t, value_t>& _entry,
+	inline size_t get_position(const std::pair<size_t, value_t>& _entry,
 						const size_t* const _baseIndexDim,
 						const size_t* const _divisors,
 						const size_t* const _attributes,
@@ -261,7 +184,7 @@ namespace xerus {
 		return position;
 	}
 
-	bool check_position(size_t & _position,
+	inline bool check_position(size_t & _position,
 						const std::pair<size_t, value_t>& _entry,
 						const size_t* const _baseIndexDim,
 						const size_t* const _divisors,
@@ -291,45 +214,45 @@ namespace xerus {
 		return true;
 	}
 
-	std::unique_ptr<const size_t[]> get_dimension_array(const std::vector<Index> _indices) {
-		if(_indices.size() == 0) {
-			return std::unique_ptr<const size_t[]>();
-		} else {
-			size_t* stepSizes = new size_t[_indices.size()];
-			for(size_t i = 0; i < _indices.size(); ++i) {
-				stepSizes[i] = _indices[i].dimension();
-			}
-			return std::unique_ptr<const size_t[]>(stepSizes);
+	inline std::vector<size_t> get_dimension_vector(const std::vector<Index> _indices) {
+		std::vector<size_t> dimensions;
+		dimensions.reserve(_indices.size());
+		for(const Index& idx : _indices) {
+			dimensions.emplace_back(idx.dimension());
 		}
+		return dimensions;
 	}
 	
-	std::unique_ptr<const size_t[]> get_step_sizes(const std::vector<Index> _indices) {
-		if(_indices.size() == 0) {
-			return std::unique_ptr<const size_t[]>();
-		} else {
-			size_t* stepSizes = new size_t[_indices.size()];
-			stepSizes[_indices.size()-1] = 1;
-			for(size_t i = _indices.size()-1; i > 0; --i) {
-				stepSizes[i-1] = stepSizes[i]*_indices[i].dimension();
-			}
-			return std::unique_ptr<const size_t[]>(stepSizes);
+	inline std::vector<size_t> get_step_sizes(const std::vector<Index> _indices) {
+		std::vector<size_t> stepSizes(_indices.size());
+		stepSizes.back() = 1;
+		for(size_t i = stepSizes.size()-1; i > 0; --i) {
+			stepSizes[i-1] = stepSizes[i]*_indices[i].dimension();
 		}
+		return stepSizes;
 	}
 
 
 	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base) {
 		// Assign the indices
 		_base.assign_indices();
-		_base.assign_index_dimensions();
 		_out.assign_indices();
+		
+		// If there is no index reshuffling, the evalutation is trivial (NOTE must be after index assignment so span zero indices are erased. Otherwise empty index arrays may occur)
+		if(_base.indices == _out.indices) {
+			*_out.tensorObject = *_base.tensorObjectReadOnly;
+			return; // We are finished here
+		}
+		
+		// Assign the dimensions
+		_base.assign_index_dimensions();
 		_out.assign_index_dimensions();
 		
-		// Extract base index dimensions
-		const std::unique_ptr<const size_t[]> baseIndexDimensions = get_dimension_array(_base.indices);
+		// Extract base index dimensions and stepSizes
+		const std::vector<size_t> baseIndexStepSizes(get_step_sizes(_base.indices));
+		const std::vector<size_t> baseIndexDimensions(get_dimension_vector(_base.indices));
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
-			REQUIRE(_out.tensorObjectReadOnly != _base.tensorObjectReadOnly, "Target of evaluation must not conincide with base!");
-			
 			// Check base indices
 			for(size_t i = 0; i < _base.indices.size(); ++i) {
 				// If the index is fixed we don't expect to find it anywhere
@@ -364,44 +287,10 @@ namespace xerus {
 			}
 		#endif
 		
-		// If there is no index reshuffling, the evalutation is trivial
-		if(_base.indices == _out.indices) {
-			*_out.tensorObject = *_base.tensorObjectReadOnly;
-			return; // We are finished here
-		}
-		
-		if(_base.degree() == _out.degree()) { // Only reshuffling happening
-			std::vector<size_t> shuffle(_base.degree());
-			size_t pos = 0;
-			for(const Index& idx : _base.indices) {
-				size_t j = 0, jPos = 0;
-				while(idx != _out.indices[j]) {  jPos += _out.indices[j].span; ++j; }
-				
-				for(size_t k = 0; k < idx.span; ++k) {
-					REQUIRE(pos < _base.degree(), "IE");
-					shuffle[pos++] = jPos+k;
-				}
-			}
-			
-			reshuffle(*_out.tensorObject, *_base.tensorObjectReadOnly, shuffle);
-			return;
-		}
-		
-		
-		// We need the step sizes of the base indices
-		const std::unique_ptr<const size_t[]> baseIndexStepSizes = get_step_sizes(_base.indices);
-		
-		
-		// In every case we have to ensure that _out has its own data, since we gonna rewrite it.
-		_out.tensorObject->ensure_own_data_no_copy();
-		
 		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Full => Full   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-		if(!_out.tensorObjectReadOnly->is_sparse() && !_base.tensorObjectReadOnly->is_sparse()) {
+		if(_base.tensorObjectReadOnly->is_dense()) {
 			// Extract out index dimensions
-			const std::unique_ptr<const size_t[]> outIndexDimensions = get_dimension_array(_out.indices);
-		
-			// Propagate the constant factor, since we won't apply it for Tensors
-			_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
+			const std::vector<size_t> outIndexDimensions(get_dimension_vector(_out.indices));
 			
 			// Count how many indices in the back are already ordered (We know that base has at least as many indices as out)
 			size_t numOrderedIndices;
@@ -409,7 +298,7 @@ namespace xerus {
 			
 			const size_t orderedIndexDim = baseIndexStepSizes[_base.indices.size()-numOrderedIndices-1];
 			
-			VLA(size_t[_out.indices.size()-numOrderedIndices], stepSizes); // How much we have to move in base when the i-th index of _out increases
+			std::vector<size_t> stepSizes(_out.indices.size()-numOrderedIndices); // How much we have to move in base when the i-th index of _out increases
 			
 			size_t fixedIndexOffset = 0; // Fixed offset in base due to fixed indices
 			
@@ -439,45 +328,80 @@ namespace xerus {
 				}
 			}
 			
-			full_to_full_evaluation(*_out.tensorObject,
-				*_base.tensorObjectReadOnly,
-				fixedIndexOffset,
-				orderedIndexDim,
-				_out.indices.size()-numOrderedIndices,
-				stepSizes,
-				outIndexDimensions.get(),
-				traceDimensions.size(),
-				traceDimensions.data(), 
-				traceStepSizes.data(),
-				totalTraceDim
-			);
+			// Start performance analysis for low level part
+			PA_START;
+			
+			// Get pointers to the data and delay the deletion of the base data in case _out and _base coincide
+			const value_t* oldPosition = _base.tensorObjectReadOnly->get_unsanitized_dense_data()+fixedIndexOffset;
+			std::shared_ptr<value_t> delaySlot;
+			if(_base.tensorObjectReadOnly == _out.tensorObjectReadOnly) { delaySlot = _out.tensorObject->get_internal_dense_data(); }
+			value_t* const newPosition = _out.tensorObject->override_dense_data();
+			
+			// Get specific sizes
+			const size_t numSteps = _out.tensorObject->size/orderedIndexDim;
+			
+			if(orderedIndexDim == 1) { // We have to copy/add single entries
+				if(totalTraceDim == 1) { // We don't need to sum any traces
+					newPosition[0] = *oldPosition;
+					for(size_t i = 1; i < numSteps; ++i) {
+						increase_indices(i, oldPosition, stepSizes, outIndexDimensions);
+						newPosition[i] = *oldPosition;
+					}
+				} else { // We have to add traces
+					sum_traces(newPosition, oldPosition, traceStepSizes, traceDimensions, totalTraceDim);
+					for(size_t i = 1; i < numSteps; ++i) {
+						increase_indices(i, oldPosition, stepSizes, outIndexDimensions);
+						sum_traces(newPosition+i, oldPosition, traceStepSizes, traceDimensions, totalTraceDim);
+					}
+				}
+			} else { // We can copy/add larger blocks
+				if(totalTraceDim == 1) { // We don't need to sum any traces
+					misc::array_copy(newPosition, oldPosition, orderedIndexDim);
+					for(size_t i = 1; i < numSteps; ++i) {
+						increase_indices(i, oldPosition, stepSizes, outIndexDimensions);
+						misc::array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
+					}
+				} else { // We have to add traces
+					sum_traces(newPosition, oldPosition, traceStepSizes, traceDimensions, totalTraceDim, orderedIndexDim);
+					for(size_t i = 1; i < numSteps; ++i) {
+						increase_indices(i, oldPosition, stepSizes, outIndexDimensions);
+						sum_traces(newPosition + i*orderedIndexDim, oldPosition, traceStepSizes, traceDimensions, totalTraceDim, orderedIndexDim);
+					}
+				}
+			}
+			PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObject->dimensions));
+			
+			
+			// Propagate the constant factor, since we don't apply it for dense Tensors
+			_out.tensorObject->factor = _base.tensorObjectReadOnly->factor;
 		}
-		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Both  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Sparse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		else if(_base.tensorObjectReadOnly->is_sparse()) {
 			VLA(bool[_base.indices.size()]  , fixedFlags); // Flag for each index indicating whether the index is fixed
 			VLA(bool[_base.indices.size()]  , traceFlags); // Flag for each index indicating whether the index is part of a trace
 			VLA(size_t[_base.indices.size()], attributes);  // Either the factor in _out, the value of an fixed index or the position of the other part of a trace
 			bool peacefullIndices = true;
 			
+			const std::vector<size_t> outIndexStepSizes(get_step_sizes(_out.indices));
+			
 			// Process base indices
-			const std::unique_ptr<const size_t[]> outIndexStepSizes = get_step_sizes(_out.indices);
 			for(size_t i = 0; i < _base.indices.size(); ++i) {
-				// First try to find the index in out
-				size_t outPos = 0;
-				while(outPos < _out.indices.size() && _out.indices[outPos] != _base.indices[i]) { ++outPos; }
-				if(outPos < _out.indices.size()) {
-					fixedFlags[i] = false;
-					traceFlags[i] = false;
-					attributes[i] = outIndexStepSizes[outPos];
-					continue;
-				}
-				
 				// Check whether the index is fixed
 				if(_base.indices[i].fixed()) {
 					fixedFlags[i] = true;
 					traceFlags[i] = false;
 					attributes[i] = _base.indices[i].valueId;
 					peacefullIndices = false;
+					continue;
+				}
+				
+				// Try to find the index in out
+				size_t outPos = 0;
+				while(outPos < _out.indices.size() && _out.indices[outPos] != _base.indices[i]) { ++outPos; }
+				if(outPos < _out.indices.size()) {
+					fixedFlags[i] = false;
+					traceFlags[i] = false;
+					attributes[i] = outIndexStepSizes[outPos];
 					continue;
 				}
 				
@@ -488,51 +412,30 @@ namespace xerus {
 				for(attributes[i] = 0; _base.indices[i] != _base.indices[attributes[i]] || attributes[i] == i; ++attributes[i]) { }
 			}
 			
-			// Get the entries and the factor of our base tensor
+			// Get direct acces to the entries and delay deletion of _base data in case _base and _out coincide
 			const std::map<size_t, value_t>& baseEntries = _base.tensorObjectReadOnly->get_unsanitized_sparse_data();
+			std::shared_ptr<std::map<size_t, value_t>> delaySlot;
+			if(_base.tensorObjectReadOnly == _out.tensorObjectReadOnly) { delaySlot = _out.tensorObject->get_internal_sparse_data(); }
+			std::map<size_t, value_t>& outEntries = _out.tensorObject->override_sparse_data(); // Takes care that no entries are present
+			
 			const value_t factor = _base.tensorObjectReadOnly->factor;
 			
 			// Start performance analysis for low level part
 			PA_START;
 			
-			// Check whether _out is sparse
-			if(_out.tensorObjectReadOnly->is_sparse()) {
-				std::map<size_t, value_t>& outEntries = _out.tensorObject->override_sparse_data();
-				
-				if(peacefullIndices) {
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						outEntries.insert(std::pair<size_t, value_t>(get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, _base.indices.size()), factor*entry.second));
-					}
-				} else {
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						size_t newPosition;
-						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
-							outEntries[newPosition] += factor*entry.second;
-						}
-					}
+			if(peacefullIndices) {
+				for(const std::pair<size_t, value_t>& entry : baseEntries) {
+					outEntries.emplace(get_position(entry, baseIndexDimensions.data(), baseIndexStepSizes.data(), attributes, _base.indices.size()), factor*entry.second);
 				}
-				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			} else {
-				// Ensure that _out is empty
-				value_t* const dataPointer = _out.tensorObject->override_dense_data();
-				misc::array_set_zero(dataPointer, _out.tensorObject->size);
-				
-				if(peacefullIndices) {
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						dataPointer[get_position(entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, _base.indices.size())] = factor*entry.second;
-					}
-				} else {
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
-						size_t newPosition;
-						if(check_position(newPosition, entry, baseIndexDimensions.get(), baseIndexStepSizes.get(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
-							dataPointer[newPosition] += factor*entry.second;
-						}
+				size_t newPosition;
+				for(const std::pair<size_t, value_t>& entry : baseEntries) {
+					if(check_position(newPosition, entry, baseIndexDimensions.data(), baseIndexStepSizes.data(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
+						outEntries[newPosition] += factor*entry.second;
 					}
 				}
-				PA_END("Evaluation", "Sparse->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			}
+			PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 		}
 	}
-	
-	
 }
