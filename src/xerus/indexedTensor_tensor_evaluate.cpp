@@ -238,19 +238,12 @@ namespace xerus {
 		_base.assign_indices();
 		_out.assign_indices();
 		
-		// If there is no index reshuffling, the evalutation is trivial (NOTE must be after index assignment so span zero indices are erased. Otherwise empty index arrays may occur)
-		if(_base.indices == _out.indices) {
-			*_out.tensorObject = *_base.tensorObjectReadOnly;
-			return; // We are finished here
-		}
+		
 		
 		// Assign the dimensions
 		_base.assign_index_dimensions();
 		_out.assign_index_dimensions();
 		
-		// Extract base index dimensions and stepSizes
-		const std::vector<size_t> baseIndexStepSizes(get_step_sizes(_base.indices));
-		const std::vector<size_t> baseIndexDimensions(get_dimension_vector(_base.indices));
 		
 		#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
 			// Check base indices
@@ -286,6 +279,16 @@ namespace xerus {
 				REQUIRE(misc::count(_base.indices, _out.indices[i]) == 1, "Every index of the target must appear exactly once in the base of evaluation. Base: " << _base.indices << " Out: " << _out.indices);
 			}
 		#endif
+		
+		// If there is no index reshuffling, the evalutation is trivial (NOTE must be after index assignment so span zero indices are erased. Otherwise empty index arrays may occur)
+		if(_base.indices == _out.indices) {
+			*_out.tensorObject = *_base.tensorObjectReadOnly;
+			return; // We are finished here
+		} // TODO in front of dimension assignment
+		
+		// Extract base index dimensions and stepSizes
+		const std::vector<size_t> baseIndexStepSizes(get_step_sizes(_base.indices));
+		const std::vector<size_t> baseIndexDimensions(get_dimension_vector(_base.indices));
 		
 		//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Full => Full   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		if(_base.tensorObjectReadOnly->is_dense()) {
