@@ -120,6 +120,8 @@ namespace xerus {
 		
 		void add(const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		
+		void add(const value_t _residual, const TTTensor& _x, const size_t _flags = 0);
+		
 		operator bool() const {
 			return active;
 		}

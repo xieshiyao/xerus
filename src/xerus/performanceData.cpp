@@ -77,6 +77,16 @@ namespace xerus {
 			}
 		}
 	}
+	
+	void PerformanceData::add(const value_t _residual, const TTTensor& _x, const size_t _flags) {
+		if (active) {
+			if (data.empty()) {
+				add(0, _residual, _x, _flags);
+			} else {
+				add(data.back().iterationCount+1, _residual, _x, _flags);
+			}
+		}
+	}
 
 	void PerformanceData::dump_to_file(const std::string &_fileName) const {
 		std::string header;
