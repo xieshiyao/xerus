@@ -42,7 +42,7 @@ namespace xerus {
 	
 		struct ALSAlgorithmicData {
 			const ALSVariant &ALS; ///< the algorithm this data belongs to
-			const TTOperator &A; ///< global operator A
+			const TTOperator *A; ///< global operator A
 			TTTensor &x; ///< current iterate x
 			const TTTensor &b; ///< global right-hand-side
 			std::vector<size_t> targetRank; ///< rank for the final x
@@ -79,7 +79,7 @@ namespace xerus {
 			*/
 			void choose_energy_functional();
 			
-			ALSAlgorithmicData(const ALSVariant &, const TTOperator &, TTTensor &, const TTTensor &);
+			ALSAlgorithmicData(const ALSVariant &, const TTOperator *, TTTensor &, const TTTensor &);
 			
 			/**
 			* @brief performs one step in @a direction, updating all stacks

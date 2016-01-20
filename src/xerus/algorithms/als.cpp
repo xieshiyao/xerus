@@ -43,7 +43,7 @@ namespace xerus {
 		Tensor x;
 		Index i,j;
 		x(i&0) = b(j&0) / A(j/2, i/2);
-		
+		_x(i&0) = x(i&0);
 //         REQUIRE(_x.degree() <= 3, "dmrg not yet implemented in lapack_solver");// TODO split result into d-2 tensors -> choose correct tensor as core!
 	}
 	
@@ -152,10 +152,10 @@ namespace xerus {
 		bxR.emplace_back(tmpB);
 		
 		for (size_t i = d-1; i > optimizedRange.first + ALS.sites - 1; --i) {
-			if (&A) {
+			if (A) {
 				tmpA(r1, r2, r3) = xAxR.back()(cr1, cr2, cr3) 
 									* x.get_component(i)(r1, n1, cr1) 
-									* A.get_component(i)(r2, n1, n2, cr2) 
+									* A->get_component(i)(r2, n1, n2, cr2) 
 									* x.get_component(i)(r3, n2, cr3);
 				xAxR.emplace_back(std::move(tmpA));
 			}
@@ -165,10 +165,10 @@ namespace xerus {
 			bxR.emplace_back(std::move(tmpB));
 		}
 		for (size_t i = 0; i < optimizedRange.first; ++i) {
-			if (&A) {
+			if (A) {
 				tmpA(r1, r2, r3) = xAxL.back()(cr1, cr2, cr3) 
 									* x.get_component(i)(cr1,n1,r1) 
-									* A.get_component(i)(cr2, n1, n2, r2) 
+									* A->get_component(i)(cr2, n1, n2, r2) 
 									* x.get_component(i)(cr3,n2,r3);
 				xAxL.emplace_back(std::move(tmpA));
 			}
@@ -180,19 +180,20 @@ namespace xerus {
 	}
 	
 	void ALSVariant::ALSAlgorithmicData::choose_energy_functional() {
-		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
-		if (&A) {
+		if (A) {
 			residual_f = [&](){
-				return frob_norm(A(n1/2,n2/2)*x(n2&0) - b(n1&0));
+				Index n1, n2;
+				return frob_norm((*A)(n1/2,n2/2)*x(n2&0) - b(n1&0));
 			};
 			if (ALS.useResidualForEndCriterion) {
 				energy_f = residual_f;
 			} else {
 				energy_f = [&](){
+					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 					Tensor res;
 					// 0.5*<x,Ax> - <x,b>
 					res() = 0.5*xAxR.back()(cr1, cr2, cr3) 
-					* x.get_component(currIndex)(r1, n1, cr1) * A.get_component(currIndex)(r2, n1, n2, cr2) * x.get_component(currIndex)(r3, n2, cr3) 
+					* x.get_component(currIndex)(r1, n1, cr1) * A->get_component(currIndex)(r2, n1, n2, cr2) * x.get_component(currIndex)(r3, n2, cr3) 
 					* xAxL.back()(r1, r2, r3)
 					- bxR.back()(cr1, cr2) 
 					* b.get_component(currIndex)(r1, n1, cr1) * x.get_component(currIndex)(r2, n1, cr2)
@@ -202,12 +203,13 @@ namespace xerus {
 			}
 		} else {
 			residual_f = [&](){
-				return frob_norm(x(n1&0) - b(n1&0));
+				return frob_norm(x - b);
 			};
 			if (ALS.useResidualForEndCriterion) {
 				energy_f = residual_f;
 			} else {
 				energy_f = [&](){
+					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 					Tensor res;
 					// 0.5*<x,Ax> - <x,b> = 0.5*|x_i|^2 - <x,b>
 					res() = 0.5*x.get_component(currIndex)(r1, n1, cr1) * x.get_component(currIndex)(r1, n1, cr1) 
@@ -220,7 +222,7 @@ namespace xerus {
 		}
 	}
 	
-	ALSVariant::ALSAlgorithmicData::ALSAlgorithmicData(const ALSVariant &_ALS, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) 
+	ALSVariant::ALSAlgorithmicData::ALSAlgorithmicData(const ALSVariant &_ALS, const TTOperator *_A, TTTensor &_x, const TTTensor &_b) 
 		: ALS(_ALS), A(_A), x(_x), b(_b)
 	{
 		targetRank = _x.ranks();
@@ -242,11 +244,11 @@ namespace xerus {
 			x.move_core(currIndex+1, true);
 			
 			// Move one site to the right
-			if (&A) {
+			if (A) {
 				xAxR.pop_back();
 				tmpA(r1, r2, r3) = xAxL.back()(cr1,cr2,cr3) 
 									* x.get_component(currIndex)(cr1,n1,r1) 
-									* A.get_component(currIndex)(cr2, n1, n2, r2) 
+									* A->get_component(currIndex)(cr2, n1, n2, r2) 
 									* x.get_component(currIndex)(cr3,n2,r3);
 				xAxL.emplace_back(std::move(tmpA));
 			}
@@ -263,11 +265,11 @@ namespace xerus {
 			x.move_core(currIndex-1, true);
 			
 			// move one site to the left
-			if (&A) {
+			if (A) {
 				xAxL.pop_back();
 				tmpA(r1, r2, r3) = xAxR.back()(cr1,cr2,cr3) 
 									* x.get_component(currIndex)(r1,n1,cr1) 
-									* A.get_component(currIndex)(r2, n1, n2, cr2) 
+									* A->get_component(currIndex)(r2, n1, n2, cr2) 
 									* x.get_component(currIndex)(r3,n2,cr3);
 				xAxR.emplace_back(std::move(tmpA));
 			}
@@ -325,7 +327,7 @@ namespace xerus {
 		
 		const size_t FLAG_FINISHED_HALFSWEEP = 1;
 		const size_t FLAG_FINISHED_FULLSWEEP = 3; // contains the flag for a new halfsweep!
-		ALSAlgorithmicData data(*this, _A, _x, _b);
+		ALSAlgorithmicData data(*this, _Ap, _x, _b);
 		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 		
 		TensorNetwork ATilde;

@@ -56,14 +56,15 @@ UNIT_TEST(ALS, identity,
     
     PerformanceData perfdata;
     
-    TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-13 * 1000);
+	value_t result = ALS(ttI, ttX, ttB, 0.001, perfdata);
+    MTEST(result < 0.01,  "1 " << result);
+	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
     perfdata.reset();
 	
     ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
-    TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-	LOG(unit_test, "norm: " << frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)));
-    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
+	result = ALS(ttI, ttX, ttB, 0.001, perfdata);
+    MTEST(result < 0.01, "2 " << result);
+	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
 )
 
 

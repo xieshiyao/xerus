@@ -2,7 +2,7 @@
 # Uses: USE_CLANG, 
 
 # Set Compiler used
-ifndef CXX
+ifeq ($(strip $(CXX)),)
 	ifdef USE_CLANG
 		CXX = clang++
 	else
