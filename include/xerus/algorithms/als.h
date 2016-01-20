@@ -94,32 +94,29 @@ namespace xerus {
 		uint sites; ///< the number of sites that are simultaneously optimized
 		size_t numHalfSweeps; ///< maximum number of sweeps to perform. set to 0 for infinite
 		value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
-		value_t minimumLocalResidual; ///< below this bound for the local residual, no local solver will be called.
+// 		value_t minimumLocalResidual; ///< below this bound for the local residual, no local solver will be called.
 		bool useResidualForEndCriterion; ///< calculates the residual to decide if the ALS converged. recommended if _perfdata is given
 		bool preserveCorePosition; ///< if true the core will be moved to its original position at the end
 		
 		// TODO std::function endCriterion
-		// TODO all arguments should be tensorNetworks to allow efficient CG (esp. in the dmrg case)
 		
 		/// the algorithm that is used to solve the local problems
-		using LocalSolver = std::function<void(const TensorNetwork &, TensorNetwork &, const TensorNetwork &, const ALSAlgorithmicData &)>;
+		using LocalSolver = std::function<void(const TensorNetwork &, std::vector<Tensor> &, const TensorNetwork &, const ALSAlgorithmicData &)>;
 		LocalSolver localSolver;
 		
 		/// local solver that calls the corresponding lapack routines (LU solver)
-		static void lapack_solver(const TensorNetwork &_A, TensorNetwork &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
+		static void lapack_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
 		
 		//TODO add local CG solver
 		
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-		ALSVariant(uint _sites, size_t _numHalfSweeps, value_t _minimumLocalResidual, LocalSolver _localSolver,
+		ALSVariant(uint _sites, size_t _numHalfSweeps, LocalSolver _localSolver,
 			bool _useResidual=false
 		) 
 				: sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
-				minimumLocalResidual(_minimumLocalResidual), 
 				useResidualForEndCriterion(_useResidual), preserveCorePosition(true), localSolver(_localSolver)
 		{
 			REQUIRE(_sites>0, "");
-			REQUIRE(_minimumLocalResidual>=0, "");
 		}
 		
 		/**

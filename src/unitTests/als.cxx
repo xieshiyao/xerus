@@ -62,7 +62,7 @@ UNIT_TEST(ALS, identity,
     perfdata.reset();
 	
     ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
-	result = ALS(ttI, ttX, ttB, 0.001, perfdata);
+	result = DMRG(ttI, ttX, ttB, 0.001, perfdata);
     MTEST(result < 0.01, "2 " << result);
 	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
 )
