@@ -392,9 +392,9 @@ UNIT_TEST(TT, operator_times_tensor,
 	Tensor D;
 	Tensor Do;
 	TTOperator ttA(A); 
-	ttA.round(2); A = Tensor(ttA);
+	ttA.round(2ul); A = Tensor(ttA);
 	TTOperator ttB(B); 
-	ttB.round(2); B = Tensor(ttB);
+	ttB.round(2ul); B = Tensor(ttB);
 	TTTensor ttC(C); 
 	TTTensor ttD(C);
 	TTOperator ttDo(A);
@@ -482,7 +482,7 @@ UNIT_TEST(TT, disjoint_product,
 		TTTensor ttC;
 		
 		
-		ttC = TTTensor::dyadic_product(ttA,ttB);
+		ttC = TTTensor::dyadic_product(ttA, ttB);
 		C(i/2,j/2) = A(i&0)*B(j&0);
 		
 		LOG(unit_test, frob_norm(C(i&0) - Tensor(ttC)(i&0)));

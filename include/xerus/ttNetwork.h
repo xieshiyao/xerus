@@ -231,6 +231,8 @@ namespace xerus {
 		 */
 		bool exceeds_maximal_ranks() const;
 		
+		///@brief Return the number of ranks, i.e. 0 for degree zero and degree()/N-1 otherwise.
+		size_t num_ranks() const;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
