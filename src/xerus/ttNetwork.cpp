@@ -68,8 +68,6 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(externalLinks.size() == _degree, "Internal Error.");
-		
 		std::vector<TensorNetwork::Link> neighbors;
 		
 		neighbors.emplace_back(1, 0, 1,false);
@@ -95,120 +93,55 @@ namespace xerus {
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
 		TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
+		
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const xerus::Tensor& _tensor, const double _eps, const xerus::TensorNetwork::RankTuple& _maxRanks): TTNetwork(_tensor.degree()) {
+	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const TensorNetwork::RankTuple& _maxRanks): TTNetwork(_tensor.degree()) {
+		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
+		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
+		REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : degree()/N-1), "We need " << (_tensor.degree() == 0 ? 0 : degree()/N-1) <<" ranks but " << _maxRanks.size() << " where given");
+		REQUIRE(!misc::contains(_maxRanks, 0ul), "Maximal ranks must be strictly positive. Here: " << _maxRanks);
+		
 		const size_t numComponents = degree()/N;
 		
-		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
-		REQUIRE(_maxRanks.size() == (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1), "We need (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) ranks (i.e. " 
-			<< (_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1) <<") but " << _maxRanks.size() << " where given");
-
-		IF_CHECK(
-			for(const size_t maxRank : _maxRanks) { REQUIRE(maxRank > 0, "Maximal ranks must be strictly positive. Here: " << _maxRanks); }
-		)
-		
-		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
+		if (_tensor.degree() == 0) {
+			*nodes[0].tensorObject = _tensor;
+			return;
+		}
 		
 		dimensions = _tensor.dimensions;
 		
-		if (_tensor.degree() == 0) {
-			nodes[0].tensorObject.reset( new Tensor(_tensor));
-			return; 
-		}
-		
-		// Needed variables
-		std::unique_ptr<Tensor> nxtTensor;
-		std::unique_ptr<value_t[]> currentU, currentS;
-		std::shared_ptr<value_t> workingData, currentVt;
-		size_t leftDim=1, remainingDim=_tensor.size, maxRank, newRank=1, oldRank=1;
-		
-		// If we want a TTOperator we need to reshuffle the indices first, otherwise we want to copy the data because Lapack wants to destroy it
-		if (!isOperator) {
-			if(_tensor.is_sparse()) {
-				Tensor tmpTensor(_tensor); // TODO Sparse SVD?
-				tmpTensor.use_dense_representation();
-				workingData = tmpTensor.get_internal_dense_data();
-			} else {
-				workingData.reset(new value_t[_tensor.size], internal::array_deleter_vt);
-				misc::array_copy(workingData.get(), _tensor.get_unsanitized_dense_data(), _tensor.size);
-			}
-		} else {
-			Tensor tmpTensor(std::vector<size_t>(degree(), 1));
-			std::vector<Index> presentIndices, newIndices;
-			for(size_t i = 0; i < degree(); ++i) { presentIndices.emplace_back(); }
+		Tensor remains;
+		if(isOperator) {
+			std::vector<size_t> shuffle(_tensor.degree());
 			for(size_t i = 0; i < numComponents; ++i) {
-				newIndices.emplace_back(presentIndices[i]);
-				newIndices.emplace_back(presentIndices[i+numComponents]);
-			}
-			tmpTensor(newIndices) = _tensor(presentIndices);
-			workingData = tmpTensor.get_internal_dense_data();
-		}
-		
-		for(size_t position = 0; position < numComponents-1; ++position) {
-			// Determine the dimensions of the next matrification
-			leftDim = oldRank*dimensions[position];
-			if (isOperator) { leftDim *= dimensions[position+numComponents]; }
-			remainingDim /= dimensions[position];
-			if (isOperator) { remainingDim /= dimensions[position+numComponents]; }
-			maxRank = std::min(leftDim, remainingDim);
-			
-			// Create temporary space for the results
-			currentU.reset(new value_t[leftDim*maxRank]);
-			currentS.reset(new value_t[maxRank]);
-			currentVt.reset(new value_t[maxRank*remainingDim], &internal::array_deleter_vt);
-			
-			blasWrapper::svd_destructive(currentU.get(), currentS.get(), currentVt.get(), workingData.get(), leftDim, remainingDim);
-			
-			// Determine the rank, keeping all singular values that are large enough
-			newRank = std::min(maxRank, _maxRanks[position]);
-			while (currentS[newRank-1] < _eps*currentS[0]) {
-				newRank-=1;
+				shuffle[i] = 2*i;
+				shuffle[numComponents + i] = 2*i+1; 
 			}
 			
-			// Create a Tensor for U
-			std::vector<size_t> constructionDim;
-			constructionDim.emplace_back(oldRank);
-			constructionDim.emplace_back(dimensions[position]);
-			if (isOperator) { constructionDim.emplace_back(dimensions[position+numComponents]); }
-			constructionDim.emplace_back(newRank);
-			if (newRank == maxRank) {
-				nxtTensor.reset(new Tensor(std::move(constructionDim), std::move(currentU)) );
-			} else {
-				nxtTensor.reset(new Tensor(std::move(constructionDim), Tensor::Representation::Dense, Tensor::Initialisation::None) );
-				for (size_t i = 0; i < leftDim; ++i) {
-					misc::array_copy(nxtTensor->get_unsanitized_dense_data()+i*newRank, currentU.get()+i*maxRank, newRank);
-				}
-			}
-			
-			// Update component tensor to U
-			set_component(position, std::move(nxtTensor));
-			
-			// Calclate S*Vt by scaling the rows of Vt
-			for (size_t row = 0; row < newRank; ++row) {
-				misc::array_scale(currentVt.get()+row*remainingDim, currentS[row], remainingDim);
-			}
-			
-			workingData = std::move(currentVt);
-			oldRank = newRank;
-		}
-		
-		// Create Tensor for Vt
-		if (!isOperator) {
-			nxtTensor.reset(new Tensor({oldRank, dimensions[numComponents-1], 1}, Tensor::Representation::Dense, Tensor::Initialisation::None) );
+			xerus::reshuffle(remains, _tensor, shuffle);
 		} else {
-			nxtTensor.reset(new Tensor({oldRank, dimensions[numComponents-1], dimensions[degree()-1], 1}, Tensor::Representation::Dense, Tensor::Initialisation::None) );
+			remains = _tensor;
 		}
-		misc::array_copy(nxtTensor->get_unsanitized_dense_data(), workingData.get(), oldRank*remainingDim);
 		
-		// set last component tensor to Vt
-		set_component(numComponents-1, std::move(nxtTensor));
+		// Add ghost dimensions used in the nodes
+		std::vector<size_t> extDimensions;
+		extDimensions.reserve(remains.degree()+2);
+		extDimensions.emplace_back(1);
+		extDimensions.insert(extDimensions.end(), remains.dimensions.begin(), remains.dimensions.end());
+		extDimensions.emplace_back(1);
+		remains.reinterpret_dimensions(extDimensions);
 		
-		move_core(0); // TODO create with correct cannonicalization in the first place
-		component(0) *= _tensor.factor; // NOTE this needs to be removed if the loop above does not use low-level calls anymore
+		Tensor singularValues, newNode;
+		for(size_t position = numComponents-1; position > 0; --position) {
+			calculate_svd(remains, singularValues, newNode, remains, 1+position*N, _maxRanks[position-1], _eps);
+			
+			set_component(position, std::move(newNode));
+			xerus::contract(remains, remains, false, singularValues, false, 1);
+		}
 		
-		REQUIRE((N==1 && remainingDim == dimensions.back()) || (N==2 && remainingDim == dimensions[degree()/2-1]*dimensions[degree()-1]), "Internal Error");
-		require_correct_format();
+		set_component(0, remains);
+		assume_core_position(0);
 	}
 	
 

@@ -217,7 +217,7 @@ namespace xerus {
 				std::cout << "A was: " << std::endl;
 				for(size_t i=0; i < _m; ++i) {
 					for(size_t j=0; j < _n; ++j) {
-						std::cout << tmpA[i*_n+j];
+						std::cout << tmpA[i*_n+j] << " ";
 					}
 					std::cout << std::endl;
 				}

@@ -1199,10 +1199,10 @@ namespace xerus {
 		if( !_lhs.is_dense()
 			|| _lhs.degree() != _splitPos+1
 			|| _lhs.dimensions.back() != rank 
-			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + (long)_splitPos, _lhs.dimensions.begin())) 
+			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
 		{
 			Tensor::DimensionTuple newDimU;
-			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + (long)_splitPos);
+			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
 			newDimU.push_back(rank);
 			_lhs.reset(newDimU, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
@@ -1210,11 +1210,11 @@ namespace xerus {
 		if(!_rhs.is_dense()
 			|| _rhs.degree() != _input.degree()-_splitPos+1 
 			|| rank != _rhs.dimensions.front() 
-			|| !std::equal(_input.dimensions.begin()+(long)_splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
+			|| !std::equal(_input.dimensions.begin() + _splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
 		{
 			Tensor::DimensionTuple newDimVt;
 			newDimVt.push_back(rank);
-			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + (long)_splitPos, _input.dimensions.end());
+			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
 			_rhs.reset(newDimVt, Tensor::Representation::Dense, Tensor::Initialisation::None);
 		}
 		
@@ -1224,16 +1224,21 @@ namespace xerus {
 	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
 		REQUIRE(0 <= _eps && _eps < 1, "Epsilon must be fullfill 0 <= _eps < 1.");
 		
+		Tensor xnput = _input;
+		
 		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, _input, _splitPos);
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, xnput, _splitPos);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
 		// Calculate the actual SVD
-		if(_input.is_sparse()) {
-			LOG(fatal, "Sparse SVD not yet implemented."); // TODO
+		if(xnput.is_sparse()) {
+			LOG(warning, "Sparse SVD not yet implemented.");
+			Tensor denseCopy = xnput;
+			denseCopy.use_dense_representation();
+			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), xnput.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// Account for hard threshold
@@ -1252,11 +1257,11 @@ namespace xerus {
 		// Create tensor from diagonal values
 		_S.reset(Tensor::DimensionTuple(2, rank), Tensor::Representation::Sparse);
 		for(size_t i = 0; i < rank; ++i) {
-			_S[i*rank+i] = std::abs(_input.factor)*tmpS[i];
+			_S[i*rank+i] = std::abs(xnput.factor)*tmpS[i];
 		}
 		
 		// Account for a negative factor
-		if(_input.factor < 0.0) {
+		if(xnput.factor < 0.0) {
 			_Vt *= -1;
 		}
 		
@@ -1283,7 +1288,10 @@ namespace xerus {
 		REQUIRE(A.size == lhsSize*rhsSize, "woot " << _splitPos << " | " << A.degree());
 		
 		if(A.is_sparse()) {
-			LOG(fatal, "Sparse QR not yet implemented."); // TODO
+			LOG(warning, "Sparse QR not yet implemented."); // TODO
+			Tensor denseCopy = A;
+			denseCopy.use_dense_representation();
+			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
 			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
@@ -1307,7 +1315,10 @@ namespace xerus {
 		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, A, _splitPos);
 		
 		if(A.is_sparse()) {
-			LOG(fatal, "Sparse RQ not yet implemented."); // TODO
+			LOG(warning, "Sparse RQ not yet implemented."); // TODO
+			Tensor denseCopy = A;
+			denseCopy.use_dense_representation();
+			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
 			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
@@ -1331,7 +1342,22 @@ namespace xerus {
 		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, A, _splitPos);
 		
 		if(A.is_sparse()) {
-			LOG(fatal, "Sparse QC not yet implemented."); // TODO
+			LOG(warning, "Sparse QC not yet implemented."); // TODO
+			Tensor denseCopy = A;
+			denseCopy.use_dense_representation();
+			
+			std::unique_ptr<double[]> Qt, Ct;
+			blasWrapper::qc(Qt, Ct, denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			
+			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
+			
+			std::vector<size_t> newDim = _Q.dimensions;
+			newDim.back() = rank;
+			_Q.reset(std::move(newDim), std::move(Qt));
+			
+			newDim = _C.dimensions;
+			newDim.front() = rank;
+			_C.reset(std::move(newDim), std::move(Ct));
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
 			blasWrapper::qc(Qt, Ct, A.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
