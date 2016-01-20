@@ -101,6 +101,23 @@ UNIT_TEST(TensorNetwork, contraction_single_network_trace,
 )
 
 
+UNIT_TEST(TensorNetwork, index_reshuffle2,
+		  TensorNetwork A, B;
+		  Index n1,n2,n3,n4,r1,r2;
+		  Tensor At({2,1,3});
+		  Tensor Bt({1,4,5,1});
+		  Tensor Bt2({1,6,7,1});
+		  A = At;
+		  B = Bt;
+		  A.draw(std::string("out")+misc::to_string(0));
+		  A(n1^(1), n2, r2, n3^(1), n4) = A(n1^(1), r1, n3^(1)) * B(r1, n2, n4, r2);
+		  A.draw(std::string("out")+misc::to_string(1));
+		  TEST(A.dimensions == std::vector<size_t>({2,4,1,3,5}));
+		  B = Bt2;
+		  A(n1^(2), n2, r2, n3^(2), n4) = A(n1^(2), r1, n3^(2)) * B(r1, n2, n4, r2);
+		  A.draw(std::string("out")+misc::to_string(2));
+		  MTEST(A.dimensions == std::vector<size_t>({2,4,6,1,3,5,7}), "found " << A.dimensions);
+)
 
 
 UNIT_TEST(TensorNetwork, triple_indices,
