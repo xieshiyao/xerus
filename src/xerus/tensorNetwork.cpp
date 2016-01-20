@@ -475,7 +475,7 @@ namespace xerus {
 				
 				std::swap(_other.indices[i], _other.indices[j]);
 				
-				for (size_t n = 0; n < _other.indices[i].span; ++n) {
+				for (size_t n = 0; n < _me.indices[i].span; ++n) {
 					_me.tensorObject->swap_external_links(passedDegree1+n, passedDegree2+n);
 				}
 			}
@@ -571,8 +571,8 @@ namespace xerus {
 	
 	
 	void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
-		TensorNetwork::Link &li = externalLinks[_i];
-		TensorNetwork::Link &lj = externalLinks[_j];
+		const TensorNetwork::Link& li = externalLinks[_i];
+		const TensorNetwork::Link& lj = externalLinks[_j];
 		nodes[li.other].neighbors[li.indexPosition].indexPosition = _j;
 		nodes[lj.other].neighbors[lj.indexPosition].indexPosition = _i;
 		std::swap(externalLinks[_i], externalLinks[_j]);
@@ -581,6 +581,7 @@ namespace xerus {
 	
 	
 	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+		_base.assign_indices();
 		_toInsert.assign_indices();
 		
 		TensorNetwork &base = *_base.tensorObject;
@@ -607,8 +608,8 @@ namespace xerus {
 		}
 		
 		// Sanitize the nodes (treating all external links as new external links)
-		for (size_t i = 0; i < toInsert.nodes.size(); ++i) {
-			for(TensorNetwork::Link &l : base.nodes[firstNew+i].neighbors) {
+		for (size_t i = firstNew; i < base.nodes.size(); ++i) {
+			for(TensorNetwork::Link &l : base.nodes[i].neighbors) {
 				if (!l.external) { // Link inside the added network
 					l.other += firstNew;
 				} else { // External link
@@ -617,7 +618,7 @@ namespace xerus {
 			}
 		}
 		
-		// Find traces (former contractions have become traces due to the joining)
+		// Find traces (former contractions may have become traces due to the joining)
 		link_traces(std::move(_base));
 		
 		_base.tensorObject->require_valid_network();
