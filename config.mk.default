@@ -64,8 +64,8 @@ COMPILE_THREADS = 8					# Number of threads to use during link time optimization
 
 
 # Sanitization 
-# DEBUG += -fsanitize=undefined         # gcc 4.9 only
-# DEBUG += -fsanitize=memory            # clang only
+# DEBUG += -fsanitize=undefined         # GCC only
+# DEBUG += -fsanitize=memory            # Clang only
 # DEBUG += -fsanitize=address           # find out of bounds access
 
 
@@ -123,6 +123,6 @@ LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + La
 SUITESPARSE = -lcxsparse
 
 
-# custom include paths
+# Custom include paths
 # OTHER += -I /path/to/include
 

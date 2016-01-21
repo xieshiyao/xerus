@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,32 +27,31 @@ UNIT_TEST(TT, sum,
 	//Random numbers
 	std::mt19937_64 rnd;
 	rnd.seed(0X5EED);
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-    std::uniform_int_distribution<size_t> intDist (1, 10);
-    
-    Index i;
-    
-    std::vector<size_t> dimensions;
-    size_t d = 4;
-        dimensions.push_back(intDist(rnd));
-		dimensions.push_back(intDist(rnd));
-		dimensions.push_back(intDist(rnd));
-		dimensions.push_back(intDist(rnd));
-        Tensor A = Tensor::random(dimensions, rnd, dist);
-        Tensor B = Tensor::random(dimensions, rnd, dist);
-        Tensor C;
-        TTTensor ttA(A); 
-        TTTensor ttB(B); 
-        TTTensor ttC(d);
-		TTOperator toA(A); 
-        TTOperator toB(B); 
-        TTOperator toC(d);
-        
-        C(i&0) = A(i&0) + B(i&0);
-        ttC(i&0) = ttA(i&0) + ttB(i&0);
-		toC(i&0) = toA(i&0) + toB(i&0);
-        TEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 3.1*1e-13);
-		TEST(frob_norm(Tensor(toC)(i&0) - C(i&0)) < 3.1*1e-13);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+	std::uniform_int_distribution<size_t> intDist (1, 10);
+	
+	Index i;
+	
+	std::vector<size_t> dimensions;
+	dimensions.push_back(intDist(rnd));
+	dimensions.push_back(intDist(rnd));
+	dimensions.push_back(intDist(rnd));
+	dimensions.push_back(intDist(rnd));
+	Tensor A = Tensor::random(dimensions, rnd, dist);
+	Tensor B = Tensor::random(dimensions, rnd, dist);
+	Tensor C;
+	TTTensor ttA(A); 
+	TTTensor ttB(B); 
+	TTTensor ttC;
+	TTOperator toA(A); 
+	TTOperator toB(B); 
+	TTOperator toC;
+	
+	C(i&0) = A(i&0) + B(i&0);
+	ttC(i&0) = ttA(i&0) + ttB(i&0);
+	toC(i&0) = toA(i&0) + toB(i&0);
+	MTEST(frob_norm(Tensor(ttC)(i&0) - C(i&0)) < 3.1*1e-13, frob_norm(Tensor(ttC)(i&0) - C(i&0)));
+	MTEST(frob_norm(Tensor(toC)(i&0) - C(i&0)) < 3.1*1e-13, frob_norm(Tensor(toC) - C));
 	
 )
 
@@ -79,72 +78,72 @@ UNIT_TEST(TT, difference,
 )
 
 UNIT_TEST(TT, real_difference,
-    //Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(0X5EED);
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-    
-    TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
-    TTTensor ttC(5); 
-    
-    Index i;
-    ttC(i&0) = ttA(i&0) - ttA(i&0);
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "1 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = ttB(i&0) - ttB(i&0);
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "2 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "3 " << frob_norm(ttC(i&0)));
-    
+	//Random numbers
+	std::mt19937_64 rnd;
+	rnd.seed(0X5EED);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+	
+	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+	TTTensor ttC(5); 
+	
+	Index i;
+	ttC(i&0) = ttA(i&0) - ttA(i&0);
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "1 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = ttB(i&0) - ttB(i&0);
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "2 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "3 " << frob_norm(ttC(i&0)));
+	
 	ttC(i&0) = (ttA(i&0) + ttB(i&0));
 	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
 	ttC(i&0) = (ttB(i&0) + ttA(i&0));
 	TEST(ttC.ranks() == std::vector<size_t>({8,8,8,8}));
-    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "4 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 1e-9, "5 " << frob_norm(ttC(i&0)));
+	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "4 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 1e-9, "5 " << frob_norm(ttC(i&0)));
 	
 	ttA = TTTensor::random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
 	ttC(i&0) = ttA(i&0) - ttA(i&0);
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "6 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = ttB(i&0) - ttB(i&0);
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "7 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "8 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 1e-11, "9 " << frob_norm(ttC(i&0)));
-    
-    ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
-    MTEST(frob_norm(ttC(i&0)) < 5e-10, "10 " << frob_norm(ttC(i&0)));
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "6 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = ttB(i&0) - ttB(i&0);
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "7 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttA(i&0) + ttB(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "8 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = (ttA(i&0) + ttB(i&0)) - (ttB(i&0) + ttA(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 1e-11, "9 " << frob_norm(ttC(i&0)));
+	
+	ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
+	MTEST(frob_norm(ttC(i&0)) < 5e-10, "10 " << frob_norm(ttC(i&0)));
 	
 )
 
 UNIT_TEST(TT, difference_of_TTStacks,
-    //Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(0X5EED);
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-    
-    TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-    TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
-    TTTensor ttC;
-    
-    Index i,j,k;
-    ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
-    LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-7);
-    
-    ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
-    LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-    TEST(frob_norm(ttC(i&0)) < 1e-7);
+	//Random numbers
+	std::mt19937_64 rnd;
+	rnd.seed(0X5EED);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+	
+	TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+	TTTensor ttC;
+	
+	Index i,j,k;
+	ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
+	LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+	TEST(frob_norm(ttC(i&0)) < 1e-7);
+	
+	ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
+	LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+	TEST(frob_norm(ttC(i&0)) < 1e-7);
 )
 
 UNIT_TEST(TT, special_sum_diff,
@@ -324,7 +323,7 @@ UNIT_TEST(TT, ax_b,
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	TTTensor X = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
 	TTTensor B = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
-    
+	
 	Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
 			return 1.0;
@@ -336,7 +335,7 @@ UNIT_TEST(TT, ax_b,
 	TTOperator A(I);
 	TTTensor T;
 	TTTensor S;
-    
+	
 	Index i,j,k;
 	
 	
@@ -353,12 +352,12 @@ UNIT_TEST(TT, ax_b,
 	TEST(frob_norm(fT(i^3) - fX(i^3))<1e-7);
 	
 	T(i^3) = A(i^3, j^3) * X(j^3);
-    TEST(frob_norm(Tensor(T) - fT) < 1e-7);
-    TEST(frob_norm(Tensor(T)(i^3) - fT(i^3)) < 1e-7);
+	TEST(frob_norm(Tensor(T) - fT) < 1e-7);
+	TEST(frob_norm(Tensor(T)(i^3) - fT(i^3)) < 1e-7);
 	
 	T(i^3) = A(i^3, j^3) * X(j^3);
-    TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
-    
+	TEST(frob_norm(A(i^3, j^3) * X(j^3) - T(i^3)) < 1e-7);
+	
 	TEST(frob_norm(T(i^3) - X(i^3))<1e-7);
 	T(i^3) = T(i^3) - X(i^3);
 	S(i^3) = A(i^3, j^3) * X(j^3) - X(i^3);
@@ -393,9 +392,9 @@ UNIT_TEST(TT, operator_times_tensor,
 	Tensor D;
 	Tensor Do;
 	TTOperator ttA(A); 
-	ttA.round(2); A = Tensor(ttA);
+	ttA.round(2ul); A = Tensor(ttA);
 	TTOperator ttB(B); 
-	ttB.round(2); B = Tensor(ttB);
+	ttB.round(2ul); B = Tensor(ttB);
 	TTTensor ttC(C); 
 	TTTensor ttD(C);
 	TTOperator ttDo(A);
@@ -463,14 +462,14 @@ UNIT_TEST(TT, full_contraction,
 
 UNIT_TEST(TT, disjoint_product,
 	//Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(73);
+	std::mt19937_64 rnd;
+	rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	std::uniform_int_distribution<size_t> dimDist(1, 5);
 	
 	std::vector<size_t> dimsA;
 	std::vector<size_t> dimsB;
-    
+	
 	const size_t D = 5;
 	Index i,j;
 	
@@ -483,7 +482,7 @@ UNIT_TEST(TT, disjoint_product,
 		TTTensor ttC;
 		
 		
-		ttC = TTTensor::dyadic_product(ttA,ttB);
+		ttC = TTTensor::dyadic_product(ttA, ttB);
 		C(i/2,j/2) = A(i&0)*B(j&0);
 		
 		LOG(unit_test, frob_norm(C(i&0) - Tensor(ttC)(i&0)));

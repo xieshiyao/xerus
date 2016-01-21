@@ -4,7 +4,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 
 * 2016-01-?? v2.0
  * ! Merged FullTensor and SparseTensor into a single Tensor class.
- * Implemented several FullTensor functions also for sparse representations (modify(_diag)_elements, fix_slate, resize_dimension,...)
+ * Implemented several FullTensor functions also for sparse representations (modify(\_diag)_elements, fix\_slate, resize\_dimension,...)
  * ! Removed all support for stored IndexedTensor*s.
  * ! Reworked the IndexedTensor* index assignment.
  * ! Changed resize_dimension to allow slate insertion at the first position.
