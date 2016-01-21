@@ -459,10 +459,33 @@ namespace xerus {
 		link_traces((*_me.tensorObject)(_other.indices));
 		
 		_me.assign_indices();
-
+		
+		TensorNetwork& me = *_me.tensorObject;
+		const TensorNetwork& other = *_other.tensorObjectReadOnly;
+		
+		for (size_t i = 0, dimPosA = 0; i < _me.indices.size(); dimPosA += _me.indices[i].span, ++i) {
+			size_t j = 0, dimPosB = 0;
+			while (_me.indices[i] != _other.indices[j]) {
+				dimPosB += _other.indices[j].span;
+				++j;
+				REQUIRE( j < _other.indices.size(), "LHS Index " << _me.indices[i] << " not found in RHS " << _other.indices);
+			}
+			
+			REQUIRE(_me.indices[i].span == _other.indices[j].span, "Index spans must coincide");
+			
+			for (size_t s = 0; s < _me.indices[i].span; ++s) {
+				me.dimensions[dimPosA+s] = other.dimensions[dimPosB+s];
+				me.externalLinks[dimPosA+s] = other.externalLinks[dimPosB+s];
+				me.nodes[me.externalLinks[dimPosA+s].other].neighbors[me.externalLinks[dimPosA+s].indexPosition].indexPosition = dimPosA+s;
+				me.nodes[me.externalLinks[dimPosA+s].other].neighbors[me.externalLinks[dimPosA+s].indexPosition].dimension = me.dimensions[dimPosA+s];
+			}
+		}
+		/*
 		// Swap indices accordingly
 		size_t passedDegree1 = 0;
 		for (size_t i = 0; i < _me.indices.size(); passedDegree1 += _me.indices[i].span, ++i) {
+			LOG(dbgs, _me.indices << " = " << _other.indices);
+			_me.tensorObject->draw(std::string("outI")+misc::to_string(i));
 			if (_other.indices[i] != _me.indices[i]) {
 				// Find the correct index in other
 				size_t j = i+1;
@@ -481,6 +504,13 @@ namespace xerus {
 			}
 			REQUIRE(_other.indices[i].span == _me.indices[i].span, "Index span mismatch");
 		}
+		
+		LOG(dbgs, _me.indices << " = " << _other.indices);
+		_me.tensorObject->draw(std::string("outIX"));
+		REQUIRE(_other.indices == _me.indices, "IE");
+		_me.tensorObjectReadOnly->draw("outX3");*/
+		
+		require_valid_network();
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
