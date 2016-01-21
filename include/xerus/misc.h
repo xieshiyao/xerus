@@ -28,6 +28,7 @@
 #include "misc/standard.h"
 #include "misc/namedLogger.h"
 #include "misc/missingFunctions.h"
+#include "misc/basicArraySupport.h"
 #include "misc/stringUtilities.h"
 #include "misc/sfinae.h"
 #include "misc/callStack.h"

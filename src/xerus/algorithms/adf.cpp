@@ -26,7 +26,7 @@
  
  
 #include <xerus/indexedTensorMoveable.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -343,7 +343,7 @@ namespace xerus {
 		}
 		
 		for(size_t n = 0; n < _position.size; ++n) {
-			misc::array_add(_deltaPtr + n*_localLeftRank*_localRightRank, 
+			misc::add_scaled(_deltaPtr + n*_localLeftRank*_localRightRank, 
 				_position[n]*_residual,
 				_scratchSpace,
 				_localLeftRank*_localRightRank

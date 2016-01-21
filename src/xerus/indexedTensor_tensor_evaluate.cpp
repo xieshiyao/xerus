@@ -28,7 +28,7 @@
 #include <xerus/tensor.h>
  
 #include <memory>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/performanceAnalysis.h>
 
@@ -108,10 +108,10 @@ namespace xerus {
 					*outPosition = *(basePosition + b*blockSize);
 				}
 			} else {
-				misc::array_copy(outPosition, basePosition, blockSize);
+				misc::copy(outPosition, basePosition, blockSize);
 				for(size_t b = 1; b < numBlocks; ++b) {
 					increase_indices(b, outPosition, stepSizes, usedBase->dimensions);
-					misc::array_copy(outPosition, basePosition + b*blockSize, blockSize);
+					misc::copy(outPosition, basePosition + b*blockSize, blockSize);
 				}
 			}
 			_out.factor = usedBase->factor;
@@ -164,10 +164,10 @@ namespace xerus {
 							const std::vector<size_t>& _doubleMultDimensions,
 							const size_t _numSummations,
 							const size_t _orderedIndicesMultDim ) {
-		misc::array_copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
+		misc::copy(_newPosition, _oldPosition, _orderedIndicesMultDim);
 		for(size_t k = 1; k < _numSummations; ++k) {
 			increase_indices(k, _oldPosition, _doubleSteps, _doubleMultDimensions);
-			misc::array_add(_newPosition, 1.0, _oldPosition, _orderedIndicesMultDim);
+			misc::add(_newPosition, _oldPosition, _orderedIndicesMultDim);
 		}
 	}
 	
@@ -359,10 +359,10 @@ namespace xerus {
 				}
 			} else { // We can copy/add larger blocks
 				if(totalTraceDim == 1) { // We don't need to sum any traces
-					misc::array_copy(newPosition, oldPosition, orderedIndexDim);
+					misc::copy(newPosition, oldPosition, orderedIndexDim);
 					for(size_t i = 1; i < numSteps; ++i) {
 						increase_indices(i, oldPosition, stepSizes, outIndexDimensions);
-						misc::array_copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
+						misc::copy(newPosition + i*orderedIndexDim, oldPosition, orderedIndexDim);
 					}
 				} else { // We have to add traces
 					sum_traces(newPosition, oldPosition, traceStepSizes, traceDimensions, totalTraceDim, orderedIndexDim);

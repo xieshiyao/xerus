@@ -27,7 +27,7 @@
 #include <xerus/tensor.h>
  
 #include <xerus/blasLapackWrapper.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
 
 namespace xerus {
 	

@@ -25,7 +25,7 @@
 #include <xerus/tensor.h>
 #include <xerus/misc/check.h>
 #include <xerus/misc/missingFunctions.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
  
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cs_wrapper.h>
@@ -46,7 +46,7 @@ namespace xerus {
 		if(representation == Representation::Dense) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
 			if(_init == Initialisation::Zero) {
-				misc::array_set_zero(denseData.get(), size);
+				misc::set_zero(denseData.get(), size);
 			}
 		} else {
 			sparseData.reset(new std::map<size_t, value_t>());
@@ -61,7 +61,7 @@ namespace xerus {
 		if(representation == Representation::Dense) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
 			if(_init == Initialisation::Zero) {
-				misc::array_set_zero(denseData.get(), size);
+				misc::set_zero(denseData.get(), size);
 			}
 		} else {
 			sparseData.reset(new std::map<size_t, value_t>());
@@ -608,23 +608,23 @@ namespace xerus {
 				if(_cutPos == 0) {
 					for ( size_t i = 0; i < blockCount; ++i ) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
-						misc::array_set_zero(currData, insertBlockSize);
-						misc::array_copy(currData+insertBlockSize, denseData.get()+i*oldStepSize, oldStepSize);
+						misc::set_zero(currData, insertBlockSize);
+						misc::copy(currData+insertBlockSize, denseData.get()+i*oldStepSize, oldStepSize);
 					}
 				} else if(_cutPos == oldDim) {
 					for ( size_t i = 0; i < blockCount; ++i ) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
-						misc::array_copy(currData, denseData.get()+i*oldStepSize, oldStepSize);
-						misc::array_set_zero(currData+oldStepSize, insertBlockSize);
+						misc::copy(currData, denseData.get()+i*oldStepSize, oldStepSize);
+						misc::set_zero(currData+oldStepSize, insertBlockSize);
 					}
 				} else {
 					const size_t preBlockSize = _cutPos*dimStepSize;
 					const size_t postBlockSize = (oldDim-_cutPos)*dimStepSize;
 					for (size_t i = 0; i < blockCount; ++i) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
-						misc::array_copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
-						misc::array_set_zero(currData+preBlockSize, insertBlockSize);
-						misc::array_copy(currData+preBlockSize+insertBlockSize, denseData.get()+i*oldStepSize+preBlockSize, postBlockSize);
+						misc::copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
+						misc::set_zero(currData+preBlockSize, insertBlockSize);
+						misc::copy(currData+preBlockSize+insertBlockSize, denseData.get()+i*oldStepSize+preBlockSize, postBlockSize);
 					}
 				}
 			} else { // Remove slates
@@ -638,12 +638,12 @@ namespace xerus {
 					
 					for (size_t i = 0; i < blockCount; ++i) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
-						misc::array_copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
-						misc::array_copy(currData+preBlockSize, denseData.get()+i*oldStepSize+preBlockSize+removedBlockSize, postBlockSize);
+						misc::copy(currData, denseData.get()+i*oldStepSize, preBlockSize);
+						misc::copy(currData+preBlockSize, denseData.get()+i*oldStepSize+preBlockSize+removedBlockSize, postBlockSize);
 					}
 				} else {
 					for (size_t i = 0; i < blockCount; ++i) {
-						misc::array_copy(tmpData.get()+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize);
+						misc::copy(tmpData.get()+i*newStepSize, denseData.get()+i*oldStepSize, newStepSize);
 					}
 				}
 			}
@@ -701,7 +701,7 @@ namespace xerus {
 			
 			// Copy data
 			for(size_t i = 0; i < stepCount; ++i) {
-				misc::array_copy(tmpData.get()+i*blockSize, denseData.get()+i*stepSize+slateOffset, blockSize);
+				misc::copy(tmpData.get()+i*blockSize, denseData.get()+i*stepSize+slateOffset, blockSize);
 			}
 			
 			denseData.reset(tmpData.release(), &internal::array_deleter_vt);
@@ -754,12 +754,12 @@ namespace xerus {
 		size = front*mid*back;
 		
 		std::unique_ptr<value_t[]> newData(new value_t[size]);
-		misc::array_set_zero(newData.get(), size);
+		misc::set_zero(newData.get(), size);
 		
 		for(size_t f = 0; f < front; ++f) {
 			for(size_t t = 0; t < traceDim; ++t) {
 				for(size_t m = 0; m < mid; ++m) {
-					misc::array_add(newData.get()+(f*mid+m)*back, factor, denseData.get()+f*frontStepSize+t*traceStepSize+m*midStepSize, back);
+					misc::add_scaled(newData.get()+(f*mid+m)*back, factor, denseData.get()+f*frontStepSize+t*traceStepSize+m*midStepSize, back);
 				}
 			}
 		}
@@ -886,7 +886,7 @@ namespace xerus {
     void Tensor::use_dense_representation() {
 		if(is_sparse()) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
-			misc::array_set_zero(denseData.get(), size);
+			misc::set_zero(denseData.get(), size);
 			for(const std::pair<size_t, value_t>& entry : *sparseData) {
 				denseData.get()[entry.first] = entry.second;
 			}
@@ -946,14 +946,14 @@ namespace xerus {
 		if(_me.is_dense()) {
 			_me.ensure_own_data_and_apply_factor();
 			if(_other.is_dense()) {
-				misc::array_add(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+				misc::add_scaled(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
 			} else {
 				add_sparse_to_full(_me.denseData, sign*_other.factor, _other.sparseData);
 			}
 		} else {
 			if(_other.is_dense()) {
 				_me.denseData.reset(new value_t[_me.size], internal::array_deleter_vt);
-				misc::array_scaled_copy(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
+				misc::copy_scaled(_me.denseData.get(), sign*_other.factor, _other.denseData.get(), _me.size);
 				add_sparse_to_full(_me.denseData, _me.factor, _me.sparseData);
 				_me.factor = 1.0;
 				_me.representation = Representation::Dense;
@@ -1000,7 +1000,7 @@ namespace xerus {
 			if(!denseData.unique()) {
 				value_t* const oldDataPtr = denseData.get();
 				denseData.reset(new value_t[size], internal::array_deleter_vt);
-				misc::array_copy(denseData.get(), oldDataPtr, size);
+				misc::copy(denseData.get(), oldDataPtr, size);
 			}
 		} else {
 			if(!sparseData.unique()) {
@@ -1026,11 +1026,11 @@ namespace xerus {
 		if(has_factor()) {
 			if(is_dense()) {
 				if(denseData.unique()) {
-					misc::array_scale(denseData.get(), factor, size);
+					misc::scale(denseData.get(), factor, size);
 				} else {
 					value_t* const oldDataPtr = denseData.get();
 					denseData.reset(new value_t[size], internal::array_deleter_vt);
-					misc::array_scaled_copy(denseData.get(), factor, oldDataPtr, size);
+					misc::copy_scaled(denseData.get(), factor, oldDataPtr, size);
 				}
 			} else {
 				if(!sparseData.unique()) {
