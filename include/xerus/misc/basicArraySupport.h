@@ -45,7 +45,7 @@ namespace xerus {
 		* @brief Copys @a _n entries from @a _y to @a _x, where @a _y and @a _x must be disjunkt memory regions.
 		* @details For trivial copyable types this is only a slim wrapper for memcpy.
 		*/
-		template <typename T, typename std::enable_if<std::is_trivially_copyable<T>::value, int>::type = 0>
+		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
 		inline void copy(T* const __restrict _x, const T* const __restrict _y, const size_t _n) {
 			memcpy(_x, _y, _n*sizeof(T));
 		}
@@ -55,7 +55,7 @@ namespace xerus {
 		* @brief Copys @a _n entries from @a _y to @a _x, allowing the accessed memry regions of @a _y and @a _x to overlap.
 		* @details For trivial copyable types this is only a slim wrapper for memmove.
 		*/
-		template <typename T, typename std::enable_if<std::is_trivially_copyable<T>::value, int>::type = 0>
+		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
 		inline void copy_inplace(T* const _x, const T* const _y, const size_t _n) {
 			memmove(_x, _y, _n*sizeof(T));
 		}
