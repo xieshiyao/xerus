@@ -112,7 +112,7 @@ namespace xerus {
 		
 		size_t firstNotOptimizedIndex = d;
 		dimensionProd = 1;
-		while (firstNotOptimizedIndex > firstOptimizedIndex+1) {
+		while (firstNotOptimizedIndex > firstOptimizedIndex+ALS.sites) {
 			const size_t localDim = x.dimensions[firstNotOptimizedIndex-1];
 			size_t newDimensionProd = dimensionProd * localDim;
 			if (x.rank(firstNotOptimizedIndex-2) < newDimensionProd) {
@@ -267,7 +267,7 @@ namespace xerus {
 		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 		Tensor tmpA, tmpB;
 		if (direction == Increasing) {
-			REQUIRE(currIndex+ALS.sites < optimizedRange.second, "ie");
+			REQUIRE(currIndex+ALS.sites < optimizedRange.second, "ie " << currIndex << " " << ALS.sites << " " << optimizedRange.first << " " << optimizedRange.second);
 			// Move core to next position (assumed to be done by the solver if sites > 1)
 			if (ALS.sites == 1) {
 				x.move_core(currIndex+1, true);
@@ -383,14 +383,11 @@ namespace xerus {
 			// Calculate Atilde and Btilde
 			if (_Ap) {
 				ATilde = data.xAxL.back();
-				LOG(A, _A.dimensions << " " << _A.ranks());
 				for (size_t p=0;  p<sites; ++p) {
-					LOG(at, ATilde.dimensions << " " << _A.get_component(data.currIndex+p).dimensions);
 					ATilde.draw(std::string("out")+misc::to_string(p));
 					ATilde(n1^(p+1), n2, r2, n3^(p+1), n4) = ATilde(n1^(p+1), r1, n3^(p+1)) * _A.get_component(data.currIndex+p)(r1, n2, n4, r2);
 				}
 				ATilde.draw(std::string("out")+misc::to_string(sites));
-				LOG(at, ATilde.dimensions);
 				ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1, n3^(sites+1)) * data.xAxR.back()(n2, r1, n4);
 			}
 			BTilde(r1,cr1) = data.bxL.back()(cr1,r1);
