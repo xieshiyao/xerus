@@ -37,12 +37,12 @@ UNIT_TEST(Tutorials, quick_start,
 	xerus::Index i,j,k;
 	
 	double residual = frob_norm( ttA(i^9,j^9)*ttx(j^9) - ttb(i^9) );
-	MTEST(residual < 2e-9, residual);
+	MTEST(residual < 3.5e-9, residual);
 // 	std::cout << "residual: " << residual << std::endl;
 	
 	xerus::Tensor x;
 	x(j^9) = b(i^9) / A(i^9, j^9);
-	MTEST(frob_norm(x(i&0) - ttx(i&0)) < 2e-9, frob_norm(x(i&0) - ttx(i&0)));
+	MTEST(frob_norm(x(i&0) - ttx(i&0)) < 3.5e-9, frob_norm(x(i&0) - ttx(i&0)));
 // 	std::cout << Tensor(ttx).to_string() << std::endl;
 // 	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
 )

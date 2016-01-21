@@ -450,20 +450,19 @@ namespace xerus {
 	
 	
 	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		// If tensorObject is not already identical copy it.
-		if (_me.tensorObjectReadOnly != _other.tensorObjectReadOnly) {
-			*_me.tensorObject = *_other.tensorObjectReadOnly;
-		}
-		
-		_other.assign_indices();
-		link_traces((*_me.tensorObject)(_other.indices));
-		
-		_me.assign_indices();
-		
 		TensorNetwork& me = *_me.tensorObject;
 		const TensorNetwork& other = *_other.tensorObjectReadOnly;
 		
-		const std::vector<size_t> otherDimensions = other.dimensions; // TODO not needed if me and other are not the same
+		me = other;
+		
+		_other.assign_indices();
+		
+		link_traces((me)(_other.indices));
+		
+		_me.assign_indices();
+		
+		// Needed if &me == &other
+		const std::vector<size_t> otherDimensions = other.dimensions;
 		const std::vector<Link> otherExtLinks = other.externalLinks;
 		
 		for (size_t i = 0, dimPosA = 0; i < _me.indices.size(); dimPosA += _me.indices[i].span, ++i) {
@@ -541,7 +540,7 @@ namespace xerus {
 				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "n=" << n << " " << currNode.degree() << " vs " << currNode.tensorObject->degree());
 			}
 			// per neighbor
-			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
+			for (size_t i = 0; i < currNode.neighbors.size(); ++i) {
 				const TensorNetwork::Link &el = currNode.neighbors[i];
 				REQUIRE(el.dimension > 0, "n=" << n << " i=" << i);
 				if (currNode.tensorObject) {

@@ -270,7 +270,7 @@ namespace xerus {
 		for (size_t i=0; i<_U.degree(); ++i) { REQUIRE_TEST;
 			std::unique_ptr<Tensor> newComponent(new Tensor);
 			(*newComponent)(i1,r,j1) = _U.get_component(i)(i1,r,j1) + _change.components[i](i1,r,j1);
-			_U.set_component(i, std::move(newComponent));
+			_U.set_component(i, std::move(*newComponent));
 		}
 		_U.move_core(0, true);
 	}

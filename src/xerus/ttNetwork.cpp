@@ -129,6 +129,7 @@ namespace xerus {
 		extDimensions.emplace_back(1);
 		remains.reinterpret_dimensions(extDimensions);
 		
+		
 		Tensor singularValues, newNode;
 		for(size_t position = numComponents-1; position > 0; --position) {
 			calculate_svd(remains, singularValues, newNode, remains, 1+position*N, _maxRanks[position-1], _eps);
@@ -181,13 +182,13 @@ namespace xerus {
 		for (size_t i = 0; i < numComponents; ++i) {
 			constructionVector[1] = _dimensions[i];
 			constructionVector[2] = _dimensions[i+numComponents];
-			result.set_component(i, std::unique_ptr<Tensor>(new Tensor(constructionVector, [](const std::vector<size_t> &_idx){
+			result.set_component(i, Tensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
 				} else {
 					return 0.0;
 				}
-			})));
+			}));
 		}
 		
 		result.cannonicalize_left();
@@ -208,7 +209,7 @@ namespace xerus {
 			REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 			
 			// per external link
-			for (size_t n=0; n<externalLinks.size(); ++n) {
+			for (size_t n = 0; n < externalLinks.size(); ++n) {
 				const TensorNetwork::Link &l = externalLinks[n];
 				REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
 				REQUIRE(!l.external, "n=" << n);
@@ -252,7 +253,7 @@ namespace xerus {
 			}
 			
 			// Per component
-			for (size_t n=0; n<numComponents; ++n) {
+			for (size_t n = 0; n < numComponents; ++n) {
 				const TensorNode &node = nodes[n+1];
 				REQUIRE(!node.erased, "n=" << n);
 				REQUIRE(node.degree() == N+2, "n=" << n << " " << node.degree());
@@ -288,15 +289,14 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::exceeds_maximal_ranks() const {
-		for (size_t i=0; i<degree()/N; ++i) {
+		for (size_t i = 0; i < degree()/N; ++i) {
 			const Tensor& comp = get_component(i);
 			size_t extDim = comp.dimensions[1];
 			if (isOperator) {
 				extDim *= comp.dimensions[2];
 			}
-			if (   comp.dimensions.front() > extDim * comp.dimensions.back()
-				|| comp.dimensions.back() > extDim * comp.dimensions.front()
-			) {
+			if (	comp.dimensions.front() > extDim * comp.dimensions.back() 
+				|| 	comp.dimensions.back()  > extDim * comp.dimensions.front()) {
 				return true;
 			}
 		}
@@ -312,10 +312,8 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	template<bool isOperator>
-	std::vector<size_t> TTNetwork<isOperator>::reduce_to_maximal_ranks(const std::vector<size_t>& _ranks, const std::vector<size_t>& _dimensions) {
+	std::vector<size_t> TTNetwork<isOperator>::reduce_to_maximal_ranks(std::vector<size_t> _ranks, const std::vector<size_t>& _dimensions) {
 		const size_t numComponents = _dimensions.size()/N;
-		
-		std::vector<size_t> reducedRanks(_ranks);
 		
 		if(numComponents > 0) {
 			// Left to right sweep
@@ -324,10 +322,10 @@ namespace xerus {
 				currMax *= _dimensions[i];
 				if (isOperator) { currMax *= _dimensions[numComponents+i]; }
 				
-				if (currMax < reducedRanks[i]) { 
-					reducedRanks[i] = currMax;
+				if (currMax < _ranks[i]) { 
+					_ranks[i] = currMax;
 				} else {
-					currMax = reducedRanks[i];
+					currMax = _ranks[i];
 				}
 			}
 		
@@ -337,15 +335,15 @@ namespace xerus {
 				currMax *= _dimensions[i];
 				if (isOperator) { currMax *= _dimensions[numComponents+i]; }
 				
-				if (currMax < reducedRanks[i-1]) {
-					reducedRanks[i-1] = currMax;
+				if (currMax < _ranks[i-1]) {
+					_ranks[i-1] = currMax;
 				} else {
-					currMax = reducedRanks[i-1];
+					currMax = _ranks[i-1];
 				}
 			}
 		}
 		
-		return reducedRanks;
+		return _ranks;
 	}
 		
 	template<bool isOperator>
@@ -361,30 +359,12 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::set_component(const size_t _idx, const Tensor &_T) {
+	void TTNetwork<isOperator>::set_component(const size_t _idx, Tensor _T) {
 		REQUIRE(_idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::set_component");
 		REQUIRE(_T.degree() == N+2, "Component must have degree 3 (TTTensor) or 4 (TTOperator). Given: " << _T.degree());
 		
 		TensorNode &currNode = nodes[_idx+1];
-		currNode.tensorObject.reset( new Tensor(_T));
-		for (size_t i = 0; i < N+2; ++i) {
-			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
-			if (currNode.neighbors[i].external) {
-				externalLinks[currNode.neighbors[i].indexPosition].dimension = currNode.tensorObject->dimensions[i];
-				dimensions[currNode.neighbors[i].indexPosition] = currNode.tensorObject->dimensions[i];
-			}
-		}
-		
-		cannonicalized = cannonicalized && (corePosition == _idx);
-	}
-	
-	template<bool isOperator>
-	void TTNetwork<isOperator>::set_component(size_t _idx, std::unique_ptr<Tensor> &&_T) {
-		REQUIRE(_idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::set_component");
-		REQUIRE(_T->degree() == N+2, "Component must have degree 3 (TTTensor) or 4 (TTOperator). Given: " << _T->degree());
-		
-		TensorNode &currNode = nodes[_idx+1];
-		currNode.tensorObject = std::move(_T);
+		*currNode.tensorObject = std::move(_T);
 		for (size_t i = 0; i < N+2; ++i) {
 			currNode.neighbors[i].dimension = currNode.tensorObject->dimensions[i];
 			if (currNode.neighbors[i].external) {
@@ -548,7 +528,7 @@ namespace xerus {
 				}
 				offsetB = 0;
 			}
-			result.set_component(i, std::move(newComponent));
+			result.set_component(i, std::move(*newComponent));
 		}
 		
 		result.require_correct_format();
@@ -1252,7 +1232,7 @@ namespace xerus {
 				}
 			}
 			
-			outTensor.set_component(0, std::move(nextTensor));
+			outTensor.set_component(0, std::move(*nextTensor));
 			return true;
 		}
 		
@@ -1349,7 +1329,7 @@ namespace xerus {
 				}
 			}
 			
-			outTensor.set_component(position, std::move(newComponent));
+			outTensor.set_component(position, std::move(*newComponent));
 		}
 		
 		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(outTensor.dimensions)+" Ranks: "+misc::to_string(outTensor.ranks()));

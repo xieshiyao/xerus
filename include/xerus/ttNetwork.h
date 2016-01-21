@@ -243,7 +243,7 @@ namespace xerus {
 		* @param _dimensions the dimensions used to calculate the maximal ranks.
 		* @return the reduced ranks.
 		*/
-		static std::vector<size_t> reduce_to_maximal_ranks(const std::vector<size_t>& _ranks, const std::vector<size_t>& _dimensions);
+		static std::vector<size_t> reduce_to_maximal_ranks(std::vector<size_t> _ranks, const std::vector<size_t>& _dimensions);
 		
 		
 		/** 
@@ -308,19 +308,7 @@ namespace xerus {
 		* @param _idx index of the component to set.
 		* @param _T Tensor to use as the new component tensor.
 		*/
-		void set_component(const size_t _idx, const Tensor &_T);
-		
-		
-		/** 
-		* @brief Sets a specific component of the TT decomposition.
-		* @details This function also takes care of adjusting the corresponding link dimensions and external dimensions
-		* if needed. However this might still leave the TTNetwork in an invalid if the rank is changed. In this case it
-		* is the callers responsibility to also update the other component tensors consistently to account for that rank
-		* change.
-		* @param _idx index of the component to set.
-		* @param _T Tensor to use as the new component tensor.
-		*/
-		void set_component(size_t _idx, std::unique_ptr<Tensor> &&_T);
+		void set_component(const size_t _idx, Tensor _T);
 		
 		
 		/** 
@@ -440,7 +428,7 @@ namespace xerus {
 			for (size_t n = 0; n < degree()/N; ++n) {
 				std::unique_ptr<Tensor> At(new Tensor(nodes[n+1].tensorObject->representation));
 				(*At)(l,j,i,r) = get_component(n)(l,i,j,r);
-				set_component(n, std::move(At));
+				set_component(n, std::move(*At));
 			}
 		}
 		
