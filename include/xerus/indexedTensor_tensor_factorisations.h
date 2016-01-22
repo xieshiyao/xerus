@@ -31,15 +31,18 @@
 
 namespace xerus {
 	class Tensor;
-	template<class tensor_type> class IndexedTensorReadOnly;
-	template<class tensor_type> class IndexedTensor;
+	
+	namespace internal {
+		template<class tensor_type> class IndexedTensorReadOnly;
+		template<class tensor_type> class IndexedTensor;
+	}
 	
 	/**
 	* @brief Abstract super class for all tensor factorisations.
 	*/
 	class TensorFactorisation {
 	public:
-		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const = 0;
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const = 0;
 	};
 	
 	/**
@@ -49,25 +52,25 @@ namespace xerus {
 	*/
 	class SVD : public TensorFactorisation{
 	public:
-		IndexedTensorReadOnly<Tensor>* input;
+		internal::IndexedTensorReadOnly<Tensor>* input;
 		const double epsilon;
 		const double softThreshold;
 		const size_t maxRank;
 		const bool preventZero;
 		
-		SVD(IndexedTensorReadOnly<Tensor>&& _input) : 
+		SVD(internal::IndexedTensorReadOnly<Tensor>&& _input) : 
 			input(&_input), epsilon(EPSILON), softThreshold(0.0), maxRank(std::numeric_limits<size_t>::max()), preventZero(false) { }
 			
-		SVD(IndexedTensorReadOnly<Tensor>&& _input, const double _softTreshold, const bool _preventZero = false) : 
+		SVD(internal::IndexedTensorReadOnly<Tensor>&& _input, const double _softTreshold, const bool _preventZero = false) : 
 			input(&_input), epsilon(0.0), softThreshold(_softTreshold), maxRank(std::numeric_limits<size_t>::max()), preventZero(_preventZero) { }
 			
-		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
+		SVD(internal::IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon = EPSILON) : 
 			input(&_input), epsilon(_epsilon), softThreshold(0.0), maxRank(_maxRank), preventZero(false) { }
 			
-		SVD(IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
+		SVD(internal::IndexedTensorReadOnly<Tensor>&& _input, const size_t _maxRank, const double _epsilon, const double _softTreshold, const bool _preventZero) : 
 			input(&_input), epsilon(_epsilon), softThreshold(_softTreshold), maxRank(_maxRank), preventZero(_preventZero) { }
 		
-		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
 	};
 
 	/**
@@ -77,10 +80,10 @@ namespace xerus {
 	*/
 	class QR : public TensorFactorisation {
 	public:
-		IndexedTensorReadOnly<Tensor>* input;
-		QR(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		internal::IndexedTensorReadOnly<Tensor>* input;
+		QR(internal::IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
-		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
 	};
 
 	/**
@@ -90,10 +93,10 @@ namespace xerus {
 	*/
 	class RQ : public TensorFactorisation {
 	public:
-		IndexedTensorReadOnly<Tensor>* input;
-		RQ(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		internal::IndexedTensorReadOnly<Tensor>* input;
+		RQ(internal::IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
-		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
 	};
 	
 	/**
@@ -104,9 +107,9 @@ namespace xerus {
 	*/
 	class QC : public TensorFactorisation {
 	public:
-		IndexedTensorReadOnly<Tensor>* input;
-		QC(IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		internal::IndexedTensorReadOnly<Tensor>* input;
+		QC(internal::IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
-		virtual void operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const override;
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
 	};
 }

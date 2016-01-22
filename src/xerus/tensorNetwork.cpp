@@ -420,38 +420,38 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
-		return IndexedTensor<TensorNetwork>(this, _indices, false);
+	internal::IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
+		return internal::IndexedTensor<TensorNetwork>(this, _indices, false);
 	}
 	
 	
-	IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
-		return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
+	internal::IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
+		return internal::IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
 	}
 	
 	
-	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
-		return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
+	internal::IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
+		return internal::IndexedTensorReadOnly<TensorNetwork>(this, _indices);
 	}
 	
 	
-	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
-		return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
+	internal::IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
+		return internal::IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
 	}
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
+	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me , internal::IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	bool TensorNetwork::specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
+	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
+	void TensorNetwork::specialized_evaluation(internal::IndexedTensorWritable<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		TensorNetwork& me = *_me.tensorObject;
 		const TensorNetwork& other = *_other.tensorObjectReadOnly;
 		
@@ -583,7 +583,7 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+	void TensorNetwork::add_network_to_network(internal::IndexedTensorWritable<TensorNetwork>&& _base, internal::IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
 		_base.assign_indices();
 		_toInsert.assign_indices();
 		
@@ -627,7 +627,7 @@ namespace xerus {
 		_base.tensorObject->require_valid_network();
 	}
 	
-	void TensorNetwork::link_traces(IndexedTensorWritable<TensorNetwork>&& _base) {
+	void TensorNetwork::link_traces(internal::IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
 		_base.assign_indices();
 		

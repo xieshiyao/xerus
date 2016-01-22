@@ -266,7 +266,7 @@ namespace xerus {
 			
 			// Change component tensor if the local residual is large enough
 			if (_Ap) {
-				if (minimumLocalResidual <= 0 || frob_norm(IndexedTensorMoveable<Tensor>(ATilde(r1^3, r2^3)*_x.get_component(currIndex)(r2^3)) - BTilde(r1^3)) > minimumLocalResidual) {
+				if (minimumLocalResidual <= 0 || frob_norm(internal::IndexedTensorMoveable<Tensor>(ATilde(r1^3, r2^3)*_x.get_component(currIndex)(r2^3)) - BTilde(r1^3)) > minimumLocalResidual) {
 					Tensor tmpX;
 					localSolver(ATilde, tmpX, BTilde);
 					_x.set_component(currIndex, tmpX);

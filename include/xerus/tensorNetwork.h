@@ -324,8 +324,8 @@ namespace xerus {
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
 		template<typename... args>
-		IndexedTensor<TensorNetwork> operator()(args... _args) {
-			return IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
+		internal::IndexedTensor<TensorNetwork> operator()(args... _args) {
+			return internal::IndexedTensor<TensorNetwork>(this, std::vector<Index>({_args...}), false);
 		}
 		
 		
@@ -335,8 +335,8 @@ namespace xerus {
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
 		template<typename... args>
-		IndexedTensorReadOnly<TensorNetwork> operator()(args... _args) const {
-			return IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
+		internal::IndexedTensorReadOnly<TensorNetwork> operator()(args... _args) const {
+			return internal::IndexedTensorReadOnly<TensorNetwork>(this, std::vector<Index>({_args...}));
 		}
 		
 		
@@ -345,7 +345,7 @@ namespace xerus {
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
-		IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
+		internal::IndexedTensor<TensorNetwork> operator()(const std::vector<Index> & _indices);
 		
 		
 		/** 
@@ -353,7 +353,7 @@ namespace xerus {
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
-		IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
+		internal::IndexedTensor<TensorNetwork> operator()(      std::vector<Index>&& _indices);
 		
 		
 		/** 
@@ -361,7 +361,7 @@ namespace xerus {
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
-		IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
+		internal::IndexedTensorReadOnly<TensorNetwork> operator()(const std::vector<Index> & _indices) const;
 		
 		
 		/** 
@@ -369,21 +369,21 @@ namespace xerus {
 		* @param _args several [indices](@ref Index) determining the desired index order.
 		* @return an internal representation of an IndexedTensor(Network).
 		*/
-		IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
+		internal::IndexedTensorReadOnly<TensorNetwork> operator()(      std::vector<Index>&& _indices) const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		
 		///@brief (Internal) Calculates the contraction between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
-		virtual bool specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
+		virtual bool specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const;
 		
 		
 		///@brief (Internal) Calculates the sum between _me and _other and stores the result in _out. Requires that *this is the tensorObjectReadOnly of _me.
-		virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const;
+		virtual bool specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const;
 		
 		
 		///@brief (Internal) Evaluates _other into _me. Requires that *this is the tensorObjectReadOnly of _me.
-		virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
+		virtual void specialized_evaluation(internal::IndexedTensorWritable<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other);
 			
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
@@ -430,14 +430,14 @@ namespace xerus {
 		/** 
 		* @brief Inserts all nodes from @a _toInsert into @a _base, creating links where demanded by the indices.
 		*/
-		static void add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert);
+		static void add_network_to_network(internal::IndexedTensorWritable<TensorNetwork>&& _base, internal::IndexedTensorReadOnly<TensorNetwork>&& _toInsert);
 		
 		
 		/** 
 		 * @brief Finds traces defined by the indices and Internally links the corresponding indices.
 		 * @details For each trace this reduces the degree of the TN by two and removes two indices from the IndexedTensor.
 		 */
-		static void link_traces(IndexedTensorWritable<TensorNetwork>&& _base);
+		static void link_traces(internal::IndexedTensorWritable<TensorNetwork>&& _base);
 		
 		
 	public:

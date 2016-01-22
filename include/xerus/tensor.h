@@ -507,8 +507,8 @@ namespace xerus {
 		 * @return an internal representation of an IndexedTensor.
 		 */
 		template<typename... args>
-		IndexedTensor<Tensor> operator()(args... _args) {
-			return IndexedTensor<Tensor>(this, std::vector<Index>({_args...}), false);
+		internal::IndexedTensor<Tensor> operator()(args... _args) {
+			return internal::IndexedTensor<Tensor>(this, std::vector<Index>({_args...}), false);
 		}
 		
 		
@@ -518,8 +518,8 @@ namespace xerus {
 		 * @return an internal representation of an IndexedTensor.
 		 */
 		template<typename... args>
-		IndexedTensorReadOnly<Tensor> operator()(args... _args) const {
-			return IndexedTensorReadOnly<Tensor>(this, std::vector<Index>({_args...}));
+		internal::IndexedTensorReadOnly<Tensor> operator()(args... _args) const {
+			return internal::IndexedTensorReadOnly<Tensor>(this, std::vector<Index>({_args...}));
 		}
 		
 		
@@ -528,7 +528,7 @@ namespace xerus {
 		 * @param _indices several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
-		IndexedTensor<Tensor> operator()(const std::vector<Index>&  _indices);
+		internal::IndexedTensor<Tensor> operator()(const std::vector<Index>&  _indices);
 		
 		
 		/** 
@@ -536,7 +536,7 @@ namespace xerus {
 		 * @param _indices several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
-		IndexedTensor<Tensor> operator()(	  std::vector<Index>&& _indices);
+		internal::IndexedTensor<Tensor> operator()(	  std::vector<Index>&& _indices);
 
 		
 		/** 
@@ -544,7 +544,7 @@ namespace xerus {
 		 * @param _indices several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
-		IndexedTensorReadOnly<Tensor> operator()(const std::vector<Index>&  _indices) const;
+		internal::IndexedTensorReadOnly<Tensor> operator()(const std::vector<Index>&  _indices) const;
 		
 		
 		/** 
@@ -552,7 +552,7 @@ namespace xerus {
 		 * @param _indices Several [indices](@ref Index) determining the desired index order.
 		 * @return an internal representation of an IndexedTensor.
 		 */
-		IndexedTensorReadOnly<Tensor> operator()(	  std::vector<Index>&& _indices) const;
+		internal::IndexedTensorReadOnly<Tensor> operator()(	  std::vector<Index>&& _indices) const;
 		
 		
 		

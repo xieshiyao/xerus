@@ -69,6 +69,7 @@ namespace xerus {
 			
 			static void contract_stack(IndexedTensorWritable<TensorNetwork>&& _me);
 			
+			
 			virtual value_t frob_norm() const override;
 		};
 	}

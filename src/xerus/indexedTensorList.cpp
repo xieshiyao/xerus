@@ -26,25 +26,27 @@
 #include <xerus/indexedTensor_tensor_factorisations.h>
 
 namespace xerus {
-    IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) { } 
-    
-    IndexedTensorList::IndexedTensorList(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
-        tensors.emplace_back(&_first);
-        tensors.emplace_back(&_second);
-    }
-    
-    void IndexedTensorList::operator=(TensorFactorisation&& _factorisation) const {
-		_factorisation(tensors);
-    }
-    
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-    
-    IndexedTensorList operator,(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
-        return IndexedTensorList(std::move(_first), std::move(_second));
-    }
+	namespace internal {
+		IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) { } 
+		
+		IndexedTensorList::IndexedTensorList(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
+			tensors.emplace_back(&_first);
+			tensors.emplace_back(&_second);
+		}
+		
+		void IndexedTensorList::operator=(TensorFactorisation&& _factorisation) const {
+			_factorisation(tensors);
+		}
+		
+		/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+		
+		IndexedTensorList operator,(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
+			return IndexedTensorList(std::move(_first), std::move(_second));
+		}
 
-    IndexedTensorList operator,(IndexedTensorList&& _first, IndexedTensor<Tensor>&& _second) {
-        _first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
-        return std::move(_first);
-    }
+		IndexedTensorList operator,(IndexedTensorList&& _first, IndexedTensor<Tensor>&& _second) {
+			_first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
+			return std::move(_first);
+		}
+	}
 }
