@@ -40,8 +40,9 @@ namespace xerus {
 	
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
 	
+	
 	Tensor::Tensor(const DimensionTuple& _dimensions, const Representation _representation, const Initialisation _init) 
-		: dimensions(_dimensions), size(misc::product(_dimensions)), representation(_representation)
+		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
 	{
 		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
 		
@@ -54,6 +55,7 @@ namespace xerus {
 			sparseData.reset(new std::map<size_t, value_t>());
 		}
 	}
+	
 	
 	Tensor::Tensor(DimensionTuple&& _dimensions, const Representation _representation, const Initialisation _init) 
 	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
@@ -70,25 +72,28 @@ namespace xerus {
 		}
 	}
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, std::unique_ptr<value_t[]>&& _data)
-	: dimensions(_dimensions), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::move(_data)) { }
+	
+	Tensor::Tensor(DimensionTuple _dimensions, std::unique_ptr<value_t[]>&& _data)
+	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::move(_data)) { }
 	
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const std::function<value_t()>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
+	Tensor::Tensor(DimensionTuple _dimensions, const std::function<value_t()>& _f) : Tensor(std::move(_dimensions), Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		for (size_t i=0; i < size; ++i) {
 			realData[i] = _f();
 		}
 	}
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const std::function<value_t(const size_t)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
+	
+	Tensor::Tensor(DimensionTuple _dimensions, const std::function<value_t(const size_t)>& _f) : Tensor(std::move(_dimensions), Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		for (size_t i=0; i < size; ++i) {
 			realData[i] = _f(i);
 		}
 	}
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const std::function<value_t(const MultiIndex&)>& _f) : Tensor(_dimensions, Representation::Dense, Initialisation::None) {
+	
+	Tensor::Tensor(DimensionTuple _dimensions, const std::function<value_t(const MultiIndex&)>& _f) : Tensor(std::move(_dimensions), Representation::Dense, Initialisation::None) {
 		value_t* const realData = denseData.get();
 		MultiIndex multIdx(degree(), 0);
 		size_t idx = 0;
@@ -108,7 +113,8 @@ namespace xerus {
 		}
 	}
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f) : Tensor(_dimensions, Representation::Sparse, Initialisation::Zero) {
+	
+	Tensor::Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f) : Tensor(std::move(_dimensions), Representation::Sparse, Initialisation::Zero) {
 		REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
 		for (size_t i=0; i < _N; ++i) {
 			std::pair<size_t, value_t> entry = _f(i, size);
@@ -119,10 +125,8 @@ namespace xerus {
 	}
 	
 	
-	
-	
-	Tensor Tensor::ones(const DimensionTuple& _dimensions) {
-		Tensor ret(_dimensions, Representation::Dense, Initialisation::None);
+	Tensor Tensor::ones(DimensionTuple _dimensions) {
+		Tensor ret(std::move(_dimensions), Representation::Dense, Initialisation::None);
 		value_t* const data = ret.get_dense_data();
 		for(size_t i = 0; i < ret.size; ++i) {
 			data[i] = 1.0;
@@ -130,12 +134,12 @@ namespace xerus {
 		return ret;
 	}
 		
-	Tensor Tensor::identity(const DimensionTuple& _dimensions) {
+	Tensor Tensor::identity(DimensionTuple _dimensions) {
 		REQUIRE(_dimensions.size()%2 == 0, "Identity tensor must have even degree, here: " << _dimensions.size());
 		const size_t d = _dimensions.size();
 		
-		Tensor ret(_dimensions, Representation::Sparse);
-		MultiIndex position(_dimensions.size(), 0);
+		Tensor ret(std::move(_dimensions), Representation::Sparse);
+		MultiIndex position(d, 0);
 		
 		if(d == 0) {
 			ret[position] = 1.0;
@@ -146,7 +150,7 @@ namespace xerus {
 				
 				position[0]++; position[d/2]++;
 				size_t node = 0;
-				while(position[node] == std::min(_dimensions[node], _dimensions[d/2+node])) {
+				while(position[node] == std::min(ret.dimensions[node], ret.dimensions[d/2+node])) {
 					position[node] = position[d/2+node] = 0;
 					node++;
 					if(node == d/2) {notMultiLevelBreak = false; break;}
@@ -157,10 +161,11 @@ namespace xerus {
 		
 		return ret;
 	}
-		
-	Tensor Tensor::kronecker(const DimensionTuple& _dimensions) {
-		Tensor ret(_dimensions, Representation::Sparse);
-		if(_dimensions.empty()) {
+	
+	
+	Tensor Tensor::kronecker(DimensionTuple _dimensions) {
+		Tensor ret(std::move(_dimensions), Representation::Sparse);
+		if(ret.degree() == 0) {
 			ret[{}] = 1.0;
 		} else {
 			for(size_t i = 0; i < misc::min(ret.dimensions); ++i) {
@@ -169,15 +174,17 @@ namespace xerus {
 		}
 		return ret;
 	}
-		
-	Tensor Tensor::dirac(const DimensionTuple& _dimensions, const MultiIndex& _position) {
-		Tensor ret(_dimensions, Representation::Sparse);
+	
+	
+	Tensor Tensor::dirac(DimensionTuple _dimensions, const MultiIndex& _position) {
+		Tensor ret(std::move(_dimensions), Representation::Sparse);
 		ret[_position] = 1.0;
 		return ret;
 	}
-		
-	Tensor Tensor::dirac(const DimensionTuple& _dimensions, const size_t _position) {
-		Tensor ret(_dimensions, Representation::Sparse);
+	
+	
+	Tensor Tensor::dirac(DimensionTuple _dimensions, const size_t _position) {
+		Tensor ret(std::move(_dimensions), Representation::Sparse);
 		ret[_position] = 1.0;
 		return ret;
 	}
@@ -197,7 +204,6 @@ namespace xerus {
 	}
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	Tensor& Tensor::operator=( Tensor&& _other) {
 		std::swap(dimensions, _other.dimensions);
 		std::swap(size, _other.size);
@@ -208,11 +214,12 @@ namespace xerus {
 		return *this;
 	}
 	
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	size_t Tensor::degree() const {
 		return dimensions.size();
 	}
+	
 	
 	bool Tensor::has_factor() const {
 		#pragma GCC diagnostic push
@@ -221,15 +228,18 @@ namespace xerus {
 		#pragma GCC diagnostic pop
 	}
 	
+	
 	bool Tensor::is_dense() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
+	
 	bool Tensor::is_sparse() const {
 		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
+	
 	
 	size_t Tensor::sparsity() const {
 		if(is_sparse()) {
@@ -256,6 +266,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	bool Tensor::all_entries_valid() const {
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) {
@@ -269,9 +280,11 @@ namespace xerus {
 		return true;
 	}
 	
+	
 	size_t Tensor::reorder_costs() const {
 		return is_sparse() ? 10*sparsity() : size;
 	}
+	
 	
 	value_t Tensor::frob_norm() const {
 		if(is_dense()) {
@@ -285,33 +298,33 @@ namespace xerus {
 		}
 	}
 	
-
-
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	Tensor& Tensor::operator+=(const Tensor& _other) {
 		plus_minus_equal<1>(*this, _other);
 		return *this;
 	}
+	
 	
 	Tensor& Tensor::operator-=(const Tensor& _other) {
 		plus_minus_equal<-1>(*this, _other);
 		return *this;
 	}
 	
+	
 	Tensor& Tensor::operator*=(const value_t _factor) {
 		factor *= _factor;
 		return *this;
 	}
 	
+	
 	Tensor& Tensor::operator/=(const value_t _divisor) {
 		factor /= _divisor;
 		return *this;
 	}
-
+	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Access - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	value_t& Tensor::operator[](const size_t _position) {
 		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
 		
@@ -329,6 +342,7 @@ namespace xerus {
 			}
 		}
 	}
+	
 
 	value_t Tensor::operator[](const size_t _position) const {
 		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
@@ -344,10 +358,12 @@ namespace xerus {
 			}
 		}
 	}
-
+	
+	
 	value_t& Tensor::operator[](const MultiIndex& _positions) {
 		return operator[](multiIndex_to_position(_positions, dimensions));
 	}
+	
 	
 	value_t Tensor::operator[](const MultiIndex& _positions) const {
 		return operator[](multiIndex_to_position(_positions, dimensions));
@@ -372,6 +388,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	value_t Tensor::cat(const size_t _position) const {
 		REQUIRE(_position < size, "Position " << _position << " does not exist in Tensor of dimensions " << dimensions);
 		REQUIRE(!has_factor(), "at() must not be called if there is a factor.");
@@ -389,22 +406,24 @@ namespace xerus {
 	}
 	
 	
-	
 	value_t* Tensor::get_dense_data() {
 		use_dense_representation();
 		ensure_own_data_and_apply_factor();
 		return denseData.get();
 	}
 	
+	
 	value_t* Tensor::get_unsanitized_dense_data() {
 		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
 		return denseData.get();
 	}
 	
+	
 	const value_t* Tensor::get_unsanitized_dense_data() const  {
 		REQUIRE(is_dense(), "Unsanitized dense data requested, but representation is not dense!");
 		return denseData.get();
 	}
+	
 	
 	value_t* Tensor::override_dense_data()  {
 		factor = 1.0;
@@ -415,6 +434,7 @@ namespace xerus {
 		}
 		return denseData.get();
 	}
+	
 	
 	const std::shared_ptr<value_t>& Tensor::get_internal_dense_data() {
 		REQUIRE(is_dense(), "Internal dense data requested, but representation is not dense!");
@@ -429,15 +449,18 @@ namespace xerus {
 		return *sparseData.get();
 	}
 	
+	
 	std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() {
 		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
 		return *sparseData.get();
 	}
 	
+	
 	const std::map<size_t, value_t>& Tensor::get_unsanitized_sparse_data() const  {
 		REQUIRE(is_sparse(), "Unsanitized sparse data requested, but representation is not sparse!");
 		return *sparseData.get();
 	}
+	
 	
 	std::map<size_t, value_t>& Tensor::override_sparse_data() {
 		factor = 1.0;
@@ -453,30 +476,31 @@ namespace xerus {
 		return *sparseData.get();
 	}
 	
+	
 	const std::shared_ptr<std::map<size_t, value_t>>& Tensor::get_internal_sparse_data() {
 		REQUIRE(is_sparse(), "Internal sparse data requested, but representation is not sparse!");
 		return sparseData;
 	}
-
-	
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	internal::IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
 		is_dense(); 
 		return internal::IndexedTensor<Tensor>(this, _indices, false);
 	}
+	
 	
 	internal::IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
 		is_dense(); 
 		return internal::IndexedTensor<Tensor>(this, std::move(_indices), false);
 	}
 	
+	
 	internal::IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
 		is_dense(); 
 		return internal::IndexedTensorReadOnly<Tensor>(this, _indices);
 	}
+	
 	
 	internal::IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
 		is_dense(); 
@@ -484,12 +508,10 @@ namespace xerus {
 	}
 	
 	
-	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Modififiers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-	void Tensor::reset(const DimensionTuple&  _newDim, const Representation _representation, const Initialisation _init) {
+	void Tensor::reset(DimensionTuple _newDim, const Representation _representation, const Initialisation _init) {
 		const size_t oldDataSize = size;
-		dimensions = _newDim;
+		dimensions = std::move(_newDim);
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
@@ -522,9 +544,10 @@ namespace xerus {
 		}
 	}
 	
-	void Tensor::reset(const DimensionTuple&  _newDim, const Initialisation _init) {
+	
+	void Tensor::reset(DimensionTuple _newDim, const Initialisation _init) {
 		const size_t oldDataSize = size;
-		dimensions = _newDim;
+		dimensions = std::move(_newDim);
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
@@ -545,8 +568,9 @@ namespace xerus {
 		}
 	}
 	
-	void Tensor::reset(const DimensionTuple& _newDim, const std::shared_ptr<value_t>& _newData) {
-		dimensions = _newDim;
+	
+	void Tensor::reset(DimensionTuple _newDim, const std::shared_ptr<value_t>& _newData) {
+		dimensions = std::move(_newDim);
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
@@ -558,8 +582,9 @@ namespace xerus {
 		denseData = _newData;
 	}
 	
-	void Tensor::reset(const DimensionTuple& _newDim, std::unique_ptr<value_t[]>&& _newData) {
-		dimensions = _newDim;
+	
+	void Tensor::reset(DimensionTuple _newDim, std::unique_ptr<value_t[]>&& _newData) {
+		dimensions = std::move(_newDim);
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
@@ -571,15 +596,18 @@ namespace xerus {
 		denseData = std::move(_newData);
 	}
 	
+	
 	void Tensor::reinterpret_dimensions(const DimensionTuple& _newDimensions) {
 		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
 		dimensions = _newDimensions;
 	}
 	
+	
 	void Tensor::reinterpret_dimensions(      DimensionTuple&& _newDimensions) {
 		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
 		dimensions = std::move(_newDimensions);
 	}
+	
 	
 	void Tensor::resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos) {
 		REQUIRE(_dimPos < degree(), "Can't resize dimension " << _dimPos << " as the tensor is only order " << degree());
@@ -686,6 +714,7 @@ namespace xerus {
 		size = newsize;
 	}
 	
+	
 	void Tensor::fix_slate(const size_t _dimPos, const size_t _slatePosition) {
 		REQUIRE(_slatePosition < dimensions[_dimPos], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimPos]);
 		
@@ -720,11 +749,11 @@ namespace xerus {
 			sparseData.reset(tmpData.release());
 		}
 		
-		
 		// Adjust dimensions
 		dimensions.erase(dimensions.begin()+long(_dimPos));
 		size = stepCount*blockSize;
 	}
+	
 	
 	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
 		REQUIRE(_indexNb < degree(), "");
@@ -733,6 +762,7 @@ namespace xerus {
 		
 		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos+1);
 	}
+	
 	
 	void Tensor::perform_trace(size_t _firstIndex, size_t _secondIndex) {
 		REQUIRE(_firstIndex != _secondIndex, "Given indices must not coincide");
@@ -789,6 +819,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
@@ -809,6 +840,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
@@ -827,6 +859,7 @@ namespace xerus {
 			}
 		}
 	}
+	
 
 	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
@@ -846,6 +879,7 @@ namespace xerus {
 			}
 		}
 	}
+	
 	
 	void Tensor::modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f) {
 		ensure_own_data_and_apply_factor();
@@ -881,6 +915,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::use_dense_representation() {
 		if(is_sparse()) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
@@ -893,11 +928,13 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::use_dense_representation_if_desirable() {
 		if (is_sparse() && sparsity() * sparsityFactor >= size) {
 			use_dense_representation();
 		}
 	}
+	
 	
 	void Tensor::use_sparse_representation(const value_t _eps) {
 		if(is_dense()) {
@@ -912,9 +949,9 @@ namespace xerus {
 			representation = Representation::Sparse;
 		}
 	}
+
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	std::string Tensor::to_string() const {
 		if (degree() == 0) return xerus::misc::to_string(operator[](0));
 		
@@ -933,10 +970,7 @@ namespace xerus {
 	}
 	
 	
-	
-	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
 	template<int sign>
 	void Tensor::plus_minus_equal(Tensor& _me, const Tensor& _other) {
 		REQUIRE(_me.dimensions == _other.dimensions, "In Tensor sum the dimensions must coincide.");
@@ -964,6 +998,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData) {
 		for(const std::pair<size_t, value_t>& entry : *_sparseData) {
 			_denseData.get()[entry.first] += _factor*entry.second;
@@ -980,6 +1015,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	size_t Tensor::multiIndex_to_position(const MultiIndex& _multiIndex, const DimensionTuple& _dimensions) {
 		REQUIRE(_multiIndex.size() == _dimensions.size(), "MultiIndex has wrong degree. Given " << _multiIndex.size() << ",  expected " << _dimensions.size());
 		
@@ -992,6 +1028,7 @@ namespace xerus {
 		
 		return finalIndex;
 	}
+	
 	
 	void Tensor::ensure_own_data() {
 		if(is_dense()) {
@@ -1019,6 +1056,7 @@ namespace xerus {
 			}
 		}
 	}
+	
 	
 	void Tensor::apply_factor() {
 		if(has_factor()) {
@@ -1052,36 +1090,40 @@ namespace xerus {
 		}
 	}
 	
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	
-	Tensor operator+(const Tensor& _lhs, const Tensor& _rhs) {
-		Tensor result(_lhs);
-		result += _rhs;
-		return result;
-	}
-	
-	Tensor operator-(const Tensor& _lhs, const Tensor& _rhs) {
-		Tensor result(_lhs);
-		result -= _rhs;
-		return result;
-	}
-	
-	Tensor operator*(const value_t _factor, const Tensor& _tensor) {
-		Tensor result(_tensor);
-		result *= _factor;
-		return result;
-	}
-	
-	Tensor operator/(const Tensor& _tensor, const value_t _divisor) {
-		Tensor result(_tensor);
-		result /= _divisor;
-		return result;
+	Tensor operator+(Tensor _lhs, const Tensor& _rhs) {
+		_lhs += _rhs;
+		return _lhs;
 	}
 	
 	
+	Tensor operator-(Tensor _lhs, const Tensor& _rhs) {
+		_lhs -= _rhs;
+		return _lhs;
+	}
+	
+	
+	Tensor operator*(const value_t _factor, Tensor _tensor) {
+		_tensor *= _factor;
+		return _tensor;
+	}
+	
+	
+	Tensor operator*(Tensor _tensor, const value_t _factor) {
+		_tensor *= _factor;
+		return _tensor;
+	}
+	
+	
+	Tensor operator/(Tensor _tensor, const value_t _divisor) {
+		_tensor /= _divisor;
+		return _tensor;
+	}
+	
+	
+	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
 		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have.");
 		

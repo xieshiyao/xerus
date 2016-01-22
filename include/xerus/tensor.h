@@ -30,9 +30,8 @@
 #include <random>
 
 #include "basic.h"
-#include "misc/sfinae.h"
- 
 #include "misc/containerSupport.h"
+
 #include "indexedTensor.h"
 
 namespace xerus {
@@ -98,8 +97,10 @@ namespace xerus {
 		/// @brief Constructs an order zero Tensor with the given inital representation
 		explicit Tensor(const Representation _representation = Representation::Sparse);
 		
+		
 		/// @brief Tensors are copy constructable.
 		implicit Tensor( const Tensor& _other ) = default;
+		
 		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
@@ -109,6 +110,7 @@ namespace xerus {
 		 */
 		explicit Tensor(const DimensionTuple& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
 		
+		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
@@ -116,6 +118,7 @@ namespace xerus {
 		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
 		explicit Tensor(      DimensionTuple&& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
+		
 		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
@@ -126,12 +129,14 @@ namespace xerus {
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
 		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Sparse), denseData(std::forward<SPtr>(_data)) { }
 		
+		
 		/** 
 		 * @brief: Creates a new (dense) tensor with the given dimensions, using a provided data.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _data inital dense data in row-major order.
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, std::unique_ptr<value_t[]>&& _data);
+		explicit Tensor(DimensionTuple _dimensions, std::unique_ptr<value_t[]>&& _data);
+		
 		
 		/** 
 		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
@@ -140,7 +145,8 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the Tensor. 
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const std::function<value_t()>& _f);
+		explicit Tensor(DimensionTuple _dimensions, const std::function<value_t()>& _f);
+		
 		
 		/** 
 		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
@@ -148,7 +154,8 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the Tensor. 
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const std::function<value_t(const size_t)>& _f);
+		explicit Tensor(DimensionTuple _dimensions, const std::function<value_t(const size_t)>& _f);
+		
 		
 		/** 
 		 * @brief Constructs a Tensor with the given dimensions and uses the given function to assign the values to the entries.
@@ -156,7 +163,8 @@ namespace xerus {
 		 * @param _dimensions the future dimensions of the Tensor.
 		 * @param _f the function to use to set the entries of the Tensor. 
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const std::function<value_t(const MultiIndex&)>& _f);
+		explicit Tensor(DimensionTuple _dimensions, const std::function<value_t(const MultiIndex&)>& _f);
+		
 		
 		/** 
 		 * @brief Constructs a Tensor with the given dimensions and uses the given function @a _f to create @a _N non zero entries.
@@ -166,8 +174,7 @@ namespace xerus {
 		 * @param _N the number of non-zero entries to be created.
 		 * @param _f the function to be used to create each non zero entry. 
 		 */
-		Tensor(const DimensionTuple& _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
-		
+		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
 		
 		
 		/** 
@@ -187,6 +194,7 @@ namespace xerus {
 			return result;
 		}
 		
+		
 		/** 
 		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
 		 * @details See the std::vector variant for details.
@@ -195,6 +203,7 @@ namespace xerus {
 		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
 			return Tensor::random(DimensionTuple(std::move(_dimensions)), _rnd, _dist);
 		}
+		
 		
 		/** 
 		 * @brief Constructs a random sparse Tensor with the given dimensions.
@@ -216,6 +225,7 @@ namespace xerus {
 			return result;
 		}
 		
+		
 		/** 
 		 * @brief Constructs a random sparse Tensor with the given dimensions.
 		 * @details See the std::vector variant for details.
@@ -225,39 +235,40 @@ namespace xerus {
 			return Tensor::random(DimensionTuple(_dimensions), _N, _rnd, _dist);
 		}
 		
+		
 		/** 
 		 * @brief: Returns a Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor ones(const DimensionTuple& _dimensions);
+		static Tensor ones(DimensionTuple _dimensions);
 		
 		/** 
 		 * @brief: Returns a Tensor representation of the identity operator with the given dimensions.
 		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
 		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
 		 */
-		static Tensor identity(const DimensionTuple& _dimensions);
+		static Tensor identity(DimensionTuple _dimensions);
 		
 		/** 
 		 * @brief: Returns a Tensor representation of the kronecker delta.
 		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor kronecker(const DimensionTuple& _dimensions);
+		static Tensor kronecker(DimensionTuple _dimensions);
 		
 		/** 
 		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor dirac(const DimensionTuple& _dimensions, const MultiIndex& _position);
+		static Tensor dirac(DimensionTuple _dimensions, const MultiIndex& _position);
 		
 		/** 
 		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor dirac(const DimensionTuple& _dimensions, const size_t _position);
+		static Tensor dirac(DimensionTuple _dimensions, const size_t _position);
 		
 		
 		
@@ -565,28 +576,32 @@ namespace xerus {
 		 * @param _representation the new representation of the tensor.
 		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		void reset(const DimensionTuple&  _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
+		void reset(DimensionTuple _newDim, const Representation _representation, const Initialisation _init = Initialisation::Zero);
+		
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
-		void reset(const DimensionTuple&  _newDim, const Initialisation _init = Initialisation::Zero);
+		void reset(DimensionTuple _newDim, const Initialisation _init = Initialisation::Zero);
+		
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions and uses the given data.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _newData new dense data in row-major order.
 		 */
-		void reset(const DimensionTuple&  _newDim, const std::shared_ptr<value_t>& _newData);
+		void reset(DimensionTuple _newDim, const std::shared_ptr<value_t>& _newData);
+		
 		
 		/** 
 		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _newData new dense data in row-major order.
 		 */
-		void reset(const DimensionTuple&  _newDim, std::unique_ptr<value_t[]>&& _newData);
+		void reset(DimensionTuple _newDim, std::unique_ptr<value_t[]>&& _newData);
+		
 		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
@@ -597,6 +612,7 @@ namespace xerus {
 		 */
 		void reinterpret_dimensions(const DimensionTuple& _newDimensions);
 		
+		
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
 		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
@@ -605,6 +621,7 @@ namespace xerus {
 		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
 		 */
 		void reinterpret_dimensions(	  DimensionTuple&& _newDimensions);
+		
 		
 		/** 
 		 * @brief Resizes a specific dimension of the Tensor.
@@ -617,12 +634,14 @@ namespace xerus {
 		 */
 		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul);
 		
+		
 		/** 
 		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
 		 * @param _dimPos the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
 		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
 		 */
 		void fix_slate(const size_t _dimPos, const size_t _slatePosition);
+		
 		
 		/** 
 		 * @brief Removes a single slate from the Tensor.
@@ -639,12 +658,14 @@ namespace xerus {
 		 */
 		void perform_trace(size_t _firstIndex, size_t _secondIndex);
 		
+		
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
 		 * @param _f the function to call to modify each entry.
 		 */
 		void modify_diag_elements(const std::function<void(value_t&)>& _f);
+		
 		
 		/** 
 		 * @brief Modifies the diagonal entries according to the given function.
@@ -653,12 +674,14 @@ namespace xerus {
 		 */
 		void modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f);
 		
+		
 		/** 
 		 * @brief Modifies every entry according to the given function.
 		 * @details In this overload only the current entry is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
 		void modify_elements(const std::function<void(value_t&)>& _f);
+		
 		
 		/** 
 		 * @brief Modifies every entry according to the given function.
@@ -667,6 +690,7 @@ namespace xerus {
 		 */
 		void modify_elements(const std::function<void(value_t&, const size_t)>& _f);
 		
+		
 		/** 
 		 * @brief Modifies every entry according to the given function.
 		 * @details In this overload the current entry together with its complete position is passed to @a _f.
@@ -674,10 +698,12 @@ namespace xerus {
 		 */
 		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
+		
 		/** 
 		 * @brief Converts the Tensor to a dense representation.
 		 */
 		void use_dense_representation();
+		
 		
 		/** 
 		 * @brief Converts the Tensor to a dense representation if sparsity * sparsityFactor >= size
@@ -743,7 +769,7 @@ namespace xerus {
 	 * @param _rhs the first summand.
 	 * @return the sum.
 	 */
-	Tensor operator+(const Tensor& _lhs, const Tensor& _rhs);
+	Tensor operator+(Tensor _lhs, const Tensor& _rhs);
 	
 
 	/** 
@@ -753,7 +779,7 @@ namespace xerus {
 	 * @param _rhs the subtrahend.
 	 * @return the difference.
 	 */
-	Tensor operator-(const Tensor& _lhs, const Tensor& _rhs);
+	Tensor operator-(Tensor _lhs, const Tensor& _rhs);
 	
 	/** 
 	 * @brief Calculates the entrywise multiplication of the Tensor @a _tensor with the constant @a _factor.
@@ -762,7 +788,7 @@ namespace xerus {
 	 * @param _tensor the Tensor that shall be scaled.
 	 * @return the resulting scaled Tensor.
 	 */
-	Tensor operator*(const value_t _factor, const Tensor& _tensor);
+	Tensor operator*(const value_t _factor, Tensor _tensor);
 	
 	/** 
 	 * @brief Calculates the entrywise multiplication of the Tensor @a _tensor with the constant @a _factor.
@@ -771,7 +797,7 @@ namespace xerus {
 	 * @param _factor the factor to be used.
 	 * @return the resulting scaled Tensor.
 	 */
-	static _inline_ Tensor operator*(const Tensor& _tensor, const value_t _factor) { return _factor*_tensor; }
+	Tensor operator*(Tensor _tensor, const value_t _factor);
 	
 	/** 
 	 * @brief Calculates the entrywise divison of the Tensor @a _tensor with the constant @a _divisor.
@@ -780,7 +806,7 @@ namespace xerus {
 	 * @param _divisor the factor to be used.
 	 * @return the resulting scaled Tensor.
 	 */
-	Tensor operator/(const Tensor& _tensor, const value_t _divisor);
+	Tensor operator/(Tensor _tensor, const value_t _divisor);
 	
 	
 	/** 
