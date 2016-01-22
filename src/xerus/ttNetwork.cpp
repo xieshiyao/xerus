@@ -22,6 +22,8 @@
 * @brief Implementation of the TTNetwork class (and thus TTTensor and TTOperator).
 */
 
+#include <algorithm>
+
 #include <xerus/ttNetwork.h>
 
 #include <xerus/misc/check.h>
@@ -1036,7 +1038,7 @@ namespace xerus {
 		// TODO profiler should warn if other->corePosition is not identical to coreAtTheEnd
 		
 		// Determine my first half and second half of indices
-		auto midIndexItr = _me.indices.begin();
+		std::vector<Index>::iterator midIndexItr = _me.indices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
 			REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
@@ -1049,7 +1051,7 @@ namespace xerus {
 		
 		if (otherTT) {
 			// ensure fitting indices
-			if (misc::equal(_me.indices.begin(), midIndexItr, _other.indices.begin(), _other.indices.end()) || misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), _other.indices.end())) {
+			if (std::equal(_me.indices.begin(), midIndexItr, _other.indices.begin()) || std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) {
 				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
 				_out.reset(new IndexedTensorMoveable<TensorNetwork>(res, _me.indices));
@@ -1071,10 +1073,10 @@ namespace xerus {
 				return false; // an index spanned some links of the left and some of the right side
 			}
 			// or indices in fitting order to contract the TTOs
-			if (   misc::equal(_me.indices.begin(), midIndexItr, _other.indices.begin(), otherMidIndexItr) 
-				|| misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr)
-				|| misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end()) 
-				|| misc::equal(midIndexItr, _me.indices.end(), otherMidIndexItr, _other.indices.end())	) 
+			if (   std::equal(_me.indices.begin(), midIndexItr, _other.indices.begin()) 
+				|| std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())
+				|| std::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr) 
+				|| std::equal(midIndexItr, _me.indices.end(), otherMidIndexItr)) 
 			{
 				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
 				*res = *_me.tensorObjectReadOnly;
@@ -1085,6 +1087,7 @@ namespace xerus {
 				return false;
 			}
 		}
+		return false;
 	}
 	
 	template<bool isOperator>
@@ -1122,8 +1125,8 @@ namespace xerus {
 			if (_me.indices == _other.indices) { 
 				REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
 			} else {
-				if (   !misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end()) 
-					|| !misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr)) 
+				if (   !std::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr) 
+					|| !std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) 
 				{
 					return false;
 				}
@@ -1387,8 +1390,8 @@ namespace xerus {
 					}
 					if (spanSum == numComponents) {
 						// Other tensor also transposable
-						transposed = (misc::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr, _other.indices.end())) 
-						&& (misc::equal(midIndexItr, _me.indices.end(), _other.indices.begin(), otherMidIndexItr));
+						transposed = (std::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr)) 
+						&& (std::equal(midIndexItr, _me.indices.end(), _other.indices.begin()));
 					}
 				}
 				

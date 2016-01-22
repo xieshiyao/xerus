@@ -29,8 +29,19 @@
 
 #include "standard.h"
 
+/**
+* @def VLA(T, name)
+* @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but is created on the heap.
+*/
+#define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & name = name##_store.get();
+
 namespace xerus {
 	namespace misc {
+		template<class T>
+		std::unique_ptr<T[]> make_unique_array(T* _ptr) {
+			return std::unique_ptr<T[]>(_ptr);
+		}
+		
 		/** 
 		* @brief Sets all entries equal to zero.
 		* @details This is done directly by memset and therefore requires the type to be trivial.

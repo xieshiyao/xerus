@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include <set>
 #include <memory>
 
-#include "misc/missingFunctions.h"
+ 
 #include "indexedTensor.h"
 
 namespace xerus {

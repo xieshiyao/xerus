@@ -22,6 +22,8 @@
  * @brief Implementation of the indexed tensor / operator.
  */
 
+#include <xerus/misc/containerSupport.h>
+
 #include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/indexedTensor.h>

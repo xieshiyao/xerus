@@ -24,8 +24,12 @@
 
 #pragma once
 
+#include <set>
+#include <random>
+
 #include "basic.h"
-#include "misc/missingFunctions.h"
+ 
+#include "misc/math.h"
 
 namespace xerus {
 	class Tensor;

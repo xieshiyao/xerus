@@ -28,6 +28,7 @@
  
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/containerSupport.h>
 
 namespace xerus {
 	

@@ -22,8 +22,6 @@
  * @brief Implementation of the blas and lapack wrapper functions.
  */
 
-#include <xerus/blasLapackWrapper.h>
-#include <xerus/misc/basicArraySupport.h>
 
 #include <complex.h>
 // fix for non standard-conform complex implementation
@@ -54,9 +52,14 @@ extern "C"
 #include <xerus/misc/standard.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
-#include <xerus/misc/missingFunctions.h>
+ 
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/basic.h>
+
+#include <xerus/blasLapackWrapper.h>
+#include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/math.h>
+
 
 
 namespace xerus {

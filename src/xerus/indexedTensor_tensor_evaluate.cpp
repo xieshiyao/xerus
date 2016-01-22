@@ -29,7 +29,8 @@
  
 #include <memory>
 #include <xerus/misc/basicArraySupport.h>
-#include <xerus/misc/missingFunctions.h>
+ 
+#include <xerus/misc/containerSupport.h>
 #include <xerus/misc/performanceAnalysis.h>
 
 namespace xerus {

@@ -25,6 +25,8 @@
 #include <xerus/tensorNetwork.h>
 
 #include <xerus/misc/stringUtilities.h>
+#include <xerus/misc/containerSupport.h>
+#include <xerus/misc/missingFunctions.h>
 
 #include <xerus/basic.h>
 #include <xerus/index.h>

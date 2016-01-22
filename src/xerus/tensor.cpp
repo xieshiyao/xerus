@@ -24,8 +24,10 @@
 
 #include <xerus/tensor.h>
 #include <xerus/misc/check.h>
-#include <xerus/misc/missingFunctions.h>
+ 
+#include <xerus/misc/containerSupport.h>
 #include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/math.h>
  
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cs_wrapper.h>

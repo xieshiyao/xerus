@@ -31,7 +31,8 @@
 
 #include "basic.h"
 #include "misc/sfinae.h"
-#include "misc/missingFunctions.h"
+ 
+#include "misc/containerSupport.h"
 #include "indexedTensor.h"
 
 namespace xerus {

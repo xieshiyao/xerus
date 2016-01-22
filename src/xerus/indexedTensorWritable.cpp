@@ -22,6 +22,8 @@
  * @brief Implementation of the IndexedTensorWritable class.
  */
 
+#include <xerus/misc/containerSupport.h>
+
 #include <xerus/indexedTensorWritable.h>
 #include <xerus/indexedTensor.h>
 #include <xerus/indexedTensorMoveable.h>
