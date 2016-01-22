@@ -203,17 +203,6 @@ namespace xerus {
 		return ret;
 	}
 	
-	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	Tensor& Tensor::operator=( Tensor&& _other) {
-		std::swap(dimensions, _other.dimensions);
-		std::swap(size, _other.size);
-		std::swap(representation, _other.representation);
-		factor = _other.factor;
-		std::swap(denseData, _other.denseData);
-		std::swap(sparseData, _other.sparseData);
-		return *this;
-	}
-	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	size_t Tensor::degree() const {

@@ -98,8 +98,12 @@ namespace xerus {
 		explicit Tensor(const Representation _representation = Representation::Sparse);
 		
 		
-		/// @brief Tensors are copy constructable.
-		implicit Tensor( const Tensor& _other ) = default;
+		/// @brief Tensors are default copy constructable.
+		implicit Tensor( const Tensor&  _other ) = default;
+		
+		
+		/// @brief Tensors are default move constructable.
+		implicit Tensor(       Tensor&& _other ) = default;
 		
 		
 		/** 
@@ -242,12 +246,14 @@ namespace xerus {
 		 */
 		static Tensor ones(DimensionTuple _dimensions);
 		
+		
 		/** 
 		 * @brief: Returns a Tensor representation of the identity operator with the given dimensions.
 		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
 		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
 		 */
 		static Tensor identity(DimensionTuple _dimensions);
+		
 		
 		/** 
 		 * @brief: Returns a Tensor representation of the kronecker delta.
@@ -256,12 +262,14 @@ namespace xerus {
 		 */
 		static Tensor kronecker(DimensionTuple _dimensions);
 		
+		
 		/** 
 		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
 		static Tensor dirac(DimensionTuple _dimensions, const MultiIndex& _position);
+		
 		
 		/** 
 		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
@@ -271,9 +279,9 @@ namespace xerus {
 		static Tensor dirac(DimensionTuple _dimensions, const size_t _position);
 		
 		
-		
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
 		Tensor dense_copy() const;
+		
 		
 		/// @brief Returns a copy of this Tensor that uses a sparse representation.
 		Tensor sparse_copy() const;
@@ -287,12 +295,13 @@ namespace xerus {
 		 */
 		Tensor& operator=(const Tensor&  _other) = default;
 		
+		
 		/** 
 		 * @brief Standard move-assignment operator.
 		 * @param _other the Tensor to be move-assinged to this one.
 		 * @return a reference to this Tensor.
 		 */
-		Tensor& operator=(      Tensor&& _other);
+		Tensor& operator=(      Tensor&& _other) = default;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -766,7 +775,7 @@ namespace xerus {
 	 * @brief Calculates the entrywise sum of @a _lhs and @a _rhs.
 	 * @details To be well-defined it is required that the dimensions of  @a _lhs and @a _rhs coincide.
 	 * @param _lhs the first summand.
-	 * @param _rhs the first summand.
+	 * @param _rhs the second summand.
 	 * @return the sum.
 	 */
 	Tensor operator+(Tensor _lhs, const Tensor& _rhs);

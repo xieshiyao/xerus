@@ -1296,7 +1296,7 @@ namespace xerus {
 	
 	
 	value_t TensorNetwork::frob_norm() const {
-		Index i;
+		const Index i;
 		Tensor res;
 		res() = (*this)(i&0) * (*this)(i&0);
 		return std::sqrt(res[0]);

@@ -44,6 +44,11 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
+		TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
+	
+	
+	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
 		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
 		const size_t numComponents = _degree/N;
@@ -88,11 +93,6 @@ namespace xerus {
 		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
 	}
 	
-	
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const size_t _maxRank) :
-		TTNetwork(_tensor, _eps, std::vector<size_t>(_tensor.degree() == 0 ? 0 : _tensor.degree()/N-1, _maxRank)) {}
-		
 	
 	template<bool isOperator>
 	TTNetwork<isOperator>::TTNetwork(const Tensor& _tensor, const double _eps, const TensorNetwork::RankTuple& _maxRanks): TTNetwork(_tensor.degree()) {
@@ -930,34 +930,22 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator>& TTNetwork<isOperator>::operator+=(const TTNetwork<isOperator>& _other) {
-		Index i;
+		const Index i;
 		(*this)(i&0) = (*this)(i&0) + _other(i&0);
 		return *this;
 	}
 	
 	
-	template<bool isOperator>
-	TTNetwork<isOperator>  TTNetwork<isOperator>::operator+(const TTNetwork<isOperator>& _other) const {
-		TTNetwork cpy(*this);
-		cpy += _other;
-		return cpy;
-	}
 	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator>& TTNetwork<isOperator>::operator-=(const TTNetwork<isOperator>& _other) {
-		Index i;
+		const Index i;
 		(*this)(i&0) = (*this)(i&0) - _other(i&0);
 		return *this;
 	}
 	
 	
-	template<bool isOperator>
-	TTNetwork<isOperator>  TTNetwork<isOperator>::operator-(const TTNetwork<isOperator>& _other) const {
-		TTNetwork cpy(*this);
-		cpy -= _other;
-		return cpy;
-	}
 	
 	
 	template<bool isOperator>
@@ -976,13 +964,6 @@ namespace xerus {
 	}
 	
 	
-	template<bool isOperator>
-	TTNetwork<isOperator>  TTNetwork<isOperator>::operator*(const value_t _factor) const {
-		TTNetwork result(*this);
-		result *= _factor;
-		return result;
-	}
-	
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::operator/=(const value_t _divisor) {
@@ -990,12 +971,6 @@ namespace xerus {
 	}
 	
 	
-	template<bool isOperator>
-	TTNetwork<isOperator>  TTNetwork<isOperator>::operator/(const value_t _divisor) const {
-		TTNetwork result(*this);
-		result /= _divisor;
-		return result;
-	}
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1427,4 +1402,51 @@ namespace xerus {
 	template class TTNetwork<false>;
 	template class TTNetwork<true>;
 	
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> operator+(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs) {
+		_lhs += _rhs;
+		return _lhs;
+	}
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> operator-(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs) {
+		_lhs -= _rhs;
+		return _lhs;
+	}
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> operator*(TTNetwork<isOperator> _network, const value_t _factor) {
+		_network *= _factor;
+		return _network;
+	}
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> operator*(const value_t _factor, TTNetwork<isOperator> _network) {
+		_network *= _factor;
+		return _network;
+	}
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _divisor) {
+		_network /= _divisor;
+		return _network;
+	}
+	
+	//Explicit instantiation for both types
+	template TTNetwork<false> operator+(TTNetwork<false> _lhs, const TTNetwork<false>& _rhs);
+	template TTNetwork<true> operator+(TTNetwork<true> _lhs, const TTNetwork<true>& _rhs);
+	template TTNetwork<false> operator-(TTNetwork<false> _lhs, const TTNetwork<false>& _rhs);
+	template TTNetwork<true> operator-(TTNetwork<true> _lhs, const TTNetwork<true>& _rhs);
+	template TTNetwork<false> operator*(TTNetwork<false> _network, const value_t _factor);
+	template TTNetwork<true> operator*(TTNetwork<true> _network, const value_t _factor);
+	template TTNetwork<false> operator*(const value_t _factor, TTNetwork<false> _network);
+	template TTNetwork<true> operator*(const value_t _factor, TTNetwork<true> _network);
+	template TTNetwork<false> operator/(TTNetwork<false> _network, const value_t _divisor);
+	template TTNetwork<true> operator/(TTNetwork<true> _network, const value_t _divisor);
 }

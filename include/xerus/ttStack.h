@@ -42,7 +42,7 @@ namespace xerus {
 			
 			const size_t futureCorePosition;
 			
-			explicit TTStack(const bool _canno, const size_t _corePos = 0) : cannonicalization_required(_canno), futureCorePosition(_corePos) {};
+			explicit TTStack(const bool _canno, const size_t _corePos = 0);
 			
 			TTStack(const TTStack&  _other) = default;
 			
@@ -66,9 +66,7 @@ namespace xerus {
 			
 			virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override;
 			
-			
 			static void contract_stack(IndexedTensorWritable<TensorNetwork>&& _me);
-			
 			
 			virtual value_t frob_norm() const override;
 		};
