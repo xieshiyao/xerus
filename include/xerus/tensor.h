@@ -815,7 +815,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the SVD shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the SVD is calculated.
 	 */
-	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps);
+	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, Tensor _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps);
 	
 	/** 
 	 * @brief Low-Level QR calculation of a given Tensor @a _input = @a _Q @a _R.
@@ -824,7 +824,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the QR shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the QR is calculated.
 	 */
-	void calculate_qr(Tensor& _Q, Tensor& _R, const Tensor& _input, const size_t _splitPos);
+	void calculate_qr(Tensor& _Q, Tensor& _R, Tensor _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Low-Level RQ calculation of a given Tensor @a _input = @a _R @a _Q.
@@ -833,7 +833,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the RQ shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the RQ is calculated.
 	 */
-	void calculate_rq(Tensor& _R, Tensor& _Q, const Tensor& _input, const size_t _splitPos);
+	void calculate_rq(Tensor& _R, Tensor& _Q, Tensor _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Low-Level QC calculation of a given Tensor @a _input = @a _Q @a _C.
@@ -844,7 +844,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the QC shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the QC is calculated.
 	 */
-	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos);
+	void calculate_qc(Tensor& _Q, Tensor& _C, Tensor _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Low-Level CQ calculation of a given Tensor @a _input = @a _C @a _Q.
@@ -855,7 +855,7 @@ namespace xerus {
 	 * @param _input input Tensor of which the CQ shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the CQ is calculated.
 	 */
-	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos);
+	void calculate_cq(Tensor& _C, Tensor& _Q, Tensor _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.

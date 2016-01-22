@@ -1118,13 +1118,13 @@ namespace xerus {
 			|| _result.representation != resultRepresentation
 			|| _result.degree() != lhsRemainOrder + rhsRemainOrder
 			|| _result.size != leftDim*rightDim
-			|| !std::equal(_lhs.dimensions.begin() + (long)lhsRemainStart, _lhs.dimensions.begin() + (long)lhsRemainEnd, _result.dimensions.begin())
-			|| !std::equal(_rhs.dimensions.begin() + (long)rhsRemainStart, _rhs.dimensions.begin() + (long)rhsRemainEnd, _result.dimensions.begin() + (long)(lhsRemainEnd-lhsRemainStart))
+			|| !std::equal(_lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd, _result.dimensions.begin())
+			|| !std::equal(_rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd, _result.dimensions.begin() + (lhsRemainEnd-lhsRemainStart))
 		) {
 			Tensor::DimensionTuple resultDim;
 			resultDim.reserve(lhsRemainOrder + rhsRemainOrder);
-			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + (long)lhsRemainStart, _lhs.dimensions.begin() + (long)lhsRemainEnd);
-			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + (long)rhsRemainStart, _rhs.dimensions.begin() + (long)rhsRemainEnd);
+			resultDim.insert(resultDim.end(), _lhs.dimensions.begin() + lhsRemainStart, _lhs.dimensions.begin() + lhsRemainEnd);
+			resultDim.insert(resultDim.end(), _rhs.dimensions.begin() + rhsRemainStart, _rhs.dimensions.begin() + rhsRemainEnd);
 			
 			if(&_result == &_lhs || &_result == &_rhs) {
 				tmpResult.reset(new Tensor(std::move(resultDim), resultRepresentation, Tensor::Initialisation::None));
@@ -1219,24 +1219,21 @@ namespace xerus {
 		return std::make_tuple(lhsSize, rhsSize, rank);
 	}
 	
-	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, const Tensor& _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, Tensor _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
 		REQUIRE(0 <= _eps && _eps < 1, "Epsilon must be fullfill 0 <= _eps < 1.");
 		
-		Tensor xnput = _input;
-		
 		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, xnput, _splitPos);
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_U, _Vt, _input, _splitPos);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
 		// Calculate the actual SVD
-		if(xnput.is_sparse()) {
+		if(_input.is_sparse()) {
 			LOG(warning, "Sparse SVD not yet implemented.");
-			Tensor denseCopy = xnput;
-			denseCopy.use_dense_representation();
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			_input.use_dense_representation();
+			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), xnput.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
 		// Account for hard threshold
@@ -1255,11 +1252,11 @@ namespace xerus {
 		// Create tensor from diagonal values
 		_S.reset(Tensor::DimensionTuple(2, rank), Tensor::Representation::Sparse);
 		for(size_t i = 0; i < rank; ++i) {
-			_S[i*rank+i] = std::abs(xnput.factor)*tmpS[i];
+			_S[i*rank+i] = std::abs(_input.factor)*tmpS[i];
 		}
 		
 		// Account for a negative factor
-		if(xnput.factor < 0.0) {
+		if(_input.factor < 0.0) {
 			_Vt *= -1;
 		}
 		
@@ -1268,84 +1265,48 @@ namespace xerus {
 	}
 	
 	
-	void calculate_qr(Tensor& _Q, Tensor& _R, const Tensor& _input, const size_t _splitPos) {
-		std::unique_ptr<Tensor> saveSlot;
-		const Tensor* Ap;
-		if(&_input == &_Q || &_input == &_R) {
-			saveSlot.reset(new Tensor(_input));
-			Ap = saveSlot.get();
-		} else {
-			Ap = &_input;
-		}
-		const Tensor& A = *Ap;
-		
+	void calculate_qr(Tensor& _Q, Tensor& _R, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, A, _splitPos);
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _R, _input, _splitPos);
 		
-		REQUIRE(A.size == misc::product(A.dimensions), "woot!!");
-		REQUIRE(A.size == lhsSize*rhsSize, "woot " << _splitPos << " | " << A.degree());
-		
-		if(A.is_sparse()) {
+		if(_input.is_sparse()) {
 			LOG(warning, "Sparse QR not yet implemented."); // TODO
-			Tensor denseCopy = A;
-			denseCopy.use_dense_representation();
-			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			_input.use_dense_representation();
+			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
-			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
-		_R.factor = A.factor;
+		_R.factor = _input.factor;
 	}
 	
 	
-	void calculate_rq(Tensor& _R, Tensor& _Q, const Tensor& _input, const size_t _splitPos) {
-		std::unique_ptr<Tensor> saveSlot;
-		const Tensor* Ap;
-		if(&_input == &_Q || &_input == &_R) {
-			saveSlot.reset(new Tensor(_input));
-			Ap = saveSlot.get();
-		} else {
-			Ap = &_input;
-		}
-		const Tensor& A = *Ap;
-		
+	void calculate_rq(Tensor& _R, Tensor& _Q, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, A, _splitPos);
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_R, _Q, _input, _splitPos);
 		
-		if(A.is_sparse()) {
+		if(_input.is_sparse()) {
 			LOG(warning, "Sparse RQ not yet implemented."); // TODO
-			Tensor denseCopy = A;
-			denseCopy.use_dense_representation();
-			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			_input.use_dense_representation();
+			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
-			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), A.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
-		_R.factor = A.factor;
+		_R.factor = _input.factor;
 	}
 	
 	
-	void calculate_qc(Tensor& _Q, Tensor& _C, const Tensor& _input, const size_t _splitPos) {
-		std::unique_ptr<Tensor> saveSlot;
-		const Tensor* Ap;
-		if(&_input == &_Q || &_input == &_C) {
-			saveSlot.reset(new Tensor(_input));
-			Ap = saveSlot.get();
-		} else {
-			Ap = &_input;
-		}
-		const Tensor& A = *Ap;
-		
+	void calculate_qc(Tensor& _Q, Tensor& _C, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
-		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, A, _splitPos);
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_Q, _C, _input, _splitPos);
 		
-		if(A.is_sparse()) {
+		if(_input.is_sparse()) {
 			LOG(warning, "Sparse QC not yet implemented."); // TODO
-			Tensor denseCopy = A;
-			denseCopy.use_dense_representation();
+			_input.use_dense_representation();
 			
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, denseCopy.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
@@ -1358,7 +1319,7 @@ namespace xerus {
 			_C.reset(std::move(newDim), std::move(Ct));
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, A.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
@@ -1371,11 +1332,11 @@ namespace xerus {
 			_C.reset(std::move(newDim), std::move(Ct));
 		}
 		
-		_C.factor = A.factor;
+		_C.factor = _input.factor;
 	}
 	
 	
-	void calculate_cq(Tensor& _C, Tensor& _Q, const Tensor& _input, const size_t _splitPos) {
+	void calculate_cq(Tensor& _C, Tensor& _Q, Tensor _input, const size_t _splitPos) {
 		LOG(fatal, "Not yet Implemented."); // TODO
 	}
 	
