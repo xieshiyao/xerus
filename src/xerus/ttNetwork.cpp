@@ -136,7 +136,8 @@ namespace xerus {
 		for(size_t position = numComponents-1; position > 0; --position) {
 			calculate_svd(remains, singularValues, newNode, remains, 1+position*N, _maxRanks[position-1], _eps);
 			
-			set_component(position, std::move(newNode));
+			set_component(position, std::move(newNode)); 
+			newNode.reset();
 			xerus::contract(remains, remains, false, singularValues, false, 1);
 		}
 		

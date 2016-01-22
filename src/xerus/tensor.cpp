@@ -116,7 +116,7 @@ namespace xerus {
 	
 	Tensor::Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f) : Tensor(std::move(_dimensions), Representation::Sparse, Initialisation::Zero) {
 		REQUIRE(_N <= size, "Cannot create more non zero entries that the dimension of the Tensor.");
-		for (size_t i=0; i < _N; ++i) {
+		for (size_t i = 0; i < _N; ++i) {
 			std::pair<size_t, value_t> entry = _f(i, size);
 			REQUIRE(entry.first < size, "Postion is out of bounds " << entry.first);
 			REQUIRE(!misc::contains(*sparseData, entry.first), "Allready contained " << entry.first);
@@ -474,25 +474,21 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	internal::IndexedTensor<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) {
-		is_dense(); 
 		return internal::IndexedTensor<Tensor>(this, _indices, false);
 	}
 	
 	
 	internal::IndexedTensor<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) {
-		is_dense(); 
 		return internal::IndexedTensor<Tensor>(this, std::move(_indices), false);
 	}
 	
 	
 	internal::IndexedTensorReadOnly<Tensor> Tensor::operator()(const std::vector<Index>&  _indices) const {
-		is_dense(); 
 		return internal::IndexedTensorReadOnly<Tensor>(this, _indices);
 	}
 	
 	
 	internal::IndexedTensorReadOnly<Tensor> Tensor::operator()(      std::vector<Index>&& _indices) const {
-		is_dense(); 
 		return internal::IndexedTensorReadOnly<Tensor>(this, std::move(_indices));
 	}
 	
@@ -505,7 +501,7 @@ namespace xerus {
 		factor = 1.0;
 		
 		if(_representation == Representation::Dense) {
-			if(is_dense()) {
+			if(representation == Representation::Dense) {
 				if(oldDataSize != size || !denseData.unique()) {
 					denseData.reset(new value_t[size], internal::array_deleter_vt);
 				}
@@ -519,7 +515,7 @@ namespace xerus {
 				memset(denseData.get(), 0, size*sizeof(value_t));
 			}
 		} else {
-			if(is_sparse()) {
+			if(representation == Representation::Sparse) {
 				if(sparseData.unique()) {
 					sparseData->clear();
 				} else {
@@ -540,7 +536,7 @@ namespace xerus {
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
-		if(is_dense()) {
+		if(representation == Representation::Dense) {
 			if(oldDataSize != size || !denseData.unique()) {
 				denseData.reset(new value_t[size], internal::array_deleter_vt);
 			}
@@ -557,13 +553,32 @@ namespace xerus {
 		}
 	}
 	
+	void Tensor::reset() {
+		dimensions.clear();
+		factor = 1.0;
+		
+		if(representation == Representation::Dense) {
+			if(size != 1 || !denseData.unique()) {
+				denseData.reset(new value_t[1], internal::array_deleter_vt);
+			}
+			*denseData.get() = 0.0;
+		} else {
+			if(sparseData.unique()) {
+				sparseData->clear();
+			} else {
+				sparseData.reset(new std::map<size_t, value_t>());
+			}
+		}
+		size = 1;
+	}
+	
 	
 	void Tensor::reset(DimensionTuple _newDim, const std::shared_ptr<value_t>& _newData) {
 		dimensions = std::move(_newDim);
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
-		if(is_sparse()) {
+		if(representation == Representation::Sparse) {
 			sparseData.reset();
 			representation = Representation::Dense;
 		}
@@ -577,7 +592,7 @@ namespace xerus {
 		size = misc::product(dimensions);
 		factor = 1.0;
 		
-		if(is_sparse()) {
+		if(representation == Representation::Sparse) {
 			sparseData.reset();
 			representation = Representation::Dense;
 		}

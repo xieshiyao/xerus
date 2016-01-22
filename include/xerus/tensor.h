@@ -105,7 +105,6 @@ namespace xerus {
 		/// @brief Tensors are default move constructable.
 		implicit Tensor(       Tensor&& _other ) = default;
 		
-		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
 		 * @param _dimensions the dimensions of the new tensor.
@@ -594,6 +593,11 @@ namespace xerus {
 		 * @param _init (optional) data treatment, i.e. whether the tensor shall be zero initialized.
 		 */
 		void reset(DimensionTuple _newDim, const Initialisation _init = Initialisation::Zero);
+		
+		/** 
+		 * @brief Resets the tensor as if default initialized.
+		 */
+		void reset();
 		
 		
 		/** 
