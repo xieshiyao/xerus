@@ -33,6 +33,8 @@
 #include <xerus/cs_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 
+#include <xerus/tensorNetwork.h>
+
 namespace xerus {
 	size_t Tensor::sparsityFactor = 4;
 	
@@ -201,6 +203,11 @@ namespace xerus {
 		Tensor ret(*this);
 		ret.use_sparse_representation();
 		return ret;
+	}
+	
+	
+	Tensor& Tensor::operator=(const TensorNetwork& _network) {
+		return operator=(Tensor(_network));
 	}
 	
 	

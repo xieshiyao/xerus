@@ -35,6 +35,9 @@
 #include "indexedTensor.h"
 
 namespace xerus {
+	//Forwad declarations
+	class TensorNetwork;
+	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor final {
 	public:
@@ -301,6 +304,14 @@ namespace xerus {
 		 * @return a reference to this Tensor.
 		 */
 		Tensor& operator=(      Tensor&& _other) = default;
+		
+		
+		/** 
+		 * @brief Assigns the given TensorNetwork to this Tensor by completely contracting the network.
+		 * @param _other the TensorNetwork to be to this Tensor.
+		 * @return a reference to this Tensor.
+		 */
+		Tensor& operator=(const TensorNetwork& _network);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Information - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
