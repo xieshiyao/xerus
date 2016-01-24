@@ -129,11 +129,12 @@ UNIT_TEST(ALS, tutorial,
 	X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
 	
 	xerus::ALSVariant ALSb(xerus::ALS);
+	PerformanceData pd(false);
 // 	ALSb.printProgress = true;
 // 	ALSb.useResidualForEndCriterion = true;
 // 	std::vector<value_t> perfdata;
 	
-	ALSb(A, X, C, 1e-12);
+	ALSb(A, X, C, 1e-12, pd);
 	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
 	
 	

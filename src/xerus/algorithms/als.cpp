@@ -208,8 +208,8 @@ namespace xerus {
 					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 					Tensor res;
 					// 0.5*<x,Ax> - <x,b>
-					Tensor xAx = xAxL.back();
-					Tensor bx = bxL.back();
+					TensorNetwork xAx = xAxL.back();
+					TensorNetwork bx = bxL.back();
 					for (size_t i=0; i<ALS.sites; ++i) {
 						xAx(cr1, cr2, cr3) = xAx(r1, r2, r3) 
 												* x.get_component(currIndex+i)(r1, n1, cr1) 
@@ -235,7 +235,7 @@ namespace xerus {
 					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 					Tensor res;
 					// 0.5*<x,Ax> - <x,b> = 0.5*|x_i|^2 - <x,b>
-					Tensor bx = bxL.back();
+					TensorNetwork bx = bxL.back();
 					for (size_t i=0; i<ALS.sites; ++i) {
 						bx(cr1, cr2) = bx(r1, r2)
 										* b.get_component(currIndex+i)(r1, n1, cr1) 
@@ -384,10 +384,8 @@ namespace xerus {
 			if (_Ap) {
 				ATilde = data.xAxL.back();
 				for (size_t p=0;  p<sites; ++p) {
-					ATilde.draw(std::string("out")+misc::to_string(p));
 					ATilde(n1^(p+1), n2, r2, n3^(p+1), n4) = ATilde(n1^(p+1), r1, n3^(p+1)) * _A.get_component(data.currIndex+p)(r1, n2, n4, r2);
 				}
-				ATilde.draw(std::string("out")+misc::to_string(sites));
 				ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1, n3^(sites+1)) * data.xAxR.back()(n2, r1, n4);
 			}
 			BTilde(r1,cr1) = data.bxL.back()(cr1,r1);
