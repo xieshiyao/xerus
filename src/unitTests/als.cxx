@@ -134,7 +134,7 @@ UNIT_TEST(ALS, tutorial,
 // 	ALSb.useResidualForEndCriterion = true;
 // 	std::vector<value_t> perfdata;
 	
-	ALSb(A, X, C, 1e-12);
+	ALSb(A, X, C, 1e-12, pd);
 	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
 	
 	

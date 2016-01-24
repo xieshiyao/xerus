@@ -307,6 +307,10 @@ namespace xerus {
 		currIndex = optimizedRange.first;
 		direction = Increasing;
 		choose_energy_functional();
+		lastEnergy2 = 1e102;
+		lastEnergy = 1e101;
+		energy = 1e100;
+		halfSweepCount = 0;
 	}
 
 	void ALSVariant::ALSAlgorithmicData::move_to_next_index() {
@@ -352,7 +356,7 @@ namespace xerus {
 	}
 	
 	
-	TensorNetwork ALSVariant::constructLocalOperator(ALSVariant::ALSAlgorithmicData& _data) const {
+	TensorNetwork ALSVariant::construct_local_operator(ALSVariant::ALSAlgorithmicData& _data) const {
 		REQUIRE(_data.A, "IE");
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork ATilde = _data.localOperatorCache.left.back();
@@ -372,7 +376,7 @@ namespace xerus {
 		return ATilde;
 	}
 	
-	TensorNetwork ALSVariant::constructLocalRHS(ALSVariant::ALSAlgorithmicData& _data) const {
+	TensorNetwork ALSVariant::construct_local_RHS(ALSVariant::ALSAlgorithmicData& _data) const {
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork BTilde;
 		if (assumeSPD) {
@@ -384,9 +388,9 @@ namespace xerus {
 		} else {
 			BTilde(n1,r1^2) = _data.rhsCache.left.back()(r1^2,n1);
 			for (size_t p=0; p<sites; ++p) {
-				BTilde(n1^(p+1), n2, cr1, cr2) = BTilde(n1^(p+1), r1, r2) 
-					* _data.b.get_component(_data.currIndex+p)(r1, n1, cr1)
-					* _data.A->get_component(_data.currIndex+p)(r2, n1, n2, cr2);
+				BTilde(n1^(p+1), n3, cr1, cr2) = BTilde(n1^(p+1), r1, r2) 
+					* _data.b.get_component(_data.currIndex+p)(r1, n2, cr1)
+					* _data.A->get_component(_data.currIndex+p)(r2, n2, n3, cr2);
 			}
 			BTilde(n1^(sites+1),n2) = BTilde(n1^(sites+1), r1^2) * _data.rhsCache.right.back()(r1^2,n2);
 		}
@@ -394,6 +398,58 @@ namespace xerus {
 	}
 
 
+	bool ALSVariant::check_for_end_of_sweep(ALSAlgorithmicData& _data, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
+		if ((_data.direction == Decreasing && _data.currIndex==_data.optimizedRange.first) 
+			|| (_data.direction == Increasing && _data.currIndex==_data.optimizedRange.second-sites)) 
+		{
+			LOG(ALS, "Sweep Done");
+			_data.halfSweepCount += 1;
+			
+			_data.lastEnergy2 = _data.lastEnergy;
+			_data.lastEnergy = _data.energy;
+			_data.energy = _data.energy_f();
+			
+			if (_perfData) {
+				size_t flags = _data.direction == Increasing ? FLAG_FINISHED_HALFSWEEP : FLAG_FINISHED_FULLSWEEP;
+				if (!useResidualForEndCriterion) {
+					_perfData.stop_timer();
+					value_t residual = _data.residual_f();
+					_perfData.continue_timer();
+					_perfData.add(residual, _data.x, flags);
+				} else {
+					_perfData.add(_data.energy, _data.x, flags);
+				}
+			}
+			
+			// Conditions for loop termination
+			if (_data.halfSweepCount == _numHalfSweeps 
+				|| std::abs(_data.lastEnergy-_data.energy) < _convergenceEpsilon 
+				|| std::abs(_data.lastEnergy2-_data.energy) < _convergenceEpsilon 
+				|| (_data.optimizedRange.second - _data.optimizedRange.first<=sites)) 
+			{
+				// we are done! yay
+				LOG(ALS, "ALS done, " << _data.energy << " " << _data.lastEnergy << " " 
+					<< std::abs(_data.lastEnergy2-_data.energy) << " " << std::abs(_data.lastEnergy-_data.energy) << " < " << _convergenceEpsilon);
+				if (_data.cannonicalizeAtTheEnd && preserveCorePosition) {
+					_data.x.move_core(_data.corePosAtTheEnd, true);
+				}
+				return true;
+			}
+				
+			// change walk direction
+			_data.direction = _data.direction == Increasing ? Decreasing : Increasing;
+		} else {
+			// we are not done with the sweep, just calculate data for the perfdata
+			if (_perfData) {
+				_perfData.stop_timer();
+				value_t residual = _data.residual_f();
+				_perfData.continue_timer();
+				_perfData.add(residual, _data.x, 0);
+			}
+		}
+		return false;
+	}
+	
 	
 	// -------------------------------------------------------------------------------------------------------------------------
 	//                                   the actual algorithm
@@ -434,18 +490,9 @@ namespace xerus {
 		}
 		_perfData.start();
 		
-		const size_t FLAG_FINISHED_HALFSWEEP = 1;
-		const size_t FLAG_FINISHED_FULLSWEEP = 3; // contains the flag for a new halfsweep!
 		ALSAlgorithmicData data(*this, _Ap, _x, _b);
 		
-		TensorNetwork ATilde;
-		TensorNetwork BTilde;
-		value_t lastEnergy2 = 1e102;
-		value_t lastEnergy = 1e101;
-		value_t energy = 1e100;
-		size_t halfSweepCount = 0;
-		
-		energy = data.energy_f();
+		data.energy = data.energy_f();
 		
 		if (_perfData) {
 			_perfData.stop_timer();
@@ -457,74 +504,24 @@ namespace xerus {
 		while (true) {
 			LOG(ALS, "Starting to optimize index " << data.currIndex);
 			
-			// Calculate Atilde and Btilde
-			if (_Ap) {
-				ATilde = constructLocalOperator(data);
-			}
-			BTilde = constructLocalRHS(data);
-			
 			// update current component tensor
 			if (_Ap) {
 				std::vector<Tensor> tmpX;
 				for (size_t p=0; p<sites; ++p) {
 					tmpX.emplace_back(_x.get_component(data.currIndex+p));
 				}
-				localSolver(ATilde, tmpX, BTilde, data);
+				localSolver(construct_local_operator(data), tmpX, construct_local_RHS(data), data);
 				for (size_t p=0; p<sites; ++p) {
 					_x.set_component(data.currIndex+p, std::move(tmpX[p]));
 				}
 			} else {
 				//TODO?
 				REQUIRE(sites==1, "approximation dmrg not implemented yet");
-				_x.component(data.currIndex) = Tensor(BTilde);
+				_x.component(data.currIndex) = Tensor(construct_local_RHS(data));
 			}
 			
-			// Are we done with the sweep?
-			if ((data.direction == Decreasing && data.currIndex==data.optimizedRange.first) 
-				|| (data.direction == Increasing && data.currIndex==data.optimizedRange.second-sites)) 
-			{
-				LOG(ALS, "Sweep Done");
-				halfSweepCount += 1;
-				
-				lastEnergy2 = lastEnergy;
-				lastEnergy = energy;
-				energy = data.energy_f();
-				
-				if (_perfData) {
-					size_t flags = data.direction == Increasing ? FLAG_FINISHED_HALFSWEEP : FLAG_FINISHED_FULLSWEEP;
-					if (!useResidualForEndCriterion) {
-						_perfData.stop_timer();
-						value_t residual = data.residual_f();
-						_perfData.continue_timer();
-						_perfData.add(residual, _x, flags);
-					} else {
-						_perfData.add(energy, _x, flags);
-					}
-				}
-				
-				// Conditions for loop termination
-				if (halfSweepCount == _numHalfSweeps 
-						|| std::abs(lastEnergy-energy) < _convergenceEpsilon 
-						|| std::abs(lastEnergy2-energy) < _convergenceEpsilon 
-						|| (data.optimizedRange.second - data.optimizedRange.first<=sites)) {
-					// we are done! yay
-					LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
-					if (data.cannonicalizeAtTheEnd && preserveCorePosition) {
-						_x.move_core(data.corePosAtTheEnd, true);
-					}
-					return energy;
-				}
-				
-				// change walk direction
-				data.direction = data.direction == Increasing ? Decreasing : Increasing;
-			} else {
-				// we are not done with the sweep, just calculate data for the perfdata
-				if (_perfData) {
-					_perfData.stop_timer();
-					value_t residual = data.residual_f();
-					_perfData.continue_timer();
-					_perfData.add(residual, _x, 0);
-				}
+			if(check_for_end_of_sweep(data, _numHalfSweeps, _convergenceEpsilon, _perfData)) {
+				return data.energy;
 			}
 			
 			data.move_to_next_index();

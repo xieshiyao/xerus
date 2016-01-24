@@ -55,10 +55,15 @@ namespace xerus {
 			std::pair<size_t, size_t> optimizedRange; ///< range of indices for the nodes of _x that need to be optimized
 			bool cannonicalizeAtTheEnd; ///< whether _x should be cannonicalized at the end
 			size_t corePosAtTheEnd; ///< core position that should be restored at the end of the algorithm
-			size_t currIndex; ///< position that is currently being optimized
-			Direction direction; ///< direction of current sweep
 			std::function<value_t()> energy_f; ///< the energy functional used for this calculation
 			std::function<value_t()> residual_f; ///< the functional to calculate the current residual
+			
+			size_t currIndex; ///< position that is currently being optimized
+			value_t lastEnergy2; ///< energy at the end of last full sweep
+			value_t lastEnergy; ///< energy at the end of last halfsweep
+			value_t energy; ///< current value of the energy residual
+			size_t halfSweepCount; ///< current count of halfSweeps
+			Direction direction; ///< direction of current sweep
 			
 			/**
 			* @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
@@ -96,9 +101,13 @@ namespace xerus {
 			void move_to_next_index();
 		};
 		
-		TensorNetwork constructLocalOperator(ALSAlgorithmicData &_data) const;
-		TensorNetwork constructLocalRHS(ALSAlgorithmicData &_data) const;
+		TensorNetwork construct_local_operator(ALSAlgorithmicData &_data) const;
+		TensorNetwork construct_local_RHS(ALSAlgorithmicData &_data) const;
+		bool check_for_end_of_sweep(ALSAlgorithmicData& _data, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const;
 	public:
+		const size_t FLAG_FINISHED_HALFSWEEP = 1;
+		const size_t FLAG_FINISHED_FULLSWEEP = 3; // contains the flag for a new halfsweep!
+		
 		uint sites; ///< the number of sites that are simultaneously optimized
 		size_t numHalfSweeps; ///< maximum number of sweeps to perform. set to 0 for infinite
 		value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
