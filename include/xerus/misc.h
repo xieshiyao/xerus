@@ -27,7 +27,8 @@
 #include "misc/check.h"
 #include "misc/standard.h"
 #include "misc/namedLogger.h"
-#include "misc/missingFunctions.h"
+ 
+#include "misc/basicArraySupport.h"
 #include "misc/stringUtilities.h"
 #include "misc/sfinae.h"
 #include "misc/callStack.h"
@@ -37,3 +38,5 @@
 #include "misc/exceptions.h"
 #include "misc/allocator.h"
 #include "misc/histogram.h"
+#include "misc/sort.h"
+#include "misc/math.h"

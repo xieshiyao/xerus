@@ -23,6 +23,7 @@
  */
 
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/misc/check.h>
 
 namespace xerus {
     namespace misc {

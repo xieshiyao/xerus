@@ -33,7 +33,7 @@ endif
 # Set optimization options
 ifdef LOW_OPTIMIZATION
 	DEBUG += -D LOW_OPTIMIZATION
-	OPTIMIZE += -O0 
+	OPTIMIZE += -O0
 else ifdef HIGH_OPTIMIZATION
 	DEBUG += -D HIGH_OPTIMIZATION
 	OPTIMIZE += -O3				# Even more optimization, using non iso conform C++ operations

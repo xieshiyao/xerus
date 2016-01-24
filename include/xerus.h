@@ -36,7 +36,6 @@
 
     // All the xerus headers
 	#include "xerus/blasLapackWrapper.h"
-	#include "xerus/selectedFunctions.h"
     #include "xerus/index.h"
     #include "xerus/indexedTensorReadOnly.h"
     #include "xerus/indexedTensorWritable.h"

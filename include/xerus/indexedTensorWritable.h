@@ -27,73 +27,75 @@
 #include "indexedTensorReadOnly.h"
 
 namespace xerus {
-	/**
-	 * @brief Abstract internal representation of an read and writeable indexed Tensor or TensorNetwork.
-	 * @details This class (without specialization) should not appear or be used anywhere.
-	 */
-	template<class tensor_type>
-	class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
-	public:
+	namespace internal {
 		/**
-		 * @brief Non-const pointer to the tensor object. 
-		 * @details This must always coincide with tensorObjectReadOnly.
-		 * */
-		tensor_type* tensorObject;
+		* @brief Abstract internal representation of an read and writeable indexed Tensor or TensorNetwork.
+		* @details This class (without specialization) should not appear or be used anywhere.
+		*/
+		template<class tensor_type>
+		class IndexedTensorWritable : public IndexedTensorReadOnly<tensor_type> {
+		public:
+			/**
+			* @brief Non-const pointer to the tensor object. 
+			* @details This must always coincide with tensorObjectReadOnly.
+			* */
+			tensor_type* tensorObject;
+			
+			///@brief Flag indicating, whether the IndexedTensorWritable is the owner of the tensorObject.
+			bool deleteTensorObject;
+			
+		protected:
+			///@brief There is no usefull default constructor;
+			IndexedTensorWritable() = delete;
+			
+			///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
+			IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
+			
+			///@brief Move constructor.
+			IndexedTensorWritable(IndexedTensorWritable &&_other );
+			
+			///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
+			IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);
+			
+			///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
+			IndexedTensorWritable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership);
+			
+		public:
+			/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			virtual ~IndexedTensorWritable();
+			
+			/*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			
+			///@brief Check whether the IndexedTensorWritable has ownership of the tensor object.
+			bool is_owner() const;
+			
+			/**
+			* @brief Tensor assignment with indices.
+			*/
+			void indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs);
+			
+			/**
+			* @brief Tensor assignment with indices.
+			*/
+			void indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
+			
+			/**
+			* @brief Tensor add_assignment with indices.
+			*/
+			void indexed_plus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
+			
+			/**
+			* @brief Tensor subtract_assignment with indices.
+			*/
+			void indexed_minus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
+			
+			/**
+			* @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.
+			*/
+			void perform_traces();
+		};
 		
-		///@brief Flag indicating, whether the IndexedTensorWritable is the owner of the tensorObject.
-		bool deleteTensorObject;
 		
-	protected:
-		///@brief There is no usefull default constructor;
-		IndexedTensorWritable() = delete;
-		
-		///@brief There is no usefull copy constructor, because the handling of the tensorObject is unclear.
-		IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
-		
-		///@brief Move constructor.
-		IndexedTensorWritable(IndexedTensorWritable &&_other );
-		
-		///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
-		IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);
-		
-		///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
-		IndexedTensorWritable(tensor_type* const _tensorObject,       std::vector<Index>&& _indices, const bool _takeOwnership);
-		
-	public:
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		virtual ~IndexedTensorWritable();
-		
-		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Other - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		
-		///@brief Check whether the IndexedTensorWritable has ownership of the tensor object.
-		bool is_owner() const;
-		
-		/**
-		 * @brief Tensor assignment with indices.
-		 */
-		void indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs);
-		
-		/**
-		 * @brief Tensor assignment with indices.
-		 */
-		void indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs);
-		
-		/**
-		 * @brief Tensor add_assignment with indices.
-		 */
-		void indexed_plus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
-		
-		/**
-		 * @brief Tensor subtract_assignment with indices.
-		 */
-		void indexed_minus_equal(IndexedTensorReadOnly<tensor_type>&& _rhs);
-		
-		/**
-		 * @brief: Performes all traces induces by the current indices and therby also evaluates all fixed indices.
-		 */
-		void perform_traces();
-	};
-	
-	
-	void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
+		void evaluate(IndexedTensorWritable<Tensor>&& _out, IndexedTensorReadOnly<Tensor>&& _base);
+	}
 }

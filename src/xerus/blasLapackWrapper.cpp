@@ -22,8 +22,6 @@
  * @brief Implementation of the blas and lapack wrapper functions.
  */
 
-#include <xerus/blasLapackWrapper.h>
-#include <xerus/selectedFunctions.h>
 
 #include <complex.h>
 // fix for non standard-conform complex implementation
@@ -54,9 +52,14 @@ extern "C"
 #include <xerus/misc/standard.h>
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/check.h>
-#include <xerus/misc/missingFunctions.h>
+ 
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/basic.h>
+
+#include <xerus/blasLapackWrapper.h>
+#include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/math.h>
+
 
 
 namespace xerus {
@@ -120,7 +123,7 @@ namespace xerus {
             PA_START;
             
             //Blas wants to add the product to A, but we don't
-            misc::array_set_zero(_A, _m*_n);
+            misc::set_zero(_A, _m*_n);
             
             cblas_dger(CblasRowMajor, (int)_m, (int)_n, _alpha, _x, 1, _y, 1, _A, (int)_n);
             
@@ -196,7 +199,7 @@ namespace xerus {
         void svd( double* const _U, double* const _S, double* const _Vt, const double* const _A, const size_t _m, const size_t _n) {
             //Create copy of A
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::array_copy(tmpA.get(), _A, _m*_n);
+            misc::copy(tmpA.get(), _A, _m*_n);
             
             svd_destructive(_U, _S, _Vt, tmpA.get(), _m, _n);
         }
@@ -207,7 +210,7 @@ namespace xerus {
             
             PA_START;
             std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-			misc::array_copy(tmpA.get(), _A, _m*_n);
+			misc::copy(tmpA.get(), _A, _m*_n);
 			
             int lapackAnswer = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', (int) _m, (int) _n, _A, (int) _n, _S, _U, (int) std::min(_m, _n), _Vt, (int) _n);
             CHECK(lapackAnswer == 0, error, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
@@ -243,7 +246,7 @@ namespace xerus {
 			const std::unique_ptr<int[]> permutation(new int[_n]());
 			
 			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::array_copy(tmpA.get(), _A, _m*_n);
+            misc::copy(tmpA.get(), _A, _m*_n);
 			
 			// Calculate QR factorisations with column pivoting
 			IF_CHECK(int lapackAnswer = ) LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, (int) _m, (int) _n, tmpA.get(), (int) _n, permutation.get(), tau.get());
@@ -288,10 +291,10 @@ namespace xerus {
 			
 			_Q.reset(new double[_m*rank]);
 			if(rank == _n) {
-				misc::array_copy(_Q.get(), tmpA.get(), _m*rank);
+				misc::copy(_Q.get(), tmpA.get(), _m*rank);
 			} else {
 				for(size_t row = 0; row < _m; ++row) {
-					misc::array_copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
+					misc::copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
 				}
 			}
 			
@@ -304,7 +307,7 @@ namespace xerus {
         void qr(double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n) {
             // Create tmp copy of A since Lapack wants to destroy it
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::array_copy(tmpA.get(), _A, _m*_n);
+            misc::copy(tmpA.get(), _A, _m*_n);
             
             qr_destructive(_Q, _R, tmpA.get(), _m, _n);
         }
@@ -338,8 +341,8 @@ namespace xerus {
             
             // Copy the upper triangular Matrix R (rank x _n) into position
             for(size_t row =0; row < rank; ++row) {
-                misc::array_set_zero(_R+row*_n, row); // Set starting zeros
-                misc::array_copy(_R+row*_n+row, _A+row*_n+row, _n-row); // Copy upper triangular part from lapack result.
+                misc::set_zero(_R+row*_n, row); // Set starting zeros
+                misc::copy(_R+row*_n+row, _A+row*_n+row, _n-row); // Copy upper triangular part from lapack result.
             }
             
             // Create orthogonal matrix Q (in tmpA)
@@ -350,15 +353,15 @@ namespace xerus {
             // Copy Q (_m x rank) into position
             if(_A != _Q) {
 				if(_n == rank) {
-					misc::array_copy(_Q, _A, _m*_n);
+					misc::copy(_Q, _A, _m*_n);
 				} else {
 					for(size_t row = 0; row < _m; ++row) {
-						misc::array_copy(_Q+row*rank, _A+row*_n, rank);
+						misc::copy(_Q+row*rank, _A+row*_n, rank);
 					}
 				}
             } else if(_n != rank) { // Note extra treatmeant to avoid memcpy overlap
 				for(size_t row = 1; row < _m; ++row) {
-					misc::array_copy_inplace(_Q+row*rank, _A+row*_n, rank);
+					misc::copy_inplace(_Q+row*rank, _A+row*_n, rank);
 				}
 			}
             
@@ -370,7 +373,7 @@ namespace xerus {
         void rq( double* const _R, double* const _Q, const double* const _A, const size_t _m, const size_t _n) {
             // Create tmp copy of A since Lapack wants to destroy it
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::array_copy(tmpA.get(), _A, _m*_n);
+            misc::copy(tmpA.get(), _A, _m*_n);
             
             rq_destructive(_R, _Q, tmpA.get(), _m, _n);
         }
@@ -405,11 +408,11 @@ namespace xerus {
             // Copy the upper triangular Matrix R (_m x rank) into position.
             size_t row = 0;
             for( ; row < _m - rank; ++row) {
-                misc::array_copy(_R+row*rank, _A+row*_n+_n-rank, rank);
+                misc::copy(_R+row*rank, _A+row*_n+_n-rank, rank);
             }
             for(size_t skip = 0; row < _m; ++row, ++skip) {
-                misc::array_set_zero(_R+row*rank, skip); // Set starting zeros
-                misc::array_copy(_R+row*rank+skip, _A+row*_n+_n-rank+skip, rank-skip); // Copy upper triangular part from lapack result.
+                misc::set_zero(_R+row*rank, skip); // Set starting zeros
+                misc::copy(_R+row*rank+skip, _A+row*_n+_n-rank+skip, rank-skip); // Copy upper triangular part from lapack result.
             }
             
             // Create orthogonal matrix Q (in _A). Lapacke expects to get the last rank rows of A...
@@ -419,7 +422,7 @@ namespace xerus {
             
             //Copy Q (rank x _n) into position
             if(_A != _Q) {
-                misc::array_copy(_Q, _A+(_m-rank)*_n, rank*_n);
+                misc::copy(_Q, _A+(_m-rank)*_n, rank*_n);
             }
             
 			PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
@@ -461,10 +464,10 @@ namespace xerus {
         /// Solves min ||Ax - b||_2 for x
         void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b){
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::array_copy(tmpA.get(), _A, _m*_n);
+            misc::copy(tmpA.get(), _A, _m*_n);
             
             const std::unique_ptr<double[]> tmpB(new double[_n]);
-            misc::array_copy(tmpB.get(), _b, _n);
+            misc::copy(tmpB.get(), _b, _n);
             
             solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get());
         }
@@ -477,13 +480,13 @@ namespace xerus {
             PA_START;
             
             std::unique_ptr<int[]> pivot(new int[_n]);
-            misc::array_set_zero(pivot.get(), _n);
+            misc::set_zero(pivot.get(), _n);
             int rank;
             
             double* bOrX;
             if(_m >= _n) {
                 bOrX = _x;
-                misc::array_copy(bOrX, _b, _n);
+                misc::copy(bOrX, _b, _n);
             } else {
                 bOrX = _b;
             }
@@ -503,7 +506,7 @@ namespace xerus {
             CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer);
             
             if(_m < _n) {
-                misc::array_copy(_x, bOrX, _m);
+                misc::copy(_x, bOrX, _m);
             }
             
 			PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));

@@ -23,7 +23,9 @@
  */
 
 #include <xerus/misc/simpleNumerics.h>
-#include <xerus/misc/missingFunctions.h>
+ 
+#include <xerus/misc/math.h>
+#include <xerus/misc/containerSupport.h>
 #include <xerus/misc/exceptions.h>
 #include <xerus/misc/namedLogger.h>
 #include <xerus/misc/check.h>

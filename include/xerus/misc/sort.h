@@ -17,69 +17,43 @@
 // For further information on Xerus visit https://libXerus.org 
 // or contact us at contact@libXerus.org.
 
+/**
+* @file
+* @brief Header file for some extended sorting functions.
+*/
+
+#include <vector>
+#include <algorithm>
+
+#include "check.h"
 
 namespace xerus {
-    namespace misc {
-
-        // NOT TESTED -- NOTE -- NOT TESTED
-
-        static _inline_ void merge(const size_t* const _leftPositions,
-                    const value_t* const _leftValues,
-                    const size_t _leftSize, 
-                    const size_t* const _rightPositions,
-                    const value_t* const _rightValues,
-                    const size_t _rightSize,
-                    size_t* _outPositions,
-                    value_t* const _outValues,
-                    size_t& _outSize
-                    ) {
-            size_t leftIndex = 0, rightIndex = 0, outIndex = 0;
-            
-            while(leftIndex < _leftSize && rightIndex < _rightSize) {
-                if(_leftPositions[leftIndex] == _rightPositions[rightIndex]) {
-                    _outValues[outIndex] = _leftValues[leftIndex] + _rightValues[rightIndex];
-                    _outPositions[outIndex] = _leftPositions[leftIndex] + _rightPositions[rightIndex];
-                    ++leftIndex; ++rightIndex;
-                } else if(_leftPositions[leftIndex] < _rightPositions[rightIndex]) {
-                    _outValues[outIndex] = _leftValues[leftIndex];
-                    _outPositions[outIndex] = _leftPositions[leftIndex];
-                    ++leftIndex;
-                } else {
-                    _outValues[outIndex] = _rightValues[leftIndex];
-                    _outPositions[outIndex] = _rightPositions[leftIndex];
-                    ++rightIndex;
-                }
-                ++outIndex;
-            }
-            _outSize = outIndex;
-        }
-
-        void merge_sort(const size_t* const _positions,
-                        const value_t* const _values,
-                        size_t* const _outPositions,
-                        value_t* const _outValues,
-                        size_t _size ) {
-            // End of the recursion
-            if(_size == 1) {
-                _outPositions[0] = _positions[0];
-                _outValues[0] = _values[0];
-            }
-            
-            // Recursive call for the left half
-            size_t leftSize = _size/2;
-            std::unique_ptr<size_t[]> leftPositions(new size_t[leftSize]);
-            std::unique_ptr<value_t[]> leftValues(new value_t[leftSize]);
-            merge_sort(_positions, _values, leftPositions.get(), leftValues.get(), leftSize);
-            
-            // Recursive call for the right half
-            size_t rightSize = _size/2+_size%2;
-            std::unique_ptr<size_t[]> rightPositions(new size_t[leftSize]);
-            std::unique_ptr<value_t[]> rightValues(new value_t[leftSize]);
-            merge_sort(_positions+leftSize, _values+leftSize, rightPositions.get(), rightValues.get(), rightSize);
-            
-            // Merge both halfes
-            merge(leftPositions.get(), leftValues.get(), leftSize, rightPositions.get(), rightValues.get(), rightSize, _outPositions, _outValues, _size);
-        }
-    }
+	namespace misc {
+		template<class T, class Comparator>
+		std::vector<size_t> create_sort_permutation(const std::vector<T>& _vec, Comparator _comp) {
+			std::vector<size_t> permutation(_vec.size());
+			std::iota(permutation.begin(), permutation.end(), 0);
+			std::sort(permutation.begin(), permutation.end(), [&](const size_t _i, const size_t _j){ return _comp(_vec[_i], _vec[_j]); });
+			return permutation;
+		}
+		
+		template<class T>
+		void apply_permutation( std::vector<T>& _vec, const std::vector<size_t>& _permutation) {
+			REQUIRE(_vec.size() == _permutation.size(), "Vector and permutation size must coincide.");
+			std::vector<T> sorted_vec;
+			sorted_vec.reserve(_permutation.size());
+			for(size_t i = 0; i < _permutation.size(); ++i) {
+				sorted_vec.emplace_back(std::move(_vec[_permutation[i]]));
+			}
+			_vec = std::move(sorted_vec);
+		}
+		
+		template <class KeyType, class DataType, class Comparator>
+		void simultaneous_sort( std::vector<KeyType>& _keyVector, std::vector<DataType>& _dataVector, Comparator _comp) {
+			REQUIRE(_keyVector.size() == _dataVector.size(), "Vector sizes must coincide.");
+			std::vector<size_t> permutation = create_sort_permutation(_keyVector, _comp);
+			apply_permutation(_keyVector, permutation);
+			apply_permutation(_dataVector, permutation);
+		}
+	}
 }
-    

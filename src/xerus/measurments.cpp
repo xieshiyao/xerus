@@ -24,7 +24,8 @@
 
 #include <xerus/misc/check.h>
 #include <xerus/measurments.h>
-#include <xerus/misc/missingFunctions.h>
+ 
+#include <xerus/misc/sort.h>
 
 #include <xerus/index.h>
 #include <xerus/tensor.h> 
@@ -151,7 +152,7 @@ namespace xerus {
 		value_t residualNorm = 0.0;
 		value_t measurementNorm = 0.0;
 		
-		Index r1, r2, i1;
+		const Index r1, r2, i1;
 		
 		std::vector<Tensor> reshuffledComponents(degree());
 		

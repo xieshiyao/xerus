@@ -27,11 +27,12 @@
 #include <xerus/tensor.h>
  
 #include <xerus/blasLapackWrapper.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/containerSupport.h>
 
 namespace xerus {
 	
-	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, size_t& _splitPos, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, IndexedTensorReadOnly<Tensor>&& _base, IndexedTensor<Tensor>&& _lhs, IndexedTensor<Tensor>&& _rhs) {
+	std::unique_ptr<Tensor> prepare_split(size_t& _lhsSize, size_t& _rhsSize, size_t& _rank, size_t& _splitPos, std::vector<Index>& _lhsPreliminaryIndices, std::vector<Index>& _rhsPreliminaryIndices, internal::IndexedTensorReadOnly<Tensor>&& _base, internal::IndexedTensor<Tensor>&& _lhs, internal::IndexedTensor<Tensor>&& _rhs) {
 		_base.assign_indices();
 		
 		// Calculate the future order of lhs and rhs.
@@ -120,7 +121,7 @@ namespace xerus {
 		}
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);
 		
-		IndexedTensor<Tensor> reorderedBaseTensor(new Tensor(std::move(reorderedBaseDimensions), _base.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
+		internal::IndexedTensor<Tensor> reorderedBaseTensor(new Tensor(std::move(reorderedBaseDimensions), _base.tensorObjectReadOnly->representation, Tensor::Initialisation::None), std::move(reorderedBaseIndices), false);
 		evaluate(std::move(reorderedBaseTensor), std::move(_base));
 		reorderedBaseTensor.tensorObject->ensure_own_data();
 		
@@ -139,12 +140,12 @@ namespace xerus {
 		return std::unique_ptr<Tensor>(reorderedBaseTensor.tensorObject);
 	}
 	
-	void SVD::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
+	void SVD::operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 3, "SVD requires two output tensors, not " << _output.size());
-		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensor<Tensor>& U = *_output[0];
-		IndexedTensor<Tensor>& S = *_output[1];
-		IndexedTensor<Tensor>& Vt = *_output[2];
+		internal::IndexedTensorReadOnly<Tensor>& A = *input;
+		internal::IndexedTensor<Tensor>& U = *_output[0];
+		internal::IndexedTensor<Tensor>& S = *_output[1];
+		internal::IndexedTensor<Tensor>& Vt = *_output[2];
 		
 		IF_CHECK(S.check_indices(2, false));
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
@@ -192,11 +193,11 @@ namespace xerus {
 	}
 
 
-	void QR::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
+	void QR::operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QR factorisation requires two output tensors, not " << _output.size());
-		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensor<Tensor>& Q = *_output[0];
-		IndexedTensor<Tensor>& R = *_output[1];
+		internal::IndexedTensorReadOnly<Tensor>& A = *input;
+		internal::IndexedTensor<Tensor>& Q = *_output[0];
+		internal::IndexedTensor<Tensor>& R = *_output[1];
 		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
@@ -210,11 +211,11 @@ namespace xerus {
 		R = (*R.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
 
-	void RQ::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
+	void RQ::operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "RQ factorisation requires two output tensors, not " << _output.size());
-		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensor<Tensor>& R = *_output[0];
-		IndexedTensor<Tensor>& Q = *_output[1];
+		internal::IndexedTensorReadOnly<Tensor>& A = *input;
+		internal::IndexedTensor<Tensor>& R = *_output[0];
+		internal::IndexedTensor<Tensor>& Q = *_output[1];
 		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
@@ -229,11 +230,11 @@ namespace xerus {
 	}
 	
 	
-	void QC::operator()(const std::vector<IndexedTensor<Tensor>*>& _output) const {
+	void QC::operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const {
 		REQUIRE(_output.size() == 2, "QC factorisation requires two output tensors, not " << _output.size());
-		IndexedTensorReadOnly<Tensor>& A = *input;
-		IndexedTensor<Tensor>& Q = *_output[0];
-		IndexedTensor<Tensor>& C = *_output[1];
+		internal::IndexedTensorReadOnly<Tensor>& A = *input;
+		internal::IndexedTensor<Tensor>& Q = *_output[0];
+		internal::IndexedTensor<Tensor>& C = *_output[1];
 		
 		size_t lhsSize, rhsSize, rank, splitPos;
 		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
