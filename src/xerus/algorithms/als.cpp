@@ -65,6 +65,27 @@ namespace xerus {
 		}
 	}
 	
+	void ALSVariant::ASD_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data) {
+		// performs a single gradient step, so
+		// x = x + alpha * P( A^t (b - Ax) )    or for SPD: x = x + alpha * P( b - Ax )
+		// where the projection P is already part of the stacks 
+		// and alpha is the exact stepsize for quadratic functionals
+		REQUIRE(_data.ALS.sites == 1, "ASD only defined for single site alternation at the moment");
+		Tensor grad;
+		Index i,j,k;
+		grad(i&0) = _b(i&0) - _A(i/2,j/2) * _x[0](j&0);
+		value_t alpha;
+		if (_data.ALS.assumeSPD) {
+			// stepsize alpha = <y,y>/<y,Ay>
+			alpha = misc::sqr(frob_norm(grad)) / value_t(grad(i&0) * _A(i/2,j/2) * grad(j&0));
+		} else {
+			grad(i&0) = _A(j/2,i/2) * grad(j&0);
+			// stepsize alpha = <y,y>/<Ay,Ay>
+			alpha = frob_norm(grad) / frob_norm(_A(i/2,j/2) * grad(j&0));
+		}
+		_x[0] += alpha * grad;
+	}
+	
 	// -------------------------------------------------------------------------------------------------------------------------
 	//                                       helper functions
 	// -------------------------------------------------------------------------------------------------------------------------
@@ -534,4 +555,7 @@ namespace xerus {
 	
 	const ALSVariant DMRG(2, 0, ALSVariant::lapack_solver, false);
 	const ALSVariant DMRG_SPD(2, 0, ALSVariant::lapack_solver, true);
+	
+	const ALSVariant ASD(1, 0, ALSVariant::ASD_solver, false);
+	const ALSVariant ASD_SPD(1, 0, ALSVariant::ASD_solver, true);
 }

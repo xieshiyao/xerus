@@ -124,10 +124,10 @@ namespace xerus {
 		
 		/// local solver that calls the corresponding lapack routines (LU solver)
 		static void lapack_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
+		static void ASD_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
 		
 		//TODO add local CG solver
 		//TODO add AMEn solver
-		//TODO add ASD solver
 		
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
 		ALSVariant(uint _sites, size_t _numHalfSweeps, LocalSolver _localSolver, bool _assumeSPD,
@@ -213,5 +213,9 @@ namespace xerus {
 	/// default variant of the two-site DMRG algorithm using the lapack solver
 	extern const ALSVariant DMRG;
 	extern const ALSVariant DMRG_SPD;
+	
+	/// default variant of the alternating steepest descent
+	extern const ALSVariant ASD;
+	extern const ALSVariant ASD_SPD;
 }
 
