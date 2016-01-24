@@ -24,7 +24,10 @@
 
 #pragma once
 
+#include <limits>
+#include <cmath>
 #include "standard.h"
+#include "sfinae.h"
 
 namespace xerus {
 	namespace misc {

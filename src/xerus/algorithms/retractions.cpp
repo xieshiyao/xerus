@@ -47,14 +47,14 @@ namespace xerus {
 	}
 	
 	void ALSRetractionII(TTTensor &_U, const TTTensor &_change) {
-		static const ALSVariant roundingALS(1, 2, ALSVariant::lapack_solver);
+		static const ALSVariant roundingALS(1, 2, ALSVariant::lapack_solver, false);
 		TTTensor target = _U + _change;
 		roundingALS(_U, target);
 // 		_U.move_core(0);
 	}
 	
 	void ALSRetractionI(TTTensor &_U, const TTTangentVector &_change) {
-		static const ALSVariant roundingALS(1, 2, ALSVariant::lapack_solver);
+		static const ALSVariant roundingALS(1, 2, ALSVariant::lapack_solver, false);
 		TTTensor target = _change.added_to_base();
 		roundingALS(_U, target);
 // 		_U.move_core(0);
