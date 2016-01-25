@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -22,6 +22,8 @@
  * @brief Implementation of some basic greedy contraction heuristics.
  */
 
+#include <xerus/misc/check.h>
+
 #include <xerus/contractionHeuristic.h>
 #include <xerus/tensorNetwork.h>
 
@@ -32,7 +34,7 @@ namespace xerus {
 		void greedy_heuristic(double &_bestCost, std::vector<std::pair<size_t,size_t>> &_contractions, TensorNetwork _network) {
 			// estimated cost to calculate this heuristic is
 			// numNodes * numNodes * 2*avgEdgesPerNode = 2 * numNodes * numEdges
-			double numNodes=0, numEdges=0;
+			double numNodes = 0, numEdges = 0;
 			for (size_t i=0; i<_network.nodes.size(); ++i) {
 				if (!_network.nodes[i].erased) {
 					numNodes += 1;
@@ -48,23 +50,23 @@ namespace xerus {
 			size_t bestId1, bestId2;
 			do {
 				bestScore = std::numeric_limits<double>::max();
-				for (size_t i=0; i<_network.nodes.size(); ++i) {
+				for (size_t i = 0; i < _network.nodes.size(); ++i) {
 					if (_network.nodes[i].erased) continue;
 					TensorNetwork::TensorNode &ni = _network.nodes[i];
-					for (size_t j=i+1; j<_network.nodes.size(); ++j) {
+					for (size_t j = i+1; j < _network.nodes.size(); ++j) {
 						if (_network.nodes[j].erased) continue;
 						TensorNetwork::TensorNode &nj = _network.nodes[j];
 						/* possible candidate (i.e. link to a later node) */
 						/* calculate n,m,r */
 						double m=1,n=1,r=1;
-						for (size_t d=0; d<ni.degree(); ++d) {
+						for (size_t d = 0; d < ni.degree(); ++d) {
 							if (ni.neighbors[d].other == j) {
 								r *= (double)ni.neighbors[d].dimension;
 							} else {
 								m *= (double)ni.neighbors[d].dimension;
 							}
 						}
-						for (size_t d=0; d<nj.degree(); ++d) {
+						for (size_t d = 0; d < nj.degree(); ++d) {
 							if (nj.neighbors[d].other != i) {
 								n *= (double)nj.neighbors[d].dimension;
 							}

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -141,15 +141,6 @@ namespace xerus {
 		 */
 		Index operator/(const size_t _span) const;
 		
-		/// @brief Two Indices are equal if their valueId coincides. Fixed indices are never equal.
-		bool operator==(const Index& _other) const;
-		
-		/// @brief Two Indices are equal if their valueId coincides. Fixed indices are never equal.
-		bool operator!=(const Index& _other) const;
-		
-		/// @brief The Comparision operator is needed for indices to be orderable in std::set, the valueId is used.
-		bool operator<(const Index& _other) const;
-		
 		/**
 		 * @brief: Checks whether all indices in _indices are open. This is naturally only usefull
 		 * for assinged indices, i.e. indices returned by IndexedTensorReadOnly::get_assigned_indices().
@@ -157,6 +148,15 @@ namespace xerus {
 		 */
 		static bool all_open(const std::vector<Index>& _indices);
 	};
+	
+	/// @brief Two Indices are equal if their valueId coincides. Fixed indices are never equal.
+	bool operator==(const Index& _a, const Index& _b);
+	
+	/// @brief Two Indices are equal if their valueId coincides. Fixed indices are never equal.
+	bool operator!=(const Index& _a, const Index& _b);
+	
+	/// @brief The Comparision operator is needed for indices to be orderable in std::set, the valueId is used.
+	bool operator<(const Index& _a, const Index& _b);
 	
 	/// @brief Allows to pretty print indices, giving the valueId and span.
 	std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx); 

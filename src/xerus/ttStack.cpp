@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -33,6 +33,9 @@
 
 namespace xerus {
 	namespace internal {
+		template<bool isOperator>
+		TTStack<isOperator>::TTStack(const bool _canno, const size_t _corePos) : cannonicalization_required(_canno), futureCorePosition(_corePos) {}
+		
 		
 		template<bool isOperator>
 		TensorNetwork* TTStack<isOperator>::get_copy() const {
@@ -164,16 +167,17 @@ namespace xerus {
 			LOG(fatal, "TTStack not supported as a storing type");
 		}
 		
+		
 		template<bool isOperator>
 		bool TTStack<isOperator>::specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 			return TTNetwork<isOperator>::specialized_contraction_f(_out, std::move(_me), std::move(_other));
 		}
 		
+		
 		template<bool isOperator>
 		bool TTStack<isOperator>::specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 			return TTNetwork<isOperator>::specialized_sum_f(_out, std::move(_me), std::move(_other));
 		}
-		
 		
 		
 		template<bool isOperator>
@@ -183,6 +187,7 @@ namespace xerus {
 			tmp(i&0) = (*this)(i&0);
 			return tmp.frob_norm();
 		}
+		
 		
 		// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 		template class TTStack<false>;

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -25,6 +25,8 @@
 #include <xerus/tensorNetwork.h>
 
 #include <xerus/misc/stringUtilities.h>
+#include <xerus/misc/containerSupport.h>
+#include <xerus/misc/missingFunctions.h>
 
 #include <xerus/basic.h>
 #include <xerus/index.h>
@@ -418,68 +420,69 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Indexing - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
-		return IndexedTensor<TensorNetwork>(this, _indices, false);
+	internal::IndexedTensor<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) {
+		return internal::IndexedTensor<TensorNetwork>(this, _indices, false);
 	}
 	
 	
-	IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
-		return IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
+	internal::IndexedTensor<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) {
+		return internal::IndexedTensor<TensorNetwork>(this, std::move(_indices), false);
 	}
 	
 	
-	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
-		return IndexedTensorReadOnly<TensorNetwork>(this, _indices);
+	internal::IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(const std::vector<Index> & _indices) const {
+		return internal::IndexedTensorReadOnly<TensorNetwork>(this, _indices);
 	}
 	
 	
-	IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
-		return IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
+	internal::IndexedTensorReadOnly<TensorNetwork> TensorNetwork::operator()(	  std::vector<Index>&& _indices) const {
+		return internal::IndexedTensorReadOnly<TensorNetwork>(this, std::move(_indices));
 	}
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me , IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
+	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me , internal::IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	bool TensorNetwork::specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const {
+	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	void TensorNetwork::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		// If tensorObject is not already identical copy it.
-		if (_me.tensorObjectReadOnly != _other.tensorObjectReadOnly) {
-			*_me.tensorObject = *_other.tensorObjectReadOnly;
-		}
+	void TensorNetwork::specialized_evaluation(internal::IndexedTensorWritable<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
+		TensorNetwork& me = *_me.tensorObject;
+		const TensorNetwork& other = *_other.tensorObjectReadOnly;
+		
+		me = other;
 		
 		_other.assign_indices();
-		link_traces((*_me.tensorObject)(_other.indices));
+		
+		link_traces((me)(_other.indices));
 		
 		_me.assign_indices();
-
-		// Swap indices accordingly
-		size_t passedDegree1 = 0;
-		for (size_t i = 0; i < _me.indices.size(); passedDegree1 += _me.indices[i].span, ++i) {
-			if (_other.indices[i] != _me.indices[i]) {
-				// Find the correct index in other
-				size_t j = i+1;
-				size_t passedDegree2 = passedDegree1+_other.indices[i].span;
-				while(_other.indices[j] != _me.indices[i]) {
-					passedDegree2 += _other.indices[j].span;
-					++j;
-					REQUIRE( j < _other.indices.size(), "RHS Index " << _other.indices[j] << " not found in LHS " << _me.indices);
-				}
-				
-				std::swap(_other.indices[i], _other.indices[j]);
-				
-				for (size_t n = 0; n < _other.indices[i].span; ++n) {
-					_me.tensorObject->swap_external_links(passedDegree1+n, passedDegree2+n);
-				}
+		
+		// Needed if &me == &other
+		const std::vector<size_t> otherDimensions = other.dimensions;
+		const std::vector<Link> otherExtLinks = other.externalLinks;
+		
+		for (size_t i = 0, dimPosA = 0; i < _me.indices.size(); dimPosA += _me.indices[i].span, ++i) {
+			size_t j = 0, dimPosB = 0;
+			while (_me.indices[i] != _other.indices[j]) {
+				dimPosB += _other.indices[j].span;
+				++j;
+				REQUIRE( j < _other.indices.size(), "LHS Index " << _me.indices[i] << " not found in RHS " << _other.indices);
 			}
-			REQUIRE(_other.indices[i].span == _me.indices[i].span, "Index span mismatch");
+			
+			REQUIRE(_me.indices[i].span == _other.indices[j].span, "Index spans must coincide");
+			
+			for (size_t s = 0; s < _me.indices[i].span; ++s) {
+				me.dimensions[dimPosA+s] = otherDimensions[dimPosB+s];
+				me.externalLinks[dimPosA+s] = otherExtLinks[dimPosB+s];
+				me.nodes[me.externalLinks[dimPosA+s].other].neighbors[me.externalLinks[dimPosA+s].indexPosition].indexPosition = dimPosA+s;
+				me.nodes[me.externalLinks[dimPosA+s].other].neighbors[me.externalLinks[dimPosA+s].indexPosition].dimension = me.dimensions[dimPosA+s];
+			}
 		}
 	}
 	
@@ -539,7 +542,7 @@ namespace xerus {
 				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "n=" << n << " " << currNode.degree() << " vs " << currNode.tensorObject->degree());
 			}
 			// per neighbor
-			for (size_t i=0; i<currNode.neighbors.size(); ++i) {
+			for (size_t i = 0; i < currNode.neighbors.size(); ++i) {
 				const TensorNetwork::Link &el = currNode.neighbors[i];
 				REQUIRE(el.dimension > 0, "n=" << n << " i=" << i);
 				if (currNode.tensorObject) {
@@ -571,8 +574,8 @@ namespace xerus {
 	
 	
 	void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
-		TensorNetwork::Link &li = externalLinks[_i];
-		TensorNetwork::Link &lj = externalLinks[_j];
+		const TensorNetwork::Link& li = externalLinks[_i];
+		const TensorNetwork::Link& lj = externalLinks[_j];
 		nodes[li.other].neighbors[li.indexPosition].indexPosition = _j;
 		nodes[lj.other].neighbors[lj.indexPosition].indexPosition = _i;
 		std::swap(externalLinks[_i], externalLinks[_j]);
@@ -580,7 +583,8 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::add_network_to_network(IndexedTensorWritable<TensorNetwork>&& _base, IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+	void TensorNetwork::add_network_to_network(internal::IndexedTensorWritable<TensorNetwork>&& _base, internal::IndexedTensorReadOnly<TensorNetwork>&& _toInsert) {
+		_base.assign_indices();
 		_toInsert.assign_indices();
 		
 		TensorNetwork &base = *_base.tensorObject;
@@ -607,8 +611,8 @@ namespace xerus {
 		}
 		
 		// Sanitize the nodes (treating all external links as new external links)
-		for (size_t i = 0; i < toInsert.nodes.size(); ++i) {
-			for(TensorNetwork::Link &l : base.nodes[firstNew+i].neighbors) {
+		for (size_t i = firstNew; i < base.nodes.size(); ++i) {
+			for(TensorNetwork::Link &l : base.nodes[i].neighbors) {
 				if (!l.external) { // Link inside the added network
 					l.other += firstNew;
 				} else { // External link
@@ -617,13 +621,13 @@ namespace xerus {
 			}
 		}
 		
-		// Find traces (former contractions have become traces due to the joining)
+		// Find traces (former contractions may have become traces due to the joining)
 		link_traces(std::move(_base));
 		
 		_base.tensorObject->require_valid_network();
 	}
 	
-	void TensorNetwork::link_traces(IndexedTensorWritable<TensorNetwork>&& _base) {
+	void TensorNetwork::link_traces(internal::IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
 		_base.assign_indices();
 		
@@ -1292,7 +1296,7 @@ namespace xerus {
 	
 	
 	value_t TensorNetwork::frob_norm() const {
-		Index i;
+		const Index i;
 		Tensor res;
 		res() = (*this)(i&0) * (*this)(i&0);
 		return std::sqrt(res[0]);

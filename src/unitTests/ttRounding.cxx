@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -118,7 +118,5 @@ UNIT_TEST(TT, no_rounding,
 	a(i&0) = a(i&0) + 0.0*c(i&0);
 	LOG(unit_test, a.ranks());
 	a.round(2);
-	LOG(unit_test, frob_norm(b-a));
-	TEST(approx_equal(Tensor(a),Tensor(b)));
+	TEST(approx_equal(Tensor(a), Tensor(b), 1e-14));
 )
-

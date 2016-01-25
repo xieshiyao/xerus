@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,7 +27,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/sparseTimesFullContraction.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
 
 namespace xerus {
     
@@ -73,20 +73,20 @@ namespace xerus {
 		PA_START;
 		
         // Prepare output array
-        misc::array_set_zero(_C, _leftDim*_rightDim);
+        misc::set_zero(_C, _leftDim*_rightDim);
         
         // Transposition of A only changes how i and j are calculated
         if(!_transposeA) {
             for(const std::pair<size_t, double>& entry : _A) {
                 const size_t i = entry.first/_midDim;
                 const size_t j = entry.first%_midDim;
-                misc::array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::add_scaled(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         } else {
             for(const std::pair<size_t, double>& entry : _A) {
                 const size_t i = entry.first%_leftDim;
                 const size_t j = entry.first/_leftDim;
-                misc::array_add(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::add_scaled(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }
         
@@ -139,14 +139,14 @@ namespace xerus {
 		
         size_t currentRow = 0;
         std::unique_ptr<double[]> row(new double[_rightDim]);
-        misc::array_set_zero(row.get(), _rightDim);
+        misc::set_zero(row.get(), _rightDim);
         
         for(const std::pair<size_t, double>& entry : _A) {
             const size_t i = entry.first/_midDim;
             const size_t j = entry.first%_midDim;
             
             if(i == currentRow) {
-                misc::array_add(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::add_scaled(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
             } else {
                 REQUIRE(i > currentRow, "Internal Error");
                 
@@ -162,7 +162,7 @@ namespace xerus {
                 
                 // Start new row
                 currentRow = i;
-                misc::array_scaled_copy(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
+                misc::copy_scaled(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         }
         

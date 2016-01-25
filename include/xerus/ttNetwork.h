@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,7 +24,8 @@
 
 #pragma once
 
-#include "misc/missingFunctions.h"
+ 
+#include "misc/containerSupport.h"
 #include "misc/check.h"
 
 #include "index.h"
@@ -46,10 +47,8 @@ namespace xerus {
 		///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
 		static constexpr const size_t N = isOperator?2:1;
 		
-		
 		/// @brief Flag indicating whether the TTNetwork is cannonicalized.
 		bool cannonicalized;
-		
 		
 		/**
 		* @brief The position of the core.
@@ -65,6 +64,14 @@ namespace xerus {
 		* @details This is an empty TensorNetwork. Internally the network contains one order zero node with entry zero.
 		*/
 		explicit TTNetwork();
+		
+		
+		///@brief TTNetworks are default copy constructable.
+		implicit TTNetwork(const TTNetwork & _cpy) = default;
+		
+		
+		///@brief TTNetworks are default move constructable.
+		implicit TTNetwork(      TTNetwork&& _mov) = default;
 		
 		
 		/** 
@@ -92,14 +99,6 @@ namespace xerus {
 		* @param _maxRanks maximal ranks to be used
 		*/
 		explicit TTNetwork(const Tensor& _tensor, const double _eps, const RankTuple& _maxRanks);
-		
-		
-		///@brief Copy constructor for TTNetworks.
-		implicit TTNetwork(const TTNetwork & _cpy) = default;
-		
-		
-		///@brief Move constructor for TTNetworks.
-		implicit TTNetwork(TTNetwork&& _mov) = default;
 		
 		
 		/** 
@@ -172,7 +171,7 @@ namespace xerus {
 		{
 			TTNetwork result = random(_dimensions, _ranks, _rnd, _dist);
 			
-			Index i,j,k,l,m;
+			const Index i,j,k,l,m;
 			
 			for (size_t pos = 0; pos+1 < result.degree(); ++pos) {
 				Tensor A;
@@ -210,11 +209,11 @@ namespace xerus {
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-		///@brief TTNetworks are assignable.
+		///@brief TTNetworks are default assignable.
 		TTNetwork& operator=(const TTNetwork&  _other) = default;
 		
 		
-		///@brief TTNetworks are move-assignable.
+		///@brief TTNetworks are default move-assignable.
 		TTNetwork& operator=(      TTNetwork&& _other) = default;
 		
 		
@@ -232,6 +231,9 @@ namespace xerus {
 		bool exceeds_maximal_ranks() const;
 		
 		
+		///@brief Return the number of ranks, i.e. 0 for degree zero and degree()/N-1 otherwise.
+		size_t num_ranks() const;
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
 		/** 
@@ -241,7 +243,7 @@ namespace xerus {
 		* @param _dimensions the dimensions used to calculate the maximal ranks.
 		* @return the reduced ranks.
 		*/
-		static std::vector<size_t> reduce_to_maximal_ranks(const std::vector<size_t>& _ranks, const std::vector<size_t>& _dimensions);
+		static std::vector<size_t> reduce_to_maximal_ranks(std::vector<size_t> _ranks, const std::vector<size_t>& _dimensions);
 		
 		
 		/** 
@@ -306,19 +308,7 @@ namespace xerus {
 		* @param _idx index of the component to set.
 		* @param _T Tensor to use as the new component tensor.
 		*/
-		void set_component(const size_t _idx, const Tensor &_T);
-		
-		
-		/** 
-		* @brief Sets a specific component of the TT decomposition.
-		* @details This function also takes care of adjusting the corresponding link dimensions and external dimensions
-		* if needed. However this might still leave the TTNetwork in an invalid if the rank is changed. In this case it
-		* is the callers responsibility to also update the other component tensors consistently to account for that rank
-		* change.
-		* @param _idx index of the component to set.
-		* @param _T Tensor to use as the new component tensor.
-		*/
-		void set_component(size_t _idx, std::unique_ptr<Tensor> &&_T);
+		void set_component(const size_t _idx, Tensor _T);
 		
 		
 		/** 
@@ -434,11 +424,9 @@ namespace xerus {
 		*/
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
 		void transpose() {
-			Index i,r,l,j;
+			const std::vector<size_t> shuffle({0,2,1,3});
 			for (size_t n = 0; n < degree()/N; ++n) {
-				std::unique_ptr<Tensor> At(new Tensor(nodes[n+1].tensorObject->representation));
-				(*At)(l,j,i,r) = get_component(n)(l,i,j,r);
-				set_component(n, std::move(At));
+				xerus::reshuffle(component(n), component(n), shuffle);
 			}
 		}
 		
@@ -481,16 +469,6 @@ namespace xerus {
 		
 		
 		/** 
-		* @brief Calculates the entrywise sum of this TTNetwork and @a _other.
-		* @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
-		* The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
-		* @param _other the second summand.
-		* @return the sum.
-		*/
-		TTNetwork  operator+(const TTNetwork& _other) const;
-		
-		
-		/** 
 		* @brief Subtracts the @a _other TTNetwork entrywise from this one.
 		* @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
 		* The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
@@ -499,58 +477,93 @@ namespace xerus {
 		*/
 		TTNetwork& operator-=(const TTNetwork& _other);
 		
-		
-		/** 
-		* @brief Calculates the entrywise difference between this TTNetwork and @a _other.
-		* @details To be well-defined it is required that the dimensions of this and @a _other coincide. 
-		* The rank of the result are in general the entrywise sum of the ranks of this and @a _other.
-		* @param _other the subtrahend,
-		* @return the difference.
-		*/
-		TTNetwork  operator-(const TTNetwork& _other) const;
-		
-		
-		virtual void operator*=(const value_t _factor) override;
-		
-		virtual void operator/=(const value_t _divisor) override;
-		
 		/** 
 		* @brief Calculates the entrywise multiplication of this TensorNetwork with a constant @a _factor.
 		* @details Internally this only results in a change in the global factor.
-		* @param _factor the factor,
-		* @return the resulting scaled TensorNetwork.
+		* @param _factor the factor.
 		*/
-		TTNetwork  operator*(const value_t _factor) const;
+		virtual void operator*=(const value_t _factor) override;
 		
 		/** 
 		* @brief Calculates the entrywise divison of this TensorNetwork by a constant @a _divisor.
 		* @details Internally this only results in a change in the global factor.
-		* @param _divisor the divisor,
-		* @return the resulting scaled TensorNetwork.
+		* @param _divisor the divisor.
 		*/
-		TTNetwork  operator/(const value_t _div) const;
-		
+		virtual void operator/=(const value_t _divisor) override;
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-		static bool specialized_contraction_f(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
+		static bool specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other);
 		
-		static bool specialized_sum_f(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other);
+		static bool specialized_sum_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other);
 		
-		virtual bool specialized_contraction(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+		virtual bool specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
 			return specialized_contraction_f(_out, std::move(_me), std::move(_other));
 		}
 		
-		virtual bool specialized_sum(std::unique_ptr<IndexedTensorMoveable<TensorNetwork>>& _out, IndexedTensorReadOnly<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
+		virtual bool specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const override {
 			return specialized_sum_f(_out, std::move(_me), std::move(_other));
 		}
 		
-		virtual void specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me, IndexedTensorReadOnly<TensorNetwork>&& _other) override;
+		virtual void specialized_evaluation(internal::IndexedTensorWritable<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) override;
 		
 	};
 
 	typedef TTNetwork<false> TTTensor;
 	typedef TTNetwork<true> TTOperator;
 	
+
+	/** 
+	* @brief Calculates the entrywise sum of the given TTNetworks @a _lhs and @a _rhs.
+	* @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide. 
+	* The rank of the result are in general the entrywise sum of the ranks of @a _lhs and @a _rhs.
+	* @param _lhs the first summand.
+	* @param _rhs the second summand.
+	* @return the sum.
+	*/
 	template<bool isOperator>
-	static _inline_ TTNetwork<isOperator> operator*(const value_t _lhs, const TTNetwork<isOperator>& _rhs) { return _rhs*_lhs; }
+	TTNetwork<isOperator> operator+(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs);
+
+
+	/** 
+	* @brief Calculates the entrywise difference of the given TTNetworks @a _lhs and @a _rhs.
+	* @details To be well-defined it is required that the dimensions of @a _lhs and @a _rhs coincide. 
+	* The rank of the result are in general the entrywise sum of the ranks of @a _lhs and @a _rhs.
+	* @param _lhs the minuend.
+	* @param _rhs the subtrahend.
+	* @return the difference.
+	*/
+	template<bool isOperator>
+	TTNetwork<isOperator> operator-(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs);
+	
+	
+	/** 
+	* @brief Calculates the entrywise multiplication of the given TTNetwork @a _network with a constant @a _factor.
+	* @details Internally this only results in a change in the global factor.
+	* @param _network the TTNetwork,
+	* @param _factor the factor,
+	* @return the resulting scaled TTNetwork.
+	*/
+	template<bool isOperator>
+	TTNetwork<isOperator> operator*(TTNetwork<isOperator> _network, const value_t _factor);
+	
+	
+	/** 
+	* @brief Calculates the entrywise multiplication of the given TTNetwork @a _network with a constant @a _factor.
+	* @details Internally this only results in a change in the global factor.
+	* @param _factor the factor,
+	* @param _network the TTNetwork,
+	* @return the resulting scaled TTNetwork.
+	*/
+	template<bool isOperator>
+	TTNetwork<isOperator> operator*(const value_t _factor, TTNetwork<isOperator> _network);
+
+
+	/** 
+	* @brief Calculates the entrywise divison of this TTNetwork by a constant @a _divisor.
+	* @details Internally this only results in a change in the global factor.
+	* @param _divisor the divisor,
+	* @return the resulting scaled TTNetwork.
+	*/
+	template<bool isOperator>
+	TTNetwork<isOperator> operator/(const TTNetwork<isOperator>& _network, const value_t _div);
 }

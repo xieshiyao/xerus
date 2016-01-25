@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -41,20 +41,29 @@ namespace xerus {
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
 		struct ALSAlgorithmicData {
+			struct ContractedTNCache {
+				std::vector<Tensor> left, right;
+			};
 			const ALSVariant &ALS; ///< the algorithm this data belongs to
 			const TTOperator *A; ///< global operator A
 			TTTensor &x; ///< current iterate x
 			const TTTensor &b; ///< global right-hand-side
 			std::vector<size_t> targetRank; ///< rank for the final x
-			std::vector<Tensor> xAxL, xAxR; ///< stacks for the local operator
-			std::vector<Tensor> bxL, bxR; ///< stacks for the right-hand-side
+			ContractedTNCache localOperatorCache; ///< stacks for the local operator (either xAx or xAtAx)
+			ContractedTNCache rhsCache; ///< stacks for the right-hand-side (either xb or xAtb)
+			value_t normB; ///< norm of the (global) right hand side
 			std::pair<size_t, size_t> optimizedRange; ///< range of indices for the nodes of _x that need to be optimized
 			bool cannonicalizeAtTheEnd; ///< whether _x should be cannonicalized at the end
 			size_t corePosAtTheEnd; ///< core position that should be restored at the end of the algorithm
-			size_t currIndex; ///< position that is currently being optimized
-			Direction direction; ///< direction of current sweep
 			std::function<value_t()> energy_f; ///< the energy functional used for this calculation
 			std::function<value_t()> residual_f; ///< the functional to calculate the current residual
+			
+			size_t currIndex; ///< position that is currently being optimized
+			value_t lastEnergy2; ///< energy at the end of last full sweep
+			value_t lastEnergy; ///< energy at the end of last halfsweep
+			value_t energy; ///< current value of the energy residual
+			size_t halfSweepCount; ///< current count of halfSweeps
+			Direction direction; ///< direction of current sweep
 			
 			/**
 			* @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
@@ -64,6 +73,9 @@ namespace xerus {
 			* modifies x
 			*/
 			void prepare_x_for_als();
+			
+			TensorNetwork localOperatorSlice(size_t _pos);
+			TensorNetwork localRhsSlice(size_t _pos);
 			
 			/**
 			* @brief prepares the initial stacks for the local operator and local right-hand-side
@@ -89,14 +101,20 @@ namespace xerus {
 			void move_to_next_index();
 		};
 		
-		
+		TensorNetwork construct_local_operator(ALSAlgorithmicData &_data) const;
+		TensorNetwork construct_local_RHS(ALSAlgorithmicData &_data) const;
+		bool check_for_end_of_sweep(ALSAlgorithmicData& _data, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const;
 	public:
+		const size_t FLAG_FINISHED_HALFSWEEP = 1;
+		const size_t FLAG_FINISHED_FULLSWEEP = 3; // contains the flag for a new halfsweep!
+		
 		uint sites; ///< the number of sites that are simultaneously optimized
 		size_t numHalfSweeps; ///< maximum number of sweeps to perform. set to 0 for infinite
 		value_t convergenceEpsilon; ///< default value for the change in the energy functional at which the ALS assumes it is converged
 // 		value_t minimumLocalResidual; ///< below this bound for the local residual, no local solver will be called.
-		bool useResidualForEndCriterion; ///< calculates the residual to decide if the ALS converged. recommended if _perfdata is given
+		bool useResidualForEndCriterion; ///< calculates the residual to decide if the ALS converged. recommended if _perfdata is given. implied if assumeSPD = false
 		bool preserveCorePosition; ///< if true the core will be moved to its original position at the end
+		bool assumeSPD; ///< if true the operator A will be assumed to be symmetric positive definite
 		
 		// TODO std::function endCriterion
 		
@@ -106,15 +124,17 @@ namespace xerus {
 		
 		/// local solver that calls the corresponding lapack routines (LU solver)
 		static void lapack_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
+		static void ASD_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data);
 		
 		//TODO add local CG solver
+		//TODO add AMEn solver
 		
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-		ALSVariant(uint _sites, size_t _numHalfSweeps, LocalSolver _localSolver,
+		ALSVariant(uint _sites, size_t _numHalfSweeps, LocalSolver _localSolver, bool _assumeSPD,
 			bool _useResidual=false
 		) 
 				: sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
-				useResidualForEndCriterion(_useResidual), preserveCorePosition(true), localSolver(_localSolver)
+				useResidualForEndCriterion(_useResidual), preserveCorePosition(true), assumeSPD(_assumeSPD), localSolver(_localSolver)
 		{
 			REQUIRE(_sites>0, "");
 		}
@@ -188,8 +208,14 @@ namespace xerus {
 	
 	/// default variant of the single-site ALS algorithm using the lapack solver
 	extern const ALSVariant ALS;
+	extern const ALSVariant ALS_SPD;
 	
 	/// default variant of the two-site DMRG algorithm using the lapack solver
 	extern const ALSVariant DMRG;
+	extern const ALSVariant DMRG_SPD;
+	
+	/// default variant of the alternating steepest descent
+	extern const ALSVariant ASD;
+	extern const ALSVariant ASD_SPD;
 }
 

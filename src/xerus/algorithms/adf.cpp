@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -26,7 +26,7 @@
  
  
 #include <xerus/indexedTensorMoveable.h>
-#include <xerus/selectedFunctions.h>
+#include <xerus/misc/basicArraySupport.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -343,7 +343,7 @@ namespace xerus {
 		}
 		
 		for(size_t n = 0; n < _position.size; ++n) {
-			misc::array_add(_deltaPtr + n*_localLeftRank*_localRightRank, 
+			misc::add_scaled(_deltaPtr + n*_localLeftRank*_localRightRank, 
 				_position[n]*_residual,
 				_scratchSpace,
 				_localLeftRank*_localRightRank

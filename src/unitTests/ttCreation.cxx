@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -90,7 +90,7 @@ UNIT_TEST(TT, TTOperator_Creation,
     TTOperator TTA4(A4, 1e-14);
     Tensor B4;
     B4(j,i^7) = TTA4(j,i&1);
-    TEST(approx_equal(B4,A4, 1e-14));
+    TEST(approx_equal(B4, A4, 1e-14));
     
     Tensor A5 = Tensor::random({7,5,6,3,1,4,2,1}, rnd, dist); 
     TTOperator TTA5(A5, 1e-14);

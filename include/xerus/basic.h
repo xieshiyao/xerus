@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -46,7 +46,7 @@ namespace xerus {
 	 * @details This value is used as a default value by all xerus routines that work up to a certain accuracy,
 	 * e.g. the singluar value decompostion or the ALS algorithm.
 	 */
-	constexpr const double EPSILON = 1e-14;
+	constexpr const value_t EPSILON = 8*std::numeric_limits<value_t>::epsilon();
     
 	/**
 	* @brief Namespace for function and classes designated only for internal use.

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,36 +29,38 @@
 #include <xerus/tensorNetwork.h>
 
 namespace xerus {
-	template<class tensor_type>
-	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>(nullptr, std::vector<Index>(), false) { }
-	
-	template<class tensor_type>
-	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(IndexedTensorMoveable &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
-	
-	template<class tensor_type>
-	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, _indices, true) {}
+	namespace internal {
+		template<class tensor_type>
+		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>(nullptr, std::vector<Index>(), false) { }
+		
+		template<class tensor_type>
+		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(IndexedTensorMoveable &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
+		
+		template<class tensor_type>
+		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, _indices, true) {}
 
-	template<class tensor_type>
-	IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, std::vector<Index>&& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, std::move(_indices), true) {}
-	
-	template<>
-	IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&&  _other) :
-		IndexedTensorWritable<TensorNetwork>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }
-	
-	template<>
-	IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&&  _other) :
-		IndexedTensorWritable<Tensor>(new Tensor(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
-	
-	template<>template<>
-	IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(IndexedTensorReadOnly<Tensor> && _other) : 
-		IndexedTensorWritable<TensorNetwork>(new TensorNetwork(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
+		template<class tensor_type>
+		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, std::vector<Index>&& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, std::move(_indices), true) {}
+		
+		template<>
+		IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&&  _other) :
+			IndexedTensorWritable<TensorNetwork>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }
+		
+		template<>
+		IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&&  _other) :
+			IndexedTensorWritable<Tensor>(new Tensor(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
+		
+		template<>template<>
+		IndexedTensorMoveable<TensorNetwork>::IndexedTensorMoveable(IndexedTensorReadOnly<Tensor> && _other) : 
+			IndexedTensorWritable<TensorNetwork>(new TensorNetwork(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
 
-	template<>template<>
-	IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork> && _other ) : 
-		IndexedTensorWritable<Tensor>(new Tensor(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
-	
-	
-	// IndexedTensorReadOnly may be instanciated as
-	template class IndexedTensorMoveable<Tensor>;
-	template class IndexedTensorMoveable<TensorNetwork>;
+		template<>template<>
+		IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork> && _other ) : 
+			IndexedTensorWritable<Tensor>(new Tensor(*_other.tensorObjectReadOnly), std::move(_other.indices), true) { }
+		
+		
+		// IndexedTensorReadOnly may be instanciated as
+		template class IndexedTensorMoveable<Tensor>;
+		template class IndexedTensorMoveable<TensorNetwork>;
+	}
 }

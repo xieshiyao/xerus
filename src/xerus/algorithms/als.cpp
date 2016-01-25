@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -21,6 +21,8 @@
 * @file
 * @brief Implementation of the ALS variants.
 */
+
+#include <xerus/misc/math.h>
 
 #include <xerus/algorithms/als.h>
 #include <xerus/basic.h>
@@ -61,6 +63,27 @@ namespace xerus {
 			}
 			_x[0] = std::move(x);
 		}
+	}
+	
+	void ALSVariant::ASD_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data) {
+		// performs a single gradient step, so
+		// x = x + alpha * P( A^t (b - Ax) )    or for SPD: x = x + alpha * P( b - Ax )
+		// where the projection P is already part of the stacks 
+		// and alpha is the exact stepsize for quadratic functionals
+		REQUIRE(_data.ALS.sites == 1, "ASD only defined for single site alternation at the moment");
+		Tensor grad;
+		Index i,j,k;
+		grad(i&0) = _b(i&0) - _A(i/2,j/2) * _x[0](j&0);
+		value_t alpha;
+		if (_data.ALS.assumeSPD) {
+			// stepsize alpha = <y,y>/<y,Ay>
+			alpha = misc::sqr(frob_norm(grad)) / value_t(grad(i&0) * _A(i/2,j/2) * grad(j&0));
+		} else {
+			grad(i&0) = _A(j/2,i/2) * grad(j&0);
+			// stepsize alpha = <y,y>/<Ay,Ay>
+			alpha = frob_norm(grad) / frob_norm(_A(i/2,j/2) * grad(j&0));
+		}
+		_x[0] += alpha * grad;
 	}
 	
 	// -------------------------------------------------------------------------------------------------------------------------
@@ -112,7 +135,7 @@ namespace xerus {
 		
 		size_t firstNotOptimizedIndex = d;
 		dimensionProd = 1;
-		while (firstNotOptimizedIndex > firstOptimizedIndex+1) {
+		while (firstNotOptimizedIndex > firstOptimizedIndex+ALS.sites) {
 			const size_t localDim = x.dimensions[firstNotOptimizedIndex-1];
 			size_t newDimensionProd = dimensionProd * localDim;
 			if (x.rank(firstNotOptimizedIndex-2) < newDimensionProd) {
@@ -155,76 +178,122 @@ namespace xerus {
 		optimizedRange = std::pair<size_t, size_t>(firstOptimizedIndex, firstNotOptimizedIndex);
 	}
 
+	TensorNetwork ALSVariant::ALSAlgorithmicData::localOperatorSlice(size_t _pos) {
+		//TODO optimization: create these networks without indices
+		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3;
+		TensorNetwork res;
+		REQUIRE(A, "ie");
+		if (ALS.assumeSPD) {
+			res(r1,r2,r3, cr1,cr2,cr3) = x.get_component(_pos)(r1, n1, cr1) 
+										* A->get_component(_pos)(r2, n1, n2, cr2) 
+										* x.get_component(_pos)(r3, n2, cr3);
+		} else {
+			res(r1,r2,r3,r4, cr1,cr2,cr3, cr4) = x.get_component(_pos)(r1, n1, cr1) 
+										* A->get_component(_pos)(r2, n2, n1, cr2) 
+										* A->get_component(_pos)(r3, n2, n3, cr3) 
+										* x.get_component(_pos)(r4, n3, cr4);
+		}
+		return res;
+	}
+	
+	TensorNetwork ALSVariant::ALSAlgorithmicData::localRhsSlice(size_t _pos) {
+		//TODO optimization: create these networks without indices
+		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
+		TensorNetwork res;
+		if (ALS.assumeSPD || !A) {
+			res(r1,r2, cr1,cr2) = b.get_component(_pos)(r1, n1, cr1) 
+									* x.get_component(_pos)(r2, n1, cr2);
+		} else {
+			res(r1,r2,r3, cr1,cr2,cr3) = b.get_component(_pos)(r1, n1, cr1) 
+												* A->get_component(_pos)(r2, n1, n2, cr2) 
+												* x.get_component(_pos)(r3, n2, cr3);
+		}
+		return res;
+	}
+	
 	void ALSVariant::ALSAlgorithmicData::prepare_stacks() {
 		const size_t d=x.degree();
-		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
+		Index r1,r2;
 		
-		Tensor tmpA({1,1,1}, [](){return 1.0;});
-		Tensor tmpB({1,1}, [](){return 1.0;});
+		Tensor tmpA;
+		Tensor tmpB;
+		if (ALS.assumeSPD || !A) {
+			tmpA = Tensor::ones({1,1,1});
+			tmpB = Tensor::ones({1,1});
+		} else {
+			tmpA = Tensor::ones({1,1,1,1});
+			tmpB = Tensor::ones({1,1,1});
+		}
 		
-		xAxL.emplace_back(tmpA);
-		bxL.emplace_back(tmpB);
-		xAxR.emplace_back(tmpA);
-		bxR.emplace_back(tmpB);
+		
+		localOperatorCache.left.emplace_back(tmpA);
+		localOperatorCache.right.emplace_back(tmpA);
+		rhsCache.left.emplace_back(tmpB);
+		rhsCache.right.emplace_back(tmpB);
 		
 		for (size_t i = d-1; i > optimizedRange.first + ALS.sites - 1; --i) {
 			if (A) {
-				tmpA(r1, r2, r3) = xAxR.back()(cr1, cr2, cr3) 
-									* x.get_component(i)(r1, n1, cr1) 
-									* A->get_component(i)(r2, n1, n2, cr2) 
-									* x.get_component(i)(r3, n2, cr3);
-				xAxR.emplace_back(std::move(tmpA));
+				tmpA(r1&0) = localOperatorCache.right.back()(r2&0) * localOperatorSlice(i)(r1/2, r2/2);
+				localOperatorCache.right.emplace_back(tmpA);
 			}
-			tmpB(r1, r2) = bxR.back()(cr1, cr2) 
-							* b.get_component(i)(r1, n1, cr1) 
-							* x.get_component(i)(r2, n1, cr2);
-			bxR.emplace_back(std::move(tmpB));
+			tmpB(r1&0) = rhsCache.right.back()(r2&0) * localRhsSlice(i)(r1/2, r2/2);
+			rhsCache.right.emplace_back(tmpB);
 		}
 		for (size_t i = 0; i < optimizedRange.first; ++i) {
 			if (A) {
-				tmpA(r1, r2, r3) = xAxL.back()(cr1, cr2, cr3) 
-									* x.get_component(i)(cr1,n1,r1) 
-									* A->get_component(i)(cr2, n1, n2, r2) 
-									* x.get_component(i)(cr3,n2,r3);
-				xAxL.emplace_back(std::move(tmpA));
+				tmpA(r2&0) = localOperatorCache.left.back()(r1&0) * localOperatorSlice(i)(r1/2, r2/2);
+				localOperatorCache.left.emplace_back((tmpA));
 			}
-			tmpB(r1, r2) = bxL.back()(cr1, cr2) 
-							* b.get_component(i)(cr1, n1, r1) 
-							* x.get_component(i)(cr2, n1, r2);
-			bxL.emplace_back(std::move(tmpB));
+			tmpB(r2&0) = rhsCache.left.back()(r1&0) * localRhsSlice(i)(r1/2, r2/2);
+			rhsCache.left.emplace_back(tmpB);
 		}
 	}
 	
 	void ALSVariant::ALSAlgorithmicData::choose_energy_functional() {
 		if (A) {
-			residual_f = [&](){
-				Index n1, n2;
-				return frob_norm((*A)(n1/2,n2/2)*x(n2&0) - b(n1&0));
-			};
-			if (ALS.useResidualForEndCriterion) {
-				energy_f = residual_f;
-			} else {
-				energy_f = [&](){
-					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
-					Tensor res;
-					// 0.5*<x,Ax> - <x,b>
-					Tensor xAx = xAxL.back();
-					Tensor bx = bxL.back();
-					for (size_t i=0; i<ALS.sites; ++i) {
-						xAx(cr1, cr2, cr3) = xAx(r1, r2, r3) 
-												* x.get_component(currIndex+i)(r1, n1, cr1) 
-												* A->get_component(currIndex+i)(r2, n1, n2, cr2) 
-												* x.get_component(currIndex+i)(r3, n2, cr3) ;
-						bx(cr1, cr2) = bx(r1, r2)
-										* b.get_component(currIndex+i)(r1, n1, cr1) 
-										* x.get_component(currIndex+i)(r2, n1, cr2);
-					}
-					res() = 0.5*xAx(r1, r2, r3) * xAxR.back()(r1, r2, r3)
-							- bx(r1, r2) * bxR.back()(r1, r2);
-					return res[0];
+			if (ALS.assumeSPD) {
+				residual_f = [&](){
+					Index n1, n2;
+					return frob_norm((*A)(n1/2,n2/2)*x(n2&0) - b(n1&0));
 				};
+				if (ALS.useResidualForEndCriterion) {
+					energy_f = residual_f;
+				} else {
+					energy_f = [&](){
+						Index r1,r2;
+						Tensor res;
+						// 0.5*<x,Ax> - <x,b>
+						TensorNetwork xAx = localOperatorCache.left.back();
+						TensorNetwork bx = rhsCache.left.back();
+						for (size_t i=0; i<ALS.sites; ++i) {
+							xAx(r2&0) = xAx(r1&0) * localOperatorSlice(currIndex+i)(r1/2, r2/2);
+							bx(r2&0) = bx(r1&0) * localRhsSlice(currIndex+i)(r1/2, r2/2);
+						}
+						res() = 0.5*xAx(r1&0) * localOperatorCache.right.back()(r1&0)
+								- bx(r1&0) * rhsCache.right.back()(r1&0);
+						return res[0];
+					};
+				}
+			} else {
+				// not Symmetric pos def
+				residual_f = [&](){
+					Index r1,r2;
+					Tensor res;
+					// <Ax,Ax> - 2 * <Ax,b> + <b,b>
+					TensorNetwork xAtAx = localOperatorCache.left.back();
+					TensorNetwork bAx = rhsCache.left.back();
+					for (size_t i=0; i<ALS.sites; ++i) {
+						xAtAx(r2&0) = xAtAx(r1&0) * localOperatorSlice(currIndex+i)(r1/2, r2/2);
+						bAx(r2&0) = bAx(r1&0) * localRhsSlice(currIndex+i)(r1/2, r2/2);
+					}
+					res() = xAtAx(r1&0) * localOperatorCache.right.back()(r1&0)
+							- 2 * bAx(r1&0) * rhsCache.right.back()(r1&0);
+					return res[0] + misc::sqr(normB);
+				};
+				energy_f = residual_f;
 			}
 		} else {
+			// no operator A given
 			residual_f = [&](){
 				return frob_norm(x - b);
 			};
@@ -232,18 +301,15 @@ namespace xerus {
 				energy_f = residual_f;
 			} else {
 				energy_f = [&](){
-					Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
+					Index r1,r2;
 					Tensor res;
 					// 0.5*<x,Ax> - <x,b> = 0.5*|x_i|^2 - <x,b>
-					Tensor bx = bxL.back();
+					TensorNetwork bx = rhsCache.left.back();
 					for (size_t i=0; i<ALS.sites; ++i) {
-						bx(cr1, cr2) = bx(r1, r2)
-										* b.get_component(currIndex+i)(r1, n1, cr1) 
-										* x.get_component(currIndex+i)(r2, n1, cr2);
+						bx(r2&0) = bx(r1&0) * localRhsSlice(currIndex+i)(r1/2, r2/2);
 					}
-					res() = 0.5*x.get_component(currIndex)(r1, n1, cr1) * x.get_component(currIndex)(r1, n1, cr1) 
-							- bx(r1, r2) 
-								* bxR.back()(r1, r2);
+					res() = 0.5*x.get_component(currIndex)(r1&0) * x.get_component(currIndex)(r1&0) 
+							- bx(r1&0) * rhsCache.right.back()(r1&0);
 					return res[0];
 				};
 			}
@@ -256,18 +322,23 @@ namespace xerus {
 		targetRank = _x.ranks();
 		cannonicalizeAtTheEnd = _x.cannonicalized;
 		corePosAtTheEnd = _x.corePosition;
+		normB = frob_norm(_b);
 		prepare_x_for_als();
 		prepare_stacks();
 		currIndex = optimizedRange.first;
 		direction = Increasing;
 		choose_energy_functional();
+		lastEnergy2 = 1e102;
+		lastEnergy = 1e101;
+		energy = 1e100;
+		halfSweepCount = 0;
 	}
 
 	void ALSVariant::ALSAlgorithmicData::move_to_next_index() {
-		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
+		Index r1,r2;
 		Tensor tmpA, tmpB;
 		if (direction == Increasing) {
-			REQUIRE(currIndex+ALS.sites < optimizedRange.second, "ie");
+			REQUIRE(currIndex+ALS.sites < optimizedRange.second, "ie " << currIndex << " " << ALS.sites << " " << optimizedRange.first << " " << optimizedRange.second);
 			// Move core to next position (assumed to be done by the solver if sites > 1)
 			if (ALS.sites == 1) {
 				x.move_core(currIndex+1, true);
@@ -275,19 +346,14 @@ namespace xerus {
 			
 			// Move one site to the right
 			if (A) {
-				xAxR.pop_back();
-				tmpA(r1, r2, r3) = xAxL.back()(cr1,cr2,cr3) 
-									* x.get_component(currIndex)(cr1,n1,r1) 
-									* A->get_component(currIndex)(cr2, n1, n2, r2) 
-									* x.get_component(currIndex)(cr3,n2,r3);
-				xAxL.emplace_back(std::move(tmpA));
+				localOperatorCache.right.pop_back();
+				tmpA(r2&0) = localOperatorCache.left.back()(r1&0) * localOperatorSlice(currIndex)(r1/2, r2/2);
+				localOperatorCache.left.emplace_back(std::move(tmpA));
 			}
 			
-			bxR.pop_back();
-			tmpB(r1, r2) = bxL.back()(cr1,cr2) 
-							* b.get_component(currIndex)(cr1, n1, r1) 
-							* x.get_component(currIndex)(cr2, n1, r2);
-			bxL.emplace_back(std::move(tmpB));
+			rhsCache.right.pop_back();
+			tmpB(r2&0) = rhsCache.left.back()(r1&0) * localRhsSlice(currIndex)(r1/2, r2/2);
+			rhsCache.left.emplace_back(std::move(tmpB));
 			currIndex++;
 		} else {
 			REQUIRE(currIndex > optimizedRange.first, "ie");
@@ -298,21 +364,111 @@ namespace xerus {
 			
 			// move one site to the left
 			if (A) {
-				xAxL.pop_back();
-				tmpA(r1, r2, r3) = xAxR.back()(cr1,cr2,cr3) 
-									* x.get_component(currIndex)(r1,n1,cr1) 
-									* A->get_component(currIndex)(r2, n1, n2, cr2) 
-									* x.get_component(currIndex)(r3,n2,cr3);
-				xAxR.emplace_back(std::move(tmpA));
+				localOperatorCache.left.pop_back();
+				tmpA(r1&0) = localOperatorCache.right.back()(r2&0) * localOperatorSlice(currIndex)(r1/2, r2/2);
+				localOperatorCache.right.emplace_back(std::move(tmpA));
 			}
 			
-			bxL.pop_back();
-			tmpB(r1, r2) = bxR.back()(cr1,cr2) 
-							* b.get_component(currIndex)(r1, n1, cr1) 
-							* x.get_component(currIndex)(r2, n1, cr2);
-			bxR.emplace_back(std::move(tmpB));
+			rhsCache.left.pop_back();
+			tmpB(r1&0) = rhsCache.right.back()(r2&0) * localRhsSlice(currIndex)(r1/2, r2/2);
+			rhsCache.right.emplace_back(std::move(tmpB));
 			currIndex--;
 		}
+	}
+	
+	
+	TensorNetwork ALSVariant::construct_local_operator(ALSVariant::ALSAlgorithmicData& _data) const {
+		REQUIRE(_data.A, "IE");
+		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
+		TensorNetwork ATilde = _data.localOperatorCache.left.back();
+		if (assumeSPD) {
+			for (size_t p=0;  p<sites; ++p) {
+				ATilde(n1^(p+1), n2, r2, n3^(p+1), n4) = ATilde(n1^(p+1), r1, n3^(p+1)) * _data.A->get_component(_data.currIndex+p)(r1, n2, n4, r2);
+			}
+			ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1, n3^(sites+1)) * _data.localOperatorCache.right.back()(n2, r1, n4);
+		} else {
+			for (size_t p=0;  p<sites; ++p) {
+				ATilde(n1^(p+1),n2, r3,r4, n3^(p+1),n4) = ATilde(n1^(p+1), r1,r2, n3^(p+1))
+						* _data.A->get_component(_data.currIndex+p)(r1, x, n2, r3)
+						* _data.A->get_component(_data.currIndex+p)(r2, x, n4, r4);
+			}
+			ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1^2, n3^(sites+1)) * _data.localOperatorCache.right.back()(n2, r1^2, n4);
+		}
+		return ATilde;
+	}
+	
+	TensorNetwork ALSVariant::construct_local_RHS(ALSVariant::ALSAlgorithmicData& _data) const {
+		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
+		TensorNetwork BTilde;
+		if (assumeSPD) {
+			BTilde(n1,r1) = _data.rhsCache.left.back()(r1,n1);
+			for (size_t p=0; p<sites; ++p) {
+				BTilde(n1^(p+1), n2, cr1) = BTilde(n1^(p+1), r1) * _data.b.get_component(_data.currIndex+p)(r1, n2, cr1);
+			}
+			BTilde(n1^(sites+1),n2) = BTilde(n1^(sites+1), r1) * _data.rhsCache.right.back()(r1,n2);
+		} else {
+			BTilde(n1,r1^2) = _data.rhsCache.left.back()(r1^2,n1);
+			for (size_t p=0; p<sites; ++p) {
+				BTilde(n1^(p+1), n3, cr1, cr2) = BTilde(n1^(p+1), r1, r2) 
+					* _data.b.get_component(_data.currIndex+p)(r1, n2, cr1)
+					* _data.A->get_component(_data.currIndex+p)(r2, n2, n3, cr2);
+			}
+			BTilde(n1^(sites+1),n2) = BTilde(n1^(sites+1), r1^2) * _data.rhsCache.right.back()(r1^2,n2);
+		}
+		return BTilde;
+	}
+
+
+	bool ALSVariant::check_for_end_of_sweep(ALSAlgorithmicData& _data, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
+		if ((_data.direction == Decreasing && _data.currIndex==_data.optimizedRange.first) 
+			|| (_data.direction == Increasing && _data.currIndex==_data.optimizedRange.second-sites)) 
+		{
+			LOG(ALS, "Sweep Done");
+			_data.halfSweepCount += 1;
+			
+			_data.lastEnergy2 = _data.lastEnergy;
+			_data.lastEnergy = _data.energy;
+			_data.energy = _data.energy_f();
+			
+			if (_perfData) {
+				size_t flags = _data.direction == Increasing ? FLAG_FINISHED_HALFSWEEP : FLAG_FINISHED_FULLSWEEP;
+				if (!useResidualForEndCriterion) {
+					_perfData.stop_timer();
+					value_t residual = _data.residual_f();
+					_perfData.continue_timer();
+					_perfData.add(residual, _data.x, flags);
+				} else {
+					_perfData.add(_data.energy, _data.x, flags);
+				}
+			}
+			
+			// Conditions for loop termination
+			if (_data.halfSweepCount == _numHalfSweeps 
+				|| std::abs(_data.lastEnergy-_data.energy) < _convergenceEpsilon 
+				|| std::abs(_data.lastEnergy2-_data.energy) < _convergenceEpsilon 
+				|| (_data.optimizedRange.second - _data.optimizedRange.first<=sites)) 
+			{
+				// we are done! yay
+				LOG(ALS, "ALS done, " << _data.energy << " " << _data.lastEnergy << " " 
+					<< std::abs(_data.lastEnergy2-_data.energy) << " " << std::abs(_data.lastEnergy-_data.energy) << " < " << _convergenceEpsilon);
+				if (_data.cannonicalizeAtTheEnd && preserveCorePosition) {
+					_data.x.move_core(_data.corePosAtTheEnd, true);
+				}
+				return true;
+			}
+				
+			// change walk direction
+			_data.direction = _data.direction == Increasing ? Decreasing : Increasing;
+		} else {
+			// we are not done with the sweep, just calculate data for the perfdata
+			if (_perfData) {
+				_perfData.stop_timer();
+				value_t residual = _data.residual_f();
+				_perfData.continue_timer();
+				_perfData.add(residual, _data.x, 0);
+			}
+		}
+		return false;
 	}
 	
 	
@@ -322,7 +478,6 @@ namespace xerus {
 	
 	
 	double ALSVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
-		const TTOperator &_A = *_Ap;
 		LOG(ALS, "ALS("<< sites <<") called");
 		#ifndef DISABLE_RUNTIME_CHECKS_
 			_x.require_correct_format();
@@ -331,18 +486,18 @@ namespace xerus {
 			REQUIRE(_x.dimensions == _b.dimensions, "");
 			
 			if (_Ap) {
-				_A.require_correct_format();
-				REQUIRE(_A.dimensions.size() == _b.dimensions.size()*2, "");
+				_Ap->require_correct_format();
+				REQUIRE(_Ap->dimensions.size() == _b.dimensions.size()*2, "");
 				for (size_t i=0; i<_x.dimensions.size(); ++i) {
-					REQUIRE(_A.dimensions[i] == _x.dimensions[i], "");
-					REQUIRE(_A.dimensions[i+_A.degree()/2] == _x.dimensions[i], "");
+					REQUIRE(_Ap->dimensions[i] == _x.dimensions[i], "");
+					REQUIRE(_Ap->dimensions[i+_Ap->degree()/2] == _x.dimensions[i], "");
 				}
 			}
 		#endif
 		
 		if (_Ap) {
 			_perfData << "ALS for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
-					<< "A.ranks: " << _A.ranks() << '\n'
+					<< "A.ranks: " << _Ap->ranks() << '\n'
 					<< "x.ranks: " << _x.ranks() << '\n'
 					<< "b.ranks: " << _b.ranks() << '\n'
 					<< "maximum number of half sweeps: " << _numHalfSweeps << '\n'
@@ -356,19 +511,9 @@ namespace xerus {
 		}
 		_perfData.start();
 		
-		const size_t FLAG_FINISHED_HALFSWEEP = 1;
-		const size_t FLAG_FINISHED_FULLSWEEP = 3; // contains the flag for a new halfsweep!
 		ALSAlgorithmicData data(*this, _Ap, _x, _b);
-		Index cr1, cr2, cr3, r1, r2, r3, n1, n2, n3, n4;
 		
-		TensorNetwork ATilde;
-		TensorNetwork BTilde;
-		value_t lastEnergy2 = 1e102;
-		value_t lastEnergy = 1e101;
-		value_t energy = 1e100;
-		size_t halfSweepCount = 0;
-		
-		energy = data.energy_f();
+		data.energy = data.energy_f();
 		
 		if (_perfData) {
 			_perfData.stop_timer();
@@ -380,87 +525,24 @@ namespace xerus {
 		while (true) {
 			LOG(ALS, "Starting to optimize index " << data.currIndex);
 			
-			// Calculate Atilde and Btilde
-			if (_Ap) {
-				ATilde = data.xAxL.back();
-				LOG(A, _A.dimensions << " " << _A.ranks());
-				for (size_t p=0;  p<sites; ++p) {
-					LOG(at, ATilde.dimensions << " " << _A.get_component(data.currIndex+p).dimensions);
-					ATilde.draw(std::string("out")+misc::to_string(p));
-					ATilde(n1^(p+1), n2, r2, n3^(p+1), n4) = ATilde(n1^(p+1), r1, n3^(p+1)) * _A.get_component(data.currIndex+p)(r1, n2, n4, r2);
-				}
-				ATilde.draw(std::string("out")+misc::to_string(sites));
-				LOG(at, ATilde.dimensions);
-				ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1, n3^(sites+1)) * data.xAxR.back()(n2, r1, n4);
-			}
-			BTilde(r1,cr1) = data.bxL.back()(cr1,r1);
-			for (size_t p=0; p<sites; ++p) {
-				BTilde(r1^(p+1), n1, cr1) = BTilde(r1^(p+1), r2) * _b.get_component(data.currIndex+p)(r2, n1, cr1);
-			}
-			BTilde(r1^(sites+1),cr1) = BTilde(r1^(sites+1), r2) * data.bxR.back()(r2,cr1);
-			
-			// Change component tensor if the local residual is large enough
+			// update current component tensor
 			if (_Ap) {
 				std::vector<Tensor> tmpX;
 				for (size_t p=0; p<sites; ++p) {
 					tmpX.emplace_back(_x.get_component(data.currIndex+p));
 				}
-				localSolver(ATilde, tmpX, BTilde, data);
+				localSolver(construct_local_operator(data), tmpX, construct_local_RHS(data), data);
 				for (size_t p=0; p<sites; ++p) {
 					_x.set_component(data.currIndex+p, std::move(tmpX[p]));
 				}
 			} else {
 				//TODO?
 				REQUIRE(sites==1, "approximation dmrg not implemented yet");
-				_x.component(data.currIndex) = Tensor(BTilde);
+				_x.component(data.currIndex) = Tensor(construct_local_RHS(data));
 			}
 			
-			// Are we done with the sweep?
-			if ((data.direction == Decreasing && data.currIndex==data.optimizedRange.first) 
-				|| (data.direction == Increasing && data.currIndex==data.optimizedRange.second-sites)) 
-			{
-				LOG(ALS, "Sweep Done");
-				halfSweepCount += 1;
-				
-				lastEnergy2 = lastEnergy;
-				lastEnergy = energy;
-				energy = data.energy_f();
-				
-				if (_perfData) {
-					size_t flags = data.direction == Increasing ? FLAG_FINISHED_HALFSWEEP : FLAG_FINISHED_FULLSWEEP;
-					if (!useResidualForEndCriterion) {
-						_perfData.stop_timer();
-						value_t residual = data.residual_f();
-						_perfData.continue_timer();
-						_perfData.add(residual, _x, flags);
-					} else {
-						_perfData.add(energy, _x, flags);
-					}
-				}
-				
-				// Conditions for loop termination
-				if (halfSweepCount == _numHalfSweeps 
-						|| std::abs(lastEnergy-energy) < _convergenceEpsilon 
-						|| std::abs(lastEnergy2-energy) < _convergenceEpsilon 
-						|| (data.optimizedRange.second - data.optimizedRange.first<=sites)) {
-					// we are done! yay
-					LOG(ALS, "ALS done, " << energy << " " << lastEnergy << " " << std::abs(lastEnergy2-energy) << " " << std::abs(lastEnergy-energy) << " < " << _convergenceEpsilon);
-					if (data.cannonicalizeAtTheEnd && preserveCorePosition) {
-						_x.move_core(data.corePosAtTheEnd, true);
-					}
-					return energy;
-				}
-				
-				// change walk direction
-				data.direction = data.direction == Increasing ? Decreasing : Increasing;
-			} else {
-				// we are not done with the sweep, just calculate data for the perfdata
-				if (_perfData) {
-					_perfData.stop_timer();
-					value_t residual = data.residual_f();
-					_perfData.continue_timer();
-					_perfData.add(residual, _x, 0);
-				}
+			if(check_for_end_of_sweep(data, _numHalfSweeps, _convergenceEpsilon, _perfData)) {
+				return data.energy;
 			}
 			
 			data.move_to_next_index();
@@ -468,7 +550,12 @@ namespace xerus {
 	}
 	
 	
-	const ALSVariant ALS(1, 0, ALSVariant::lapack_solver);
+	const ALSVariant ALS(1, 0, ALSVariant::lapack_solver, false);
+	const ALSVariant ALS_SPD(1, 0, ALSVariant::lapack_solver, true);
 	
-	const ALSVariant DMRG(2, 0, ALSVariant::lapack_solver);
+	const ALSVariant DMRG(2, 0, ALSVariant::lapack_solver, false);
+	const ALSVariant DMRG_SPD(2, 0, ALSVariant::lapack_solver, true);
+	
+	const ALSVariant ASD(1, 0, ALSVariant::ASD_solver, false);
+	const ALSVariant ASD_SPD(1, 0, ALSVariant::ASD_solver, true);
 }

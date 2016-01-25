@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -32,21 +32,27 @@ namespace xerus {
 	std::atomic<size_t> Index::idThreadInitCounter(0);
 	thread_local size_t Index::idCounter = (idThreadInitCounter++)<<54;
 	
+	
 	Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ul<<54, "Index ID counter left thread safe range."); }
+	
 	
 	Index::Index(const size_t _i) : valueId(_i), span(1) {
 		flags[Flag::FIXED] = true;
 	}
 	
+	
 	Index::Index(const int _i) : Index((size_t) _i) {
 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
 	}
 	
+	
 	Index::Index(const size_t _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
+	
 	
 	Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1) : valueId(_valueId), span(_span) {
 		flags[_flag1] = true;
 	}
+	
 	
 	void Index::set_span(const size_t _degree) {
 		REQUIRE(!flags[Flag::FIXED] || span == 1, "Fixed indices must have span one.");
@@ -63,6 +69,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	size_t Index::actual_span(const size_t _degree) const {
 		if(flags[Flag::INVERSE_SPAN]) {
 			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have inverse span."); 
@@ -77,6 +84,7 @@ namespace xerus {
 			return span;
 		}
 	}
+	
 	
 	bool Index::fixed() const {
 		#ifndef DISABLE_RUNTIME_CHECKS_
@@ -93,46 +101,40 @@ namespace xerus {
 		#endif
 	}
 	
+	
 	bool Index::open() const {
 		REQUIRE(flags[Index::Flag::ASSINGED], "Check for index openness only allowed if the index is assinged.");
 		return flags[Index::Flag::OPEN];
 	}
+	
 	
 	void Index::open(const bool _open) {
 		flags[Flag::OPEN] = _open;
 		IF_CHECK( flags[Flag::ASSINGED] = true; )
 	}
 	
+	
 	size_t Index::dimension() const {
 		REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
 		return assingedDimension;
 	}
+	
 	
 	Index Index::operator^(const size_t _span) const {
 		REQUIRE(flags.none(), "Cannot apply ^ operator to an index that has any flag set.");
 		return Index(valueId, _span);
 	}
 	
+	
 	Index Index::operator&(const size_t _span) const {
 		REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
 		return Index(valueId, _span, Flag::INVERSE_SPAN);
 	}
 	
+	
 	Index Index::operator/(const size_t _span) const {
 		REQUIRE(flags.none(), "Cannot apply & operator to an index that has any flag set.");
 		return Index(valueId, _span, Flag::FRACTIONAL_SPAN);
-	}
-	
-	bool Index::operator==(const Index& _other) const {
-		return valueId == _other.valueId && !fixed() && !_other.fixed();
-	}
-	
-	bool Index::operator!=(const Index& _other) const {
-		return valueId != _other.valueId || fixed() || _other.fixed();
-	}
-	
-	bool Index::operator<(const Index& _other) const {
-		return valueId < _other.valueId;
 	}
 	
 	
@@ -141,6 +143,21 @@ namespace xerus {
 			if(!idx.open()) { return false; }
 		}
 		return true;
+	}
+	
+	
+	
+	
+	bool operator==(const Index& _a, const Index& _b) {
+		return _a.valueId == _b.valueId && !_a.fixed() && !_b.fixed();
+	}
+	
+	bool operator!=(const Index& _a, const Index& _b) {
+		return _a.valueId != _b.valueId || _a.fixed() || _b.fixed();
+	}
+	
+	bool operator<(const Index& _a, const Index& _b) {
+		return _a.valueId < _b.valueId;
 	}
 	
 	std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx) {

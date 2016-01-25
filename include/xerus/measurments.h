@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2015 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,8 +24,12 @@
 
 #pragma once
 
+#include <set>
+#include <random>
+
 #include "basic.h"
-#include "misc/missingFunctions.h"
+ 
+#include "misc/math.h"
 
 namespace xerus {
 	class Tensor;
