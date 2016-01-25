@@ -29,6 +29,7 @@
     #include <bfd.h>
     #include <dlfcn.h>
     #include <unistd.h>
+#include <iostream>
     #include <sstream>
     #include <memory>
     #include <map>
@@ -93,16 +94,12 @@ namespace xerus { namespace misc { namespace internal {
 			}
 			storedBfd &currBfd = bfds.at(info.dli_fbase);
 			
-			asection *section = currBfd.abfd->sections;
-			while (section != nullptr) {
-				if (_name == section->name) {
-					return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
-				} else {
-					section = section->next;
-					continue;
-				}
+			asection *section = bfd_get_section_by_name(currBfd.abfd.get(), _name.c_str());
+			if (section == nullptr) {
+				return std::pair<uintptr_t, uintptr_t>(0,0);
+			} else {
+				return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
 			}
-			return std::pair<uintptr_t, uintptr_t>(0,0);
 		}
 		
 		static std::string resolve(void *address) {
