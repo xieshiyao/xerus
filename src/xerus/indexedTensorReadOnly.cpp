@@ -354,7 +354,7 @@ namespace xerus {
 		
 		template<class tensor_type>
 		value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor) {
-			return _idxTensor.tensorObjectReadOnly->frob_norm(); 
+			return _idxTensor.tensorObjectReadOnly->frob_norm();
 		}
 		
 		template value_t frob_norm<Tensor>(const IndexedTensorReadOnly<Tensor>& _idxTensor);

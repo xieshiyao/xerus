@@ -126,24 +126,41 @@ UNIT_TEST(TT, real_difference,
 )
 
 UNIT_TEST(TT, difference_of_TTStacks,
-	//Random numbers
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
-	std::normal_distribution<value_t> dist (0.0, 1.0);
-	
-	TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
-	TTTensor ttC;
-	
-	Index i,j,k;
-	ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
-	LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-7);
-	
-	ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
-	LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
-	TEST(frob_norm(ttC(i&0)) < 1e-7);
+		  //Random numbers
+		  std::mt19937_64 rnd;
+		  rnd.seed(0X5EED);
+		  std::normal_distribution<value_t> dist (0.0, 1.0);
+		  
+		  TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+		  TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
+		  TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+		  TTTensor ttC;
+		  
+		  Index i,j,k;
+		  ttC(i&0) = ttO(i/2, j/2)*ttA(j&0) - ttO(i/2, j/2)*ttA(j&0);
+		  LOG(unit_tests, "Frob norm 1 " << frob_norm(ttC(i&0)));
+		  TEST(frob_norm(ttC(i&0)) < 1e-7);
+		  
+		  ttC(i&0) = ttO(i/2, j/2)*ttB(j&0) - ttO(i/2, j/2)*ttB(j&0);
+		  LOG(unit_tests, "Frob norm 2 " << frob_norm(ttC(i&0)));
+		  TEST(frob_norm(ttC(i&0)) < 1e-7);
+)
+
+UNIT_TEST(TT, ttStacks_frob_norm,
+		  //Random numbers
+		  std::mt19937_64 rnd;
+		  rnd.seed(0X5EED);
+		  std::normal_distribution<value_t> dist (0.0, 1.0);
+		  
+		  const Index i, j, k;
+		  
+		  TTOperator ttO1 = TTOperator::identity({10,10,10,10,10,10,10,10,10,10});
+		  TTOperator ttO2 = TTOperator::identity({10,10,10,10,10,10,10,10,10,10});
+		  
+		  MTEST(misc::approx_equal(frob_norm(ttO1(i&0)*ttO2(i&0)), double(misc::pow(10, 5))), frob_norm(ttO1(i&0)*ttO2(i&0)) << " vs " << misc::pow(10, 5));
+		  
+		  
+		  TEST(misc::approx_equal(frob_norm(ttO1(i/2, j/2)*ttO2(j/2, k/2)), std::sqrt(misc::pow(10, 5))));
 )
 
 UNIT_TEST(TT, special_sum_diff,

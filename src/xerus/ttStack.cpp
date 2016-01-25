@@ -184,7 +184,7 @@ namespace xerus {
 		value_t TTStack<isOperator>::frob_norm() const {
 			const Index i;
 			TTNetwork<isOperator> tmp;
-			tmp(i&0) = (*this)(i&0);
+			tmp(i&0) = IndexedTensorMoveable<TensorNetwork>(this->get_copy(), {i&0});
 			return tmp.frob_norm();
 		}
 		
