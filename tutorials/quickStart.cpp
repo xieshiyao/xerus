@@ -41,8 +41,8 @@ int main() {
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), rnd, dist);
 	
-	// and solve the system with the default ALS algorithm
-	xerus::ALS(ttA, ttx, ttb);
+	// and solve the system with the default ALS algorithm for symmetric positive operators
+	xerus::ALS_SPD(ttA, ttx, ttb);
 	
 	// to perform arithmetic operations we need to define some indices
 	xerus::Index i,j,k;

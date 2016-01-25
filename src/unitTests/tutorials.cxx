@@ -32,7 +32,7 @@ UNIT_TEST(Tutorials, quick_start,
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), rnd, dist);
 	
-	xerus::ALS(ttA, ttx, ttb);
+	xerus::ALS_SPD(ttA, ttx, ttb);
 	
 	xerus::Index i,j,k;
 	

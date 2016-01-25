@@ -56,14 +56,15 @@ UNIT_TEST(ALS, identity,
     
     PerformanceData perfdata;
     
-    TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-13 * 1000);
+	value_t result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
+    MTEST(result < 0.01,  "1 " << result);
+	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
     perfdata.reset();
 	
     ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
-    TEST(ALS(ttI, ttX, ttB, 0.001, perfdata) < 0.01);
-	LOG(unit_test, "norm: " << frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)));
-    TEST(frob_norm(Tensor(ttX)(k^3) - Tensor(ttB)(k^3)) < 1e-9); // approx 1e-16 * dim * max_entry
+	result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
+    MTEST(result < 0.01, "2 " << result);
+	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
 )
 
 
@@ -81,7 +82,7 @@ UNIT_TEST(ALS, projectionALS,
 	for (size_t r = 7; r > 0; --r) {
 		X.round(r);
 		value_t roundNorm = frob_norm(X-B);
-		ALS(X,B,1e-4);
+		ALS_SPD(X,B,1e-4);
 		value_t projNorm = frob_norm(X-B);
 		LOG(unit_test, r << " : " << roundNorm << " > " << projNorm);
 		TEST(projNorm < roundNorm);
@@ -107,7 +108,7 @@ UNIT_TEST(ALS, tutorial,
 	
 	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
 	
-	xerus::ALS(A, X, B);
+	xerus::ALS_SPD(A, X, B);
 	
 // 	LOG(asd, frob_norm(X-B));
 	
@@ -127,12 +128,12 @@ UNIT_TEST(ALS, tutorial,
 	C(i&0) = A(i/2, j/2) * B(j&0);
 	X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
 	
-	xerus::ALSVariant ALSb(xerus::ALS);
+	PerformanceData pd(false);
 // 	ALSb.printProgress = true;
 // 	ALSb.useResidualForEndCriterion = true;
 // 	std::vector<value_t> perfdata;
 	
-	ALSb(A, X, C, 1e-12);
+	ALS_SPD(A, X, C, 1e-12, pd);
 	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
 	
 	

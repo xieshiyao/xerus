@@ -1,9 +1,11 @@
 #=================================================================================================
 # Compiler Options
 #=================================================================================================
-# Xerus can be compiled either with the G++ or the Clang++ frontend of the LLVM. The default is
-# to use the G++. The Uncomment the next line to use Clang++ instead.
-# USE_CLANG = TRUE
+# Xerus can be compiled either with G++ or the Clang++ frontend of the LLVM.
+# Set the CXX variable to the one you want to use.
+CXX = g++
+# CXX = clang++
+
 
 #=================================================================================================
 # Optimization
