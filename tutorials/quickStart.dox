@@ -48,9 +48,10 @@ of a random number generator and distribution that will be used for the creation
 \until ttx
 
 With these three tensors (the operator `ttA`, the right-hand-side `ttb` and the initial guess `ttx`)
-we can now perform the ALS algorithm to solve for `ttx`
+we can now perform the ALS algorithm to solve for `ttx` (note here, that the _SPD suffix chooses the variant of the ALS
+that assumes that the given operators are symmetric positive definite)
 
-\skipline xerus::ALS
+\skipline xerus::ALS_SPD
 
 To verify the calculation performed by the ALS we will need to perform some arithmetic operations. 
 As these require the definition of (relative) index orderings in the tensors, we define some indices

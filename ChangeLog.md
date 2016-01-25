@@ -10,6 +10,8 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * ! Reworked the IndexedTensor* index assignment.
  * ! Changed resize_dimension to allow slate insertion at the first position.
  * Added TTTensor::random with callback function to manipulate the singular values of all matricisations.
+ * Rewrote the ALS algorithm for better readability.
+ * Added fully functional (multi-site) DMRG and alternating steepest descent algorithms.
  * Support for low level factorisation calls for Tensor class.
  * Several bug fixes, including SVD factor handling, SparseTensor summation, Tensor resize_dimension, TN evaluation,....
  * Added several test cases.

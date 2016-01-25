@@ -206,16 +206,19 @@ namespace xerus {
 		}
 	};
 	
-	/// default variant of the single-site ALS algorithm using the lapack solver
+	/// default variant of the single-site ALS algorithm for non-symmetric operators using the lapack solver
 	extern const ALSVariant ALS;
+	/// default variant of the single-site ALS algorithm for symmetric positive-definite operators using the lapack solver
 	extern const ALSVariant ALS_SPD;
 	
-	/// default variant of the two-site DMRG algorithm using the lapack solver
+	/// default variant of the two-site DMRG algorithm for non-symmetric operators using the lapack solver
 	extern const ALSVariant DMRG;
+	/// default variant of the two-site DMRG algorithm for symmetric positive-definite operators using the lapack solver
 	extern const ALSVariant DMRG_SPD;
 	
-	/// default variant of the alternating steepest descent
+	/// default variant of the alternating steepest descent for non-symmetric operators
 	extern const ALSVariant ASD;
+	/// default variant of the alternating steepest descent for symmetric positive-definite operators
 	extern const ALSVariant ASD_SPD;
 }
 

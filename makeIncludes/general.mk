@@ -2,12 +2,8 @@
 # Uses: USE_CLANG, 
 
 # Set Compiler used
-ifeq ($(strip $(CXX)),)
-	ifdef USE_CLANG
-		CXX = clang++
-	else
-		CXX = g++
-	endif
+ifneq (,$(findstring clang, $(CXX)))
+	USE_CLANG = true
 endif
 
 

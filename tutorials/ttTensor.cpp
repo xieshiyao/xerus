@@ -41,13 +41,11 @@ int main() {
 	// the rank of A increased in the last operation:
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
 	
-	// create a new variant of the ALS algorithm
-	xerus::ALSVariant ALSb(xerus::ALS);
-	// that will print its progress
-	ALSb.printProgress = true;
+	// create a performance data object to keep track of the current algorithm progress (and print it to cout)
+	xerus::PerformanceData perfData(true);
 	
 	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
-	ALSb(A, X, B, 1e-4);
+	ALS_SPD(A, X, B, 1e-4, perfData);
 	
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
 	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor

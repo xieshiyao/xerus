@@ -400,7 +400,7 @@ namespace xerus {
 	TensorNetwork ALSVariant::construct_local_RHS(ALSVariant::ALSAlgorithmicData& _data) const {
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork BTilde;
-		if (assumeSPD) {
+		if (assumeSPD || !_data.A) {
 			BTilde(n1,r1) = _data.rhsCache.left.back()(r1,n1);
 			for (size_t p=0; p<sites; ++p) {
 				BTilde(n1^(p+1), n2, cr1) = BTilde(n1^(p+1), r1) * _data.b.get_component(_data.currIndex+p)(r1, n2, cr1);
