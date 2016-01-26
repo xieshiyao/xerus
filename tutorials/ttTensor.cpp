@@ -45,7 +45,7 @@ int main() {
 	xerus::PerformanceData perfData(true);
 	
 	// apply the ALS algorithm to the new system A*X=B and try to converge up to a relative error of @f$ 10^{-4} @f$
-	ALS_SPD(A, X, B, 1e-4, perfData);
+	xerus::ALS_SPD(A, X, B, 1e-4, perfData);
 	
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
 	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor
