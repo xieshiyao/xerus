@@ -2,7 +2,7 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2016-01-?? v2.0
+* 2016-01-26 v2.0.0
  * ! Merged FullTensor and SparseTensor into a single Tensor class.
  * Implemented several FullTensor functions also for sparse representations (modify(\_diag)_elements, fix\_slate, resize\_dimension,...)
  * ! IndexedTensor*s now considered internal.
