@@ -98,7 +98,7 @@
 				std::normal_distribution<value_t> normalDist (0.0, 1.0);\
 				std::uniform_real_distribution<value_t> uniformDist (-1.0, 1.0);\
 			
-			
+	
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
 
     namespace xerus { namespace misc { namespace internal {

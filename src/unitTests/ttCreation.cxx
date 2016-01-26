@@ -49,7 +49,6 @@ UNIT_TEST(TT, TTTensor_Creation,
     
     Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
     TTTensor TTA4(A4, 1e-14);
-	TTA4.draw("test.svg");
     Tensor B4;
     B4(j,i^7) = TTA4(j,i^7);
     TEST(approx_equal(B4,A4, 1e-14));

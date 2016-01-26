@@ -18,9 +18,10 @@
 // or contact us at contact@libXerus.org.
 
 
-#include<xerus.h>
+#include <xerus.h>
 
 #include "../../include/xerus/misc/test.h"
+
 using namespace xerus;
 
 Tensor::DimensionTuple random_dimensions(const size_t _degree, const size_t _maxDim, std::mt19937_64 _rnd) {
