@@ -51,6 +51,21 @@ UNIT_TEST(Tensor, SVD_Identity,
 	MTEST(frob_norm(res3(k,m,l)*res3(k,n,l) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
 )
 
+UNIT_TEST(Tensor, SVD_zero,
+    Tensor A({2,2,2,2});
+    Tensor res1({2,2,4});
+    Tensor res2({4,4});
+    Tensor res3({4,2,2});
+    
+    Index i, j, k, l, m, n;
+    
+    (res1(i,j,m), res2(m,n), res3(n,k,l)) = SVD(A(i,j,k,l));
+	MTEST(res2.dimensions[0] == 1, res2.dimensions[0]);
+	MTEST(std::abs(res2[0]) < 1e-15, res2[0]);
+	MTEST(frob_norm(res1(i^2, m)*res1(i^2, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
+	MTEST(frob_norm(res3(m, i^2)*res3(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
+)
+
 UNIT_TEST(Tensor, SVD_Random_512x512,
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
