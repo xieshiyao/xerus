@@ -257,7 +257,7 @@ namespace xerus {
 	
 	
 	void TensorNetwork::sanitize() {
-		std::vector<size_t> idMap(nodes.size(), ~0ul);
+		std::vector<size_t> idMap(nodes.size());
 		
 		// Move nodes
 		size_t newId = 0, oldId = 0;
@@ -929,8 +929,8 @@ namespace xerus {
 			nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition--;
 		}
 		
-		externalLinks.erase(externalLinks.begin()+(long)_dimension);
-		dimensions.erase(dimensions.begin()+(long)_dimension);
+		externalLinks.erase(externalLinks.begin()+_dimension);
+		dimensions.erase(dimensions.begin()+_dimension);
 		
 		// Correct the others links to affected node.
 		for(size_t i = extNodeIndexPos+1; i < nodes[extNode].neighbors.size(); ++i) {
@@ -943,7 +943,7 @@ namespace xerus {
 		}
 		
 		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
-		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + (long)extNodeIndexPos);
+		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
 		
 		contract_unconnected_subnetworks();
 	}

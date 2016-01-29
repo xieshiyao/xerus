@@ -348,18 +348,27 @@ namespace xerus {
 		
 		return _ranks;
 	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+		REQUIRE(!isOperator, "fix_slate(), does not work for TTOperators, if applicable cast to TensorNetwork first");
+		TensorNetwork::fix_slate(_dimension, _slatePosition);
+	}
+	
 		
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
 		REQUIRE(_idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::get_component");
 		return *nodes[_idx+1].tensorObject;
 	}
+	
 		
 	template<bool isOperator>
 	const Tensor& TTNetwork<isOperator>::get_component(const size_t _idx) const {
 		REQUIRE(_idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::get_component");
 		return *nodes[_idx+1].tensorObject;
 	}
+	
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::set_component(const size_t _idx, Tensor _T) {
@@ -378,6 +387,7 @@ namespace xerus {
 		
 		cannonicalized = cannonicalized && (corePosition == _idx);
 	}
+	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
@@ -857,6 +867,31 @@ namespace xerus {
 	template<bool isOperator>
 	TensorNetwork* TTNetwork<isOperator>::get_copy() const {
 		return new TTNetwork(*this);
+	}
+	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::contract_unconnected_subnetworks() {
+		if(degree() == 0) {
+			std::set<size_t> all;
+			for(size_t i = 0; i < nodes.size(); ++i) { all.emplace_hint(all.end(), i); }
+			contract(all);
+		} else {
+			REQUIRE(nodes.size() > 2, "Invalid TTNetwork");
+			const size_t numComponents = nodes.size()-2;
+			
+			for(size_t i = 1; i < numComponents; ++i) {
+				if(nodes[i].degree() == 2) {
+						contract(i, i+1);
+				}
+			}
+			
+			// Extra treatment for last component to avoid contraction to the pseudo-node.
+			if(nodes[numComponents].degree() == 2) {
+				contract(numComponents-1, numComponents);
+			}
+		}
+		
+		sanitize();
 	}
 	
 	

@@ -245,6 +245,7 @@ namespace xerus {
 		*/
 		static std::vector<size_t> reduce_to_maximal_ranks(std::vector<size_t> _ranks, const std::vector<size_t>& _dimensions);
 		
+		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
 		
 		/** 
 		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
@@ -432,6 +433,9 @@ namespace xerus {
 		
 		
 		virtual TensorNetwork* get_copy() const override;
+		
+		
+		virtual void contract_unconnected_subnetworks() override;
 		
 		
 		virtual value_t frob_norm() const override;

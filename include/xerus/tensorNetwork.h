@@ -205,7 +205,7 @@ namespace xerus {
 		*/
 		virtual TensorNetwork* get_copy() const;
 			
-	private:
+	protected:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		///@brief: Sets the externalLinks and returns an Link vector for a node, assuming that this node is the only node there is and all given dimensions are open.
 		std::vector<Link> init_from_dimension_array();
@@ -224,7 +224,7 @@ namespace xerus {
 		/** 
 		* @brief Contracts all nodes that are not connected to any external links.
 		*/
-		void contract_unconnected_subnetworks();
+		virtual void contract_unconnected_subnetworks();
 		
 		
 		/** 
@@ -244,8 +244,8 @@ namespace xerus {
 		
 		
 		/**
-		 * @brief Removes the erased nodes. 
-		 * @note this will change the node ids
+		 * @brief Removes all erased nodes from the TensorNetwork. 
+		 * @details The order of the node ids is retained, but the ids might decrease due to removed nodes. 
 		 */
 		void sanitize();
 
