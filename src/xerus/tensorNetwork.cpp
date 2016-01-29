@@ -1348,4 +1348,23 @@ namespace xerus {
 		graphLayout << "}" << std::endl;
 		misc::exec(std::string("dot -Tsvg > ") + _filename+".svg", graphLayout.str());
 	}
+	
+	
+	
+	
+	bool approx_equal(const TensorNetwork& _a, const TensorNetwork& _b, const value_t _eps) {
+		REQUIRE(_a.dimensions == _b.dimensions, "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions);
+		const Index i; // TODO no indices
+		return frob_norm(_a(i&0) - _b(i&0)) <= _eps*(_a.frob_norm() + _b.frob_norm())/2.0;
+	}
+	
+	
+	bool approx_equal(const TensorNetwork& _a, const Tensor& _b, const value_t _eps) {
+		return approx_equal(Tensor(_a), _b, _eps);
+	}
+	
+	
+	bool approx_equal(const Tensor& _a, const TensorNetwork& _b, const value_t _eps) {
+		return approx_equal(_a, Tensor(_b), _eps);
+	}
 }

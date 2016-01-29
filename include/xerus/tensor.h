@@ -923,8 +923,8 @@ namespace xerus {
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B);
 	
 	/** 
-	* @brief Checks whether two Tensors are approximately equal.
-	* @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
+	* @brief Checks whether two tensors are approximately equal.
+	* @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < @a _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
 	* @param _a the first test candidate.
 	* @param _b the second test candidate
 	* @param _eps the maximal relative difference between @a _a and @a _b.

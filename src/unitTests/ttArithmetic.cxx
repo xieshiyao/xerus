@@ -516,7 +516,7 @@ UNIT_TEST2(TT, fix_slate) {
 	std::vector<size_t> dimsA;
 	std::vector<size_t> dimsX;
 	
-	const Index i, j, k;
+	const Index i, j;
 	
 	dimsX.push_back(dimDist(rnd));
 	dimsA = dimsX | dimsX;
@@ -552,11 +552,21 @@ UNIT_TEST2(TT, fix_slate) {
 		tnA.fix_slate(slate, position);
 		tnX.fix_slate(slate, position);
 		
+		TEST(approx_equal(A, tnA));
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(tnA, ttA));
+		
+		TEST(approx_equal(X, tnX));
+		TEST(approx_equal(X, ttX));
+		TEST(approx_equal(tnX, ttX));
+		
 		C(i&0) = A(i/2,j/2)*X(j&0);
-// 		ttC(i&0) = ttA(i/2,j/2)*ttX(j&0);
+		ttC(i&0) = ttA(i/2,j/2)*ttX(j&0);
 		tnC(i&0) = tnA(i/2,j/2)*tnX(j&0);
 		
-// 		approx_equal(C, tnC);
+		TEST(approx_equal(C, tnC));
+		TEST(approx_equal(C, ttC));
+		TEST(approx_equal(tnC, ttC));
 		
 		
 		dimsX.push_back(dimDist(rnd));

@@ -205,13 +205,12 @@ namespace xerus {
 		template<bool isOperator>
 		void TTNetwork<isOperator>::require_correct_format() const {
 			const size_t numComponents = degree()/N;
-			const size_t numNodes = degree()==0 ? 1 : degree()/N + 2;
+			const size_t numNodes = degree() == 0 ? 1 : degree()/N + 2;
 			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
 			REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
 			REQUIRE(!cannonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, corePosition << " vs " << numComponents);
-			REQUIRE(nodes.size() > 0, "There must always be at least one node!");
 			
-			// per external link
+			// Per external link
 			for (size_t n = 0; n < externalLinks.size(); ++n) {
 				const TensorNetwork::Link &l = externalLinks[n];
 				REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
@@ -875,21 +874,29 @@ namespace xerus {
 			std::set<size_t> all;
 			for(size_t i = 0; i < nodes.size(); ++i) { all.emplace_hint(all.end(), i); }
 			contract(all);
+			cannonicalized = false;
 		} else {
 			REQUIRE(nodes.size() > 2, "Invalid TTNetwork");
 			const size_t numComponents = nodes.size()-2;
 			
-			for(size_t i = 1; i < numComponents; ++i) {
-				if(nodes[i].degree() == 2) {
-						contract(i, i+1);
+			for(size_t i = 0; i+1 < numComponents; ++i) {
+				if(nodes[i+1].degree() == 2) {
+						// If we are the core, everything is fine, we contract ourself to the next node, then get removed and the corePositions stays. If the next Node is the core, we have to change the corePosition to ours, because we will be removed. In all other cases cannonicalization is destroyed.
+						if(corePosition == i+1) { corePosition = i; }
+						else if(corePosition != i) { cannonicalized = false; }
+						contract(i+1, i+2);
 				}
 			}
 			
 			// Extra treatment for last component to avoid contraction to the pseudo-node.
 			if(nodes[numComponents].degree() == 2) {
+				if(corePosition == numComponents-1) { corePosition = numComponents-2; }
+				else if(corePosition != numComponents-2) { cannonicalized = false; }
 				contract(numComponents-1, numComponents);
 			}
 		}
+		
+		REQUIRE(corePosition < degree() || !cannonicalized, "Woot");
 		
 		sanitize();
 	}
@@ -899,7 +906,11 @@ namespace xerus {
 	value_t TTNetwork<isOperator>::frob_norm() const {
 		require_correct_format();
 		if (cannonicalized) {
-			return get_component(corePosition).frob_norm();
+			if(degree() == 0) {
+				return nodes[0].tensorObject->frob_norm();
+			} else {
+				return get_component(corePosition).frob_norm();
+			}
 		} else {
 			const Index i;
 			return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));

@@ -522,12 +522,38 @@ namespace xerus {
 		void draw(const std::string& _filename) const;
 	};
 	
+	
+	
 	/** 
 	* @brief Calculates the frobenious norm of the given TensorNetwork.
 	* @param _network the TensorNetwork of which the frobenious norm shall be calculated.
 	* @return the frobenious norm.
 	*/
 	static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
+	
+	
+	/** 
+	* @brief Checks whether two TensorNetworks are approximately equal.
+	* @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < @a _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
+	* @param _a the first test candidate.
+	* @param _b the second test candidate
+	* @param _eps the maximal relative difference between @a _a and @a _b.
+	* @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
+	*/
+	bool approx_equal(const TensorNetwork& _a, const TensorNetwork& _b, const value_t _eps = EPSILON);
+	
+	
+	/** 
+	* @brief Convinience wrapper, casts the the given TensorNetwork @a _a to Tensor and calls the Tensor function.
+	*/
+	bool approx_equal(const TensorNetwork& _a, const Tensor& _b, const value_t _eps = EPSILON);
+	
+	
+	/** 
+	* @brief Convinience wrapper, casts the the given TensorNetwork @a _b to Tensor and calls the Tensor function.
+	*/
+	bool approx_equal(const Tensor& _a, const TensorNetwork& _b, const value_t _eps = EPSILON);
+	
 	
 	std::ostream &operator<<(std::ostream &_out, const TensorNetwork::Link &_rhs);
 }
