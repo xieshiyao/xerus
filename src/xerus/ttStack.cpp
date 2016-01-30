@@ -92,7 +92,7 @@ namespace xerus {
 			for(size_t i = 0; i < numComponents; ++i) {
 				_me.tensorObject->externalLinks.emplace_back(i+1, 1, _me.tensorObject->dimensions[i], false);
 			}
-			if(N == 2) {
+			if(isOperator) {
 				for(size_t i = 0; i < numComponents; ++i) {
 					_me.tensorObject->externalLinks.emplace_back(i+1, 2, _me.tensorObject->dimensions[numComponents+i], false);
 				}
@@ -109,7 +109,7 @@ namespace xerus {
 			_me.tensorObject->nodes.front().tensorObject->reinterpret_dimensions({1});
 			_me.tensorObject->nodes.back().neighbors = std::vector<TensorNetwork::Link>({TensorNetwork::Link(numComponents,N+1,1,false)});
 			_me.tensorObject->nodes.back().tensorObject->reinterpret_dimensions({1});
-			for (size_t i=0; i<numComponents; ++i) {
+			for (size_t i = 0; i < numComponents; ++i) {
 				lastIndices = std::move(oldIndices); oldIndices.clear();
 				lastRight = std::move(newRight); newRight.clear();
 				lastRank = newRank; newRank=1;
@@ -159,6 +159,7 @@ namespace xerus {
 			}
 			
 			// NOTE core position according to information in TTStack is set in evaluation
+			_me.tensorObject->require_valid_network();
 		}
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
