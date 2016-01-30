@@ -68,12 +68,12 @@ namespace xerus {
 			_me.tensorObject->require_valid_network();
 			
 			const size_t numComponents = _me.degree()/N;
-			const size_t numNodes = _me.degree()/N+2;
+			const size_t numNodes = _me.degree() == 0 ? 1 : _me.degree()/N+2;
 			
 			std::set<size_t> toContract;
 			for (size_t currentNode = 0; currentNode < numNodes; ++currentNode) {
 				toContract.clear();
-				for (size_t i = currentNode; i < _me.tensorObject->nodes.size(); i+=numNodes) {
+				for (size_t i = currentNode; i < _me.tensorObject->nodes.size(); i += numNodes) {
 					toContract.insert(i);
 				}
 				_me.tensorObject->contract(toContract);

@@ -27,6 +27,7 @@
 #include <xerus/ttNetwork.h>
 
 #include <xerus/misc/check.h>
+#include <xerus/misc/math.h>
 #include <xerus/misc/performanceAnalysis.h>
 
 #include <xerus/basic.h>
@@ -154,11 +155,16 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
-		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(_dimensions.size()%2 == 0, "Illegal number of dimensions for ttOperator");
 		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		
+		if(_dimensions.empty()) {
+			return TTNetwork(Tensor::ones({}));
+		}
 		
 		TTNetwork result(_dimensions.size());
 		const size_t numNodes = _dimensions.size()/N;
+		
 		std::vector<size_t> dimensions(isOperator ? 4 : 3, 1);
 		for(size_t i = 0; i < numNodes; ++i) {
 			dimensions[1] = _dimensions[i];
@@ -176,6 +182,10 @@ namespace xerus {
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
 		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		
+		if(_dimensions.empty()) {
+			return TTNetwork(Tensor::ones({}));
+		}
 		
 		const size_t numComponents = _dimensions.size()/N;
 		
@@ -204,83 +214,55 @@ namespace xerus {
 	#ifndef DISABLE_RUNTIME_CHECKS_
 		template<bool isOperator>
 		void TTNetwork<isOperator>::require_correct_format() const {
+			require_valid_network(); // Network must at least be valid.
+			
 			const size_t numComponents = degree()/N;
 			const size_t numNodes = degree() == 0 ? 1 : degree()/N + 2;
-			REQUIRE(nodes.size() == numNodes, nodes.size() << " vs " << numNodes);
-			REQUIRE(externalLinks.size() == degree(), externalLinks.size() << " vs " << degree());
-			REQUIRE(!cannonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, corePosition << " vs " << numComponents);
+			REQUIRE(nodes.size() == numNodes, "Wrong number of nodes: " << nodes.size() << " expected " << numNodes << ".");
+			REQUIRE(!cannonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, "Invalid corePosition: " << corePosition << " there are only " << numComponents << " components.");
 			
 			// Per external link
 			for (size_t n = 0; n < externalLinks.size(); ++n) {
 				const TensorNetwork::Link &l = externalLinks[n];
-				REQUIRE(l.dimension == dimensions[n], "n=" << n << " " << l.dimension << " vs " << dimensions[n]);
-				REQUIRE(!l.external, "n=" << n);
-				REQUIRE(l.other == (n%numComponents)+1, "n=" << n << " " << l.other << " vs " << ((n%numComponents)+1));
-				REQUIRE(l.indexPosition < nodes[l.other].neighbors.size(), "n=" << n << " " << l.indexPosition << " vs " << nodes[l.other].neighbors.size());
-				REQUIRE(nodes[l.other].neighbors[l.indexPosition].external, "n=" << n);
-				REQUIRE(nodes[l.other].neighbors[l.indexPosition].indexPosition == n, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].indexPosition);
-				REQUIRE(nodes[l.other].neighbors[l.indexPosition].dimension == l.dimension, "n=" << n << " " << nodes[l.other].neighbors[l.indexPosition].dimension << " vs " << l.dimension);
+				REQUIRE(l.other == (n%numComponents)+1, "The " << n << "-th external link must point the the " << (n%numComponents) << "-th component (i.e. the " << (n%numComponents)+1 << "-th node) but does point to the " << l.other << "-th node.");
 			}
 			
-			// virtual nodes
+			// Virtual nodes
 			if(degree() > 0) {
-				REQUIRE(nodes.front().neighbors.size() == 1, nodes.front().neighbors.size());
-				REQUIRE(nodes.front().neighbors[0].dimension == 1, nodes.front().neighbors[0].dimension);
-				REQUIRE(nodes.front().neighbors[0].other == 1, nodes.front().neighbors[0].other);
-				REQUIRE(nodes.front().neighbors[0].indexPosition == 0, nodes.front().neighbors[0].indexPosition);
-				if (nodes.front().tensorObject) {
-					REQUIRE(nodes.front().tensorObject->dimensions == std::vector<size_t>({1}), nodes.front().tensorObject->dimensions);
-					#pragma GCC diagnostic push
-						#pragma GCC diagnostic ignored "-Wfloat-equal"
-						REQUIRE((*nodes.front().tensorObject)[0] == 1.0, (*nodes.front().tensorObject)[0]);
-					#pragma GCC diagnostic pop
-					REQUIRE(!nodes.front().tensorObject->has_factor(), "");
-				}
+				REQUIRE(nodes.front().degree() == 1, "The left virtual node must have degree 1, but has size " << nodes.front().degree());
+				REQUIRE(nodes.front().neighbors[0].dimension == 1, "The left virtual node's single dimension must be 1, but is " << nodes.front().neighbors[0].dimension);
+				REQUIRE(nodes.front().neighbors[0].other == 1, "The left virtual node's single link must be to node 1, but is towards node " << nodes.front().neighbors[0].other);
+				REQUIRE(nodes.front().neighbors[0].indexPosition == 0, "The left virtual node's single link must link at indexPosition 0, but link at " << nodes.front().neighbors[0].indexPosition);
+				REQUIRE(misc::hard_equal((*nodes.front().tensorObject)[0], 1.0), "The left virtual node's single entry must be 1.0, but it is " << (*nodes.front().tensorObject)[0]);
+				REQUIRE(!nodes.front().tensorObject->has_factor(), "The left virtual node must no carry a non-trivial factor.");
 				
-				REQUIRE(nodes.back().neighbors.size() == 1, nodes.back().neighbors.size());
-				REQUIRE(nodes.back().neighbors[0].dimension == 1, nodes.back().neighbors[0].dimension);
-				REQUIRE(nodes.back().neighbors[0].other == numNodes-2, nodes.back().neighbors[0].other);
-				REQUIRE(nodes.back().neighbors[0].indexPosition == N+1, nodes.back().neighbors[0].indexPosition);
-				if (nodes.back().tensorObject) {
-					REQUIRE(nodes.back().tensorObject->dimensions == std::vector<size_t>({1}), nodes.back().tensorObject->dimensions);
-					#pragma GCC diagnostic push
-						#pragma GCC diagnostic ignored "-Wfloat-equal"
-						REQUIRE((*nodes.back().tensorObject)[0] == 1.0, (*nodes.back().tensorObject)[0]);
-					#pragma GCC diagnostic pop
-					REQUIRE(!nodes.back().tensorObject->has_factor(), "");
-				}
-			} else {
-				REQUIRE(nodes[0].neighbors.size() == 0, nodes[0].neighbors.size());
-				REQUIRE(!nodes[0].tensorObject || nodes[0].tensorObject->degree() == 0, nodes[0].tensorObject->degree());
+				REQUIRE(nodes.back().degree() == 1, "The right virtual node must have degree 1, but has size " << nodes.back().degree());
+				REQUIRE(nodes.back().neighbors[0].dimension == 1, "The right virtual node's single dimension must be 1, but is " << nodes.back().neighbors[0].dimension);
+				REQUIRE(nodes.back().neighbors[0].other == numNodes-2, "The right virtual node's single link must be to node " << numNodes-2 << ", but is towards node " << nodes.back().neighbors[0].other);
+				REQUIRE(nodes.back().neighbors[0].indexPosition == N+1, "The right virtual node's single link must link at indexPosition " << N+1 << ", but link at " << nodes.back().neighbors[0].indexPosition);
+				REQUIRE(misc::hard_equal((*nodes.back().tensorObject)[0], 1.0), "The right virtual node's single entry must be 1.0, but it is " << (*nodes.back().tensorObject)[0]);
+				REQUIRE(!nodes.back().tensorObject->has_factor(), "The right virtual node must no carry a non-trivial factor.");
 			}
 			
 			// Per component
 			for (size_t n = 0; n < numComponents; ++n) {
-				const TensorNode &node = nodes[n+1];
-				REQUIRE(!node.erased, "n=" << n);
-				REQUIRE(node.degree() == N+2, "n=" << n << " " << node.degree());
-				if (node.tensorObject) {
-					REQUIRE(node.tensorObject->degree() == N+2, "n=" << n << " " << node.tensorObject->degree());
-				}
-				REQUIRE(!node.neighbors[0].external, "n=" << n);
-				REQUIRE(node.neighbors[0].other == n, "n=" << n);
-				REQUIRE(node.neighbors[0].indexPosition == (n==0?0:N+1), "n=" << n << " " << node.neighbors[0].indexPosition);
-				REQUIRE(node.neighbors[1].external, "n=" << n);
-				REQUIRE(node.neighbors[1].indexPosition == n, "n=" << n << " " << node.neighbors[1].indexPosition);
-				REQUIRE(!isOperator || node.neighbors[2].external, "n=" << n);
-				REQUIRE(!isOperator || node.neighbors[2].indexPosition == numComponents+n, "n=" << n << " " << node.neighbors[2].indexPosition << " vs " << numComponents+n);
-				if (node.tensorObject) {
-					REQUIRE(!cannonicalized || n == corePosition || !node.tensorObject->has_factor(), "n="<<n);
-					REQUIRE(node.tensorObject->dimensions[0]==node.neighbors[0].dimension, "n=" << n);
-					REQUIRE(node.tensorObject->dimensions[1]==node.neighbors[1].dimension, "n=" << n);
-					REQUIRE(node.tensorObject->dimensions[2]==node.neighbors[2].dimension, "n=" << n);
-					REQUIRE(!isOperator || node.tensorObject->dimensions[3] == node.neighbors[3].dimension, "n=" << n);
-				}
-				REQUIRE(!node.neighbors.back().external, "n=" << n);
-				REQUIRE(node.neighbors.back().other == n+2, "n=" << n << " " << node.neighbors.back().other);
-				REQUIRE(node.neighbors.back().indexPosition == 0, "n=" << n << " " << node.neighbors.back().indexPosition);
-				REQUIRE(!nodes[n+2].neighbors.empty(), "n=" << n);
-				REQUIRE(node.neighbors.back().dimension == nodes[n+2].neighbors[0].dimension, "n=" << n << " " << node.neighbors.back().dimension << " vs " << nodes[n+1].neighbors[0].dimension);
+				const TensorNode& node = nodes[n+1];
+				
+				REQUIRE(!cannonicalized || n == corePosition || !node.tensorObject->has_factor(), "In cannonicalized TTNetworks only the core may carry a non-trivial factor. Violated by component " << n);
+				
+				REQUIRE(node.degree() == N+2, "Every TT-Component must have degree " << N+2 << ", but component " << n << " has degree " << node.degree());
+				REQUIRE(!node.neighbors[0].external, "The first link of each TT-Component must not be external. Violated by component " << n);
+				REQUIRE(node.neighbors[0].other == n, "The first link of each TT-Component must link to the previous node. Violated by component " << n << ", which instead links to node " << node.neighbors[0].other << " (expected " << n << ").");
+				REQUIRE(node.neighbors[0].indexPosition == (n==0?0:N+1), "The first link of each TT-Component must link to the last last index of the previous node. Violated by component " << n << ", which instead links to index " << node.neighbors[0].indexPosition << " (expected " << (n==0?0:N+1) << ").");
+				
+				REQUIRE(node.neighbors[1].external, "The second link of each TT-Component must be external. Violated by component " << n << ".");
+				REQUIRE(node.neighbors[1].indexPosition == n, "The second link of each TT-Component must link to the external dimension equal to the component position. Violated by component " << n << " which links at " << node.neighbors[1].indexPosition);
+				REQUIRE(!isOperator || node.neighbors[2].external, "The third link of each TTO-Component must be external. Violated by component " << n << ".");
+				REQUIRE(!isOperator || node.neighbors[2].indexPosition == numComponents+n, "The third link of each TTO-Component must link to the external dimension equal to the component position + numComponents. Violated by component " << n << " which links at " << node.neighbors[2].indexPosition << " (expected " << numComponents+n << ").");
+				
+				REQUIRE(!node.neighbors.back().external, "The last link of each TT-Component must not be external. Violated by component " << n);
+				REQUIRE(node.neighbors.back().other == n+2, "The last link of each TT-Component must link to the next node. Violated by component " << n << ", which instead links to node " << node.neighbors.back().other << " (expected " << n+2 << ").");
+				REQUIRE(node.neighbors.back().indexPosition == 0, "The last link of each TT-Component must link to the first index of the next node. Violated by component " << n << ", which instead links to index " << node.neighbors.back().indexPosition << " (expected 0).");
 			}
 		}
 	#else
@@ -1364,27 +1346,28 @@ namespace xerus {
 		_me.assign_indices(_other.degree());
 		_other.assign_indices();
 		const size_t numComponents = _other.degree()/N;
+		TTNetwork& meTTN = static_cast<TTNetwork&>(*_me.tensorObject);
 		
 		// First check whether the other is a TTNetwork as well, otherwise we can skip to fallback
 		const TTNetwork* const otherTTN = dynamic_cast<const TTNetwork*>(_other.tensorObjectReadOnly);
-		TTNetwork* const meTTN = dynamic_cast<TTNetwork*>(_me.tensorObject);
-		REQUIRE(meTTN, "Internal Error.");
 		const internal::TTStack<isOperator>* const otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_other.tensorObjectReadOnly);
 		internal::IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork> *>(&_other);
-		if (otherTTStack) {
-			REQUIRE(movOther, "not moveable TTStack encountered...");
-			internal::TTStack<isOperator>::contract_stack(std::move(*movOther));
-		}
+		
 		if(otherTTN || otherTTStack) {
+			if (otherTTStack) {
+				REQUIRE(movOther, "Not moveable TTStack encountered...");
+				internal::TTStack<isOperator>::contract_stack(std::move(*movOther));
+			}
+			
 			// Check whether the index order coincides
 			if (_me.indices == _other.indices) {
 				if (otherTTN) {
-					*meTTN = *otherTTN;
+					meTTN = *otherTTN;
 				} else {
 					_me.tensorObject->operator=(*_other.tensorObjectReadOnly);
-					meTTN->cannonicalized = false;
+					meTTN.cannonicalized = false;
 					if (otherTTStack->cannonicalization_required) {
-						meTTN->move_core(otherTTStack->futureCorePosition);
+						meTTN.move_core(otherTTStack->futureCorePosition);
 					}
 				}
 				return;
@@ -1419,12 +1402,12 @@ namespace xerus {
 				
 				if (transposed) {
 					if (otherTTN) {
-						*meTTN = *otherTTN;
+						meTTN = *otherTTN;
 					} else {
 						_me.tensorObject->operator=(*_other.tensorObjectReadOnly);
-						meTTN->cannonicalized = false;
+						meTTN.cannonicalized = false;
 						if (otherTTStack->cannonicalization_required) {
-							meTTN->move_core(otherTTStack->futureCorePosition);
+							meTTN.move_core(otherTTStack->futureCorePosition);
 						}
 					}
 					require_correct_format();

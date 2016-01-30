@@ -544,7 +544,9 @@ UNIT_TEST2(TT, fix_slate) {
 		X.fix_slate(slate, position);
 		
 		ttA = TTOperator(A);
-		ttX.fix_slate(slate, position);
+// 		ttX.fix_slate(slate, position);
+		ttX = TTTensor(X);
+		
 		ttA.require_correct_format();
 		ttX.require_correct_format();
 		
