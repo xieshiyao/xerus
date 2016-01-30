@@ -120,8 +120,8 @@ namespace xerus {
 		 */
 		template<class generator, class distribution>
 		static TTNetwork random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
-			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for ttOperator");
-			REQUIRE(_ranks.size() == _dimensions.size()/N-1,"Non-matching amount of ranks given to TTNetwork::random");
+			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
+			REQUIRE(_ranks.size()+1 == _dimensions.size()/N,"Non-matching amount of ranks given to TTNetwork::random.");
 			REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
 			REQUIRE(!misc::contains(_ranks, 0ul), "Trying to construct random TTTensor with rank 0 is illegal.");
 			
