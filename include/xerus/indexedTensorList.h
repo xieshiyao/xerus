@@ -34,7 +34,7 @@ namespace xerus {
 	namespace internal {
 		template<class tensor_type> class IndexedTensor;
 		/**
-		* @brief Internal representation of a tuple of writeable indexed Tensors.
+		* @brief Internal representation of a tuple of indexed Tensor s.
 		* @details This class appears inplicitly by using expressiong like (Q(i,r), R(r,j)) and is particulary used for a convinient syntax for Tensor factorisations.
 		*/
 		class IndexedTensorList {

@@ -107,23 +107,8 @@ namespace xerus {
 			///@brief Assignes the indices using the current tensorObejct.
 			void assign_index_dimensions();
 			
-			///@brief Checks whether a given index is contained and open in the index vector.
-			bool is_contained_and_open(const Index& idx) const;
-			
 			///@brief Returns the dimensionTuple the evaluation of this IndexedTensor to the given indices would have.
 			std::vector<size_t> get_evaluated_dimensions(const std::vector<Index>& _indexOrder);
-			
-			#ifndef DISABLE_RUNTIME_CHECKS_
-				/**
-				* @brief: Checks whether the indices are usefull in combination with the current degree.
-				*/
-				void check_indices(const bool _allowNonOpen = true) const;
-				
-				/**
-				* @brief: Checks whether the indices are usefull in combination with the given degree.
-				*/
-				void check_indices(const size_t _futureDegree, const bool _allowNonOpen) const;
-			#endif
 		};
 		
 		

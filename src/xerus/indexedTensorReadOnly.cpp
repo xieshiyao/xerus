@@ -137,10 +137,6 @@ namespace xerus {
 			REQUIRE(dimensionCount <= degree(), "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << degree());
 		}
 		
-		template<class tensor_type>
-		bool IndexedTensorReadOnly<tensor_type>::is_contained_and_open(const Index& idx) const {
-			return !idx.fixed() && misc::count(indices, idx) == 1;
-		}
 		
 		template<class tensor_type>
 		std::vector<size_t> IndexedTensorReadOnly<tensor_type>::get_evaluated_dimensions(const std::vector<Index>& _indexOrder) {
@@ -177,25 +173,6 @@ namespace xerus {
 			return evalDimensions;
 		}
 		
-		#ifndef DISABLE_RUNTIME_CHECKS_
-			template<class tensor_type>
-			void IndexedTensorReadOnly<tensor_type>::check_indices(const bool _allowNonOpen) const {
-				check_indices(degree(), _allowNonOpen);
-			}
-			
-			template<class tensor_type>
-			void IndexedTensorReadOnly<tensor_type>::check_indices(const size_t _futureDegree, const bool _allowNonOpen) const {
-				size_t dimensionCount = 0;
-				for(const Index& idx : indices) {
-					REQUIRE(_allowNonOpen || !idx.fixed(), "Fixed indices are not allowed here.");
-					REQUIRE(_allowNonOpen || misc::count(indices, idx) == 1, "Traces are not allowed here.");
-					REQUIRE(misc::count(indices, idx) <= 2, "An index must not appere more than twice!");
-					dimensionCount += idx.actual_span(_futureDegree);
-				}
-				REQUIRE(dimensionCount >= _futureDegree, "Order determined by Indices is to small. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
-				REQUIRE(dimensionCount <= _futureDegree, "Order determined by Indices is to large. Order according to the indices " << dimensionCount << ", according to the tensor " << _futureDegree);
-			}
-		#endif
 		
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensorReadOnly<Tensor>;

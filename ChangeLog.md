@@ -2,6 +2,10 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-xx-xx v2.1.0
+ * fix_slate() now works correctly for TTTensors and (correctly) throws an error for TTOperators.
+ * Several bug fixes in the handling of TTNetworks of degree zero.
+
 * 2016-01-26 v2.0.0
  * ! Merged FullTensor and SparseTensor into a single Tensor class.
  * Implemented several FullTensor functions also for sparse representations (modify(\_diag)_elements, fix\_slate, resize\_dimension,...)

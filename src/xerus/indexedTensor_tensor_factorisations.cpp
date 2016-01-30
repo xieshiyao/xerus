@@ -131,11 +131,9 @@ namespace xerus {
 		
 		_lhs.tensorObject->reset(std::move(lhsDims), Tensor::Initialisation::None);
 		_lhs.tensorObject->ensure_own_data_no_copy();
-		IF_CHECK( _lhs.check_indices(false); )
 		
 		_rhs.tensorObject->reset(std::move(rhsDims), Tensor::Initialisation::None);
 		_rhs.tensorObject->ensure_own_data_no_copy();
-		IF_CHECK( _rhs.check_indices(false); )
 		
 		return std::unique_ptr<Tensor>(reorderedBaseTensor.tensorObject);
 	}
@@ -147,7 +145,6 @@ namespace xerus {
 		internal::IndexedTensor<Tensor>& S = *_output[1];
 		internal::IndexedTensor<Tensor>& Vt = *_output[2];
 		
-		IF_CHECK(S.check_indices(2, false));
 		REQUIRE(epsilon < 1, "Epsilon must be smaller than one.");
 		REQUIRE(maxRank > 0, "maxRank must be larger than zero.");
 		
