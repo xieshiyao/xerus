@@ -49,6 +49,9 @@ namespace xerus {
 
         ///@brief: Removes all leading and trailing whitespaces from _string.
         void trim(std::string& _string, const std::string& whitespace = " \t\n\r\v");
+		
+		///@brief: Removes all leading and trailing whitespaces from _string.
+		std::string trim(const std::string& _string, const std::string& whitespace = " \t\n\r\v");
 
         ///@brief: Removes all leading and trailing whitespaces from _string, and reduces all double whitespaces to one.
         void reduce(std::string& _string, const std::string& whitespace = " \t\n\r\v", const std::string& fill = " ");

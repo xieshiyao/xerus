@@ -88,9 +88,19 @@ namespace xerus {
             } else {
                 _string.erase(0, strBegin);
                 const size_t strEnd = _string.find_last_not_of(whitespace);
-                _string.erase(strEnd, _string.length()-strEnd);
+                _string.erase(strEnd+1, _string.length()-strEnd);
             }
         }
+        
+        std::string trim(const std::string& _string, const std::string& whitespace) {
+			const size_t strBegin = _string.find_first_not_of(whitespace);
+			if (strBegin == std::string::npos) {
+				return "";
+			} else {
+				const size_t strEnd = _string.find_last_not_of(whitespace);
+				return _string.substr(strBegin, strEnd - strBegin + 1);
+			}
+		}
 
         void reduce(std::string& _string, const std::string& whitespace, const std::string& fill) {
             // Trim first
