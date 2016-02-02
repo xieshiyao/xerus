@@ -229,7 +229,7 @@ namespace xerus {
 			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
         }
         
-		void qc(std::unique_ptr<double[]> &_Q, std::unique_ptr<double[]> &_C, const double* const _A, const size_t _m, const size_t _n, size_t &_r) {
+		std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>, size_t> qc_destructive(double* const _A, const size_t _m, const size_t _n) {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
@@ -243,67 +243,133 @@ namespace xerus {
 			
 			// Tmp Array for Lapacke
 			const std::unique_ptr<double[]> tau(new double[maxRank]);
-			const std::unique_ptr<int[]> permutation(new int[_n]());
 			
-			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-            misc::copy(tmpA.get(), _A, _m*_n);
+			const std::unique_ptr<int[]> permutation(new int[_n]());
+			misc::set_zero(permutation.get(), _n); // Lapack requires the entries to be zero.
 			
 			// Calculate QR factorisations with column pivoting
-			IF_CHECK(int lapackAnswer = ) LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, static_cast<int>(_m), static_cast<int>(_n), tmpA.get(), static_cast<int>(_n), permutation.get(), tau.get());
+			IF_CHECK(int lapackAnswer = ) LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, static_cast<int>(_m), static_cast<int>(_n), _A, static_cast<int>(_n), permutation.get(), tau.get());
 			REQUIRE(lapackAnswer == 0, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
 			
-			size_t rank = maxRank-1;
-			bool done = false;
-			while (rank > 0) {
-				for (size_t pos = rank*(_n+1); pos < (rank+1)*_n; ++pos) {
-					if (!misc::approx_equal(tmpA[pos] / tmpA[0], 0.0, 1e-15)) { // TODO Magic number!
-						done = true;
-						break;
-					}
-				}
-				if (done) break;
-				rank -= 1;
-			}
-// 			std::cout << std::scientific << _A[rank*(_n+1)] << std::endl;
-			rank += 1;
-			_r = rank;
 			
-			_C.reset(new double[rank*_n]);
+			// Determine the actual rank
+			size_t rank;
+			for (rank = 1; rank <= maxRank; ++rank) {
+				if (rank == maxRank || std::abs(_A[rank+rank*_n]) < 16*std::numeric_limits<double>::epsilon()*_A[0]) {
+					break;
+				}
+			}
+			
+			
+			// Create the matrix C
+			std::unique_ptr<double[]> C(new double[rank*_n]);
+			misc::set_zero(C.get(), rank*_n); 
 			
 			// Copy the upper triangular Matrix C (rank x _n) into position
 			for (size_t col = 0; col < _n; ++col) {
-				size_t targetCol = size_t(permutation[col]);
-				REQUIRE(targetCol > 0, "ie");
-				targetCol -= 1;
-				REQUIRE(targetCol < _n, "ie " << targetCol << " vs " << _n);
-				size_t row = 0;
-				for (; row < rank && row < col+1; ++row) {
-					_C[row*_n + targetCol] = tmpA[row*_n + col];
-				}
-				for (; row < rank; ++row) {
-					_C[row*_n + targetCol] = 0.0;
+				const size_t targetCol = static_cast<size_t>(permutation[col]-1); // For Lapack numbers start at 1 (instead of 0).
+				for(size_t row = 0; row < rank && row < col+1; ++row) {
+					C[row*_n + targetCol] = _A[row*_n + col];
 				}
 			}
 			
-			// Create orthogonal matrix Q
-			IF_CHECK(lapackAnswer = ) LAPACKE_dorgqr(LAPACK_ROW_MAJOR, static_cast<int>(_m), static_cast<int>(maxRank), static_cast<int>(maxRank), tmpA.get(), static_cast<int>(_n), tau.get());
-			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QR factorisation. Lapacke says: " << lapackAnswer);
 			
-			_Q.reset(new double[_m*rank]);
+			// Create orthogonal matrix Q
+			IF_CHECK(lapackAnswer = ) LAPACKE_dorgqr(LAPACK_ROW_MAJOR, static_cast<int>(_m), static_cast<int>(maxRank), static_cast<int>(maxRank), _A, static_cast<int>(_n), tau.get());
+			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QC factorisation. Lapacke says: " << lapackAnswer);
+			
+			// Copy the newly created Q into position
+			std::unique_ptr<double[]> Q(new double[_m*rank]);
 			if(rank == _n) {
-				misc::copy(_Q.get(), tmpA.get(), _m*rank);
+				misc::copy(Q.get(), _A, _m*rank);
 			} else {
 				for(size_t row = 0; row < _m; ++row) {
-					misc::copy(_Q.get()+row*rank, tmpA.get()+row*_n, rank);
+					misc::copy(Q.get()+row*rank, _A+row*_n, rank);
 				}
 			}
 			
 			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
+			
+			return std::make_tuple(std::move(Q), std::move(C), rank);
 		}
-        
-        
-        
-        
+		
+		
+		std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>, size_t> qc(const double* const _A, const size_t _m, const size_t _n) {
+			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+            misc::copy(tmpA.get(), _A, _m*_n);
+			
+			return qc_destructive(tmpA.get(), _m, _n);
+		}
+		
+		// We use that in col-major we get At = Qt * Ct => A = C * Q, i.e. doing the calculation in col-major and switching Q and C give the desired result.
+		std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>, size_t> cq_destructive(double* const _A, const size_t _m, const size_t _n) {
+			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			
+			REQUIRE(_m > 0, "Dimension n must be larger than zero");
+			REQUIRE(_n > 0, "Dimension m must be larger than zero");
+			
+			PA_START;
+			
+			// Maximal rank is used by Lapacke
+			const size_t maxRank = std::min(_n, _m);
+			
+			// Tmp Array for Lapacke
+			const std::unique_ptr<double[]> tau(new double[maxRank]);
+			
+			const std::unique_ptr<int[]> permutation(new int[_m]());
+			misc::set_zero(permutation.get(), _m); // Lapack requires the entries to be zero.
+			
+			// Calculate QR factorisations with column pivoting
+			IF_CHECK(int lapackAnswer = ) LAPACKE_dgeqp3(LAPACK_COL_MAJOR, static_cast<int>(_n), static_cast<int>(_m), _A, static_cast<int>(_n), permutation.get(), tau.get());
+			REQUIRE(lapackAnswer == 0, "Unable to perform QC factorisaton (dgeqp3). Lapacke says: " << lapackAnswer );
+			
+			
+			// Determine the actual rank
+			size_t rank;
+			for (rank = 1; rank <= maxRank; ++rank) {
+				if (rank == maxRank || std::abs(_A[rank+rank*_n]) < 16*std::numeric_limits<double>::epsilon()*_A[0]) {
+					break;
+				}
+			}
+			
+			
+			// Create the matrix C
+			std::unique_ptr<double[]> C(new double[rank*_m]);
+			misc::set_zero(C.get(), rank*_m); 
+			
+			// Copy the upper triangular Matrix C (rank x _m) into position
+			for (size_t col = 0; col < _m; ++col) {
+				const size_t targetCol = static_cast<size_t>(permutation[col]-1); // For Lapack numbers start at 1 (instead of 0).
+				for(size_t row = 0; row < rank && row < col+1; ++row) {
+					C[row + targetCol*rank] = _A[row + col*_n];
+				}
+			}
+			
+			
+			// Create orthogonal matrix Q
+			IF_CHECK(lapackAnswer = ) LAPACKE_dorgqr(LAPACK_COL_MAJOR, static_cast<int>(_n), static_cast<int>(maxRank), static_cast<int>(maxRank), _A, static_cast<int>(_n), tau.get());
+			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the QC factorisation. Lapacke says: " << lapackAnswer);
+			
+			// Copy the newly created Q into position
+			std::unique_ptr<double[]> Q(new double[_n*rank]);
+			misc::copy(Q.get(), _A, _n*rank);
+			
+			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_n)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_m));
+			
+			return std::make_tuple(std::move(C), std::move(Q), rank);
+		}
+		
+		std::tuple<std::unique_ptr<double[]>, std::unique_ptr<double[]>, size_t> cq(const double* const _A, const size_t _m, const size_t _n) {
+			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+            misc::copy(tmpA.get(), _A, _m*_n);
+			
+			return cq_destructive(tmpA.get(), _m, _n);
+		}
+		
+		
+		
+		
         void qr(double* const _Q, double* const _R, const double* const _A, const size_t _m, const size_t _n) {
             // Create tmp copy of A since Lapack wants to destroy it
             const std::unique_ptr<double[]> tmpA(new double[_m*_n]);

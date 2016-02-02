@@ -1349,6 +1349,7 @@ namespace xerus {
 		_R.factor = _input.factor;
 	}
 	
+	// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 	
 	void calculate_qc(Tensor& _Q, Tensor& _C, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
@@ -1359,9 +1360,7 @@ namespace xerus {
 			_input.use_dense_representation();
 			
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
-			
-			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
+			std::tie(Qt, Ct, rank) = blasWrapper::qc(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 			
 			std::vector<size_t> newDim = _Q.dimensions;
 			newDim.back() = rank;
@@ -1372,9 +1371,7 @@ namespace xerus {
 			_C.reset(std::move(newDim), std::move(Ct));
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, _input.get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
-			
-			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
+			std::tie(Qt, Ct, rank) = blasWrapper::qc(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 			
 			std::vector<size_t> newDim = _Q.dimensions;
 			newDim.back() = rank;
@@ -1390,7 +1387,37 @@ namespace xerus {
 	
 	
 	void calculate_cq(Tensor& _C, Tensor& _Q, Tensor _input, const size_t _splitPos) {
-		LOG(fatal, "Not yet Implemented."); // TODO
+		size_t lhsSize, rhsSize, rank;
+		std::tie(lhsSize, rhsSize, rank) = prepare_factorization_output(_C, _Q, _input, _splitPos);
+		
+		if(_input.is_sparse()) {
+			LOG(warning, "Sparse CQ not yet implemented."); // TODO
+			_input.use_dense_representation();
+			
+			std::unique_ptr<double[]> Qt, Ct;
+			std::tie(Ct, Qt, rank) = blasWrapper::cq(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			
+			std::vector<size_t> newDim = _C.dimensions;
+			newDim.back() = rank;
+			_C.reset(std::move(newDim), std::move(Ct));
+			
+			newDim = _Q.dimensions;
+			newDim.front() = rank;
+			_Q.reset(std::move(newDim), std::move(Qt));
+		} else {
+			std::unique_ptr<double[]> Qt, Ct;
+			std::tie(Ct, Qt, rank) = blasWrapper::cq(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			
+			std::vector<size_t> newDim = _C.dimensions;
+			newDim.back() = rank;
+			_C.reset(std::move(newDim), std::move(Ct));
+			
+			newDim = _Q.dimensions;
+			newDim.front() = rank;
+			_Q.reset(std::move(newDim), std::move(Qt));
+		}
+		
+		_C.factor = _input.factor;
 	}
 	
 	

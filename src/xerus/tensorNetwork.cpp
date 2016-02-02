@@ -760,7 +760,7 @@ namespace xerus {
 			// Seperate the cores ...
 			Tensor coreA, coreB;
 			if(transFrom) {
-				calculate_rq(coreA, fromTensor, fromTensor, 1);
+				calculate_cq(coreA, fromTensor, fromTensor, 1);
 			} else {
 				calculate_qc(fromTensor, coreA, fromTensor, fromDegree-1);
 			}
@@ -768,7 +768,7 @@ namespace xerus {
 			if(transTo) {
 				calculate_qc(toTensor, coreB, toTensor, toDegree-1);
 			} else {
-				calculate_rq(coreB, toTensor, toTensor, 1);
+				calculate_cq(coreB, toTensor, toTensor, 1);
 			}
 			
 			// ... contract them ...
@@ -843,8 +843,12 @@ namespace xerus {
 		Tensor& toTensor = *nodes[_nodeB].tensorObject;
 		
 		bool transR = false; // TODO use CQ when available
-		if(posA == 0 && !_allowRankReduction) {
-			calculate_rq(R, Q, fromTensor, 1);
+		if(posA == 0) {
+			if(_allowRankReduction) {
+				calculate_cq(R, Q, fromTensor, 1);
+			} else {
+				calculate_rq(R, Q, fromTensor, 1);
+			}
 			fromTensor = Q;
 			transR = true;
 		} else if(posA == nodes[_nodeA].degree()-1) {

@@ -15,13 +15,8 @@ WARNINGS += -Wswitch-default					# Warn whenever a switch statement does not hav
 WARNINGS += -Wfloat-equal					# Warn if floating-point values are used in equality comparisons. 
 WARNINGS += -Wundef						# Warn if an undefined identifier is evaluated in an ‘#if’ directive. 
 WARNINGS += -Wunreachable-code					# Warn about unreachable code
-# WARNINGS += -Wframe-larger-than=16384 -Wstack-usage=16384 	# Warn if the size of a function frame is larger than 16384 bytes.
-# WARNINGS += -Wunsafe-loop-optimizations	    		# Warn if the loop cannot be optimized because the compiler cannot assume anything on the bounds
-# WARNINGS += -Wno-aggressive-loop-optimizations 		# Warn if in a loop with constant number of iterations the compiler detects undefined behavior
 WARNINGS += -Wdisabled-optimization	                	# Warn if a requested optimization pass is disabled
 WARNINGS += -Wpacked						# misaligned structs (reordering of the fields might help)
-# WARNINGS += -Winline						# Warn if a function that is declared as inline cannot be inlined
-# WARNINGS += -fstack-protector -Wstack-protector		# warns about functions that are not protected against stack smashing
 WARNINGS += -Wcast-align					# Warn whenever a pointer is cast such that the required alignment of the target is increased. 
 WARNINGS += -Wcast-qual						# Warn whenever a pointer is cast so as to remove a type qualifier from the target type. 
 WARNINGS += -Wsign-promo					# Warn when overload resolution chooses a promotion from unsigned or enumerated type to a signed type

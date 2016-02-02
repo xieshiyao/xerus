@@ -242,7 +242,7 @@ namespace xerus {
 			LOG(fatal, "Sparse QC not yet implemented.");
 		} else {
 			std::unique_ptr<double[]> Qt, Ct;
-			blasWrapper::qc(Qt, Ct, reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize, rank);
+			std::tie(Qt, Ct, rank) = blasWrapper::qc(reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
 			
 			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
 			
