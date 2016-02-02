@@ -43,6 +43,8 @@ namespace xerus {
 	class TensorFactorisation {
 	public:
 		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const = 0;
+		
+		virtual ~TensorFactorisation() = default;
 	};
 	
 	/**

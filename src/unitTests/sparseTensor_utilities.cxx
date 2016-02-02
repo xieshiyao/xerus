@@ -153,7 +153,7 @@ UNIT_TEST(SparseTensor, modify_elements,
     A.modify_diag_elements([](value_t& _entry){_entry = 73.5*_entry;});
     TEST(approx_entrywise_equal(A, {73.5*1,2,3,4,5,73.5*6,7,8,9,10,73.5*11,12,13,14,15,73.5*16}));
     
-    A.modify_diag_elements([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - (value_t)_position;});
+    A.modify_diag_elements([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - static_cast<value_t>(_position);});
     TEST(approx_entrywise_equal(A, {73.5*73.5*1,2,3,4,5,73.5*73.5*6-1.0,7,8,9,10,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
     
     A.reinterpret_dimensions({2,8});

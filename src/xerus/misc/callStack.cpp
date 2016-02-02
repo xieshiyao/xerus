@@ -66,10 +66,10 @@ namespace xerus { namespace misc { namespace internal {
 				if (storageNeeded < 0) {
 					return false;
 				}
-				newBfd->symbols.reset(reinterpret_cast<asymbol**>(new char[(size_t)storageNeeded]));
+				newBfd->symbols.reset(reinterpret_cast<asymbol**>(new char[static_cast<size_t>(storageNeeded)]));
 				/*size_t numSymbols = */bfd_canonicalize_symtab(newBfd->abfd.get(), newBfd->symbols.get());
 				
-				newBfd->offset = (intptr_t)_info.dli_fbase;
+				newBfd->offset = reinterpret_cast<intptr_t>(_info.dli_fbase);
 				
 				bfds.insert(std::pair<void *, storedBfd>(_info.dli_fbase, std::move(*newBfd.get())));
 			} 
@@ -109,7 +109,7 @@ namespace xerus { namespace misc { namespace internal {
 			}
 				
 			std::stringstream res;
-			res << "[0x" << std::setw((int)sizeof(void*)*2) << std::setfill('0') << std::hex << (uintptr_t)address;
+			res << "[0x" << std::setw(sizeof(void*)*2) << std::setfill('0') << std::hex << reinterpret_cast<uintptr_t>(address);
 			
 			// get path and offset of shared object that contains this address
 			Dl_info info;
@@ -124,14 +124,14 @@ namespace xerus { namespace misc { namespace internal {
 			storedBfd &currBfd = bfds.at(info.dli_fbase);
 			
 			asection *section = currBfd.abfd->sections;
-			bool relative = section->vma < (uintptr_t)currBfd.offset;
+			const bool relative = section->vma < static_cast<uintptr_t>(currBfd.offset);
 	// 		std::cout << '\n' << "sections:\n";
 			while (section != nullptr) {
-				intptr_t offset = ((intptr_t)address) - (relative?currBfd.offset:0) - (intptr_t)section->vma;
+				const intptr_t offset = reinterpret_cast<intptr_t>(address) - (relative ? currBfd.offset : 0) - static_cast<intptr_t>(section->vma);
 	// 			std::cout << section->name << " " << section->id << " file: " << section->filepos << " flags: " << section->flags 
 	// 						<< " vma: " << std::hex << section->vma << " - " << std::hex << (section->vma+section->size) << std::endl;
 				
-				if (offset < 0 || (size_t)offset > section->size) {
+				if (offset < 0 || static_cast<size_t>(offset) > section->size) {
 					section = section->next;
 					continue;
 				}
@@ -148,7 +148,7 @@ namespace xerus { namespace misc { namespace internal {
 						return res.str()+"] "+std::string(file)+":"+to_string(line)+" (inside "+demangle_cxa(func)+")";
 					} else {
 						if (info.dli_saddr) {
-							return res.str()+"] ??:? (inside "+demangle_cxa(func)+" +0x"+std::to_string((intptr_t)address-(intptr_t)info.dli_saddr)+")";
+							return res.str()+"] ??:? (inside "+demangle_cxa(func)+" +0x"+std::to_string(reinterpret_cast<uintptr_t>(address)-reinterpret_cast<uintptr_t>(info.dli_saddr))+")";
 						} else {
 							return res.str()+"] ??:? (inside "+demangle_cxa(func)+")";
 						}
@@ -173,10 +173,10 @@ namespace xerus { namespace misc { namespace internal {
 		if (num <= 0) {
 			return "Callstack could not be built.";
 		}
-		stack.resize((size_t) num);
+		stack.resize(static_cast<size_t>(num));
 		std::string res;
 		//NOTE i=0 corresponds to get_call_stack and is omitted
-		for (size_t i=1; i<(size_t)num; ++i) {
+		for (size_t i = 1; i < static_cast<size_t>(num); ++i) {
 			res += internal::bfdResolver::resolve(stack[i]) + '\n';
 		}
 		return res;

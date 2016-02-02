@@ -122,7 +122,7 @@ namespace xerus {
         template<typename T>
         std::string to_string(const T& obj, const size_t _precision){
             std::stringstream stream;
-            stream.precision((long) _precision);
+            stream.precision(static_cast<long>(_precision));
             stream << std::fixed << obj;
             return stream.str();
         }

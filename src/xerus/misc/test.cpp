@@ -129,32 +129,32 @@
 			std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 			
 			if (passed) { 
-				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
+				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
 			} else {
-				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << (double)time/1000.0 << " ms)" << std::endl << "| " << std::endl;
+				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
 			}
 			
 			return passed;
 		}
 
 		void print_group_name(std::string _g) {
-			int a = (77-(int)_g.size())/2; if (a<0) a=0;
-			int b = 77-(77+(int)_g.size())/2; if (b<0) b=0;
+			int a = (77-static_cast<int>(_g.size()))/2; if (a<0) a=0;
+			int b = 77-(77+static_cast<int>(_g.size()))/2; if (b<0) b=0;
 			std::cout << "-------------------------------------------------------------------------------" << std::endl;
-			std::cout << "|" << std::string((size_t)a, ' ') << "\033[1m" << _g << "\033[0m" << std::string((size_t)b, ' ')  << ' ' << std::endl;
+			std::cout << "|" << std::string(static_cast<size_t>(a), ' ') << "\033[1m" << _g << "\033[0m" << std::string(static_cast<size_t>(b), ' ')  << ' ' << std::endl;
 			std::cout << "|" << std::endl;
 			//std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		}
 
-		void print_group_summary(std::string _g, unsigned _passes, unsigned _total) {
+		void print_group_summary(const std::string& _g, const size_t _passes, const size_t _total) {
 			std::stringstream ts;
 			ts.str(""); ts.clear();
 			ts << _g << " summary " << (_passes == _total?"\033[1;32m":"\033[1;31m") << _passes << " of " << _total << " passed\033[0m";
-			int a = (77-((int)ts.str().size()-11))/2; if (a<0) a=0;
-			int b = 77-(77+((int)ts.str().size()-11))/2; if (b<0) b=0;
+			int a = (77-(static_cast<int>(ts.str().size())-11))/2; if (a<0) a=0;
+			int b = 77-(77+(static_cast<int>(ts.str().size())-11))/2; if (b<0) b=0;
 			//std::cout << "-------------------------------------------------------------------------------" << std::endl;
 			std::cout << "|" << std::endl;
-			std::cout << "|" << std::string((size_t)a, ' ') << ts.str() << std::string((size_t)b, ' ')  << ' ' << std::endl;
+			std::cout << "|" << std::string(static_cast<size_t>(a), ' ') << ts.str() << std::string(static_cast<size_t>(b), ' ')  << ' ' << std::endl;
 			std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		}
 
@@ -181,7 +181,7 @@
 		// perform required_test initializations
 		// pass address of xerus::misc::internal::catch_signals as the address of main cannot be taken as by ISO c++...
 		std::pair<uintptr_t, uintptr_t> requiredTestRange = xerus::misc::get_range_of_section(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(&xerus::misc::internal::catch_signals)), "required_tests");
-		for (required_test_t *p = (required_test_t *)requiredTestRange.first; p < (required_test_t *)requiredTestRange.second; p += 1) {
+		for (required_test_t* p = reinterpret_cast<required_test_t*>(requiredTestRange.first); p < reinterpret_cast<required_test_t*>(requiredTestRange.second); p += 1) {
 			try {
 				(*p)();
 			} catch (...) {
@@ -233,7 +233,7 @@
                             totalPassCount += 1;
                         }
                     }
-                    xerus::misc::internal::print_group_summary(p.first, passCount, (unsigned)p.second.size());
+                    xerus::misc::internal::print_group_summary(p.first, passCount, p.second.size());
                 }
                 break;
             }
@@ -268,7 +268,7 @@
                         totalPassCount += 1;
                     }
                 }
-                xerus::misc::internal::print_group_summary(grp, passCount, (unsigned)(*xerus::misc::internal::UnitTest::tests)[grp].size());
+                xerus::misc::internal::print_group_summary(grp, passCount, (*xerus::misc::internal::UnitTest::tests)[grp].size());
             }
         }
         
@@ -278,7 +278,7 @@
         xerus::misc::internal::print_group_summary("total", totalPassCount, totalCount);
         
         std::cout << "|" << std::endl;
-        std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << (double)totalTime/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
+        std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << static_cast<double>(totalTime)/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
         std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		
         #ifdef TEST_COVERAGE_

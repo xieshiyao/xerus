@@ -246,8 +246,8 @@ namespace xerus {
 					}
 				}
 				
-				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+(long)link.indexPosition);
-				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin()+(long)i);
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin() + link.indexPosition);
+				nodes[_nodeId].neighbors.erase(nodes[_nodeId].neighbors.begin() + i);
 				
 				//Redo this index
 				i -= 1;
@@ -1196,7 +1196,7 @@ namespace xerus {
 		REQUIRE(!nodes[_nodeId2].erased, "It appears node2 = " << _nodeId2 << " was already contracted?");
 		
 		if (_nodeId1 == _nodeId2) {
-			return (double) nodes[_nodeId1].size(); // Costs of a trace
+			return static_cast<double>(nodes[_nodeId1].size()); // Costs of a trace
 		}
 		
 		//TODO add correct calculation for sparse matrices
@@ -1208,7 +1208,7 @@ namespace xerus {
 				cost *= neighbor.dimension;
 			}
 		}
-		return (double) (cost);
+		return static_cast<double>(cost);
 	}
 
 
@@ -1237,23 +1237,23 @@ namespace xerus {
 			double sab = 1, sbc = 1, sac = 1; // link dimensions
 			for (size_t d = 0; d < na.degree(); ++d) {
 				if (na.neighbors[d].links(b)) {
-					sab *= (double) na.neighbors[d].dimension;
+					sab *= static_cast<double>(na.neighbors[d].dimension);
 				} else if (na.neighbors[d].links(c)) {
-					sac *= (double) na.neighbors[d].dimension;
+					sac *= static_cast<double>(na.neighbors[d].dimension);
 				} else {
-					sa *= (double) na.neighbors[d].dimension;
+					sa *= static_cast<double>(na.neighbors[d].dimension);
 				}
 			}
 			for (size_t d = 0; d < nb.degree(); ++d) {
 				if (nb.neighbors[d].links(c)) {
-					sbc *= (double) nb.neighbors[d].dimension;
+					sbc *= static_cast<double>(nb.neighbors[d].dimension);
 				} else if (!nb.neighbors[d].links(a)) {
-					sb *= (double) nb.neighbors[d].dimension;
+					sb *= static_cast<double>(nb.neighbors[d].dimension);
 				}
 			}
 			for (size_t d = 0; d < nc.degree(); ++d) {
 				if (!nc.neighbors[d].links(a) && !nc.neighbors[d].links(b)) {
-					sc *= (double)nc.neighbors[d].dimension;
+					sc *= static_cast<double>(nc.neighbors[d].dimension);
 				}
 			}
 			// cost of contraction a-b first etc.

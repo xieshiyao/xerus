@@ -29,13 +29,13 @@ namespace xerus {
         namespace misc {
 
         size_t uTime() {
-            return (size_t) std::chrono::duration_cast<std::chrono::microseconds>
-                (std::chrono::system_clock::now().time_since_epoch()).count();
+            return static_cast<size_t>(std::chrono::duration_cast<std::chrono::microseconds>
+                (std::chrono::system_clock::now().time_since_epoch()).count());
         }
 
         size_t mTime() {
-            return (size_t) std::chrono::duration_cast<std::chrono::milliseconds>
-                (std::chrono::system_clock::now().time_since_epoch()).count();
+            return static_cast<size_t>(std::chrono::duration_cast<std::chrono::milliseconds>
+                (std::chrono::system_clock::now().time_since_epoch()).count());
         }
 
 

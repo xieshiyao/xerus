@@ -41,7 +41,7 @@ namespace xerus {
 	}
 	
 	
-	Index::Index(const int _i) : Index((size_t) _i) {
+	Index::Index(const int _i) : Index(static_cast<size_t>(_i)) {
 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
 	}
 	

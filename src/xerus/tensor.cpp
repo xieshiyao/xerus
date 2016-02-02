@@ -803,8 +803,8 @@ namespace xerus {
 			}
 		}
 		
-		dimensions.erase(dimensions.begin()+(long)_secondIndex);
-		dimensions.erase(dimensions.begin()+(long)_firstIndex);
+		dimensions.erase(dimensions.begin()+_secondIndex);
+		dimensions.erase(dimensions.begin()+_firstIndex);
 		factor = 1.0;
 		denseData.reset(newData.release(), internal::array_deleter_vt);
 	}

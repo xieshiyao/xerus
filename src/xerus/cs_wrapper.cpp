@@ -34,7 +34,7 @@ namespace xerus {
 		
 		CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N) {
 			REQUIRE(_m < std::numeric_limits<int>::max() && _n < std::numeric_limits<int>::max() && _N < std::numeric_limits<int>::max(), "Sparse Tensor is to large for SuiteSparse (" << _m << " x " << _n << ", " << _N << ")");
-			return CsUniquePtr(cs_spalloc((int) _m, (int) _n, (int) _N, 1, 0), &cs_spfree);
+			return CsUniquePtr(cs_spalloc(static_cast<int>(_m), static_cast<int>(_n), static_cast<int>(_N), 1, 0), &cs_spfree);
 		}
 		
 		// Converts an Indexed SparseTensor and an given matrification to the CSparse sparse matrix format
@@ -51,8 +51,8 @@ namespace xerus {
 				
 				for(const std::pair<size_t, value_t>& entry : _input) {
 					cs_format->x[entryPos] = entry.second;
-					cs_format->i[entryPos] = (int) (entry.first%_m);
-					while(currRow < (int) (entry.first/_m)) {
+					cs_format->i[entryPos] = static_cast<int>(entry.first%_m);
+					while(currRow < static_cast<int>(entry.first/_m)) {
 						cs_format->p[++currRow] = int(entryPos);
 					}
 					entryPos++;
@@ -60,7 +60,7 @@ namespace xerus {
 				
 				REQUIRE(size_t(currRow) < _n && entryPos == _input.size(), "Internal Error " << currRow << ", " << _n << " | " << entryPos << ", " <<  _input.size());
 				
-				while(currRow < (int) _n) {
+				while(currRow < static_cast<int>(_n)) {
 					cs_format->p[++currRow] = int(entryPos);
 				}
 				
@@ -83,9 +83,9 @@ namespace xerus {
 					entryPos++;
 				}
 				
-				REQUIRE(currCol < (int) _n && entryPos == _input.size(), "Internal Error " << currCol << ", " <<  _n << " | " << entryPos << ", " << _input.size());
+				REQUIRE(currCol < static_cast<int>(_n) && entryPos == _input.size(), "Internal Error " << currCol << ", " <<  _n << " | " << entryPos << ", " << _input.size());
 				
-				while(currCol < (int) _n) {
+				while(currCol < static_cast<int>(_n)) {
 					cs_format->p[++currCol] = int(entryPos);
 				}
 			}

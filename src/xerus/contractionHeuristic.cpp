@@ -38,7 +38,7 @@ namespace xerus {
 			for (size_t i=0; i<_network.nodes.size(); ++i) {
 				if (!_network.nodes[i].erased) {
 					numNodes += 1;
-					numEdges += (double)_network.nodes[i].degree();
+					numEdges += static_cast<double>(_network.nodes[i].degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
@@ -61,14 +61,14 @@ namespace xerus {
 						double m=1,n=1,r=1;
 						for (size_t d = 0; d < ni.degree(); ++d) {
 							if (ni.neighbors[d].other == j) {
-								r *= (double)ni.neighbors[d].dimension;
+								r *= static_cast<double>(ni.neighbors[d].dimension);
 							} else {
-								m *= (double)ni.neighbors[d].dimension;
+								m *= static_cast<double>(ni.neighbors[d].dimension);
 							}
 						}
 						for (size_t d = 0; d < nj.degree(); ++d) {
 							if (nj.neighbors[d].other != i) {
-								n *= (double)nj.neighbors[d].dimension;
+								n *= static_cast<double>(nj.neighbors[d].dimension);
 							}
 						}
 						double tmpscore = scoreFct(m,n,r,0.0,0.0);
@@ -140,26 +140,26 @@ namespace xerus {
 			const TensorNetwork::TensorNode &nc = _network.nodes[_id3];
 			double sa=1, sb=1, sc=1; // sizes devided by the link dimensions between a,b,c
 			double sab=1, sbc=1, sac=1; // link dimensions
-			for (size_t d=0; d<na.degree(); ++d) {
+			for (size_t d = 0; d < na.degree(); ++d) {
 				if (na.neighbors[d].links(_id2)) {
-					sab *= (double)na.neighbors[d].dimension;
+					sab *= static_cast<double>(na.neighbors[d].dimension);
 				} else if (na.neighbors[d].links(_id3)) {
-					sac *= (double)na.neighbors[d].dimension;
+					sac *= static_cast<double>(na.neighbors[d].dimension);
 				} else {
-					sa *= (double)na.neighbors[d].dimension;
+					sa *= static_cast<double>(na.neighbors[d].dimension);
 				}
 			}
-			for (size_t d=0; d<nb.degree(); ++d) {
+			for (size_t d = 0; d < nb.degree(); ++d) {
 				if (nb.neighbors[d].links(_id3)) {
-					sbc *= (double) nb.neighbors[d].dimension;
+					sbc *= static_cast<double>(nb.neighbors[d].dimension);
 				} else if (!nb.neighbors[d].links(_id1)) {
-					sb *= (double) nb.neighbors[d].dimension;
+					sb *= static_cast<double>(nb.neighbors[d].dimension);
 				}
 			}
-			for (size_t d=0; d<nc.degree(); ++d) {
+			for (size_t d = 0; d < nc.degree(); ++d) {
 //                 size_t other = nc.neighbors[d].other;
 				if (!nc.neighbors[d].links(_id1) && !nc.neighbors[d].links(_id2)) {
-					sc *= (double)nc.neighbors[d].dimension;
+					sc *= static_cast<double>(nc.neighbors[d].dimension);
 				}
 			}
 			// cost of contraction a-b first etc.
@@ -281,7 +281,7 @@ namespace xerus {
 			double numEdges=0;
 			for (size_t i=0; i<_network.nodes.size(); ++i) {
 				if (!_network.nodes[i].erased) {
-					numEdges += (double)_network.nodes[i].degree();
+					numEdges += static_cast<double>(_network.nodes[i].degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother

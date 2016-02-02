@@ -71,7 +71,7 @@ namespace xerus {
                 }
             } else {
                 orderX.push_back(idx);
-                for(size_t i=0; i< (size_t) idx.span; ++i) {
+                for(size_t i = 0; i < idx.span; ++i) {
                     dimensionsX.push_back(_a.tensorObjectReadOnly->dimensions[dimensionsCount++]);
                 }
             }

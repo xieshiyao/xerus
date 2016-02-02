@@ -84,6 +84,8 @@ namespace xerus {  namespace misc {
 		virtual ft_type best_estimate() const = 0;
 		virtual ft_type error_approximate() const = 0;
 		virtual void reset() = 0;
+		
+		virtual ~LimitExtractor() = default;
 	};
 
 	/** 
@@ -106,6 +108,8 @@ namespace xerus {  namespace misc {
 		ft_type error_approximate() const override;
 		
 		void reset() override;
+		
+		~ShanksTransformation() override = default;
 	};
 
 
@@ -130,6 +134,8 @@ namespace xerus {  namespace misc {
 		ft_type error_approximate() const override;
 		
 		void reset() override;
+		
+		~RichardsonExtrapolation() override = default;
 	};
 
 } } // namespaces
