@@ -77,14 +77,13 @@
 	template < class T >                                                              \
 	class HasMember_##member                                                          \
 	{                                                                                 \
-	private:                                                                          \
+	public:                                                                          \
 		typedef char (& yes)[1];							\
 		typedef char (& no)[2];							\
 		\
 		template <typename C> static yes check(decltype(&C::member));		\
 		template <typename> static no check(...);					\
 		\
-	public: 									\
 		static constexpr bool RESULT = sizeof(check<T>(0)) == sizeof(yes);		\
 		};                                                                                \
 		\
