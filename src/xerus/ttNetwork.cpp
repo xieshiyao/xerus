@@ -974,7 +974,7 @@ namespace xerus {
 			return *this;
 		}
 		
-		
+		PA_START;
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current components
 			const Tensor& myComponent = get_component(position);
@@ -1062,6 +1062,8 @@ namespace xerus {
 			
 			set_component(position, std::move(*newComponent));
 		}
+		
+		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(dimensions)+" Ranks: "+misc::to_string(ranks()));
 		
 		if(initialCanonicalization) {
 			move_core(initialCorePosition);
@@ -1193,12 +1195,10 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_sum_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		REQUIRE(_me.degree() == _other.degree(), "");
-		
 		_me.assign_indices();
 		_other.assign_indices();
 		
-		// If the other is not a TT tensor (or stack) fall back to default summation (ie return false)
+		// If the other is not a TT tensor (or stack) fall back to default summation (i.e. return false)
 		const TTNetwork* otherTT = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
 		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
 		if (!otherTT && !otherTTStack) { return false; }
@@ -1285,9 +1285,6 @@ namespace xerus {
 		}
 		const TensorNetwork &realOther = *realOtherPtr;
 		
-		// Number of components to create
-		const size_t numComponents = realMe.degree()/N;
-		
 		_out.reset( new internal::IndexedTensorMoveable<TensorNetwork>( new TTNetwork(realMe.degree()), _me.indices));
 		
 		//The external dimensions are the same as the ones of the input
@@ -1296,141 +1293,11 @@ namespace xerus {
 		
 		TTNetwork& outTensor = *static_cast<TTNetwork*>(_out->tensorObject);
 		
-		if (numComponents == 0) {
-			(*outTensor.nodes[0].tensorObject)[0] = (*_me.tensorObjectReadOnly->nodes[0].tensorObject)[0] +  (*_other.tensorObjectReadOnly->nodes[0].tensorObject)[0];
-			return true;
-		}
-		
-		if(numComponents == 1) {
-			// Create the one Node
-			std::unique_ptr<Tensor> nextTensor;
-			const Tensor &myComponent = *realMe.tensorObjectReadOnly->nodes[1].tensorObject.get();
-			const Tensor &otherComponent = *realOther.nodes[1].tensorObject.get();
-			if(myComponent.is_sparse() && otherComponent.is_sparse()) { // Both Sparse
-				nextTensor.reset( new Tensor(myComponent));
-				*static_cast<Tensor*>(nextTensor.get()) += (*static_cast<const Tensor*>(&otherComponent));
-			} else { // at most one sparse
-				if(myComponent.is_sparse()){
-					nextTensor.reset(new Tensor(*static_cast<const Tensor*>(&myComponent)));
-				} else {
-					nextTensor.reset(new Tensor(*static_cast<const Tensor*>(&myComponent)));
-				}
-				if(otherComponent.is_sparse()){
-					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const Tensor&>(otherComponent);
-				} else {
-					*static_cast<Tensor*>(nextTensor.get()) += static_cast<const Tensor&>(otherComponent);
-				}
-			}
-			
-			outTensor.set_component(0, std::move(*nextTensor));
-			return true;
-		}
-		
 		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
 		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOtherPtr);
 		
-		PA_START;
-		for(size_t position = 0; position < numComponents; ++position) {
-			// Get current input nodes
-			// TODO sparse
-			REQUIRE(!realMe.tensorObjectReadOnly->nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
-			REQUIRE(!realOther.nodes[position+1].tensorObject->is_sparse(), "sparse tensors in TT not supported (yet)");
-			Tensor &myComponent = *static_cast<Tensor*>(realMe.tensorObjectReadOnly->nodes[position+1].tensorObject.get());
-			Tensor &otherComponent = *static_cast<Tensor*>(realOther.nodes[position+1].tensorObject.get());
-			
-			// Structure has to be (for degree 4)
-			// (L1 R1) * ( L2 0  ) * ( L3 0  ) * ( L4 )
-			// 			 ( 0  R2 )   ( 0  R3 )   ( R4 )
-			
-			// Create a Tensor for Node
-			std::vector<size_t> nxtDimensions;
-			if (position == 0) { 
-				nxtDimensions.emplace_back(1);
-			} else {
-				nxtDimensions.emplace_back(myComponent.dimensions.front()+otherComponent.dimensions.front());
-			}
-			nxtDimensions.emplace_back(outTensor.dimensions[position]);
-			if (isOperator) { nxtDimensions.emplace_back(outTensor.dimensions[position+numComponents]); }
-			if (position == numComponents-1) {
-				nxtDimensions.emplace_back(1);
-			} else {
-				nxtDimensions.emplace_back(myComponent.dimensions.back()+otherComponent.dimensions.back());
-			}
-			
-			Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
-			REQUIRE(newRep == Tensor::Representation::Dense, "Sparse TT sum not yet implemented!");
-			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep) );
-			value_t * const componentData = static_cast<Tensor*>(newComponent.get())->get_unsanitized_dense_data();
-			
-			
-			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();
-			const size_t extIdxOffset = newComponent->dimensions.back();
-			const size_t myLeftIdxOffset = myComponent.size/myComponent.dimensions.front();
-			const size_t myExtIdxOffset = myComponent.dimensions.back();
-			const size_t otherLeftIdxOffset = otherComponent.size/otherComponent.dimensions.front();
-			const size_t otherExtIdxOffset = otherComponent.dimensions.back();
-			const size_t otherGeneralOffset = (position == 0 ? 0 : myComponent.dimensions.front()*leftIdxOffset) + (position == numComponents-1 ? 0 : myComponent.dimensions.back());
-			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[2] : 1);
-			
-			// Copy own Tensor into place
-			if (!ttMe->cannonicalized || position == ttMe->corePosition) {
-				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied in one piece
-						misc::copy_scaled(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-												myComponent.factor, 
-												myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
-												myComponent.dimensions.back());
-					}
-				}
-			} else {
-				REQUIRE(!myComponent.has_factor(), "Only Core node is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-										myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
-										myComponent.dimensions.back());
-					}
-				}
-			}
-			
-			
-			// Copy other Tensor into place
-			if(!ttOther->cannonicalized || position == ttOther->corePosition) {
-				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy_scaled(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-												otherComponent.factor, 
-												otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
-												otherComponent.dimensions.back());
-					}
-				}
-			} else {
-				REQUIRE(!otherComponent.has_factor(), "Only Core node is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-										otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
-										otherComponent.dimensions.back());
-					}
-				}
-			}
-			
-			outTensor.set_component(position, std::move(*newComponent));
-		}
-		
-		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(outTensor.dimensions)+" Ranks: "+misc::to_string(outTensor.ranks()));
-		
-		// TODO profiler should warn if other->corePos differs
-		
-		if (ttMe->cannonicalized) {
-			REQUIRE(!outTensor.cannonicalized, "Internal Error.");
-			outTensor.move_core(ttMe->corePosition);
-			REQUIRE(!outTensor.exceeds_maximal_ranks(), outTensor.dimensions << " rank: " << outTensor.ranks());
-		}
+		outTensor = *ttMe;
+		outTensor += *ttOther;
 		
 		return true;
 	}
