@@ -1203,101 +1203,85 @@ namespace xerus {
 		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
 		if (!otherTT && !otherTTStack) { return false; }
 		
-		bool transposeRHS = false;
-		if (!isOperator && _me.indices != _other.indices) {
-			return false; //TODO we could do inverse order...
-		} else if (isOperator) {
-			// find index mid-points to compare the halves separately
-			auto midIndexItr = _me.indices.begin();
+		bool transposeRHS;
+		if(_me.indices == _other.indices) { // Everything is easy.
+			REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions.");
+			transposeRHS = false;
+		} else if (isOperator) { // Check for transposition
+			// Find index mid-points to compare the halves separately
+			auto myMidIndexItr = _me.indices.begin();
 			size_t spanSum = 0;
 			while (spanSum < _me.degree() / 2) {
-				REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
-				spanSum += midIndexItr->span;
-				++midIndexItr;
+				spanSum += myMidIndexItr->span;
+				++myMidIndexItr;
 			}
+			
 			auto otherMidIndexItr = _other.indices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
 			
-			if (_me.indices == _other.indices) { 
-				REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions");
-			} else {
-				if (   !std::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr) 
-					|| !std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) 
-				{
-					return false;
-				}
-				// other is transposed compared to me
-				for (size_t d=0; d<_me.degree(); ++d) {
-					REQUIRE(_me.tensorObjectReadOnly->dimensions[d] == _other.tensorObjectReadOnly->dimensions[(d+_me.degree()/2)%_me.degree()], "sum requires identical dimensions");
-				}
+			if(std::equal(_me.indices.begin(), myMidIndexItr, otherMidIndexItr) && std::equal(myMidIndexItr, _me.indices.end(), _other.indices.begin())) {
 				transposeRHS = true;
-			}
-		}
-		
-		// TODO the order is not canonical, because if I am no Stack I don't have to know whether or not i am moveable
-		// If I am in fact a TTTensorStack, we have to evaluate me to TTNetwork
-		std::unique_ptr<internal::IndexedTensor<TensorNetwork>> meStorage;
-		internal::IndexedTensorReadOnly<TensorNetwork> *realMePtr = &_me;
-		internal::IndexedTensorMoveable<TensorNetwork> *movMe = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork> *>(&_me);
-		if (movMe) {
-			internal::TTStack<isOperator> *stackMe = dynamic_cast<internal::TTStack<isOperator> *>(movMe->tensorObject);
-			if (stackMe) {
-				meStorage.reset(new internal::IndexedTensor<TensorNetwork>(new TTNetwork(_me.degree()), _me.indices, true));
-				std::move(*meStorage) = std::move(_me);
-				realMePtr = meStorage.get();
+			} else {
+				return false;
 			}
 		} else {
-			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_me.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+			return false; // Not Operator and index order differs.
 		}
-		internal::IndexedTensorReadOnly<TensorNetwork> &realMe = *realMePtr;
 		
-		// If other is in fact a TTTensorStack, we have to evaluate it to tttensor
-		std::unique_ptr<TTNetwork> otherStorage;
-		const TensorNetwork *realOtherPtr = _other.tensorObjectReadOnly;
-		internal::IndexedTensorMoveable<TensorNetwork> *movOther = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork> *>(&_other);
-		if (movOther) {
-			internal::TTStack<isOperator> *stackOther = dynamic_cast<internal::TTStack<isOperator> *>(movOther->tensorObject);
-			if (stackOther) {
-				otherStorage.reset(new TTNetwork());
-				(*otherStorage)(_other.indices) = std::move(_other);
-				if (transposeRHS) {
-					//NOTE will only be called in the operator case and is thus a nop
-					reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
-					transposeRHS = false;
-				}
-				realOtherPtr = otherStorage.get();
-			}
-		} else {
-			REQUIRE(!dynamic_cast<const internal::TTStack<isOperator> *>(_other.tensorObjectReadOnly),"ie - non-moveable TTStack detected");
+		// Check whether we are a TTStack
+		std::unique_ptr<TTNetwork<isOperator>> meStorage;
+		const TTNetwork* usedMe;
+		
+		internal::IndexedTensorMoveable<TensorNetwork>* const moveMe = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork>*>(&_me);
+		internal::TTStack<isOperator>* stackMe;
+		if(moveMe && (stackMe = dynamic_cast<internal::TTStack<isOperator>*>(moveMe->tensorObject))) {
+			meStorage.reset(new TTNetwork());
+			(*meStorage)(_me.indices) = std::move(_me); // TODO use cast to TTNetwork (and no indices) when available.
+			usedMe = meStorage.get();
+		} else { // I am normal
+			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
+			usedMe = static_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly);
 		}
-		if (transposeRHS) {
+		const TTNetwork& ttMe = *usedMe;
+		
+		
+		// Check whether the other is a TTStack
+		std::unique_ptr<TTNetwork<isOperator>> otherStorage;
+		const TTNetwork* usedOther;
+		
+		internal::IndexedTensorMoveable<TensorNetwork>* const moveOther = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork>*>(&_other);
+		internal::TTStack<isOperator>* stackOther;
+		if(moveOther && (stackOther = dynamic_cast<internal::TTStack<isOperator>*>(moveOther->tensorObject))) {
 			otherStorage.reset(new TTNetwork());
-			(*otherStorage)(_other.indices) = std::move(_other);
-			//NOTE will only be called in the operator case and is thus a nop
-			reinterpret_cast<TTNetwork<true> *>(otherStorage.get())->transpose();
-			transposeRHS = false;
-			realOtherPtr = otherStorage.get();
+			(*otherStorage)(_other.indices) = std::move(_other); // TODO use cast to TTNetwork (and no indices) when available.
+			usedOther = otherStorage.get();
+			
+			if(transposeRHS) {
+				reinterpret_cast<TTNetwork<true>*>(otherStorage.get())->transpose(); // Is only called if isOperator is true.
+			}
+		} else if(transposeRHS && !moveMe) { // Other is normal, non-moveable, but needs transposition.
+			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
+			otherStorage.reset(new TTNetwork(*static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly)));
+			usedOther = otherStorage.get();
+			
+			reinterpret_cast<TTNetwork<true>*>(otherStorage.get())->transpose(); // Is only called if isOperator is true.
+		} else { // Other is normal
+			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
+			usedOther = static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly);
+			
+			if(transposeRHS) {
+				reinterpret_cast<TTNetwork<true>*>(moveOther->tensorObject)->transpose(); // Is only called if isOperator is true.
+			}
 		}
-		const TensorNetwork &realOther = *realOtherPtr;
+		const TTNetwork& ttOther = *usedOther;
 		
-		_out.reset( new internal::IndexedTensorMoveable<TensorNetwork>( new TTNetwork(realMe.degree()), _me.indices));
+		_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>( new TTNetwork(ttMe), _me.indices));
 		
-		//The external dimensions are the same as the ones of the input
-		_out->tensorObject->dimensions = realMe.tensorObjectReadOnly->dimensions;
-		REQUIRE(realOther.dimensions == realMe.tensorObjectReadOnly->dimensions, "Internal Error");
-		
-		TTNetwork& outTensor = *static_cast<TTNetwork*>(_out->tensorObject);
-		
-		const TTNetwork * const ttMe = static_cast<const TTNetwork*>(realMe.tensorObjectReadOnly);
-		const TTNetwork * const ttOther = static_cast<const TTNetwork*>(realOtherPtr);
-		
-		outTensor = *ttMe;
-		outTensor += *ttOther;
+		*static_cast<TTNetwork*>(_out->tensorObject) += ttOther;
 		
 		return true;
 	}
