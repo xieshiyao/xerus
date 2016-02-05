@@ -244,8 +244,6 @@ namespace xerus {
 			std::unique_ptr<double[]> Qt, Ct;
 			std::tie(Qt, Ct, rank) = blasWrapper::qc(reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
 			
-			// TODO either change rq/qr/svd to this setup or this to the one of rq/qr/svd
-			
 			std::vector<size_t> newDim = Q.tensorObject->dimensions;
 			newDim.back() = rank;
 			Q.tensorObject->reset(newDim, std::move(Qt));

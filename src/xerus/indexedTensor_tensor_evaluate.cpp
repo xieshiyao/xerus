@@ -289,7 +289,7 @@ namespace xerus {
 			if(_base.indices == _out.indices) {
 				*_out.tensorObject = *_base.tensorObjectReadOnly;
 				return; // We are finished here
-			} // TODO in front of dimension assignment
+			}
 			
 			// Extract base index dimensions and stepSizes
 			const std::vector<size_t> baseIndexStepSizes(get_step_sizes(_base.indices));

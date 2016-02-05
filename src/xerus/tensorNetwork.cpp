@@ -861,7 +861,7 @@ namespace xerus {
 		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
 		Tensor& toTensor = *nodes[_nodeB].tensorObject;
 		
-		bool transR = false; // TODO use CQ when available
+		bool transR = false;
 		if(posA == 0) {
 			if(_allowRankReduction) {
 				calculate_cq(R, Q, fromTensor, 1);

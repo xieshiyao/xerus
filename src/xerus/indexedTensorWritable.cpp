@@ -145,12 +145,12 @@ namespace xerus {
 		
 		template<>
 		void IndexedTensorWritable<TensorNetwork>::indexed_plus_equal(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-			indexed_assignement(std::move(*this) + std::move(_rhs)); // TODO might be problematic
+			indexed_assignement(std::move(*this) + std::move(_rhs));
 		}
 		
 		template<>
 		void IndexedTensorWritable<TensorNetwork>::indexed_minus_equal(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
-			indexed_assignement(std::move(*this) - std::move(_rhs)); // TODO might be problematic
+			indexed_assignement(std::move(*this) - std::move(_rhs));
 		}
 		
 		template<>

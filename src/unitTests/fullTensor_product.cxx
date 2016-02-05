@@ -264,12 +264,11 @@ UNIT_TEST(Tensor, Product_Order_3_Same_Dimensions,
     res2(i,j) = A(l,m,j) * B(m,i,l);
     TEST(approx_entrywise_equal(res2, {5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     
-//     TODO Require Fixed Index support
-//     res2a(i) = A(l,m,0) * B(m,i,l);
-//     TEST(approx_entrywise_equal(res2a, {5+2*7+3*9+4*11, 6+2*8+3*10+4*12}));
-//     
-//     res2a(j) = A(l,m,j)* B(m,1,l);
-//     TEST(approx_entrywise_equal(res2a, {6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
+    res2a(i) = A(l,m,0) * B(m,i,l);
+    TEST(approx_entrywise_equal(res2a, {5+2*7+3*9+4*11, 6+2*8+3*10+4*12}));
+    
+    res2a(j) = A(l,m,j)* B(m,1,l);
+    TEST(approx_entrywise_equal(res2a, {6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     
     res3() = A(i,j,k) * B(i,k,j);
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));

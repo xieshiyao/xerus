@@ -568,9 +568,6 @@ namespace xerus {
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
 			
-			// Ensure maximal ranks are not exceeded (may happen if non uniform).
-			x.round(maxRanks); // TODO do not round edges that do not need it (i.e. do not even do the SVD!)
-			
 			resize_stack_tensors();
 			
 			solve_with_current_ranks();
