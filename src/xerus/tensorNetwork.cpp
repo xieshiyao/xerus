@@ -521,42 +521,44 @@ namespace xerus {
 		
 		// Per external link
 		for (size_t n = 0; n < externalLinks.size(); ++n) {
-			const TensorNetwork::Link &el = externalLinks[n];
-			REQUIRE(el.other < nodes.size(), "n=" << n);
-			REQUIRE(el.dimension > 0, "n=" << n);
-			REQUIRE(el.dimension == dimensions[n], "n=" << n);
-			REQUIRE(!el.external, "n=" << n);
+			const TensorNetwork::Link& el = externalLinks[n];
+			REQUIRE(el.other < nodes.size(), "External link " << n << " is inconsitent. The linked node " << el.other << " does not exist, as there are only " << nodes.size() << " nodes.");
+			REQUIRE(el.dimension > 0, "External link " << n << " is corrupted. The link specifies zero as dimension.");
+			REQUIRE(el.dimension == dimensions[n], "External link " << n << " is inconsitent. The specified dimension " << el.dimension << " does not match the " << n << "-th dimension of the Network, which is " << dimensions[n] << ".");
+			REQUIRE(!el.external, "External link " << n << " is corrupted. It specifies itself to be external, but must link to a node.");
 			
-			const TensorNode &other = nodes[el.other];
-			REQUIRE(other.degree() > el.indexPosition, "n=" << n << " " << other.degree() << " vs " << el.indexPosition);
-			REQUIRE(other.neighbors[el.indexPosition].external, "n=" << n);
-			REQUIRE(other.neighbors[el.indexPosition].indexPosition == n, "n=" << n << " We have " << other.neighbors[el.indexPosition].indexPosition << " != " << n << " and el.other =" << el.other << " and el.indexPosition = " << el.indexPosition );
-			REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
+			const TensorNode& otherNode = nodes[el.other];
+			const TensorNetwork::Link& otherLink = otherNode.neighbors[el.indexPosition];
+			REQUIRE(otherNode.degree() > el.indexPosition, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target node only has " << otherNode.degree() << " links.");
+			REQUIRE(otherLink.external, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target link says it is not external.");
+			REQUIRE(otherLink.indexPosition == n, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target link points to IP " << otherLink.indexPosition << " instead to " << n << ".");
+			REQUIRE(otherLink.dimension == el.dimension, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ". The dimension specified by the external link is " << el.dimension << " but the one of the target link is " << otherLink.dimension << ".");
 		}
 		
 		// Per node
 		for (size_t n = 0; n < nodes.size(); ++n) {
 			const TensorNode &currNode = nodes[n];
-			REQUIRE(!_check_erased || !currNode.erased, "n=" << n);
+			REQUIRE(!_check_erased || !currNode.erased, "Node " << n << " is marked erased, although this was not allowed.");
 			if (currNode.tensorObject) {
-				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "n=" << n << " " << currNode.degree() << " vs " << currNode.tensorObject->degree());
+				REQUIRE(currNode.degree() == currNode.tensorObject->degree(), "Node " << n << " has is inconsitent, as its tensorObject has degree " << currNode.tensorObject->degree() << " but there are " << currNode.degree() << " links.");
 			}
-			// per neighbor
+			
+			// Per neighbor
 			for (size_t i = 0; i < currNode.neighbors.size(); ++i) {
 				const TensorNetwork::Link &el = currNode.neighbors[i];
 				REQUIRE(el.dimension > 0, "n=" << n << " i=" << i);
 				if (currNode.tensorObject) {
-					REQUIRE(el.dimension==currNode.tensorObject->dimensions[i],  "n=" << n << " i=" << i << " " << el.dimension << " vs " << currNode.tensorObject->dimensions[i]);
+					REQUIRE(el.dimension == currNode.tensorObject->dimensions[i],  "n=" << n << " i=" << i << " " << el.dimension << " vs " << currNode.tensorObject->dimensions[i]);
 				}
 				
-				if (!el.external) { // externals were already checked
-					REQUIRE(el.other < nodes.size(), "n=" << n << " i=" << i << " " << el.other << " vs " << nodes.size());
+				if(!el.external) { // externals were already checked
+					REQUIRE(el.other < nodes.size(), "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". The target node does not exist, as there are only " << nodes.size() << " nodes.");
 					const TensorNode &other = nodes[el.other];
-					REQUIRE(other.degree() > el.indexPosition, "n=" << n << " i=" << i << " " << other.degree() << " vs " << el.indexPosition);
-					REQUIRE(!other.neighbors[el.indexPosition].external, "n=" << n << " i=" << i);
-					REQUIRE(other.neighbors[el.indexPosition].other == n, "n=" << n << " i=" << i);
-					REQUIRE(other.neighbors[el.indexPosition].indexPosition == i, "n=" << n << " i=" << i);
-					REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "n=" << n << " i=" << i << " " << other.neighbors[el.indexPosition].dimension << " vs " << el.dimension);
+					REQUIRE(other.degree() > el.indexPosition, "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". Link at target does not exist as there are only " << other.degree() << " links.");
+					REQUIRE(!other.neighbors[el.indexPosition].external, "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". Link at target says it is external.");
+					REQUIRE(other.neighbors[el.indexPosition].other == n, "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". Link at target links to node " << other.neighbors[el.indexPosition].other << " at IP " << other.neighbors[el.indexPosition].indexPosition);
+					REQUIRE(other.neighbors[el.indexPosition].indexPosition == i, "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". Link at target links to node " << other.neighbors[el.indexPosition].other << " at IP " << other.neighbors[el.indexPosition].indexPosition);
+					REQUIRE(other.neighbors[el.indexPosition].dimension == el.dimension, "Inconsitent Link from node " << n << " to node " << el.other << " from IP " << i << " to IP " << el.indexPosition << ". Dimension of this link is " << el.dimension << " but the target link says the dimension is " << other.neighbors[el.indexPosition].dimension);
 				}
 			}
 		}

@@ -147,10 +147,10 @@ namespace xerus {
 	}
 	
 
-	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TTNetwork(Tensor(_network)) {
-		LOG(warning, "Cast of arbitrary tensor network to TT not yet supported. Casting to Tensor first"); // TODO
-	}
+// 	template<bool isOperator>
+// 	TTNetwork<isOperator>::TTNetwork(const TensorNetwork &_network, double _eps) : TTNetwork(Tensor(_network)) {
+// 		LOG(warning, "Cast of arbitrary tensor network to TT not yet supported. Casting to Tensor first"); // TODO
+// 	}
 
 	
 	template<bool isOperator>
@@ -1106,8 +1106,6 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		REQUIRE(!_out->tensorObject, "Internal Error.");
-		
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		if(!isOperator) { return false; }
 		
@@ -1193,6 +1191,18 @@ namespace xerus {
 		return false;
 	}
 	
+	
+	template<bool isOperator>
+	void transpose_if_operator(TTNetwork<isOperator>& _ttNetwork);
+	
+	template<>
+	void transpose_if_operator<false>(TTNetwork<false>& _ttNetwork) {}
+	
+	template<>
+	void transpose_if_operator<true>(TTNetwork<true>& _ttNetwork) {
+		_ttNetwork.transpose();
+	}
+	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::specialized_sum_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		_me.assign_indices();
@@ -1240,8 +1250,9 @@ namespace xerus {
 		internal::TTStack<isOperator>* stackMe;
 		if(moveMe && (stackMe = dynamic_cast<internal::TTStack<isOperator>*>(moveMe->tensorObject))) {
 			meStorage.reset(new TTNetwork());
-			(*meStorage)(_me.indices) = std::move(_me); // TODO use cast to TTNetwork (and no indices) when available.
 			usedMe = meStorage.get();
+			*meStorage.get() = TTNetwork(*stackMe);
+			REQUIRE(usedMe->dimensions == stackMe->dimensions, "Ie " << stackMe->dimensions << " vs "  << usedMe->dimensions);
 		} else { // I am normal
 			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
 			usedMe = static_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly);
@@ -1250,34 +1261,22 @@ namespace xerus {
 		
 		
 		// Check whether the other is a TTStack
-		std::unique_ptr<TTNetwork<isOperator>> otherStorage;
-		const TTNetwork* usedOther;
+		TTNetwork ttOther;
 		
 		internal::IndexedTensorMoveable<TensorNetwork>* const moveOther = dynamic_cast<internal::IndexedTensorMoveable<TensorNetwork>*>(&_other);
 		internal::TTStack<isOperator>* stackOther;
 		if(moveOther && (stackOther = dynamic_cast<internal::TTStack<isOperator>*>(moveOther->tensorObject))) {
-			otherStorage.reset(new TTNetwork());
-			(*otherStorage)(_other.indices) = std::move(_other); // TODO use cast to TTNetwork (and no indices) when available.
-			usedOther = otherStorage.get();
-			
-			if(transposeRHS) {
-				reinterpret_cast<TTNetwork<true>*>(otherStorage.get())->transpose(); // Is only called if isOperator is true.
-			}
-		} else if(transposeRHS && !moveMe) { // Other is normal, non-moveable, but needs transposition.
-			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
-			otherStorage.reset(new TTNetwork(*static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly)));
-			usedOther = otherStorage.get();
-			
-			reinterpret_cast<TTNetwork<true>*>(otherStorage.get())->transpose(); // Is only called if isOperator is true.
+			ttOther = TTNetwork(*stackOther);
+			REQUIRE(ttOther.dimensions == stackOther->dimensions, "Ie");
 		} else { // Other is normal
 			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
-			usedOther = static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly);
+			ttOther = *static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly);
 			
-			if(transposeRHS) {
-				reinterpret_cast<TTNetwork<true>*>(moveOther->tensorObject)->transpose(); // Is only called if isOperator is true.
-			}
 		}
-		const TTNetwork& ttOther = *usedOther;
+		
+		if(transposeRHS) {
+			transpose_if_operator(ttOther);
+		}
 		
 		_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>( new TTNetwork(ttMe), _me.indices));
 		

@@ -107,7 +107,7 @@ namespace xerus {
 		* @param _network The network to transform.
 		* @param _eps the accuracy to be used in the transformation.
 		*/
-		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
+// 		explicit TTNetwork(const TensorNetwork &_network, double _eps=EPSILON);
 		
 		
 		/** 

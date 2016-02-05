@@ -30,6 +30,8 @@
 #include "indexedTensorMoveable.h"
 
 namespace xerus {
+	template<bool isOperator> class TTNetwork;
+	
 	namespace internal {
 		template<bool isOperator>
 		///@brief Internal class used to represent stacks of (possibly multiply) applications of TTOperators to either a TTTensor or TTOperator.
@@ -53,6 +55,8 @@ namespace xerus {
 			TTStack& operator= (const TTStack&  _other) = delete;
 			
 			TTStack& operator= (      TTStack&& _other) = delete;
+			
+			explicit operator TTNetwork<isOperator>();
 			
 			virtual void operator*=(const value_t _factor) override;
 			
