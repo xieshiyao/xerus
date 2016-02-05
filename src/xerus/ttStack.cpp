@@ -191,14 +191,120 @@ namespace xerus {
 		}
 		
 		
+		// TODO get rid of this function and use TTN cast instead
 		template<bool isOperator>
 		void TTStack<isOperator>::contract_stack(IndexedTensorWritable<TensorNetwork>&& _me) {
 			_me.tensorObject->require_valid_network();
 			
-			TTNetwork<isOperator> contractedMe(*static_cast<TTStack<isOperator>*>(_me.tensorObject));
+			if(_me.tensorObject->degree() == 0) {
+				std::set<size_t> toContract;
+				for(size_t i = 0; i < _me.tensorObject->nodes.size(); ++i) {
+					toContract.insert(i);
+					_me.tensorObject->contract(toContract);
+					_me.tensorObject->reshuffle_nodes([](const size_t _i){return 0;});
+					return;
+				}
+			}
 			
-			// NOTE core position according to information in TTStack is set in evaluation
-			_me.tensorObject->require_valid_network();
+			const size_t numComponents = _me.tensorObject->degree()/N;
+			const size_t numNodes = _me.tensorObject->degree()/N+2;
+			const size_t stackSize = _me.tensorObject->nodes.size()/numNodes;
+			
+			REQUIRE(_me.tensorObject->nodes.size()%numNodes == 0, "IE");
+			
+			// Contract the stack to a TTNetwork node structure.
+			std::set<size_t> toContract;
+			for (size_t currentNode = 0; currentNode < numNodes; ++currentNode) {
+				toContract.clear();
+				for (size_t i = 0; i < stackSize; i++) {
+					toContract.insert(currentNode+i*numNodes);
+				}
+				_me.tensorObject->contract(toContract);
+			}
+			
+			// Reshuffle the nodes to be in the correct order after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction) so modulus gives the correct wanted id.
+			_me.tensorObject->reshuffle_nodes([numNodes](const size_t _i){return _i%(numNodes);});
+			
+			REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
+			
+			// Reset to new external links
+			for(size_t i = 0; i < numComponents; ++i) {
+				_me.tensorObject->externalLinks[i].other = i+1;
+				_me.tensorObject->externalLinks[i].indexPosition = 1;
+			}
+			if(isOperator) {
+				for(size_t i = 0; i < numComponents; ++i) {
+					_me.tensorObject->externalLinks[numComponents+i].other = i+1;
+					_me.tensorObject->externalLinks[numComponents+i].indexPosition = 2;
+				}
+			}
+			
+			// Fix the first virtual node
+			_me.tensorObject->nodes[0].tensorObject->reinterpret_dimensions({1});
+			_me.tensorObject->nodes[0].neighbors.resize(1);
+			_me.tensorObject->nodes[0].neighbors.front().other = 1;
+			_me.tensorObject->nodes[0].neighbors.front().indexPosition = 0;
+
+			// Fix all real components
+			std::vector<size_t> shuffle(N+2*stackSize);
+			for (size_t i = 1; i+1 < numNodes; ++i) {
+				size_t leftCount = 0;
+				size_t leftDim = 1, rightDim = 1;
+				size_t fullDim = 1;
+				for(size_t k = 0; k < N+2*stackSize; ++k) {
+					REQUIRE(!_me.tensorObject->nodes[i].erased, "IE");
+					const TensorNetwork::Link& link = _me.tensorObject->nodes[i].neighbors[k];
+					fullDim *= link.dimension;
+					if(link.external) {
+						if(link.indexPosition < numComponents) {
+							shuffle[k] = stackSize;
+						} else {
+							REQUIRE(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << _me.tensorObject->degree());
+							shuffle[k] = stackSize+1;
+						}
+					} else {
+						if(link.other == i-1) {
+							shuffle[k] = leftCount++;
+							leftDim *= link.dimension;
+						} else {
+							// We want the order of the next node (so the next one can keep its order)
+							size_t otherPos = 0;
+							for(const TensorNetwork::Link& otherLink : _me.tensorObject->nodes[i+1].neighbors) {
+								if(otherLink.other == i) {
+									if(otherLink.indexPosition == k) {
+										break;
+									} else {
+										otherPos++;
+									}
+								}
+							}
+							shuffle[k] = stackSize+N+otherPos;
+							rightDim *= link.dimension;
+						}
+					}
+				}
+				REQUIRE(fullDim == _me.tensorObject->nodes[i].tensorObject->size, "Uhh");
+				REQUIRE(leftCount == stackSize, "IE");
+				
+				xerus::reshuffle(*_me.tensorObject->nodes[i].tensorObject, *_me.tensorObject->nodes[i].tensorObject, shuffle);
+				if(isOperator) {
+					_me.tensorObject->nodes[i].tensorObject->reinterpret_dimensions({leftDim, _me.tensorObject->dimensions[i-1], _me.tensorObject->dimensions[i-1+numComponents], rightDim});
+				} else {
+					_me.tensorObject->nodes[i].tensorObject->reinterpret_dimensions({leftDim, _me.tensorObject->dimensions[i-1], rightDim});
+				}
+				
+				_me.tensorObject->nodes[i].neighbors.clear();
+				_me.tensorObject->nodes[i].neighbors.emplace_back(i-1, i==1 ? 0 : N+1, leftDim, false);
+				_me.tensorObject->nodes[i].neighbors.emplace_back(0, i-1 , _me.tensorObject->dimensions[i-1], true);
+				if(isOperator) { _me.tensorObject->nodes[i].neighbors.emplace_back(0, numComponents+i-1, _me.tensorObject->dimensions[numComponents+i-1], true); }
+				_me.tensorObject->nodes[i].neighbors.emplace_back(i+1, 0, rightDim, false);
+			}
+			
+			// Fix the second virtual node
+			_me.tensorObject->nodes[numNodes-1].tensorObject->reinterpret_dimensions({1});
+			_me.tensorObject->nodes[numNodes-1].neighbors.resize(1);
+			_me.tensorObject->nodes[numNodes-1].neighbors.front().other = numNodes-2;
+			_me.tensorObject->nodes[numNodes-1].neighbors.front().indexPosition = N+1;
 		}
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */

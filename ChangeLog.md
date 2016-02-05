@@ -2,7 +2,7 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2016-xx-xx v2.1.0
+* 2016-02-05 v2.1.0
  * ! fix_slate() now works correctly for TTTensors and (correctly) throws an error for TTOperators.
  * Several bug fixes in the handling of TTNetworks of degree zero.
  * Implemented the Tensor CQ function, which is now used where appropriate.
