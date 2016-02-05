@@ -225,13 +225,13 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 		Tensor A = Tensor::random(dimsA, rnd, normalDist);
 		Tensor B = Tensor::random(dimsB, rnd, normalDist);
 		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsX, rnd, normalDist);
+		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
 		Tensor C;
 		
-		TTOperator ttA(A, 0.2); 
-		TTOperator ttB(B, 0.2); 
-		TTTensor ttX(X, 0.2);
-		TTTensor ttY(Y, 0.2);
+		TTOperator ttA(A, 0.75); 
+		TTOperator ttB(B, 0.75); 
+		TTTensor ttX(X, 0.6);
+		TTTensor ttY(Y, 0.6);
 		TTTensor ttC;
 		
 		TensorNetwork tnA(ttA);
@@ -252,32 +252,32 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 		Tensor sC;
 		
 		TEST(approx_equal(A, sA));
-		TEST(approx_equal(A, tnA));
-		TEST(approx_equal(A, ttA));
-		TEST(approx_equal(sA, tnA));
-		TEST(approx_equal(sA, ttA));
-		TEST(approx_equal(tnA, ttA));
+		TEST(approx_equal(A, tnA, 1e-14));
+		TEST(approx_equal(A, ttA, 1e-14));
+		TEST(approx_equal(sA, tnA, 1e-14));
+		TEST(approx_equal(sA, ttA, 1e-14));
+		TEST(approx_equal(tnA, ttA, 1e-14));
 		
 		TEST(approx_equal(B, sB));
-		TEST(approx_equal(B, tnB));
-		TEST(approx_equal(B, ttB));
-		TEST(approx_equal(sB, tnB));
-		TEST(approx_equal(sB, ttB));
-		TEST(approx_equal(tnB, ttB));
+		TEST(approx_equal(B, tnB, 1e-14));
+		TEST(approx_equal(B, ttB, 1e-14));
+		TEST(approx_equal(sB, tnB, 1e-14));
+		TEST(approx_equal(sB, ttB, 1e-14));
+		TEST(approx_equal(tnB, ttB, 1e-14));
 		
 		TEST(approx_equal(X, sX));
-		TEST(approx_equal(X, tnX));
-		TEST(approx_equal(X, ttX));
-		TEST(approx_equal(sX, tnX));
-		TEST(approx_equal(sX, ttX));
-		TEST(approx_equal(tnX, ttX));
+		TEST(approx_equal(X, tnX, 1e-14));
+		TEST(approx_equal(X, ttX, 1e-14));
+		TEST(approx_equal(sX, tnX, 1e-14));
+		TEST(approx_equal(sX, ttX, 1e-14));
+		TEST(approx_equal(tnX, ttX, 1e-14));
 		
 		TEST(approx_equal(Y, sY));
-		TEST(approx_equal(Y, tnY));
-		TEST(approx_equal(Y, ttY));
-		TEST(approx_equal(sY, tnY));
-		TEST(approx_equal(sY, ttY));
-		TEST(approx_equal(tnY, ttY));
+		TEST(approx_equal(Y, tnY, 1e-14));
+		TEST(approx_equal(Y, ttY, 1e-14));
+		TEST(approx_equal(sY, tnY, 1e-14));
+		TEST(approx_equal(sY, ttY, 1e-14));
+		TEST(approx_equal(tnY, ttY, 1e-14));
 		
 		
 		C(i&0) = A(i/2,j/2)*X(j&0);
@@ -286,11 +286,11 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 		tnC(i&0) = tnA(i/2,j/2)*tnX(j&0);
 		
 		TEST(approx_equal(C, sC));
-		TEST(approx_equal(C, tnC));
-		TEST(approx_equal(C, ttC));
-		TEST(approx_equal(sC, tnC));
-		TEST(approx_equal(sC, ttC));
-		TEST(approx_equal(tnC, ttC));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		TEST(approx_equal(tnC, ttC, 1e-14));
 		
 		C(i&0) = B(i/2,j/2)*X(j&0);
 		sC(i&0) = sB(i/2,j/2)*sX(j&0);
@@ -298,35 +298,35 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 		tnC(i&0) = tnB(i/2,j/2)*tnX(j&0);
 		
 		TEST(approx_equal(C, sC));
-		TEST(approx_equal(C, tnC));
-		TEST(approx_equal(C, ttC));
-		TEST(approx_equal(sC, tnC));
-		TEST(approx_equal(sC, ttC));
-		TEST(approx_equal(tnC, ttC));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		TEST(approx_equal(tnC, ttC, 1e-14));
 		
-		C(i&0) = B(i/2,j/2)*Y(i&0);
-		sC(i&0) = sB(i/2,j/2)*sY(i&0);
-		ttC(i&0) = ttB(i/2,j/2)*ttY(i&0);
-		tnC(i&0) = tnB(i/2,j/2)*tnY(i&0);
-		
-		TEST(approx_equal(C, sC));
-		TEST(approx_equal(C, tnC));
-		TEST(approx_equal(C, ttC));
-		TEST(approx_equal(sC, tnC));
-		TEST(approx_equal(sC, ttC));
-		TEST(approx_equal(tnC, ttC));
-		
-		C(i&0) = B(j/2,i/2)*A(i/2,j/2)*X(j&0);
-		sC(i&0) = sB(j/2,i/2)*sA(i/2,j/2)*sX(j&0);
-		ttC(i&0) = ttB(j/2,i/2)*A(i/2,j/2)*ttX(j&0);
-		tnC(i&0) = tnB(j/2,i/2)*A(i/2,j/2)*tnX(j&0);
+		C(j&0) = B(i/2,j/2)*Y(i&0);
+		sC(j&0) = sB(i/2,j/2)*sY(i&0);
+		ttC(j&0) = ttB(i/2,j/2)*ttY(i&0);
+		tnC(j&0) = tnB(i/2,j/2)*tnY(i&0);
 		
 		TEST(approx_equal(C, sC));
-		TEST(approx_equal(C, tnC));
-		TEST(approx_equal(C, ttC));
-		TEST(approx_equal(sC, tnC));
-		TEST(approx_equal(sC, ttC));
-		TEST(approx_equal(tnC, ttC));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		TEST(approx_equal(tnC, ttC, 1e-14));
+		
+		C(k&0) = B(k/2,i/2)*A(i/2,j/2)*X(j&0);
+		sC(k&0) = sB(k/2,i/2)*sA(i/2,j/2)*sX(j&0);
+		ttC(k&0) = ttB(k/2,i/2)*ttA(i/2,j/2)*ttX(j&0);
+		tnC(k&0) = tnB(k/2,i/2)*tnA(i/2,j/2)*tnX(j&0);
+		
+		TEST(approx_equal(C, sC, 1e-14));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		TEST(approx_equal(tnC, ttC, 1e-14));
 		
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
@@ -339,7 +339,7 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 }});
 
 UNIT_TEST2(Consistency, fix_slate) {
-	std::uniform_int_distribution<size_t> dimDist(1, 4);
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
@@ -357,13 +357,13 @@ UNIT_TEST2(Consistency, fix_slate) {
 		Tensor A = Tensor::random(dimsA, rnd, normalDist);
 		Tensor B = Tensor::random(dimsB, rnd, normalDist);
 		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsX, rnd, normalDist);
+		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
 		Tensor C;
 		
-		TTOperator ttA(A, 0.2); 
-		TTOperator ttB(B, 0.2); 
-		TTTensor ttX(X, 0.2);
-		TTTensor ttY(Y, 0.2);
+		TTOperator ttA(A, 0.75); 
+		TTOperator ttB(B, 0.75); 
+		TTTensor ttX(X, 0.6);
+		TTTensor ttY(Y, 0.6);
 		TTTensor ttC;
 		
 		TensorNetwork tnA(ttA);
@@ -473,10 +473,10 @@ UNIT_TEST2(Consistency, fix_slate) {
 		TEST(approx_equal(sC, ttC, 1e-14));
 		TEST(approx_equal(tnC, ttC, 1e-14));
 		
-		C(i&0) = B(i/2,j/2)*Y(i&0);
-		sC(i&0) = sB(i/2,j/2)*sY(i&0);
-		ttC(i&0) = ttB(i/2,j/2)*ttY(i&0);
-		tnC(i&0) = tnB(i/2,j/2)*tnY(i&0);
+		C(j&0) = B(i/2,j/2)*Y(i&0);
+		sC(j&0) = sB(i/2,j/2)*sY(i&0);
+		ttC(j&0) = ttB(i/2,j/2)*ttY(i&0);
+		tnC(j&0) = tnB(i/2,j/2)*tnY(i&0);
 		
 		TEST(approx_equal(C, sC));
 		TEST(approx_equal(C, tnC, 1e-14));
@@ -485,12 +485,12 @@ UNIT_TEST2(Consistency, fix_slate) {
 		TEST(approx_equal(sC, ttC, 1e-14));
 		TEST(approx_equal(tnC, ttC, 1e-14));
 		
-		C(i&0) = B(j/2,i/2)*A(i/2,j/2)*X(j&0);
-		sC(i&0) = sB(j/2,i/2)*sA(i/2,j/2)*sX(j&0);
-		ttC(i&0) = ttB(j/2,i/2)*A(i/2,j/2)*ttX(j&0);
-		tnC(i&0) = tnB(j/2,i/2)*A(i/2,j/2)*tnX(j&0);
+		C(k&0) = B(k/2,i/2)*A(i/2,j/2)*X(j&0);
+		sC(k&0) = sB(k/2,i/2)*sA(i/2,j/2)*sX(j&0);
+		ttC(k&0) = ttB(k/2,i/2)*ttA(i/2,j/2)*ttX(j&0);
+		tnC(k&0) = tnB(k/2,i/2)*tnA(i/2,j/2)*tnX(j&0);
 		
-		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, sC, 1e-14));
 		TEST(approx_equal(C, tnC, 1e-14));
 		TEST(approx_equal(C, ttC, 1e-14));
 		TEST(approx_equal(sC, tnC, 1e-14));

@@ -1108,12 +1108,11 @@ namespace xerus {
 	bool TTNetwork<isOperator>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		if(!isOperator) { return false; }
-		
 		_me.assign_indices();
 		_other.assign_indices();
 		
 		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
-		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
+		const internal::TTStack<isOperator>* const meTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_me.tensorObjectReadOnly);
 		REQUIRE(meTT || meTTStack, "Internal Error.");
 		
 		const TTTensor* const otherTT = dynamic_cast<const TTTensor*>(_other.tensorObjectReadOnly);
@@ -1150,12 +1149,11 @@ namespace xerus {
 			return false; // an index spanned some links of the left and some of the right side
 		}
 		
-		if (otherTT) {
+		if (otherTT || otherTTStack) {
 			// ensure fitting indices
 			if (std::equal(_me.indices.begin(), midIndexItr, _other.indices.begin()) || std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) {
-				TensorNetwork *res = new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd);
-				*res = *_me.tensorObjectReadOnly;
-				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(res, _me.indices));
+				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd), _me.indices));
+				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
 			} else {
@@ -1179,9 +1177,8 @@ namespace xerus {
 				|| std::equal(_me.indices.begin(), midIndexItr, otherMidIndexItr) 
 				|| std::equal(midIndexItr, _me.indices.end(), otherMidIndexItr)) 
 			{
-				TensorNetwork *res = new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd);
-				*res = *_me.tensorObjectReadOnly;
-				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(res, _me.indices));
+				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(new internal::TTStack<true>(cannoAtTheEnd, coreAtTheEnd), _me.indices));
+				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
 			} else {

@@ -573,8 +573,6 @@ namespace xerus {
 	}
 	
 	
-	
-	
 	void TensorNetwork::swap_external_links(const size_t _i, const size_t _j) {
 		const TensorNetwork::Link& li = externalLinks[_i];
 		const TensorNetwork::Link& lj = externalLinks[_j];
@@ -656,7 +654,7 @@ namespace xerus {
 				for (size_t n = 0; n < idx.span; ++n) {
 					const TensorNetwork::Link &link1 = base.externalLinks[passedDegree+n];
 					const TensorNetwork::Link &link2 = base.externalLinks[passedDegreeSecond+n];
-					REQUIRE(link1.dimension == link2.dimension, "Index dimensions do not coincide: ["<<n<<"]" << link1.dimension << " vs " << link2.dimension << " Indices are " << idx << " and " << _base.indices[j] << " from " << _base.indices);
+					REQUIRE(link1.dimension == link2.dimension, "Index dimensions do not coincide: ["<<n<<"] " << link1.dimension << " vs " << link2.dimension << " Indices are " << idx << " and " << _base.indices[j] << " from " << _base.indices);
 					
 					base.nodes[link1.other].neighbors[link1.indexPosition] = link2;
 					base.nodes[link2.other].neighbors[link2.indexPosition] = link1;
