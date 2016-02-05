@@ -481,6 +481,17 @@ namespace xerus {
 		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
 		
 		
+		/** 
+		 * @brief Resizes a specific dimension of the TensorNetwork.
+		 * @param _dimPos the dimension to resize.
+		 * @param _newDim the new value that resized dimension shall have.
+		 * @param _cutPos the position within the selected dimension in front of which slates are inserted 
+		 * or removed. By default the current dimension, i.e new slates are added after the last current one
+		 * and removed starting from the last one.
+		 */
+		virtual void resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos=~0ul);
+		
+		
 		/**
 		 * @brief Contracts the nodes with indices @a _nodeId1 and @a _nodeId2.
 		 * @details Replaces @a _nodeId1 with the contraction and erases @a _nodeId2.

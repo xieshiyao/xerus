@@ -335,6 +335,17 @@ namespace xerus {
 		TensorNetwork::fix_slate(_dimension, _slatePosition);
 	}
 	
+	template<bool isOperator>
+	void TTNetwork<isOperator>::resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos) {
+		TensorNetwork::resize_dimension(_dimension, _newDim, _cutPos);
+		if(cannonicalized && _newDim != corePosition) {
+			const size_t oldCorePosition = corePosition;
+			const size_t numComponents = degree()/N;
+			move_core(_dimension%numComponents);
+			move_core(oldCorePosition);
+		}
+	}
+	
 	
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
@@ -683,7 +694,7 @@ namespace xerus {
 	template<bool isOperator>
 	void TTNetwork<isOperator>::move_core(const size_t _position, const bool _keepRank) {
 		const size_t numComponents = degree()/N;
-		REQUIRE(_position < numComponents || (_position == 0 && degree() == 0), "Illegal position for core chosen.");
+		REQUIRE(_position < numComponents || (_position == 0 && degree() == 0), "Illegal core-position " << _position << " chosen for TTNetwork with " << numComponents << " components");
 		require_correct_format();
 		
 		if(cannonicalized) {

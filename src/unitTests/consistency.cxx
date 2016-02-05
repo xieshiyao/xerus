@@ -471,11 +471,9 @@ UNIT_TEST2(Consistency, fix_slate) {
 		
 		ttA = TTOperator(A); // Can't use fix_slate
 		ttB = TTOperator(B); // Can't use fix_slate
-		ttX = TTTensor(X);
-		ttY = TTTensor(Y);
+		ttX.fix_slate(slate, position);
+		ttY.fix_slate(slate, position);
 		
-		ttA.require_correct_format();
-		ttB.require_correct_format();
 		ttX.require_correct_format();
 		ttY.require_correct_format();
 		
@@ -564,3 +562,167 @@ UNIT_TEST2(Consistency, fix_slate) {
 		
 	}
 }});
+
+
+UNIT_TEST2(Consistency, resize_dimension) {
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	
+	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
+	
+	const Index i, j, k;
+	
+	for(size_t d = 1; d <= 8; ++d) {
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dims2.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsY = dims2;
+		dimsA = dims1 | dims1;
+		dimsB = dims2 | dims1;
+		
+		Tensor A = Tensor::random(dimsA, rnd, normalDist);
+		Tensor B = Tensor::random(dimsB, rnd, normalDist);
+		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor C;
+		
+		TTOperator ttA(A, 0.75); 
+		TTOperator ttB(B, 0.75); 
+		TTTensor ttX(X, 0.6);
+		TTTensor ttY(Y, 0.6);
+		TTTensor ttC;
+		
+		TensorNetwork tnA(ttA);
+		TensorNetwork tnB(ttB);
+		TensorNetwork tnX(ttX);
+		TensorNetwork tnY(ttY);
+		TensorNetwork tnC;
+		
+		A = ttA;
+		B = ttB;
+		X = ttX;
+		Y = ttY;
+		
+		Tensor sA = A.sparse_copy();
+		Tensor sB = B.sparse_copy();
+		Tensor sX = X.sparse_copy();
+		Tensor sY = Y.sparse_copy();
+		Tensor sC;
+		
+		std::uniform_int_distribution<size_t> dimensionSelect(0, d-1);
+		const size_t dimension = dimensionSelect(rnd);
+		
+		const size_t newDim1 = dimDist(rnd);
+		const size_t newDim2 = dimDist(rnd);
+		
+		std::uniform_int_distribution<size_t> posSelect1(newDim1 - std::min(newDim1, dimsX[dimension]), dimsX[dimension]);
+		std::uniform_int_distribution<size_t> posSelect2(newDim1 - std::min(newDim2, dimsX[dimension]), dimsY[dimension]);
+		const size_t position1 = posSelect1(rnd);
+		const size_t position2 = posSelect2(rnd);
+		
+		A.resize_dimension(dimension+d, newDim1, position1);
+		A.resize_dimension(dimension, newDim1, position1);
+		B.resize_dimension(dimension+d, newDim1, position1);
+		B.resize_dimension(dimension, newDim2, position2);
+		X.resize_dimension(dimension, newDim1, position1);
+		Y.resize_dimension(dimension, newDim2, position2);
+		
+		sA.resize_dimension(dimension+d, newDim1, position1);
+		sA.resize_dimension(dimension, newDim1, position1);
+		sB.resize_dimension(dimension+d, newDim1, position1);
+		sB.resize_dimension(dimension, newDim2, position2);
+		sX.resize_dimension(dimension, newDim1, position1);
+		sY.resize_dimension(dimension, newDim2, position2);
+		
+		ttA.resize_dimension(dimension+d, newDim1, position1);
+		ttA.resize_dimension(dimension, newDim1, position1);
+		ttB.resize_dimension(dimension+d, newDim1, position1);
+		ttB.resize_dimension(dimension, newDim2, position2);
+		ttX.resize_dimension(dimension, newDim1, position1);
+		ttY.resize_dimension(dimension, newDim2, position2);
+		
+		tnA.resize_dimension(dimension+d, newDim1, position1);
+		tnA.resize_dimension(dimension, newDim1, position1);
+		tnB.resize_dimension(dimension+d, newDim1, position1);
+		tnB.resize_dimension(dimension, newDim2, position2);
+		tnX.resize_dimension(dimension, newDim1, position1);
+		tnY.resize_dimension(dimension, newDim2, position2);
+		
+		TEST(approx_equal(A, sA));
+		TEST(approx_equal(A, tnA, 1e-14));
+		TEST(approx_equal(A, ttA, 1e-14));
+		TEST(approx_equal(sA, tnA, 1e-14));
+		TEST(approx_equal(sA, ttA, 1e-14));
+		
+		
+		TEST(approx_equal(B, sB));
+		TEST(approx_equal(B, tnB, 1e-14));
+		TEST(approx_equal(B, ttB, 1e-14));
+		TEST(approx_equal(sB, tnB, 1e-14));
+		TEST(approx_equal(sB, ttB, 1e-14));
+		
+		
+		TEST(approx_equal(X, sX));
+		TEST(approx_equal(X, tnX, 1e-14));
+		TEST(approx_equal(X, ttX, 1e-14));
+		TEST(approx_equal(sX, tnX, 1e-14));
+		TEST(approx_equal(sX, ttX, 1e-14));
+		
+		
+		TEST(approx_equal(Y, sY));
+		TEST(approx_equal(Y, tnY, 1e-14));
+		TEST(approx_equal(Y, ttY, 1e-14));
+		TEST(approx_equal(sY, tnY, 1e-14));
+		TEST(approx_equal(sY, ttY, 1e-14));
+		
+		
+		
+		C(i&0) = A(i/2,j/2)*X(j&0);
+		sC(i&0) = sA(i/2,j/2)*sX(j&0);
+		ttC(i&0) = ttA(i/2,j/2)*ttX(j&0);
+		tnC(i&0) = tnA(i/2,j/2)*tnX(j&0);
+		
+		TEST(approx_equal(C, sC, 1e-14));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		
+		
+		C(i&0) = B(i/2,j/2)*X(j&0);
+		sC(i&0) = sB(i/2,j/2)*sX(j&0);
+		ttC(i&0) = ttB(i/2,j/2)*ttX(j&0);
+		tnC(i&0) = tnB(i/2,j/2)*tnX(j&0);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		
+		
+		C(j&0) = B(i/2,j/2)*Y(i&0);
+		sC(j&0) = sB(i/2,j/2)*sY(i&0);
+		ttC(j&0) = ttB(i/2,j/2)*ttY(i&0);
+		tnC(j&0) = tnB(i/2,j/2)*tnY(i&0);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+		
+		
+		C(k&0) = B(k/2,i/2)*A(i/2,j/2)*X(j&0);
+		sC(k&0) = sB(k/2,i/2)*sA(i/2,j/2)*sX(j&0);
+		ttC(k&0) = ttB(k/2,i/2)*ttA(i/2,j/2)*ttX(j&0);
+		tnC(k&0) = tnB(k/2,i/2)*tnA(i/2,j/2)*tnX(j&0);
+		
+		TEST(approx_equal(C, sC, 1e-14));
+		TEST(approx_equal(C, tnC, 1e-14));
+		TEST(approx_equal(C, ttC, 1e-14));
+		TEST(approx_equal(sC, tnC, 1e-14));
+		TEST(approx_equal(sC, ttC, 1e-14));
+	}
+}});
+

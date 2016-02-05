@@ -49,8 +49,8 @@
 		static constexpr const size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
 		
 		static_assert(BUCKET_SIZE > 1, "Buckets need to be at least 2 bytes large.");
-		static_assert(BUCKET_SIZE % ALIGNMENT == 0, "bucket size needs to be aligned");
-		static_assert(ALIGNMENT <= 256, "only alignment up to 256 bytes is supported as only a single byte is used to indicate the offset.");
+		static_assert(BUCKET_SIZE % ALIGNMENT == 0, "Bucket size needs to be aligned");
+		static_assert(ALIGNMENT <= 256, "Only alignment up to 256 bytes is supported as only a single byte is used to indicate the offset.");
 		static_assert(NUM_BUCKETS < 255, "atm only a single byte is used to store bucket size");
 		
 		std::array<std::vector<uint8_t*, Mallocator>, NUM_BUCKETS> buckets;

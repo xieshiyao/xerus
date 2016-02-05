@@ -972,6 +972,23 @@ namespace xerus {
 	}
 	
 	
+	
+	void TensorNetwork::resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos) {
+		REQUIRE(_dimension < degree(), "Invalid dimension given for resize_dimension");
+		require_valid_network();
+		
+		const size_t extNode = externalLinks[_dimension].other;
+		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		
+		nodes[extNode].tensorObject->resize_dimension(extNodeIndexPos, _newDim, _cutPos);
+		nodes[extNode].neighbors[extNodeIndexPos].dimension = _newDim;
+		externalLinks[_dimension].dimension = _newDim;
+		dimensions[_dimension] = _newDim;
+		
+		require_valid_network();
+	}
+	
+	
 	void TensorNetwork::reduce_representation() {
 		require_valid_network();
 		
