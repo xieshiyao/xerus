@@ -1209,7 +1209,7 @@ namespace xerus {
 		const TTNetwork* otherTT = dynamic_cast<const TTNetwork*>( _other.tensorObjectReadOnly);
 		const internal::TTStack<isOperator>* otherTTStack = dynamic_cast<const internal::TTStack<isOperator>*>( _other.tensorObjectReadOnly);
 		if (!otherTT && !otherTTStack) { return false; }
-		
+				
 		bool transposeRHS;
 		if(_me.indices == _other.indices) { // Everything is easy.
 			REQUIRE(_me.tensorObjectReadOnly->dimensions == _other.tensorObjectReadOnly->dimensions, "TT sum requires both operants to share the same dimensions.");
@@ -1278,7 +1278,6 @@ namespace xerus {
 		_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>( new TTNetwork(ttMe), _me.indices));
 		
 		*static_cast<TTNetwork*>(_out->tensorObject) += ttOther;
-		
 		return true;
 	}
 	

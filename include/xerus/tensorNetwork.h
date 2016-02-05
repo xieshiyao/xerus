@@ -434,10 +434,11 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief Finds traces defined by the indices and Internally links the corresponding indices.
+		 * @brief Finds traces defined by the indices and internally links the corresponding indices. Also applys all fixed indices
 		 * @details For each trace this reduces the degree of the TN by two and removes two indices from the IndexedTensor.
 		 */
-		static void link_traces(internal::IndexedTensorWritable<TensorNetwork>&& _base);
+		static void link_traces_and_fix(internal::IndexedTensorWritable<TensorNetwork>&& _base);
+		
 		
 		
 	public:

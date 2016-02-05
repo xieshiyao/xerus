@@ -228,9 +228,11 @@ namespace xerus {
 		
 		inline std::vector<size_t> get_step_sizes(const std::vector<Index> _indices) {
 			std::vector<size_t> stepSizes(_indices.size());
-			stepSizes.back() = 1;
-			for(size_t i = stepSizes.size()-1; i > 0; --i) {
-				stepSizes[i-1] = stepSizes[i]*_indices[i].dimension();
+			if(!_indices.empty()) {
+				stepSizes.back() = 1;
+				for(size_t i = stepSizes.size(); i > 1; --i) {
+					stepSizes[i-2] = stepSizes[i-1]*_indices[i-1].dimension();
+				}
 			}
 			return stepSizes;
 		}

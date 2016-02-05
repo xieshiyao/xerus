@@ -83,7 +83,7 @@ namespace xerus {
 			_rhs.assign_indices();
 			std::vector<Index> rightIndices = _rhs.indices;
 			TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
-			TensorNetwork::link_traces(cpy(rightIndices));
+			TensorNetwork::link_traces_and_fix(cpy(rightIndices));
 			
 			std::set<size_t> all;
 			for (size_t i=0; i < cpy.nodes.size(); ++i) {

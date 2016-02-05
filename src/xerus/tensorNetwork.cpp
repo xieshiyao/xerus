@@ -459,7 +459,7 @@ namespace xerus {
 		
 		_other.assign_indices();
 		
-		link_traces((me)(_other.indices));
+		link_traces_and_fix((me)(_other.indices));
 		
 		_me.assign_indices();
 		
@@ -622,12 +622,13 @@ namespace xerus {
 		}
 		
 		// Find traces (former contractions may have become traces due to the joining)
-		link_traces(std::move(_base));
+		link_traces_and_fix(std::move(_base));
 		
 		_base.tensorObject->require_valid_network();
 	}
 	
-	void TensorNetwork::link_traces(internal::IndexedTensorWritable<TensorNetwork>&& _base) {
+	
+	void TensorNetwork::link_traces_and_fix(internal::IndexedTensorWritable<TensorNetwork>&& _base) {
 		TensorNetwork &base = *_base.tensorObject;
 		_base.assign_indices();
 		
@@ -684,9 +685,27 @@ namespace xerus {
 			}
 		}
 		
+		// Apply fixed indices
+		passedDegree = 0;
+		for(size_t i = 0; i < _base.indices.size(); ) {
+			const Index& idx = _base.indices[i];
+			
+			if(idx.fixed()) {
+				// Fix the slates
+				for(size_t k = passedDegree; k < passedDegree+idx.span; ++k) {
+					base.fix_slate(passedDegree, idx.valueId);
+				}
+				
+				// Remove index
+				_base.indices.erase(_base.indices.begin()+long(i));
+			} else {
+				passedDegree += idx.span;
+				++i;
+			}
+		}
+		
 		base.contract_unconnected_subnetworks();
 	}
-	
 	
 	
 	void TensorNetwork::round_edge(const size_t _from, const size_t _to, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
