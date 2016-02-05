@@ -27,27 +27,25 @@
 
 namespace xerus { namespace examples { namespace completion {
 	
-	void inverse_index_norm(std::vector<SinglePointMeasurment> &_measurements, value_t _additiveConst) {
-		for (SinglePointMeasurment &meas : _measurements) {
-			value_t normSqr=0;
-			for (size_t i=0; i<meas.positions.size(); ++i) {
-				normSqr += misc::sqr(double(meas.positions[i])+_additiveConst);
+	void inverse_index_norm(SinglePointMeasurmentSet& _measurements, const value_t _additiveConst) {
+		for (size_t i = 0; i < _measurements.size(); ++i) {
+			value_t normSqr = 0;
+			for (size_t j = 0; j < _measurements.positions[i].size(); ++j) {
+				normSqr += misc::sqr(static_cast<value_t>(_measurements.positions[i][j]) + _additiveConst);
 			}
-			meas.value = 1/std::sqrt(normSqr);
+			_measurements.measuredValues[i] = 1/std::sqrt(normSqr);
 		}
 	}
 	
 	
-	
-	void inverse_index_ratios(std::vector<SinglePointMeasurment> &_measurements, value_t _additiveConst) {
-		for (SinglePointMeasurment &meas : _measurements) {
-			value_t sum=0;
-			for (size_t i=0; i<meas.positions.size()-1; ++i) {
-				sum += (double(meas.positions[i]) + 1.0) / (double(meas.positions[i+1]) + _additiveConst);
+	void inverse_index_ratios(SinglePointMeasurmentSet& _measurements, const value_t _additiveConst) {
+		for (size_t i = 0; i < _measurements.size(); ++i) {
+			value_t sum = 0;
+			for (size_t j = 0; j+1 < _measurements.positions[i].size(); ++j) {
+				sum += (static_cast<value_t>(_measurements.positions[i][j]) + 1.0) / (static_cast<value_t>(_measurements.positions[i][j+1]) + _additiveConst);
 			}
-			meas.value = 1/(_additiveConst + sum);
+			_measurements.measuredValues[i] = 1/(_additiveConst + sum);
 		}
 	}
-	
 }}}
 

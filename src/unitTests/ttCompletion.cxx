@@ -34,15 +34,13 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
-	
-	std::vector<SinglePointMeasurment> measurements;
-	std::set<SinglePointMeasurment, SinglePointMeasurment::Comparator> measSet;
+	SinglePointMeasurmentSet measurements;
 	
 	REQUIRE(D*N*CS*R*R < misc::pow(N, D), "CS too large");
-	
+
 	for(size_t d = 0; d < D; ++d) {
 		for(size_t n = 0; n < N; ++n) {
-			while(measSet.size() < d*N*CS*R*R + (n+1)*CS*R*R) {
+			while(measurements.size() < d*N*CS*R*R + (n+1)*CS*R*R) {
 				std::vector<size_t> pos;
 				for (size_t i = 0; i < d; ++i) {
 					pos.emplace_back(dist(rnd));
@@ -51,20 +49,22 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 				for (size_t i = d+1; i < D; ++i) {
 					pos.emplace_back(dist(rnd));
 				}
-				measSet.emplace(pos, 0.0);
+				
+				if(!misc::contains(measurements.positions, pos)) {
+					measurements.add_measurment(pos, 0.0);
+				}
 			}
 		}
 	}
-
-	measurements.insert(measurements.end(), measSet.begin(), measSet.end());
+	
 	examples::completion::inverse_index_ratios(measurements);
 
-	std::vector<SinglePointMeasurment> ctrSet = SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd);
-	examples::completion::inverse_index_ratios(ctrSet);
 	
+	SinglePointMeasurmentSet ctrSet = SinglePointMeasurmentSet::random(D, N, D*N*CS*R*R, rnd);
+	examples::completion::inverse_index_ratios(ctrSet);
 	value_t ctrNorm = 0.0;
-	for(const SinglePointMeasurment& meas : ctrSet) {
-		ctrNorm += misc::sqr(meas.value);
+	for(size_t i = 0; i < ctrSet.size(); ++i) {
+		ctrNorm += misc::sqr(ctrSet.measuredValues[i]);
 	}
 	ctrNorm = std::sqrt(ctrNorm);
 	
@@ -72,17 +72,17 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	
 	PerformanceData perfData([&](const TTTensor& _x){
 		value_t ctrValue = 0.0;
-		for(const SinglePointMeasurment& meas : ctrSet) {
-			ctrValue += misc::sqr(meas.value - _x[meas.positions]);
+		for(size_t i = 0; i < ctrSet.size(); ++i) {
+			ctrNorm += misc::sqr(ctrSet.measuredValues[i] - _x[ctrSet.positions[i]]);
 		}
 		return std::sqrt(ctrValue)/ctrNorm;
 	}, true, false);
 	
-	ADF(X, SinglePointMeasurmentSet(measurements), std::vector<size_t>(D-1, R), perfData);
+	ADF(X, measurements, std::vector<size_t>(D-1, R), perfData);
 	
 	value_t ctrValue = 0.0;
-	for(const SinglePointMeasurment& meas : ctrSet) {
-		ctrValue += misc::sqr(meas.value - X[meas.positions]);
+	for(size_t i = 0; i < ctrSet.size(); ++i) {
+		ctrNorm += misc::sqr(ctrSet.measuredValues[i] - X[ctrSet.positions[i]]);
 	}
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
@@ -92,11 +92,11 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	perfData.reset();
 	X = TTTensor::ones(std::vector<size_t>(D, N));
 	
-	ADF(X, RankOneMeasurmentSet(SinglePointMeasurmentSet(measurements), X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ADF(X, RankOneMeasurmentSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
 	ctrValue = 0.0;
-	for(const SinglePointMeasurment& meas : ctrSet) {
-		ctrValue += misc::sqr(meas.value - X[meas.positions]);
+	for(size_t i = 0; i < ctrSet.size(); ++i) {
+		ctrNorm += misc::sqr(ctrSet.measuredValues[i] - X[ctrSet.positions[i]]);
 	}
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
@@ -116,7 +116,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 
-	SinglePointMeasurmentSet measurements(SinglePointMeasurment::create_set(D, N, D*N*CS*R*R, rnd));
+	SinglePointMeasurmentSet measurements(SinglePointMeasurmentSet::random(D, N, D*N*CS*R*R, rnd));
 	trueSolution.measure(measurements);
 	
 	bool test = true;
