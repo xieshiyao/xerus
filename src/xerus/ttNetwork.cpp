@@ -474,8 +474,7 @@ namespace xerus {
 				result.cannonicalized = true;
 				result.corePosition = lhsNumComponents;
 				result.move_core(0);
-			}
-			if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
+			} else if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
 				result.cannonicalized = true;
 				result.corePosition = lhsNumComponents-1;
 				result.move_core(lhsNumComponents + rhsNumComponents -1);

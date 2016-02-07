@@ -211,6 +211,11 @@ UNIT_TEST(TT, dyadic_product,
 	TTOperator O = TTOperator::dyadic_product({o1,o2,o3});
 	TTTensor S = TTTensor::dyadic_product({s1,s2,s3});
 	
+	TEST(O.cannonicalized);
+	MTEST(O.corePosition == 0, O.corePosition);
+	TEST(S.cannonicalized);
+	MTEST(S.corePosition == 0, S.corePosition);
+	
 	Index i,j;
 	value_t r1 = frob_norm(o1(i/2,j/2) * s1(j/1));
 	value_t r2 = frob_norm(o2(i/2,j/2) * s2(j/1));
