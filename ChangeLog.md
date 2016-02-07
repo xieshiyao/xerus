@@ -7,6 +7,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * Several bug fixes in the handling of TTNetworks of degree zero.
  * Implemented the Tensor CQ function, which is now used where appropriate.
  * Added several unit tests to ensure consitent results for dense/sparse Tensors, TensorNetwork and TTNetworks.
+ * Several Bugfixes in xerus::misc and a bugfix in TT:dyadic_product.
 
 * 2016-01-26 v2.0.0
  * ! Merged FullTensor and SparseTensor into a single Tensor class.

@@ -195,3 +195,28 @@ UNIT_TEST(TT, named_constructors,
 	MTEST(frob_norm(fones - Tensor::ones(dimensions)) < 1e-14*1024, "op " << frob_norm(fones - Tensor::ones(dimensions)) );
 )
 
+
+UNIT_TEST(TT, dyadic_product,
+	//Random numbers
+	std::mt19937_64 rnd(0xDEADBEEF);
+	std::normal_distribution<value_t> dist (0.0, 1.0);
+	
+	TTOperator o1 = TTOperator::random({10,10}, {}, rnd, dist);
+	TTOperator o2 = TTOperator::random({10,10}, {}, rnd, dist);
+	TTOperator o3 = TTOperator::random({10,10}, {}, rnd, dist);
+	TTTensor s1 = TTTensor::random({10},{},rnd, dist);
+	TTTensor s2 = TTTensor::random({10},{},rnd, dist);
+	TTTensor s3 = TTTensor::random({10},{},rnd, dist);
+	
+	TTOperator O = TTOperator::dyadic_product({o1,o2,o3});
+	TTTensor S = TTTensor::dyadic_product({s1,s2,s3});
+	
+	Index i,j;
+	value_t r1 = frob_norm(o1(i/2,j/2) * s1(j/1));
+	value_t r2 = frob_norm(o2(i/2,j/2) * s2(j/1));
+	value_t r3 = frob_norm(o3(i/2,j/2) * s3(j/1));
+	
+	value_t R = frob_norm(O(i/2,j/2) * S(j/1));
+	TEST(std::abs(R - r1*r2*r3) < 1e-12);
+)
+

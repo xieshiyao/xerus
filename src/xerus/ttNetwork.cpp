@@ -406,6 +406,17 @@ namespace xerus {
 		const size_t lhsNumComponents = _lhs.degree()/N;
 		const size_t rhsNumComponents = _rhs.degree()/N;
 		
+		// fix external links of lhs nodes
+		for (size_t i=1; i<result.nodes.size(); ++i) {
+			for (TensorNetwork::Link &l : result.nodes[i].neighbors) {
+				if (l.external) {
+					if (l.indexPosition >= lhsNumComponents) {
+						l.indexPosition += rhsNumComponents;
+					}
+				}
+			}
+		}
+		
 		// Add all nodes of rhs and fix neighbor relations
 		result.nodes.pop_back();
 		result.nodes.reserve(_lhs.degree()+_rhs.degree()+2);
@@ -428,13 +439,16 @@ namespace xerus {
 		}
 		
 		// Add all external indices of rhs
+		result.externalLinks.clear(); // NOTE that this is necessary because in the operator case we added indices 
+		result.dimensions.clear();   //        in the wrong position when we copied the lhs
+		result.externalLinks.reserve(_lhs.degree()+_rhs.degree());
+		result.dimensions.reserve(_lhs.degree()+_rhs.degree());
+		
 		for (size_t i = 0; i < lhsNumComponents; ++i) {
 			const size_t d=_lhs.dimensions[i];
 			result.externalLinks.emplace_back(i+1, 1, d, false);
 			result.dimensions.push_back(d);
 		}
-		result.externalLinks.reserve(_lhs.degree()+_rhs.degree());
-		result.dimensions.reserve(_lhs.degree()+_rhs.degree());
 		
 		for (size_t i = 0; i < rhsNumComponents; ++i) {
 			const size_t d = _rhs.dimensions[i];
