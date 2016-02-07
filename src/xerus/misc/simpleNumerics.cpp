@@ -91,7 +91,7 @@ namespace xerus {
                                 )
                             );
             for (uint i=0; i<_branchFactor; ++i) {
-                sum += integrate(_f, min+i*h, min+(i+1)*h, newEps, _minIter, _maxIter, _branchFactor, _maxRecursion-1, false);
+                sum += xerus::misc::integrate(_f, min+i*h, min+(i+1)*h, newEps, _minIter, _maxIter, _branchFactor, _maxRecursion-1, false);
             }
             return (_a>_b?-1:1)*sum;
         }
@@ -104,11 +104,48 @@ namespace xerus {
             double max = std::max(_a,_b);
             double res = 0;
             for (double x=min; x<max; x+=_segmentation) {
-                res += integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
+                res += xerus::misc::integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
             }
             return (_a>_b?-1:1)*res;
         }
 
+        
+        double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon) {
+			double nm = std::max(_min, _max);
+			_min = std::min(_min, _max);
+			_max = nm;
+			
+			double fmin = _f(_min);
+			double fmax = _f(_max);
+			
+			REQUIRE(fmin * fmax <= 0, "bisection requires inputs to both sides of the root (and no NaNs)");
+			
+			if (std::fpclassify(fmin) == FP_ZERO) {
+				return _min;
+			}
+			
+			if (std::fpclassify(fmax) == FP_ZERO) {
+				return _max;
+			}
+			
+			while (_max-_min > _epsilon) {
+				double mid = (_max+_min)/2.0;
+				double fmid = _f(mid);
+				if (std::fpclassify(fmid) == FP_ZERO) {
+					return mid;
+				}
+				REQUIRE(std::isfinite(fmid), "invalid function value f("<<mid<<") = " << fmid << " reached in bisection");
+				if (fmid * fmid < 0) {
+					fmax = fmid;
+					_max = mid;
+				} else {
+					fmin = fmid;
+					_min = mid;
+				}
+			}
+			
+			return (_max + _min) / 2.0;
+		}
         
         // - - - - - - - - - - - - - - - Polynomial - - - - - - - - - - - - - - -
         
@@ -174,7 +211,7 @@ namespace xerus {
         }
         
         double Polynomial::scalar_product(const Polynomial &_rhs, const std::function<double (double)> &_weight, double _minX, double _maxX) const {
-            return integrate([&](double x){
+            return xerus::misc::integrate([&](double x){
                 return (*this)(x) * _rhs(x) * _weight(x);
             }, _minX, _maxX, 1e-10);
         }

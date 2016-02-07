@@ -263,7 +263,7 @@ namespace xerus {
 		* @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
 		* @returns the dyadic product as a TTNetwork.
 		*/
-		static TTNetwork dyadic_product(const std::vector<std::reference_wrapper<TTNetwork>> &_tensors);
+		static TTNetwork dyadic_product(const std::vector<TTNetwork> &_tensors);
 		
 		
 		/**

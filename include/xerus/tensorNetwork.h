@@ -480,6 +480,10 @@ namespace xerus {
 		*/
 		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
 		
+		/**
+		 * @brief removes the given @a _slatePosition from the @a _dimension. this reduces the given dimension by one
+		 */
+		virtual void remove_slate(const size_t _dimension, const size_t _slatePosition);
 		
 		/** 
 		 * @brief Resizes a specific dimension of the TensorNetwork.

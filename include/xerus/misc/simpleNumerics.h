@@ -39,8 +39,17 @@ namespace xerus {  namespace misc {
 							double _eps=1e-8, uint _minIter=4, uint _maxIter=6, uint _branchFactor=8,
 							uint _maxRecursion=10);
 
+	
+	double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon = 1e-14);
 
-
+	template<class T>
+	_pure_ T difference(T _a, T _b) {
+		if (_a > _b) {
+			return (_a-_b);
+		} else {
+			return (_b-_a);
+		}
+	}
 
 	/// @brief Class to represent a polynomial by its vector of coefficients.
 	struct Polynomial {

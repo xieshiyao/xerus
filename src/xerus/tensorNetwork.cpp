@@ -944,6 +944,9 @@ namespace xerus {
 	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
 		require_valid_network();
 		
+		REQUIRE(_dimension < degree(), "invalid dimension to remove");
+		REQUIRE(_slatePosition < dimensions[_dimension], "invalide _slatePosition to choose");
+		
 		const size_t extNode = externalLinks[_dimension].other;
 		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
 		
@@ -969,6 +972,25 @@ namespace xerus {
 		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
 		
 		contract_unconnected_subnetworks();
+	}
+	
+	
+	void TensorNetwork::remove_slate(const size_t _dimension, const size_t _slatePosition) {
+		require_valid_network();
+		
+		REQUIRE(_dimension < degree(), "invalid dimension to remove a slate from");
+		REQUIRE(_slatePosition < dimensions[_dimension], "invalide slate position to choose");
+		REQUIRE(dimensions[_dimension] > 0, "removing the last possible slate from this index position would result a dimension of size 0");
+		
+		const size_t extNode = externalLinks[_dimension].other;
+		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		
+		externalLinks[_dimension].dimension -= 1;
+		dimensions[_dimension] -= 1;
+		if (nodes[extNode].tensorObject) {
+			nodes[extNode].tensorObject->remove_slate(extNodeIndexPos, _slatePosition);
+		}
+		nodes[extNode].neighbors[extNodeIndexPos].dimension -= 1;
 	}
 	
 	

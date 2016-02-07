@@ -474,7 +474,7 @@ namespace xerus {
 	}
 	
 	template<bool isOperator>
-	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const std::vector<std::reference_wrapper<TTNetwork<isOperator>>>& _tensors) {
+	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const std::vector<TTNetwork<isOperator>>& _tensors) {
 		if (_tensors.empty()) { return TTNetwork(); }
 		
 		TTNetwork result(_tensors.back());
