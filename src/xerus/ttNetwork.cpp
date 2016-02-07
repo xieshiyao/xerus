@@ -428,9 +428,10 @@ namespace xerus {
 		}
 		
 		// Add all external indices of rhs
-		if(isOperator) {
-			result.externalLinks.resize(lhsNumComponents);
-			result.dimensions.resize(lhsNumComponents);
+		for (size_t i = 0; i < lhsNumComponents; ++i) {
+			const size_t d=_lhs.dimensions[i];
+			result.externalLinks.emplace_back(i+1, 1, d, false);
+			result.dimensions.push_back(d);
 		}
 		result.externalLinks.reserve(_lhs.degree()+_rhs.degree());
 		result.dimensions.reserve(_lhs.degree()+_rhs.degree());

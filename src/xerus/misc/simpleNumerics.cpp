@@ -91,7 +91,7 @@ namespace xerus {
                                 )
                             );
             for (uint i=0; i<_branchFactor; ++i) {
-                sum += xerus::misc::integrate(_f, min+i*h, min+(i+1)*h, newEps, _minIter, _maxIter, _branchFactor, _maxRecursion-1, false);
+                sum += integrate(_f, min+i*h, min+(i+1)*h, newEps, _minIter, _maxIter, _branchFactor, _maxRecursion-1, false);
             }
             return (_a>_b?-1:1)*sum;
         }
@@ -104,7 +104,7 @@ namespace xerus {
             double max = std::max(_a,_b);
             double res = 0;
             for (double x=min; x<max; x+=_segmentation) {
-                res += xerus::misc::integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
+                res += integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
             }
             return (_a>_b?-1:1)*res;
         }
