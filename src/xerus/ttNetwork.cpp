@@ -155,7 +155,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
-		REQUIRE(_dimensions.size()%2 == 0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(_dimensions.size()%N == 0, "Illegal number of dimensions for ttOperator");
 		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
 		
 		if(_dimensions.empty()) {
@@ -180,7 +180,7 @@ namespace xerus {
 	
 	template<> template<>
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
-		REQUIRE(_dimensions.size()%2==0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for ttOperator");
 		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
 		
 		if(_dimensions.empty()) {
@@ -248,7 +248,7 @@ namespace xerus {
 			for (size_t n = 0; n < numComponents; ++n) {
 				const TensorNode& node = nodes[n+1];
 				
-				REQUIRE(!cannonicalized || n == corePosition || !node.tensorObject->has_factor(), "In cannonicalized TTNetworks only the core may carry a non-trivial factor. Violated by component " << n);
+				REQUIRE(!cannonicalized || n == corePosition || !node.tensorObject->has_factor(), "In cannonicalized TTNetworks only the core may carry a non-trivial factor. Violated by component " << n << " factor: " << node.tensorObject->factor << " corepos: " << corePosition);
 				
 				REQUIRE(node.degree() == N+2, "Every TT-Component must have degree " << N+2 << ", but component " << n << " has degree " << node.degree());
 				REQUIRE(!node.neighbors[0].external, "The first link of each TT-Component must not be external. Violated by component " << n);
@@ -473,11 +473,22 @@ namespace xerus {
 			if (_lhs.corePosition == 0 && _rhs.corePosition == 0) {
 				result.cannonicalized = true;
 				result.corePosition = lhsNumComponents;
+				// the other core might have carried a factor
+				if (result.nodes[1].tensorObject->has_factor()) {
+					(*result.nodes[lhsNumComponents+1].tensorObject) *= result.nodes[1].tensorObject->factor;
+					result.nodes[1].tensorObject->factor = 1.0;
+				}
 				result.move_core(0);
 			} else if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
 				result.cannonicalized = true;
 				result.corePosition = lhsNumComponents-1;
-				result.move_core(lhsNumComponents + rhsNumComponents -1);
+				const size_t lastIdx = lhsNumComponents + rhsNumComponents -1;
+				// the other core might have carried a factor
+				if (result.nodes[lastIdx+1].tensorObject->has_factor()) {
+					(*result.nodes[lhsNumComponents].tensorObject) *= result.nodes[lastIdx+1].tensorObject->factor;
+					result.nodes[lastIdx+1].tensorObject->factor = 1.0;
+				}
+				result.move_core(lastIdx);
 			}
 		} else {
 			result.cannonicalized = false;

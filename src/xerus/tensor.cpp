@@ -218,6 +218,7 @@ namespace xerus {
 	
 	
 	bool Tensor::has_factor() const {
+// 		return std::abs(1.0-factor) > std::numeric_limits<double>::epsilon();
 		#pragma GCC diagnostic push
 			#pragma GCC diagnostic ignored "-Wfloat-equal"
 			return (factor != 1.0);

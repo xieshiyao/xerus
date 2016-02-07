@@ -223,5 +223,20 @@ UNIT_TEST(TT, dyadic_product,
 	
 	value_t R = frob_norm(O(i/2,j/2) * S(j/1));
 	TEST(std::abs(R - r1*r2*r3) < 1e-12);
+	
+	S = TTTensor::dyadic_product(S,TTTensor::ones({10})) + TTTensor::dyadic_product(TTTensor::ones({10}), S);
+	TEST(S.cannonicalized);
+	MTEST(S.corePosition == 0, S.corePosition);
+	
+	Tensor e0({10}, [&](const std::vector<size_t> &_idx){
+		return (_idx[0]==0?1.0:0.0);
+	});
+	Tensor e1({10}, [&](const std::vector<size_t> &_idx){
+		return (_idx[0]==1?1.0:0.0);
+	});
+	S *= 1/std::sqrt(2);
+	S = TTTensor::dyadic_product(S,TTTensor(e0)) + TTTensor::dyadic_product(TTTensor(e1), S);
+	TEST(S.cannonicalized);
+	MTEST(S.corePosition == 0, S.corePosition);
 )
 
