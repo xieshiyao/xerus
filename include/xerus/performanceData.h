@@ -75,6 +75,9 @@ namespace xerus {
 		
 		void start() {
 			if (active) {
+				if(printProgress) {
+					LOG(PerformanceData, additionalInformation);
+				}
 				startTime = misc::uTime();
 			}
 		}
@@ -130,12 +133,7 @@ namespace xerus {
 		template<class T>
 		PerformanceData& operator<<(const T &_info) noexcept {
 			if (active) {
-				std::string string = misc::to_string(_info);
-				additionalInformation += string;
-				
-				if(printProgress) {
-					LOG(PerformanceData, string);
-				}
+				additionalInformation += misc::to_string(_info);
 			}
 			return *this;
 		}

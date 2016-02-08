@@ -1298,7 +1298,7 @@ namespace xerus {
 		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
-			LOG(warning, "Sparse SVD not yet implemented.");
+			LOG_ONCE(warning, "Sparse SVD not yet implemented. falling back to the dense SVD");
 			_input.use_dense_representation();
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
@@ -1340,7 +1340,7 @@ namespace xerus {
 		prepare_factorization_output(_Q, _R, _input, _splitPos, rank);
 		
 		if(_input.is_sparse()) {
-			LOG(warning, "Sparse QR not yet implemented."); // TODO
+			LOG_ONCE(warning, "Sparse QR not yet implemented. falling back to the dense variant"); // TODO
 			_input.use_dense_representation();
 			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
@@ -1357,7 +1357,7 @@ namespace xerus {
 		prepare_factorization_output(_R, _Q, _input, _splitPos, rank);
 		
 		if(_input.is_sparse()) {
-			LOG(warning, "Sparse RQ not yet implemented."); // TODO
+			LOG_ONCE(warning, "Sparse RQ not yet implemented. falling back to the dense variant"); // TODO
 			_input.use_dense_representation();
 			blasWrapper::rq(_R.override_dense_data(), _Q.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		} else {
@@ -1374,7 +1374,7 @@ namespace xerus {
 		std::unique_ptr<double[]> QData, CData;
 		
 		if(_input.is_sparse()) {
-			LOG(warning, "Sparse QC not yet implemented."); // TODO
+			LOG_ONCE(warning, "Sparse QC not yet implemented. falling back to the dense variant"); // TODO
 			_input.use_dense_representation();
 			
 			std::tie(QData, CData, rank) = blasWrapper::qc(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
@@ -1393,7 +1393,7 @@ namespace xerus {
 		std::unique_ptr<double[]> CData, QData;
 		
 		if(_input.is_sparse()) {
-			LOG(warning, "Sparse CQ not yet implemented."); // TODO
+			LOG_ONCE(warning, "Sparse CQ not yet implemented. falling back to the dense variant"); // TODO
 			_input.use_dense_representation();
 			
 			std::tie(CData, QData, rank) = blasWrapper::cq(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);

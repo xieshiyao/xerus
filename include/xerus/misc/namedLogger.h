@@ -305,6 +305,21 @@ namespace xerus {
         (void)0
 
 /**
+ * @def LOG_ONCE(lvl, msg)
+ * @brief logs the message @a msg with severity level @a lvl at most once per program execution
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
+ */
+#define LOG_ONCE(lvl, ...) \
+	{\
+		static bool logged = false;\
+		if (!logged) {\
+			LOG(lvl, __VA_ARGS__);\
+			logged = true;\
+		}\
+	}
+
+/**
  * @def IS_LOGGING(lvl)
  * @brief evaluates to true if @a lvl is begin logged (either to cerr or into a file on error) in the current configuration 
  */
