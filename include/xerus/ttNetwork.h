@@ -120,18 +120,19 @@ namespace xerus {
 		 */
 		template<class generator, class distribution>
 		static TTNetwork random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+			const size_t numComponents = _dimensions.size()/N;
 			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
-			REQUIRE(_ranks.size()+1 == _dimensions.size()/N,"Non-matching amount of ranks given to TTNetwork::random.");
+			REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
 			REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
 			REQUIRE(!misc::contains(_ranks, 0ul), "Trying to construct random TTTensor with rank 0 is illegal.");
 			
+			
 			TTNetwork result(_dimensions.size());
-			const size_t numComponents = _dimensions.size()/N;
 			const std::vector<size_t> targetRank = reduce_to_maximal_ranks(_ranks, _dimensions);
 			
 			for(size_t i = 0; i < numComponents; ++i) {
-				size_t leftRank = i==0 ? 1 : targetRank[i-1];
-				size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
+				const size_t leftRank = i==0 ? 1 : targetRank[i-1];
+				const size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
 
 				if(isOperator) {
 					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));

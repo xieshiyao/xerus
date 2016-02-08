@@ -6,19 +6,18 @@ The `xerus` library is a general purpose library for numerical calculations with
 The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
 
 The key features include:
-* Modern code and concepts incorporating many features of the new `c++11` standard.
+* Modern code and concepts incorporating many features of the new `C++11` standard.
 * Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
 * Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS, ADF and CG).
-* Capabilites to handle arbitrary Tensor Networks and the possibility for the user to define own decomposition formats.
 * Lazy evaluation of multiple tensor contractions featuring heuristics to find the most effective contraction order.
-* Direct integration of the `blas` and `lapack`, as high performance linear algebra backends, resulting in superior performance on a wide range of systems.
+* Direct integration of the `blas` and `lapack`, as high performance linear algebra backends.
 * Fast sparse tensor calculation by usage of the `suiteSparse` sparse matrix capabilities.
+* Capabilites to handle arbitrary Tensor Networks.
 
 ## Version History
 
-We released our first stable version 1.0 in May 2015 and are currently at version 1.4.0. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
-The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be
-adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
+We released our first stable version 1.0 in May 2015 and are currently at version 2.1.0. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
+The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
 
 ## Getting Started
 

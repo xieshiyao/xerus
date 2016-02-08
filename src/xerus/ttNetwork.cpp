@@ -273,12 +273,10 @@ namespace xerus {
 	
 	template<bool isOperator>
 	bool TTNetwork<isOperator>::exceeds_maximal_ranks() const {
-		for (size_t i = 0; i < degree()/N; ++i) {
+		const size_t numComponents = dimensions.size()/N;
+		for (size_t i = 0; i < numComponents; ++i) {
 			const Tensor& comp = get_component(i);
-			size_t extDim = comp.dimensions[1];
-			if (isOperator) {
-				extDim *= comp.dimensions[2];
-			}
+			const size_t extDim = isOperator ? comp.dimensions[1]*comp.dimensions[2] : comp.dimensions[1];
 			if (comp.dimensions.front() > extDim * comp.dimensions.back() || comp.dimensions.back() > extDim * comp.dimensions.front()) {
 				return true;
 			}

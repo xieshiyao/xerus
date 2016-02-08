@@ -852,6 +852,7 @@ namespace xerus {
 	
 	
 	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
+		REQUIRE(_nodeA < nodes.size() && _nodeB < nodes.size(), " Illegal node IDs " << _nodeA << "/" << _nodeB << " as there are only " << nodes.size() << " nodes");
 		require_valid_network();
 		
 		Tensor Q, R;

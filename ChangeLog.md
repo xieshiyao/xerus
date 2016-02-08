@@ -2,6 +2,10 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-x-xx v2.2.0
+ * Fixed indices are finally supported by TensorNetworks.
+ * Bugfixes for TTNetwork dyadic_product.
+
 * 2016-02-05 v2.1.0
  * ! fix_slate() now works correctly for TTTensors and (correctly) throws an error for TTOperators.
  * Several bug fixes in the handling of TTNetworks of degree zero.
