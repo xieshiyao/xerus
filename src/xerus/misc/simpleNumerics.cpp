@@ -231,7 +231,7 @@ namespace xerus {
         }
         
         /// returns @a _N pairwise orthogonal polynomials w.r.t. a scalar product defined by the @a _weight
-        std::vector<Polynomial> Polynomial::build_orthogonal_base(uint _N, const std::function<double (double)> &_weight, double _minX, double _maxX) {
+        std::vector<Polynomial> Polynomial::build_orthogonal_base(size_t _N, const std::function<double (double)> &_weight, double _minX, double _maxX) {
             std::vector<Polynomial> base;
             while (base.size() < _N) {
                 Polynomial next;
