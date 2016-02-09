@@ -524,13 +524,14 @@ namespace xerus {
 		
 		const size_t numComponents = _A.degree() / N;
 		
-		std::unique_ptr<Tensor> newComponent;
+		#pragma omp for schedule(static)
 		for (size_t i = 0; i < numComponents; ++i) {
+			std::unique_ptr<Tensor> newComponent;
 			//TODO sparse TT
-			REQUIRE(!_A.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
-			REQUIRE(!_B.get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 			const Tensor& componentA = _A.get_component(i);
 			const Tensor& componentB = _B.get_component(i);
+			REQUIRE(!componentA.is_sparse(), "sparse tensors in TT not allowed");
+			REQUIRE(!componentB.is_sparse(), "sparse tensors in TT not allowed");
 			size_t externalDim;
 			Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			REQUIRE(newRep == Tensor::Representation::Dense, "entrywise product of sparse TT not yet implemented!");
@@ -609,6 +610,7 @@ namespace xerus {
 				set_component(i, std::move(newComponent));
 			}
 		} else {
+			#pragma omp for schedule(static)
 			for (size_t i = 0; i < numComponents; ++i) {
 				REQUIRE(!get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 				const Tensor& currComp = get_component(i);

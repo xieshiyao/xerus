@@ -35,6 +35,9 @@
 
 #include <xerus/tensorNetwork.h>
 
+
+#include <suitesparse/cholmod.h>
+
 namespace xerus {
 	size_t Tensor::sparsityFactor = 4;
 	
@@ -203,6 +206,40 @@ namespace xerus {
 		Tensor ret(*this);
 		ret.use_sparse_representation();
 		return ret;
+	}
+	
+
+	std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> Tensor::to_cholmod(const size_t _matrificationPosition) const {
+		cholmod_common common; // TODO nciht hier
+		cholmod_common* const cc = &common;
+		// TODO call start
+		
+		const size_t nRows = misc::product(dimensions, 0, _matrificationPosition);
+		const size_t nCols = misc::product(dimensions, _matrificationPosition, dimensions.size());
+		
+		std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> result(
+			cholmod_allocate_sparse ( 
+				nRows, 					// # of rows
+				nCols,	// # of columns
+				count_non_zero_entries(),												// max # of nonzeros
+				0,																		// TRUE if columns of A sorted, FALSE otherwise
+				0,																		// TRUE if A will be packed, FALSE otherwise
+				0,																		// stype of A ( 0 means not symmetric )
+				CHOLMOD_REAL,															// CHOLMOD_PATTERN, _REAL, _COMPLEX, or _ZOMPLEX
+				cc
+			), [&](cholmod_sparse* _toDelete) {cholmod_free_sparse(&_toDelete, cc);});
+		
+		// TODO the actual construction
+		LOG(fatal, "Cholmod...");
+		
+		return result;
+	}
+	
+	
+	Tensor Tensor::from_cholmod(const cholmod_sparse* const _cholmod, const Tensor::DimensionTuple& _dimensions) {
+		Tensor result;
+		LOG(fatal, "Cholmod...");
+		return result;
 	}
 	
 	
