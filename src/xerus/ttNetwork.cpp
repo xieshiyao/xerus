@@ -581,34 +581,6 @@ namespace xerus {
 		
 		if(degree() == 0) {
 			(*nodes[0].tensorObject)[0] *= (*nodes[0].tensorObject)[0];
-		} else if ( degree() <= 2 ) {
-			for (size_t i = 0; i < numComponents; ++i) {
-				const Tensor& currComp = get_component(i);
-				const size_t newLeftRank = currComp.dimensions.front()*(currComp.dimensions.front()+1)/2;
-				const size_t newRightRank = currComp.dimensions.back()*(currComp.dimensions.back()+1)/2;
-				
-				Tensor newComponent(isOperator ? 
-					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), Tensor::Representation::Dense, Tensor::Initialisation::None );
-				
-				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
-				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
-				const size_t oldExtStep = currComp.dimensions.back();
-				
-				size_t newPos = 0;
-				for (size_t r1 = 0; r1 < currComp.dimensions.front(); ++r1) {
-					for (size_t r2 = 0; r2 <= r1; ++r2) {
-						for (size_t n = 0; n < externalDim; ++n) {
-							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								for (size_t s2 = 0; s2 <= s1; ++s2) {
-									newComponent[newPos++] = (s1 == s2 ? 1.0 : 2.0) * currComp[r1*oldLeftStep + n*oldExtStep + s1] * currComp[r2*oldLeftStep + n*oldExtStep + s2];
-								}
-							}
-						}
-					}
-				}
-				set_component(i, std::move(newComponent));
-			}
 		} else {
 			#pragma omp for schedule(static)
 			for (size_t i = 0; i < numComponents; ++i) {
