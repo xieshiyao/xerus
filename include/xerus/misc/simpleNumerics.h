@@ -81,7 +81,7 @@ namespace xerus {  namespace misc {
 		Polynomial &orthogonolize(const std::vector<Polynomial> &_orthoBase, const std::function<double (double)> &_weight, double _minX, double _maxX);
 		
 		/// returns @a _N pairwise orthogonal polynomials w.r.t. a scalar product defined by the @a _weight
-		static std::vector<Polynomial> build_orthogonal_base(uint _N, const std::function<double (double)> &_weight, double _minX, double _maxX);
+		static std::vector<Polynomial> build_orthogonal_base(size_t _N, const std::function<double (double)> &_weight, double _minX, double _maxX);
 	};
 
 

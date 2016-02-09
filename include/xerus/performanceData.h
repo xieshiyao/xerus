@@ -76,7 +76,12 @@ namespace xerus {
 		void start() {
 			if (active) {
 				if(printProgress) {
-					LOG(PerformanceData, additionalInformation);
+					std::stringstream ss(additionalInformation);
+					while (ss) {
+						std::string line;
+						std::getline(ss, line);
+						LOG_SHORT(PerformanceData, line);
+					}
 				}
 				startTime = misc::uTime();
 			}

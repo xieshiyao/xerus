@@ -305,6 +305,30 @@ namespace xerus {
         (void)0
 
 /**
+ * @def LOG_SHORT(lvl, msg)
+ * @brief logs the message @a msg with severity level @a lvl, omits the current file name and line number
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
+ */
+#define LOG_SHORT(lvl, ...) \
+    if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
+        std::stringstream tmpStream; \
+        XERUS_LOGGER_TIMESTAMP \
+				<< std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
+        xerus::misc::internal::namedLoggerMutex.lock(); \
+        if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+            XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
+        } \
+        NAMED_LOGGER_LOGBUFFER \
+        xerus::misc::internal::namedLoggerMutex.unlock(); \
+        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) { \
+            NAMED_LOGGER_ON_FATAL \
+        } \
+    } else \
+        (void)0
+
+/**
  * @def LOG_ONCE(lvl, msg)
  * @brief logs the message @a msg with severity level @a lvl at most once per program execution
  * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
