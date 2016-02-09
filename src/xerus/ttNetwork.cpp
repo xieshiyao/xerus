@@ -521,7 +521,6 @@ namespace xerus {
 		}
 		
 		TTNetwork result(_A.degree());
-		
 		const size_t numComponents = _A.degree() / N;
 		
 		#pragma omp for schedule(static)
@@ -532,19 +531,16 @@ namespace xerus {
 			const Tensor& componentB = _B.get_component(i);
 			REQUIRE(!componentA.is_sparse(), "sparse tensors in TT not allowed");
 			REQUIRE(!componentB.is_sparse(), "sparse tensors in TT not allowed");
-			size_t externalDim;
-			Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
-			REQUIRE(newRep == Tensor::Representation::Dense, "entrywise product of sparse TT not yet implemented!");
+			const size_t externalDim = isOperator ? componentA.dimensions[1] * componentA.dimensions[2] : componentA.dimensions[1];
+			const Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			if (isOperator) {
 				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], componentA.dimensions[2], 
 											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
-				externalDim = componentA.dimensions[1] * componentA.dimensions[2];
 			} else {
 				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
 											componentA.dimensions[1], 
 											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
-				externalDim = componentA.dimensions[1];
 			}
 			size_t offsetA = 0, offsetB = 0, offsetResult = 0;
 			const size_t stepsize = componentB.dimensions.back();
@@ -562,7 +558,11 @@ namespace xerus {
 				}
 				offsetB = 0;
 			}
-			result.set_component(i, std::move(*newComponent));
+			
+			#pragma omp critical
+			{
+				result.set_component(i, std::move(*newComponent));
+			}
 		}
 		
 		result.require_correct_format();
@@ -639,7 +639,11 @@ namespace xerus {
 						}
 					}
 				}
-				set_component(i, std::move(newComponent));
+				
+				#pragma omp critical
+				{
+					set_component(i, std::move(newComponent));
+				}
 			}
 		}
 		
