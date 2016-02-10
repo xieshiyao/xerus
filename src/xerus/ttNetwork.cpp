@@ -50,48 +50,59 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
-		REQUIRE(_degree%N==0, "illegal degree for TTOperator");
-		const size_t numComponents = _degree/N;
+	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TTNetwork(std::vector<size_t>(_degree, 1)) { }
+	
+	template<bool isOperator>
+	TTNetwork<isOperator>::TTNetwork(Tensor::DimensionTuple _dimensions) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
+		dimensions = std::move(_dimensions);
+		
+		REQUIRE(dimensions.size()%N==0, "Illegal degree for TTOperator.");
+		REQUIRE(!misc::contains(dimensions, 0ul), "Zero is no valid dimension.");
+		const size_t numComponents = dimensions.size()/N;
 		
 		if (numComponents == 0) {
 			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
 			return;
 		}
 		
-		dimensions = std::vector<size_t>(_degree, 1);
-		
 		// ExternalLinks
-		externalLinks.reserve(_degree);
-		for (size_t i = 1; i <= numComponents; ++i) {
-			externalLinks.emplace_back(i, 1, 1, false);
+		externalLinks.reserve(dimensions.size());
+		for (size_t i = 0; i < numComponents; ++i) {
+			externalLinks.emplace_back(i+1, 1, dimensions[i], false);
 		}
 		
 		if (isOperator) {
-			for (size_t i = 1; i <= numComponents; ++i) {
-				externalLinks.emplace_back(i, 2, 1, false);
+			for (size_t i = 0; i < numComponents; ++i) {
+				externalLinks.emplace_back(i+1, 2, dimensions[numComponents+i], false);
 			}
 		}
 		
 		std::vector<TensorNetwork::Link> neighbors;
 		
-		neighbors.emplace_back(1, 0, 1,false);
+		neighbors.emplace_back(1, 0, 1, false);
 		
-		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors) );
+		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
 		
 		for (size_t i = 0; i < numComponents; ++i) {
 			neighbors.clear();
-			neighbors.emplace_back(i, i==0?0:N+1, 1, false);
-			neighbors.emplace_back(-1, i, 1, true);
-			if(isOperator) { neighbors.emplace_back(-1, i+numComponents, 1, true); }
+			neighbors.emplace_back(i, i==0 ? 0 : N+1, 1, false);
+			neighbors.emplace_back(-1, i, dimensions[i], true);
+			if(isOperator) { neighbors.emplace_back(-1, i+numComponents, dimensions[numComponents+i], true); }
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
-			nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(std::vector<size_t>(neighbors.size(), 1))), std::move(neighbors) );
+			if(!isOperator) {
+				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], 1}, 0))), std::move(neighbors) );
+			} else {
+				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], dimensions[numComponents+i], 1}, 0))), std::move(neighbors) );
+			}
 		}
 		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
 		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
+		
+		// Make a Zero Tensor (at core)
+		(*nodes[1].tensorObject)[0] = 0;
 	}
 	
 	

@@ -82,6 +82,13 @@ namespace xerus {
 		
 		
 		/** 
+		* @brief Constructs an zero initialized TTNetwork with the given dimensions and ranks all equal to one.
+		* @details Naturally for TTOperators the degree must be even.
+		*/
+		explicit TTNetwork(Tensor::DimensionTuple _dimensions);
+		
+		
+		/** 
 		* @brief Constructs a TTNetwork from the given Tensor.
 		* @details  The higher order SVD algorithm is used to decompose the given Tensor into the TT format.
 		* @param _tensor The Tensor to decompose.
