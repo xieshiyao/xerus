@@ -36,7 +36,7 @@
 #include <xerus/tensorNetwork.h>
 
 
-#include <suitesparse/cholmod.h>
+// #include <suitesparse/cholmod.h>
 
 namespace xerus {
 	size_t Tensor::sparsityFactor = 4;
@@ -210,7 +210,7 @@ namespace xerus {
 		return ret;
 	}
 	
-
+/*
 	std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> Tensor::to_cholmod(const size_t _matrificationPosition) const {
 		cholmod_common common; // TODO nciht hier
 		cholmod_common* const cc = &common;
@@ -243,7 +243,7 @@ namespace xerus {
 		LOG(fatal, "Cholmod...");
 		return result;
 	}
-	
+	*/
 	
 	Tensor& Tensor::operator=(const TensorNetwork& _network) {
 		return operator=(Tensor(_network));

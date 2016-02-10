@@ -2,8 +2,12 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
-* 2016-x-xx v2.2.0
- * Fixed indices are finally supported by TensorNetworks.
+* 2016-xx-xx v2.2.0
+ * To be determined.
+
+* 2016-02-10 v2.2.1
+ * Basic support for fixed indices in TensorNetworks.
+ * Readded TTNetwork constructor from DimensionTuple.
  * Bugfixes for TTNetwork dyadic_product.
 
 * 2016-02-05 v2.1.0
