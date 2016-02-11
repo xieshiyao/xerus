@@ -1024,7 +1024,7 @@ namespace xerus {
 			
 			Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep));
-			REQUIRE(newRep == Tensor::Representation::Dense, "ie");
+			REQUIRE(newRep == Tensor::Representation::Dense, "not implemented yet");
 			value_t * const componentData = static_cast<Tensor*>(newComponent.get())->get_unsanitized_dense_data();
 			
 			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();

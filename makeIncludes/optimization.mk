@@ -44,13 +44,17 @@ else ifdef HIGH_OPTIMIZATION
 		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
 		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
 		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.
-#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
+		#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
 		OPTIMIZE += -fira-loop-pressure			# Use IRA to evaluate register pressure in loops for decisions to move loop invariants.
-		OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
-		OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
-		OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
-		OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
-		OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+		
+		#Optimizations that need Graphite
+		ifdef GRAPHITE_AVAILABLE
+			OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
+			OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
+			OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
+			OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
+			OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+		endif
 # 		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
 		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
 		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
@@ -71,13 +75,16 @@ else ifdef DANGEROUS_OPTIMIZATION
 		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
 		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
 		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.
-#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
+		#Not working with LTO 		OPTIMIZE += -fipa-pta				# Perform interprocedural pointer analysis and interprocedural modification and reference analysis.
 		OPTIMIZE += -fira-loop-pressure			# Use IRA to evaluate register pressure in loops for decisions to move loop invariants.
-		OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
-		OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
-		OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
-		OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
-		OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+		#Optimizations that need Graphite
+		ifdef GRAPHITE_AVAILABLE
+			OPTIMIZE += -fgraphite-identity			# Enable the identity transformation for graphite.
+			OPTIMIZE += -floop-block			# Perform loop blocking transformations on loops.
+			OPTIMIZE += -floop-interchange			# Perform loop interchange transformations on loops.
+			OPTIMIZE += -floop-nest-optimize		# Enable the ISL based loop nest optimizer.
+			OPTIMIZE += -floop-strip-mine			# Perform loop strip mining transformations on loops.
+		endif
 # 		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
 		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
 		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
@@ -94,15 +101,6 @@ else ifdef DANGEROUS_OPTIMIZATION
 		OPTIMIZE += -funsafe-loop-optimizations 	# This option tells the loop optimizer to assume that loop indices do not overflow, and that loops with nontrivial exit condition are not infinite. 
 
 		OPTIMIZE += --param max-vartrack-expr-depth=120
-	endif
-	
-	#Optimizations that need Graphite
-	ifdef GRAPHITE_AVAILABLE
-		OPTIMIZE += -floop-interchange		#Perform loop interchange transformations on loops.
-		OPTIMIZE += -floop-strip-mine		#Perform loop strip mining transformations on loops.
-		OPTIMIZE += -floop-block		#Perform loop blocking transformations on loops.
-		OPTIMIZE += -fgraphite-identity
-		OPTIMIZE += -floop-nest-optimize
 	endif
 	
 	# Potentially loose precicision
