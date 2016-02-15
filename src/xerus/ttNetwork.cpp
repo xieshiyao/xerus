@@ -536,7 +536,7 @@ namespace xerus {
 		
 		#pragma omp for schedule(static)
 		for (size_t i = 0; i < numComponents; ++i) {
-			std::unique_ptr<Tensor> newComponent;
+			Tensor newComponent;
 			//TODO sparse TT
 			const Tensor& componentA = _A.get_component(i);
 			const Tensor& componentB = _B.get_component(i);
@@ -545,13 +545,9 @@ namespace xerus {
 			const size_t externalDim = isOperator ? componentA.dimensions[1] * componentA.dimensions[2] : componentA.dimensions[1];
 			const Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			if (isOperator) {
-				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
-											componentA.dimensions[1], componentA.dimensions[2], 
-											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
+				newComponent = Tensor({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions[2], componentA.dimensions.back()*componentB.dimensions.back() }, newRep);
 			} else {
-				newComponent.reset(new Tensor({componentA.dimensions.front()*componentB.dimensions.front(), 
-											componentA.dimensions[1], 
-											componentA.dimensions.back()*componentB.dimensions.back()   }, newRep));
+				newComponent = Tensor({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions.back()*componentB.dimensions.back() }, newRep);
 			}
 			size_t offsetA = 0, offsetB = 0, offsetResult = 0;
 			const size_t stepsize = componentB.dimensions.back();
@@ -560,7 +556,7 @@ namespace xerus {
 					offsetA = r1 * externalDim * componentA.dimensions.back();
 					for (size_t n = 0; n < externalDim; ++n) {
 						for (size_t r2 = 0; r2 < componentA.dimensions.back(); ++r2) {
-							misc::copy_scaled(newComponent->get_unsanitized_dense_data()+offsetResult, componentB.factor*componentA.factor*componentA.get_unsanitized_dense_data()[offsetA], componentB.get_unsanitized_dense_data()+offsetB, stepsize);
+							misc::copy_scaled(newComponent.get_unsanitized_dense_data()+offsetResult, componentB.factor*componentA.factor*componentA.get_unsanitized_dense_data()[offsetA], componentB.get_unsanitized_dense_data()+offsetB, stepsize);
 							offsetResult += stepsize;
 							offsetA += 1;
 						}
@@ -572,7 +568,7 @@ namespace xerus {
 			
 			#pragma omp critical
 			{
-				result.set_component(i, std::move(*newComponent));
+				result.set_component(i, std::move(newComponent));
 			}
 		}
 		
