@@ -34,7 +34,7 @@
 
 #include "indexedTensor.h"
 
-// typedef struct cholmod_sparse_struct cholmod_sparse ;
+typedef struct cholmod_sparse_struct cholmod_sparse;
 
 namespace xerus {
 	//Forwad declarations
@@ -295,7 +295,7 @@ namespace xerus {
 		 * @param _matrificationPosition position to be used in defining the matrification.
 		 * @return unique_ptr to the cholmod_sparse object.
 		 */
-// 		std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> to_cholmod(const size_t _matrificationPosition) const;
+		std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> to_cholmod(const size_t _matrificationPosition) const;
 		
 		/** 
 		 * @brief: Constructs a tensor from the SuiteSparse CHOLMOD sparse format.
@@ -303,7 +303,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor, must be compatible with the given matrix dimensions.
 		 * @return The newly constructed Tensor.
 		 */
-// 		static Tensor from_cholmod(const cholmod_sparse* const _cholmod, const DimensionTuple& _dimensions);
+		static Tensor from_cholmod(const cholmod_sparse* const _cholmod, const DimensionTuple& _dimensions);
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 

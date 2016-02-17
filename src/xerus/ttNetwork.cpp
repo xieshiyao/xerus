@@ -853,16 +853,6 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	size_t TTNetwork<isOperator>::datasize() const {
-		size_t result = 0;
-		for (const TensorNode& node : nodes) {
-			result += node.tensorObject->size;
-		}
-		return result;
-	}
-	
-	
-	template<bool isOperator>
 	void TTNetwork<isOperator>::assume_core_position(const size_t _pos) {
 		REQUIRE(_pos < degree()/N || (degree() == 0 && _pos == 0), "Invalid core position.");
 		corePosition = _pos;

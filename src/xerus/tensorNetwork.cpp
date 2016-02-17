@@ -492,6 +492,13 @@ namespace xerus {
 		return dimensions.size();
 	}
 	
+	size_t TensorNetwork::datasize() const {
+		size_t result = 0;
+		for (const TensorNode& node : nodes) {
+			result += node.tensorObject->size;
+		}
+		return result;
+	}
 	
 	void TensorNetwork::reshuffle_nodes(const std::function<size_t(size_t)>& _f) {
 		std::vector<TensorNode> newNodes(nodes.size());

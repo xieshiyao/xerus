@@ -390,13 +390,6 @@ namespace xerus {
 		
 		
 		/** 
-		* @brief Calculates the storage requirement of the current representation.
-		* @return The datasize in sizeof(value_t).
-		*/
-		size_t datasize() const;
-		
-		
-		/** 
 		* @brief Move the core to a new position.
 		* @details The core is moved to @a _position and the nodes between the old and the new position are orthogonalized
 		* accordingly. If the TTNetwork is not yet cannonicalized it will be with @a _position as new corePosition.

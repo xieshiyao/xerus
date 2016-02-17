@@ -395,6 +395,12 @@ namespace xerus {
 		*/
 		size_t degree() const;
 		
+		/** 
+		* @brief Calculates the storage requirement of the current representation.
+		* @return The datasize in sizeof(value_t).
+		*/
+		size_t datasize() const;
+		
 		
 		/// @brief reshuffled the nodes according to the given function
 		void reshuffle_nodes(const std::function<size_t(size_t)>& _f);
