@@ -58,7 +58,6 @@ namespace xerus {
 	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
-		REQUIRE(_lhs.size() == _rhs.size(), "");
 		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
 			if (_lhs[i] < _rhs[i]) return true;
 			if (_lhs[i] > _rhs[i]) return false;
@@ -67,6 +66,7 @@ namespace xerus {
 			if (_lhs[i-1] < _rhs[i-1]) return true;
 			if (_lhs[i-1] > _rhs[i-1]) return false;
 		}
+		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}
@@ -165,7 +165,6 @@ namespace xerus {
 	
 	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) {
-		REQUIRE(_lhs.size() == _rhs.size(), "I.E.");
 		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
 			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
 			for(size_t j = 0; j < _lhs[i].size; ++j) {
@@ -180,6 +179,7 @@ namespace xerus {
 				if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
 			}
 		}
+		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}

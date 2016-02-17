@@ -77,16 +77,16 @@ namespace xerus {
 			for (size_t j = 0; j < degree; ++j) {
 				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
-					if (measurments.positions[_a][j][k] < measurments.positions[_b][j][k]) { return true; }
-					if (measurments.positions[_a][j][k] > measurments.positions[_b][j][k]) { return false; }
+					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
+					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
 				}
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
 				REQUIRE(measurments.positions[_a][j-1].size == measurments.positions[_b][j-1].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j-1].size << " vs " << measurments.positions[_b][j-1].size);
 				for(size_t k = 0; k < measurments.positions[_a][j-1].size; ++k) {
-					if (measurments.positions[_a][j-1][k] < measurments.positions[_b][j-1][k]) { return true; }
-					if (measurments.positions[_a][j-1][k] > measurments.positions[_b][j-1][k]) { return false; }
+					if (measurments.positions[_a][j-1].cat(k) < measurments.positions[_b][j-1].cat(k)) { return true; }
+					if (measurments.positions[_a][j-1].cat(k) > measurments.positions[_b][j-1].cat(k)) { return false; }
 				}
 			}
 		}
