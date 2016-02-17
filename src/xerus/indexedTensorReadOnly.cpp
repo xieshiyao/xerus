@@ -154,7 +154,7 @@ namespace xerus {
 			for(const Index& idx : _indexOrder) {
 				if(idx.actual_span(trueOrder) == 0) { continue; }
 				
-				REQUIRE(misc::count(indices, idx) == 1, "All indices of evaluation target must appear exactly once. Here " << misc::count(indices, idx));
+				REQUIRE(misc::count(indices, idx) == 1, "All indices of evaluation target must appear exactly once. Here " << misc::count(indices, idx) << " " << indices << " " << _indexOrder);
 				
 				// Find index
 				size_t indexPos = 0, dimCount = 0;
