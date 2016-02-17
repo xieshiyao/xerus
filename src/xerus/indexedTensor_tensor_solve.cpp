@@ -101,10 +101,11 @@ namespace xerus {
 		const size_t N = usedX->tensorObjectReadOnly->size;
 		
 		if(tmpA.tensorObjectReadOnly->is_sparse()) {
-			LOG(fatal, "Sparse solve not yet implemented.");
-		} else {
-			blasWrapper::solve_least_squares_destructive(usedX->tensorObject->override_dense_data(), tmpA.tensorObject->get_unsanitized_dense_data(), M, N, tmpB.tensorObject->get_unsanitized_dense_data());
+			LOG_ONCE(warning, "Sparse solve not yet implemented. falling back by casting to dense first");
+			tmpA.tensorObject->use_dense_representation();
 		}
+		blasWrapper::solve_least_squares_destructive(usedX->tensorObject->override_dense_data(), tmpA.tensorObject->get_unsanitized_dense_data(), M, N, tmpB.tensorObject->get_unsanitized_dense_data());
+		
 		
 		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
 		

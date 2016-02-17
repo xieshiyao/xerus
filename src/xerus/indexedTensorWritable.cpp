@@ -80,34 +80,33 @@ namespace xerus {
 		template<> 
 		void IndexedTensorWritable<Tensor>::indexed_assignement(IndexedTensorReadOnly<TensorNetwork>&& _rhs) {
 			_rhs.tensorObjectReadOnly->require_valid_network();
-			_rhs.assign_indices();
-			std::vector<Index> rightIndices = _rhs.indices;
-			TensorNetwork cpy(*_rhs.tensorObjectReadOnly);
-			TensorNetwork::link_traces_and_fix(cpy(rightIndices));
+			IndexedTensorMoveable<TensorNetwork> cpy(std::move(_rhs));
+			TensorNetwork::link_traces_and_fix(std::move(cpy));
 			
 			std::set<size_t> all;
-			for (size_t i=0; i < cpy.nodes.size(); ++i) {
+			for (size_t i=0; i < cpy.tensorObject->nodes.size(); ++i) {
 				all.insert(i);
 			}
 
-			size_t res = cpy.contract(all);
+			const size_t res = cpy.tensorObject->contract(all);
 			
 			std::vector<Index> externalOrder;
-			for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
+			for(size_t i = 0; i < cpy.tensorObject->nodes[res].neighbors.size(); ++i) { externalOrder.emplace_back(); }
 			
 			std::vector<Index> internalOrder;
-			for(const TensorNetwork::Link& link: cpy.nodes[res].neighbors) {
+			for(const TensorNetwork::Link& link: cpy.tensorObject->nodes[res].neighbors) {
 				REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
 				internalOrder.emplace_back(externalOrder[link.indexPosition]);
 			}
 			
-			assign_indices(get_eval_degree(rightIndices));
+			assign_indices(get_eval_degree(cpy.indices));
 			std::vector<Index> outOrder;
 			for (const Index &idx : indices) {
-				REQUIRE(misc::contains(rightIndices, idx), "Every index on the LHS must appear somewhere on the RHS");
+				REQUIRE(misc::contains(cpy.indices, idx), "Every index on the LHS must appear somewhere on the RHS");
 				size_t spanSum = 0;
-				for (size_t j = 0; rightIndices[j] != idx; ++j) {
-					spanSum += rightIndices[j].span;
+				for (size_t j = 0; cpy.indices[j] != idx; ++j) {
+					REQUIRE(j < cpy.indices.size()-1, "ie");
+					spanSum += cpy.indices[j].span;
 				}
 				
 				for (size_t i=0; i < idx.span; ++i) {
@@ -115,7 +114,7 @@ namespace xerus {
 				}
 			}
 		
-			(*tensorObject)(outOrder) = (*cpy.nodes[res].tensorObject)(internalOrder);
+			(*tensorObject)(outOrder) = (*cpy.tensorObject->nodes[res].tensorObject)(internalOrder);
 		}
 		
 		template<> 
