@@ -71,11 +71,6 @@ namespace xerus {
 		
 		size_t degree() const;
 		
-		struct Comparator {
-			const size_t split_position;
-			Comparator(const size_t _splitPos) : split_position(_splitPos)  {}
-			bool operator()(const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) const;
-		};
 	};
 	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos = ~0ul);
@@ -91,12 +86,7 @@ namespace xerus {
 		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
 		
 		RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions);
-		
-		struct Comparator {
-			const size_t split_position;
-			Comparator(const size_t _splitPos) : split_position(_splitPos)  {}
-			bool operator()(const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) const;
-		};
+
 		
 		void add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue);
 		

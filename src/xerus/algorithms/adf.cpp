@@ -252,7 +252,7 @@ namespace xerus {
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
-		std::vector<Tensor> fixedComponents = get_fixed_components(_currentComponent);		
+		const std::vector<Tensor> fixedComponents = get_fixed_components(_currentComponent);		
 		
 		// Update the stack
 		#pragma omp parallel for schedule(static)
