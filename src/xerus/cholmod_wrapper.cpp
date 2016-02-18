@@ -58,6 +58,7 @@ namespace xerus { namespace internal {
 		REQUIRE(c->itype == CHOLMOD_INT, "atm only cholmod compiled with itype = int is supported...");
 		REQUIRE(c->dtype == CHOLMOD_DOUBLE, "atm only cholmod compiled with dtype = double is supported...");
 		c->error_handler = &error_handler;
+		c->print = 0;
 		REQUIRE(c->status == 0, "unable to initialize CHOLMOD");
 	}
 	
@@ -89,7 +90,7 @@ namespace xerus { namespace internal {
 	}
 
 	CholmodSparse::CholmodSparse(const std::map<size_t, double>& _input, const size_t _m, const size_t _n, const bool _transpose) 
-		: CholmodSparse(_m, _n, _input.size())
+		: CholmodSparse(_n, _m, _input.size())
 	{
 		size_t entryPos = 0;
 		int* i = static_cast<int*>(matrix->i);
@@ -103,22 +104,22 @@ namespace xerus { namespace internal {
 		
 		for(const std::pair<size_t, value_t>& entry : _input) {
 			x[entryPos] = entry.second;
-			i[entryPos] = static_cast<int>(entry.first%_m);
-			while(currRow < static_cast<int>(entry.first/_m)) {
+			i[entryPos] = static_cast<int>(entry.first%_n);
+			while(currRow < static_cast<int>(entry.first/_n)) {
 				p[++currRow] = int(entryPos);
 			}
 			entryPos++;
 		}
 		
-		REQUIRE(size_t(currRow) < _n && entryPos == _input.size(), "Internal Error " << currRow << ", " << _n << " | " << entryPos << ", " <<  _input.size());
+		REQUIRE(size_t(currRow) < _m && entryPos == _input.size(), "Internal Error " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
 		
-		while(currRow < static_cast<int>(_n)) {
+		while(currRow < static_cast<int>(_m)) {
 			p[++currRow] = int(entryPos);
 		}
 
 		if(!_transpose) {
 			// we didn't want A^T, so transpose the data to get compressed column storage of A
-			ptr_type newM(cholmod_allocate_sparse(_n, _m, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
+			ptr_type newM(cholmod_allocate_sparse(_m, _n, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
 			cholmod_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
 			matrix = std::move(newM);
 		}
@@ -155,8 +156,8 @@ namespace xerus { namespace internal {
 								const bool _transposeB ) 
 	{
 // 		LOG(ssmult, _leftDim << " " << _midDim << " " << _rightDim << " " << _transposeA << " " << _transposeB);
-		const CholmodSparse lhsCs(_A, _transposeA?_leftDim:_midDim, _transposeA?_midDim:_leftDim, _transposeA);
-		const CholmodSparse rhsCs(_B, _transposeB?_midDim:_rightDim, _transposeB?_rightDim:_midDim, _transposeB);
+		const CholmodSparse lhsCs(_A, _transposeA?_midDim:_leftDim, _transposeA?_leftDim:_midDim, _transposeA);
+		const CholmodSparse rhsCs(_B, _transposeB?_rightDim:_midDim, _transposeB?_midDim:_rightDim, _transposeB);
 		const CholmodSparse resultCs = lhsCs * rhsCs;
 		_C = resultCs.to_map(_alpha);
 	}

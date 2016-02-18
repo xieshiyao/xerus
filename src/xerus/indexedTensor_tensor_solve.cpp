@@ -84,6 +84,7 @@ namespace xerus {
 		
 		internal::IndexedTensor<Tensor> tmpB(new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true);
 		evaluate(std::move(tmpB), std::move(_b));
+		tmpB.tensorObject->use_dense_representation();
 		tmpB.tensorObject->ensure_own_data();
 		
 		//Save slot for eventual tmpX
@@ -104,8 +105,8 @@ namespace xerus {
 			LOG_ONCE(warning, "Sparse solve not yet implemented. falling back by casting to dense first");
 			tmpA.tensorObject->use_dense_representation();
 		}
-		blasWrapper::solve_least_squares_destructive(usedX->tensorObject->override_dense_data(), tmpA.tensorObject->get_unsanitized_dense_data(), M, N, tmpB.tensorObject->get_unsanitized_dense_data());
 		
+		blasWrapper::solve_least_squares_destructive(usedX->tensorObject->override_dense_data(), tmpA.tensorObject->get_unsanitized_dense_data(), M, N, tmpB.tensorObject->get_unsanitized_dense_data());
 		
 		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
 		
