@@ -55,10 +55,9 @@ namespace xerus { namespace internal {
 	
 	CholmodCommon::CholmodCommon() : c(new cholmod_common()) {
 		cholmod_start(c.get());
-		c->itype = CHOLMOD_LONG;
-		c->dtype = CHOLMOD_DOUBLE;
+		REQUIRE(c->itype == CHOLMOD_INT, "atm only cholmod compiled with itype = int is supported...");
+		REQUIRE(c->dtype == CHOLMOD_DOUBLE, "atm only cholmod compiled with dtype = double is supported...");
 		c->error_handler = &error_handler;
-// 		c->print = 1;
 		REQUIRE(c->status == 0, "unable to initialize CHOLMOD");
 	}
 	
@@ -86,60 +85,57 @@ namespace xerus { namespace internal {
 	CholmodSparse::CholmodSparse(const size_t _m, const size_t _n, const size_t _N) 
 		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter())
 	{
-		REQUIRE(matrix, "cholmod_allocate_sparse did not allocate anything... status: " << cholmodObject.c->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
-		if (matrix) {
-			LOG(test, "yay!");
-		}
+		REQUIRE(matrix && cholmodObject.c->status == 0, "cholmod_allocate_sparse did not allocate anything... status: " << cholmodObject.c->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
 	}
 
 	CholmodSparse::CholmodSparse(const std::map<size_t, double>& _input, const size_t _m, const size_t _n, const bool _transpose) 
 		: CholmodSparse(_m, _n, _input.size())
 	{
 		size_t entryPos = 0;
-		LOG(test, uintptr_t(matrix->i));
-		long* i = static_cast<long*>(matrix->i);
-		long* p = static_cast<long*>(matrix->p);
+		int* i = static_cast<int*>(matrix->i);
+		int* p = static_cast<int*>(matrix->p);
 		double* x = static_cast<double*>(matrix->x);
 		i[0] = 0;
 		
 		// create compressed column storage of A^T aka compressed row storage of A
 		
-		long currRow = -1;
+		int currRow = -1;
 		
 		for(const std::pair<size_t, value_t>& entry : _input) {
 			x[entryPos] = entry.second;
-			i[entryPos] = static_cast<long>(entry.first%_m);
-			while(currRow < static_cast<long>(entry.first/_m)) {
-				p[++currRow] = long(entryPos);
+			i[entryPos] = static_cast<int>(entry.first%_m);
+			while(currRow < static_cast<int>(entry.first/_m)) {
+				p[++currRow] = int(entryPos);
 			}
 			entryPos++;
 		}
 		
 		REQUIRE(size_t(currRow) < _n && entryPos == _input.size(), "Internal Error " << currRow << ", " << _n << " | " << entryPos << ", " <<  _input.size());
 		
-		while(currRow < static_cast<long>(_n)) {
-			p[++currRow] = long(entryPos);
+		while(currRow < static_cast<int>(_n)) {
+			p[++currRow] = int(entryPos);
 		}
-		
+
 		if(!_transpose) {
 			// we didn't want A^T, so transpose the data to get compressed column storage of A
-			matrix = ptr_type(cholmod_transpose(matrix.get(), 1, cholmodObject.get()), cholmodObject.get_deleter());
+			ptr_type newM(cholmod_allocate_sparse(_n, _m, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
+			cholmod_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
+			matrix = std::move(newM);
 		}
 	}
 
 	std::map<size_t, double> CholmodSparse::to_map(double _alpha) const {
 		std::map<size_t, double> result;
-		long* mi = reinterpret_cast<long*>(matrix->i);
-		long* p = reinterpret_cast<long*>(matrix->p);
+		int* mi = reinterpret_cast<int*>(matrix->i);
+		int* p = reinterpret_cast<int*>(matrix->p);
 		double* x = reinterpret_cast<double*>(matrix->x);
 		
 		for(size_t i = 0; i < matrix->ncol; ++i) {
-			for(long j = p[i]; j < p[i+1]; ++j) {
+			for(int j = p[i]; j < p[i+1]; ++j) {
 				IF_CHECK( auto ret = ) result.emplace(mi[size_t(j)]*matrix->ncol+i, _alpha*x[j]);
 				REQUIRE(ret.second, "Internal Error");
 			}
 		}
-		
 		return result;
 	}
 
@@ -158,8 +154,9 @@ namespace xerus { namespace internal {
 								const std::map<size_t, double>& _B,
 								const bool _transposeB ) 
 	{
-		const CholmodSparse lhsCs(_A, _leftDim, _midDim, _transposeA);
-		const CholmodSparse rhsCs(_B, _midDim, _rightDim, _transposeB);
+// 		LOG(ssmult, _leftDim << " " << _midDim << " " << _rightDim << " " << _transposeA << " " << _transposeB);
+		const CholmodSparse lhsCs(_A, _transposeA?_leftDim:_midDim, _transposeA?_midDim:_leftDim, _transposeA);
+		const CholmodSparse rhsCs(_B, _transposeB?_midDim:_rightDim, _transposeB?_rightDim:_midDim, _transposeB);
 		const CholmodSparse resultCs = lhsCs * rhsCs;
 		_C = resultCs.to_map(_alpha);
 	}
