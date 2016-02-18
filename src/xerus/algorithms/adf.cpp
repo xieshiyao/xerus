@@ -98,8 +98,8 @@ namespace xerus {
 				else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
 				
 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
-					if (measurments.positions[_a][j][k] < measurments.positions[_b][j][k]) { return true; }
-					if (measurments.positions[_a][j][k] > measurments.positions[_b][j][k]) { return false; }
+					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
+					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
 				}
 			}
 		} else {
@@ -110,7 +110,6 @@ namespace xerus {
 						if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; } 
 						else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
 					}
-					
 					if (measurments.positions[_a][j-1].cat(k) < measurments.positions[_b][j-1].cat(k)) { return true; }
 					if (measurments.positions[_a][j-1].cat(k) > measurments.positions[_b][j-1].cat(k)) { return false; }
 				}

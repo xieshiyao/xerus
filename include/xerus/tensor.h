@@ -449,7 +449,6 @@ namespace xerus {
 		value_t operator[](const MultiIndex& _positions) const;
 		
 		
-	protected:
 		/** 
 		 * @brief Unsanitized access to a single entry.
 		 * @param _position the position of the desired entry, assuming row-major ordering.
