@@ -54,7 +54,6 @@ namespace xerus { namespace internal {
 	}
 	
 	CholmodCommon::CholmodCommon() : c(new cholmod_common()) {
-		LOG(pointerCreation, c.get());
 		cholmod_start(c.get());
 		REQUIRE(c->itype == CHOLMOD_INT, "atm only cholmod compiled with itype = int is supported...");
 		REQUIRE(c->dtype == CHOLMOD_DOUBLE, "atm only cholmod compiled with dtype = double is supported...");
@@ -67,7 +66,6 @@ namespace xerus { namespace internal {
 	}
 
 	CholmodCommon::RestrictedAccess CholmodCommon::get() {
-		LOG(pointer, c.get());
 		return RestrictedAccess(c.get(), lock);
 	}
 
