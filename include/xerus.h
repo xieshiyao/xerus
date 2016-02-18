@@ -43,7 +43,6 @@
     #include "xerus/indexedTensorMoveable.h"
     #include "xerus/indexedTensorList.h"
     #include "xerus/tensor.h"
-    #include "xerus/cs_wrapper.h"
     #include "xerus/cholmod_wrapper.h"
     #include "xerus/sparseTimesFullContraction.h"
     #include "xerus/sparseTimesFullContraction.h"

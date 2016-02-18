@@ -30,7 +30,6 @@
 #include <xerus/misc/math.h>
 
 #include <xerus/blasLapackWrapper.h>
-#include <xerus/cs_wrapper.h>
 #include <xerus/cholmod_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 

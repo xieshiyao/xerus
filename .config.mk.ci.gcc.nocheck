@@ -3,122 +3,21 @@
 #=================================================================================================
 CXX = g++
 
-#=================================================================================================
-# Optimization
-#=================================================================================================
-# We suggest the use of one of the following optimization levels. The first uses basically no 
-# optimization and is primarly intended for debugging purposes. The second (recommended) level 
-# activates more or less all optimization options that conform with the ISO C++ Standard. 
-# The last level activates all optimazations available, including non-ISO C++ conform optimization 
-# and optimazations that may result in a loss of numerical precicsion, use at your own risk.
-#Optimization options
-# LOW_OPTIMIZATION = TRUE           # Activates -O0
-# HIGH_OPTIMIZATION = TRUE          # Activates -O3 -march=native and some others
-# DANGEROUS_OPTIMIZATION = TRUE     # Activates everything of HIGH_OPTIMIZATION plus basically everything that is said to improve performance including several potentially unsafe optimizations
-
-# Additionally Link Time Optimization support can be build into the library by uncommenting the following line.
-# USE_LTO = TRUE                    # Activates -ftlo
-COMPILE_THREADS = 8					# Number of threads to use during link time optimization.
-
-# Some parts of xerus can use parallelization. This can be aktivated by using openMP
-# OTHER += -fopenmp
-
-#=================================================================================================
-# Debug and Logging   
-#=================================================================================================
-# The Xerus library performs a number of runtime checks to ensure a valid input to all routines.
-# While not recommended these runtime checks can be completly disabled by uncommenting the following
-# line. This slighlty improves the performance.
+HIGH_OPTIMIZATION = TRUE          # Activates -O3 -march=native and some others
 DEBUG += -D DISABLE_RUNTIME_CHECKS_    # Disable all runtime checks
-
-
-# When performing tests it is useful to ensure that all of the code in covered. This is ensured by
-# a set of macros including REQUIRE_TEST to mark lines that need to be tested. With the following
-# definition this coverage is tested.
-# DEBUG += -D TEST_COVERAGE_			# enable coverage tests
-
-
-# Xerus uses many small objects (Indices, vectors of dimensions etc.) for which the standard allocator
-# is not very efficient. With the following option, an experimental replacement allocator will be 
-# included in the library, which will _globally_ replace the 'new' and 'delete' operators in your program.
-# Note also, that the replacement allocator is not (yet) thread safe!
 DEBUG += -D REPLACE_ALLOCATOR
 
-
-# In the default configuration xerus will throw exceptions if it encounters invalid inputs
-# or (hopefully never) suffers an internal error. For some debugging purposes however it is
-# more convinient to instruct xerus to directly exit in such cases.
-# NO_XERUS_EXCEPTIONS = TRUE         # Disable the use of exceptions by the xerus library
-
-
-# With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
-# includes NO function names, source-filenames and line numbers.
-# NOTE: activate this to remove the dependence on the binutils libraries -lbfd -liberty -lz and -ldl
-# NO_FANCY_CALLSTACK = TRUE					# show simple callstacks only
-
-
-# You can add all kind of debuging options. In the following are some examples
  DEBUG += -g                # Adds debug symbols
 
 
-# Sanitization 
-# DEBUG += -fsanitize=undefined         # gcc 4.9 only
-# DEBUG += -fsanitize=memory            # clang only
-# DEBUG += -fsanitize=address           # find out of bounds access
-
-
-# Xerus has a buildin logging system to provide runtime information. Here you can adjust the logging level used by the library.
-# LOGGING += -D DEBUG_                  # 
 LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
-# LOGGING += -D WARNING_                # Informations that is linked to unexpected or erroneous behaviour from which the library is able to recover internally.
-# LOGGING += -D ERROR_                  # Information about errors that occourt, but don't require immediate attention. 
-                                        # Since this is a numerical library which relies on correct results, there are barely any such errors.
-# LOGGING += -D CRITICAL_               # Same as above only for more severe errors. Again there are nearly no such errors.
-
-# Per default the logs are printed to cerr. Uncomment the following line to print the log messages to the file error.log instead.
-# LOGGING += -D LOGFILE_                # Use error file instead of cerr
-
-# print absolute times instead of relative to program time
-# LOGGING += -D LOG_ABSOLUTE_TIME
-
-# Uncomment the following line to save the last Logs in a circular buffer (without printing them) to allow detailed reports in case of errors.
-# Note that this can significatly slow down the library.
-# LOGGING += -D LOG_BUFFER_            # Activate the log buffer
-
-# Add time measurments for the relevant low level function calls. This allow to use get_analysis() to get a listing on all called low level fucntions and the time spend on them.
-# LOGGING += -D PERFORMANCE_ANALYSIS           # Enable performance analysis
-
-
-#=================================================================================================
-# Install paths
-#=================================================================================================
-# Set the directories to install libxerus.
-
-INSTALL_LIB_PATH = /usr/local/lib64/        # Path where to install the libxerus.so shared library.
-INSTALL_HEADER_PATH = /usr/local/include/   # Path where to install the xerus header files.
-
 
 #=================================================================================================
 # External libraries
 #=================================================================================================
-# Xerus depends on several external libraries, namely blas, cblas, lapack, lapacke and suiteSparse
-# and bfd, all of which are available through common GNU/Linux packaging systems. If you want to 
-# build a shared library or run the unit tests of Xerus you have to provide the corresponding 
-# libraries here (otherwise only when linking your own program using Xerus). 
-
-# Uncomment or add the appropriate blas libraries 
 BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
-# BLAS_LIBRARIES = -lopenblasp -lgfortran                   # Openblas, parallel
-# BLAS_LIBRARIES = /usr/lib64/atlas/libsatlas.so -lgfortran # Atlas
-# BLAS_LIBRARIES = /usr/lib64/atlas/libf77blas.a /usr/lib64/atlas/libcblas.a /usr/lib64/atlas/libatlas.a -lgfortran  # Custom
-
-
-# Uncomment or add the appropriate lapack libraries 
 LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
-# LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a    # Custom
-
-# Uncomment or add the appropriate CXSparse library
-SUITESPARSE = -lcxsparse -lcholmod
+SUITESPARSE = -lcholmod
 
 
 # custom include paths
