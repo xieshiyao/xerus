@@ -35,12 +35,14 @@ namespace xerus {
 	class Tensor;
 	
 	namespace internal {
+		
+		
 		///@brief wrapper object for the cholmod_common struct to automatically call the constructor and destructor
 		struct CholmodCommon final {
 			struct RestrictedAccess final {
-				cholmod_common* c;
+				cholmod_common* const c;
 				std::mutex &lock;
-				RestrictedAccess(cholmod_common* _c, std::mutex &_lock);
+				RestrictedAccess(cholmod_common* const _c, std::mutex &_lock);
 				operator cholmod_common*() const;
 				~RestrictedAccess();
 			};
@@ -49,7 +51,7 @@ namespace xerus {
 			std::mutex lock;
 			CholmodCommon();
 			~CholmodCommon();
-			RestrictedAccess operator&();
+			RestrictedAccess get();
 			std::function<void(cholmod_sparse*)> get_deleter();
 		};
 		
@@ -85,5 +87,8 @@ namespace xerus {
 										const std::map<size_t, double>& _B,
 										const bool _transposeB);
 		};
+		
+		
+		extern thread_local CholmodCommon cholmodObject;
 	}
 }

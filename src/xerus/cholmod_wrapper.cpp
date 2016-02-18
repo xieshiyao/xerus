@@ -31,7 +31,7 @@
 
 namespace xerus { namespace internal {
 	
-	CholmodCommon::RestrictedAccess::RestrictedAccess(cholmod_common* _c, std::mutex& _lock) 
+	CholmodCommon::RestrictedAccess::RestrictedAccess(cholmod_common* const _c, std::mutex& _lock) 
 		: c(_c), lock(_lock)
 	{
 		lock.lock();
@@ -54,6 +54,7 @@ namespace xerus { namespace internal {
 	}
 	
 	CholmodCommon::CholmodCommon() : c(new cholmod_common()) {
+		LOG(pointerCreation, c.get());
 		cholmod_start(c.get());
 		c->itype = CHOLMOD_LONG;
 		c->dtype = CHOLMOD_DOUBLE;
@@ -66,17 +67,18 @@ namespace xerus { namespace internal {
 		cholmod_finish(c.get());
 	}
 
-	CholmodCommon::RestrictedAccess CholmodCommon::operator&() {
+	CholmodCommon::RestrictedAccess CholmodCommon::get() {
+		LOG(pointer, c.get());
 		return RestrictedAccess(c.get(), lock);
 	}
 
 	std::function<void(cholmod_sparse*)> CholmodCommon::get_deleter() {
 		return [&](cholmod_sparse* _toDelete) {
-			cholmod_free_sparse(&_toDelete, &(*this));
+			cholmod_free_sparse(&_toDelete, this->get());
 		};
 	}
 	
-	static thread_local CholmodCommon cholmodObject;
+	thread_local CholmodCommon cholmodObject;
 
 	
 	
@@ -84,9 +86,13 @@ namespace xerus { namespace internal {
 
 	
 	CholmodSparse::CholmodSparse(const size_t _m, const size_t _n, const size_t _N) 
-		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, &cholmodObject), cholmodObject.get_deleter())
+		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter())
 	{
-		REQUIRE(matrix, "cholmod_allocate_sparse did not allocate anything... status: " << cholmodObject.c->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
+		LOG(pointer, static_cast<cholmod_common*>(cholmodObject.get()));
+		REQUIRE(matrix, "cholmod_allocate_sparse did not allocate anything... status: " << static_cast<cholmod_common*>(cholmodObject.get())->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
+		if (matrix) {
+			LOG(test, "yay!");
+		}
 	}
 
 	CholmodSparse::CholmodSparse(const std::map<size_t, double>& _input, const size_t _m, const size_t _n, const bool _transpose) 
@@ -120,7 +126,7 @@ namespace xerus { namespace internal {
 		
 		if(!_transpose) {
 			// we didn't want A^T, so transpose the data to get compressed column storage of A
-			matrix = ptr_type(cholmod_transpose(matrix.get(), 1, &cholmodObject), cholmodObject.get_deleter());
+			matrix = ptr_type(cholmod_transpose(matrix.get(), 1, cholmodObject.get()), cholmodObject.get_deleter());
 		}
 	}
 
@@ -141,7 +147,7 @@ namespace xerus { namespace internal {
 	}
 
 	CholmodSparse CholmodSparse::operator*(const CholmodSparse& _rhs) const {
-		return CholmodSparse(cholmod_ssmult(matrix.get(), _rhs.matrix.get(), 0, 1, 1, &cholmodObject));
+		return CholmodSparse(cholmod_ssmult(matrix.get(), _rhs.matrix.get(), 0, 1, 1, cholmodObject.get()));
 	}
 
 	
