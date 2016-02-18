@@ -49,10 +49,15 @@ namespace xerus {
 		const bool forward;
 		const MeasurmentSet& measurments;
 		const size_t degree;
+		std::shared_ptr<size_t> compZeroFirstNonZero;
 	public:
 		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
+		
 		bool operator()(const size_t _a, const size_t _b) const;
 	};
+	
+	template<>
+	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
 	
 	template<>
 	bool MeasurmentComparator<SinglePointMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
@@ -71,22 +76,42 @@ namespace xerus {
 		return false;
 	}
 	
+	
+	template<>
+	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()), compZeroFirstNonZero(new size_t[_measurments.size()], internal::array_deleter_st) {
+		for(size_t i = 0; i < measurments.size(); ++i) {
+			for(size_t k = 0; k < measurments.positions[i][0].size; ++k) {
+				if (measurments.positions[i][0].cat(k) > 0.0) {
+					compZeroFirstNonZero.get()[i] = k;
+					break;
+				}
+			}
+		}
+	}
+	
 	template<>
 	bool MeasurmentComparator<RankOneMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
 				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
+				if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; }
+				else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
+				
 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
-					if (measurments.positions[_a][j][k] < measurments.positions[_b][j][k]) { return true; }
-					if (measurments.positions[_a][j][k] > measurments.positions[_b][j][k]) { return false; }
+					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
+					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
 				}
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
 				REQUIRE(measurments.positions[_a][j-1].size == measurments.positions[_b][j-1].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j-1].size << " vs " << measurments.positions[_b][j-1].size);
 				for(size_t k = 0; k < measurments.positions[_a][j-1].size; ++k) {
-					if (measurments.positions[_a][j-1][k] < measurments.positions[_b][j-1][k]) { return true; }
-					if (measurments.positions[_a][j-1][k] > measurments.positions[_b][j-1][k]) { return false; }
+					if(j == 1) {
+						if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; } 
+						else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
+					}
+					if (measurments.positions[_a][j-1].cat(k) < measurments.positions[_b][j-1].cat(k)) { return true; }
+					if (measurments.positions[_a][j-1].cat(k) > measurments.positions[_b][j-1].cat(k)) { return false; }
 				}
 			}
 		}
@@ -109,10 +134,11 @@ namespace xerus {
 		size_t numUniqueStackEntries = 0;
 		
 		// Create a reordering map
+		perfData << "Start sorting";
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
-		
-		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), MeasurmentComparator<MeasurmentSet>(measurments, _forward) );
+		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward)) );
+		perfData << "End sorting";
 		
 		// Create the entries for the first measurement (these are allways unqiue).
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -472,13 +498,6 @@ namespace xerus {
 		}
 	}
 	
-// 	template<>
-// 	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
-// 		const value_t PyR = misc::sqr(frob_norm(projectedGradientComponent));
-// 		
-// 		// Update
-// 		x.component(_corePosition)(r1, i1, r2) = x.component(_corePosition)(r1, i1, r2) + (PyR/misc::sum(_normAProjGrad))*projectedGradientComponent(r1, i1, r2);
-// 	}
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
@@ -563,7 +582,6 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
-// 			x.round(2.5e-2);
 			
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
@@ -571,7 +589,6 @@ namespace xerus {
 			resize_stack_tensors();
 			
 			solve_with_current_ranks();
-			
 		}
 		return residualNorm;
 	}
@@ -580,5 +597,5 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<SinglePointMeasurmentSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
 	
-	const ADFVariant ADF(0, 1e-8, 1e-4, true);
+	const ADFVariant ADF(0, 1e-8, 1e-3, true);
 }

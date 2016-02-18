@@ -47,6 +47,9 @@ namespace xerus {
 		SinglePointMeasurmentSet(const SinglePointMeasurmentSet&  _other) = default;
 		SinglePointMeasurmentSet(      SinglePointMeasurmentSet&& _other) = default;
 		
+		SinglePointMeasurmentSet& operator=(const SinglePointMeasurmentSet&  _other) = default;
+		SinglePointMeasurmentSet& operator=(      SinglePointMeasurmentSet&& _other) = default;
+		
 		template<class random_engine>
 		static SinglePointMeasurmentSet random(const size_t _degree, const size_t _n, const size_t _numMeasurements, random_engine _rnd) {
 			REQUIRE(misc::pow(_n, _degree) >= _numMeasurements, "It's impossible to perform as many measurements as requested");
@@ -87,6 +90,8 @@ namespace xerus {
 		
 		RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions);
 
+		RankOneMeasurmentSet& operator=(const RankOneMeasurmentSet&  _other) = default;
+		RankOneMeasurmentSet& operator=(      RankOneMeasurmentSet&& _other) = default;
 		
 		void add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue);
 		

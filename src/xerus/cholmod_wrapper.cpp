@@ -31,7 +31,7 @@
 
 namespace xerus { namespace internal {
 	
-	CholmodCommon::RestrictedAccess::RestrictedAccess(cholmod_common* _c, std::mutex& _lock) 
+	CholmodCommon::RestrictedAccess::RestrictedAccess(cholmod_common* const _c, std::mutex& _lock) 
 		: c(_c), lock(_lock)
 	{
 		lock.lock();
@@ -54,6 +54,7 @@ namespace xerus { namespace internal {
 	}
 	
 	CholmodCommon::CholmodCommon() : c(new cholmod_common()) {
+		LOG(pointerCreation, c.get());
 		cholmod_start(c.get());
 		REQUIRE(c->itype == CHOLMOD_INT, "atm only cholmod compiled with itype = int is supported...");
 		REQUIRE(c->dtype == CHOLMOD_DOUBLE, "atm only cholmod compiled with dtype = double is supported...");
@@ -66,6 +67,7 @@ namespace xerus { namespace internal {
 	}
 
 	CholmodCommon::RestrictedAccess CholmodCommon::get() {
+		LOG(pointer, c.get());
 		return RestrictedAccess(c.get(), lock);
 	}
 
@@ -75,7 +77,7 @@ namespace xerus { namespace internal {
 		};
 	}
 	
-	static thread_local CholmodCommon cholmodObject;
+	thread_local CholmodCommon cholmodObject;
 
 	
 	
