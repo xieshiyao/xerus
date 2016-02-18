@@ -84,7 +84,7 @@ namespace xerus { namespace internal {
 
 	
 	CholmodSparse::CholmodSparse(const size_t _m, const size_t _n, const size_t _N) 
-		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, 1, &cholmodObject), cholmodObject.get_deleter())
+		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, &cholmodObject), cholmodObject.get_deleter())
 	{
 		REQUIRE(matrix, "cholmod_allocate_sparse did not allocate anything... status: " << cholmodObject.c->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
 	}

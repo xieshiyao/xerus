@@ -139,6 +139,9 @@ namespace xerus {
 		PerformanceData& operator<<(const T &_info) noexcept {
 			if (active) {
 				additionalInformation += misc::to_string(_info);
+				if(printProgress) {
+					LOG_SHORT(PerformanceData, _info);
+				}
 			}
 			return *this;
 		}

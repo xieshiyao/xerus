@@ -31,6 +31,9 @@ UNIT_TEST(SparseTensor, Product_Order_0,
     A[{}] = 42;
     B[{}] = 73;
     
+	A.use_sparse_representation();
+	B.use_sparse_representation();
+	
     res1() = A() * B();
     TEST(approx_entrywise_equal(res1, {42*73}));
 )
@@ -55,7 +58,11 @@ UNIT_TEST(SparseTensor, Product_Order_1,
     C[0] = 5;
     C[1] = 6;
     C[2] = 7;
-    
+	
+    A.use_sparse_representation();
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+	
     // Same dimensions
     // Contraction with no index being contracted
     res1(i,j) = A(i) * B(j);
@@ -111,6 +118,9 @@ UNIT_TEST(SparseTensor, Product_Order_2_Same_Dimensions,
     B[{1,0}]=7;
     B[{1,1}]=8;
     
+    A.use_sparse_representation();
+	B.use_sparse_representation();
+	
     //Most possible contractions with no index being contracted
     //Switch pairs (i,j) and (k,l)
     res1(i,j,k,l) = A(i,j) * B(k,l);
@@ -212,6 +222,9 @@ UNIT_TEST(SparseTensor, Product_Order_2_Different_Dimensions,
     B[{1,1}] = 7;
     B[{1,2}] = 8;
     
+    A.use_sparse_representation();
+	B.use_sparse_representation();
+	
     //No Index contracted
     res1(i,j,k,l) = A(i,j) * B(k,l);
     TEST(approx_entrywise_equal(res1, {3,4,5,6,7,8,6,8,10,12,14,16}));
@@ -257,6 +270,9 @@ UNIT_TEST(SparseTensor, Product_Order_3_Same_Dimensions,
     B[{1,1,0}]=8;
     B[{1,1,1}]=12;
     
+    A.use_sparse_representation();
+	B.use_sparse_representation();
+	
     res2(i,j) = A(l,m,j) * B(m,i,l);
     TEST(approx_entrywise_equal(res2, {5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     res3() = A(i,j,k) * B(i,k,j);
@@ -292,6 +308,9 @@ UNIT_TEST(SparseTensor, Product_Multiindices,
     C[{1,1,0}]=8; 
     C[{1,1,1}]=12;
     
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+	
     res2(i,j, k&2) = B(l,m,j, k^0) * C(m,i,l, k&3);
     TEST(approx_entrywise_equal(res2, {5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     res3(j&0) = B(i&0) * C(i^3);
@@ -323,6 +342,10 @@ UNIT_TEST(SparseTensor, Product_Threefold,
     D[{1,0}]=11;
     D[{1,1}]=12;
     
+    D.use_sparse_representation();
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+	
     res(i,L) = B(i,J) * C(J,K) * D(K,L);
     TEST(approx_entrywise_equal(res, {413, 454, 937, 1030}));
     res(i,L) = B(i,J) * C(K,L) * D(J,K);
@@ -374,6 +397,15 @@ UNIT_TEST(SparseTensor, Product_Many_Degree_2,
     F[{0,1}]=22;
     F[{1,0}]=23;
     F[{1,1}]=24;
+	
+	
+    A.use_sparse_representation();
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+    D.use_sparse_representation();
+	E.use_sparse_representation();
+	F.use_sparse_representation();
+    G.use_sparse_representation();
     
     res1(i,o) = A(i,j) * B(j,k) * C(k,l) * D(l,m) * E(m,n) * F(n,o); 
     TEST(approx_entrywise_equal(res1, {20596523, 21531582, 46728183, 48849590}));
