@@ -51,7 +51,7 @@ namespace xerus {
 		CsUniquePtr create_cs(const size_t _m, const size_t _n, const size_t _N); 
 
 		///@brief Converts the given @a _tensor to the CS format using the given matrification.
-		CsUniquePtr to_cs_format(const Tensor& _tensor, const size_t _splitPos, const bool _transpose);
+// 		CsUniquePtr to_cs_format(const Tensor& _tensor, const size_t _splitPos, const bool _transpose);
 		
 		///@brief Retransforms a CS sparse matrix to sparse Tensor format.
 		void from_cs_format(Tensor& _output, const CsUniquePtr& _cs_format);

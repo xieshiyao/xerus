@@ -31,6 +31,7 @@
 
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cs_wrapper.h>
+#include <xerus/cholmod_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
 
 #include <xerus/tensorNetwork.h>
@@ -1237,10 +1238,9 @@ namespace xerus {
 											_rhs.get_unsanitized_dense_data(), _rhsTrans);
 			
 		} else if(_lhs.is_sparse() && _rhs.is_sparse() ) { // Sparse * Sparse => Sparse 
-			internal::matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
+			internal::CholmodSparse::matrix_matrix_product(usedResult->override_sparse_data(), leftDim, rightDim, _lhs.factor*_rhs.factor, 
 								_lhs.get_unsanitized_sparse_data(), _lhsTrans, midDim,
 								_rhs.get_unsanitized_sparse_data(), _rhsTrans);
-			
 		} else {
 			if(sparseResult) {
 				if(_lhs.is_sparse() && !_rhs.is_sparse() && usedResult->is_sparse()) { // Sparse * Full => Sparse
