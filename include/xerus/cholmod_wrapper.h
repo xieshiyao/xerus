@@ -86,6 +86,24 @@ namespace xerus {
 										const size_t _midDim,
 										const std::map<size_t, double>& _B,
 										const bool _transposeB);
+			
+			///@brief solve operator / for sparse right hand sites
+			static void solve_sparse_rhs(std::map<size_t, double>& _x,
+								size_t _xDim,
+								const std::map<size_t, double>& _A,
+								const bool _transposeA,
+								const std::map<size_t, double>& _b,
+								size_t _bDim
+			);
+			
+			///@brief solve operator / for dense right hand sites
+			static void solve_dense_rhs(double * _x,
+								size_t _xDim,
+								const std::map<size_t, double>& _A,
+								const bool _transposeA,
+								const double* _b,
+								size_t _bDim
+			);
 		};
 		
 		

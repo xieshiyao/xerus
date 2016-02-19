@@ -26,6 +26,7 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/misc/basicArraySupport.h>
 
 #include <xerus/misc/check.h>
 
@@ -160,5 +161,49 @@ namespace xerus { namespace internal {
 		const CholmodSparse rhsCs(_B, _transposeB?_rightDim:_midDim, _transposeB?_midDim:_rightDim, _transposeB);
 		const CholmodSparse resultCs = lhsCs * rhsCs;
 		_C = resultCs.to_map(_alpha);
+	}
+	
+	void CholmodSparse::solve_sparse_rhs(std::map<size_t, double>& _x,
+						  size_t _xDim,
+					   const std::map<size_t, double>& _A,
+					   const bool _transposeA,
+					   const std::map<size_t, double>& _b,
+					   size_t _bDim)
+	{
+		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA); 
+		const CholmodSparse b(_b, 1, _bDim, true);
+		std::unique_ptr<cholmod_factor> L(cholmod_analyze(A.matrix.get(), cholmodObject.get()) );
+		cholmod_factorize(A.matrix.get(), L.get(), cholmodObject.get());
+		CholmodSparse x(cholmod_spsolve(CHOLMOD_A, L.get(), b.matrix.get(), cholmodObject.get()));
+		_x = x.to_map();
+		// cholmod stinks
+		cholmod_factor *lt = L.release();
+		cholmod_free_factor(&lt, cholmodObject.get());
+	}
+	
+	void CholmodSparse::solve_dense_rhs(double * _x,
+								 size_t _xDim,
+							  const std::map<size_t, double>& _A,
+							  const bool _transposeA,
+							  const double* _b,
+							  size_t _bDim)
+	{
+		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA);
+		std::unique_ptr<cholmod_factor> L(cholmod_analyze(A.matrix.get(), cholmodObject.get()) );
+		cholmod_factorize(A.matrix.get(), L.get(), cholmodObject.get());
+		cholmod_dense b{
+			_bDim, 1, _bDim, _bDim, static_cast<void*>(const_cast<double*>(_b)), nullptr, CHOLMOD_REAL, CHOLMOD_DOUBLE
+		};
+		std::unique_ptr<cholmod_dense> x(cholmod_solve(CHOLMOD_A, L.get(), &b, cholmodObject.get()));
+		
+		REQUIRE(cholmodObject.c->status == 0, "unable to solve sparse system...");
+		
+		misc::copy(_x, static_cast<double*>(x->x), _xDim);
+		
+		// cholmod stinks
+		cholmod_dense *lx = x.release();
+		cholmod_free_dense(&lx, cholmodObject.get());
+		cholmod_factor *lt = L.release();
+		cholmod_free_factor(&lt, cholmodObject.get());
 	}
 }}
