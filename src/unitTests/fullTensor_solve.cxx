@@ -73,7 +73,7 @@ UNIT_TEST(Tensor, solve_Ax_equals_b,
 UNIT_TEST(Tensor, solve_sparse,
 	std::mt19937_64 rnd(0x5EED);
 	std::normal_distribution<double> dist(0.0, 1.0);
-	const size_t N = 10;
+	const size_t N = 100;
 	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
 	
 	Index i,j,k;
@@ -86,16 +86,13 @@ UNIT_TEST(Tensor, solve_sparse,
 	
 	r.use_sparse_representation();
 	x(i) = r(j) / id(j,i);
-	MTEST(frob_norm(x-r) < 1e-14, "s " << frob_norm(x-r));
+	MTEST(frob_norm(x-r) < 1e-14, "d " << frob_norm(x-r));
+	r.use_dense_representation();
 	
 	// consistency with dense solve:
 	for (size_t n=0; n<N*3; ++n) {
 		id[eDist(rnd)] = dist(rnd);
 	}
-	id[0]=0.0;
-	id[1]=1.;
-	id[N]=1.;
-	id[N+1]=0.;
 	id.use_sparse_representation();
 	
 	// test faithful reconstruction
@@ -107,16 +104,10 @@ UNIT_TEST(Tensor, solve_sparse,
 	Tensor fid(id);
 	fid.use_dense_representation();
 	Tensor fx;
-	r.use_dense_representation();
-	id.use_sparse_representation();
+// 	id.use_sparse_representation();
 	TEST(id.is_sparse());
 	
 	fx(i) = r(j) / fid(j,i);
-// 	r.use_sparse_representation();
 	x(i) = r(j) / id(j,i);
-	MTEST(frob_norm(fx-x)<1e-14, frob_norm(fx-x));
-	LOG(id, id.to_string());
-	LOG(x, x.to_string());
-	LOG(fx, fx.to_string());
-	LOG(r, r.to_string());
+	MTEST(frob_norm(fx-x)/frob_norm(x)<3e-14, frob_norm(fx-x)/frob_norm(x));
 )

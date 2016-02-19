@@ -28,6 +28,8 @@
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/basicArraySupport.h>
 
+#include <suitesparse/umfpack.h>
+
 #include <xerus/misc/check.h>
 
 namespace xerus { namespace internal {
@@ -134,7 +136,7 @@ namespace xerus { namespace internal {
 		
 		for(size_t i = 0; i < matrix->ncol; ++i) {
 			for(int j = p[i]; j < p[i+1]; ++j) {
-				IF_CHECK( auto ret = ) result.emplace(mi[size_t(j)]*matrix->ncol+i, _alpha*x[j]);
+				IF_CHECK( auto ret = ) result.emplace(size_t(mi[size_t(j)])*matrix->ncol+i, _alpha*x[j]);
 				REQUIRE(ret.second, "Internal Error");
 			}
 		}
@@ -170,15 +172,7 @@ namespace xerus { namespace internal {
 					   const std::map<size_t, double>& _b,
 					   size_t _bDim)
 	{
-		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA); 
-		const CholmodSparse b(_b, 1, _bDim, true);
-		std::unique_ptr<cholmod_factor> L(cholmod_analyze(A.matrix.get(), cholmodObject.get()) );
-		cholmod_factorize(A.matrix.get(), L.get(), cholmodObject.get());
-		CholmodSparse x(cholmod_spsolve(CHOLMOD_A, L.get(), b.matrix.get(), cholmodObject.get()));
-		_x = x.to_map();
-		// cholmod stinks
-		cholmod_factor *lt = L.release();
-		cholmod_free_factor(&lt, cholmodObject.get());
+		LOG(fatal, "not yet implemented");
 	}
 	
 	void CholmodSparse::solve_dense_rhs(double * _x,
@@ -188,22 +182,17 @@ namespace xerus { namespace internal {
 							  const double* _b,
 							  size_t _bDim)
 	{
+		REQUIRE(_xDim == _bDim, "solving sparse systems only implemented for square matrices so far");
 		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA);
-		std::unique_ptr<cholmod_factor> L(cholmod_analyze(A.matrix.get(), cholmodObject.get()) );
-		cholmod_factorize(A.matrix.get(), L.get(), cholmodObject.get());
-		cholmod_dense b{
-			_bDim, 1, _bDim, _bDim, static_cast<void*>(const_cast<double*>(_b)), nullptr, CHOLMOD_REAL, CHOLMOD_DOUBLE
-		};
-		std::unique_ptr<cholmod_dense> x(cholmod_solve(CHOLMOD_A, L.get(), &b, cholmodObject.get()));
 		
-		REQUIRE(cholmodObject.c->status == 0, "unable to solve sparse system...");
-		
-		misc::copy(_x, static_cast<double*>(x->x), _xDim);
-		
-		// cholmod stinks
-		cholmod_dense *lx = x.release();
-		cholmod_free_dense(&lx, cholmodObject.get());
-		cholmod_factor *lt = L.release();
-		cholmod_free_factor(&lt, cholmodObject.get());
+		void *symbolic, *numeric;
+// 		double control[UMFPACK_CONTROL], info[UMFPACK_INFO];
+		// TODO check return values
+		umfpack_di_symbolic(int(_bDim), int(_xDim), static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), &symbolic, nullptr, nullptr);
+		umfpack_di_numeric(static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), symbolic, &numeric, nullptr, nullptr);
+		umfpack_di_free_symbolic(&symbolic);
+		umfpack_di_solve(UMFPACK_A, static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), _x, _b, numeric, nullptr, nullptr);
+		umfpack_di_free_numeric(&numeric);
 	}
+
 }}

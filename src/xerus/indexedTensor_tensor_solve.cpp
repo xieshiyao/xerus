@@ -77,11 +77,29 @@ namespace xerus {
 		orderA.insert(orderA.end(), orderX.begin(), orderX.end());
 		dimensionsA.insert(dimensionsA.end(), dimensionsX.begin(), dimensionsX.end());
 		
-		//Save slot for eventual tmpX
+		//Save slot for eventual tmpX and tmpB
 		std::unique_ptr<internal::IndexedTensor<Tensor>> saveSlotX;
 		internal::IndexedTensorWritable<Tensor>* usedX;
+		std::unique_ptr<internal::IndexedTensor<Tensor>> saveSlotB;
+		internal::IndexedTensorReadOnly<Tensor>* usedB;
 		
-		bool sparseResult = (_a.tensorObjectReadOnly->is_sparse() && _b.tensorObjectReadOnly->is_sparse());
+		// We need tmp objects for A and b, because Lapacke wants to destroys the input
+		// and we need to cast b if it is sparse as we cannot handle that yet
+		if (_b.tensorObjectReadOnly->is_sparse()) {
+			LOG_ONCE(info, "solve operator cannot make use of a sparse rhs yet. casting rhs to dense representation first from now on.");
+		}
+		if (_b.tensorObjectReadOnly->is_sparse() || !_a.tensorObjectReadOnly->is_sparse()) {
+			saveSlotB.reset(new internal::IndexedTensor<Tensor>(
+				new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true
+			));
+			evaluate(std::move(*saveSlotB), std::move(_b));
+			saveSlotB->tensorObject->use_dense_representation();
+			usedB = saveSlotB.get();
+		} else {
+			usedB = &_b;
+		}
+		
+		bool sparseResult = (_a.tensorObjectReadOnly->is_sparse() && usedB->tensorObjectReadOnly->is_sparse());
 		
 		if (orderX != _x.indices || (_x.tensorObject->is_sparse() != sparseResult)) {
 			if (sparseResult) {
@@ -98,24 +116,24 @@ namespace xerus {
 		}
 		
 		// Assume A is an MxN matrix
-		const size_t M = _b.tensorObjectReadOnly->size;
+		const size_t M = usedB->tensorObjectReadOnly->size;
 		const size_t N = usedX->tensorObjectReadOnly->size;
 		
 		if (_a.tensorObjectReadOnly->is_sparse()) {
-			if (_b.tensorObjectReadOnly->is_sparse()) {
+			if (usedB->tensorObjectReadOnly->is_sparse()) {
 				internal::CholmodSparse::solve_sparse_rhs(
 					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
 					_a.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-					_b.tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
+					usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
 			} else {
 				internal::CholmodSparse::solve_dense_rhs(
 					usedX->tensorObject->get_unsanitized_dense_data(), N, 
 					_a.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-					_b.tensorObjectReadOnly->get_unsanitized_dense_data(), M);
+					usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
 			}
 			
 			// Propagate the constant factor
-			usedX->tensorObject->factor = _b.tensorObjectReadOnly->factor / _a.tensorObjectReadOnly->factor;
+			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / _a.tensorObjectReadOnly->factor;
 		} else {
 			// dense A
 			// We need tmp objects for A and b, because Lapacke wants to destroys the input
@@ -123,18 +141,13 @@ namespace xerus {
 			evaluate(std::move(tmpA), std::move(_a));
 			tmpA.tensorObject->ensure_own_data();
 			
-			internal::IndexedTensor<Tensor> tmpB(new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true);
-			evaluate(std::move(tmpB), std::move(_b));
-			tmpB.tensorObject->use_dense_representation();
-			tmpB.tensorObject->ensure_own_data();
-			
 			blasWrapper::solve_least_squares_destructive(
 				usedX->tensorObject->override_dense_data(), 
 				tmpA.tensorObject->get_unsanitized_dense_data(), M, N, 
-				tmpB.tensorObject->get_unsanitized_dense_data());
+				saveSlotB->tensorObject->get_unsanitized_dense_data());
 			
 			// Propagate the constant factor
-			usedX->tensorObject->factor = tmpB.tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
+			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
 		}
 		
 		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
