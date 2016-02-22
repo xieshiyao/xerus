@@ -119,26 +119,27 @@ namespace xerus {
 		const size_t M = usedB->tensorObjectReadOnly->size;
 		const size_t N = usedX->tensorObjectReadOnly->size;
 		
-		if (_a.tensorObjectReadOnly->is_sparse()) {
+		internal::IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), Tensor::Representation::Dense, Tensor::Initialisation::None), orderA, true);
+		evaluate(std::move(tmpA), std::move(_a));
+		
+		if (tmpA.tensorObjectReadOnly->is_sparse()) {
 			if (usedB->tensorObjectReadOnly->is_sparse()) {
 				internal::CholmodSparse::solve_sparse_rhs(
 					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
-					_a.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
+					tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
 					usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
 			} else {
 				internal::CholmodSparse::solve_dense_rhs(
 					usedX->tensorObject->get_unsanitized_dense_data(), N, 
-					_a.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
+					tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
 					usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
 			}
 			
 			// Propagate the constant factor
-			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / _a.tensorObjectReadOnly->factor;
+			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
 		} else {
 			// dense A
 			// We need tmp objects for A and b, because Lapacke wants to destroys the input
-			internal::IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), Tensor::Representation::Dense, Tensor::Initialisation::None), orderA, true);
-			evaluate(std::move(tmpA), std::move(_a));
 			tmpA.tensorObject->ensure_own_data();
 			
 			blasWrapper::solve_least_squares_destructive(

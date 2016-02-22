@@ -111,3 +111,36 @@ UNIT_TEST(Tensor, solve_sparse,
 	x(i) = r(j) / id(j,i);
 	MTEST(frob_norm(fx-x)/frob_norm(x)<3e-14, frob_norm(fx-x)/frob_norm(x));
 )
+
+UNIT_TEST(Tensor, solve_transposed,
+	std::mt19937_64 rnd(0x5EED);
+	std::normal_distribution<double> dist(0.0, 1.0);
+	const size_t N = 100;
+	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
+	
+	Index i,j,k;
+	
+	Tensor A = Tensor::identity({N,N});
+	for (size_t n=0; n<N*3; ++n) {
+		A[eDist(rnd)] = dist(rnd);
+	}
+	A.use_sparse_representation();
+	Tensor At;
+	At(i,j) = A(j,i);
+	At.use_sparse_representation();
+		
+	Tensor r = Tensor({N}, [](size_t _i)->value_t{return double(_i);});
+	Tensor x1, x2;
+	x1(i) = r(j) / A(i,j);
+	x2(i) = r(j) / At(j,i);
+	MTEST(frob_norm(x1-x2) < 1e-14, "s " << frob_norm(x1-x2));
+	
+	A.use_dense_representation();
+	At.use_dense_representation();
+	
+	Tensor x3, x4;
+	x3(i) = r(j) / A(i,j);
+	x4(i) = r(j) / At(j,i);
+	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4));
+	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 1e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
+)
