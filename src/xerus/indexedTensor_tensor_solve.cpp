@@ -119,7 +119,7 @@ namespace xerus {
 		const size_t M = usedB->tensorObjectReadOnly->size;
 		const size_t N = usedX->tensorObjectReadOnly->size;
 		
-		internal::IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), Tensor::Representation::Dense, Tensor::Initialisation::None), orderA, true);
+		internal::IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), _a.tensorObjectReadOnly->representation, Tensor::Initialisation::None), orderA, true);
 		evaluate(std::move(tmpA), std::move(_a));
 		
 		if (tmpA.tensorObjectReadOnly->is_sparse()) {
