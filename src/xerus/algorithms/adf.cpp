@@ -19,17 +19,16 @@
 
 /**
  * @file
- * @brief Implementation of the ADF variants.
+ * @brief Implementation of the ADF variants. 
  */
 
 #include <xerus/algorithms/adf.h>
- 
  
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/misc/basicArraySupport.h>
 
 #ifdef _OPENMP
-#include <omp.h>
+	#include <omp.h>
 #endif
 
 namespace xerus {
@@ -47,17 +46,19 @@ namespace xerus {
 	template<class MeasurmentSet>
 	class MeasurmentComparator {
 		const bool forward;
+		const bool firstPart;
 		const MeasurmentSet& measurments;
 		const size_t degree;
 		std::shared_ptr<size_t> compZeroFirstNonZero;
 	public:
-		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
+		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward, const bool _firstPart);
 		
 		bool operator()(const size_t _a, const size_t _b) const;
 	};
 	
 	template<>
-	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()) {}
+	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward, const bool) : forward(_forward), firstPart(false), measurments(_measurments), degree(_measurments.degree()) {
+	}
 	
 	template<>
 	bool MeasurmentComparator<SinglePointMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
@@ -78,7 +79,8 @@ namespace xerus {
 	
 	
 	template<>
-	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward) : forward(_forward), measurments(_measurments), degree(_measurments.degree()), compZeroFirstNonZero(new size_t[_measurments.size()], internal::array_deleter_st) {
+	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward, const bool _firstPart) : forward(_forward), firstPart(_firstPart), measurments(_measurments), degree(_measurments.degree()), compZeroFirstNonZero(new size_t[_measurments.size()], internal::array_deleter_st) {
+		REQUIRE(!firstPart || _forward, "IE");
 		for(size_t i = 0; i < measurments.size(); ++i) {
 			for(size_t k = 0; k < measurments.positions[i][0].size; ++k) {
 				if (measurments.positions[i][0].cat(k) > 0.0) {
@@ -91,30 +93,57 @@ namespace xerus {
 	
 	template<>
 	bool MeasurmentComparator<RankOneMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
-		if(forward) {
-			for (size_t j = 0; j < degree; ++j) {
+		if (firstPart) {
+			if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; }
+			else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
+			
+			REQUIRE(measurments.positions[_a][0].size == measurments.positions[_b][0].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][0].size << " vs " << measurments.positions[_b][0].size);
+			
+			for(size_t k = compZeroFirstNonZero.get()[_a]; k < measurments.positions[_a][0].size; ++k) {
+				if (measurments.positions[_a][0].cat(k) < measurments.positions[_b][0].cat(k)) { return true; }
+				if (measurments.positions[_a][0].cat(k) > measurments.positions[_b][0].cat(k)) { return false; }
+			}
+			return false;
+			
+			
+			
+		} else if(forward) { // Second part
+			
+			for (size_t j = 1; j < degree; ++j) {
 				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
-				if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; }
-				else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
 				
 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
 					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
 					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
 				}
 			}
+			
+			return false;
+				
+// 			for (size_t j = 0; j < degree; ++j) {
+// 				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
+// 				
+// 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
+// 					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
+// 					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
+// 				}
+// 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
 				REQUIRE(measurments.positions[_a][j-1].size == measurments.positions[_b][j-1].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j-1].size << " vs " << measurments.positions[_b][j-1].size);
+				
+				if(j == 1) {
+					if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; } 
+					else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
+				}
+				
 				for(size_t k = 0; k < measurments.positions[_a][j-1].size; ++k) {
-					if(j == 1) {
-						if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; } 
-						else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
-					}
 					if (measurments.positions[_a][j-1].cat(k) < measurments.positions[_b][j-1].cat(k)) { return true; }
 					if (measurments.positions[_a][j-1].cat(k) > measurments.positions[_b][j-1].cat(k)) { return false; }
 				}
 			}
 		}
+		
 		LOG(fatal, "Measurments must not appear twice. ");
 		return false;
 	}
@@ -137,8 +166,14 @@ namespace xerus {
 		perfData << "Start sorting";
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
-		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward)) );
-		perfData << "End sorting";
+		if(_forward) {
+			std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, true)));
+			perfData << "End Pre Sort";
+			std::stable_sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, false)));
+		} else {
+			std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, false)));
+		}
+		perfData << "End sorting " << _forward ;
 		
 		// Create the entries for the first measurement (these are allways unqiue).
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -216,10 +251,10 @@ namespace xerus {
 		#pragma omp parallel for schedule(static)
 		for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
 			for(const size_t i : forwardUpdates[corePosition]) {
-				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, Tensor::Initialisation::None);
+				forwardStack[i + corePosition*numMeasurments]->reset({corePosition+1 == degree ? 1 : x.rank(corePosition)}, Tensor::Representation::Dense, Tensor::Initialisation::None);
 			}
 			for(const size_t i : backwardUpdates[corePosition]) {
-				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, Tensor::Initialisation::None);
+				backwardStack[i + corePosition*numMeasurments]->reset({corePosition == 0 ? 1 :x.rank(corePosition - 1)}, Tensor::Representation::Dense, Tensor::Initialisation::None);
 			}
 		}
 	}

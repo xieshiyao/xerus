@@ -1444,7 +1444,7 @@ namespace xerus {
 	}
 	
 	
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const Tensor& _b) {
+	void solve_least_squares(Tensor& _x, const Tensor& _A, const size_t _splitPos, const Tensor& _b) {
 		LOG(fatal, "Not yet Implemented."); // TODO
 	}
 	
