@@ -33,6 +33,77 @@
 
 namespace xerus {
 	
+	static int comp(const Tensor& _a, const Tensor& _b) {
+		REQUIRE(_a.size == _b.size, "IE");
+		
+		if(_a.is_dense() || _b.is_dense()) {
+			for(size_t k = 0; k < _a.size; ++k) {
+				if (_a.cat(k) < _b.cat(k)) { return 1; }
+				if (_a.cat(k) > _b.cat(k)) { return -1; }
+			}
+			return 0;
+		} else {
+			REQUIRE(!_a.has_factor(), "IE");
+			REQUIRE(!_b.has_factor(), "IE");
+			
+			const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
+			const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
+			
+			std::map<size_t, double>::const_iterator itrA = dataA.begin();
+			std::map<size_t, double>::const_iterator itrB = dataB.begin();
+			
+			while(itrA != dataA.end() && itrB != dataB.end()) {
+				if(itrA->first == itrB->first) {
+					if(itrA->second < itrB->second) {
+						return 1;
+					} else if(itrA->second > itrB->second) {
+						return -1;
+					} else {
+						++itrA; ++itrB;
+					}
+				} else if(itrA->first < itrB->first) {
+					if(itrA->second < 0.0) {
+						return 1;
+					} else if(itrA->second > 0.0) {
+						return -1;
+					} else {
+						++itrA;
+					}
+				} else { // itrA->first > itrB->first
+					if(0.0 < itrB->second) {
+						return 1;
+					} else if(0.0 > itrB->second) {
+						return -1;
+					} else {
+						++itrB;
+					}
+				}
+			}
+			
+			while(itrA != dataA.end()) {
+				if(itrA->second < 0.0) {
+					return 1;
+				} else if(itrA->second > 0.0) {
+					return -1;
+				} else {
+					++itrA;
+				}
+			}
+			
+			while(itrB != dataB.end()) {
+				if(0.0 < itrB->second) {
+					return 1;
+				} else if(0.0 > itrB->second) {
+					return -1;
+				} else {
+					++itrB;
+				}
+			}
+			
+			return 0;
+		}
+	}
+	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
@@ -46,19 +117,16 @@ namespace xerus {
 	template<class MeasurmentSet>
 	class MeasurmentComparator {
 		const bool forward;
-		const bool firstPart;
-		const MeasurmentSet& measurments;
 		const size_t degree;
-		std::shared_ptr<size_t> compZeroFirstNonZero;
+		const MeasurmentSet& measurments;
 	public:
-		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward, const bool _firstPart);
+		MeasurmentComparator(const MeasurmentSet& _measurments, const bool _forward);
 		
 		bool operator()(const size_t _a, const size_t _b) const;
 	};
 	
 	template<>
-	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward, const bool) : forward(_forward), firstPart(false), measurments(_measurments), degree(_measurments.degree()) {
-	}
+	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
 	
 	template<>
 	bool MeasurmentComparator<SinglePointMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
@@ -79,68 +147,21 @@ namespace xerus {
 	
 	
 	template<>
-	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward, const bool _firstPart) : forward(_forward), firstPart(_firstPart), measurments(_measurments), degree(_measurments.degree()), compZeroFirstNonZero(new size_t[_measurments.size()], internal::array_deleter_st) {
-		REQUIRE(!firstPart || _forward, "IE");
-		for(size_t i = 0; i < measurments.size(); ++i) {
-			for(size_t k = 0; k < measurments.positions[i][0].size; ++k) {
-				if (measurments.positions[i][0].cat(k) > 0.0) {
-					compZeroFirstNonZero.get()[i] = k;
-					break;
-				}
-			}
-		}
-	}
+	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
 	
 	template<>
 	bool MeasurmentComparator<RankOneMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
-		if (firstPart) {
-			if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; }
-			else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
-			
-			REQUIRE(measurments.positions[_a][0].size == measurments.positions[_b][0].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][0].size << " vs " << measurments.positions[_b][0].size);
-			
-			for(size_t k = compZeroFirstNonZero.get()[_a]; k < measurments.positions[_a][0].size; ++k) {
-				if (measurments.positions[_a][0].cat(k) < measurments.positions[_b][0].cat(k)) { return true; }
-				if (measurments.positions[_a][0].cat(k) > measurments.positions[_b][0].cat(k)) { return false; }
+		if(forward) {
+			for (size_t j = 0; j < degree; ++j) {
+				const int res = comp(measurments.positions[_a][j], measurments.positions[_b][j]);
+				if(res == -1) { return true; }
+				else if(res == 1) { return false; }
 			}
-			return false;
-			
-			
-			
-		} else if(forward) { // Second part
-			
-			for (size_t j = 1; j < degree; ++j) {
-				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
-				
-				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
-					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
-					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
-				}
-			}
-			
-			return false;
-				
-// 			for (size_t j = 0; j < degree; ++j) {
-// 				REQUIRE(measurments.positions[_a][j].size == measurments.positions[_b][j].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j].size << " vs " << measurments.positions[_b][j].size);
-// 				
-// 				for(size_t k = 0; k < measurments.positions[_a][j].size; ++k) {
-// 					if (measurments.positions[_a][j].cat(k) < measurments.positions[_b][j].cat(k)) { return true; }
-// 					if (measurments.positions[_a][j].cat(k) > measurments.positions[_b][j].cat(k)) { return false; }
-// 				}
-// 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
-				REQUIRE(measurments.positions[_a][j-1].size == measurments.positions[_b][j-1].size, "IE: " << _a << " " << _b << " | " << measurments.positions[_a][j-1].size << " vs " << measurments.positions[_b][j-1].size);
-				
-				if(j == 1) {
-					if(compZeroFirstNonZero.get()[_a] > compZeroFirstNonZero.get()[_b]) { return true; } 
-					else if(compZeroFirstNonZero.get()[_a] < compZeroFirstNonZero.get()[_b]) { return false; }
-				}
-				
-				for(size_t k = 0; k < measurments.positions[_a][j-1].size; ++k) {
-					if (measurments.positions[_a][j-1].cat(k) < measurments.positions[_b][j-1].cat(k)) { return true; }
-					if (measurments.positions[_a][j-1].cat(k) > measurments.positions[_b][j-1].cat(k)) { return false; }
-				}
+				const int res = comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
+				if(res == -1) { return true; }
+				else if(res == 1) { return false; }
 			}
 		}
 		
@@ -166,13 +187,7 @@ namespace xerus {
 		perfData << "Start sorting";
 		std::vector<size_t> reorderedMeasurments(numMeasurments);
 		std::iota(reorderedMeasurments.begin(), reorderedMeasurments.end(), 0);
-		if(_forward) {
-			std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, true)));
-			perfData << "End Pre Sort";
-			std::stable_sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, false)));
-		} else {
-			std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), std::move(MeasurmentComparator<MeasurmentSet>(measurments, _forward, false)));
-		}
+		std::sort(reorderedMeasurments.begin(), reorderedMeasurments.end(), MeasurmentComparator<MeasurmentSet>(measurments, _forward));
 		perfData << "End sorting " << _forward ;
 		
 		// Create the entries for the first measurement (these are allways unqiue).
