@@ -57,8 +57,8 @@ namespace xerus { namespace internal {
 	}
 	
 	CholmodCommon::CholmodCommon() : c(new cholmod_common()) {
-		cholmod_start(c.get());
-		REQUIRE(c->itype == CHOLMOD_INT, "atm only cholmod compiled with itype = int is supported...");
+		cholmod_l_start(c.get());
+		REQUIRE(c->itype == CHOLMOD_LONG, "atm only cholmod compiled with itype = long is supported...");
 		REQUIRE(c->dtype == CHOLMOD_DOUBLE, "atm only cholmod compiled with dtype = double is supported...");
 		c->error_handler = &error_handler;
 		c->print = 0;
@@ -66,7 +66,7 @@ namespace xerus { namespace internal {
 	}
 	
 	CholmodCommon::~CholmodCommon() {
-		cholmod_finish(c.get());
+		cholmod_l_finish(c.get());
 	}
 
 	CholmodCommon::RestrictedAccess CholmodCommon::get() {
@@ -75,7 +75,7 @@ namespace xerus { namespace internal {
 
 	std::function<void(cholmod_sparse*)> CholmodCommon::get_deleter() {
 		return [&](cholmod_sparse* _toDelete) {
-			cholmod_free_sparse(&_toDelete, this->get());
+			cholmod_l_free_sparse(&_toDelete, this->get());
 		};
 	}
 	
@@ -87,7 +87,7 @@ namespace xerus { namespace internal {
 
 	
 	CholmodSparse::CholmodSparse(const size_t _m, const size_t _n, const size_t _N) 
-		 : matrix(cholmod_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter())
+		 : matrix(cholmod_l_allocate_sparse(_m, _n, _N, 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter())
 	{
 		REQUIRE(matrix && cholmodObject.c->status == 0, "cholmod_allocate_sparse did not allocate anything... status: " << cholmodObject.c->status << " call: " << _m << " " << _n << " " << _N << " alloc: " << cholmodObject.c->malloc_count);
 	}
@@ -96,46 +96,46 @@ namespace xerus { namespace internal {
 		: CholmodSparse(_n, _m, _input.size())
 	{
 		size_t entryPos = 0;
-		int* i = static_cast<int*>(matrix->i);
-		int* p = static_cast<int*>(matrix->p);
+		long* i = static_cast<long*>(matrix->i);
+		long* p = static_cast<long*>(matrix->p);
 		double* x = static_cast<double*>(matrix->x);
 		i[0] = 0;
 		
 		// create compressed column storage of A^T aka compressed row storage of A
 		
-		int currRow = -1;
+		long currRow = -1;
 		
 		for(const std::pair<size_t, value_t>& entry : _input) {
 			x[entryPos] = entry.second;
-			i[entryPos] = static_cast<int>(entry.first%_n);
-			while(currRow < static_cast<int>(entry.first/_n)) {
-				p[++currRow] = int(entryPos);
+			i[entryPos] = static_cast<long>(entry.first%_n);
+			while(currRow < static_cast<long>(entry.first/_n)) {
+				p[++currRow] = long(entryPos);
 			}
 			entryPos++;
 		}
 		
 		REQUIRE(size_t(currRow) < _m && entryPos == _input.size(), "Internal Error " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
 		
-		while(currRow < static_cast<int>(_m)) {
-			p[++currRow] = int(entryPos);
+		while(currRow < static_cast<long>(_m)) {
+			p[++currRow] = long(entryPos);
 		}
 
 		if(!_transpose) {
 			// we didn't want A^T, so transpose the data to get compressed column storage of A
-			ptr_type newM(cholmod_allocate_sparse(_m, _n, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
-			cholmod_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
+			ptr_type newM(cholmod_l_allocate_sparse(_m, _n, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
+			cholmod_l_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
 			matrix = std::move(newM);
 		}
 	}
 
 	std::map<size_t, double> CholmodSparse::to_map(double _alpha) const {
 		std::map<size_t, double> result;
-		int* mi = reinterpret_cast<int*>(matrix->i);
-		int* p = reinterpret_cast<int*>(matrix->p);
+		long* mi = reinterpret_cast<long*>(matrix->i);
+		long* p = reinterpret_cast<long*>(matrix->p);
 		double* x = reinterpret_cast<double*>(matrix->x);
 		
 		for(size_t i = 0; i < matrix->ncol; ++i) {
-			for(int j = p[i]; j < p[i+1]; ++j) {
+			for(long j = p[i]; j < p[i+1]; ++j) {
 				IF_CHECK( auto ret = ) result.emplace(size_t(mi[size_t(j)])*matrix->ncol+i, _alpha*x[j]);
 				REQUIRE(ret.second, "Internal Error");
 			}
@@ -144,7 +144,7 @@ namespace xerus { namespace internal {
 	}
 
 	CholmodSparse CholmodSparse::operator*(const CholmodSparse& _rhs) const {
-		return CholmodSparse(cholmod_ssmult(matrix.get(), _rhs.matrix.get(), 0, 1, 1, cholmodObject.get()));
+		return CholmodSparse(cholmod_l_ssmult(matrix.get(), _rhs.matrix.get(), 0, 1, 1, cholmodObject.get()));
 	}
 
 	
@@ -188,11 +188,26 @@ namespace xerus { namespace internal {
 		void *symbolic, *numeric;
 // 		double control[UMFPACK_CONTROL], info[UMFPACK_INFO];
 		// TODO check return values
-		umfpack_di_symbolic(int(_bDim), int(_xDim), static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), &symbolic, nullptr, nullptr);
-		umfpack_di_numeric(static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), symbolic, &numeric, nullptr, nullptr);
-		umfpack_di_free_symbolic(&symbolic);
-		umfpack_di_solve(UMFPACK_A, static_cast<int*>(A.matrix->p), static_cast<int*>(A.matrix->i), static_cast<double*>(A.matrix->x), _x, _b, numeric, nullptr, nullptr);
-		umfpack_di_free_numeric(&numeric);
+		umfpack_dl_symbolic(long(_bDim), long(_xDim), static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), &symbolic, nullptr, nullptr);
+		umfpack_dl_numeric(static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), symbolic, &numeric, nullptr, nullptr);
+		umfpack_dl_free_symbolic(&symbolic);
+		umfpack_dl_solve(UMFPACK_A, static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), _x, _b, numeric, nullptr, nullptr);
+		umfpack_dl_free_numeric(&numeric);
 	}
+	
+	
+	void CholmodSparse::qr(std::map< size_t, double >& _q, std::map<size_t, double>& _r, size_t& _rank, const std::map< size_t, double >& _A, const bool _transposeA, size_t _m, size_t _n) {
+		CholmodSparse A(_A, _m, _n, _transposeA);
+		cholmod_sparse *Q, *R;
+		SuiteSparse_long *E;
+		_rank = SuiteSparseQR<double>(0, xerus::EPSILON, 1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		CholmodSparse Qs(Q);
+		CholmodSparse Rs(R);
+		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		REQUIRE(_rank == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << _rank << " vs " << Qs.matrix->ncol);
+		_q = Qs.to_map();
+		_r = Rs.to_map();
+	}
+
 
 }}

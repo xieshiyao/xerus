@@ -289,3 +289,48 @@ UNIT_TEST(Tensor, QC,
     TEST(approx_equal(res4, A, 1e-15));
 	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
 )
+
+UNIT_TEST(Tensor, Sparse_QR,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+
+    Tensor A({2,2,2,2,2,2});
+	for (size_t i=0; i<16; ++i) {
+		A[i] = dist(rnd);
+	}
+	A.use_sparse_representation();
+	Tensor B({2,3}, [](size_t i){return double(i);});
+    Tensor Q;
+    Tensor R;
+    Tensor Q2;
+    Tensor R2;
+    Tensor Q3;
+    Tensor R3;
+    Tensor Q4;
+    Tensor res4;
+    
+    Index i, j, k, l, m, n, o, p, q, r;
+	
+    (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q(i,j,k,o)*R(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
+    
+    (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
+    res4(i,n,k,m,j,r) = Q(i,j,k,o)*R(o,m,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
+    
+    (Q2(i,k,l), R2(l,m,j,n,r)) = QR(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q2(i,k,o)*R2(o,m,j,n,r);
+    TEST(approx_equal(res4, A, 1e-12));
+    
+    (Q3(i,m,j,k,l), R3(l,n,r)) = QR(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q3(i,m,j,k,o)*R3(o,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+	
+	(Q(i,l,j,k,m), R(l,n,r)) = QR(A(i,j,k,m,n,r));
+    res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
+    TEST(approx_equal(res4, A, 1e-15));
+	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
+)

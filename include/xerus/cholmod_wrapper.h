@@ -29,6 +29,7 @@
 #include <mutex>
 
 #include <suitesparse/cholmod.h>
+#include <suitesparse/SuiteSparseQR.hpp>
 
 
 namespace xerus {
@@ -67,7 +68,8 @@ namespace xerus {
 			///@brief Creates a cholmod sparse matrix with given dimensions and number of entries.
 			CholmodSparse(const size_t _m, const size_t _n, const size_t _N);
 			
-			///@brief Converts the given @a _tensor to the cholmod sparse format using the given matrification.
+			///@brief Converts the given tensor to the cholmod sparse format using the given matrification.
+			///@note _input is supposed to be a _m by _n matrix _before_ transposition.
 			CholmodSparse(const std::map<size_t, double>& _input, const size_t _m, const size_t _n, const bool _transpose);
 			
 			///@brief Transforms a cholmod sparse matrix to sparse Tensor format.
@@ -103,6 +105,17 @@ namespace xerus {
 								const bool _transposeA,
 								const double* _b,
 								size_t _bDim
+			);
+			
+			///@brief calculates the sparse QR decompomposition
+			///@note A is assumed to be a _m by _n matrix _before_ transposition. Outputs are given in sparse format but usually not very sparse anymore...
+			static void qr(std::map<size_t, double>& _q,
+				std::map<size_t, double>& _r,
+				size_t &_rank,
+				const std::map<size_t, double> &_A,
+				const bool _transposeA,
+				size_t _m,
+				size_t _n
 			);
 		};
 		

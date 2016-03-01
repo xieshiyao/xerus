@@ -3,9 +3,10 @@
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
 * 2016-xx-xx v2.2.0
- * To be determined.
+ * Added Sparse solve and sparse QR factorization.
+ * ! Xerus now depends on the SuiteSparseQR (-lspqr) library.
 
-* 2016-02-10 v2.2.1
+* 2016-02-10 v2.1.1
  * Basic support for fixed indices in TensorNetworks.
  * Readded TTNetwork constructor from DimensionTuple.
  * Bugfixes for TTNetwork dyadic_product.

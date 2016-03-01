@@ -35,8 +35,7 @@
 
 #include <xerus/tensorNetwork.h>
 
-
-#include <suitesparse/cholmod.h>
+#include <xerus/cholmod_wrapper.h>
 
 namespace xerus {
 	size_t Tensor::sparsityFactor = 4;
@@ -209,41 +208,6 @@ namespace xerus {
 		ret.use_sparse_representation();
 		return ret;
 	}
-	
-
-	std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> Tensor::to_cholmod(const size_t _matrificationPosition) const {
-		cholmod_common common; // TODO nciht hier
-		cholmod_common* const cc = &common;
-		// TODO call start
-		
-		const size_t nRows = misc::product(dimensions, 0, _matrificationPosition);
-		const size_t nCols = misc::product(dimensions, _matrificationPosition, dimensions.size());
-		
-		std::unique_ptr<cholmod_sparse, std::function<void(cholmod_sparse*)>> result(
-			cholmod_allocate_sparse ( 
-				nRows, 					// # of rows
-				nCols,	// # of columns
-				count_non_zero_entries(),												// max # of nonzeros
-				0,																		// TRUE if columns of A sorted, FALSE otherwise
-				0,																		// TRUE if A will be packed, FALSE otherwise
-				0,																		// stype of A ( 0 means not symmetric )
-				CHOLMOD_REAL,															// CHOLMOD_PATTERN, _REAL, _COMPLEX, or _ZOMPLEX
-				cc
-			), [&](cholmod_sparse* _toDelete) {cholmod_free_sparse(&_toDelete, cc);});
-		
-		// TODO the actual construction
-		LOG(fatal, "Cholmod...");
-		
-		return result;
-	}
-	
-	
-	Tensor Tensor::from_cholmod(const cholmod_sparse* const _cholmod, const Tensor::DimensionTuple& _dimensions) {
-		Tensor result;
-		LOG(fatal, "Cholmod...");
-		return result;
-	}
-	
 	
 	Tensor& Tensor::operator=(const TensorNetwork& _network) {
 		return operator=(Tensor(_network));
@@ -1286,11 +1250,11 @@ namespace xerus {
 		return std::make_tuple(lhsSize, rhsSize, rank);
 	}
 	
-	_inline_ void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
+	_inline_ void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank, Tensor::Representation _rep) {
 		_lhs.factor = 1.0;
 		_rhs.factor = 1.0;
 		
-		if( !_lhs.is_dense()
+		if (_lhs.representation != _rep
 			|| _lhs.degree() != _splitPos+1
 			|| _lhs.dimensions.back() != _rank 
 			|| !std::equal(_input.dimensions.begin(), _input.dimensions.begin() + _splitPos, _lhs.dimensions.begin())) 
@@ -1298,10 +1262,10 @@ namespace xerus {
 			Tensor::DimensionTuple newDimU;
 			newDimU.insert(newDimU.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
 			newDimU.push_back(_rank);
-			_lhs.reset(std::move(newDimU), Tensor::Representation::Dense, Tensor::Initialisation::None);
+			_lhs.reset(std::move(newDimU), _rep, Tensor::Initialisation::None);
 		}
 		
-		if(!_rhs.is_dense()
+		if (_rhs.representation != _rep
 			|| _rhs.degree() != _input.degree()-_splitPos+1 
 			|| _rank != _rhs.dimensions.front() 
 			|| !std::equal(_input.dimensions.begin() + _splitPos, _input.dimensions.end(), _rhs.dimensions.begin()+1)) 
@@ -1309,7 +1273,7 @@ namespace xerus {
 			Tensor::DimensionTuple newDimVt;
 			newDimVt.push_back(_rank);
 			newDimVt.insert(newDimVt.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
-			_rhs.reset(std::move(newDimVt), Tensor::Representation::Dense, Tensor::Initialisation::None);
+			_rhs.reset(std::move(newDimVt), _rep, Tensor::Initialisation::None);
 		}
 	}
 	
@@ -1330,7 +1294,7 @@ namespace xerus {
 		
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_U, _Vt, _input, _splitPos, rank);
+		prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
@@ -1375,12 +1339,16 @@ namespace xerus {
 	void calculate_qr(Tensor& _Q, Tensor& _R, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_Q, _R, _input, _splitPos, rank);
+		prepare_factorization_output(_Q, _R, _input, _splitPos, rank, _input.representation);
 		
-		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse QR not yet implemented. falling back to the dense variant"); // TODO
-			_input.use_dense_representation();
-			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+		if (_input.is_sparse()) {
+			internal::CholmodSparse::qr(_Q.get_sparse_data(), _R.get_sparse_data(), rank, _input.get_sparse_data(), false, lhsSize, rhsSize);
+			_Q.dimensions.back() = rank;
+			_R.dimensions.front() = rank;
+			_Q.size = misc::product(_Q.dimensions);
+			_R.size = misc::product(_R.dimensions);
+			_Q.use_dense_representation_if_desirable();
+			_R.use_dense_representation_if_desirable();
 		} else {
 			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
@@ -1392,7 +1360,7 @@ namespace xerus {
 	void calculate_rq(Tensor& _R, Tensor& _Q, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_R, _Q, _input, _splitPos, rank);
+		prepare_factorization_output(_R, _Q, _input, _splitPos, rank, Tensor::Representation::Dense);
 		
 		if(_input.is_sparse()) {
 			LOG_ONCE(warning, "Sparse RQ not yet implemented. falling back to the dense variant"); // TODO
