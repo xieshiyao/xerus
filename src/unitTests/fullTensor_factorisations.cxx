@@ -334,3 +334,28 @@ UNIT_TEST(Tensor, Sparse_QR,
     TEST(approx_equal(res4, A, 1e-15));
 	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
 )
+
+
+UNIT_TEST(Tensor, Sparse_CQ,
+    std::mt19937_64 rnd;
+    std::normal_distribution<value_t> dist (0.0, 1.0);
+
+    Tensor A({3,3,3,3,3,3});
+	for (size_t i=0; i<16; ++i) {
+		A[i] = dist(rnd);
+	}
+	A.use_sparse_representation();
+	Tensor Af(A);
+	Af.use_dense_representation();
+	A *= 2; Af *= 2;
+    Tensor Qs, Qf, Cs, Cf, res;
+    Index i, j, k, l, m, n, o, p, q, r;
+	
+    (Cs(i,j,k,l), Qs(l,m,n,r)) = CQ(A(i,j,k,m,n,r));
+	(Cf(i,j,k,l), Qf(l,m,n,r)) = CQ(Af(i,j,k,m,n,r));
+    res(i,j,k,m,n,r) = Cs(i,j,k,o)*Qs(o,m,n,r);
+    TEST(approx_equal(res, A, 1e-15));
+	TEST(approx_equal(Qs, Qf, 1e-15));
+	TEST(approx_equal(Cs, Cf, 1e-15));
+	MTEST(frob_norm(Qs(l,i,j,k)*Qs(m,i,j,k) - Tensor::identity({Qs.dimensions[0], Qs.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
+)

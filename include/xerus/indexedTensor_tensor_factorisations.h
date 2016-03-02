@@ -104,13 +104,27 @@ namespace xerus {
 	/**
 	* @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
 	* @details This calculates a factorisation QC=A with orthogonal Q and r x m matrix C where r is typically not much larger than the rank of A.
-	* The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and R can
+	* The simplest example is (Q(i,k), C(k,j)) = QC(A(i,j)) to calculate the QC decomposition of A. However A, Q and C can
 	*  also be a higher order Tensors.
 	*/
 	class QC : public TensorFactorisation {
 	public:
 		internal::IndexedTensorReadOnly<Tensor>* input;
 		QC(internal::IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
+		
+		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
+	};
+	
+	/**
+	* @brief Helper class to allow an intuitive syntax for an rank revealing orthogonal factorisation.
+	* @details This calculates a factorisation CQ=A with orthogonal Q and n x r matrix C where r is typically not much larger than the rank of A.
+	* The simplest example is (C(i,k), Q(k,j)) = QC(A(i,j)) to calculate the CQ decomposition of A. However A, Q and C can
+	*  also be a higher order Tensors.
+	*/
+	class CQ : public TensorFactorisation {
+	public:
+		internal::IndexedTensorReadOnly<Tensor>* input;
+		CQ(internal::IndexedTensorReadOnly<Tensor>&& _input) : input(&_input) { }
 		
 		virtual void operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const override;
 	};

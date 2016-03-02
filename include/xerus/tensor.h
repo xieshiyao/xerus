@@ -618,11 +618,17 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief Resets the tensor to the given dimensions, preserving the current representation.
+		 * @brief Resets the tensor to the given dimensions with data @a _newData.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _newData new dense data in row-major order.
 		 */
 		void reset(DimensionTuple _newDim, std::unique_ptr<value_t[]>&& _newData);
+		
+		
+		/**
+		 * @brief Resets the tensor to a given dimensionstuple with sparse data @a _newData
+		 */
+		void reset(DimensionTuple _newDim, std::map<size_t, value_t>&& _newData);
 		
 		
 		/** 

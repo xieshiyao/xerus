@@ -611,6 +611,20 @@ namespace xerus {
 		denseData = std::move(_newData);
 	}
 	
+	void Tensor::reset(DimensionTuple _newDim, std::map<size_t, value_t>&& _newData) {
+		dimensions = std::move(_newDim);
+		size = misc::product(dimensions);
+		factor = 1.0;
+		
+		if(representation == Representation::Dense) {
+			denseData.reset();
+			representation = Representation::Sparse;
+		}
+		
+		std::shared_ptr<std::map<size_t, value_t>> newD(new std::map<size_t, value_t>(std::move(_newData)));
+		sparseData = std::move(newD);
+	}
+	
 	
 	void Tensor::reinterpret_dimensions(const DimensionTuple& _newDimensions) {
 		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
@@ -1277,7 +1291,21 @@ namespace xerus {
 		}
 	}
 	
-	_inline_ void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, std::unique_ptr<value_t[]>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
+	_inline_ void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, 
+										   std::unique_ptr<value_t[]>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
+		Tensor::DimensionTuple newDim;
+		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
+		newDim.push_back(_rank);
+		_lhs.reset(std::move(newDim), std::move(_lhsData));
+
+		newDim.clear();
+		newDim.push_back(_rank);
+		newDim.insert(newDim.end(), _input.dimensions.begin() + _splitPos, _input.dimensions.end());
+		_rhs.reset(std::move(newDim), std::move(_rhsData));
+	}
+	
+	_inline_ void set_factorization_output(Tensor& _lhs, std::map<size_t, value_t>&& _lhsData, Tensor& _rhs, 
+										   std::map<size_t, value_t>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
 		Tensor::DimensionTuple newDim;
 		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
 		newDim.push_back(_rank);
@@ -1339,17 +1367,15 @@ namespace xerus {
 	void calculate_qr(Tensor& _Q, Tensor& _R, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_Q, _R, _input, _splitPos, rank, _input.representation);
-		
 		if (_input.is_sparse()) {
-			internal::CholmodSparse::qr(_Q.get_sparse_data(), _R.get_sparse_data(), rank, _input.get_sparse_data(), false, lhsSize, rhsSize);
-			_Q.dimensions.back() = rank;
-			_R.dimensions.front() = rank;
-			_Q.size = misc::product(_Q.dimensions);
-			_R.size = misc::product(_R.dimensions);
+			std::map<size_t, double> qdata, rdata;
+			std::tie(qdata, rdata, rank) = internal::CholmodSparse::qc(_input.get_unsanitized_sparse_data(), false, lhsSize, rhsSize, true);
+			REQUIRE(rank == std::min(lhsSize, rhsSize), "IE, sparse qr reduced rank");
+			set_factorization_output(_Q, std::move(qdata), _R, std::move(rdata), _input, _splitPos, rank);
 			_Q.use_dense_representation_if_desirable();
 			_R.use_dense_representation_if_desirable();
 		} else {
+			prepare_factorization_output(_Q, _R, _input, _splitPos, rank, _input.representation);
 			blasWrapper::qr(_Q.override_dense_data(), _R.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
@@ -1377,18 +1403,19 @@ namespace xerus {
 	void calculate_qc(Tensor& _Q, Tensor& _C, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		std::unique_ptr<double[]> QData, CData;
 		
 		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse QC not yet implemented. falling back to the dense variant"); // TODO
-			_input.use_dense_representation();
-			
-			std::tie(QData, CData, rank) = blasWrapper::qc(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			std::map<size_t, double> qdata, cdata;
+			std::tie(qdata, cdata, rank) = internal::CholmodSparse::qc(_input.get_unsanitized_sparse_data(), false, lhsSize, rhsSize, false);
+			set_factorization_output(_Q, std::move(qdata), _C, std::move(cdata), _input, _splitPos, rank);
+			_Q.use_dense_representation_if_desirable();
+			_C.use_dense_representation_if_desirable();
 		} else {
+			std::unique_ptr<double[]> QData, CData;
 			std::tie(QData, CData, rank) = blasWrapper::qc(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			set_factorization_output(_Q, std::move(QData), _C, std::move(CData), _input, _splitPos, rank);
 		}
 		
-		set_factorization_output(_Q, std::move(QData), _C, std::move(CData), _input, _splitPos, rank);
 		_C.factor = _input.factor;
 	}
 	
@@ -1396,18 +1423,19 @@ namespace xerus {
 	void calculate_cq(Tensor& _C, Tensor& _Q, Tensor _input, const size_t _splitPos) {
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		std::unique_ptr<double[]> CData, QData;
 		
 		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse CQ not yet implemented. falling back to the dense variant"); // TODO
-			_input.use_dense_representation();
-			
-			std::tie(CData, QData, rank) = blasWrapper::cq(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			std::map<size_t, double> qdata, cdata;
+			std::tie(cdata, qdata, rank) = internal::CholmodSparse::cq(_input.get_unsanitized_sparse_data(), false, rhsSize, lhsSize, false);
+			set_factorization_output(_C, std::move(cdata), _Q, std::move(qdata), _input, _splitPos, rank);
+			_Q.use_dense_representation_if_desirable();
+			_C.use_dense_representation_if_desirable();
 		} else {
+			std::unique_ptr<double[]> CData, QData;
 			std::tie(CData, QData, rank) = blasWrapper::cq(_input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			set_factorization_output(_C, std::move(CData), _Q, std::move(QData), _input, _splitPos, rank);
 		}
 		
-		set_factorization_output(_C, std::move(CData), _Q, std::move(QData), _input, _splitPos, rank);
 		_C.factor = _input.factor;
 	}
 	

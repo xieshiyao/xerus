@@ -78,6 +78,9 @@ namespace xerus {
 			///@brief Calculates the Matrix Matrix product with another sparse matrix.
 			CholmodSparse operator*(const CholmodSparse &_rhs) const;
 			
+			///@brief transposes the represented sparse matrix.
+			void transpose();
+			
 			///@brief Calculates the Matrix Matrix product between two sparse matrices.
 			static void matrix_matrix_product(std::map<size_t, double>& _C,
 										const size_t _leftDim,
@@ -107,15 +110,30 @@ namespace xerus {
 								size_t _bDim
 			);
 			
-			///@brief calculates the sparse QR decompomposition
-			///@note A is assumed to be a _m by _n matrix _before_ transposition. Outputs are given in sparse format but usually not very sparse anymore...
-			static void qr(std::map<size_t, double>& _q,
-				std::map<size_t, double>& _r,
-				size_t &_rank,
+			/**
+			 * @brief calculates the sparse QR decomposition (or qc if fullrank = false)
+			 * @note A is assumed to be a _m by _n matrix _before_ transposition. Outputs are given in sparse format but usually not very sparse anymore...
+			 * @returns (q, c, rank), rank = min(m,n) if fullrank was set to true
+			 */
+			static std::tuple<std::map<size_t, double>, std::map<size_t, double>, size_t> qc(
 				const std::map<size_t, double> &_A,
 				const bool _transposeA,
 				size_t _m,
-				size_t _n
+				size_t _n,
+				bool _fullrank
+			);
+			
+			/**
+			 * @brief calculates the sparse CQ decomposition
+			 * @note A is assumed to be a _m by _n matrix _before_ transposition. Outputs are given in sparse format but usually not very sparse anymore...
+			 * @returns (c, q, rank), rank = min(m,n) if fullrank was set to true
+			 */
+			static std::tuple<std::map<size_t, double>, std::map<size_t, double>, size_t> cq(
+				const std::map<size_t, double> &_A,
+				const bool _transposeA,
+				size_t _m,
+				size_t _n,
+				bool _fullrank
 			);
 		};
 		

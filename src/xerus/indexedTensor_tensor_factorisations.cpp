@@ -238,26 +238,28 @@ namespace xerus {
 		
 		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(Q), std::move(C));
 		
-		if(reorderedBaseTensor->is_sparse()){
-			LOG(fatal, "Sparse QC not yet implemented.");
-		} else {
-			std::unique_ptr<double[]> Qt, Ct;
-			std::tie(Qt, Ct, rank) = blasWrapper::qc(reorderedBaseTensor->get_unsanitized_dense_data(), lhsSize, rhsSize);
-			
-			std::vector<size_t> newDim = Q.tensorObject->dimensions;
-			newDim.back() = rank;
-			Q.tensorObject->reset(newDim, std::move(Qt));
-			
-			newDim = C.tensorObject->dimensions;
-			newDim.front() = rank;
-			C.tensorObject->reset(newDim, std::move(Ct));
-		}
-		
-		// C has to carry the constant factor
-		C.tensorObject->factor = reorderedBaseTensor->factor;
+		calculate_qc(*Q.tensorObject, *C.tensorObject, *reorderedBaseTensor, splitPos);
 		
 		// Post evaluate the results
 		Q = (*Q.tensorObjectReadOnly)(lhsPreliminaryIndices);
 		C = (*C.tensorObjectReadOnly)(rhsPreliminaryIndices);
+	}
+	
+	void CQ::operator()(const std::vector<internal::IndexedTensor<Tensor>*>& _output) const {
+		REQUIRE(_output.size() == 2, "CQ factorisation requires two output tensors, not " << _output.size());
+		internal::IndexedTensorReadOnly<Tensor>& A = *input;
+		internal::IndexedTensor<Tensor>& C = *_output[0];
+		internal::IndexedTensor<Tensor>& Q = *_output[1];
+		
+		size_t lhsSize, rhsSize, rank, splitPos;
+		std::vector<Index> lhsPreliminaryIndices, rhsPreliminaryIndices;
+		
+		std::unique_ptr<Tensor> reorderedBaseTensor = prepare_split(lhsSize, rhsSize, rank, splitPos, lhsPreliminaryIndices, rhsPreliminaryIndices, std::move(A), std::move(C), std::move(Q));
+		
+		calculate_cq(*C.tensorObject, *Q.tensorObject, *reorderedBaseTensor, splitPos);
+		
+		// Post evaluate the results
+		C = (*C.tensorObjectReadOnly)(lhsPreliminaryIndices);
+		Q = (*Q.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
 }

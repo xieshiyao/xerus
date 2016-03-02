@@ -122,9 +122,7 @@ namespace xerus { namespace internal {
 
 		if(!_transpose) {
 			// we didn't want A^T, so transpose the data to get compressed column storage of A
-			ptr_type newM(cholmod_l_allocate_sparse(_m, _n, _input.size(), 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
-			cholmod_l_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
-			matrix = std::move(newM);
+			transpose();
 		}
 	}
 
@@ -145,6 +143,12 @@ namespace xerus { namespace internal {
 
 	CholmodSparse CholmodSparse::operator*(const CholmodSparse& _rhs) const {
 		return CholmodSparse(cholmod_l_ssmult(matrix.get(), _rhs.matrix.get(), 0, 1, 1, cholmodObject.get()));
+	}
+
+	void CholmodSparse::transpose() {
+		ptr_type newM(cholmod_l_allocate_sparse(matrix->ncol, matrix->nrow, matrix->nzmax, 1, 1, 0, CHOLMOD_REAL, cholmodObject.get()), cholmodObject.get_deleter());
+		cholmod_l_transpose_unsym(matrix.get(), 1, nullptr, nullptr, 0, newM.get(), cholmodObject.get());
+		matrix = std::move(newM);
 	}
 
 	
@@ -196,17 +200,44 @@ namespace xerus { namespace internal {
 	}
 	
 	
-	void CholmodSparse::qr(std::map< size_t, double >& _q, std::map<size_t, double>& _r, size_t& _rank, const std::map< size_t, double >& _A, const bool _transposeA, size_t _m, size_t _n) {
+	std::tuple<std::map<size_t, double>, std::map<size_t, double>, size_t> CholmodSparse::qc(
+				const std::map<size_t, double> &_A,
+				const bool _transposeA,
+				size_t _m,
+				size_t _n,
+				bool _fullrank)
+	{
 		CholmodSparse A(_A, _m, _n, _transposeA);
 		cholmod_sparse *Q, *R;
 		SuiteSparse_long *E;
-		_rank = SuiteSparseQR<double>(0, xerus::EPSILON, 1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		size_t rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?std::min(_m,_n):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
 		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE(_rank == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << _rank << " vs " << Qs.matrix->ncol);
-		_q = Qs.to_map();
-		_r = Rs.to_map();
+		REQUIRE((_fullrank?std::min(_m,_n):rank) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?std::min(_m,_n):rank) << " vs " << Qs.matrix->ncol);
+		return std::make_tuple(Qs.to_map(), Rs.to_map(), _fullrank?std::min(_m,_n):rank);
+	}
+	
+	std::tuple<std::map<size_t, double>, std::map<size_t, double>, size_t> CholmodSparse::cq(
+				const std::map<size_t, double> &_A,
+				const bool _transposeA,
+				size_t _m,
+				size_t _n,
+				bool _fullrank)
+	{
+		CholmodSparse A(_A, _n, _m, !_transposeA);
+		cholmod_sparse *Q, *R;
+		SuiteSparse_long *E;
+		// decompose A^T = q^T*r^T
+		size_t rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?std::min(_m,_n):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		CholmodSparse Qs(Q);
+		CholmodSparse Rs(R);
+		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		REQUIRE((_fullrank?std::min(_m,_n):rank) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?std::min(_m,_n):rank) << " vs " << Qs.matrix->ncol);
+		//transpose q and r to get r*q=A
+		Qs.transpose();
+		Rs.transpose();
+		return std::make_tuple(Rs.to_map(), Qs.to_map(), _fullrank?std::min(_m,_n):rank);
 	}
 
 
