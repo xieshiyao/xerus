@@ -16,7 +16,7 @@ The key features include:
 
 ## Version History
 
-We released our first stable version 1.0 in May 2015 and are currently at version 2.1.0. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
+We released our first stable version 1.0 in May 2015 and are currently at version 2.2.1. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
 The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
 
 ## Getting Started
@@ -44,6 +44,6 @@ entry might look as follows
 	author = {Huber, Benjamin and Wolf, Sebastian},
 	title = {Xerus - A General Purpose Tensor Library},
 	howpublished = {\url{https://libxerus.org/}},
-	year = {2014--2015}
+	year = {2014--2016}
 }
 ~~~

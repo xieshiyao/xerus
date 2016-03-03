@@ -995,83 +995,24 @@ namespace xerus {
 			
 			// Create a Tensor for the result
 			std::vector<size_t> nxtDimensions;
-			if (position == 0) { 
-				nxtDimensions.emplace_back(1);
-			} else {
-				nxtDimensions.emplace_back(myComponent.dimensions.front()+otherComponent.dimensions.front());
-			}
+			nxtDimensions.emplace_back(position == 0 ? 1 : myComponent.dimensions.front()+otherComponent.dimensions.front());
 			nxtDimensions.emplace_back(myComponent.dimensions[1]);
 			if (isOperator) { nxtDimensions.emplace_back(myComponent.dimensions[2]); }
-			if (position == numComponents-1) {
-				nxtDimensions.emplace_back(1);
-			} else {
-				nxtDimensions.emplace_back(myComponent.dimensions.back()+otherComponent.dimensions.back());
-			}
+			nxtDimensions.emplace_back(position == numComponents-1 ? 1 : myComponent.dimensions.back()+otherComponent.dimensions.back());
 			
 			Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep));
-			REQUIRE(newRep == Tensor::Representation::Dense, "not implemented yet");
-			value_t * const componentData = static_cast<Tensor*>(newComponent.get())->get_unsanitized_dense_data();
 			
-			const size_t leftIdxOffset = newComponent->size/newComponent->dimensions.front();
-			const size_t extIdxOffset = newComponent->dimensions.back();
-			const size_t myLeftIdxOffset = myComponent.size/myComponent.dimensions.front();
-			const size_t myExtIdxOffset = myComponent.dimensions.back();
-			const size_t otherLeftIdxOffset = otherComponent.size/otherComponent.dimensions.front();
-			const size_t otherExtIdxOffset = otherComponent.dimensions.back();
-			const size_t otherGeneralOffset = (position == 0 ? 0 : myComponent.dimensions.front()*leftIdxOffset) + (position == numComponents-1 ? 0 : myComponent.dimensions.back());
-			const size_t extDimSize = myComponent.dimensions[1] * (isOperator? myComponent.dimensions[2] : 1);
+			newComponent->offset_add(myComponent, isOperator ? std::vector<size_t>({0,0,0,0}) : std::vector<size_t>({0,0,0}));
 			
-			// Copy own Tensor into place
-			if (!initialCanonicalization || position == initialCorePosition) {
-				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied in one piece
-						misc::copy_scaled(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-												myComponent.factor, 
-												myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
-												myComponent.dimensions.back());
-					}
-				}
-			} else {
-				REQUIRE(!myComponent.has_factor(), "Only Core node is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < myComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset, 
-										myComponent.get_unsanitized_dense_data() + leftIdx*myLeftIdxOffset + extIdx*myExtIdxOffset, 
-										myComponent.dimensions.back());
-					}
-				}
-			}
+			const size_t leftOffset = position == 0 ? 0 : myComponent.dimensions.front();
+			const size_t rightOffset = position == numComponents-1 ? 0 : myComponent.dimensions.back();
 			
+			newComponent->offset_add(otherComponent, isOperator ? std::vector<size_t>({leftOffset,0,0,rightOffset}) : std::vector<size_t>({leftOffset,0,rightOffset}));
 			
-			// Copy other Tensor into place
-			if(!_other.cannonicalized || position == _other.corePosition) {
-				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy_scaled(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-												otherComponent.factor, 
-												otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
-												otherComponent.dimensions.back());
-					}
-				}
-			} else {
-				REQUIRE(!otherComponent.has_factor(), "Only Core node is allowed to have a factor");
-				for(size_t leftIdx = 0; leftIdx < otherComponent.dimensions.front(); ++leftIdx) {
-					for(size_t extIdx = 0; extIdx < extDimSize; ++extIdx) {
-						// RightIdx can be copied as one piece
-						misc::copy(componentData + leftIdx*leftIdxOffset + extIdx*extIdxOffset + otherGeneralOffset, 
-										otherComponent.get_unsanitized_dense_data() + leftIdx*otherLeftIdxOffset + extIdx*otherExtIdxOffset, 
-										otherComponent.dimensions.back());
-					}
-				}
-			}
 			
 			set_component(position, std::move(*newComponent));
 		}
-		
 		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(dimensions)+" Ranks: "+misc::to_string(ranks()));
 		
 		if(initialCanonicalization) {

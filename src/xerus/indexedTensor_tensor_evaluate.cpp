@@ -217,7 +217,7 @@ namespace xerus {
 			return true;
 		}
 
-		inline std::vector<size_t> get_dimension_vector(const std::vector<Index> _indices) {
+		inline std::vector<size_t> get_dimension_vector(const std::vector<Index>& _indices) {
 			std::vector<size_t> dimensions;
 			dimensions.reserve(_indices.size());
 			for(const Index& idx : _indices) {
@@ -226,7 +226,7 @@ namespace xerus {
 			return dimensions;
 		}
 		
-		inline std::vector<size_t> get_step_sizes(const std::vector<Index> _indices) {
+		inline std::vector<size_t> get_step_sizes(const std::vector<Index>& _indices) {
 			std::vector<size_t> stepSizes(_indices.size());
 			if(!_indices.empty()) {
 				stepSizes.back() = 1;

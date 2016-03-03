@@ -446,8 +446,6 @@ namespace xerus {
 		 */
 		value_t cat(const size_t _position) const;
 		
-	public:
-		
 		/** 
 		 * @brief Returns a pointer for direct access to the dense data array in row major order. 
 		 * @details Also takes care that this direct access is safe, i.e. that this tensor is using a dense representation, is the sole owner of the data and that no non trivial factor exists.
@@ -726,6 +724,12 @@ namespace xerus {
 		 */
 		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
+		/** 
+		 * @brief Adds the given Tensor with the given offsets to this one.
+		 * @param _other Tensor that shall be added to this one, the orders must coincide.
+		 * @param _offsets the offsets to be used.
+		 */
+		void offset_add(const Tensor& _other, const std::vector<size_t>& _offsets);
 		
 		/** 
 		 * @brief Converts the Tensor to a dense representation.
@@ -799,7 +803,6 @@ namespace xerus {
 	 */
 	Tensor operator+(Tensor _lhs, const Tensor& _rhs);
 	
-
 	/** 
 	 * @brief Calculates the entrywise difference between @a _lhs and @a _rhs.
 	 * @details To be well-defined it is required that the dimensions of  @a _lhs and @a _rhs coincide.
@@ -835,6 +838,7 @@ namespace xerus {
 	 * @return the resulting scaled Tensor.
 	 */
 	Tensor operator/(Tensor _tensor, const value_t _divisor);
+	
 	
 	
 	/** 

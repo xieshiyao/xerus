@@ -945,6 +945,62 @@ namespace xerus {
 	}
 	
 	
+	inline std::vector<size_t> get_step_sizes(const Tensor::DimensionTuple& _dimensions) {
+		std::vector<size_t> stepSizes(_dimensions.size());
+		if(!_dimensions.empty()) {
+			stepSizes.back() = 1;
+			for(size_t i = stepSizes.size(); i > 1; --i) {
+				stepSizes[i-2] = stepSizes[i-1]*_dimensions[i-1];
+			}
+		}
+		return stepSizes;
+	}
+	
+	void Tensor::offset_add(const Tensor& _other, const std::vector<size_t>& _offsets) {
+		IF_CHECK(
+			REQUIRE(degree() == _other.degree(), "Degrees of the this and the given tensor must coincide. Here " << degree() << " vs " << _other.degree());
+			REQUIRE(degree() == _offsets.size(), "Degrees of the this tensor and number of given offsets must coincide. Here " << degree() << " vs " << _offsets.size());
+			for(size_t d = 0; d < degree(); ++d) {
+				REQUIRE(dimensions[d] >= _offsets[d]+_other.dimensions[d], "Invalid offset/tensor dimension for dimension " << d << " because this dimension is " << dimensions[d] << " but other tensor dimension + offset is " << _offsets[d]+_other.dimensions[d]);
+			}
+		)
+		
+		REQUIRE(!_other.is_sparse(), "Sparse other not yet Implementated."); //TODO
+		
+		if(_other.is_dense()) { use_dense_representation(); }
+		ensure_own_data_and_apply_factor();
+		
+		const std::vector<size_t> stepSizes = get_step_sizes(dimensions);
+		
+		// Calculate the actual offset
+		size_t offset = 0;
+		for(size_t d = 0; d < degree(); ++d) {
+			offset += _offsets[d]*stepSizes[d];
+		}
+		
+		const size_t blockSize = _other.dimensions.back();
+		const value_t* inPosition = _other.get_unsanitized_dense_data();
+		value_t* outPosition = get_unsanitized_dense_data() + offset;
+		
+		misc::add_scaled(outPosition, _other.factor, inPosition, blockSize);
+		
+		for(size_t i = 1; i < _other.size/blockSize; ++i) {
+			size_t index = degree()-2;
+			size_t multStep = _other.dimensions[index];
+			inPosition += blockSize;
+			outPosition += stepSizes[index];
+			while(i%multStep == 0) {
+				outPosition -= dimensions[index]*stepSizes[index]; // "reset" current index to 0
+				--index;							// Advance to next index
+				outPosition += stepSizes[index];	// increase next index
+				multStep *= dimensions[index];		// next stepSize
+			}
+			
+			misc::add_scaled(outPosition, _other.factor, inPosition, blockSize);
+		}
+	}
+	
+	
 	void Tensor::use_dense_representation() {
 		if(is_sparse()) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);

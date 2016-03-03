@@ -34,7 +34,7 @@
 namespace xerus {
 	
 	static int comp(const Tensor& _a, const Tensor& _b) {
-		REQUIRE(_a.size == _b.size, "IE");
+		REQUIRE(_a.dimensions == _b.dimensions, "Compared Tensors must have the same dimensions.");
 		
 		if(_a.is_dense() || _b.is_dense()) {
 			for(size_t k = 0; k < _a.size; ++k) {
@@ -635,6 +635,8 @@ namespace xerus {
 			
 			// Increase the ranks
 			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
+			
+			x.round(maxRanks);
 			
 			resize_stack_tensors();
 			
