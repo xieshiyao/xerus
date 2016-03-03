@@ -28,8 +28,6 @@
 #include <xerus/misc/performanceAnalysis.h>
 #include <xerus/misc/basicArraySupport.h>
 
-#include <suitesparse/umfpack.h>
-
 #include <xerus/misc/check.h>
 
 namespace xerus { namespace internal {
@@ -176,8 +174,12 @@ namespace xerus { namespace internal {
 					   const std::map<size_t, double>& _b,
 					   size_t _bDim)
 	{
-		LOG(fatal, "not yet implemented");
+		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA);
+		const CholmodSparse b(_b, 1, _bDim, true); // avoids transpose call by giving transposed dimensions
+		CholmodSparse x(SuiteSparseQR<double>(0, xerus::EPSILON, A.matrix.get(), b.matrix.get(), cholmodObject.get()));
+		_x = x.to_map();
 	}
+	
 	
 	void CholmodSparse::solve_dense_rhs(double * _x,
 								 size_t _xDim,
@@ -186,17 +188,24 @@ namespace xerus { namespace internal {
 							  const double* _b,
 							  size_t _bDim)
 	{
-		REQUIRE(_xDim == _bDim, "solving sparse systems only implemented for square matrices so far");
+		REQUIRE(_xDim < std::numeric_limits<long>::max() && _bDim < std::numeric_limits<long>::max() && _A.size() < std::numeric_limits<long>::max(),
+			"sparse matrix given to qc decomposition too large for suitesparse"
+		);
 		const CholmodSparse A(_A, _transposeA?_xDim:_bDim, _transposeA?_bDim:_xDim, _transposeA);
-		
-		void *symbolic, *numeric;
-// 		double control[UMFPACK_CONTROL], info[UMFPACK_INFO];
-		// TODO check return values
-		umfpack_dl_symbolic(long(_bDim), long(_xDim), static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), &symbolic, nullptr, nullptr);
-		umfpack_dl_numeric(static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), symbolic, &numeric, nullptr, nullptr);
-		umfpack_dl_free_symbolic(&symbolic);
-		umfpack_dl_solve(UMFPACK_A, static_cast<long*>(A.matrix->p), static_cast<long*>(A.matrix->i), static_cast<double*>(A.matrix->x), _x, _b, numeric, nullptr, nullptr);
-		umfpack_dl_free_numeric(&numeric);
+		cholmod_dense b{
+			_bDim, 1, _bDim, _bDim,
+			static_cast<void*>(const_cast<double*>(_b)), nullptr, 
+			CHOLMOD_REAL, CHOLMOD_DOUBLE
+		};
+		std::unique_ptr<cholmod_dense, std::function<void(cholmod_dense*)>> x(
+			SuiteSparseQR<double>(A.matrix.get(), &b, cholmodObject.get()), 
+			[](cholmod_dense* _toDelete) {
+				cholmod_l_free_dense(&_toDelete, cholmodObject.get());
+			}
+		);
+		REQUIRE(x->z == nullptr, "IE");
+		REQUIRE(x->nrow == _xDim, "IE");
+		misc::copy(_x, static_cast<double*>(x->x), _xDim);
 	}
 	
 	
@@ -207,15 +216,18 @@ namespace xerus { namespace internal {
 				size_t _n,
 				bool _fullrank)
 	{
+		REQUIRE(_m < std::numeric_limits<long>::max() && _n < std::numeric_limits<long>::max() && _A.size() < std::numeric_limits<long>::max(),
+			"sparse matrix given to qc decomposition too large for suitesparse"
+		);
 		CholmodSparse A(_A, _m, _n, _transposeA);
 		cholmod_sparse *Q, *R;
 		SuiteSparse_long *E;
-		size_t rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?std::min(_m,_n):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
 		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):rank) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?std::min(_m,_n):rank) << " vs " << Qs.matrix->ncol);
-		return std::make_tuple(Qs.to_map(), Rs.to_map(), _fullrank?std::min(_m,_n):rank);
+		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
+		return std::make_tuple(Qs.to_map(), Rs.to_map(), _fullrank?std::min(_m,_n):size_t(rank));
 	}
 	
 	std::tuple<std::map<size_t, double>, std::map<size_t, double>, size_t> CholmodSparse::cq(
@@ -225,19 +237,22 @@ namespace xerus { namespace internal {
 				size_t _n,
 				bool _fullrank)
 	{
+		REQUIRE(_m < std::numeric_limits<long>::max() && _n < std::numeric_limits<long>::max() && _A.size() < std::numeric_limits<long>::max(),
+			"sparse matrix given to qc decomposition too large for suitesparse"
+		);
 		CholmodSparse A(_A, _n, _m, !_transposeA);
 		cholmod_sparse *Q, *R;
 		SuiteSparse_long *E;
 		// decompose A^T = q^T*r^T
-		size_t rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?std::min(_m,_n):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
 		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):rank) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?std::min(_m,_n):rank) << " vs " << Qs.matrix->ncol);
+		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
 		//transpose q and r to get r*q=A
 		Qs.transpose();
 		Rs.transpose();
-		return std::make_tuple(Rs.to_map(), Qs.to_map(), _fullrank?std::min(_m,_n):rank);
+		return std::make_tuple(Rs.to_map(), Qs.to_map(), _fullrank?std::min(_m,_n):size_t(rank));
 	}
 
 

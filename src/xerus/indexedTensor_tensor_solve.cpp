@@ -85,10 +85,7 @@ namespace xerus {
 		
 		// We need tmp objects for A and b, because Lapacke wants to destroys the input
 		// and we need to cast b if it is sparse as we cannot handle that yet
-		if (_b.tensorObjectReadOnly->is_sparse()) {
-			LOG_ONCE(info, "solve operator cannot make use of a sparse rhs yet. casting rhs to dense representation first from now on.");
-		}
-		if (_b.tensorObjectReadOnly->is_sparse() || !_a.tensorObjectReadOnly->is_sparse()) {
+		if (!_a.tensorObjectReadOnly->is_sparse()) {
 			saveSlotB.reset(new internal::IndexedTensor<Tensor>(
 				new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true
 			));

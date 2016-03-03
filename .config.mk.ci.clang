@@ -18,7 +18,7 @@ BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
 LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
 
 # Uncomment or add the appropriate CXSparse library
-SUITESPARSE = -lcholmod -lumfpack -lspqr
+SUITESPARSE = -lcholmod -lspqr
 
 
 # custom include paths

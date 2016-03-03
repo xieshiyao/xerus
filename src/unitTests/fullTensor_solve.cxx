@@ -142,5 +142,5 @@ UNIT_TEST(Tensor, solve_transposed,
 	x3(i) = r(j) / A(i,j);
 	x4(i) = r(j) / At(j,i);
 	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4));
-	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 3e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
+	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
 )

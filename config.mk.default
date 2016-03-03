@@ -120,7 +120,7 @@ LAPACK_LIBRARIES = -llapacke -llapack							# Standard Lapack + Lapacke librarie
 # LAPACK_LIBRARIES = ../lib/lapack/liblapacke.a ../lib/lapack/liblapack.a	# Custom
 
 # Uncomment or add the appropriate CXSparse library
-SUITESPARSE = -lcholmod -lumfpack -lspqr
+SUITESPARSE = -lcholmod -lspqr
 
 
 # Custom include paths

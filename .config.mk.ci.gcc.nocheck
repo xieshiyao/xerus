@@ -17,7 +17,7 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 #=================================================================================================
 BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
 LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
-SUITESPARSE = -lcholmod -lumfpack -lspqr
+SUITESPARSE = -lcholmod -lspqr
 
 
 # custom include paths
