@@ -965,38 +965,53 @@ namespace xerus {
 			}
 		)
 		
-		REQUIRE(!_other.is_sparse(), "Sparse other not yet Implementated."); //TODO
+		if(_other.is_dense()) {
+			use_dense_representation();
+			
+			const std::vector<size_t> stepSizes = get_step_sizes(dimensions);
 		
-		if(_other.is_dense()) { use_dense_representation(); }
-		ensure_own_data_and_apply_factor();
-		
-		const std::vector<size_t> stepSizes = get_step_sizes(dimensions);
-		
-		// Calculate the actual offset
-		size_t offset = 0;
-		for(size_t d = 0; d < degree(); ++d) {
-			offset += _offsets[d]*stepSizes[d];
-		}
-		
-		const size_t blockSize = _other.dimensions.back();
-		const value_t* inPosition = _other.get_unsanitized_dense_data();
-		value_t* outPosition = get_unsanitized_dense_data() + offset;
-		
-		misc::add_scaled(outPosition, _other.factor, inPosition, blockSize);
-		
-		for(size_t i = 1; i < _other.size/blockSize; ++i) {
-			size_t index = degree()-2;
-			size_t multStep = _other.dimensions[index];
-			inPosition += blockSize;
-			outPosition += stepSizes[index];
-			while(i%multStep == 0) {
-				outPosition -= dimensions[index]*stepSizes[index]; // "reset" current index to 0
-				--index;							// Advance to next index
-				outPosition += stepSizes[index];	// increase next index
-				multStep *= dimensions[index];		// next stepSize
+			// Calculate the actual offset
+			size_t offset = 0;
+			for(size_t d = 0; d < degree(); ++d) {
+				offset += _offsets[d]*stepSizes[d];
 			}
 			
+			const size_t blockSize = _other.dimensions.back();
+			const value_t* inPosition = _other.get_unsanitized_dense_data();
+			value_t* outPosition = get_dense_data() + offset;
+			
 			misc::add_scaled(outPosition, _other.factor, inPosition, blockSize);
+			
+			for(size_t i = 1; i < _other.size/blockSize; ++i) {
+				size_t index = degree()-2;
+				size_t multStep = _other.dimensions[index];
+				inPosition += blockSize;
+				outPosition += stepSizes[index];
+				while(i%multStep == 0) {
+					outPosition -= dimensions[index]*stepSizes[index]; // "reset" current index to 0
+					--index;							// Advance to next index
+					outPosition += stepSizes[index];	// increase next index
+					multStep *= dimensions[index];		// next stepSize
+				}
+				
+				misc::add_scaled(outPosition, _other.factor, inPosition, blockSize);
+			}
+		} else {
+			const size_t offset = multiIndex_to_position(_offsets, dimensions);
+			if(is_dense()) {
+				value_t* const dataPtr = get_dense_data();
+				for(const std::pair<size_t, value_t>& entry : _other.get_unsanitized_sparse_data()) {
+					const size_t newPos = multiIndex_to_position(position_to_multiIndex(entry.first, _other.dimensions), dimensions) + offset;
+					dataPtr[newPos] += _other.factor*entry.second;
+				}
+			} else {
+				std::map<size_t, value_t>& data = get_sparse_data(); 
+				for(const std::pair<size_t, value_t>& entry : _other.get_unsanitized_sparse_data()) {
+					const size_t newPos = multiIndex_to_position(position_to_multiIndex(entry.first, _other.dimensions), dimensions) + offset;
+					data[newPos] += _other.factor*entry.second;
+				}
+			}
+			
 		}
 	}
 	
@@ -1030,6 +1045,7 @@ namespace xerus {
 				}
 			}
 			
+			factor = 1.0;
 			denseData.reset();
 			representation = Representation::Sparse;
 		}
@@ -1112,6 +1128,21 @@ namespace xerus {
 		}
 		
 		return finalIndex;
+	}
+	
+	Tensor::MultiIndex Tensor::position_to_multiIndex(size_t _position, const DimensionTuple& _dimensions) {
+		MultiIndex index(_dimensions.size());
+		
+		for(size_t i = 0; i < _dimensions.size(); ++i) {
+			const size_t k = _dimensions.size() - 1 - i;
+			
+			index[k] = _position%_dimensions[k];
+			_position /= _dimensions[k];
+		}
+		
+		REQUIRE(_position == 0, "IE");
+		
+		return index;
 	}
 	
 	

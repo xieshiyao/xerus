@@ -762,6 +762,8 @@ namespace xerus {
 		
 		static size_t multiIndex_to_position(const MultiIndex& _multiIndex, const DimensionTuple& _dimensions);
 		
+		static MultiIndex position_to_multiIndex(size_t _position, const DimensionTuple& _dimensions);
+		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal Helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	protected:

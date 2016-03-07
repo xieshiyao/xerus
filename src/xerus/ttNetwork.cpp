@@ -1010,7 +1010,6 @@ namespace xerus {
 			
 			newComponent->offset_add(otherComponent, isOperator ? std::vector<size_t>({leftOffset,0,0,rightOffset}) : std::vector<size_t>({leftOffset,0,rightOffset}));
 			
-			
 			set_component(position, std::move(*newComponent));
 		}
 		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(dimensions)+" Ranks: "+misc::to_string(ranks()));

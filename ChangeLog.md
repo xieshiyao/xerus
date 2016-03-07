@@ -5,6 +5,8 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 * 2016-xx-xx v2.2.0
  * Added Sparse solve and sparse QR factorization.
  * ! Xerus now depends on the SuiteSparseQR (-lspqr) library.
+ * TTNetwork sum now supports sparse components.
+ * Bugfix in Dense/Sparse conversion factor handling.
 
 * 2016-02-10 v2.1.1
  * Basic support for fixed indices in TensorNetworks.
