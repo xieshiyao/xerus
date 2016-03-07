@@ -1011,7 +1011,6 @@ namespace xerus {
 					data[newPos] += _other.factor*entry.second;
 				}
 			}
-			
 		}
 	}
 	
@@ -1021,8 +1020,10 @@ namespace xerus {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
 			misc::set_zero(denseData.get(), size);
 			for(const std::pair<size_t, value_t>& entry : *sparseData) {
-				denseData.get()[entry.first] = entry.second;
+				denseData.get()[entry.first] = factor*entry.second;
 			}
+			
+			factor = 1.0;
 			sparseData.reset();
 			representation = Representation::Dense;
 		}
@@ -1131,16 +1132,14 @@ namespace xerus {
 	}
 	
 	Tensor::MultiIndex Tensor::position_to_multiIndex(size_t _position, const DimensionTuple& _dimensions) {
+		REQUIRE(_position < misc::product(_dimensions), "Invalid position " << _position << " given. Max size is : " << misc::product(_dimensions));
 		MultiIndex index(_dimensions.size());
 		
 		for(size_t i = 0; i < _dimensions.size(); ++i) {
 			const size_t k = _dimensions.size() - 1 - i;
-			
 			index[k] = _position%_dimensions[k];
 			_position /= _dimensions[k];
 		}
-		
-		REQUIRE(_position == 0, "IE");
 		
 		return index;
 	}

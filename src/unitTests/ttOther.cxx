@@ -18,20 +18,20 @@ UNIT_TEST(TT, entrywise_product,
 	TTOperator Ao(Af);
 	TTOperator Bo(Bf);
 	
-	TTTensor C = TTTensor::entrywise_product(A, B);
-	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
+	TTTensor C = entrywise_product(A, B);
+	TTOperator Co = entrywise_product(Ao, Bo);
 	Tensor Cf = entrywise_product(Af, Bf);
 	
 	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);
 	TEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-14);
 	
 	
-	TTTensor D1 = TTTensor::entrywise_product(A, A);
+	TTTensor D1 = entrywise_product(A, A);
 	TTTensor D2(A);
 	D2.entrywise_square();
 	
 	
-	TTOperator Do1 = TTOperator::entrywise_product(Ao, Ao);
+	TTOperator Do1 = entrywise_product(Ao, Ao);
 	TTOperator Do2(Ao);
 	Do2.entrywise_square();
 	
@@ -59,8 +59,8 @@ UNIT_TEST(TT, soft_thresholding,
 	TTOperator Ao(Af);
 	TTOperator Bo(Bf);
 	
-	TTTensor C = TTTensor::entrywise_product(A, B);
-	TTOperator Co = TTOperator::entrywise_product(Ao, Bo);
+	TTTensor C = entrywise_product(A, B);
+	TTOperator Co = entrywise_product(Ao, Bo);
 	Tensor Cf = entrywise_product(Af, Bf);
 	
 	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);

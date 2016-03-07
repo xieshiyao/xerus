@@ -726,3 +726,121 @@ UNIT_TEST2(Consistency, resize_dimension) {
 	}
 }});
 
+
+UNIT_TEST2(Consistency, entrywise_product) {
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	
+	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
+	
+	const Index i, j, k;
+	
+	for(size_t d = 1; d <= 7; ++d) {
+		Tensor A = Tensor::random(dimsA, rnd, normalDist);
+		Tensor B = Tensor::random(dimsB, rnd, normalDist);
+		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor C;
+		
+		TTOperator ttA(A, 0.33);
+		TTOperator ttB(B, 0.33);
+		TTOperator ttoC;
+		TTTensor ttX(X, 0.33);
+		TTTensor ttY(Y, 0.33);
+		TTTensor tttC;
+		
+		A = ttA;
+		B = ttB;
+		X = ttX;
+		Y = ttY;
+		
+		Tensor sA = A.sparse_copy();
+		Tensor sB = B.sparse_copy();
+		Tensor sX = X.sparse_copy();
+		Tensor sY = Y.sparse_copy();
+		Tensor sC;
+		
+		TEST(approx_equal(A, sA));
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(sA, ttA));
+		
+		TEST(approx_equal(B, sB));
+		TEST(approx_equal(B, ttB));
+		TEST(approx_equal(sB, ttB));
+		
+		TEST(approx_equal(X, sX));
+		TEST(approx_equal(X, ttX));
+		TEST(approx_equal(sX, ttX));
+		
+		TEST(approx_equal(Y, sY));
+		TEST(approx_equal(Y, ttY));
+		TEST(approx_equal(sY, ttY));
+		
+		
+		C = entrywise_product(X, X);
+		sC = entrywise_product(sX, sX);
+		tttC = entrywise_product(ttX, ttX);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tttC, 1e-14));
+		TEST(approx_equal(sC, tttC, 1e-14));
+		
+		C = entrywise_product(X, Y);
+		sC = entrywise_product(sX, sY);
+		tttC = entrywise_product(ttX, ttY);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tttC, 1e-14));
+		TEST(approx_equal(sC, tttC, 1e-14));
+		
+		C = entrywise_product(entrywise_product(X, Y), X);
+		sC = entrywise_product(entrywise_product(sX, sY), sX);
+		tttC = entrywise_product(entrywise_product(ttX, ttY), ttX);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tttC, 1e-14));
+		TEST(approx_equal(sC, tttC, 1e-14));
+		
+		
+		C = entrywise_product(entrywise_product(entrywise_product(3.7*X, Y), X), -3*Y);
+		sC = entrywise_product(entrywise_product(entrywise_product(3.7*sX, sY), sX), -3*sY);
+		tttC = entrywise_product(entrywise_product(entrywise_product(3.7*ttX, ttY), ttX), -3*ttY);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, tttC, 1e-14));
+		TEST(approx_equal(sC, tttC, 1e-14));
+		
+		
+		C = entrywise_product(A, A);
+		sC = entrywise_product(sA, sA);
+		ttoC = entrywise_product(ttA, ttA);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, ttoC, 1e-14));
+		TEST(approx_equal(sC, ttoC, 1e-14));
+		
+		C = entrywise_product(A, B);
+		sC = entrywise_product(sA, sB);
+		ttoC = entrywise_product(ttA, ttB);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, ttoC, 1e-14));
+		TEST(approx_equal(sC, ttoC, 1e-14));
+		
+		
+		C = entrywise_product(entrywise_product(3.7*A, B), -1.2*A);
+		sC = entrywise_product(entrywise_product(3.7*sA, sB), -1.2*sA);
+		ttoC = entrywise_product(entrywise_product(3.7*ttA, ttB), -1.2*ttA);
+		
+		TEST(approx_equal(C, sC));
+		TEST(approx_equal(C, ttoC, 1e-14));
+		TEST(approx_equal(sC, ttoC, 1e-14));
+		
+		
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsY = dims1;
+		dimsA = dims1 | dims1;
+		dimsB = dims1 | dims1;
+	}
+}});

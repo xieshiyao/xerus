@@ -521,65 +521,6 @@ namespace xerus {
 	}
 	
 	
-	template<bool isOperator>
-	TTNetwork<isOperator> TTNetwork<isOperator>::entrywise_product(const TTNetwork &_A, const TTNetwork &_B) {
-		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise_product ill-defined for non equal dimensions");
-		
-		if(_A.degree() == 0) {
-			TTNetwork result(_A);
-			result *= _B[0];
-			return result;
-		}
-		
-		TTNetwork result(_A.degree());
-		const size_t numComponents = _A.degree() / N;
-		
-		#pragma omp for schedule(static)
-		for (size_t i = 0; i < numComponents; ++i) {
-			Tensor newComponent;
-			//TODO sparse TT
-			const Tensor& componentA = _A.get_component(i);
-			const Tensor& componentB = _B.get_component(i);
-			REQUIRE(!componentA.is_sparse(), "sparse tensors in TT not allowed");
-			REQUIRE(!componentB.is_sparse(), "sparse tensors in TT not allowed");
-			const size_t externalDim = isOperator ? componentA.dimensions[1] * componentA.dimensions[2] : componentA.dimensions[1];
-			const Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
-			if (isOperator) {
-				newComponent = Tensor({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions[2], componentA.dimensions.back()*componentB.dimensions.back() }, newRep);
-			} else {
-				newComponent = Tensor({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions.back()*componentB.dimensions.back() }, newRep);
-			}
-			size_t offsetA = 0, offsetB = 0, offsetResult = 0;
-			const size_t stepsize = componentB.dimensions.back();
-			for (size_t r1 = 0; r1 < componentA.dimensions.front(); ++r1) {
-				for (size_t s1 = 0; s1 < componentB.dimensions.front(); ++s1) {
-					offsetA = r1 * externalDim * componentA.dimensions.back();
-					for (size_t n = 0; n < externalDim; ++n) {
-						for (size_t r2 = 0; r2 < componentA.dimensions.back(); ++r2) {
-							misc::copy_scaled(newComponent.get_unsanitized_dense_data()+offsetResult, componentB.factor*componentA.factor*componentA.get_unsanitized_dense_data()[offsetA], componentB.get_unsanitized_dense_data()+offsetB, stepsize);
-							offsetResult += stepsize;
-							offsetA += 1;
-						}
-						offsetB += stepsize;
-					}
-				}
-				offsetB = 0;
-			}
-			
-			#pragma omp critical
-			{
-				result.set_component(i, std::move(newComponent));
-			}
-		}
-		
-		result.require_correct_format();
-		
-		if (_A.cannonicalized) {
-			result.move_core(_A.corePosition);
-		}
-		return result;
-	}
-	
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::entrywise_square() {
@@ -1000,7 +941,7 @@ namespace xerus {
 			if (isOperator) { nxtDimensions.emplace_back(myComponent.dimensions[2]); }
 			nxtDimensions.emplace_back(position == numComponents-1 ? 1 : myComponent.dimensions.back()+otherComponent.dimensions.back());
 			
-			Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+			const Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep));
 			
 			newComponent->offset_add(myComponent, isOperator ? std::vector<size_t>({0,0,0,0}) : std::vector<size_t>({0,0,0}));
@@ -1360,7 +1301,7 @@ namespace xerus {
 		return _network;
 	}
 	
-	//Explicit instantiation for both types
+	// Explicit instantiation for both types
 	template TTNetwork<false> operator+(TTNetwork<false> _lhs, const TTNetwork<false>& _rhs);
 	template TTNetwork<true> operator+(TTNetwork<true> _lhs, const TTNetwork<true>& _rhs);
 	template TTNetwork<false> operator-(TTNetwork<false> _lhs, const TTNetwork<false>& _rhs);
@@ -1371,4 +1312,100 @@ namespace xerus {
 	template TTNetwork<true> operator*(const value_t _factor, TTNetwork<true> _network);
 	template TTNetwork<false> operator/(TTNetwork<false> _network, const value_t _divisor);
 	template TTNetwork<true> operator/(TTNetwork<true> _network, const value_t _divisor);
+	
+	
+	
+	
+	template<bool isOperator>
+	void perform_component_product(Tensor& _newComponent, const Tensor& _componentA, const Tensor& _componentB) {
+		if(_componentA.is_dense() && _componentB.is_dense()) {
+			REQUIRE(_newComponent.is_dense(), "IE");
+			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+			value_t* const newCompData = _newComponent.get_dense_data();
+			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
+			for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
+				for (size_t s1 = 0; s1 < _componentB.dimensions.front(); ++s1) {
+					for (size_t n = 0; n < externalDim; ++n) {
+						for (size_t r2 = 0; r2 < _componentA.dimensions.back(); ++r2) {
+							const size_t offsetA = (r1*externalDim + n)*_componentA.dimensions.back()+r2;
+							const size_t offsetB = (s1*externalDim + n)*_componentB.dimensions.back();
+							const size_t offsetResult = (((r1*_componentB.dimensions.front() + s1)*externalDim + n)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back();
+							misc::copy_scaled(newCompData+offsetResult, _componentB.factor*_componentA[offsetA], compBData+offsetB, _componentB.dimensions.back());
+						}
+					}
+				}
+			}
+		
+		} else if(_componentA.is_dense()) { // B sparse TODO untested
+			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+			value_t* const newCompData = _newComponent.get_dense_data();
+			for(const std::pair<size_t, value_t>& entry : _componentB.get_unsanitized_sparse_data()) {
+				const Tensor::MultiIndex idxB = Tensor::position_to_multiIndex(entry.first, _componentB.dimensions);
+				const size_t currN = isOperator ? idxB[1]*idxB[2] : idxB[1];
+				for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
+					for (size_t r2 = 0; r2 < _componentA.dimensions.back(); ++r2) {
+						const size_t offsetA = (r1*externalDim + currN)*_componentA.dimensions.back();
+						const size_t offsetResult = (((r1*_componentB.dimensions.front() + idxB[0])*externalDim + currN)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back()+idxB.back();
+						newCompData[offsetResult] = _componentA[offsetA]*_componentB.factor*entry.second;
+					}
+				}
+			}
+		} else if(_componentB.is_dense()) { // A sparse TODO untested
+			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+			value_t* const newCompData = _newComponent.get_dense_data();
+			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
+			for(const std::pair<size_t, value_t>& entry : _componentA.get_unsanitized_sparse_data()) {
+				const Tensor::MultiIndex idxA = Tensor::position_to_multiIndex(entry.first, _componentA.dimensions);
+				const size_t currN = isOperator ? idxA[1]*idxA[2] : idxA[1];
+				for (size_t r1 = 0; r1 < _componentB.dimensions.front(); ++r1) {
+					const size_t offsetB = (r1*externalDim + currN)*_componentB.dimensions.back();
+					const size_t offsetResult = (((idxA.front()*_componentB.dimensions.front() + r1)*externalDim + currN)*_componentA.dimensions.back()+idxA.back())*_componentB.dimensions.back();
+					misc::copy_scaled(newCompData+offsetResult, _componentB.factor*_componentA.factor*entry.second, compBData+offsetB, _componentB.dimensions.back());
+				}
+			}
+		} else {
+			LOG(fatal, "Sparse Sparse not yet implemented"); // TODO
+		}
+	}
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> entrywise_product(const TTNetwork<isOperator> &_A, const TTNetwork<isOperator> &_B) {
+		static constexpr const size_t N = isOperator?2:1;
+		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise_product ill-defined for different external dimensions.");
+		
+		if(_A.degree() == 0) {
+			TTNetwork<isOperator> result(_A);
+			result *= _B[0];
+			return result;
+		}
+		
+		TTNetwork<isOperator> result(_A.degree());
+		const size_t numComponents = _A.degree() / N;
+		
+		#pragma omp for schedule(static)
+		for (size_t i = 0; i < numComponents; ++i) {
+			const Tensor& componentA = _A.get_component(i);
+			const Tensor& componentB = _B.get_component(i);
+			const Tensor::Representation newRep = componentA.is_sparse() && componentB.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+			Tensor newComponent(isOperator ? 
+				Tensor::DimensionTuple({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions[2], componentA.dimensions.back()*componentB.dimensions.back()}) : 
+				Tensor::DimensionTuple({componentA.dimensions.front()*componentB.dimensions.front(), componentA.dimensions[1], componentA.dimensions.back()*componentB.dimensions.back()}), newRep);
+			
+			perform_component_product<isOperator>(newComponent, componentA, componentB);
+			
+			#pragma omp critical
+			{
+				result.set_component(i, std::move(newComponent));
+			}
+		}
+		
+		if (_A.cannonicalized && _B.cannonicalized) {
+			result.move_core(_A.corePosition);
+		}
+		return result;
+	}
+	
+	//Explicit instantiation for both types
+	template TTNetwork<false> entrywise_product(const TTNetwork<false> &_A, const TTNetwork<false> &_B);
+	template TTNetwork<true> entrywise_product(const TTNetwork<true> &_A, const TTNetwork<true> &_B);
 }

@@ -274,12 +274,6 @@ namespace xerus {
 		static TTNetwork dyadic_product(const std::vector<TTNetwork> &_tensors);
 		
 		
-		/**
-		* @brief Calculates the componentwise product of two tensors given in the TT format.
-		* @details In general the resulting rank = rank(A)*rank(B). Retains the core position of @a _A
-		*/
-		static TTNetwork entrywise_product(const TTNetwork &_A, const TTNetwork &_B);
-		
 		
 		/**
 		* @brief Computes the entrywise square of the tensor.
@@ -573,4 +567,13 @@ namespace xerus {
 	*/
 	template<bool isOperator>
 	TTNetwork<isOperator> operator/(const TTNetwork<isOperator>& _network, const value_t _div);
+	
+	
+	/**
+	* @brief Calculates the componentwise product of two tensors given in the TT format.
+	* @details In general the resulting rank = rank(A)*rank(B). Retains the core position of @a _A
+	*/
+	template<bool isOperator>
+	TTNetwork<isOperator> entrywise_product(const TTNetwork<isOperator>& _A, const TTNetwork<isOperator>& _B);
+	
 }
