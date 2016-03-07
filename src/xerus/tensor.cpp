@@ -1545,14 +1545,14 @@ namespace xerus {
 		} else if(_A.is_sparse()) {
 			Tensor result(_A);
 			
-			for(std::pair<const size_t, value_t>& entry : result.get_unsanitized_sparse_data()) {
+			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
 				entry.second *= _B[entry.first];
 			}
 			return result;
 		} else { // _B.is_sparse()
 			Tensor result(_B);
 			
-			for(std::pair<const size_t, value_t>& entry : result.get_unsanitized_sparse_data()) {
+			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
 				entry.second *= _A[entry.first];
 			}
 			return result;
