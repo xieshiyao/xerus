@@ -1534,10 +1534,10 @@ namespace xerus {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
 		if(_A.is_dense() && _B.is_dense()) {
 			Tensor result(_A);
-			result.ensure_own_data();
-			value_t* const dataPtrA = result.get_unsanitized_dense_data();
-			const value_t* const dataPtrB = _B.get_unsanitized_dense_data();
+			
 			result *= _B.factor;
+			value_t* const dataPtrA = result.get_dense_data();
+			const value_t* const dataPtrB = _B.get_unsanitized_dense_data();
 			for(size_t i = 0; i < result.size; ++i) {
 				dataPtrA[i] *= dataPtrB[i];
 			}
