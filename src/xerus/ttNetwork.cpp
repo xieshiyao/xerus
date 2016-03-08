@@ -358,7 +358,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
-		REQUIRE(_idx == 0 || _idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::component.");
+		REQUIRE(_idx == 0 || _idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::component, as there are onyl " << degree()/N << " components.");
 		return *nodes[degree() == 0 ? 0 : _idx+1].tensorObject;
 	}
 	
@@ -1343,9 +1343,10 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void perform_component_product(Tensor& _newComponent, const Tensor& _componentA, const Tensor& _componentB) {
+		const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+		
 		if(_componentA.is_dense() && _componentB.is_dense()) {
 			REQUIRE(_newComponent.is_dense(), "IE");
-			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
 			value_t* const newCompData = _newComponent.get_dense_data();
 			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
 			for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
@@ -1360,36 +1361,48 @@ namespace xerus {
 					}
 				}
 			}
-		
-		} else if(_componentA.is_dense()) { // B sparse TODO untested
-			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+		} else if(_componentA.is_dense()) { // B sparse
+			const std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntriesB = get_grouped_entries<isOperator>(_componentB);
 			value_t* const newCompData = _newComponent.get_dense_data();
-			for(const std::pair<size_t, value_t>& entry : _componentB.get_unsanitized_sparse_data()) {
-				const Tensor::MultiIndex idxB = Tensor::position_to_multiIndex(entry.first, _componentB.dimensions);
-				const size_t currN = isOperator ? idxB[1]*idxB[2] : idxB[1];
-				for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
+			for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
+				for (size_t n = 0; n < externalDim; ++n) {
 					for (size_t r2 = 0; r2 < _componentA.dimensions.back(); ++r2) {
-						const size_t offsetA = (r1*externalDim + currN)*_componentA.dimensions.back();
-						const size_t offsetResult = (((r1*_componentB.dimensions.front() + idxB[0])*externalDim + currN)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back()+idxB.back();
-						newCompData[offsetResult] = _componentA[offsetA]*_componentB.factor*entry.second;
+						for(const std::tuple<size_t, size_t, value_t>& entryB : groupedEntriesB[n]) {
+							const size_t offsetA = (r1*externalDim + n)*_componentA.dimensions.back()+r2;
+							const size_t offsetResult = (((r1*_componentB.dimensions.front() + std::get<0>(entryB))*externalDim + n)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back()+std::get<1>(entryB);
+							newCompData[offsetResult] = _componentA[offsetA]*std::get<2>(entryB);
+						}
 					}
 				}
 			}
-		} else if(_componentB.is_dense()) { // A sparse TODO untested
-			const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
+		} else if(_componentB.is_dense()) { // A sparse
+			LOG(woot, "");
 			value_t* const newCompData = _newComponent.get_dense_data();
 			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
-			for(const std::pair<size_t, value_t>& entry : _componentA.get_unsanitized_sparse_data()) {
-				const Tensor::MultiIndex idxA = Tensor::position_to_multiIndex(entry.first, _componentA.dimensions);
-				const size_t currN = isOperator ? idxA[1]*idxA[2] : idxA[1];
-				for (size_t r1 = 0; r1 < _componentB.dimensions.front(); ++r1) {
-					const size_t offsetB = (r1*externalDim + currN)*_componentB.dimensions.back();
-					const size_t offsetResult = (((idxA.front()*_componentB.dimensions.front() + r1)*externalDim + currN)*_componentA.dimensions.back()+idxA.back())*_componentB.dimensions.back();
-					misc::copy_scaled(newCompData+offsetResult, _componentB.factor*_componentA.factor*entry.second, compBData+offsetB, _componentB.dimensions.back());
+			for(const std::pair<size_t, value_t>& entryA : _componentA.get_unsanitized_sparse_data()) {
+				const size_t r2 = entryA.first%_componentA.dimensions.back();
+				const size_t n = (entryA.first/_componentA.dimensions.back())%externalDim;
+				const size_t r1 = (entryA.first/_componentA.dimensions.back())/externalDim;
+				
+				for (size_t s1 = 0; s1 < _componentB.dimensions.front(); ++s1) {
+					const size_t offsetB = (s1*externalDim + n)*_componentB.dimensions.back();
+					const size_t offsetResult = (((r1*_componentB.dimensions.front() + s1)*externalDim + n)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back();
+					misc::copy_scaled(newCompData+offsetResult, _componentB.factor*_componentA.factor*entryA.second, compBData+offsetB, _componentB.dimensions.back());
 				}
 			}
 		} else {
-			LOG(fatal, "Sparse Sparse not yet implemented"); // TODO
+			const std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntriesB = get_grouped_entries<isOperator>(_componentB);
+			std::map<size_t, value_t>& dataMap = _newComponent.get_sparse_data();
+			REQUIRE(dataMap.empty(), "IE");
+			for(const std::pair<size_t, value_t>& entryA : _componentA.get_unsanitized_sparse_data()) {
+				const size_t r2 = entryA.first%_componentA.dimensions.back();
+				const size_t n = (entryA.first/_componentA.dimensions.back())%externalDim;
+				const size_t r1 = (entryA.first/_componentA.dimensions.back())/externalDim;				
+				
+				for(const std::tuple<size_t, size_t, value_t>& entryB : groupedEntriesB[n]) {
+					dataMap.emplace((((r1*_componentB.dimensions.front() + std::get<0>(entryB))*externalDim + n)*_componentA.dimensions.back()+r2)*_componentB.dimensions.back()+std::get<1>(entryB), _componentA.factor*entryA.second*std::get<2>(entryB));
+				}
+			}
 		}
 	}
 	

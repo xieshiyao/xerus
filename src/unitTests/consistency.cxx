@@ -758,6 +758,7 @@ UNIT_TEST2(Consistency, entrywise_product) {
 		Tensor sX = X.sparse_copy();
 		Tensor sY = Y.sparse_copy();
 		Tensor sC;
+
 		
 		TEST(approx_equal(A, sA));
 		TEST(approx_equal(A, ttA));
