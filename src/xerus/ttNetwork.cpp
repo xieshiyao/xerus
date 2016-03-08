@@ -521,6 +521,23 @@ namespace xerus {
 	}
 	
 	
+	template<bool isOperator>
+	std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> get_grouped_entries(const Tensor& _component) {
+		REQUIRE(_component.is_sparse(), "Not usefull (and not implemented) for dense Tensors.");
+		
+		const size_t externalDim = isOperator ? _component.dimensions[1] * _component.dimensions[2] : _component.dimensions[1];
+		
+		std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groups(externalDim);
+		
+		for(const std::pair<size_t, value_t>& entry : _component.get_unsanitized_sparse_data()) {
+			const size_t r2 = entry.first%_component.dimensions.back();
+			const size_t n = (entry.first/_component.dimensions.back())%externalDim;
+			const size_t r1 = (entry.first/_component.dimensions.back())/externalDim;
+			groups[n].emplace_back(r1, r2, _component.factor*entry.second);
+		}
+		
+		return groups;
+	}
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::entrywise_square() {
@@ -530,31 +547,39 @@ namespace xerus {
 		if(degree() == 0) {
 			(*nodes[0].tensorObject)[0] *= (*nodes[0].tensorObject)[0];
 		} else {
+			
 			#pragma omp for schedule(static)
 			for (size_t i = 0; i < numComponents; ++i) {
-				REQUIRE(!get_component(i).is_sparse(), "sparse tensors in TT not allowed");
 				const Tensor& currComp = get_component(i);
-				const size_t newLeftRank = currComp.dimensions.front()*currComp.dimensions.front();
-				const size_t newRightRank = currComp.dimensions.back()*currComp.dimensions.back();
-				
-				Tensor::Representation newRep = currComp.representation;
-				REQUIRE(newRep == Tensor::Representation::Dense, "entrywise product of sparse TT not yet implemented!");
+				const size_t leftRank = currComp.dimensions.front();
+				const size_t rightRank = currComp.dimensions.back();
 				
 				Tensor newComponent(isOperator ? 
-					std::vector<size_t>({newLeftRank, currComp.dimensions[1], currComp.dimensions[2], newRightRank})
-					: std::vector<size_t>({newLeftRank,  currComp.dimensions[1], newRightRank}), newRep, Tensor::Initialisation::None );
+					  std::vector<size_t>({misc::sqr(leftRank), currComp.dimensions[1], currComp.dimensions[2], misc::sqr(rightRank)})
+					: std::vector<size_t>({misc::sqr(leftRank),  currComp.dimensions[1], misc::sqr(rightRank)}),
+					currComp.representation, Tensor::Initialisation::None );
 				
 				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
-				const size_t oldLeftStep = externalDim*currComp.dimensions.back();
-				const size_t oldExtStep = currComp.dimensions.back();
-				
-				size_t newPos = 0;
-				for (size_t r1 = 0; r1 < currComp.dimensions.front(); ++r1) {
-					for (size_t r2 = 0; r2 < currComp.dimensions.front(); ++r2) {
-						for (size_t n = 0; n < externalDim; ++n) {
-							for (size_t s1 = 0; s1 < currComp.dimensions.back(); ++s1) {
-								misc::copy_scaled(newComponent.get_unsanitized_dense_data()+newPos, currComp.factor * currComp[r1*oldLeftStep + n*oldExtStep + s1], currComp.get_unsanitized_dense_data()+ r2*oldLeftStep + n*oldExtStep, currComp.dimensions.back());
-								newPos += currComp.dimensions.back();
+
+				if(currComp.is_dense()) {
+					value_t* dataPtr = newComponent.get_dense_data();
+					for (size_t r1 = 0; r1 < leftRank; ++r1) {
+						for (size_t r2 = 0; r2 < leftRank; ++r2) {
+							for (size_t n = 0; n < externalDim; ++n) {
+								for (size_t s1 = 0; s1 < rightRank; ++s1) {
+									misc::copy_scaled(dataPtr, currComp.factor*currComp[(r1*externalDim + n)*rightRank + s1], currComp.get_unsanitized_dense_data() + (r2*externalDim + n)*rightRank, rightRank);
+									dataPtr += rightRank;
+								}
+							}
+						}
+					}
+				} else {
+					std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntries = get_grouped_entries<isOperator>(currComp);
+					std::map<size_t, value_t>& dataMap = newComponent.get_sparse_data();
+					for(size_t n = 0; n < externalDim; ++n) {
+						for(const std::tuple<size_t, size_t, value_t>& entry : groupedEntries[n]) {
+							for(const std::tuple<size_t, size_t, value_t>& otherEntry : groupedEntries[n]) {
+								dataMap.emplace((((std::get<0>(entry)*leftRank + std::get<0>(otherEntry))*externalDim + n)*rightRank+std::get<1>(entry))*rightRank+std::get<1>(otherEntry), std::get<2>(entry)*std::get<2>(otherEntry));
 							}
 						}
 					}
