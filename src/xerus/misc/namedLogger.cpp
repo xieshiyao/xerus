@@ -23,10 +23,12 @@
  */
 
 #include <time.h>
-#include <unistd.h>
+
+#ifdef LOG_BUFFER_
+    #include <fstream>
+#endif
 
 #include <xerus/misc/namedLogger.h>
-#include <xerus/misc/callStack.h>
 
 namespace xerus {
     namespace misc {
@@ -45,27 +47,38 @@ namespace xerus {
 				}
                 
             #ifdef LOG_BUFFER_
-                BufferStreams bufferStreams;
-                
-                void dump_log_buffer(std::string _comment)  {
-                    std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(0)) + ".txt";
-                    std::ofstream out(name, std::ofstream::out);
-                    out << "Error: " << _comment << std::endl << std::endl;
+				namespace buffer {
+					std::stringstream current;
+					std::stringstream old;
+					
+					void checkSwitch() {
+						if (current.str().size() > 1024*1024) {
+							old = std::move(current);
+							current = std::stringstream();
+						}
+					}
+					
+					void dump_log(std::string _comment)  {
+						std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(nullptr)) + ".txt";
+						std::ofstream out(name, std::ofstream::out);
+						out << "Error: " << _comment << std::endl << std::endl;
 
-                    // get callstack
-                    out << "-------------------------------------------------------------------------------" << std::endl 
-                        << "  Callstack : " << std::endl
-                        << "-------------------------------------------------------------------------------" << std::endl
-                        << get_call_stack() << std::endl;
-                    // output namedLogger
-                    bufferStreams.curr->flush();
-                    bufferStreams.old->flush();
-                    out << "-------------------------------------------------------------------------------" << std::endl 
-                        << "  last " << (bufferStreams.curr->str().size() + bufferStreams.old->str().size()) << " bytes of log:" << std::endl
-                        << "-------------------------------------------------------------------------------" << std::endl 
-                        << bufferStreams.curr->str() << bufferStreams.old->str() << "horst" << std::endl; 
-                    out.close();
-                }
+						// Get callstack
+						out << "-------------------------------------------------------------------------------" << std::endl 
+							<< "  Callstack : " << std::endl
+							<< "-------------------------------------------------------------------------------" << std::endl
+							<< get_call_stack() << std::endl;
+						
+						// Output namedLogger
+						current.flush();
+						old.flush();
+						out << "-------------------------------------------------------------------------------" << std::endl 
+							<< "  last " << (current.str().size() + old.str().size()) << " bytes of log:" << std::endl
+							<< "-------------------------------------------------------------------------------" << std::endl 
+							<< current.str() << old.str() << "horst" << std::endl; 
+						out.close();
+					}
+				}
             #endif
         }
     }

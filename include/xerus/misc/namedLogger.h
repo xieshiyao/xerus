@@ -24,15 +24,12 @@
 
 #pragma once
 
-#include <cmath>
-#include <type_traits>
-#include <iomanip>
 #include <mutex>
-#include <ctime>
+#include <string>
 #include <chrono>
 #include <sstream>
+#include <iomanip>
 
-#include "stringUtilities.h"
 #include "callStack.h"
 
 #ifdef LOGFILE_
@@ -41,10 +38,6 @@
 #else
     #include <iostream>
     #define XERUS_LOGSTREAM std::cerr
-#endif
-
-#ifdef LOG_BUFFER_
-	#include <fstream>
 #endif
 
 namespace xerus {
@@ -57,56 +50,40 @@ namespace xerus {
             constexpr uint64_t log_namehash(const char* x) {
                 return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*1099511628211ul : 14695981039346656037ul;
             }
-            
-#ifdef LOG_BUFFER_
-            enum {
-                NOT_LOGGING = 0,
-                LOGGING_ON_ERROR,
-                LOGGING_FULL
-            };
-#else
-            enum {
-                NOT_LOGGING = 0,
-                LOGGING_FULL
-            };
-            static const auto LOGGING_ON_ERROR = NOT_LOGGING;
-#endif
-            
+
+			// If the LOG_BUFFER is aktive there is the additional option only to print the log if an error occours.
+			#ifdef LOG_BUFFER_
+				enum {
+					NOT_LOGGING = 0,
+					LOGGING_ON_ERROR,
+					LOGGING_FULL
+				};
+			#else
+				enum {
+					NOT_LOGGING = 0,
+					LOGGING_FULL
+				};
+				static const auto LOGGING_ON_ERROR = NOT_LOGGING;
+			#endif
+
             extern std::mutex namedLoggerMutex;
             extern std::string logFilePrefix;
             extern bool silenced;
 			extern std::chrono::system_clock::time_point programStartTime;
-            
+
             #ifdef LOGFILE_
                 extern std::ofstream fileStream;
             #endif
-                
+
             #ifdef LOG_BUFFER_
-                // TODO This class should be replaced by two global stringstream objects and one global function (both in this namespace of course).
-                struct BufferStreams {
-                    std::stringstream *curr;
-                    std::stringstream *old;
-                    BufferStreams() {
-                        old = new std::stringstream;
-                        curr = new std::stringstream;
-                    }
-                    
-                    void checkSwitch() {
-                        if (curr->str().size() > 1024*1024) {
-                            delete old; 
-                            old = curr;
-                            curr = new std::stringstream;
-                        }
-                    }
-                    
-                    ~BufferStreams() {
-                        delete old;
-                        delete curr;
-                    }
-                };
-                
-                extern BufferStreams bufferStreams;
-                void dump_log_buffer(std::string _comment);
+				namespace buffer {
+					extern std::stringstream current;
+					extern std::stringstream old;
+					
+					void checkSwitch();
+					
+					void dump_log(std::string _comment);
+				}
             #endif
         }
     }
@@ -210,10 +187,9 @@ namespace xerus {
 #endif
 
 
-// No exit if inside unit-test
+// No exit if inside unit-test 
 #if defined(TEST_) && defined(NO_XERUS_EXCEPTIONS)
-    #pragma warning "Tried to compile with TEST but without exceptions... failtests would exit the program." // TODO would?
-    #undef NO_XERUS_EXCEPTIONS
+    #pragma warning "Tried to compile with TEST but without exceptions... failtests will exit the program."
 #endif
 
     
@@ -252,11 +228,11 @@ namespace xerus {
 
 #ifdef LOG_BUFFER_
     #define NAMED_LOGGER_LOGBUFFER \
-        (*xerus::misc::internal::bufferStreams.curr) << tmpStream.str(); \
-        xerus::misc::internal::bufferStreams.checkSwitch(); \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::dump_log_buffer(std::string("error invoked:\n")+tmpStream.str()); }; \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical"))) {xerus::misc::internal::dump_log_buffer(std::string("critical error invoked:\n")+tmpStream.str()); }; \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) {xerus::misc::internal::dump_log_buffer(std::string("fatal error invoked:\n")+tmpStream.str()); }; 
+        xerus::misc::internal::buffer::current << tmpStream.str(); \
+        xerus::misc::internal::buffer::checkSwitch(); \
+        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
+        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical"))) {xerus::misc::internal::buffer::dump_log(std::string("critical error invoked:\n")+tmpStream.str()); }; \
+        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) {xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); }; 
 #else // no log buffer
     #define NAMED_LOGGER_LOGBUFFER
 #endif
@@ -350,5 +326,5 @@ namespace xerus {
 #define IS_LOGGING(lvl) \
     (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING)
 
-    
+
 SET_LOGGING_DEFAULT(xerus::misc::internal::LOGGING_FULL)

@@ -207,12 +207,11 @@ namespace xerus {
 			CHECK(lapackAnswer == 0, error, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << static_cast<int>(_m) << ", " << static_cast<int>(_n) << ", " << _A << ", " << static_cast<int>(_n) <<", " 
 			<< _S <<", " << _U << ", " << static_cast<int>(std::min(_m, _n)) << ", " << _Vt << ", " << static_cast<int>(_n) << ");");
 			if(lapackAnswer != 0) {
-				std::cout << "A was: " << std::endl;
+				LOG(error, "A was: ");
 				for(size_t i=0; i < _m; ++i) {
 					for(size_t j=0; j < _n; ++j) {
-						std::cout << tmpA[i*_n+j] << " ";
+						LOG(error, tmpA[i*_n+j]);
 					}
-					std::cout << std::endl;
 				}
 			}
 			

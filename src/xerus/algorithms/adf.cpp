@@ -390,7 +390,7 @@ namespace xerus {
 																					value_t* const _deltaPtr,
 																					const value_t _residual,
 																					const size_t& _position,
-																					value_t* const _scratchSpace
+																					value_t* const
 																				) {
 		value_t* const shiftedDeltaPtr = _deltaPtr + _position*_localLeftRank*_localRightRank;
 		
