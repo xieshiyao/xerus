@@ -36,16 +36,21 @@ namespace xerus {
 	Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ull<<54, "Index ID counter left thread safe range."); }
 	
 	
-	Index::Index(const int64 _i) : valueId(_i), span(1) {
+	Index::Index(const int32 _i) : Index(static_cast<uint64>(_i)) {
 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+	}
+	
+	Index::Index(const uint32 _i) : valueId(_i), span(1) {
 		flags[Flag::FIXED] = true;
 	}
 	
+	Index::Index(const int64 _i) : Index(static_cast<uint64>(_i)) {
+		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+	}
 	
-// 	Index::Index(const int _i) : Index(static_cast<uint64>(_i)) {
-// 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
-// 	}
-	
+	Index::Index(const uint64 _i) : valueId(_i), span(1) {
+		flags[Flag::FIXED] = true;
+	}
 	
 	Index::Index(const uint64 _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
 	
