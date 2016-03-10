@@ -193,7 +193,7 @@ namespace xerus {
 				result.assume_core_position(pos+1);
 			}
 			
-			REQUIRE(result.is_valid_tt(), "Internal Error.");
+			result.require_correct_format();
 			REQUIRE(!result.exceeds_maximal_ranks(), "Internal Error");
 			result.cannonicalize_left();
 			return result;
