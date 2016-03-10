@@ -409,9 +409,9 @@ UNIT_TEST(TT, operator_times_tensor,
 	Tensor D;
 	Tensor Do;
 	TTOperator ttA(A); 
-	ttA.round(2ul); A = Tensor(ttA);
+	ttA.round(2); A = Tensor(ttA);
 	TTOperator ttB(B); 
-	ttB.round(2ul); B = Tensor(ttB);
+	ttB.round(2); B = Tensor(ttB);
 	TTTensor ttC(C); 
 	TTTensor ttD(C);
 	TTOperator ttDo(A);

@@ -700,7 +700,7 @@ namespace xerus {
 			if(idx.fixed()) {
 				// Fix the slates
 				for(size_t k = passedDegree; k < passedDegree+idx.span; ++k) {
-					base.fix_slate(passedDegree, idx.valueId);
+					base.fix_slate(passedDegree, idx.fixed_position());
 				}
 				
 				// Remove index

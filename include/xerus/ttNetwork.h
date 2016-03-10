@@ -130,8 +130,8 @@ namespace xerus {
 			const size_t numComponents = _dimensions.size()/N;
 			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
 			REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
-			REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
-			REQUIRE(!misc::contains(_ranks, 0ul), "Trying to construct random TTTensor with rank 0 is illegal.");
+			REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
+			REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
 			
 			
 			TTNetwork result(_dimensions.size());

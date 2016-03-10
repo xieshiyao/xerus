@@ -29,27 +29,28 @@
 
 namespace xerus {
 	
-	std::atomic<size_t> Index::idThreadInitCounter(0);
-	thread_local size_t Index::idCounter = (idThreadInitCounter++)<<54;
+	std::atomic<uint64> Index::idThreadInitCounter(0);
+	thread_local uint64 Index::idCounter = (idThreadInitCounter++)<<54;
 	
 	
-	Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ul<<54, "Index ID counter left thread safe range."); }
+	Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ull<<54, "Index ID counter left thread safe range."); }
 	
 	
-	Index::Index(const size_t _i) : valueId(_i), span(1) {
+	Index::Index(const int64 _i) : valueId(_i), span(1) {
+		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
 		flags[Flag::FIXED] = true;
 	}
 	
 	
-	Index::Index(const int _i) : Index(static_cast<size_t>(_i)) {
-		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
-	}
+// 	Index::Index(const int _i) : Index(static_cast<uint64>(_i)) {
+// 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
+// 	}
 	
 	
-	Index::Index(const size_t _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
+	Index::Index(const uint64 _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
 	
 	
-	Index::Index(const size_t _valueId, const size_t _span, const Flag _flag1) : valueId(_valueId), span(_span) {
+	Index::Index(const uint64 _valueId, const size_t _span, const Flag _flag1) : valueId(_valueId), span(_span) {
 		flags[_flag1] = true;
 	}
 	
@@ -117,6 +118,12 @@ namespace xerus {
 	size_t Index::dimension() const {
 		REQUIRE(flags[Index::Flag::ASSINGED], "Check for index dimension only allowed if the index is assinged.");
 		return assingedDimension;
+	}
+	
+	
+	size_t Index::fixed_position() const {
+		REQUIRE(flags[Index::Flag::FIXED], "fixed_position() must only be called for fixed indices.");
+		return size_t(valueId);
 	}
 	
 	

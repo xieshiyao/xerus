@@ -52,14 +52,14 @@ namespace xerus {
 		
 	private:
 		/// @brief Counter that creates a unique local ID for every thread.
-		static std::atomic<size_t> idThreadInitCounter;
+		static std::atomic<uint64> idThreadInitCounter;
 		
 		/// @brief Unqiue local ID of the thread.
-		static thread_local size_t idCounter;
+		static thread_local uint64 idCounter;
 		
 	public:
 		/// @brief Unqiue ID of the index. In case the fixed flag is set, this is the fixed position.
-		size_t valueId;
+		uint64 valueId;
 		
 		/// @brief The span states how many dimensions are covered by the index.
 		size_t span = 1;
@@ -82,16 +82,16 @@ namespace xerus {
 		Index(Index&&) = default;
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const size_t _i);
+		implicit Index(const int64 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const int _i);
+// 		implicit Index(const int _i);
 
 		/// @brief Internal constructor, do not use this unless you know what you are doing.
-		explicit Index(const size_t _valueId, const size_t _span);
+		explicit Index(const uint64 _valueId, const size_t _span);
 		
 		/// @brief Internal constructor, do not use this unless you know what you are doing.
-		explicit Index(const size_t _valueId, const size_t _span, const Flag _flag1);
+		explicit Index(const uint64 _valueId, const size_t _span, const Flag _flag1);
 		
 		
 		
@@ -117,6 +117,12 @@ namespace xerus {
 		 * @param _open new openness status of the index.
 		 */
 		void open(const bool _open);
+		
+		/** @brief: Returns the fixed position of a fixed index.
+		 */
+		size_t fixed_position() const;
+		
+		
 		
 		/// @brief Returns the (mult)Dimension assinged to this index.
 		size_t dimension() const;

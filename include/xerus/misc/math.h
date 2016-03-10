@@ -47,6 +47,12 @@ namespace xerus {
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
+		constexpr T pow(const T &_base, const uint32 _exp) {
+			return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
+		}
+		
+		///@brief: Calculates _base^_exp by binary exponentiation
+		template<class T> 
 		constexpr T pow(const T &_base, const uint64 _exp) {
 			return _exp==0?1:(_exp%2==0?pow(_base*_base, _exp/2):_base*pow(_base, _exp-1));
 		}
@@ -70,7 +76,7 @@ namespace xerus {
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
-		constexpr T pow(const T &_base, const int _exp) {
+		constexpr T pow(const T &_base, const int32 _exp) {
 			return _exp==0 ? 
 						1 :
 						(

@@ -57,7 +57,7 @@ namespace xerus {
 		dimensions = std::move(_dimensions);
 		
 		REQUIRE(dimensions.size()%N==0, "Illegal degree for TTOperator.");
-		REQUIRE(!misc::contains(dimensions, 0ul), "Zero is no valid dimension.");
+		REQUIRE(!misc::contains(dimensions, size_t(0)), "Zero is no valid dimension.");
 		const size_t numComponents = dimensions.size()/N;
 		
 		if (numComponents == 0) {
@@ -111,7 +111,7 @@ namespace xerus {
 		REQUIRE(_tensor.degree()%N==0, "Number of indicis must be even for TTOperator");
 		REQUIRE(_eps >= 0 && _eps < 1, "_eps must be positive and smaller than one. " << _eps << " was given.");
 		REQUIRE(_maxRanks.size() == num_ranks(), "We need " << num_ranks() <<" ranks but " << _maxRanks.size() << " where given");
-		REQUIRE(!misc::contains(_maxRanks, 0ul), "Maximal ranks must be strictly positive. Here: " << _maxRanks);
+		REQUIRE(!misc::contains(_maxRanks, size_t(0)), "Maximal ranks must be strictly positive. Here: " << _maxRanks);
 		
 		const size_t numComponents = degree()/N;
 		
@@ -167,7 +167,7 @@ namespace xerus {
 	template<bool isOperator>
 	TTNetwork<isOperator> TTNetwork<isOperator>::ones(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%N == 0, "Illegal number of dimensions for ttOperator");
-		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
 		
 		if(_dimensions.empty()) {
 			return TTNetwork(Tensor::ones({}));
@@ -192,7 +192,7 @@ namespace xerus {
 	template<> template<>
 	TTNetwork<true> TTNetwork<true>::identity(const std::vector<size_t>& _dimensions) {
 		REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for ttOperator");
-		REQUIRE(!misc::contains(_dimensions, 0ul), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
 		
 		if(_dimensions.empty()) {
 			return TTNetwork(Tensor::ones({}));
@@ -733,7 +733,7 @@ namespace xerus {
 		const size_t numComponents = degree()/N;
 		REQUIRE(_eps < 1, "_eps must be smaller than one. " << _eps << " was given.");
 		REQUIRE(_maxRanks.size()+1 == numComponents || (_maxRanks.empty() && numComponents == 0), "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << numComponents-1 << " are given.");
-		REQUIRE(!misc::contains(_maxRanks, 0ul), "Trying to round a TTTensor to rank 0 is not possible.");
+		REQUIRE(!misc::contains(_maxRanks, size_t(0)), "Trying to round a TTTensor to rank 0 is not possible.");
 		
 		const bool initialCanonicalization = cannonicalized;
 		const size_t initialCorePosition = corePosition;
@@ -886,7 +886,7 @@ namespace xerus {
 			const double alpha = _accuracy;
 			
 			TTNetwork X = *this;
-			X.round(1ul);
+			X.round(size_t(1));
 			double Xn = std::max(operator[](X.find_largest_entry(0.0, 0.0)), _lowerBound);
 			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
 			
