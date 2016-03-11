@@ -9,9 +9,14 @@ git clone https://git.hemio.de/xerus/xerus.git
 ~~~
 
 ## Dependencies and Configuration
-`Xerus` depends on several well established libraries, usually pre-installed or available through the standard package managers. In particular `lapacke` and `cblas` and their respective dependencies,
-as well as `CXSparse` and `binutils` and their dependencies. Also note that at at least version 4.8 of the `GCC` is required, as this is the first version to offer support for all `C++11` functionality used in `xerus`. 
+`Xerus` depends on several well established libraries, usually pre-installed or available through the standard package managers. In particular `lapacke`, `CXSparse`, `binutils` 
+and their dependencies. Also note that at at least version 4.8 of the `GCC` is required, as this is the first version to offer support for all `C++11` functionality used in `xerus`. 
 Make sure that all these are installed on your system before proceeding.
+
+E.g. to install all dependencies on a fedora system execute
+~~~
+dnf install gcc-c++ openblas-devel suitesparse-devel lapack-devel binutils-devel
+~~~
 
 After downloading the source it is necessary to set a number of options that are somewhat individual to your system and needs. All following build steps assume that these
 options are set in the `config.mk` file. Reasonable default values can be found in the `config.mk.default` file.
@@ -32,10 +37,10 @@ make test -j4
 The output of this executable should then list a number of passed tests and end with
 ~~~
 |
-|                        total summary 94 of 94 passed                     
+|                       total summary 132 of 132 passed
 -------------------------------------------------------------------------------
 |
-|                       Total time elapsed: 5177.275 ms                    
+|                       Total time elapsed: 10848.406 ms
 -------------------------------------------------------------------------------
 ~~~
 Note in particular, that all tests were passed. Should this not be the case please file a bug report with as many details as you 
@@ -57,13 +62,13 @@ make install
 ~~~
 
 
-## Compiling own Applications Using Xerus
+## Compiling your own Applications Using Xerus
 
 If `xerus` is propperly installed on your system, compiling your own applications using `xerus` is as simple as using any other library. Just include `-lxerus` in your linker call and make sure to use
 `-std=c++11` or `-std=c++14` in all compilation units that include `xerus.h` and everything should work.
 
 If you want to use the static version of `xerus` you also have to include all libraries `xerus` depends on in your linker call. In particular these are lapacke (`-llapacke`), 
-lapack (`-llapack`), cblas (`-lcblas`) blas (`-lblas`), CXSparse (`-lcxsparse`), binutils (`-lbfd`). On some old system one has to manually include the dependencys of binutils (`-liberty -lz -ldl`).
+lapack (`-llapack`), blas (`-lblas` or `-lopenblas` or similar), suitesparse (`-lumfpack -lspqr`), binutils (`-lbfd`). On some old system one has to manually include the dependencys of binutils (`-liberty -lz -ldl`).
 
 You can test this by trying to compile the tutorial file (in this example without the installed `xerus` library)
 ~~~

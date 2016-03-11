@@ -2,6 +2,9 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-03-11 V2.2.1
+ * Added support for 32bit systems.
+
 * 2016-03-08 v2.2.0
  * Added Sparse solve and sparse QR factorization.
  * ! Xerus now depends on the SuiteSparseQR (-lspqr) library.
