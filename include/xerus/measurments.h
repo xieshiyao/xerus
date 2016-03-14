@@ -74,6 +74,7 @@ namespace xerus {
 		
 		size_t degree() const;
 		
+		value_t test_solution(const TTNetwork<false>& _solution) const;
 	};
 	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos = ~0ul);

@@ -56,6 +56,23 @@ namespace xerus {
 	}
 	
 	
+	value_t SinglePointMeasurmentSet::test_solution(const TTTensor& _solution) const {
+		value_t residualNorm = 0.0;
+		value_t measurementNorm = 0.0;
+		
+		SinglePointMeasurmentSet test(*this);
+		
+		_solution.measure(test);
+		
+		for(size_t i = 0; i < size(); ++i) {
+			residualNorm += misc::sqr(measuredValues[i] - test.measuredValues[i]);
+			measurementNorm += misc::sqr(measuredValues[i]);
+		}
+		
+		return std::sqrt(residualNorm)/std::sqrt(measurementNorm);
+	}
+	
+	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
 		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
@@ -66,7 +83,7 @@ namespace xerus {
 			if (_lhs[i-1] < _rhs[i-1]) return true;
 			if (_lhs[i-1] > _rhs[i-1]) return false;
 		}
-		LOG(fatal, "Measurments must not appear twice. ");
+// 		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}
@@ -179,7 +196,7 @@ namespace xerus {
 				if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
 			}
 		}
-		LOG(fatal, "Measurments must not appear twice. ");
+// 		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}

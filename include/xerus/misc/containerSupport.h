@@ -164,6 +164,12 @@ namespace xerus {
 			return std::accumulate(_container.begin(), _container.end(), item_t(0));
 		}
 		
+		///@brief: Calculates the average of all entries of an arbitary container.
+		template<template<class, class...> class container_t, class item_t, class... rest_t>
+		inline item_t average(const container_t<item_t, rest_t...>& _container) {
+			return sum(_container)/_container.size();
+		}
+		
 
 		///@brief: Calculates the product of all entries of an arbitary container.
 		template<template<class, class...> class container_t, class item_t, class... rest_t>
