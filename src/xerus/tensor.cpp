@@ -247,7 +247,7 @@ namespace xerus {
 		if (representation == Representation::Dense) {
 			_stream << short(1); newline();
 			for (size_t i=0; i<size; ++i) {
-				_stream << denseData[i]*factor; tab();
+				_stream << denseData.get()[i]*factor; tab();
 			}
 		} else {
 			_stream << short(2); tab();
@@ -282,7 +282,7 @@ namespace xerus {
 		}
 		
 		std::string header = "xerus::Tensor";
-		in.readsome(header.data(), header.size());
+		in.readsome(&header[0], header.size());
 		
 		REQUIRE(header == "xerus::Tensor", "file " << _filename << " does not contain an object of type xerus::Tensor");
 		
@@ -312,7 +312,7 @@ namespace xerus {
 			Tensor result(dim, Tensor::Representation::Dense, Initialisation::None);
 			for (size_t i=0; i<result.size; ++i) {
 				REQUIRE(_stream, "enexpected end of stream in reading dense Tensor");
-				_stream >> result.denseData[i];
+				_stream >> result.denseData.get()[i];
 			}
 			return result;
 		} else {
