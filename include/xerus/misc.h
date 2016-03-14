@@ -40,3 +40,4 @@
 #include "misc/histogram.h"
 #include "misc/sort.h"
 #include "misc/math.h"
+#include "misc/missingFunctions.h"

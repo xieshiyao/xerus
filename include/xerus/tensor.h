@@ -289,7 +289,7 @@ namespace xerus {
 		 * @brief pipes all information necessary to restore the current tensor into @a _stream.
 		 * @note that this excludes header information
 		 */
-		void save_to_stream(std::ostream &_stream, xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
+		void save_to_stream(std::ostream &_stream, const xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
 		
 		/**
 		 * @brief loads a tensor from a file
@@ -299,7 +299,7 @@ namespace xerus {
 		/**
 		 * @brief tries to restore the tensor from a stream of data. 
 		 */
-		static Tensor load_from_stream(std::istream &_stream, xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC, short _formatVersion = 1);
+		static Tensor load_from_stream(std::istream &_stream, const xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC, const uint64 _formatVersion = 1);
 		
 		
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
