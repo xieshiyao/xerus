@@ -37,6 +37,9 @@
 
 #include <xerus/cholmod_wrapper.h>
 
+#include <fstream>
+#include <iomanip>
+
 namespace xerus {
 	size_t Tensor::sparsityFactor = 4;
 	
@@ -193,6 +196,139 @@ namespace xerus {
 		Tensor ret(std::move(_dimensions), Representation::Sparse);
 		ret[_position] = 1.0;
 		return ret;
+	}
+	
+	
+	
+	void Tensor::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
+		std::ofstream out;
+		auto tab = [&](){
+			if (_format != FileFormat::BINARY) {
+				out << '\t';
+			}
+		};
+		
+		if (_format == FileFormat::AUTOMATIC) _format = FileFormat::BINARY;		
+		if (_format == FileFormat::BINARY) {
+			out.open(_filename, std::ofstream::binary);
+		} else {
+			out.open(_filename);
+			out << "# ";
+		}
+		
+		out << "xerus::Tensor"; tab();
+		out << short(1); tab(); // file-format version
+		
+		save_to_stream(out, _format);
+		out.close();
+	}
+	
+	void Tensor::save_to_stream(std::ostream &_stream, xerus::FileFormat _format) const {
+		if (_format == FileFormat::AUTOMATIC) _format = FileFormat::BINARY;
+		auto tab = [&](){
+			if (_format != FileFormat::BINARY) {
+				_stream << '\t';
+			}
+		};
+		auto newline = [&](){
+			if (_format != FileFormat::BINARY) {
+				_stream << '\n';
+			}
+		};
+		
+		if (_format == FileFormat::TSV_FULL) {
+			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
+		}
+		
+		_stream << dimensions.size(); tab();
+		for (size_t d : dimensions) {
+			_stream << d; tab();
+		}
+		if (representation == Representation::Dense) {
+			_stream << short(1); newline();
+			for (size_t i=0; i<size; ++i) {
+				_stream << denseData.get()[i]*factor; tab();
+			}
+		} else {
+			_stream << short(2); tab();
+			_stream << sparseData->size(); newline();
+			for (const auto &d : *sparseData) {
+				_stream << d.first; tab();
+				_stream << d.second*factor; newline();
+			}
+		}
+	}
+	
+	Tensor Tensor::load_from_file(const std::string &_filename, xerus::FileFormat _format) {
+		std::ifstream in;
+		in.open(_filename, std::ofstream::binary);
+		
+		char c;
+		in >> c;
+		
+		if (_format == FileFormat::AUTOMATIC && c == '#') {
+			_format = FileFormat::TSV;
+		} else {
+			_format = FileFormat::BINARY;
+		}
+		
+		REQUIRE(_format != FileFormat::BINARY || c == 'x', "invalid binary input file " << _filename);
+		REQUIRE(_format == FileFormat::BINARY || c == '#', "invalid text input file " << _filename);
+		
+		if (_format == FileFormat::BINARY) {
+			in.unget();
+		} else {
+			in >> c; REQUIRE(c == ' ',  "invalid text input file " << _filename);
+		}
+		
+		std::string header = "xerus::Tensor";
+		in.readsome(&header[0], header.size());
+		
+		REQUIRE(header == "xerus::Tensor", "file " << _filename << " does not contain an object of type xerus::Tensor");
+		
+		short version;
+		in >> version;
+		
+		REQUIRE(version == 1, "file " << _filename << " is of unknown file version " << version);
+		
+		Tensor result = load_from_stream(in, _format, version);
+		in.close();
+		return result;
+	}
+	
+	Tensor Tensor::load_from_stream(std::istream &_stream, xerus::FileFormat _format, short _formatVersion) {
+		REQUIRE(_formatVersion == 1, "unknown stream version to open (" << _formatVersion << ")");
+		size_t degree;
+		_stream >> degree;
+		std::vector<size_t> dim;
+		for (size_t i=0; i<degree; ++i) {
+			size_t nextD;
+			_stream >> nextD;
+			dim.push_back(nextD);
+		}
+		short rep;
+		_stream >> rep;
+		if (rep == 1) { // dense
+			Tensor result(dim, Tensor::Representation::Dense, Initialisation::None);
+			for (size_t i=0; i<result.size; ++i) {
+				REQUIRE(_stream, "enexpected end of stream in reading dense Tensor");
+				_stream >> result.denseData.get()[i];
+			}
+			return result;
+		} else {
+			REQUIRE(rep == 2, "unknown tensor representation " << rep << " in stream");
+			Tensor result(dim, Tensor::Representation::Sparse, Initialisation::None);
+			size_t num;
+			REQUIRE(_stream, "enexpected end of stream in reading sparse Tensor");
+			_stream >> num;
+			for (size_t i=0; i<num; ++i) {
+				size_t pos; value_t val;
+				REQUIRE(_stream, "enexpected end of stream in reading sparse Tensor");
+				_stream >> pos >> val;
+				result.sparseData->emplace(pos, val);
+			}
+			return result;
+		}
 	}
 	
 	
@@ -1240,7 +1376,8 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have.");
+		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
+			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numIndices);
 		
 		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
 		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;

@@ -280,6 +280,27 @@ namespace xerus {
 		 */
 		static Tensor dirac(DimensionTuple _dimensions, const size_t _position);
 		
+		/**
+		 * @brief stores the tensor in a file 
+		 */
+		void save_to_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
+		
+		/**
+		 * @brief pipes all information necessary to restore the current tensor into @a _stream.
+		 * @note that this excludes header information
+		 */
+		void save_to_stream(std::ostream &_stream, xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
+		
+		/**
+		 * @brief loads a tensor from a file
+		 */
+		static Tensor load_from_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC);
+		
+		/**
+		 * @brief tries to restore the tensor from a stream of data. 
+		 */
+		static Tensor load_from_stream(std::istream &_stream, xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC, short _formatVersion = 1);
+		
 		
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
 		Tensor dense_copy() const;

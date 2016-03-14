@@ -61,4 +61,15 @@ namespace xerus {
 		/// @brief Internal deleter function, needed because std::shared_ptr misses an array overload.
 		void array_deleter_st(size_t* const _toDelete);
 	}
+	
+	/**
+	 * @brief possible file formats for tensor storage
+	 * @details BINARY: not human readable, exact storage
+	 * TSV: human readable tab-separated-value lists, looses precision
+	 * TSV_FULL: human readable tab-separated-value lists with full precision
+	 * AUTOMATIC: try to determine the format automatically (when loading, defaults to BINARY when storing)
+	 */
+	enum FileFormat {
+		BINARY, TSV, TSV_FULL, AUTOMATIC
+	};
 }
