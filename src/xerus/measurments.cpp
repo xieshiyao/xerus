@@ -66,7 +66,7 @@ namespace xerus {
 			if (_lhs[i-1] < _rhs[i-1]) return true;
 			if (_lhs[i-1] > _rhs[i-1]) return false;
 		}
-		LOG(fatal, "Measurments must not appear twice. ");
+// 		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}
@@ -179,7 +179,7 @@ namespace xerus {
 				if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
 			}
 		}
-		LOG(fatal, "Measurments must not appear twice. ");
+// 		LOG(fatal, "Measurments must not appear twice. ");
 		return false; // equality
 	});
 	}
