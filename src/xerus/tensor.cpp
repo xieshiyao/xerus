@@ -201,22 +201,17 @@ namespace xerus {
 	
 	
 	void Tensor::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
-		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::BINARY; }
+		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::TSV; }
 		
-		std::ofstream out;
-		uint64 fileVersion = 1;
 		if (_format == FileFormat::BINARY) {
-			out.open(_filename, std::ofstream::binary | std::ofstream::out);
-			out.write("x xerus::Tensor", 15);
-			out.write(reinterpret_cast<char*>(&fileVersion), sizeof(uint64));
+			std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
+			out.write("Xerus Tensor datafile.\nVersion:  1 Format: Binary\n", 50);
+			save_to_stream(out, _format);
 		} else {
-			out.open(_filename, std::ofstream::out);
-			out << "# xerus::Tensor" << '\t' << fileVersion << '\n';
+			std::ofstream out(_filename, std::ofstream::out);
+			out << "Xerus Tensor datafile.\nVersion:  1 Format: TSV\n";
+			save_to_stream(out, _format);
 		}
-		
-		save_to_stream(out, _format);
-		
-		out.close();
 	}
 	
 	void Tensor::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
@@ -277,41 +272,39 @@ namespace xerus {
 		}
 	}
 	
-	Tensor Tensor::load_from_file(const std::string &_filename, xerus::FileFormat _format) {
-		std::ifstream in(_filename, std::ifstream::in | std::ifstream::binary);
-		std::unique_ptr<char[]> header( new char[15] );
+	Tensor Tensor::load_from_file(const std::string &_filename) {
+		std::ifstream in(_filename, std::ifstream::in);
 		
-		// Read header
-		in.read(header.get(), 15);
+		char firstLine[256];
+		in.getline(firstLine, 255);
 		
+		REQUIRE(in,  "Unexpected end of stream in Tensor load_from_file().");
 		
-		if (_format == FileFormat::AUTOMATIC) {
-			if(header[0] == '#') {
-				_format = FileFormat::TSV;
-			} else {
-				_format = FileFormat::BINARY;
-			}
-		}
+		REQUIRE(std::string(firstLine) == std::string("Xerus Tensor datafile."), "Invalid binary input file " << _filename << ". DBG: " << std::string(firstLine));
 		
-		REQUIRE(_format != FileFormat::BINARY || std::string(header.get()) == std::string("x xerus::Tensor"), "Invalid binary input file " << _filename);
-		REQUIRE(_format == FileFormat::BINARY || std::string(header.get()) == std::string("# xerus::Tensor"), "Invalid text input file " << _filename);
+		std::string versionQual, formatQual, formatValue;
+		uint versionValue;
+		in >> versionQual >> versionValue >> formatQual >> formatValue;
+		REQUIRE(versionQual == std::string("Version:") && formatQual == std::string("Format:"), "Invalid Sytax detected in file " << _filename << ". DBG: " << versionQual << " and " << formatQual);
 		
-		uint64 version;
-		if(_format != FileFormat::BINARY) {
+		REQUIRE(versionValue == 1, "File " << _filename << " is of unknown file version " << versionValue);
+		
+		FileFormat format;
+		if(formatValue == std::string("TSV")) {
+			format = FileFormat::TSV;
+		} else if(formatValue == std::string("Binary")) {
+			format = FileFormat::BINARY;
+			
+			// Open the stream as binary.
+			const size_t currPos = in.tellg();
 			in.close();
-			in.open(_filename, std::ifstream::in);
-			in.seekg(15);
-			in >> version;
+			in.open(_filename, std::ifstream::in | std::ifstream::binary);
+			in.seekg(currPos+1); // +1 because of the last \n
 		} else {
-			in.read(reinterpret_cast<char*>(&version), sizeof(uint64));
+			LOG(fatal, "Invalid value for format detected.");
 		}
 		
-		REQUIRE(version == 1, "File " << _filename << " is of unknown file version " << version);
-		
-		Tensor result = load_from_stream(in, _format, version);
-		
-		in.close();
-		return result;
+		return load_from_stream(in, format, versionValue); 
 	}
 	
 	Tensor Tensor::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {

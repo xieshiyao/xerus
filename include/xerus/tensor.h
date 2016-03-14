@@ -294,12 +294,12 @@ namespace xerus {
 		/**
 		 * @brief loads a tensor from a file
 		 */
-		static Tensor load_from_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC);
+		static Tensor load_from_file(const std::string &_filename);
 		
 		/**
 		 * @brief tries to restore the tensor from a stream of data. 
 		 */
-		static Tensor load_from_stream(std::istream &_stream, const xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC, const uint64 _formatVersion = 1);
+		static Tensor load_from_stream(std::istream &_stream, const xerus::FileFormat _format, const uint64 _formatVersion = 1);
 		
 		
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
