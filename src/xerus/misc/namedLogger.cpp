@@ -50,8 +50,14 @@ namespace xerus {
 					
 					void checkSwitch() {
 						if (current.str().size() > 1024*1024) {
-							old = std::move(current);
-							current = std::stringstream();
+							#if defined(__GNUC__) && __GNUC__ < 5
+								old.clear();
+								old.str(current.str());
+								current.clear();
+							#else
+								old = std::move(current);
+								current.clear();
+							#endif
 						}
 					}
 					
