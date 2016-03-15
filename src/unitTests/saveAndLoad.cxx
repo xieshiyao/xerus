@@ -38,20 +38,20 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 
 		xerus::misc::exec("mkdir -p unitTestFiles");
 		
-		A.save_to_file("unitTestFiles/A.dat", FileFormat::TSV);
-		rA = Tensor::load_from_file("unitTestFiles/A.dat");
+		misc::save_to_file(A, "unitTestFiles/A.dat", misc::FileFormat::TSV);
+		rA = misc::load_from_file<Tensor>("unitTestFiles/A.dat");
 		MTEST(approx_equal(A, rA), frob_norm(A-rA));
 		
-		X.save_to_file("unitTestFiles/X.dat", FileFormat::TSV);
-		rX = Tensor::load_from_file("unitTestFiles/X.dat");
+		misc::save_to_file(X, "unitTestFiles/X.dat", misc::FileFormat::TSV);
+		rX = misc::load_from_file<Tensor>("unitTestFiles/X.dat");
 		MTEST(approx_equal(X, rX), frob_norm(X-rX));
 		
-		sA.save_to_file("unitTestFiles/sparseA.dat", FileFormat::TSV);
-		rA = Tensor::load_from_file("unitTestFiles/sparseA.dat");
+		misc::save_to_file(sA, "unitTestFiles/sparseA.dat", misc::FileFormat::TSV);
+		rA = misc::load_from_file<Tensor>("unitTestFiles/sparseA.dat");
 		MTEST(approx_equal(sA, rA), frob_norm(sA-rA));
 		
-		sX.save_to_file("unitTestFiles/sparseX.dat", FileFormat::TSV);
-		rX = Tensor::load_from_file("unitTestFiles/sparseX.dat");
+		misc::save_to_file(sX, "unitTestFiles/sparseX.dat", misc::FileFormat::TSV);
+		rX = misc::load_from_file<Tensor>("unitTestFiles/sparseX.dat");
 		MTEST(approx_equal(sX, rX), frob_norm(sX-rX));
 		
 		// Add a new dimension
@@ -78,20 +78,20 @@ UNIT_TEST2(SaveAndLoad, TensorBinary) {
 		
 		xerus::misc::exec("mkdir -p unitTestFiles");
 		
-		A.save_to_file("unitTestFiles/A_binary.dat", FileFormat::BINARY);
-		rA = Tensor::load_from_file("unitTestFiles/A_binary.dat");
+		misc::save_to_file(A, "unitTestFiles/A_binary.dat", misc::FileFormat::BINARY);
+		rA = misc::load_from_file<Tensor>("unitTestFiles/A_binary.dat");
 		MTEST(approx_equal(A, rA), frob_norm(A-rA));
 		
-		X.save_to_file("unitTestFiles/X_binary.dat", FileFormat::BINARY);
-		rX = Tensor::load_from_file("unitTestFiles/X_binary.dat");
+		misc::save_to_file(X, "unitTestFiles/X_binary.dat", misc::FileFormat::BINARY);
+		rX = misc::load_from_file<Tensor>("unitTestFiles/X_binary.dat");
 		MTEST(approx_equal(X, rX), frob_norm(X-rX));
 		
-		sA.save_to_file("unitTestFiles/sparseA_binary.dat", FileFormat::BINARY);
-		rA = Tensor::load_from_file("unitTestFiles/sparseA_binary.dat");
+		misc::save_to_file(sA, "unitTestFiles/sparseA_binary.dat", misc::FileFormat::BINARY);
+		rA = misc::load_from_file<Tensor>("unitTestFiles/sparseA_binary.dat");
 		MTEST(approx_equal(sA, rA), frob_norm(sA-rA));
 		
-		sX.save_to_file("unitTestFiles/sparseX_binary.dat", FileFormat::BINARY);
-		rX = Tensor::load_from_file("unitTestFiles/sparseX_binary.dat");
+		misc::save_to_file(sX, "unitTestFiles/sparseX_binary.dat", misc::FileFormat::BINARY);
+		rX = misc::load_from_file<Tensor>("unitTestFiles/sparseX_binary.dat");
 		MTEST(approx_equal(sX, rX), frob_norm(sX-rX));
 		
 		// Add a new dimension

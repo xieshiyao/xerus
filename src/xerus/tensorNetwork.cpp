@@ -29,6 +29,7 @@
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/missingFunctions.h>
+#include <xerus/misc/fileIO.h>
 
 #include <xerus/basic.h>
 #include <xerus/index.h>
@@ -1375,162 +1376,6 @@ namespace xerus {
 	}
 	
 	
-	template<class T>
-	inline void write(std::ostream& _stream, const T _value, xerus::FileFormat _format, const char _space = '\t') {
-		if(_format == FileFormat::TSV) {
-			_stream << _value << _space;
-		} else {
-			_stream.write(reinterpret_cast<const char*>(&_value), sizeof(T));
-		}
-	}
-	
-	
-	template<class T>
-	inline T read(std::istream& _stream, const xerus::FileFormat _format) {
-		T value;
-		if(_format == FileFormat::TSV) {
-			_stream >> value;
-		} else {
-			_stream.read(reinterpret_cast<char*>(&value), sizeof(T));
-		}
-		return value;
-	}
-	
-	
-	void TensorNetwork::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
-		if (_format == FileFormat::BINARY) {
-			std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
-			out.write("Xerus TensorNetwork datafile.\nVersion:  1 Format: Binary\n", 57);
-			save_to_stream(out, _format);
-		} else {
-			std::ofstream out(_filename, std::ofstream::out);
-			out << "Xerus TensorNetwork datafile.\nVersion:  1 Format: TSV\n";
-			save_to_stream(out, _format);
-		}
-	}
-
-	
-	void TensorNetwork::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
-		if(_format == FileFormat::TSV) {
-			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 - 4);
-		}
-		
-		// Save dimensions
-		write<uint64>(_stream, degree(), _format);
-		for (const size_t d : dimensions) {
-			write<uint64>(_stream, d, _format);
-		}
-		if(_format == FileFormat::TSV) { _stream << '\n'; }
-		
-		// save external links
-		for(const Link& el : externalLinks) {
-			write<uint64>(_stream, el.other, _format);
-			write<uint64>(_stream, el.indexPosition, _format);
-			write<uint64>(_stream, el.dimension, _format, '\n');
-		}
-		if(_format == FileFormat::TSV) { _stream << "\n\n"; }
-		
-		// Save nodes with their links
-		write<uint64>(_stream, nodes.size(), _format);
-		if(_format == FileFormat::TSV) { _stream << '\n'; }
-		for(const TensorNode& node : nodes) {
-			write<uint64>(_stream, node.neighbors.size(), _format, '\n');
-			for(const Link& link : node.neighbors) {
-				write<bool>(_stream, link.external, _format);
-				write<uint64>(_stream, link.other, _format);
-				write<uint64>(_stream, link.indexPosition, _format);
-				write<uint64>(_stream, link.dimension, _format, '\n');
-			}
-		}
-		if(_format == FileFormat::TSV) { _stream << '\n'; }
-		
-		// Save tensorObjects
-		for(const TensorNode& node : nodes) {
-			node.tensorObject->save_to_stream(_stream, _format);
-			if(_format == FileFormat::TSV) { _stream << '\n'; }
-		}
-	}
-	
-	
-	TensorNetwork TensorNetwork::load_from_file(const std::string& _filename) {
-		std::ifstream in(_filename, std::ifstream::in);
-		
-		char firstLine[256];
-		in.getline(firstLine, 255);
-		
-		REQUIRE(in, "Unexpected end of stream in TensorNetwork::load_from_file().");
-		
-		REQUIRE(std::string(firstLine) == std::string("Xerus TensorNetwork datafile."), "Invalid binary input file " << _filename << ". DBG: " << std::string(firstLine));
-		
-		std::string versionQual, formatQual, formatValue; uint64 versionValue;
-		in >> versionQual >> versionValue >> formatQual >> formatValue;
-		
-		REQUIRE(versionQual == std::string("Version:") && formatQual == std::string("Format:"), "Invalid Sytax detected in file " << _filename << ". DBG: " << versionQual << " and " << formatQual);
-		
-		REQUIRE(versionValue == 1, "File " << _filename << " is of unknown file version " << versionValue);
-		
-		FileFormat format;
-		if(formatValue == std::string("TSV")) {
-			format = FileFormat::TSV;
-		} else if(formatValue == std::string("Binary")) {
-			format = FileFormat::BINARY;
-			
-			// Open the stream as binary and skip to the start of the binary part.
-			const std::streamoff currPos = in.tellg();
-			in.close();
-			in.open(_filename, std::ifstream::in | std::ifstream::binary);
-			in.seekg(currPos+1); // +1 because of the last \n
-		} else {
-			LOG(fatal, "Invalid value for format detected.");
-		}
-		
-		return load_from_stream(in, format, versionValue); 
-	}
-	
-	
-	TensorNetwork TensorNetwork::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {
-		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
-		
-		TensorNetwork result(ZeroNode::None);
-		
-		// Load dimensions
-		result.dimensions.resize(read<uint64>(_stream, _format));
-		for (size_t& dim : result.dimensions) {
-			dim = read<uint64>(_stream, _format);
-		}
-		
-		// load external links
-		result.externalLinks.resize(result.dimensions.size());
-		for(Link& el : result.externalLinks) {
-			el.external = false;
-			el.other = read<uint64>(_stream, _format);
-			el.indexPosition = read<uint64>(_stream, _format);
-			el.dimension = read<uint64>(_stream, _format);
-		}
-		
-		// Load nodes with their links
-		result.nodes.resize(read<uint64>(_stream, _format));
-		for(TensorNode& node : result.nodes) {
-			node.neighbors.resize(read<uint64>(_stream, _format));
-			node.erased = false;
-			for(Link& link : node.neighbors) {
-				link.external = read<bool>(_stream, _format);
-				link.other = read<uint64>(_stream, _format);
-				link.indexPosition = read<uint64>(_stream, _format);
-				link.dimension = read<uint64>(_stream, _format);
-			}
-		}
-		
-		// load tensorObjects
-		for(TensorNode& node : result.nodes) {
-			node.tensorObject.reset(new Tensor(Tensor::load_from_stream(_stream, _format)));
-		}
-		
-		result.require_valid_network();
-		return result;
-	}
-	
-	
 	void TensorNetwork::draw(const std::string& _filename) const {
 		std::stringstream graphLayout;
 				
@@ -1594,5 +1439,97 @@ namespace xerus {
 	
 	bool approx_equal(const Tensor& _a, const TensorNetwork& _b, const value_t _eps) {
 		return approx_equal(_a, Tensor(_b), _eps);
+	}
+	
+	namespace misc {
+		
+		template<>
+		void write_to_stream(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format) {
+			if(_format == FileFormat::TSV) {
+				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
+			}
+			
+			// storage version number
+			write_to_stream<uint64>(_stream, 1, _format);
+			
+			// Save dimensions
+			write_to_stream<uint64>(_stream, _obj.degree(), _format);
+			for (const size_t d : _obj.dimensions) {
+				write_to_stream<uint64>(_stream, d, _format);
+			}
+			if(_format == FileFormat::TSV) { _stream << '\n'; }
+			
+			// save external links
+			for(const TensorNetwork::Link& el : _obj.externalLinks) {
+				write_to_stream<uint64>(_stream, el.other, _format);
+				write_to_stream<uint64>(_stream, el.indexPosition, _format);
+				write_to_stream<uint64>(_stream, el.dimension, _format, '\n');
+			}
+			if(_format == FileFormat::TSV) { _stream << "\n\n"; }
+			
+			// Save nodes with their links
+			write_to_stream<uint64>(_stream, _obj.nodes.size(), _format);
+			if(_format == FileFormat::TSV) { _stream << '\n'; }
+			for(const TensorNetwork::TensorNode& node : _obj.nodes) {
+				write_to_stream<uint64>(_stream, node.neighbors.size(), _format, '\n');
+				for(const TensorNetwork::Link& link : node.neighbors) {
+					write_to_stream<bool>(_stream, link.external, _format);
+					write_to_stream<uint64>(_stream, link.other, _format);
+					write_to_stream<uint64>(_stream, link.indexPosition, _format);
+					write_to_stream<uint64>(_stream, link.dimension, _format, '\n');
+				}
+			}
+			if(_format == FileFormat::TSV) { _stream << '\n'; }
+			
+			// Save tensorObjects
+			for(const TensorNetwork::TensorNode& node : _obj.nodes) {
+				write_to_stream(_stream, *node.tensorObject, _format);
+				if(_format == FileFormat::TSV) { _stream << '\n'; }
+			}
+		}
+			
+		template<>
+		void read_from_stream(std::istream& _stream, TensorNetwork &_obj, const FileFormat _format) {
+			uint64 ver = read_from_stream<uint64>(_stream, _format);
+			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
+			
+			_obj = TensorNetwork();
+			
+			// Load dimensions
+			_obj.dimensions.resize(read_from_stream<uint64>(_stream, _format));
+			for (size_t& dim : _obj.dimensions) {
+				dim = read_from_stream<uint64>(_stream, _format);
+			}
+			
+			// load external links
+			_obj.externalLinks.resize(_obj.dimensions.size());
+			for(TensorNetwork::Link& el : _obj.externalLinks) {
+				el.external = false;
+				el.other = read_from_stream<uint64>(_stream, _format);
+				el.indexPosition = read_from_stream<uint64>(_stream, _format);
+				el.dimension = read_from_stream<uint64>(_stream, _format);
+			}
+			
+			// Load nodes with their links
+			_obj.nodes.resize(read_from_stream<uint64>(_stream, _format));
+			for(TensorNetwork::TensorNode& node : _obj.nodes) {
+				node.neighbors.resize(read_from_stream<uint64>(_stream, _format));
+				node.erased = false;
+				for(TensorNetwork::Link& link : node.neighbors) {
+					link.external = read_from_stream<bool>(_stream, _format);
+					link.other = read_from_stream<uint64>(_stream, _format);
+					link.indexPosition = read_from_stream<uint64>(_stream, _format);
+					link.dimension = read_from_stream<uint64>(_stream, _format);
+				}
+			}
+			
+			// load tensorObjects
+			for(TensorNetwork::TensorNode& node : _obj.nodes) {
+				node.tensorObject.reset(new Tensor());
+				read_from_stream<Tensor>(_stream, *node.tensorObject, _format);
+			}
+			
+			_obj.require_valid_network();
+		}
 	}
 }
