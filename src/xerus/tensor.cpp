@@ -331,8 +331,8 @@ namespace xerus {
 			for (size_t i = 0; i < num; ++i) {
 				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
 				// NOTE inline function calls can be called in any order by the compiler, so we have to cache the results to ensure correct order
-				uint64 pos = read<uint64>(_stream, _format);
-				value_t val = read<value_t>(_stream, _format);
+				const uint64 pos = read<uint64>(_stream, _format);
+				const value_t val = read<value_t>(_stream, _format);
 				result.sparseData->emplace(pos, val);
 			}
 			REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");

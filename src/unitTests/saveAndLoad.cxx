@@ -27,6 +27,8 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
+	xerus::misc::exec("mkdir -p unitTestFiles");
+	
 	for(size_t d = 1; d <= 8; ++d) {
 		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1, rnd, normalDist);
 		Tensor sX = Tensor::random(dimsX, misc::product(dimsX)/9+1, rnd, normalDist);
@@ -35,8 +37,6 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 		Tensor X = sX.dense_copy();
 		
 		Tensor rA, rX;
-
-		xerus::misc::exec("mkdir -p unitTestFiles");
 		
 		A.save_to_file("unitTestFiles/A.dat", FileFormat::TSV);
 		rA = Tensor::load_from_file("unitTestFiles/A.dat");
@@ -59,6 +59,8 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 		dimsX = dims1;
 		dimsA = dims1 | dims1;
 	}
+	
+	xerus::misc::exec("rm -r unitTestFiles");
 }});
 
 
@@ -66,6 +68,8 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 UNIT_TEST2(SaveAndLoad, TensorBinary) {
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
+	
+	xerus::misc::exec("mkdir -p unitTestFiles");
 	
 	for(size_t d = 1; d <= 8; ++d) {
 		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1, rnd, normalDist);
@@ -75,8 +79,6 @@ UNIT_TEST2(SaveAndLoad, TensorBinary) {
 		Tensor X = sX.dense_copy();
 		
 		Tensor rA, rX;
-		
-		xerus::misc::exec("mkdir -p unitTestFiles");
 		
 		A.save_to_file("unitTestFiles/A_binary.dat", FileFormat::BINARY);
 		rA = Tensor::load_from_file("unitTestFiles/A_binary.dat");
@@ -99,5 +101,74 @@ UNIT_TEST2(SaveAndLoad, TensorBinary) {
 		dimsX = dims1;
 		dimsA = dims1 | dims1;
 	}
+	
+	xerus::misc::exec("rm -r unitTestFiles");
+}});
+
+
+UNIT_TEST2(SaveAndLoad, TensorNetworkTSV) {
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	std::vector<size_t> dims1, dims2, dimsX, dimsA;
+	
+	xerus::misc::exec("mkdir -p unitTestFiles");
+	
+	for(size_t d = 1; d <= 8; ++d) {
+		Tensor A = Tensor::random(dimsA, rnd, normalDist);
+		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		
+		TensorNetwork ttA = TTOperator(A, 0.33);
+		TensorNetwork ttX = TTTensor(X, 0.33);
+		TensorNetwork rA, rX;
+		
+		ttA.save_to_file("unitTestFiles/A.dat", FileFormat::TSV);
+		rA = TensorNetwork::load_from_file("unitTestFiles/A.dat");
+		TEST(approx_equal(ttA, rA));
+		
+		ttX.save_to_file("unitTestFiles/X.dat", FileFormat::TSV);
+		rX = TensorNetwork::load_from_file("unitTestFiles/X.dat");
+		TEST(approx_equal(ttX, rX));
+		
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsA = dims1 | dims1;
+	}
+	
+	xerus::misc::exec("rm -r unitTestFiles");
+}});
+
+
+
+UNIT_TEST2(SaveAndLoad, TensorNetworkBinary) {
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	std::vector<size_t> dims1, dims2, dimsX, dimsA;
+	
+	xerus::misc::exec("mkdir -p unitTestFiles");
+	
+	for(size_t d = 1; d <= 8; ++d) {
+		Tensor A = Tensor::random(dimsA,  rnd, normalDist);
+		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		
+		TensorNetwork ttA = TTOperator(A, 0.33);
+		TensorNetwork ttX = TTTensor(X, 0.33);
+		TensorNetwork rA, rX;
+		
+		
+		ttA.save_to_file("unitTestFiles/A.dat", FileFormat::BINARY);
+		rA = TensorNetwork::load_from_file("unitTestFiles/A.dat");
+		TEST(approx_equal(ttA, rA));
+		
+		ttX.save_to_file("unitTestFiles/X.dat", FileFormat::BINARY);
+		rX = TensorNetwork::load_from_file("unitTestFiles/X.dat");
+		TEST(approx_equal(ttX, rX));
+		
+		
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsA = dims1 | dims1;
+	}
+	
+	xerus::misc::exec("rm -r unitTestFiles");
 }});
 
