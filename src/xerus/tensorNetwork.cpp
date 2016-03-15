@@ -1411,15 +1411,28 @@ namespace xerus {
 
 	
 	void TensorNetwork::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
+		if(_format == FileFormat::TSV) {
+			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 - 4);
+		}
+		
 		// Save dimensions
 		write<uint64>(_stream, degree(), _format);
 		for (const size_t d : dimensions) {
 			write<uint64>(_stream, d, _format);
 		}
-		if(_format == FileFormat::TSV) { _stream << '\n' << '\n'; }
+		if(_format == FileFormat::TSV) { _stream << '\n'; }
+		
+		// save external links
+		for(const Link& el : externalLinks) {
+			write<uint64>(_stream, el.other, _format);
+			write<uint64>(_stream, el.indexPosition, _format);
+			write<uint64>(_stream, el.dimension, _format, '\n');
+		}
+		if(_format == FileFormat::TSV) { _stream << "\n\n"; }
 		
 		// Save nodes with their links
 		write<uint64>(_stream, nodes.size(), _format);
+		if(_format == FileFormat::TSV) { _stream << '\n'; }
 		for(const TensorNode& node : nodes) {
 			write<uint64>(_stream, node.neighbors.size(), _format, '\n');
 			for(const Link& link : node.neighbors) {
@@ -1486,10 +1499,20 @@ namespace xerus {
 			dim = read<uint64>(_stream, _format);
 		}
 		
+		// load external links
+		result.externalLinks.resize(result.dimensions.size());
+		for(Link& el : result.externalLinks) {
+			el.external = false;
+			el.other = read<uint64>(_stream, _format);
+			el.indexPosition = read<uint64>(_stream, _format);
+			el.dimension = read<uint64>(_stream, _format);
+		}
+		
 		// Load nodes with their links
 		result.nodes.resize(read<uint64>(_stream, _format));
 		for(TensorNode& node : result.nodes) {
 			node.neighbors.resize(read<uint64>(_stream, _format));
+			node.erased = false;
 			for(Link& link : node.neighbors) {
 				link.external = read<bool>(_stream, _format);
 				link.other = read<uint64>(_stream, _format);
@@ -1498,7 +1521,7 @@ namespace xerus {
 			}
 		}
 		
-		// Save tensorObjects
+		// load tensorObjects
 		for(TensorNode& node : result.nodes) {
 			node.tensorObject.reset(new Tensor(Tensor::load_from_stream(_stream, _format)));
 		}
