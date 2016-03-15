@@ -29,6 +29,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 
 #include "callStack.h"
 
@@ -55,13 +56,13 @@ namespace xerus {
 			#ifdef LOG_BUFFER_
 				enum {
 					NOT_LOGGING = 0,
-					LOGGING_ON_ERROR,
-					LOGGING_FULL
+					LOGGING_ON_ERROR = 1,
+					LOGGING_FULL = 2
 				};
 			#else
 				enum {
 					NOT_LOGGING = 0,
-					LOGGING_FULL
+					LOGGING_FULL = 2
 				};
 				static const auto LOGGING_ON_ERROR = NOT_LOGGING;
 			#endif
@@ -71,20 +72,16 @@ namespace xerus {
             extern bool silenced;
 			extern std::chrono::system_clock::time_point programStartTime;
 
-            #ifdef LOGFILE_
-                extern std::ofstream fileStream;
-            #endif
+			extern std::ofstream fileStream;
 
-            #ifdef LOG_BUFFER_
-				namespace buffer {
-					extern std::stringstream current;
-					extern std::stringstream old;
-					
-					void checkSwitch();
-					
-					void dump_log(std::string _comment);
-				}
-            #endif
+			namespace buffer {
+				extern std::stringstream current;
+				extern std::stringstream old;
+				
+				void checkSwitch();
+				
+				void dump_log(std::string _comment);
+			}
         }
     }
 }

@@ -34,9 +34,7 @@ namespace xerus {
     namespace misc {
         namespace internal {
             //Look if Log shall be streamed into a file
-            #ifdef LOGFILE_
-                std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
-            #endif
+			std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
                 
                 std::mutex namedLoggerMutex;
                 std::string logFilePrefix;
@@ -46,7 +44,6 @@ namespace xerus {
 					programStartTime = std::chrono::system_clock::now();
 				}
                 
-            #ifdef LOG_BUFFER_
 				namespace buffer {
 					std::stringstream current;
 					std::stringstream old;
@@ -79,7 +76,6 @@ namespace xerus {
 						out.close();
 					}
 				}
-            #endif
         }
     }
 }

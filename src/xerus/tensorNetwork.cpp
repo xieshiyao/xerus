@@ -1463,7 +1463,7 @@ namespace xerus {
 			format = FileFormat::BINARY;
 			
 			// Open the stream as binary and skip to the start of the binary part.
-			const size_t currPos = in.tellg();
+			const std::streamoff currPos = in.tellg();
 			in.close();
 			in.open(_filename, std::ifstream::in | std::ifstream::binary);
 			in.seekg(currPos+1); // +1 because of the last \n

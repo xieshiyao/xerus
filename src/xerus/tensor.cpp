@@ -285,7 +285,7 @@ namespace xerus {
 			format = FileFormat::BINARY;
 			
 			// Open the stream as binary.
-			const size_t currPos = in.tellg();
+			const std::streamoff currPos = in.tellg();
 			in.close();
 			in.open(_filename, std::ifstream::in | std::ifstream::binary);
 			in.seekg(currPos+1); // +1 because of the last \n
@@ -317,7 +317,7 @@ namespace xerus {
 					_stream >> (result.denseData.get()[i]);
 				}
 			} else {
-				_stream.read(reinterpret_cast<char*>(result.get_unsanitized_dense_data()), result.size*sizeof(value_t));
+				_stream.read(reinterpret_cast<char*>(result.get_unsanitized_dense_data()), std::streamoff(result.size*sizeof(value_t)));
 			}
 			REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
 			return result;
