@@ -1375,199 +1375,139 @@ namespace xerus {
 	}
 	
 	
-// 	void TensorNetwork::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
-// 		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::BINARY; }
-// 		
-// 		std::ofstream out;
-// 		uint64 fileVersion = 1;
-// 		if (_format == FileFormat::BINARY) {
-// 			out.open(_filename, std::ofstream::binary | std::ofstream::out);
-// 			out.write("x xerus::Tensor", 15);
-// 			out.write(reinterpret_cast<char*>(&fileVersion), sizeof(uint64));
-// 		} else {
-// 			out.open(_filename, std::ofstream::out);
-// 			out << "# xerus::Tensor" << '\t' << fileVersion << '\n';
-// 		}
-// 		
-// 		save_to_stream(out, _format);
-// 		
-// 		out.close();
-// 	}
-// 	
-// 	void TensorNetwork::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
-// 		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
-// 		
-// 		if(_format != FileFormat::BINARY) {
-// 			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
-// 			
-// 			_stream << dimensions.size() << '\t';
-// 			
-// 			for (const size_t d : dimensions) {
-// 				_stream << d << '\t';
-// 			}
-// 			
-// 			if (representation == Representation::Dense) {
-// 				_stream << 1 << '\n';
-// 				for (size_t i = 0; i < size; ++i) {
-// 					_stream << factor*denseData.get()[i] << '\t';
-// 				}
-// 			} else {
-// 				_stream << 2 << '\t' << sparseData->size() << '\n';
-// 				for (const auto &d : *sparseData) {
-// 					_stream << d.first << '\t' << factor*d.second << '\n';
-// 				}
-// 			}
-// 		} else {
-// 			const uint64 deg = degree();
-// 			_stream.write(reinterpret_cast<const char*>(&deg), sizeof(uint64));
-// 			
-// 			for (const size_t d : dimensions) {
-// 				const uint64 dim = d;
-// 				_stream.write(reinterpret_cast<const char*>(&dim), sizeof(uint64));
-// 			}
-// 			
-// 			if (representation == Representation::Dense) {
-// 				const uint64 rep = 1;
-// 				_stream.write(reinterpret_cast<const char*>(&rep), sizeof(uint64));
-// 				
-// 				for (size_t i = 0; i < size; ++i) {
-// 					const value_t value = factor*denseData.get()[i];
-// 					_stream.write(reinterpret_cast<const char*>(&value), sizeof(value_t));
-// 				}
-// 			} else {
-// 				const uint64 rep = 2;
-// 				_stream.write(reinterpret_cast<const char*>(&rep), sizeof(uint64));
-// 				
-// 				const uint64 numEntries = sparseData->size();
-// 				_stream.write(reinterpret_cast<const char*>(&numEntries), sizeof(uint64));
-// 				
-// 				for (const std::pair<size_t, value_t> &entry : *sparseData) {
-// 					const uint64 position = entry.first;
-// 					_stream.write(reinterpret_cast<const char*>(&position), sizeof(uint64));
-// 					
-// 					const value_t realValue = factor*entry.second;
-// 					_stream.write(reinterpret_cast<const char*>(&realValue), sizeof(value_t));
-// 				}
-// 			}
-// 		}
-// 	}
-// 	
-// 	TensorNetwork TensorNetwork::load_from_file(const std::string &_filename, xerus::FileFormat _format) {
-// 		std::ifstream in(_filename, std::ifstream::in | std::ifstream::binary);
-// 		std::unique_ptr<char[]> header( new char[15] );
-// 		
-// 		// Read header
-// 		in.read(header.get(), 15);
-// 		
-// 		
-// 		if (_format == FileFormat::AUTOMATIC) {
-// 			if(header[0] == '#') {
-// 				_format = FileFormat::TSV;
-// 			} else {
-// 				_format = FileFormat::BINARY;
-// 			}
-// 		}
-// 		
-// 		REQUIRE(_format != FileFormat::BINARY || std::string(header.get()) == std::string("x xerus::Tensor"), "Invalid binary input file " << _filename);
-// 		REQUIRE(_format == FileFormat::BINARY || std::string(header.get()) == std::string("# xerus::Tensor"), "Invalid text input file " << _filename);
-// 		
-// 		uint64 version;
-// 		if(_format != FileFormat::BINARY) {
-// 			in.close();
-// 			in.open(_filename, std::ifstream::in);
-// 			in.seekg(15);
-// 			in >> version;
-// 		} else {
-// 			in.read(reinterpret_cast<char*>(&version), sizeof(uint64));
-// 		}
-// 		
-// 		REQUIRE(version == 1, "File " << _filename << " is of unknown file version " << version);
-// 		
-// 		Tensor result = load_from_stream(in, _format, version);
-// 		
-// 		in.close();
-// 		return result;
-// 	}
-// 	
-// 	TensorNetwork TensorNetwork::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {
-// 		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
-// 		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
-// 		
-// 		if(_format != FileFormat::BINARY) {
-// 			size_t newDegree;
-// 			_stream >> newDegree;
-// 			
-// 			std::vector<size_t> dim(newDegree);
-// 			for (size_t i = 0; i < newDegree; ++i) {
-// 				_stream >> dim[i];
-// 			}
-// 			
-// 			uint16 rep;
-// 			_stream >> rep;
-// 			
-// 			if (rep == 1) { // Dense
-// 				Tensor result(std::move(dim), Tensor::Representation::Dense, Initialisation::None);
-// 				for (size_t i = 0; i < result.size; ++i) {
-// 					REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
-// 					_stream >> (result.denseData.get()[i]);
-// 				}
-// 				return result;
-// 			} else { // Sparse
-// 				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
-// 				Tensor result(std::move(dim), Tensor::Representation::Sparse);
-// 				
-// 				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor");
-// 				size_t num;
-// 				_stream >> num;
-// 				
-// 				for (size_t i = 0; i < num; ++i) {
-// 					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
-// 					size_t pos; value_t val;
-// 					_stream >> pos >> val;
-// 					result.sparseData->emplace(pos, val);
-// 				}
-// 				return result;
-// 			}
-// 		} else {
-// 			uint64 newDegree;
-// 			_stream.read(reinterpret_cast<char*>(&newDegree), sizeof(uint64));
-// 			
-// 			std::vector<size_t> dims(newDegree);
-// 			for (size_t i = 0; i < newDegree; ++i) {
-// 				uint64 dim;
-// 				_stream.read(reinterpret_cast<char*>(&dim), sizeof(uint64));
-// 				REQUIRE(dim < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
-// 				dims[i] = dim;
-// 			}
-// 			
-// 			uint64 rep;
-// 			_stream.read(reinterpret_cast<char*>(&rep), sizeof(uint64));
-// 			
-// 			if (rep == 1) { // Dense
-// 				Tensor result(std::move(dims), Tensor::Representation::Dense, Initialisation::None);
-// 				_stream.read(reinterpret_cast<char*>(result.get_unsanitized_dense_data()), result.size*sizeof(value_t));
-// 				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
-// 				return result;
-// 			} else { // Sparse
-// 				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
-// 				Tensor result(std::move(dims), Tensor::Representation::Sparse);
-// 				
-// 				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor");
-// 				uint64 num;
-// 				_stream.read(reinterpret_cast<char*>(&num), sizeof(uint64));
-// 				REQUIRE(num < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
-// 				
-// 				for (size_t i = 0; i < num; ++i) {
-// 					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
-// 					uint64 pos; value_t val;
-// 					_stream.read(reinterpret_cast<char*>(&pos), sizeof(uint64));
-// 					_stream.read(reinterpret_cast<char*>(&val), sizeof(value_t));
-// 					result.sparseData->emplace(pos, val);
-// 				}
-// 				return result;
-// 			}
-// 		}
-// 	}
+	void TensorNetwork::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
+		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::BINARY; }
+		
+		if (_format == FileFormat::BINARY) {
+			std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
+			out.write("Xerus TensorNetwork datafile.\nVersion:  1 Format: Binary\n", 57);
+			save_to_stream(out, _format);
+		} else {
+			std::ofstream out(_filename, std::ofstream::out);
+			out << "Xerus TensorNetwork datafile.\nVersion:  1 Format: TSV\n";
+			save_to_stream(out, _format);
+		}
+	}
+
+	template<class T>
+	inline void write(std::ostream& _stream, const T _value, xerus::FileFormat _format, const char _space = '\t') {
+		if(_format == FileFormat::TSV) {
+			_stream << _value << _space;
+		} else {
+			_stream.write(reinterpret_cast<const char*>(&_value), sizeof(T));
+		}
+	}
+	
+	template<class T>
+	inline T read(std::istream& _stream, const xerus::FileFormat _format) {
+		T value;
+		if(_format == FileFormat::TSV) {
+			
+			_stream >> value;
+		} else {
+			_stream.read(reinterpret_cast<char*>(&value), sizeof(T));
+		}
+		return value;
+	}
+	
+	void TensorNetwork::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
+		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
+		
+		// Save dimensions
+		write<uint64>(_stream, degree(), _format);
+		for (const size_t d : dimensions) {
+			write<uint64>(_stream, d, _format);
+		}
+		if(_format == FileFormat::TSV) { _stream << '\n' << '\n'; }
+		
+		// Save nodes with their links
+		write<uint64>(_stream, nodes.size(), _format);
+		for(const TensorNode& node : nodes) {
+			write<uint64>(_stream, node.neighbors.size(), _format, '\n');
+			for(const Link& link : node.neighbors) {
+				write<bool>(_stream, link.external, _format);
+				write<uint64>(_stream, link.other, _format);
+				write<uint64>(_stream, link.indexPosition, _format);
+				write<uint64>(_stream, link.dimension, _format, '\n');
+			}
+		}
+		if(_format == FileFormat::TSV) { _stream << '\n'; }
+		
+		// Save tensorObjects
+		for(const TensorNode& node : nodes) {
+			node.tensorObject->save_to_stream(_stream, _format);
+			if(_format == FileFormat::TSV) { _stream << '\n'; }
+		}
+	}
+	
+	TensorNetwork TensorNetwork::load_from_file(const std::string& _filename) {
+		std::ifstream in(_filename, std::ifstream::in);
+		
+		char firstLine[256];
+		in.getline(firstLine, 255);
+		
+		REQUIRE(in, "Unexpected end of stream in TensorNetwork::load_from_file().");
+		
+		REQUIRE(std::string(firstLine) == std::string("Xerus TensorNetwork datafile."), "Invalid binary input file " << _filename << ". DBG: " << std::string(firstLine));
+		
+		std::string versionQual, formatQual, formatValue; uint64 versionValue;
+		in >> versionQual >> versionValue >> formatQual >> formatValue;
+		
+		REQUIRE(versionQual == std::string("Version:") && formatQual == std::string("Format:"), "Invalid Sytax detected in file " << _filename << ". DBG: " << versionQual << " and " << formatQual);
+		
+		REQUIRE(versionValue == 1, "File " << _filename << " is of unknown file version " << versionValue);
+		
+		FileFormat format;
+		if(formatValue == std::string("TSV")) {
+			format = FileFormat::TSV;
+		} else if(formatValue == std::string("Binary")) {
+			format = FileFormat::BINARY;
+			
+			// Open the stream as binary and skip to the start of the binary part.
+			const size_t currPos = in.tellg();
+			in.close();
+			in.open(_filename, std::ifstream::in | std::ifstream::binary);
+			in.seekg(currPos+1); // +1 because of the last \n
+		} else {
+			LOG(fatal, "Invalid value for format detected.");
+		}
+		
+		return load_from_stream(in, format, versionValue); 
+	}
+	
+	
+	TensorNetwork TensorNetwork::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {
+		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
+		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
+		
+		TensorNetwork result(ZeroNode::None);
+		
+		// Load dimensions
+		result.dimensions.resize(read<uint64>(_stream, _format));
+		for (size_t& dim : result.dimensions) {
+			dim = read<uint64>(_stream, _format);
+		}
+		
+		// Load nodes with their links
+		result.nodes.resize(read<uint64>(_stream, _format));
+		for(TensorNode& node : result.nodes) {
+			node.neighbors.resize(read<uint64>(_stream, _format));
+			for(Link& link : node.neighbors) {
+				link.external = read<bool>(_stream, _format);
+				link.other = read<uint64>(_stream, _format);
+				link.indexPosition = read<uint64>(_stream, _format);
+				link.dimension = read<uint64>(_stream, _format);
+			}
+		}
+		
+		// Save tensorObjects
+		for(TensorNode& node : result.nodes) {
+			node.tensorObject.reset(new Tensor(Tensor::load_from_stream(_stream, _format)));
+		}
+		
+		result.require_valid_network();
+		return result;
+	}
 	
 	void TensorNetwork::draw(const std::string& _filename) const {
 		std::stringstream graphLayout;

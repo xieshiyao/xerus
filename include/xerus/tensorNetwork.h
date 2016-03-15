@@ -145,8 +145,6 @@ namespace xerus {
 		/** 
 		* @brief Constructs an order zero TensorNetwork.
 		* @details The order of an empty TN is zero.
-		* @param _addZeroNode If TRUE the network will contain one degree zero node with the single
-		* entry zero.
 		*/
 		explicit TensorNetwork();
 		
@@ -188,7 +186,7 @@ namespace xerus {
 		/** 
 		 * @brief (Internal) Constructs an order zero TensorNetwork.
 		 * @details The order of an empty TN is zero.
-		 * @param _addZeroNode If TRUE the network will contain one degree zero node with the single
+		 * @param _nodeStatus defines whether the network will contain one degree zero node with the single
 		 * entry zero.
 		 */
 		explicit TensorNetwork(const ZeroNode _nodeStatus);
@@ -551,12 +549,12 @@ namespace xerus {
 		/**
 		 * @brief Loads a TensorNetwork from a file.
 		 */
-		static TensorNetwork load_from_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC);
+		static TensorNetwork load_from_file(const std::string &_filename);
 		
 		/**
 		 * @brief Restores the TensorNetwork from a stream of data. 
 		 */
-		static TensorNetwork load_from_stream(std::istream &_stream, const xerus::FileFormat _format = xerus::FileFormat::AUTOMATIC, const uint64 _formatVersion = 1);
+		static TensorNetwork load_from_stream(std::istream &_stream, const xerus::FileFormat _format, const uint64 _formatVersion = 1);
 		
 		
 		/**

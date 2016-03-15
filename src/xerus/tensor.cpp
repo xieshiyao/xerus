@@ -199,6 +199,27 @@ namespace xerus {
 	}
 	
 	
+	template<class T>
+	inline void write(std::ostream& _stream, const T _value, xerus::FileFormat _format, const char _space = '\t') {
+		if(_format == FileFormat::TSV) {
+			_stream << _value << _space;
+		} else {
+			_stream.write(reinterpret_cast<const char*>(&_value), sizeof(T));
+		}
+	}
+	
+	
+	template<class T>
+	inline T read(std::istream& _stream, const xerus::FileFormat _format) {
+		T value;
+		if(_format == FileFormat::TSV) {
+			_stream >> value;
+		} else {
+			_stream.read(reinterpret_cast<char*>(&value), sizeof(T));
+		}
+		return value;
+	}
+	
 	
 	void Tensor::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
 		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::TSV; }
@@ -214,60 +235,31 @@ namespace xerus {
 		}
 	}
 	
+	
 	void Tensor::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
 		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
 		
 		if(_format != FileFormat::BINARY) {
 			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
+		}
 			
-			_stream << dimensions.size() << '\t';
-			
-			for (const size_t d : dimensions) {
-				_stream << d << '\t';
-			}
-			
-			if (representation == Representation::Dense) {
-				_stream << 1 << '\n';
-				for (size_t i = 0; i < size; ++i) {
-					_stream << factor*denseData.get()[i] << '\t';
-				}
-			} else {
-				_stream << 2 << '\t' << sparseData->size() << '\n';
-				for (const auto &d : *sparseData) {
-					_stream << d.first << '\t' << factor*d.second << '\n';
-				}
+		write<uint64>(_stream, degree(), _format);
+		
+		for (const size_t d : dimensions) {
+			write<uint64>(_stream, d, _format);
+		}
+		
+		if (representation == Representation::Dense) {
+			write<uint64>(_stream, 1, _format, '\n');
+			for (size_t i = 0; i < size; ++i) {
+				write<value_t>(_stream, factor*denseData.get()[i], _format);
 			}
 		} else {
-			const uint64 deg = degree();
-			_stream.write(reinterpret_cast<const char*>(&deg), sizeof(uint64));
-			
-			for (const size_t d : dimensions) {
-				const uint64 dim = d;
-				_stream.write(reinterpret_cast<const char*>(&dim), sizeof(uint64));
-			}
-			
-			if (representation == Representation::Dense) {
-				const uint64 rep = 1;
-				_stream.write(reinterpret_cast<const char*>(&rep), sizeof(uint64));
-				
-				for (size_t i = 0; i < size; ++i) {
-					const value_t value = factor*denseData.get()[i];
-					_stream.write(reinterpret_cast<const char*>(&value), sizeof(value_t));
-				}
-			} else {
-				const uint64 rep = 2;
-				_stream.write(reinterpret_cast<const char*>(&rep), sizeof(uint64));
-				
-				const uint64 numEntries = sparseData->size();
-				_stream.write(reinterpret_cast<const char*>(&numEntries), sizeof(uint64));
-				
-				for (const std::pair<size_t, value_t> &entry : *sparseData) {
-					const uint64 position = entry.first;
-					_stream.write(reinterpret_cast<const char*>(&position), sizeof(uint64));
-					
-					const value_t realValue = factor*entry.second;
-					_stream.write(reinterpret_cast<const char*>(&realValue), sizeof(value_t));
-				}
+			write<uint64>(_stream, 2, _format);
+			write<uint64>(_stream, sparseData->size(), _format, '\n');
+			for (const auto &d : *sparseData) {
+				write<uint64>(_stream, d.first, _format);
+				write<value_t>(_stream, factor*d.second, _format, '\n');
 			}
 		}
 	}
@@ -311,79 +303,40 @@ namespace xerus {
 		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
 		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
 		
-		if(_format != FileFormat::BINARY) {
-			size_t newDegree;
-			_stream >> newDegree;
-			
-			std::vector<size_t> dim(newDegree);
-			for (size_t i = 0; i < newDegree; ++i) {
-				_stream >> dim[i];
-			}
-			
-			uint16 rep;
-			_stream >> rep;
-			
-			if (rep == 1) { // Dense
-				Tensor result(std::move(dim), Tensor::Representation::Dense, Initialisation::None);
+		// Load dimensions
+		std::vector<size_t> dims(read<uint64>(_stream, _format));
+		for (size_t& dim : dims) {
+			dim = read<uint64>(_stream, _format);
+		}
+		
+		// Load representation
+		const uint64 rep = read<uint64>(_stream, _format);
+		
+		// Load data
+		if (rep == 1) { // Dense
+			Tensor result(std::move(dims), Tensor::Representation::Dense, Initialisation::None);
+			if(_format == FileFormat::TSV) {
 				for (size_t i = 0; i < result.size; ++i) {
-					REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
 					_stream >> (result.denseData.get()[i]);
 				}
-				return result;
-			} else { // Sparse
-				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
-				Tensor result(std::move(dim), Tensor::Representation::Sparse);
-				
-				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor");
-				size_t num;
-				_stream >> num;
-				
-				for (size_t i = 0; i < num; ++i) {
-					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
-					size_t pos; value_t val;
-					_stream >> pos >> val;
-					result.sparseData->emplace(pos, val);
-				}
-				return result;
-			}
-		} else {
-			uint64 newDegree;
-			_stream.read(reinterpret_cast<char*>(&newDegree), sizeof(uint64));
-			
-			std::vector<size_t> dims(newDegree);
-			for (size_t i = 0; i < newDegree; ++i) {
-				uint64 dim;
-				_stream.read(reinterpret_cast<char*>(&dim), sizeof(uint64));
-				REQUIRE(dim < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
-				dims[i] = dim;
-			}
-			
-			uint64 rep;
-			_stream.read(reinterpret_cast<char*>(&rep), sizeof(uint64));
-			
-			if (rep == 1) { // Dense
-				Tensor result(std::move(dims), Tensor::Representation::Dense, Initialisation::None);
+			} else {
 				_stream.read(reinterpret_cast<char*>(result.get_unsanitized_dense_data()), result.size*sizeof(value_t));
-				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
-				return result;
-			} else { // Sparse
-				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
-				Tensor result(std::move(dims), Tensor::Representation::Sparse);
-				
-				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor");
-				uint64 num;
-				_stream.read(reinterpret_cast<char*>(&num), sizeof(uint64));
-				REQUIRE(num < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
-				
-				for (size_t i = 0; i < num; ++i) {
-					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
-					uint64 pos; value_t val;
-					_stream.read(reinterpret_cast<char*>(&pos), sizeof(uint64));
-					_stream.read(reinterpret_cast<char*>(&val), sizeof(value_t));
-					result.sparseData->emplace(pos, val);
-				}
-				return result;
 			}
+			REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
+			return result;
+		} else { // Sparse
+			REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
+			Tensor result(std::move(dims), Tensor::Representation::Sparse);
+			
+			const uint64 num = read<uint64>(_stream, _format);
+			REQUIRE(num < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
+			
+			for (size_t i = 0; i < num; ++i) {
+				REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
+				result.sparseData->emplace(read<uint64>(_stream, _format), read<value_t>(_stream, _format));
+			}
+			REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
+			return result;
 		}
 	}
 	
