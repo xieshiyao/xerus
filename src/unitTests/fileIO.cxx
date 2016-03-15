@@ -29,24 +29,24 @@ UNIT_TEST(Tensor, read_write_file,
 	std::normal_distribution<double> dist(0.0,1.0);
 	Tensor A = Tensor::random({12,13,14}, rnd, dist);
 	
-	A.save_to_file("test.dat", FileFormat::TSV);
-	Tensor Ab = Tensor::load_from_file("test.dat");
+	misc::save_to_file(A, "test.dat", misc::FileFormat::TSV);
+	Tensor Ab = misc::load_from_file<Tensor>("test.dat");
 	MTEST(approx_equal(A, Ab), "dense tsv " << frob_norm(A-Ab));
 	
-	A.save_to_file("test.dat", FileFormat::BINARY);
-	Ab = Tensor::load_from_file("test.dat");
+	misc::save_to_file(A, "test.dat", misc::FileFormat::BINARY);
+	Ab = misc::load_from_file<Tensor>("test.dat");
 	MTEST(approx_equal(A, Ab), "dense bin " << frob_norm(A-Ab));
 	
 	Tensor S({100,234,567}, Tensor::Representation::Sparse);
 	S[{5,7,99}] = 1; S[{80,123,5}] = 6; S[{1,2,3}] = 4; S[{99,233,566}] = 5;
 	S[{12,12,12}] = 8; S[{15,15,15}] = 7; S[{99,99,99}] = 3; S[{65,65,65}] = 2;
 	
-	S.save_to_file("test.dat", FileFormat::BINARY);
-	Ab = Tensor::load_from_file("test.dat");
+	save_to_file(S, "test.dat", misc::FileFormat::BINARY);
+	Ab = misc::load_from_file<Tensor>("test.dat");
 	MTEST(frob_norm(S - Ab) < 1e-16, "sparse bin " << frob_norm(S-Ab));
 	
-	S.save_to_file("test.dat", FileFormat::TSV);
-	Ab = Tensor::load_from_file("test.dat");
+	save_to_file(S, "test.dat", misc::FileFormat::TSV);
+	Ab = misc::load_from_file<Tensor>("test.dat");
 	TEST(Ab.is_sparse());
 	MTEST(frob_norm(S - Ab) < 1e-16, "sparse tsv " << frob_norm(S-Ab));
 )
@@ -55,14 +55,36 @@ UNIT_TEST(TensorNetwork, read_write_file,
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
 	Tensor A = Tensor::random({12,13,14}, rnd, dist);
-	Tensor B = Tensor::random({12,13,14}, rnd, dist);
+	Tensor B = Tensor({12,13,14}, Tensor::Representation::Sparse);
+	B[{1,1,1}] = 1; B[{2,3,4}] = 2; B[{7,10,3}] = 3; B[{5,12,13}] = 4; B[{8,7,6}] = 5;
 	Tensor C = Tensor::random({12,13,14}, rnd, dist);
 	Index i,j,k,l,m,n;
 	TensorNetwork T;
 	T(k,l,n) = A(i,j,k) * B(i,l,m) * C(n,j,m);
-	T.save_to_file("test.dat", FileFormat::TSV);
-	TensorNetwork Tb = TensorNetwork::load_from_file("test.dat");
+	save_to_file(T, "test.dat", misc::FileFormat::TSV);
+	TensorNetwork Tb = misc::load_from_file<TensorNetwork>("test.dat");
 	MTEST(T.dimensions == Tb.dimensions, T.dimensions << " vs " << Tb.dimensions);
 	Tb.require_valid_network();
-	MTEST(frob_norm(T(i&0)-Tb(i&0))/frob_norm(T) < 5e-16, frob_norm(T(i&0)-Tb(i&0))/frob_norm(T));
+	MTEST(frob_norm(T(i&0)-Tb(i&0))/frob_norm(T) < 6e-16, frob_norm(T(i&0)-Tb(i&0))/frob_norm(T));
+	
+	save_to_file(T, "test.dat", misc::FileFormat::BINARY);
+	Tb = misc::load_from_file<TensorNetwork>("test.dat");
+	MTEST(T.dimensions == Tb.dimensions, T.dimensions << " vs " << Tb.dimensions);
+	Tb.require_valid_network();
+	MTEST(frob_norm(T(i&0)-Tb(i&0))/frob_norm(T) < 6e-16, frob_norm(T(i&0)-Tb(i&0))/frob_norm(T));
 )
+
+
+// UNIT_TEST(TTNetwork, read_write_file,
+// 	std::mt19937_64 rnd(0x77778888);
+// 	std::normal_distribution<double> dist(0.0,1.0);
+// 	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
+// 	
+// 	A.save_to_file("test.dat");
+// 	
+// 	FAILTEST(TensorNetwork Tb = TensorNetwork::load_from_file("test.dat"));
+// 	TTTensor Ab = TTTensor::load_from_file("test.dat");
+// 	
+// 	Ab.require_correct_format();
+// 	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
+// )

@@ -26,7 +26,7 @@
 
 #include <set>
 #include <memory>
-
+#include <xerus/misc/fileIO.h>
  
 #include "indexedTensor.h"
 
@@ -534,29 +534,6 @@ namespace xerus {
 		virtual value_t frob_norm() const;
 		
 		
-		
-		/**
-		 * @brief Stores the TensorNetwork in a file.
-		 */
-		void save_to_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
-		
-		/**
-		 * @brief Pipes all information necessary to restore the current TensorNetwork into @a _stream.
-		 * @note that this excludes header information
-		 */
-		void save_to_stream(std::ostream &_stream, const xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
-		
-		/**
-		 * @brief Loads a TensorNetwork from a file.
-		 */
-		static TensorNetwork load_from_file(const std::string &_filename);
-		
-		/**
-		 * @brief Restores the TensorNetwork from a stream of data. 
-		 */
-		static TensorNetwork load_from_stream(std::istream &_stream, const xerus::FileFormat _format, const uint64 _formatVersion = 1);
-		
-		
 		/**
 		* @brief Draws a graph representation of the TensorNetwork.
 		* @details The drawing is realized by a system call to "dot" which plots the graph structure.
@@ -599,4 +576,19 @@ namespace xerus {
 	
 	
 	std::ostream &operator<<(std::ostream &_out, const TensorNetwork::Link &_rhs);
+	
+	namespace misc {
+		/**
+		* @brief Pipes all information necessary to restore the current TensorNetwork into @a _stream.
+		* @note that this excludes header information
+		*/
+		template<>
+		void write_to_stream(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format);
+		
+		/**
+		* @brief Restores the TensorNetwork from a stream of data. 
+		*/
+		template<>
+		void read_from_stream(std::istream &_stream, TensorNetwork &_obj, const FileFormat _format);
+	}
 }

@@ -31,6 +31,7 @@
 
 #include "basic.h"
 #include "misc/containerSupport.h"
+#include "misc/fileIO.h"
 
 #include "indexedTensor.h"
 
@@ -280,28 +281,7 @@ namespace xerus {
 		 */
 		static Tensor dirac(DimensionTuple _dimensions, const size_t _position);
 		
-		/**
-		 * @brief stores the tensor in a file 
-		 */
-		void save_to_file(const std::string &_filename, xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
-		
-		/**
-		 * @brief pipes all information necessary to restore the current tensor into @a _stream.
-		 * @note that this excludes header information
-		 */
-		void save_to_stream(std::ostream &_stream, const xerus::FileFormat _format = xerus::FileFormat::BINARY) const;
-		
-		/**
-		 * @brief loads a tensor from a file
-		 */
-		static Tensor load_from_file(const std::string &_filename);
-		
-		/**
-		 * @brief tries to restore the tensor from a stream of data. 
-		 */
-		static Tensor load_from_stream(std::istream &_stream, const xerus::FileFormat _format, const uint64 _formatVersion = 1);
-		
-		
+
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
 		Tensor dense_copy() const;
 		
@@ -982,4 +962,20 @@ namespace xerus {
 	 * @return TRUE if approx_equal() is true for all entries/data points, FALSE otherwise.
 	 */
 	bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON);
+	
+	
+	namespace misc {
+		/**
+		* @brief pipes all information necessary to restore the current tensor into @a _stream.
+		* @note that this excludes header information
+		*/
+		template<>
+		void write_to_stream(std::ostream &_stream, const Tensor &_obj, const FileFormat _format);
+
+		/**
+		* @brief tries to restore the tensor from a stream of data. 
+		*/
+		template<>
+		void read_from_stream(std::istream &_stream, Tensor &_obj, const FileFormat _format);
+	}
 }
