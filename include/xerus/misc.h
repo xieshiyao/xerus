@@ -29,6 +29,7 @@
 #include "misc/namedLogger.h"
  
 #include "misc/basicArraySupport.h"
+#include "misc/containerSupport.h"
 #include "misc/stringUtilities.h"
 #include "misc/sfinae.h"
 #include "misc/callStack.h"
