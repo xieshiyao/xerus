@@ -222,8 +222,6 @@ namespace xerus {
 	
 	
 	void Tensor::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
-		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::TSV; }
-		
 		if (_format == FileFormat::BINARY) {
 			std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
 			out.write("Xerus Tensor datafile.\nVersion:  1 Format: Binary\n", 50);
@@ -237,9 +235,7 @@ namespace xerus {
 	
 	
 	void Tensor::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
-		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
-		
-		if(_format != FileFormat::BINARY) {
+		if(_format == FileFormat::TSV) {
 			_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 		}
 			
@@ -263,6 +259,7 @@ namespace xerus {
 			}
 		}
 	}
+	
 	
 	Tensor Tensor::load_from_file(const std::string &_filename) {
 		std::ifstream in(_filename, std::ifstream::in);
@@ -299,8 +296,8 @@ namespace xerus {
 		return load_from_stream(in, format, versionValue); 
 	}
 	
+	
 	Tensor Tensor::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {
-		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
 		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
 		
 		// Load dimensions

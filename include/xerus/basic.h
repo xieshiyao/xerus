@@ -64,11 +64,9 @@ namespace xerus {
 	
 	/**
 	 * @brief possible file formats for tensor storage
-	 * @details BINARY: not human readable, exact storage
+	 * @details 
+	 * BINARY: not human readable, exact storage
 	 * TSV: human readable tab-separated-value lists
-	 * AUTOMATIC: try to determine the format automatically (when loading, defaults to BINARY when storing)
 	 */
-	enum FileFormat {
-		BINARY, TSV, AUTOMATIC
-	};
+	enum FileFormat { BINARY, TSV };
 }

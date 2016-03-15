@@ -1375,9 +1375,29 @@ namespace xerus {
 	}
 	
 	
+	template<class T>
+	inline void write(std::ostream& _stream, const T _value, xerus::FileFormat _format, const char _space = '\t') {
+		if(_format == FileFormat::TSV) {
+			_stream << _value << _space;
+		} else {
+			_stream.write(reinterpret_cast<const char*>(&_value), sizeof(T));
+		}
+	}
+	
+	
+	template<class T>
+	inline T read(std::istream& _stream, const xerus::FileFormat _format) {
+		T value;
+		if(_format == FileFormat::TSV) {
+			_stream >> value;
+		} else {
+			_stream.read(reinterpret_cast<char*>(&value), sizeof(T));
+		}
+		return value;
+	}
+	
+	
 	void TensorNetwork::save_to_file(const std::string &_filename, xerus::FileFormat _format) const {
-		if (_format == FileFormat::AUTOMATIC) { _format = FileFormat::BINARY; }
-		
 		if (_format == FileFormat::BINARY) {
 			std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
 			out.write("Xerus TensorNetwork datafile.\nVersion:  1 Format: Binary\n", 57);
@@ -1389,30 +1409,8 @@ namespace xerus {
 		}
 	}
 
-	template<class T>
-	inline void write(std::ostream& _stream, const T _value, xerus::FileFormat _format, const char _space = '\t') {
-		if(_format == FileFormat::TSV) {
-			_stream << _value << _space;
-		} else {
-			_stream.write(reinterpret_cast<const char*>(&_value), sizeof(T));
-		}
-	}
-	
-	template<class T>
-	inline T read(std::istream& _stream, const xerus::FileFormat _format) {
-		T value;
-		if(_format == FileFormat::TSV) {
-			
-			_stream >> value;
-		} else {
-			_stream.read(reinterpret_cast<char*>(&value), sizeof(T));
-		}
-		return value;
-	}
 	
 	void TensorNetwork::save_to_stream(std::ostream &_stream, const xerus::FileFormat _format) const {
-		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
-		
 		// Save dimensions
 		write<uint64>(_stream, degree(), _format);
 		for (const size_t d : dimensions) {
@@ -1439,6 +1437,7 @@ namespace xerus {
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
 		}
 	}
+	
 	
 	TensorNetwork TensorNetwork::load_from_file(const std::string& _filename) {
 		std::ifstream in(_filename, std::ifstream::in);
@@ -1477,7 +1476,6 @@ namespace xerus {
 	
 	
 	TensorNetwork TensorNetwork::load_from_stream(std::istream& _stream, const xerus::FileFormat _format, const uint64 _formatVersion) {
-		REQUIRE(_format != FileFormat::AUTOMATIC, "IE");
 		REQUIRE(_formatVersion == 1, "Unknown stream version to open (" << _formatVersion << ")");
 		
 		TensorNetwork result(ZeroNode::None);
@@ -1508,6 +1506,7 @@ namespace xerus {
 		result.require_valid_network();
 		return result;
 	}
+	
 	
 	void TensorNetwork::draw(const std::string& _filename) const {
 		std::stringstream graphLayout;
