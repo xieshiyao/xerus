@@ -576,4 +576,23 @@ namespace xerus {
 	template<bool isOperator>
 	TTNetwork<isOperator> entrywise_product(const TTNetwork<isOperator>& _A, const TTNetwork<isOperator>& _B);
 	
+	
+	namespace misc {
+		/**
+		 * @brief Pipes all information necessary to restore the current TensorNetwork into @a _stream.
+		 * @note that this excludes header information
+		 */
+		template<>
+		void write_to_stream(std::ostream &_stream, const TTNetwork<true> &_obj, const FileFormat _format);
+		template<>
+		void write_to_stream(std::ostream &_stream, const TTNetwork<false> &_obj, const FileFormat _format);
+		
+		/**
+		 * @brief Restores the TensorNetwork from a stream of data. 
+		 */
+		template<>
+		void read_from_stream(std::istream &_stream, TTNetwork<true> &_obj, const FileFormat _format);
+		template<>
+		void read_from_stream(std::istream &_stream, TTNetwork<false> &_obj, const FileFormat _format);
+	}
 }
