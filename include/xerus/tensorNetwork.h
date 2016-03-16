@@ -26,7 +26,7 @@
 
 #include <set>
 #include <memory>
-#include <xerus/misc/fileIO.h>
+#include "misc/fileIO.h"
  
 #include "indexedTensor.h"
 

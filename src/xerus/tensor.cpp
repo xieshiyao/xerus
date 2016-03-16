@@ -1609,11 +1609,7 @@ namespace xerus {
 			// storage version number
 			write_to_stream<uint64>(_stream, 1, _format);
 			
-			write_to_stream<uint64>(_stream, _obj.degree(), _format);
-			
-			for (const size_t d : _obj.dimensions) {
-				write_to_stream<uint64>(_stream, d, _format);
-			}
+			write_to_stream(_stream, _obj.dimensions, _format);
 			
 			if (_obj.representation == Tensor::Representation::Dense) {
 				write_to_stream<uint64>(_stream, 1, _format, '\n');
@@ -1637,10 +1633,8 @@ namespace xerus {
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
-			std::vector<size_t> dims(read_from_stream<uint64>(_stream, _format));
-			for (size_t& dim : dims) {
-				dim = read_from_stream<uint64>(_stream, _format);
-			}
+			std::vector<size_t> dims;
+			read_from_stream(_stream, dims, _format);
 			
 			// Load representation
 			const uint64 rep = read_from_stream<uint64>(_stream, _format);
@@ -1656,7 +1650,8 @@ namespace xerus {
 					_stream.read(reinterpret_cast<char*>(_obj.get_unsanitized_dense_data()), std::streamoff(_obj.size*sizeof(value_t)));
 				}
 				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
-			} else { // Sparse REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
+			} else { // Sparse 
+				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
 				_obj.reset(std::move(dims), Tensor::Representation::Sparse);
 				
 				const uint64 num = read_from_stream<uint64>(_stream, _format);
