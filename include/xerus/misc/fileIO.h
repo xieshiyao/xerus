@@ -29,6 +29,8 @@
 #include <fstream>
 #include "stringUtilities.h"
 #include "check.h"
+#include "exceptions.h"
+#include "namedLogger.h"
 
 namespace xerus { namespace misc {
 	
