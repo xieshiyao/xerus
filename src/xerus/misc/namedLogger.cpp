@@ -52,10 +52,11 @@ namespace xerus {
 						if (current.str().size() > 1024*1024) {
 							#if defined(__GNUC__) && __GNUC__ < 5
 								old.str(current.str());
-								current.str("");
+								current.str(std::string());
+								current.clear();
 							#else
 								old = std::move(current);
-								current.str("");
+								current = std::stringstream();
 							#endif
 						}
 					}
