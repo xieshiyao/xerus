@@ -1446,4 +1446,5 @@ namespace xerus {
 	//Explicit instantiation for both types
 	template TTNetwork<false> entrywise_product(const TTNetwork<false> &_A, const TTNetwork<false> &_B);
 	template TTNetwork<true> entrywise_product(const TTNetwork<true> &_A, const TTNetwork<true> &_B);
+	
 }

@@ -1448,15 +1448,11 @@ namespace xerus {
 			if(_format == FileFormat::TSV) {
 				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 			}
-			
 			// storage version number
 			write_to_stream<uint64>(_stream, 1, _format);
 			
 			// Save dimensions
-			write_to_stream<uint64>(_stream, _obj.degree(), _format);
-			for (const size_t d : _obj.dimensions) {
-				write_to_stream<uint64>(_stream, d, _format);
-			}
+			write_to_stream(_stream, _obj.dimensions, _format);
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
 			
 			// save external links
@@ -1493,13 +1489,8 @@ namespace xerus {
 			uint64 ver = read_from_stream<uint64>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
-			_obj = TensorNetwork();
-			
 			// Load dimensions
-			_obj.dimensions.resize(read_from_stream<uint64>(_stream, _format));
-			for (size_t& dim : _obj.dimensions) {
-				dim = read_from_stream<uint64>(_stream, _format);
-			}
+			read_from_stream(_stream, _obj.dimensions, _format);
 			
 			// load external links
 			_obj.externalLinks.resize(_obj.dimensions.size());

@@ -75,16 +75,18 @@ UNIT_TEST(TensorNetwork, read_write_file,
 )
 
 
-// UNIT_TEST(TTNetwork, read_write_file,
-// 	std::mt19937_64 rnd(0x77778888);
-// 	std::normal_distribution<double> dist(0.0,1.0);
-// 	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
-// 	
-// 	A.save_to_file("test.dat");
-// 	
-// 	FAILTEST(TensorNetwork Tb = TensorNetwork::load_from_file("test.dat"));
-// 	TTTensor Ab = TTTensor::load_from_file("test.dat");
-// 	
-// 	Ab.require_correct_format();
-// 	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
-// )
+UNIT_TEST(TT, read_write_file,
+	std::mt19937_64 rnd(0x77778888);
+	std::normal_distribution<double> dist(0.0,1.0);
+	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
+	
+	misc::save_to_file(A, "test.dat");
+	
+	FAILTEST(TensorNetwork Tb = misc::load_from_file<TensorNetwork>("test.dat"));
+	TTTensor Ab = misc::load_from_file<TTTensor>("test.dat");
+	Index i;
+	Ab.require_correct_format();
+	MTEST(Ab.cannonicalized && Ab.corePosition == 0, Ab.cannonicalized << " " << Ab.corePosition);
+	MTEST(A.dimensions == Ab.dimensions, A.dimensions << " vs " << Ab.dimensions);
+	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
+)
