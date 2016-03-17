@@ -203,11 +203,11 @@ namespace xerus { namespace misc { namespace internal {
                 if (num <= 0) {
                     return "Callstack could not be built.";
                 }
-                stack.resize((size_t) num);
+                stack.resize(size_t(num));
                 std::stringstream res;
                 //NOTE i=0 corresponds to get_call_stack and is omitted
-                for (size_t i=1; i<(size_t)num; ++i) {
-                    res << "[0x" << std::setw((int)sizeof(void*)*2) << std::setfill('0') << std::hex << (uintptr_t)stack[i] << " .?] <bfd not loaded, use addr2line to resolve>\n";
+                for (size_t i=1; i<size_t(num); ++i) {
+                    res << "[0x" << std::setw(int(sizeof(void*)*2)) << std::setfill('0') << std::hex << uintptr_t(stack[i]) << " .?] <bfd not loaded, use addr2line to resolve>\n";
                 }
                 return res.str();
             }
