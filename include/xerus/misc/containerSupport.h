@@ -121,7 +121,6 @@ namespace xerus {
 		
 		#endif
 		
-		
 		///@brief:  Check whether an arbitary container contains all elemets of another arbitary container.
 		template<template<class, class...> class containerA_t, template<class, class...> class containerB_t, class item_t, class... restA_t, class... restB_t>
 		inline bool contains(const containerA_t<item_t, restA_t...> &_largeContainer, const containerB_t<item_t, restB_t...> &_smallContainer) {
@@ -220,6 +219,16 @@ namespace xerus {
 
 
 namespace std {
+	
+	///@brief Hash function for std::pairs of strings
+	template<>
+	struct hash<std::pair<std::string, std::string>> {
+	public:
+		size_t operator()(const std::pair<std::string, std::string>& _pair) const {
+			const std::hash<std::string> hash_fn;
+			return hash_fn(_pair.first) ^ hash_fn(_pair.second);
+		}
+	};
 	
 	///@brief Add a + operator for iterators and size_t to avoid signed/unsigned errors.
 	template<class IteratorType, typename std::enable_if<std::is_same<typename std::iterator_traits<IteratorType>::difference_type, long>::value, bool>::type = true>
