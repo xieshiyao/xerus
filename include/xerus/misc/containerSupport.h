@@ -220,13 +220,17 @@ namespace xerus {
 
 namespace std {
 	
-	///@brief Hash function for std::pairs of strings
-	template<>
-	struct hash<std::pair<std::string, std::string>> {
+	///@brief Hash function for std::pair
+	template<class S, class T>
+	struct hash<std::pair<S, T>> {
 	public:
-		size_t operator()(const std::pair<std::string, std::string>& _pair) const {
-			const std::hash<std::string> hash_fn;
-			return hash_fn(_pair.first) ^ hash_fn(_pair.second);
+		size_t operator()(const std::pair<S, T>& _pair) const {
+			// NOTE must not be const to adhere to the standard (eg. n3690) paragraph 8.5(7):
+			// "If a program calls for the default initialization of an object of a const-qualified type T, T shall be a class type with a user-provided default constructor."
+			// NOTE std::hash has no user provided default constructor
+			std::hash<S> hash_fn_s;
+			std::hash<T> hash_fn_t;
+			return (hash_fn_s(_pair.first) * 0x01000193u) ^ hash_fn_t(_pair.second);
 		}
 	};
 	
