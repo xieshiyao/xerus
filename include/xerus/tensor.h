@@ -192,7 +192,7 @@ namespace xerus {
 		 * @param _dist the random distribution to be used.
 		 */
 		template<ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor random(Dim_T&& _dimensions, generator& _rnd, distribution& _dist) {
+		static Tensor _warn_unused_ random(Dim_T&& _dimensions, generator& _rnd, distribution& _dist) {
 			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Dense, Initialisation::None);
 			value_t* const dataPtr = result.denseData.get();
 			for(size_t i = 0; i < result.size; ++i) {
@@ -207,7 +207,7 @@ namespace xerus {
 		 * @details See the std::vector variant for details.
 		 */
 		template<class generator, class distribution>
-		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
+		_inline_ static Tensor _warn_unused_ random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
 			return Tensor::random(DimensionTuple(std::move(_dimensions)), _rnd, _dist);
 		}
 		
@@ -221,7 +221,7 @@ namespace xerus {
 		 * @param _dist the random distribution to be used.
 		 */
 		template<ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor random(Dim_T&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+		static Tensor _warn_unused_ random(Dim_T&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
 			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Sparse, Initialisation::Zero);
 			REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
 			
@@ -238,7 +238,7 @@ namespace xerus {
 		 * @details See the std::vector variant for details.
 		 */
 		template<class generator, class distribution>
-		_inline_ static Tensor random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+		_inline_ static Tensor _warn_unused_ random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
 			return Tensor::random(DimensionTuple(_dimensions), _N, _rnd, _dist);
 		}
 		
@@ -247,7 +247,7 @@ namespace xerus {
 		 * @brief: Returns a Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor ones(DimensionTuple _dimensions);
+		static Tensor _warn_unused_ ones(DimensionTuple _dimensions);
 		
 		
 		/** 
@@ -255,7 +255,7 @@ namespace xerus {
 		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
 		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
 		 */
-		static Tensor identity(DimensionTuple _dimensions);
+		static Tensor _warn_unused_ identity(DimensionTuple _dimensions);
 		
 		
 		/** 
@@ -263,7 +263,7 @@ namespace xerus {
 		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor kronecker(DimensionTuple _dimensions);
+		static Tensor _warn_unused_ kronecker(DimensionTuple _dimensions);
 		
 		
 		/** 
@@ -271,7 +271,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor dirac(DimensionTuple _dimensions, const MultiIndex& _position);
+		static Tensor _warn_unused_ dirac(DimensionTuple _dimensions, const MultiIndex& _position);
 		
 		
 		/** 
@@ -279,7 +279,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor dirac(DimensionTuple _dimensions, const size_t _position);
+		static Tensor _warn_unused_ dirac(DimensionTuple _dimensions, const size_t _position);
 		
 
 		/// @brief Returns a copy of this Tensor that uses a dense representation.

@@ -87,4 +87,4 @@ namespace xerus {
 #define _hot_ 			__attribute__((hot))
 #define _cold_ 			__attribute__((cold))
 #define _unused_ 		__attribute__((unused))
-
+#define _warn_unused_	__attribute__((warn_unused_result))
