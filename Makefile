@@ -10,7 +10,7 @@ LIB_NAME_STATIC = build/lib/libxerus.a
 TEST_NAME = XerusTest
 
 # xerus version from VERSION file
-XERUS_VERSION = $(shell git describe --tags --always)
+XERUS_VERSION = $(shell git describe --tags --always 2>/dev/null || cat VERSION)
 DEBUG += -D XERUS_VERSION="$(XERUS_VERSION)"
 
 
