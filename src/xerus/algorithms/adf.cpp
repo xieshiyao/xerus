@@ -438,7 +438,7 @@ namespace xerus {
 		{
 			Tensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank}, Tensor::Representation::Dense);
 			
-			std::unique_ptr<value_t[]> dyadicComponent(new value_t[localLeftRank*localRightRank]); // TODO Not needed if SinglePointMeasurmentSet
+			std::unique_ptr<value_t[]> dyadicComponent(std::is_same<MeasurmentSet, RankOneMeasurmentSet>::value ? new value_t[localLeftRank*localRightRank] : nullptr);
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {

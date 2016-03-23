@@ -1530,6 +1530,15 @@ namespace xerus {
 	}
 	
 	
+	void calculate_pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
+		Tensor U, S, Vt;
+		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
+		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
+		contract(_inverse, U, false, S, false, 1);
+		contract(_inverse, _inverse, false, Vt, false, 1);
+	}
+	
+	
 	void solve_least_squares(Tensor& _x, const Tensor& _A, const size_t _splitPos, const Tensor& _b) {
 		LOG(fatal, "Not yet Implemented."); // TODO
 	}

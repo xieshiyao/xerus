@@ -119,7 +119,7 @@ namespace xerus {
 		
 		template<> 
 		void IndexedTensorWritable<TensorNetwork>::indexed_assignement(IndexedTensorReadOnly<Tensor>&& _rhs) {
-			tensorObject->specialized_evaluation(std::move(*this), IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices)); // TODO change this to not casts
+			tensorObject->specialized_evaluation(std::move(*this), IndexedTensorMoveable<TensorNetwork>(new TensorNetwork(*_rhs.tensorObjectReadOnly), _rhs.indices));
 		}
 		
 		template<>

@@ -919,6 +919,15 @@ namespace xerus {
 	void calculate_cq(Tensor& _C, Tensor& _Q, Tensor _input, const size_t _splitPos);
 	
 	/** 
+	 * @brief Low-Level calculation of the pseudo inverse of a given Tensor.
+	 * @details Currently doen by calculation of the SVD.
+	 * @param _inverse Output the pseudo inverse.
+	 * @param _input input Tensor of which the CQ shall be calculated.
+	 * @param _splitPos index position at defining the matrification for which the pseudo inverse is calculated.
+	 */
+	void calculate_pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos);
+	
+	/** 
 	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.
 	 * @details The matrification of @a _A is completely defined by the order of @a _b.
 	 * @param _x Output Tensor for the resulting x.

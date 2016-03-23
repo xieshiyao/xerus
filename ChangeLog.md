@@ -4,7 +4,8 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 
 * TBD V2.3
  * Added save_to_file and load_from_file functions to store and restore Tensors and TensorNetworks in/from files.
-
+ * Added SVD based calculate_pseudo_inverse function to Tensor.
+ 
 * 2016-03-11 V2.2.1
  * Added support for 32bit systems.
 
