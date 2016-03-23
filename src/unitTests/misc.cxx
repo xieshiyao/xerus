@@ -69,3 +69,40 @@ UNIT_TEST(Misc, polynomial,
 		}
 	}
 )
+
+
+UNIT_TEST(Misc, exceptions,
+	try {
+		XERUS_THROW(misc::generic_error());
+	} catch (misc::generic_error &e) {
+		MTEST(true, "1");
+	} catch (...) {
+		MTEST(false, "1");
+	}
+	
+	try {
+		XERUS_THROW(misc::generic_error() << "test");
+	} catch (misc::generic_error &e) {
+		MTEST(true, "2");
+	} catch (...) {
+		MTEST(false, "3");
+	}
+	
+	struct test_error : public misc::generic_error {};
+	
+	try {
+		XERUS_THROW(test_error());
+	} catch (test_error &e) {
+		MTEST(true, "3");
+	} catch (...) {
+		MTEST(false, "3");
+	}
+	
+	try {
+		XERUS_THROW(test_error() << "test");
+	} catch (test_error &e) {
+		MTEST(true, "4");
+	} catch (...) {
+		MTEST(false, "4");
+	}
+)
