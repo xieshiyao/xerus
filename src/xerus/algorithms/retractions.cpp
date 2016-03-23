@@ -60,18 +60,6 @@ namespace xerus {
 // 		_U.move_core(0);
 	}
 	
-	//TODO this should use low-level calls and then be part of Tensor
-	static Tensor pseudoInverse(const Tensor &_A) {
-		Index i1,i2,i3,i4;
-		Tensor U,S,V;
-		(U(i1,i2), S(i2,i3), V(i3,i4)) = SVD(_A(i1,i4));
-		S.modify_diag_elements([](value_t &a){ a = 1/a;});
-		Tensor res;
-		res(i1,i4) = V(i2,i1) * S(i2,i3) * U(i4,i3);
-		
-		return res;
-	}
-	
 	void TTTangentVector::set_base(const TTTensor &_newBase) {
 		REQUIRE(_newBase.dimensions == baseL.dimensions, "");
 		baseL = _newBase;
@@ -106,7 +94,8 @@ namespace xerus {
 			std::unique_ptr<Tensor> newComponent(new Tensor);
 			const Tensor &UComp = baseL.get_component(currIdx);
 			Tensor V;
-			Tensor uuInv = pseudoInverse(leftStackUU.back());
+			Tensor uuInv;
+			calculate_pseudo_inverse(uuInv, leftStackUU.back(), 1);
 			V(i1,r,j1) =  uuInv(i1,s)* leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 // 			if (i!=baseL.degree()) {
 // 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
@@ -280,7 +269,7 @@ namespace xerus {
 	
 	// TODO do this without creating the change_direction tensor?
 	void ProjectiveVectorTransport(const TTTensor &_newBase, TTTangentVector &_tangentVector) {
-		REQUIRE(_newBase.cannonicalized && _newBase.corePosition == 0, "tangent vectors only implemented for core position 0 atm");
+		REQUIRE(_newBase.cannonicalized && _newBase.corePosition == 0, "Tangent vectors only implemented for core position 0 atm");
 		
 		_tangentVector = TTTangentVector(_newBase, TTTensor(_tangentVector));
 	}

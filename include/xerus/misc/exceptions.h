@@ -35,11 +35,10 @@ namespace xerus {
 		 * @details All exceptions thrown by xerus are of this type (or subclasses thereof).
 		 */
         class generic_error : public std::exception {
-        protected:
+        public:
 			///@brief String containing all relevant information concerning this error.
             std::string error_info;
             
-        public:
 			/// @brief: Normal constructor without preset error_info.
             generic_error();
             
@@ -47,14 +46,23 @@ namespace xerus {
             generic_error(const generic_error &_other) noexcept;
             
             const char* what() const noexcept override;
-            
-			/// @brief The pipe operator allows to add everything that can be converted to string to the error_info. 
-            template<class T>
-            generic_error& operator<<(const T &_info) noexcept {
-                error_info += to_string(_info);
-                return *this;
-            }
         };
+		
+		/// @brief The pipe operator allows to add everything that can be converted to string to the error_info and derived exceptions. 
+		template<typename error_t, class T>
+		typename std::enable_if<std::is_base_of<generic_error, error_t>::value, error_t&>::type
+		operator<< (error_t &o, const T &_info) noexcept {
+			o.error_info += to_string(_info);
+			return o;
+		}
+		
+		/// @brief The pipe operator allows to add everything that can be converted to string to the error_info and derived exceptions. 
+		template<typename error_t, class T>
+		typename std::enable_if<std::is_base_of<generic_error, error_t>::value, error_t&>::type
+		operator<< (error_t &&o, const T &_info) noexcept {
+			o.error_info += to_string(_info);
+			return o;
+		}
     }
 }
 

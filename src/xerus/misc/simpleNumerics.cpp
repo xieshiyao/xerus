@@ -270,7 +270,7 @@ namespace xerus {
         template<class ft_type>
         ft_type ShanksTransformation<ft_type>::best_estimate() const {
             if (values.size() == 0) {
-                XERUS_THROW(xerus::misc::generic_error() << "tried to extract limit of empty sequence"); // TODO remove xerus::misc
+                XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values[(values.size()-1) % 2];
             }
@@ -315,7 +315,7 @@ namespace xerus {
         template<class ft_type>
         ft_type RichardsonExtrapolation<ft_type>::best_estimate() const {
             if (values.size() == 0) {
-                XERUS_THROW(xerus::misc::generic_error() << "tried to extract limit of empty sequence"); // TODO remove xerus::misc
+                XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values.front();
             }
