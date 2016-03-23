@@ -61,7 +61,7 @@ include makeIncludes/optimization.mk
 # OPTIMIZE += -fprofile-generate	# Generate Profile output for optimization 
 # OPTIMIZE += -fprofile-use		# Use a previously generated profile output
 
-OTHER += -std=c++11			# Use current C++14 standard
+OTHER += -std=c++11			# Use the C++11 standard
 OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
 
 
@@ -205,7 +205,7 @@ build/%.o: %.cpp $(MINIMAL_DEPS)
 
 
 # Build rule for unit test objects
-ifndef USE_CLANG
+ifdef USE_GCC
 build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS) build/.preCompileHeaders/xerus.h.gch
 	mkdir -p $(dir $@)
 	$(CXX) -D TEST_ -I build/.preCompileHeaders $< -c $(FLAGS) -MMD -o $@

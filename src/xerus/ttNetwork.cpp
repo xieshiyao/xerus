@@ -1019,15 +1019,20 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	
 	
-	template<bool isOperator>
-	bool TTNetwork<isOperator>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
+	
+	template<>
+	bool TTNetwork<false>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&, internal::IndexedTensorReadOnly<TensorNetwork>&&, internal::IndexedTensorReadOnly<TensorNetwork>&&) {
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
-		if(!isOperator) { return false; }
+		return false;
+	}
+	
+	template<>
+	bool TTNetwork<true>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
 		_me.assign_indices();
 		_other.assign_indices();
 		
 		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
-		const internal::TTStack<isOperator>* const meTTStack = dynamic_cast<const internal::TTStack<isOperator>*>(_me.tensorObjectReadOnly);
+		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
 		REQUIRE(meTT || meTTStack, "Internal Error.");
 		
 		const TTTensor* const otherTT = dynamic_cast<const TTTensor*>(_other.tensorObjectReadOnly);
@@ -1100,7 +1105,6 @@ namespace xerus {
 				return false;
 			}
 		}
-		return false;
 	}
 	
 	

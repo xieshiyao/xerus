@@ -56,12 +56,12 @@ namespace xerus {
 			explicit IndexedTensorMoveable(IndexedTensorReadOnly<tensor_type>&& _other);
 			
 			///@brief Allow explicit conversions from indexed TensorNetworks to indexed Tensors
-			template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>{}, int>::type = 0>
+			template<class X = tensor_type, typename std::enable_if<std::is_base_of<Tensor, typename std::decay<X>::type>::value, int>::type = 0>
 			explicit IndexedTensorMoveable(IndexedTensorReadOnly<TensorNetwork>&& _other );
 			
 			///@brief Allow implicit conversions from indexed Tensors to indexed TensorNetworks
 			#if __GNUC__ > 4
-			template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>{}, int>::type = 0>
+			template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>::value, int>::type = 0>
 			#else
 			template<class X = tensor_type>
 			#endif

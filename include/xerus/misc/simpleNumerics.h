@@ -94,7 +94,7 @@ namespace xerus {  namespace misc {
 		virtual ft_type error_approximate() const = 0;
 		virtual void reset() = 0;
 		
-		virtual ~LimitExtractor() = default;
+		virtual ~LimitExtractor() {};
 	};
 
 	/** 
@@ -118,7 +118,7 @@ namespace xerus {  namespace misc {
 		
 		void reset() override;
 		
-		~ShanksTransformation() override = default;
+		virtual ~ShanksTransformation() {};
 	};
 
 
@@ -144,7 +144,7 @@ namespace xerus {  namespace misc {
 		
 		void reset() override;
 		
-		~RichardsonExtrapolation() override = default;
+		virtual ~RichardsonExtrapolation() {};
 	};
 
 } } // namespaces

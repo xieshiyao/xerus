@@ -22,9 +22,12 @@ endif
 # Set LTO usage
 ifdef USE_LTO
 	DEBUG += -D USE_LTO
-	ifndef USE_CLANG
+	ifdef USE_GCC
 		OPTIMIZE += -flto=$(COMPILE_THREADS)	    # Use LTO at compiling using X threads
 		OPTIMIZE += -fno-fat-lto-objects	        # No none LTO code in object files
+	else ifdef USE_ICC
+		OPTIMIZE += -ipo
+		OPTIMZIE += -fno-fat-lto-objects		    # No none LTO code in object files
 	else
 		OPTIMIZE += -flto			                # Use LTO at compiling
 	endif
@@ -40,7 +43,7 @@ else ifdef HIGH_OPTIMIZATION
 	OPTIMIZE += -march=native			# Compile only for native architecture 
 	
 	# Stuff that is not enabled and might help
-	ifndef USE_CLANG
+	ifdef USE_GCC
 		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
 		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
 		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.
@@ -71,7 +74,7 @@ else ifdef DANGEROUS_OPTIMIZATION
 	OPTIMIZE += -Ofast				# Even more optimization, using non iso conform C++ operations
 	
 	# Stuff that is not enabled and might help
-	ifndef USE_CLANG
+	ifdef USE_GCC
 		OPTIMIZE += -fbranch-target-load-optimize	# Perform branch target register load optimization before prologue / epilogue threading. 
 		OPTIMIZE += -fgcse-las				# When -fgcse-las is enabled, the global common subexpression elimination pass eliminates redundant loads that come after stores to the same memory location (both partial and full redundancies). 
 		OPTIMIZE += -fgcse-sm				# When -fgcse-sm is enabled, a store motion pass is run after global common subexpression elimination.

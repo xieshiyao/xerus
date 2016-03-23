@@ -36,8 +36,8 @@
 #define ALLOW_MOVE_TWO(newTypeName, allowedType1, allowedType2) \
     template<class newTypeName, \
         typename std::enable_if<\
-               std::is_base_of<allowedType1, typename std::decay<newTypeName>::type>{} \
-            || std::is_base_of<allowedType2, typename std::decay<newTypeName>::type>{}, \
+               std::is_base_of<allowedType1, typename std::decay<newTypeName>::type>::value \
+            || std::is_base_of<allowedType2, typename std::decay<newTypeName>::type>::value, \
             int> \
         ::type = 0 \
     >
@@ -46,7 +46,7 @@
  * @def ADD_MOVE(newTypeName, oldTypeName)
  * @brief Adds a template arguments whithin an existing template argument list, which can be of only one specified class, but allows & and && types.
  */
-#define ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>{}, int>::type = 0
+#define ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>::value, int>::type = 0
 
 #if __GNUC__ > 4 || defined(__clang__)
 

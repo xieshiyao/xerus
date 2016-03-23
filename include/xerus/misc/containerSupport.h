@@ -261,11 +261,17 @@ namespace std {
 	
 	
 	///@brief Allow to pipe normal containers to ostreams.
-	template<template<class, class...> class container_t, class item_t, class... rest_t, typename std::enable_if<
-				std::is_base_of<std::vector<item_t>, typename std::decay<container_t<item_t>>::type>{} 
-				|| std::is_base_of<std::set<item_t>, typename std::decay<container_t<item_t>>::type>{}, 
-				int>::type = 0>
-	std::ostream& operator<<(std::ostream& _out, const container_t<item_t, rest_t...>& _container) {
+	template<class item_t, class... rest_t>
+	std::ostream& operator<<(std::ostream& _out, const std::vector<item_t, rest_t...>& _container) {
+		if(_container.size() == 0) { _out << "{ }"; return _out; }
+		_out << "{ ";
+		for(const item_t& item : _container) { _out << item << ", "; }
+		_out << "\b\b }";
+		return _out;
+	}
+	
+	template<class item_t, class... rest_t>
+	std::ostream& operator<<(std::ostream& _out, const std::set<item_t, rest_t...>& _container) {
 		if(_container.size() == 0) { _out << "{ }"; return _out; }
 		_out << "{ ";
 		for(const item_t& item : _container) { _out << item << ", "; }

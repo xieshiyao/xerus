@@ -9,27 +9,30 @@ WARNINGS += -pedantic						# Strict ISO C++ checks (warn everywhere the ISO says
 
 
 # Additionall Warnings not aktivated by any level
-WARNINGS += -Wshadow						# Warn about variables being shadowed
-WARNINGS += -Wconversion					# warn double -> uint conversions etc.
-WARNINGS += -Wswitch-default					# Warn whenever a switch statement does not have a default case. 
-WARNINGS += -Wfloat-equal					# Warn if floating-point values are used in equality comparisons. 
 WARNINGS += -Wundef						# Warn if an undefined identifier is evaluated in an ‘#if’ directive. 
 WARNINGS += -Wunreachable-code					# Warn about unreachable code
 WARNINGS += -Wdisabled-optimization	                	# Warn if a requested optimization pass is disabled
-WARNINGS += -Wpacked						# misaligned structs (reordering of the fields might help)
-WARNINGS += -Wcast-align					# Warn whenever a pointer is cast such that the required alignment of the target is increased. 
 WARNINGS += -Wcast-qual						# Warn whenever a pointer is cast so as to remove a type qualifier from the target type. 
 WARNINGS += -Wsign-promo					# Warn when overload resolution chooses a promotion from unsigned or enumerated type to a signed type
-WARNINGS += -Wctor-dtor-privacy					# Warn when a class seems unusable.
 WARNINGS += -Winit-self						# Warn about uninitialized variables that are initialized with themselves.
-WARNINGS += -Wold-style-cast					# Warn if an old-style (C-style) cast to a non-void type is used within a C++ program. 
 WARNINGS += -Wnon-virtual-dtor					# Warn when a class has virtual functions and an accessible non-virtual destructor.
 WARNINGS += -Woverloaded-virtual				# Warn when a function declaration hides virtual functions from a base class.
+
+ifndef USE_ICC
+	WARNINGS += -Wconversion					# warn double -> uint conversions etc.
+	WARNINGS += -Wfloat-equal					# Warn if floating-point values are used in equality comparisons. 
+	WARNINGS += -Wshadow						# Warn about variables being shadowed (for ICC this is incompatible with openmp?)
+	WARNINGS += -Wswitch-default					# Warn whenever a switch statement does not have a default case. 
+	WARNINGS += -Wpacked						# misaligned structs (reordering of the fields might help)
+	WARNINGS += -Wcast-align					# Warn whenever a pointer is cast such that the required alignment of the target is increased. 
+	WARNINGS += -Wctor-dtor-privacy					# Warn when a class seems unusable.
+	WARNINGS += -Wold-style-cast					# Warn if an old-style (C-style) cast to a non-void type is used within a C++ program. 
+endif
 
 ifdef USE_CLANG
 	WARNINGS += -Wlogical-op-parentheses				# Warn about suspicious uses of logical operators in expressions
 	WARNINGS += -Wno-error=return-type-c-linkage			# do not warn about c-incompatible return types in "extern-c" blocks
-else
+else ifdef USE_GCC
 	WARNINGS += -Wuseless-cast 					# Warn when an expression is casted to its own type. 
 	WARNINGS += -Wno-error=useless-cast				# fails on gcc 5.1.1 otherwise
 	WARNINGS += -Wlogical-op					# Warn about suspicious uses of logical operators in expressions
@@ -58,6 +61,11 @@ endif
 WARNINGS += -Wno-comment					# Ignore warning about /* inside /*...*/
 WARNINGS += -Wno-unknown-pragmas				# Allow unknwon pragmas (e.g. openmp)
 WARNINGS += -Wno-unused-parameter				# No warning about unused parameters
+
+ifdef USE_ICC
+	WARNINGS += -wd2304					# disable ICC's "warning #2304: non-explicit constructor with single argument may cause implicit type conversion"
+	WARNINGS += -wd2305					# disable ICC's "error #2305: declaration of 'explicit' constructor without a single argument is redundant"
+endif
 
 ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Error Options - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ##
 WARNINGS += -Werror				        	# Promote ALL Warnings to Errors

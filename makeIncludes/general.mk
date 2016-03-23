@@ -6,6 +6,17 @@ ifneq (,$(findstring clang, $(CXX)))
 	USE_CLANG = true
 endif
 
+ifneq (,$(findstring icpc, $(CXX)))
+	USE_ICC = true
+endif
+
+ifneq (,$(findstring icc, $(CXX)))
+	USE_ICC = true
+endif
+
+ifneq (,$(findstring g++, $(CXX)))
+	USE_GCC = true
+endif
 
 # include fancy_callstack specific libraries (binutils + dependencies)
 ifdef NO_FANCY_CALLSTACK
