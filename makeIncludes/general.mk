@@ -15,7 +15,9 @@ ifneq (,$(findstring icc, $(CXX)))
 endif
 
 ifneq (,$(findstring g++, $(CXX)))
-	USE_GCC = true
+	ifndef USE_CLANG
+		USE_GCC = true
+	endif
 endif
 
 # include fancy_callstack specific libraries (binutils + dependencies)
