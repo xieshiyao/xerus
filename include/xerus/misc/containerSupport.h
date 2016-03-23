@@ -216,7 +216,11 @@ namespace xerus {
 namespace std {
 	
 	///@brief Add a + operator for iterators and size_t to avoid signed/unsigned errors.
-	template<class IteratorType, typename std::enable_if<std::is_same<typename std::iterator_traits<IteratorType>::difference_type, long>::value, bool>::type = true>
+	template<class IteratorType, 
+		typename std::enable_if<
+			std::is_same<typename std::iterator_traits<IteratorType>::difference_type, long>::value
+			&& std::is_class<IteratorType>::value
+		, bool>::type = true>
 	IteratorType operator+(const IteratorType& _iterator, const size_t _add) {
 		return _iterator + typename std::iterator_traits<IteratorType>::difference_type(_add);
 	}
