@@ -46,7 +46,7 @@
 		static constexpr const size_t BUCKET_SIZE = 64;
 		static constexpr const size_t ALIGNMENT = 64;
 		static constexpr const size_t NUM_BUCKETS = 64;
-		static constexpr const size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS;
+		static constexpr const size_t SMALLEST_NOT_CACHED_SIZE = BUCKET_SIZE * NUM_BUCKETS - 1;
 		
 		static_assert(BUCKET_SIZE > 1, "Buckets need to be at least 2 bytes large.");
 		static_assert(BUCKET_SIZE % ALIGNMENT == 0, "Bucket size needs to be aligned");
