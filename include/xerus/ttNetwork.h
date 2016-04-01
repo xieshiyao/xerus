@@ -583,7 +583,7 @@ namespace xerus {
 		 * @note that this excludes header information
 		 */
 		template<bool isOperator>
-		struct stream_writer<TTNetwork<isOperator>> {
+		struct StreamWriter<TTNetwork<isOperator>> {
 			void operator()(std::ostream &_stream, const TTNetwork<isOperator> &_obj, const FileFormat _format) const {
 				if(_format == FileFormat::TSV) {
 					_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
@@ -604,7 +604,7 @@ namespace xerus {
 		 * @brief Restores the TensorNetwork from a stream of data. 
 		 */
 		template<bool isOperator>
-		struct stream_reader<TTNetwork<isOperator>> {
+		struct StreamReader<TTNetwork<isOperator>> {
 			void operator()(std::istream &_stream, TTNetwork<isOperator> &_obj, const FileFormat _format) const {
 				uint64 ver = read_from_stream<uint64>(_stream, _format);
 				REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");

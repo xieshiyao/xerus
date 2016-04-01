@@ -40,44 +40,36 @@ namespace xerus { namespace misc {
 	 * BINARY: binary output, exact storage
 	 * TSV: tab-separated-value lists
 	 */
-	enum FileFormat { BINARY, TSV };
+	enum class FileFormat { BINARY, TSV };
 	
 	// ---------------------------------------- write_to_stream -------------------------------------------------------------
 	
 	template<class T, class enable = void>
-	struct stream_writer {
-		void operator()(std::ostream& _stream, const T &_value, FileFormat _format) const;
+	struct StreamWriter {
+		void operator()(std::ostream& _stream, const T& _value, const FileFormat _format) const;
 	};
 	
 	template<class T, typename std::enable_if<std::is_arithmetic<T>::value, bool>::type = true>
-	void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format, const char _space) {
+	void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format) {
 		if(_format == FileFormat::TSV) {
-			_stream << _value << _space;
+			_stream << _value << '\t';
 		} else {
 			_stream.write(reinterpret_cast<const char*>(&_value), std::streamsize(sizeof(T)));
 		}
 	}
 	
-	template<class T>
-	struct stream_writer<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
-		void operator()(std::ostream& _stream, const T &_value, FileFormat _format) const {
-			write_to_stream<T>(_stream, _value, _format, '\t');
-		}
-	};
-	
-	template<class T>
-	void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format = BINARY) {
-		static stream_writer<T> callObj;
-		callObj(_stream, _value, _format);
+	template<class T, typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type = true>
+	void write_to_stream(std::ostream& _stream, const T& _value, const FileFormat _format = FileFormat::BINARY) {
+		StreamWriter<T> writerObj;
+		writerObj(_stream, _value, _format);
 	}
 	
 	
-	
 	template<class item_t, class... rest_t>
-	struct stream_writer<std::vector<item_t, rest_t...>> {
-		void operator()(std::ostream& _stream, const std::vector<item_t, rest_t...> &_value, FileFormat _format) const {
+	struct StreamWriter<std::vector<item_t, rest_t...>> {
+		void operator()(std::ostream& _stream, const std::vector<item_t, rest_t...> &_value, const FileFormat _format) const {
 			write_to_stream<uint64>(_stream, _value.size(), _format);
-			for (size_t i=0; i<_value.size(); ++i) {
+			for (size_t i = 0; i < _value.size(); ++i) {
 				write_to_stream<item_t>(_stream, _value[i], _format);
 			}
 		}
@@ -87,13 +79,13 @@ namespace xerus { namespace misc {
 	// ---------------------------------------- read_from_stream -------------------------------------------------------------
 	
 	template<class T, class enable = void>
-	struct stream_reader {
-		void operator()(std::istream& _stream, T &_obj, FileFormat _format) const;
+	struct StreamReader {
+		void operator()(std::istream& _stream, T &_obj, const FileFormat _format) const;
 	};
 	
 	template<class T>
-	struct stream_reader<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
-		void operator()(std::istream& _stream, T &_obj, FileFormat _format) const {
+	struct StreamReader<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+		void operator()(std::istream& _stream, T &_obj, const FileFormat _format) const {
 			if(_format == FileFormat::TSV) {
 				_stream >> _obj;
 			} else {
@@ -104,7 +96,7 @@ namespace xerus { namespace misc {
 	
 	template<class T, class enable = void>
 	void read_from_stream(std::istream& _stream, T &_obj, const FileFormat _format) {
-		static stream_reader<T> callObj;
+		static StreamReader<T> callObj;
 		callObj(_stream, _obj, _format);
 	}
 	
@@ -123,10 +115,10 @@ namespace xerus { namespace misc {
 	
 	
 	template<class item_t, class... rest_t>
-	struct stream_reader<std::vector<item_t, rest_t...>> {
-		void operator()(std::istream& _stream, std::vector<item_t, rest_t...> &_value, FileFormat _format) const {
+	struct StreamReader<std::vector<item_t, rest_t...>> {
+		void operator()(std::istream& _stream, std::vector<item_t, rest_t...> &_value, const FileFormat _format) const {
 			_value.resize(read_from_stream<uint64>(_stream, _format));
-			for (size_t i=0; i<_value.size(); ++i) {
+			for (size_t i = 0; i < _value.size(); ++i) {
 				read_from_stream<item_t>(_stream, _value[i], _format);
 			}
 		}
@@ -137,7 +129,7 @@ namespace xerus { namespace misc {
 	
 	
 	template<class T>
-	void save_to_file(const T &_obj, const std::string &_filename, FileFormat _format = BINARY) {
+	void save_to_file(const T &_obj, const std::string &_filename, const FileFormat _format = FileFormat::BINARY) {
 		try {
 			if (_format == FileFormat::BINARY) {
 				std::ofstream out(_filename, std::ofstream::out | std::ofstream::binary);
@@ -200,6 +192,4 @@ namespace xerus { namespace misc {
 		return result;
 	}
 	
-} }
-
-
+}}

@@ -1467,7 +1467,7 @@ namespace xerus {
 			for(const TensorNetwork::Link& el : _obj.externalLinks) {
 				write_to_stream<uint64>(_stream, el.other, _format);
 				write_to_stream<uint64>(_stream, el.indexPosition, _format);
-				write_to_stream<uint64>(_stream, el.dimension, _format, '\n');
+				write_to_stream<uint64>(_stream, el.dimension, _format);
 			}
 			if(_format == FileFormat::TSV) { _stream << "\n\n"; }
 			
@@ -1475,12 +1475,12 @@ namespace xerus {
 			write_to_stream<uint64>(_stream, _obj.nodes.size(), _format);
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
 			for(const TensorNetwork::TensorNode& node : _obj.nodes) {
-				write_to_stream<uint64>(_stream, node.neighbors.size(), _format, '\n');
+				write_to_stream<uint64>(_stream, node.neighbors.size(), _format);
 				for(const TensorNetwork::Link& link : node.neighbors) {
 					write_to_stream<bool>(_stream, link.external, _format);
 					write_to_stream<uint64>(_stream, link.other, _format);
 					write_to_stream<uint64>(_stream, link.indexPosition, _format);
-					write_to_stream<uint64>(_stream, link.dimension, _format, '\n');
+					write_to_stream<uint64>(_stream, link.dimension, _format);
 				}
 			}
 			if(_format == FileFormat::TSV) { _stream << '\n'; }

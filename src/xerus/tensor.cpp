@@ -1634,6 +1634,7 @@ namespace xerus {
 	
 	namespace misc {
 		
+		
 		template<>
 		void write_to_stream(std::ostream &_stream, const Tensor &_obj, const FileFormat _format) {
 			if(_format == FileFormat::TSV) {
@@ -1646,16 +1647,16 @@ namespace xerus {
 			write_to_stream(_stream, _obj.dimensions, _format);
 			
 			if (_obj.representation == Tensor::Representation::Dense) {
-				write_to_stream<uint64>(_stream, 1, _format, '\n');
+				write_to_stream<uint64>(_stream, 1, _format);
 				for (size_t i = 0; i < _obj.size; ++i) {
 					write_to_stream<value_t>(_stream, _obj[i], _format);
 				}
 			} else {
 				write_to_stream<uint64>(_stream, 2, _format);
-				write_to_stream<uint64>(_stream, _obj.get_unsanitized_sparse_data().size(), _format, '\n');
+				write_to_stream<uint64>(_stream, _obj.get_unsanitized_sparse_data().size(), _format);
 				for (const auto &d : _obj.get_unsanitized_sparse_data()) {
 					write_to_stream<uint64>(_stream, d.first, _format);
-					write_to_stream<value_t>(_stream, _obj.factor*d.second, _format, '\n');
+					write_to_stream<value_t>(_stream, _obj.factor*d.second, _format);
 				}
 			}
 		}
