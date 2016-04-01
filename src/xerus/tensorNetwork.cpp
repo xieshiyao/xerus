@@ -541,7 +541,7 @@ namespace xerus {
 			const TensorNetwork::Link& otherLink = otherNode.neighbors[el.indexPosition];
 			REQUIRE(otherNode.degree() > el.indexPosition, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target node only has " << otherNode.degree() << " links.");
 			REQUIRE(otherLink.external, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target link says it is not external.");
-			REQUIRE(otherLink.indexPosition == n, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the target link points to IP " << otherLink.indexPosition << " instead to " << n << ".");
+			REQUIRE(otherLink.indexPosition == n, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ", but the nodes link points to IP " << otherLink.indexPosition << " instead of " << n << ".");
 			REQUIRE(otherLink.dimension == el.dimension, "External link " << n << " is inconsitent. The link points to node " << el.other << " at IP " << el.indexPosition << ". The dimension specified by the external link is " << el.dimension << " but the one of the target link is " << otherLink.dimension << ".");
 		}
 		
@@ -687,8 +687,8 @@ namespace xerus {
 				}
 				
 				// Remove indices
-				_base.indices.erase(_base.indices.begin()+long(j));
-				_base.indices.erase(_base.indices.begin()+long(i));
+				_base.indices.erase(_base.indices.begin()+j);
+				_base.indices.erase(_base.indices.begin()+i);
 			} else {
 				passedDegree += idx.span;
 				++i;
@@ -707,7 +707,7 @@ namespace xerus {
 				}
 				
 				// Remove index
-				_base.indices.erase(_base.indices.begin()+long(i));
+				_base.indices.erase(_base.indices.begin()+i);
 			} else {
 				passedDegree += idx.span;
 				++i;
@@ -955,32 +955,40 @@ namespace xerus {
 	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
 		require_valid_network();
 		
-		REQUIRE(_dimension < degree(), "invalid dimension to remove");
-		REQUIRE(_slatePosition < dimensions[_dimension], "invalide _slatePosition to choose");
+		REQUIRE(_dimension < degree(), "Invalid dimension to remove");
+		REQUIRE(_slatePosition < dimensions[_dimension], "Invalide _slatePosition to choose");
 		
 		const size_t extNode = externalLinks[_dimension].other;
 		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
 		
 		// Correct the nodes external links
 		for(size_t i = _dimension+1; i < dimensions.size(); ++i) {
+			REQUIRE(nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition > 0, "Woo");
 			nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition--;
 		}
 		
 		externalLinks.erase(externalLinks.begin()+_dimension);
 		dimensions.erase(dimensions.begin()+_dimension);
 		
-		// Correct the others links to affected node.
+		// Correct the others links of the affected node.
 		for(size_t i = extNodeIndexPos+1; i < nodes[extNode].neighbors.size(); ++i) {
 			const Link& link = nodes[extNode].neighbors[i];
 			if(link.external) {
 				externalLinks[link.indexPosition].indexPosition--; 
 			} else {
-				nodes[link.other].neighbors[link.indexPosition].indexPosition--;
+				// Check critical self links (i.e. where index position was allready modified).
+				if(link.other == extNode && link.indexPosition+1 > extNodeIndexPos && link.indexPosition < i) { 
+					nodes[link.other].neighbors[link.indexPosition+1].indexPosition--;
+				} else {
+					nodes[link.other].neighbors[link.indexPosition].indexPosition--;
+				}
 			}
 		}
 		
 		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
 		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
+		
+		require_valid_network();
 		
 		contract_unconnected_subnetworks();
 	}

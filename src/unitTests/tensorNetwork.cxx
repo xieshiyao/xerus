@@ -69,6 +69,90 @@ UNIT_TEST(TensorNetwork, contractions_of_3_to_degree_0,
 	TEST(misc::approx_equal(a2, a3, 1e-20*a2));
 )
 
+UNIT_TEST2(TensorNetwork, traces) {
+	Tensor A({2,2});
+    Tensor B({2,2,2});
+    Tensor C({2,2,2,2});
+    Tensor res({});
+    
+    Index i, j, k, l, p;
+    
+    A[{0,0}] = 1;
+    A[{0,1}] = 2;
+    A[{1,0}] = 4;
+    A[{1,1}] = 8;
+	TEST(!A.is_sparse());
+	Tensor sA = A.sparse_copy();
+    
+    B[{0,0,0}] = 1;
+    B[{0,0,1}] = 2;
+    B[{0,1,0}] = 4;
+    B[{0,1,1}] = 8;
+    B[{1,0,0}] = 16;
+    B[{1,0,1}] = 32;
+    B[{1,1,0}] = 64;
+    B[{1,1,1}] = 128;
+	TEST(!B.is_sparse());
+	Tensor sB = B.sparse_copy();
+    
+    C[{0,0,0,0}] = 1;
+    C[{0,0,0,1}] = 2;
+    C[{0,0,1,0}] = 4;
+    C[{0,0,1,1}] = 8;
+    C[{0,1,0,0}] = 16;
+    C[{0,1,0,1}] = 32;
+    C[{0,1,1,0}] = 64;
+    C[{0,1,1,1}] = 128;
+    C[{1,0,0,0}] = 256;
+    C[{1,0,0,1}] = 512;
+    C[{1,0,1,0}] = 1024;
+    C[{1,0,1,1}] = 2048;
+    C[{1,1,0,0}] = 4096;
+    C[{1,1,0,1}] = 8192;
+    C[{1,1,1,0}] = 16384;
+    C[{1,1,1,1}] = 32768;
+	TEST(!C.is_sparse());
+	Tensor sC = C.sparse_copy();
+    
+    res() = A(i,i)*sA(j,j);
+    MTEST(approx_entrywise_equal(res, {9*9}), res[0]);
+    
+    res(j) = B(i,i,j)*sA(k,k);
+    MTEST(approx_entrywise_equal(res, {9*65, 9*130}), res.to_string());
+    res(j) = sB(i,j,i)*A(k,k);
+    MTEST(approx_entrywise_equal(res, {9*33, 9*132}), res.to_string());
+    res() = B(j,i,i)*sB(k,k,j);
+    MTEST(approx_entrywise_equal(res, {9*65 + 144*130}), res.to_string());
+    
+    res(j,k) = C(i,i,j,k)*sA(l,l);
+    MTEST(approx_entrywise_equal(res, {4097*9, 8194*9, 16388*9, 32776*9}), res.to_string());
+    res(j,k) = sC(i,j,i,k)*sA(l,l);
+    MTEST(approx_entrywise_equal(res, {1025*9, 2050*9, 16400*9, 32800*9}), res.to_string());
+    
+    res(p,k,j) = sB(l,p,l)*C(i,j,i,k);
+    MTEST(approx_entrywise_equal(res, {33*1025, 33*16400, 33*2050, 33*32800, 132*1025, 132*16400, 132*2050, 132*32800}), res.to_string());
+    res(p,k,j) = B(l,p,l)*sC(j,i,i,k);
+    MTEST(approx_entrywise_equal(res, {33*65, 33*16640, 33*130, 33*33280, 132*65, 132*16640, 132*130, 132*33280}), res.to_string());
+    res(p,k,j) = sB(l,p,l)*C(j,i,k,i);
+    MTEST(approx_entrywise_equal(res, {33*33, 33*8448, 33*132, 33*33792, 132*33, 132*8448, 132*132, 132*33792}), res.to_string());
+    
+    res(k) = sB(l,l,1)*C(0,k,i,i);
+    MTEST(approx_entrywise_equal(res, {130*9, 130*144}), res.to_string());
+    res(k) = B(l,l,0)*sC(1,k,i,i);
+    MTEST(approx_entrywise_equal(res, {65*2304, 65*36864}), res.to_string());
+    res(j) = sB(l,l,0)*C(j,0,i,i);
+    MTEST(approx_entrywise_equal(res, {65*9, 65*2304}), res.to_string());
+    res(j) = sB(l,l,1)*sC(j,1,i,i);
+    MTEST(approx_entrywise_equal(res, {130*144, 130*36864}), res.to_string());
+    
+    res() = C(i,i,j,j)*sA(k,k);
+    MTEST(approx_entrywise_equal(res, {(1+8+4096+32768)*9}), res.to_string());
+    res() = C(i,j,i,j)*sA(k,k);
+    MTEST(approx_entrywise_equal(res, {(1+32+1024+32768)*9}), res.to_string());
+    res() = C(i,j,j,i)*sA(k,k);
+    MTEST(approx_entrywise_equal(res, {(1+64+512+32768)*9}), res.to_string());
+}});
+
 UNIT_TEST(TensorNetwork, contraction_single_node_trace,
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);

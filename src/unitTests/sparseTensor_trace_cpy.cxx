@@ -24,12 +24,12 @@
 using namespace xerus;
 
 UNIT_TEST(SparseTensor, Traces,
-    Tensor A({2,2}, Tensor::Representation::Sparse);
-    Tensor B({2,2,2}, Tensor::Representation::Sparse);
-    Tensor C({2,2,2,2}, Tensor::Representation::Sparse);
-    Tensor res1({}, Tensor::Representation::Sparse);
-    Tensor res2({2}, Tensor::Representation::Sparse);
-    Tensor res3({2,2}, Tensor::Representation::Sparse);
+    Tensor A({2,2});
+    Tensor B({2,2,2});
+    Tensor C({2,2,2,2});
+    Tensor res1({});
+    Tensor res2({2});
+    Tensor res3({2,2});
     
     Index i, j, k;
     
@@ -37,6 +37,7 @@ UNIT_TEST(SparseTensor, Traces,
     A[{0,1}] = 2;
     A[{1,0}] = 4;
     A[{1,1}] = 8;
+	A.use_sparse_representation();
     
     
     B[{0,0,0}] = 1;
@@ -47,6 +48,7 @@ UNIT_TEST(SparseTensor, Traces,
     B[{1,0,1}] = 32;
     B[{1,1,0}] = 64;
     B[{1,1,1}] = 128;
+	B.use_sparse_representation();
     
     C[{0,0,0,0}] = 1;
     C[{0,0,0,1}] = 2;
@@ -64,6 +66,7 @@ UNIT_TEST(SparseTensor, Traces,
     C[{1,1,0,1}] = 8192;
     C[{1,1,1,0}] = 16384;
     C[{1,1,1,1}] = 32768;
+	C.use_sparse_representation();
     
     res1() = A(i,i);
     TEST(approx_entrywise_equal(res1, {9}));

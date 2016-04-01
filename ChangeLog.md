@@ -5,8 +5,11 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 * TBD V2.3
  * Added save_to_file and load_from_file functions to store and restore Tensors and TensorNetworks in/from files.
  * Added SVD based calculate_pseudo_inverse function to Tensor.
+ * Added implementation for perform_trace() for sparse Tensors.
  * Fixed the pipe operator for xerus::misc::generic_exception to not destroy the type information.
+ * Bug fix in the handling of fixed indices in TensorNetworks.
  * Several static member function now warn if their return type is not used.
+ * Initial support for compilation with the intel ICC.
  
 * 2016-03-11 V2.2.1
  * Added support for 32bit systems.

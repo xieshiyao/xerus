@@ -33,14 +33,12 @@ UNIT_TEST(Tensor, Traces,
     
     Index i, j, k;
     
-	TEST(A.is_sparse());
     A[{0,0}] = 1;
     A[{0,1}] = 2;
     A[{1,0}] = 4;
     A[{1,1}] = 8;
 	TEST(!A.is_sparse());
     
-    TEST(B.is_sparse());
     B[{0,0,0}] = 1;
     B[{0,0,1}] = 2;
     B[{0,1,0}] = 4;
@@ -67,6 +65,7 @@ UNIT_TEST(Tensor, Traces,
     C[{1,1,0,1}] = 8192;
     C[{1,1,1,0}] = 16384;
     C[{1,1,1,1}] = 32768;
+	TEST(!C.is_sparse());
     
     res1() = A(i,i);
     MTEST(approx_entrywise_equal(res1, {9}), res1[0]);
