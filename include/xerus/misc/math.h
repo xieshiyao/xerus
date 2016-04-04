@@ -110,7 +110,7 @@ namespace xerus {
 		}
 		
 		
-		///@brief: Checks for hard equality ( == operator) without compiler warnings.
+		///@brief: Checks for hard inequality ( != operator) without compiler warnings.
 		template<class T>
 		bool hard_not_equal(const T _a, const T _b) {
 			#pragma GCC diagnostic push

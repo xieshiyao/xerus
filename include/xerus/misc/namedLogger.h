@@ -235,10 +235,17 @@ namespace xerus {
 #endif
 
 #ifdef LOG_ABSOLUTE_TIME
+	//NOTE must not use std::put_time as it was not defined before GCC 5.0
 	#define XERUS_LOGGER_TIMESTAMP \
 		std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); \
+		std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);\
 		tmpStream \
-				<< std::put_time(std::localtime(&xerus_err_t), "%F %T") << " "
+				<< (1900+xerus_err_ltm->tm_year) \
+				<< '-' << std::setw(2) << std::setfill('0') << (xerus_err_ltm->tm_mon +1) \
+				<< '-' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday \
+				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour \
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min \
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' '
 #else
 	#define XERUS_LOGGER_TIMESTAMP \
 		std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();\
@@ -247,7 +254,7 @@ namespace xerus {
 				<< std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000) \
 				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60) \
 				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60) \
-				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << " "
+				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' '
 #endif
 
 
@@ -261,7 +268,7 @@ namespace xerus {
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
         XERUS_LOGGER_TIMESTAMP \
-				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ":" \
+				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ':' \
 				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
 				<< std::setfill(' ') << std::setw(12) << std::left \
 				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
