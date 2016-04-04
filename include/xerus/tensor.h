@@ -978,13 +978,11 @@ namespace xerus {
 		* @brief pipes all information necessary to restore the current tensor into @a _stream.
 		* @note that this excludes header information
 		*/
-		template<>
-		void write_to_stream(std::ostream &_stream, const Tensor &_obj, const FileFormat _format);
+		void stream_writer(std::ostream &_stream, const Tensor &_obj, const FileFormat _format);
 
 		/**
 		* @brief tries to restore the tensor from a stream of data. 
 		*/
-		template<>
-		void read_from_stream(std::istream &_stream, Tensor &_obj, const FileFormat _format);
+		void stream_reader(std::istream &_stream, Tensor &_obj, const FileFormat _format);
 	}
 }

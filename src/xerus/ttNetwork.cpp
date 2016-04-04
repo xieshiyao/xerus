@@ -1447,8 +1447,48 @@ namespace xerus {
 		return result;
 	}
 	
+	
 	//Explicit instantiation for both types
 	template TTNetwork<false> entrywise_product(const TTNetwork<false> &_A, const TTNetwork<false> &_B);
 	template TTNetwork<true> entrywise_product(const TTNetwork<true> &_A, const TTNetwork<true> &_B);
+	
+	namespace misc {
+		
+		template<bool isOperator>
+		void stream_writer(std::ostream& _stream, const TTNetwork<isOperator> &_obj, misc::FileFormat _format) {
+			if(_format == misc::FileFormat::TSV) {
+				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
+			}
+			// storage version number
+			write_to_stream<uint64>(_stream, 1, _format);
+			
+			// store TN specific data
+			write_to_stream<bool>(_stream, _obj.cannonicalized, _format);
+			write_to_stream<uint64>(_stream, _obj.corePosition, _format);
+			
+			// save rest of TN
+			write_to_stream<TensorNetwork>(_stream, _obj, _format);
+		}
+		template void stream_writer(std::ostream& _stream, const TTNetwork<true> &_obj, misc::FileFormat _format);
+		template void stream_writer(std::ostream& _stream, const TTNetwork<false> &_obj, misc::FileFormat _format);
+		
+		
+		template<bool isOperator>
+		void stream_reader(std::istream& _stream, TTNetwork<isOperator> &_obj, const misc::FileFormat _format) {
+			uint64 ver = read_from_stream<uint64>(_stream, _format);
+			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
+			
+			// load TN specific data
+			read_from_stream<bool>(_stream, _obj.cannonicalized, _format);
+			read_from_stream<uint64>(_stream, _obj.corePosition, _format);
+			
+			// load rest of TN
+			read_from_stream<TensorNetwork>(_stream, _obj, _format);
+			
+			_obj.require_correct_format();
+		}
+		template void stream_reader(std::istream& _stream, TTNetwork<true> &_obj, const misc::FileFormat _format);
+		template void stream_reader(std::istream& _stream, TTNetwork<false> &_obj, const misc::FileFormat _format);
+	}
 	
 }

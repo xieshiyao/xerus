@@ -582,13 +582,11 @@ namespace xerus {
 		* @brief Pipes all information necessary to restore the current TensorNetwork into @a _stream.
 		* @note that this excludes header information
 		*/
-		template<>
-		void write_to_stream(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format);
+		void stream_writer(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format);
 		
 		/**
 		* @brief Restores the TensorNetwork from a stream of data. 
 		*/
-		template<>
-		void read_from_stream(std::istream &_stream, TensorNetwork &_obj, const FileFormat _format);
+		void stream_reader(std::istream &_stream, TensorNetwork &_obj, const FileFormat _format);
 	}
 }

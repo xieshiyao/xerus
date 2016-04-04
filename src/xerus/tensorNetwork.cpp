@@ -1451,8 +1451,7 @@ namespace xerus {
 	
 	namespace misc {
 		
-		template<>
-		void write_to_stream(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format) {
+		void stream_writer(std::ostream &_stream, const TensorNetwork &_obj, const FileFormat _format) {
 			if(_format == FileFormat::TSV) {
 				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 			}
@@ -1492,8 +1491,7 @@ namespace xerus {
 			}
 		}
 			
-		template<>
-		void read_from_stream(std::istream& _stream, TensorNetwork &_obj, const FileFormat _format) {
+		void stream_reader(std::istream& _stream, TensorNetwork &_obj, const FileFormat _format) {
 			uint64 ver = read_from_stream<uint64>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			

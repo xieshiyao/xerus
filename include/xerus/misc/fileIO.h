@@ -43,87 +43,58 @@ namespace xerus { namespace misc {
 	enum class FileFormat { BINARY, TSV };
 	
 	// ---------------------------------------- write_to_stream -------------------------------------------------------------
-	
-	template<class T, class enable = void>
-	struct StreamWriter {
-		void operator()(std::ostream& _stream, const T& _value, const FileFormat _format) const;
-	};
+	template<class T>
+	_inline_ void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format) {
+		stream_writer(_stream, _value, _format);
+	}
 	
 	template<class T, typename std::enable_if<std::is_arithmetic<T>::value, bool>::type = true>
-	void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format) {
-		if(_format == FileFormat::TSV) {
+	void stream_writer(std::ostream& _stream, const T &_value, FileFormat _format) {
+		if (_format == FileFormat::TSV) {
 			_stream << _value << '\t';
 		} else {
 			_stream.write(reinterpret_cast<const char*>(&_value), std::streamsize(sizeof(T)));
 		}
 	}
 	
-	template<class T, typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type = true>
-	void write_to_stream(std::ostream& _stream, const T& _value, const FileFormat _format = FileFormat::BINARY) {
-		StreamWriter<T> writerObj;
-		writerObj(_stream, _value, _format);
-	}
-	
-	
-	template<class item_t, class... rest_t>
-	struct StreamWriter<std::vector<item_t, rest_t...>> {
-		void operator()(std::ostream& _stream, const std::vector<item_t, rest_t...> &_value, const FileFormat _format) const {
-			write_to_stream<uint64>(_stream, _value.size(), _format);
-			for (size_t i = 0; i < _value.size(); ++i) {
-				write_to_stream<item_t>(_stream, _value[i], _format);
-			}
+	template<class T>
+	void stream_writer(std::ostream& _stream, const std::vector<T> &_value, FileFormat _format) {
+		write_to_stream<uint64>(_stream, _value.size(), _format);
+		for (size_t i = 0; i < _value.size(); ++i) {
+			write_to_stream<T>(_stream, _value[i], _format);
 		}
-	};
+	}
 	
 	
 	// ---------------------------------------- read_from_stream -------------------------------------------------------------
-	
-	template<class T, class enable = void>
-	struct StreamReader {
-		void operator()(std::istream& _stream, T &_obj, const FileFormat _format) const;
-	};
-	
 	template<class T>
-	struct StreamReader<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
-		void operator()(std::istream& _stream, T &_obj, const FileFormat _format) const {
-			if(_format == FileFormat::TSV) {
-				_stream >> _obj;
-			} else {
-				_stream.read(reinterpret_cast<char*>(&_obj), sizeof(T));
-			}
-		}
-	};
-	
-	template<class T, class enable = void>
-	void read_from_stream(std::istream& _stream, T &_obj, const FileFormat _format) {
-		static StreamReader<T> callObj;
-		callObj(_stream, _obj, _format);
+	_inline_ void read_from_stream(std::istream& _stream, T &_obj, const FileFormat _format) {
+		stream_reader(_stream, _obj, _format);
 	}
 	
-	template<class T, typename std::enable_if<std::is_arithmetic<T>::value, bool>::type = true>
-	T read_from_stream(std::istream& _stream, const FileFormat _format) {
+	template<class T>
+	_inline_ T read_from_stream(std::istream& _stream, const FileFormat _format) {
 		T obj;
-		if(_format == FileFormat::TSV) {
-			_stream >> obj;
-		} else {
-			_stream.read(reinterpret_cast<char*>(&obj), sizeof(T));
-		}
+		stream_reader(_stream, obj, _format);
 		return obj;
 	}
 	
-	
-	
-	
-	template<class item_t, class... rest_t>
-	struct StreamReader<std::vector<item_t, rest_t...>> {
-		void operator()(std::istream& _stream, std::vector<item_t, rest_t...> &_value, const FileFormat _format) const {
-			_value.resize(read_from_stream<uint64>(_stream, _format));
-			for (size_t i = 0; i < _value.size(); ++i) {
-				read_from_stream<item_t>(_stream, _value[i], _format);
-			}
+	template<class T, typename std::enable_if<std::is_arithmetic<T>::value, bool>::type = true>
+	void stream_reader(std::istream& _stream, T &_obj, const FileFormat _format) {
+		if(_format == FileFormat::TSV) {
+			_stream >> _obj;
+		} else {
+			_stream.read(reinterpret_cast<char*>(&_obj), sizeof(T));
 		}
-	};
+	}
 	
+	template<class T>
+	void stream_reader(std::istream& _stream, std::vector<T> &_obj, const FileFormat _format) {
+		_obj.resize(read_from_stream<uint64>(_stream, _format));
+		for (size_t i = 0; i < _obj.size(); ++i) {
+			read_from_stream<T>(_stream, _obj[i], _format);
+		}
+	}
 	
 	// ---------------------------------------- save / load file -------------------------------------------------------------
 	
