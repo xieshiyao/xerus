@@ -240,12 +240,12 @@ namespace xerus {
 		std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); \
 		std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);\
 		tmpStream \
-				<< (1900+xerus_err_ltm->tm_year) \
+				<< std::right << (1900+xerus_err_ltm->tm_year) \
 				<< '-' << std::setw(2) << std::setfill('0') << (xerus_err_ltm->tm_mon +1) \
 				<< '-' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday \
 				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour \
 				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min \
-				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' '
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' ' << std::left
 #else
 	#define XERUS_LOGGER_TIMESTAMP \
 		std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();\
@@ -254,7 +254,7 @@ namespace xerus {
 				<< std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000) \
 				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60) \
 				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60) \
-				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' '
+				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' ' << std::left
 #endif
 
 
