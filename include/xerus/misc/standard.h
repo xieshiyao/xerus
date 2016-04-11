@@ -64,13 +64,6 @@ namespace xerus {
     #define unlikely(x)     (x)
 #endif
 
-// counterpart to the explicit keyword for constructors
-/**
- * @def implicit
- * @brief Counterpart to explicit keyword. has no effect as 'implicit' is always implied as per c++11.
- */
-#define implicit      
-
 // all of these can be writen like [[gnu::unused]] but kdevelop will not recognize them then
 /** 
  * @def _inline_ 

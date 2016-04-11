@@ -96,8 +96,8 @@ namespace xerus {
 			
 			explicit TensorNode();
 			
-			implicit TensorNode(const TensorNode&  _other);
-			implicit TensorNode(      TensorNode&& _other);
+			TensorNode(const TensorNode&  _other);
+			TensorNode(      TensorNode&& _other);
 			
 			explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
 			
@@ -150,30 +150,30 @@ namespace xerus {
 		
 		
 		///@brief Copy Constructor
-		implicit TensorNetwork(const TensorNetwork& _cpy) = default;
+		TensorNetwork(const TensorNetwork& _cpy) = default;
 		
 		
 		///@brief Move Constructor
-		implicit TensorNetwork(TensorNetwork&& _mv) = default;
+		TensorNetwork(TensorNetwork&& _mv) = default;
 		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
-		implicit TensorNetwork(const Tensor& _other);
+		TensorNetwork(const Tensor& _other);
 		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
-		implicit TensorNetwork(Tensor&& _other);
+		TensorNetwork(Tensor&& _other);
 		
 		
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		* The TN takes the ownership of the pointer.
 		*/
-		implicit TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
+		TensorNetwork(std::unique_ptr<Tensor>&&  _tensor);
 		
 		
 		/** 
@@ -181,7 +181,7 @@ namespace xerus {
 		* @details All dimensions are set equals one and the only entry 
 		* of the tensor is zero.
 		*/
-		implicit TensorNetwork(size_t _degree);
+		TensorNetwork(size_t _degree);
 		
 		/** 
 		 * @brief (Internal) Constructs an order zero TensorNetwork.

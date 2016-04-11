@@ -67,11 +67,11 @@ namespace xerus {
 		
 		
 		///@brief TTNetworks are default copy constructable.
-		implicit TTNetwork(const TTNetwork & _cpy) = default;
+		TTNetwork(const TTNetwork & _cpy) = default;
 		
 		
 		///@brief TTNetworks are default move constructable.
-		implicit TTNetwork(      TTNetwork&& _mov) = default;
+		TTNetwork(      TTNetwork&& _mov) = default;
 		
 		
 		/** 

@@ -126,7 +126,7 @@ shared: $(LIB_NAME_SHARED)
 
 $(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES)
 	mkdir -p $(dir $@)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
 
 
 static: $(LIB_NAME_STATIC)

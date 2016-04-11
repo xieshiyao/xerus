@@ -103,11 +103,11 @@ namespace xerus {
 		
 		
 		/// @brief Tensors are default copy constructable.
-		implicit Tensor( const Tensor&  _other ) = default;
+		Tensor( const Tensor&  _other ) = default;
 		
 		
 		/// @brief Tensors are default move constructable.
-		implicit Tensor(       Tensor&& _other ) = default;
+		Tensor(       Tensor&& _other ) = default;
 		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.

@@ -82,16 +82,16 @@ namespace xerus {
 		Index(Index&&) = default;
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const int32 _i);
+		Index(const int32 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const uint32 _i);
+		Index(const uint32 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const int64 _i);
+		Index(const int64 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		implicit Index(const uint64 _i);
+		Index(const uint64 _i);
 
 		/// @brief Internal constructor, do not use this unless you know what you are doing.
 		explicit Index(const uint64 _valueId, const size_t _span);
