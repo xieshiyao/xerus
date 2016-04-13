@@ -21,7 +21,9 @@
  * @file
  * @brief Definition of the python bindings.
  */
-/*
+
+#ifdef XERUS_EXPERIMENTAL_PYTHON_WRAPPER
+
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 #include "xerus.h"
@@ -41,22 +43,80 @@ static xerus::Tensor random_tensor(boost::python::list _dim) {
 	return xerus::Tensor::random(to_std_vector<size_t>(_dim), rnd, dist);
 }
 
-static xerus::internal::IndexedTensor<xerus::Tensor>* wrapper_test(xerus::Tensor &_this) {
-	xerus::internal::IndexedTensor<xerus::Tensor> *result = new xerus::internal::IndexedTensor<xerus::Tensor>(std::move(_this()));
-	return result;
+template<class... args>
+static xerus::internal::IndexedTensor<xerus::Tensor>* call_operator_tensor(xerus::Tensor &_this, args... _indices) {
+	return new xerus::internal::IndexedTensor<xerus::Tensor>(std::move(_this(_indices...)));
 }
 
-static std::string logg(std::string _s) {
-	LOG(testing, "python string?! = '" << _s << "'");
-	return _s + " horst";
-}
 
 BOOST_PYTHON_MODULE(libxerus) {
-	class_<xerus::Index>("Index");
-	class_<xerus::internal::IndexedTensor<xerus::Tensor>, boost::noncopyable>("IndexedTensor", no_init);
-	class_<xerus::Tensor>("Tensor")
+	using namespace xerus;
+	class_<Index>("Index")
+		.def(init<int64_t>())
+		.def("__pow__", &Index::operator^)
+		.def("__xor__", &Index::operator^)
+		.def("__div__", &Index::operator/)
+		.def("__and__", &Index::operator&)
+		.def("__str__", static_cast<std::string (*)(const Index &)>(&misc::to_string<Index>))
+	;
+	implicitly_convertible<int64_t, Index>();
+	
+	class_<internal::IndexedTensorReadOnly<Tensor>, boost::noncopyable>("IndexedTensorReadOnly", no_init)
+		.def("__add__", 
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r) {
+				LOG(pydebug, "add ro + ro");
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+		.def("__add__", 
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r) {
+				LOG(pydebug, "add ro + mv");
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+		.def("__sub__", 
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+		.def("__sub__", 
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r){
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+	;
+	class_<internal::IndexedTensorWritable<Tensor>, boost::noncopyable, bases<internal::IndexedTensorReadOnly<Tensor>>>("IndexedTensorWriteable", no_init)
+	;
+	class_<internal::IndexedTensorMoveable<Tensor>, boost::noncopyable, bases<internal::IndexedTensorWritable<Tensor>>>("IndexedTensorMoveable", no_init)
+		.def("__add__", 
+			+[](internal::IndexedTensorMoveable<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r) {
+				LOG(pydebug, "add mv + ro");
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+		.def("__sub__", 
+			+[](internal::IndexedTensorMoveable<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
+			}, return_value_policy<manage_new_object>())
+	;
+	class_<internal::IndexedTensor<Tensor>, boost::noncopyable, bases<internal::IndexedTensorWritable<Tensor>>>("IndexedTensor", no_init)
+		.def("__lshift__", 
+			+[](xerus::internal::IndexedTensor<xerus::Tensor> &_lhs, xerus::internal::IndexedTensorReadOnly<xerus::Tensor> &_rhs) {
+				std::move(_lhs) = std::move(_rhs);
+			})
+	;
+	
+	class_<Tensor>("Tensor")
 		.def("random", &random_tensor).staticmethod("random")
-		.def("__call__", &wrapper_test, return_value_policy<manage_new_object>());
-	def("log", &logg);
-}*/
+		.def("__call__", &call_operator_tensor<>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def("__str__", &Tensor::to_string)
+	;
+	
+	def("log", +[](std::string _msg){
+		LOG_SHORT(info, _msg);
+	});
+}
 
+#endif // XERUS_EXPERIMENTAL_PYTHON_WRAPPER

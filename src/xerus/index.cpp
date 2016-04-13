@@ -173,7 +173,7 @@ namespace xerus {
 	}
 	
 	std::ostream& operator<<(std::ostream& _out, const xerus::Index& _idx) {
-		_out << _idx.valueId << "(" << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "-" : "") << _idx.span << ")";
+		_out << "index#" << _idx.valueId << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "&" : (_idx.flags[Index::Flag::FRACTIONAL_SPAN] ? "/" : "^")) << _idx.span;
 		return _out;
 	}
 }
