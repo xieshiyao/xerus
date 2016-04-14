@@ -33,7 +33,7 @@ namespace xerus {
 	thread_local uint64 Index::idCounter = (idThreadInitCounter++)<<54;
 	
 	
-	Index::Index() : valueId(idCounter++), span(1) { REQUIRE(idCounter < 1ull<<54, "Index ID counter left thread safe range."); }
+	Index::Index() : valueId(idCounter++), span(1) { }
 	
 	
 	Index::Index(const int32 _i) : Index(static_cast<uint64>(_i)) {
