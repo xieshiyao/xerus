@@ -66,6 +66,13 @@ namespace xerus {
 			template<class X = tensor_type>
 			#endif
 			IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>&& _other);
+			
+			#if __GNUC__ > 4
+			template<class X = tensor_type, typename std::enable_if<std::is_base_of<TensorNetwork, typename std::decay<X>::type>::value, int>::type = 0>
+			#else
+			template<class X = tensor_type>
+			#endif
+			IndexedTensorMoveable(IndexedTensorReadOnly<Tensor>& _other) : IndexedTensorMoveable(std::move(_other)) {}
 		};
 		
 		
