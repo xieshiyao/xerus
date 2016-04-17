@@ -85,7 +85,7 @@ UNIT_TEST(Misc, exceptions,
 	} catch (misc::generic_error &e) {
 		MTEST(true, "2");
 	} catch (...) {
-		MTEST(false, "3");
+		MTEST(false, "2");
 	}
 	
 	struct test_error : public misc::generic_error {};
