@@ -140,6 +140,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(_l) / _r);
 			}, return_value_policy<manage_new_object>())
 		.def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<TensorNetwork> &)>(&frob_norm<TensorNetwork>))
+		.def(float_(self)) // cast to double
 	;
 	
 	class_<internal::IndexedTensorWritable<TensorNetwork>, boost::noncopyable, bases<internal::IndexedTensorReadOnly<TensorNetwork>>>("IndexedTensorNetworkWriteable", no_init)
@@ -182,6 +183,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return new internal::IndexedTensorMoveable<Tensor>(std::move(_l) / _r);
 			}, return_value_policy<manage_new_object>())
 		.def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<Tensor> &)>(&frob_norm<Tensor>))
+		.def(float_(self)) // cast to double
 	;
 	class_<internal::IndexedTensorWritable<Tensor>, boost::noncopyable, bases<internal::IndexedTensorReadOnly<Tensor>>>("IndexedTensorWriteable", no_init)
 	;
@@ -266,6 +268,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.add_property("dimensions", +[](TensorNetwork &_A) {
 			return _A.dimensions;
 		})
+		.def("degree", &TensorNetwork::degree)
+		.def("datasize", &TensorNetwork::datasize)
 		.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
 		.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
 		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
@@ -298,13 +302,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("set_component", &TTTensor::set_component)
 		.def_readonly("cannonicalized", &TTTensor::cannonicalized)
 		.def_readonly("corePosition", &TTTensor::corePosition)
-		.add_property("dimensions", +[](TTTensor &_A) {
-			return _A.dimensions;
-		})
 		.def("ranks", &TTTensor::ranks)
 		.def("rank", &TTTensor::rank)
-		.def("degree", &TTTensor::degree)
-// 		.def("frob_norm", &TTTensor::frob_norm)
+// 		.def("frob_norm", &TTTensor::frob_norm) // NOTE unneccessary because correct call is inherited
 		.def("random", 
 			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
 				static std::random_device rd;
@@ -363,6 +363,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 	def("log", +[](std::string _msg){
 		LOG_SHORT(info, _msg);
 	});
+	
+	// the following is probably not necessary because we inherit from std::exception
+// 	register_exception_translator<misc::generic_error>([](const misc::generic_error &_e){
+// 		LOG(pydebug, "custom exception handler called with " << _e.what());
+// 		PyErr_SetString(PyExc_UserWarning, _e.what());
+// 	});
 }
 
 #endif // XERUS_EXPERIMENTAL_PYTHON_WRAPPER
