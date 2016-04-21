@@ -30,11 +30,7 @@
 
 using namespace boost::python;
 
-template<typename T>
-static std::vector<T> to_std_vector(const object& iterable) {
-	return std::vector<T>(stl_input_iterator<T>(iterable),
-							stl_input_iterator<T>());
-}
+
 
 template<class... args>
 static xerus::internal::IndexedTensor<xerus::Tensor>* call_operator_tensor(xerus::Tensor &_this, args... _indices) {
@@ -42,10 +38,43 @@ static xerus::internal::IndexedTensor<xerus::Tensor>* call_operator_tensor(xerus
 }
 
 
+template<typename containedType>
+struct custom_vector_to_list{
+	static PyObject* convert(const std::vector<containedType>& v){
+		list ret;
+		for(const containedType& e : v) {
+			ret.append(e);
+		}
+		return incref(ret.ptr());
+	}
+};
+template<typename containedType>
+struct custom_vector_from_seq{
+	custom_vector_from_seq(){ converter::registry::push_back(&convertible,&construct,type_id<std::vector<containedType> >()); }
+	static void* convertible(PyObject* obj_ptr){
+		// the second condition is important, for some reason otherwise there were attempted conversions of Body to list which failed afterwards.
+		if(!PySequence_Check(obj_ptr) || !PyObject_HasAttrString(obj_ptr,"__len__")) return 0;
+		return obj_ptr;
+	}
+	static void construct(PyObject* obj_ptr, converter::rvalue_from_python_stage1_data* data){
+		void* storage=(reinterpret_cast<converter::rvalue_from_python_storage<std::vector<size_t> >*>(data))->storage.bytes;
+		new (storage) std::vector<size_t>();
+		std::vector<size_t>* v=reinterpret_cast<std::vector<size_t>*>(storage);
+		Py_ssize_t l=PySequence_Size(obj_ptr); if(l<0) abort();
+		v->reserve(size_t(l)); 
+		for (Py_ssize_t i=0; i<l; i++) { 
+			v->push_back(extract<size_t>(PySequence_GetItem(obj_ptr,i))); 
+		}
+		data->convertible=storage;
+	}
+};
+
 BOOST_PYTHON_MODULE(libxerus) {
 	using namespace xerus;
 	
 	class_<std::vector<size_t>, boost::noncopyable>("IntegerVector", no_init); // just to give it a human readable name in python
+	custom_vector_from_seq<size_t>();
+	to_python_converter<std::vector<size_t>, custom_vector_to_list<size_t>>();
 	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index")
@@ -84,7 +113,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	class_<internal::IndexedTensorReadOnly<TensorNetwork>, boost::noncopyable>("IndexedTensorNetworkReadOnly", no_init)
 		ADD_MOVE_AND_RESULT_PTR("__add__", +, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__add__", +, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<TensorNetwork>)
 		ADD_MOVE_AND_RESULT_PTR("__sub__", -, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__sub__", -, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<TensorNetwork>)
 		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
 		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorMoveable<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
 		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
@@ -171,17 +202,19 @@ BOOST_PYTHON_MODULE(libxerus) {
 	// ----------------------------------------------------------- Tensor
 	class_<Tensor>("Tensor")
 		.def(init<const Tensor::DimensionTuple&>())
-		.def_readonly("dimensions", &Tensor::dimensions)
+		.add_property("dimensions", +[](Tensor &_A) {
+			return _A.dimensions;
+		})
 		.def("degree", &Tensor::degree)
 		.def_readonly("factor", &Tensor::factor)
 		.def_readonly("size", &Tensor::size)
 		.def("frob_norm", &Tensor::frob_norm)
 		.def("random", 
-			+[](boost::python::list _dim) {
+			+[](std::vector<size_t> _dim) {
 				static std::random_device rd;
 				std::mt19937_64 rnd(rd());
 				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::Tensor::random(to_std_vector<size_t>(_dim), rnd, dist);
+				return xerus::Tensor::random(_dim, rnd, dist);
 			}).staticmethod("random")
 		.def("ones", &Tensor::ones).staticmethod("ones")
 		.def("identity", &Tensor::identity).staticmethod("identity")
@@ -213,7 +246,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 	// ------------------------------------------------------------- TTNetwork
 	class_<TensorNetwork>("TensorNetwork")
 		.def(init<Tensor>())
-		.def_readonly("dimensions", &TensorNetwork::dimensions)
+		.add_property("dimensions", +[](TensorNetwork &_A) {
+			return _A.dimensions;
+		})
 // 		.def("__call__", &call_operator_tensor<>, return_value_policy<manage_new_object>())
 // 		.def("__call__", &call_operator_tensor<Index>, return_value_policy<manage_new_object>())
 // 		.def("__call__", &call_operator_tensor<Index, Index>, return_value_policy<manage_new_object>())
@@ -226,6 +261,34 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(other<value_t>() * self)
 		.def(self / other<value_t>())
 		.def("frob_norm", &TensorNetwork::frob_norm)
+	;
+	
+	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
+		.def(init<const Tensor&>())
+		.def(init<const Tensor&, value_t>())
+		.def(init<const Tensor&, value_t, size_t>())
+		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
+		.def(init<Tensor::DimensionTuple>())
+		.def(init<size_t>())
+		.def_readonly("cannonicalized", &TTTensor::cannonicalized)
+		.def_readonly("corePosition", &TTTensor::corePosition)
+		.add_property("dimensions", +[](TTTensor &_A) {
+			return _A.dimensions;
+		})
+		.def("degree", &TTTensor::degree)
+		.def("frob_norm", &TTTensor::frob_norm)
+		.def("random", 
+			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
+				static std::random_device rd;
+				std::mt19937_64 rnd(rd());
+				std::normal_distribution<double> dist(0.0, 1.0);
+				return xerus::TTTensor::random(_dim, _rank, rnd, dist);
+			}).staticmethod("random")
+		.def("ones", &TTTensor::ones).staticmethod("ones")
+// 		.def("identity", &TTTensor::identity).staticmethod("identity") // exists for  TTOperator only
+// 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
+// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
+// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
 	;
 	
 	// ------------------------------------------------------------- Algorithms
