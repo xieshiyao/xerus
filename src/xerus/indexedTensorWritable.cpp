@@ -102,7 +102,7 @@ namespace xerus {
 			assign_indices(get_eval_degree(cpy.indices));
 			std::vector<Index> outOrder;
 			for (const Index &idx : indices) {
-				REQUIRE(misc::contains(cpy.indices, idx), "Every index on the LHS must appear somewhere on the RHS");
+				REQUIRE(misc::contains(cpy.indices, idx), "Every index on the LHS must appear somewhere on the RHS, here: " << cpy.indices << ' ' << indices);
 				size_t spanSum = 0;
 				for (size_t j = 0; cpy.indices[j] != idx; ++j) {
 					REQUIRE(j < cpy.indices.size()-1, "ie");

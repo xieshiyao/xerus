@@ -1432,6 +1432,24 @@ namespace xerus {
 	
 	
 	
+	TensorNetwork operator*(TensorNetwork &_lhs, value_t _factor) {
+		TensorNetwork res(*_lhs.get_copy());
+		res *= _factor;
+		return res;
+	}
+	
+	TensorNetwork operator*(value_t _factor, TensorNetwork &_rhs) {
+		TensorNetwork res(*_rhs.get_copy());
+		res *= _factor;
+		return res;
+	}
+	
+	TensorNetwork operator/(TensorNetwork &_lhs, value_t _factor) {
+		TensorNetwork res(*_lhs.get_copy());
+		res *= 1.0/_factor;
+		return res;
+	}
+	
 	
 	bool approx_equal(const TensorNetwork& _a, const TensorNetwork& _b, const value_t _eps) {
 		REQUIRE(_a.dimensions == _b.dimensions, "The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions);

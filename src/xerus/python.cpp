@@ -45,6 +45,8 @@ static xerus::internal::IndexedTensor<xerus::Tensor>* call_operator_tensor(xerus
 BOOST_PYTHON_MODULE(libxerus) {
 	using namespace xerus;
 	
+	class_<std::vector<size_t>, boost::noncopyable>("IntegerVector", no_init); // just to give it a human readable name in python
+	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index")
 		.def(init<int64_t>())
@@ -55,56 +57,60 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("__str__", static_cast<std::string (*)(const Index &)>(&misc::to_string<Index>))
 	;
 	implicitly_convertible<int64_t, Index>();
+	def("indices", +[](int _n)->boost::python::list{
+		list res;
+		for (int i = 0; i < _n; ++i) {
+			res.append(Index());
+		}
+		return res;
+	});
 	
-	
+	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
+	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
+	implicitly_convertible<internal::IndexedTensorMoveable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
+	implicitly_convertible<internal::IndexedTensor<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
+	// NOTE in the following all __mul__ variants are defined for the ReadOnly indexed Tensors, even if they are meant for
+	//		the moveable indexed tensors. boost will take care of the proper matching that way. if IndexedTensorMoveable
+	//		defined an __mul__ function on its own it would overwrite all overloaded variants of the readonly indexed tensors
+	//		and thus loose a lot of functionality.
 	// ---------------------------------------------- indexedTensor<TN>
+	using namespace internal;
+#define ADD_MOVE_AND_RESULT_PTR(name, op, lhs_type, rhs_type, res_type) \
+	.def(name, \
+			+[](lhs_type &_l, rhs_type &_r) -> res_type* { \
+				LOG(pydebug, "python wrapper: " name);\
+				return new res_type(std::move(_l) op std::move(_r)); \
+			}, return_value_policy<manage_new_object>())
 	
 	class_<internal::IndexedTensorReadOnly<TensorNetwork>, boost::noncopyable>("IndexedTensorNetworkReadOnly", no_init)
-		.def("__add__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, internal::IndexedTensorReadOnly<TensorNetwork> &_r) {
-				LOG(pydebug, "add TN ro + ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) + std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__sub__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, internal::IndexedTensorReadOnly<TensorNetwork> &_r){
-				LOG(pydebug, "sub TN ro - ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) - std::move(_r)));
-			}, return_value_policy<manage_new_object>())
+		ADD_MOVE_AND_RESULT_PTR("__add__", +, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__sub__", -, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorMoveable<TensorNetwork>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorMoveable<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<TensorNetwork>)
 		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, internal::IndexedTensorReadOnly<TensorNetwork> &_r){
-				LOG(pydebug, "mul TN ro * ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, internal::IndexedTensorMoveable<TensorNetwork> &_r){
-				LOG(pydebug, "mul TN ro * mv");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, value_t _r){
+			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, value_t _r) -> internal::IndexedTensorReadOnly<TensorNetwork>* {
 				LOG(pydebug, "mul TN ro * scalar");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * _r));
+				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(_l) * _r);
 			}, return_value_policy<manage_new_object>())
 		.def("__rmul__", 
-			+[](value_t _r, internal::IndexedTensorReadOnly<TensorNetwork> &_l){
+			+[](value_t _r, internal::IndexedTensorReadOnly<TensorNetwork> &_l) -> internal::IndexedTensorReadOnly<TensorNetwork>* {
 				LOG(pydebug, "mul TN scalar * ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * _r));
+				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(_l) * _r);
 			}, return_value_policy<manage_new_object>())
 		.def("__div__", 
-			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, value_t _r){
+			+[](internal::IndexedTensorReadOnly<TensorNetwork> &_l, value_t _r) -> internal::IndexedTensorReadOnly<TensorNetwork>* {
 				LOG(pydebug, "div TN ro / scalar");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) / _r));
+				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(_l) / _r);
 			}, return_value_policy<manage_new_object>())
-// 		.def("frob_norm", &internal::IndexedTensorReadOnly<TensorNetwork>::frob_norm)
+		.def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<TensorNetwork> &)>(&frob_norm<TensorNetwork>))
 	;
+	
 	class_<internal::IndexedTensorWritable<TensorNetwork>, boost::noncopyable, bases<internal::IndexedTensorReadOnly<TensorNetwork>>>("IndexedTensorNetworkWriteable", no_init)
 	;
 	class_<internal::IndexedTensorMoveable<TensorNetwork>, boost::noncopyable, bases<internal::IndexedTensorWritable<TensorNetwork>>>("IndexedTensorNetworkMoveable", no_init)
-		.def("__mul__", 
-			+[](internal::IndexedTensorMoveable<TensorNetwork> &_l, internal::IndexedTensorReadOnly<TensorNetwork> &_r){
-				LOG(pydebug, "mul TN mv * ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
 	;
 	class_<internal::IndexedTensor<TensorNetwork>, boost::noncopyable, bases<internal::IndexedTensorWritable<TensorNetwork>>>("IndexedTensorNetwork", no_init)
 		.def("__lshift__", 
@@ -121,77 +127,31 @@ BOOST_PYTHON_MODULE(libxerus) {
 	// --------------------------------------------- indexedTensor<Tensor>
 	
 	class_<internal::IndexedTensorReadOnly<Tensor>, boost::noncopyable>("IndexedTensorReadOnly", no_init)
-		.def("__add__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r) {
-				LOG(pydebug, "add ro + ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__add__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r) {
-				LOG(pydebug, "add ro + mv");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__sub__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
-				LOG(pydebug, "sub ro - ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__sub__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r){
-				LOG(pydebug, "sub ro - mv");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
-			}, return_value_policy<manage_new_object>())
+		ADD_MOVE_AND_RESULT_PTR("__add__", +, IndexedTensorReadOnly<Tensor>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<Tensor>)
+		ADD_MOVE_AND_RESULT_PTR("__sub__", -, IndexedTensorReadOnly<Tensor>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<Tensor>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<Tensor>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__mul__", *, IndexedTensorReadOnly<Tensor>, IndexedTensorReadOnly<TensorNetwork>, IndexedTensorMoveable<TensorNetwork>)
+		ADD_MOVE_AND_RESULT_PTR("__div__", /, IndexedTensorReadOnly<Tensor>, IndexedTensorReadOnly<Tensor>, IndexedTensorMoveable<Tensor>)
 		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
-				LOG(pydebug, "mul ro * ro");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r){
-				LOG(pydebug, "mul ro * mv");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, value_t _r){
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, value_t _r) -> internal::IndexedTensorReadOnly<Tensor>* {
 				LOG(pydebug, "mul ro * scalar");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) * _r));
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(_l) * _r);
 			}, return_value_policy<manage_new_object>())
 		.def("__rmul__", 
-			+[](value_t _r, internal::IndexedTensorReadOnly<Tensor> &_l){
+			+[](value_t _r, internal::IndexedTensorReadOnly<Tensor> &_l) -> internal::IndexedTensorReadOnly<Tensor>* {
 				LOG(pydebug, "mul scalar * ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) * _r));
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(_l) * _r);
 			}, return_value_policy<manage_new_object>())
 		.def("__div__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, value_t _r){
+			+[](internal::IndexedTensorReadOnly<Tensor> &_l, value_t _r) -> internal::IndexedTensorReadOnly<Tensor>* {
 				LOG(pydebug, "div ro / scalar");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) / _r));
+				return new internal::IndexedTensorMoveable<Tensor>(std::move(_l) / _r);
 			}, return_value_policy<manage_new_object>())
-		.def("__div__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
-				LOG(pydebug, "div ro / ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) / std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-// 		.def("frob_norm", &internal::IndexedTensorReadOnly<Tensor>::frob_norm)
-		
+		.def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<Tensor> &)>(&frob_norm<Tensor>))
 	;
 	class_<internal::IndexedTensorWritable<Tensor>, boost::noncopyable, bases<internal::IndexedTensorReadOnly<Tensor>>>("IndexedTensorWriteable", no_init)
 	;
 	class_<internal::IndexedTensorMoveable<Tensor>, boost::noncopyable, bases<internal::IndexedTensorWritable<Tensor>>>("IndexedTensorMoveable", no_init)
-		.def("__add__", 
-			+[](internal::IndexedTensorMoveable<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r) {
-				LOG(pydebug, "add mv + ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) + std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__sub__", 
-			+[](internal::IndexedTensorMoveable<Tensor> &_l, internal::IndexedTensorReadOnly<Tensor> &_r){
-				LOG(pydebug, "sub mv - ro");
-				return new internal::IndexedTensorMoveable<Tensor>(std::move(std::move(_l) - std::move(_r)));
-			}, return_value_policy<manage_new_object>())
-		.def("__mul__", 
-			+[](internal::IndexedTensorReadOnly<Tensor> &_l, internal::IndexedTensorMoveable<Tensor> &_r){
-				LOG(pydebug, "mul ro * mv");
-				return new internal::IndexedTensorMoveable<TensorNetwork>(std::move(std::move(_l) * std::move(_r)));
-			}, return_value_policy<manage_new_object>())
 	;
 	class_<internal::IndexedTensor<Tensor>, boost::noncopyable, bases<internal::IndexedTensorWritable<Tensor>>>("IndexedTensor", no_init)
 		.def("__lshift__", 
@@ -204,16 +164,18 @@ BOOST_PYTHON_MODULE(libxerus) {
 			})
 	;
 	
-	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
-	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
-	implicitly_convertible<internal::IndexedTensorMoveable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
-	implicitly_convertible<internal::IndexedTensor<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
 	
 	// ----------------------------------------------------------- decompositions
 	
 	
 	// ----------------------------------------------------------- Tensor
 	class_<Tensor>("Tensor")
+		.def(init<const Tensor::DimensionTuple&>())
+		.def_readonly("dimensions", &Tensor::dimensions)
+		.def("degree", &Tensor::degree)
+		.def_readonly("factor", &Tensor::factor)
+		.def_readonly("size", &Tensor::size)
+		.def("frob_norm", &Tensor::frob_norm)
 		.def("random", 
 			+[](boost::python::list _dim) {
 				static std::random_device rd;
@@ -224,8 +186,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("ones", &Tensor::ones).staticmethod("ones")
 		.def("identity", &Tensor::identity).staticmethod("identity")
 		.def("kronecker", &Tensor::kronecker).staticmethod("kronecker")
-// 		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, Tensor::MultiIndex)>(&Tensor::dirac)).staticmethod("dirac")
-// 		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, size_t)>(&Tensor::dirac)).staticmethod("dirac")
+		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&Tensor::dirac))
+		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const size_t)>(&Tensor::dirac)).staticmethod("dirac")
 		.def("has_factor", &Tensor::has_factor)
 		.def("is_dense", &Tensor::is_dense)
 		.def("is_sparse", &Tensor::is_sparse)
@@ -245,12 +207,26 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(self / other<value_t>())
 		.def(self + self)
 		.def(self - self)
-		.def("frob_norm", &Tensor::frob_norm)
 	;
 	
 	
 	// ------------------------------------------------------------- TTNetwork
-	
+	class_<TensorNetwork>("TensorNetwork")
+		.def(init<Tensor>())
+		.def_readonly("dimensions", &TensorNetwork::dimensions)
+// 		.def("__call__", &call_operator_tensor<>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index, Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+// 		.def("__call__", &call_operator_tensor<Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+		.def(self * other<value_t>())
+		.def(other<value_t>() * self)
+		.def(self / other<value_t>())
+		.def("frob_norm", &TensorNetwork::frob_norm)
+	;
 	
 	// ------------------------------------------------------------- Algorithms
 // 	def("ALS", +[](){
