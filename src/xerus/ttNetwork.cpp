@@ -1298,35 +1298,35 @@ namespace xerus {
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> operator+(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs) {
-		_lhs += _rhs;
+		_lhs += _rhs; // NOTE pass-by-value!
 		return _lhs;
 	}
 	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> operator-(TTNetwork<isOperator> _lhs, const TTNetwork<isOperator>& _rhs) {
-		_lhs -= _rhs;
+		_lhs -= _rhs; // NOTE pass-by-value!
 		return _lhs;
 	}
 	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> operator*(TTNetwork<isOperator> _network, const value_t _factor) {
-		_network *= _factor;
+		_network *= _factor; // NOTE pass-by-value!
 		return _network;
 	}
 	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> operator*(const value_t _factor, TTNetwork<isOperator> _network) {
-		_network *= _factor;
+		_network *= _factor; // NOTE pass-by-value!
 		return _network;
 	}
 	
 	
 	template<bool isOperator>
 	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _divisor) {
-		_network /= _divisor;
+		_network /= _divisor; // NOTE pass-by-value!
 		return _network;
 	}
 	
