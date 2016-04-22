@@ -366,7 +366,13 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("degree", &TensorNetwork::TensorNode::degree)
 // 			.def_readonly("erased", &TensorNetwork::TensorNode::erased) // internal
 // 			.def("erase", &TensorNetwork::TensorNode::erase) // internal
-			.def_readonly("tensorObject", &TensorNetwork::TensorNode::tensorObject) // TODO should return an optional
+			.add_property("tensorObject", +[](TensorNetwork::TensorNode &_this)->object{
+				if (_this.tensorObject) {
+					return object(_this.tensorObject.get());
+				} else {
+					return object(); // aka none
+				}
+			})
 			.add_property("neighbors", +[](TensorNetwork::TensorNode &_this){
 				return _this.neighbors;
 			})
