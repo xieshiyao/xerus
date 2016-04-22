@@ -124,7 +124,7 @@ namespace xerus {
 		
 		void add(const size_t _itrCount, const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		
-		void add(const size_t _itrCount, const xerus::value_t _residual, const TTTensor& _x, const size_t _flags = 0);
+		void add(const size_t _itrCount, const value_t _residual, const TTTensor& _x, const size_t _flags = 0);
 		
 		void add(const value_t _residual, const TensorNetwork::RankTuple _ranks = TensorNetwork::RankTuple(), const size_t _flags = 0);
 		

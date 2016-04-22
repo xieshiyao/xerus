@@ -82,18 +82,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 #define parametersDocstr "\n\nParameters\n----------\n"
 #define	returnsDocstr "\n\nReturns\n-------\n"
 	
-	class_<std::vector<size_t>, boost::noncopyable>("IntegerVector", no_init); // just to give it a human readable name in python
-	class_<std::vector<double>, boost::noncopyable>("DoubleVector", no_init);
-	class_<std::vector<TensorNetwork::Link>, boost::noncopyable>("LinkVector", no_init);
-	class_<std::vector<TensorNetwork::TensorNode>, boost::noncopyable>("TensorNetworkNodeVector", no_init);
-	custom_vector_from_seq<size_t>();
-	to_python_converter<std::vector<size_t>, custom_vector_to_list<size_t>>();
-	custom_vector_from_seq<double>();
-	to_python_converter<std::vector<double>, custom_vector_to_list<double>>();
-	custom_vector_from_seq<TensorNetwork::Link>();
-	to_python_converter<std::vector<TensorNetwork::Link>, custom_vector_to_list<TensorNetwork::Link>>();
-	custom_vector_from_seq<TensorNetwork::TensorNode>();
-	to_python_converter<std::vector<TensorNetwork::TensorNode>, custom_vector_to_list<TensorNetwork::TensorNode>>();
+	#define VECTOR_TO_PY(type, name) class_<std::vector<type>, boost::noncopyable>(name, no_init); \
+		custom_vector_from_seq<type>(); \
+		to_python_converter<std::vector<type>, custom_vector_to_list<type>>(); void(0)
+	
+	VECTOR_TO_PY(size_t, "IntegerVector");
+	VECTOR_TO_PY(double, "DoubleVector");
 	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index",
@@ -296,6 +290,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	
 	// ------------------------------------------------------------- TensorNetwork
+	VECTOR_TO_PY(TensorNetwork::Link, "LinkVector");
+	VECTOR_TO_PY(TensorNetwork::Node, "TensorNetworkNodeVector");
 	{ scope TN_scope =
 		class_<TensorNetwork>("TensorNetwork")
 			.def(init<Tensor>())
@@ -466,7 +462,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return xerus::TTOperator::random(_dim, _rank, rnd, dist);
 			}).staticmethod("random")
 		.def("ones", &TTOperator::ones).staticmethod("ones")
-		.def("identity", &TTOperator::identity<true>).staticmethod("identity") // exists for  TTOperator only
 // 		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker") //TODO
 // 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTOperator::dirac)) //TODO
 // 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const size_t)>(&TTOperator::dirac)).staticmethod("dirac") //TODO
@@ -507,19 +502,103 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(self * other<value_t>())
 		.def(other<value_t>() * self)
 		.def(self / other<value_t>())
+		
+		
+		// for  TTOperator only:
+		.def("identity", &TTOperator::identity<true>).staticmethod("identity") 
+		.def("transpose", &TTOperator::transpose<true>)
 	;
 	def("entrywise_product", static_cast<TTOperator (*)(const TTOperator&, const TTOperator&)>(&entrywise_product));
 	
 	// ------------------------------------------------------------- Algorithms
-// 	def("ALS", +[](){
-// 		
-// 	});
-// 	def("ALS_SPD", &ALS_SPD.operator());
-// 	def("DMRG", &DMRG.operator());
-// 	def("DMRG_SPD", &DMRG_SPD.operator());
-// 	def("ASD", &ASD.operator());
-// 	def("ASD_SPD", &ASD_SPD.operator());
+	VECTOR_TO_PY(PerformanceData::DataPoint, "PerfDataVector");
+	{ scope perfdata =
+		class_<PerformanceData>("PerformanceData")
+			.def_readwrite("printProgress", &PerformanceData::printProgress)
+			.def_readwrite("startTime", &PerformanceData::startTime)
+			.def_readwrite("stopTime", &PerformanceData::stopTime)
+			.def_readwrite("additionalInformation", &PerformanceData::additionalInformation)
+			.add_property("data", +[](PerformanceData &_this){
+				return _this.data;
+			}, +[](PerformanceData &_this, std::vector<PerformanceData::DataPoint> &_newData){
+				_this.data = _newData;
+			}, )
+			// TODO convert the errFunc
+			.add_property("errorFunction", +[](PerformanceData &_this){
+				return _this.errorFunction;
+			}, +[](PerformanceData &_this, boost::python::object _f){
+				_this.errorFunction = _f;
+			}, )
+			.def(init<bool>())
+			.def("start", &PerformanceData::start)
+			.def("stop_timer", &PerformanceData::stop_timer)
+			.def("continue_timer", &PerformanceData::continue_timer)
+			.def("reset", &PerformanceData::reset)
+			.def("get_elapsed_time", &PerformanceData::get_elapsed_time)
+			.def("get_runtime", &PerformanceData::get_runtime)
+			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res){
+				_this.add(_itr, _res);
+			})
+			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x){
+				_this.add(_itr, _res, _x);
+			})
+			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x, size_t _flags){
+				_this.add(_itr, _res, _x, _flags);
+			})
+			.def("add", +[](PerformanceData &_this, value_t _res, const TTTensor &_x, size_t _flags){
+				_this.add(_res, _x, _flags);
+			})
+			.def("__nonzero__", +[](PerformanceData &_this){ return bool(_this); })
+			.def("dump_to_file", &PerformanceData::dump_to_file)
+			// TODO histogram
+		;
+		
+		class_<PerformanceData::DataPoint>("DataPoint", no_init)
+			.def_readonly("iterationCount", &PerformanceData::DataPoint::iterationCount)
+			.def_readonly("elapsedTime", &PerformanceData::DataPoint::elapsedTime)
+			.def_readonly("residual", &PerformanceData::DataPoint::residual)
+			.def_readonly("error", &PerformanceData::DataPoint::error)
+			.def_readonly("ranks", &PerformanceData::DataPoint::ranks)
+			.def_readonly("flags", &PerformanceData::DataPoint::flags)
+		;
+	}
 	
+	class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
+		.def_readwrite("sites", &ALSVariant::sites)
+		.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
+		.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
+		.def_readwrite("useResidualForEndCriterion", &ALSVariant::useResidualForEndCriterion)
+		.def_readwrite("preserveCorePosition", &ALSVariant::preserveCorePosition)
+		.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
+		.def_readwrite("localSolver", &ALSVariant::localSolver) // TODO we need some wrapper here
+		
+		// TODO add variants with perfdata
+		// TODO test the following!
+		// NOTE it is functionally enough to export the (A,x,b) and (x,b) variant without _eps or _numHalfSweeps
+		//      as it is expected that there will be problems with ambiguity in python we thus leave out the _eps / _numHalfSweeps variants
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
+			_this(_A, _x, _b);
+		})
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_A, _x, _b, _eps);
+		})
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
+			_this(_A, _x, _b, _numHalfSweeps);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b) {
+			_this(_x, _b);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_x, _b, _eps);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
+			_this(_x, _b, _numHalfSweeps);
+		})
+	;
+// 	add_property("ALS", +[](){ return ALS; });
+	def("ALS", +[](TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			ALS(_x, _b, _pd);
+		})
 	// ------------------------------------------------------------- misc
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
