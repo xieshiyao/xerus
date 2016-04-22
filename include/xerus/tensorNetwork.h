@@ -225,6 +225,14 @@ namespace xerus {
 		virtual void contract_unconnected_subnetworks();
 		
 		
+		/**
+		 * @brief Performs all traces in the given node.
+		 * @param _nodeId id of the node for which the traces shall be performed.
+		 */
+		void perform_traces(const size_t _nodeId);
+		
+	public:
+		
 		/** 
 		 * @brief Finds the position of a single common edge between two nodes.
 		 * @param _nodeA The first node.
@@ -234,12 +242,6 @@ namespace xerus {
 		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
 		
 		
-		/**
-		 * @brief Performs all traces in the given node.
-		 * @param _nodeId id of the node for which the traces shall be performed.
-		 */
-		void perform_traces(const size_t _nodeId);
-		
 		
 		/**
 		 * @brief Removes all erased nodes from the TensorNetwork. 
@@ -248,7 +250,6 @@ namespace xerus {
 		void sanitize();
 
 		
-	public:
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		///@brief TensorNetworks are copy assignable.

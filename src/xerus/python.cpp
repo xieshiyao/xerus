@@ -77,12 +77,21 @@ BOOST_PYTHON_MODULE(libxerus) {
 	bool show_signatures = false;
 	docstring_options doc_options(show_user_defined, show_signatures);
 	
+#define parametersDocstr "\n\nParameters\n----------\n"
+#define	returnsDocstr "\n\nReturns\n-------\n"
+	
 	class_<std::vector<size_t>, boost::noncopyable>("IntegerVector", no_init); // just to give it a human readable name in python
 	class_<std::vector<double>, boost::noncopyable>("DoubleVector", no_init);
+	class_<std::vector<TensorNetwork::Link>, boost::noncopyable>("LinkVector", no_init);
+	class_<std::vector<TensorNetwork::TensorNode>, boost::noncopyable>("TensorNetworkNodeVector", no_init);
 	custom_vector_from_seq<size_t>();
 	to_python_converter<std::vector<size_t>, custom_vector_to_list<size_t>>();
 	custom_vector_from_seq<double>();
 	to_python_converter<std::vector<double>, custom_vector_to_list<double>>();
+	custom_vector_from_seq<TensorNetwork::Link>();
+	to_python_converter<std::vector<TensorNetwork::Link>, custom_vector_to_list<TensorNetwork::Link>>();
+	custom_vector_from_seq<TensorNetwork::TensorNode>();
+	to_python_converter<std::vector<TensorNetwork::TensorNode>, custom_vector_to_list<TensorNetwork::TensorNode>>();
 	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index",
@@ -102,7 +111,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			res.append(Index());
 		}
 		return res;
-	}, args("n"), "creates n distinct indices");
+	}, args("n"), "Creates n distinct indices."
+		parametersDocstr "n : int"
+		returnsDocstr "list of Index"
+	);
 	
 	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
 	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
@@ -233,10 +245,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 					return xerus::Tensor::random(_dim, rnd, dist);
 				}).staticmethod("random")
 			.def("ones", &Tensor::ones, args("dimensions"), 
-				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere.\n\n" \
-				 "Parameters\n" \
-				 "----------\n" \
-				 "dimensions : list or tuple of int"
+				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere."
+				  parametersDocstr "dimensions : list or tuple of int"
 			).staticmethod("ones")
 			.def("identity", &Tensor::identity).staticmethod("identity")
 			.def("kronecker", &Tensor::kronecker).staticmethod("kronecker")
@@ -283,7 +293,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 	} // close Tensor_scope
 	
 	
-	// ------------------------------------------------------------- TTNetwork
+	// ------------------------------------------------------------- TensorNetwork
 	{ scope TN_scope =
 		class_<TensorNetwork>("TensorNetwork")
 			.def(init<Tensor>())
@@ -292,6 +302,15 @@ BOOST_PYTHON_MODULE(libxerus) {
 			})
 			.def("degree", &TensorNetwork::degree)
 			.def("datasize", &TensorNetwork::datasize)
+			.add_property("nodes", +[](TensorNetwork &_this){
+				return _this.nodes;
+			})
+			.def("node", +[](TensorNetwork &_this, size_t _i) {
+				return _this.nodes[_i];
+			})
+			.add_property("externalLinks", +[](TensorNetwork &_this){
+				return _this.externalLinks;
+			})
 			.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
 			.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
 			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
@@ -310,12 +329,57 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("__getitem__", +[](TensorNetwork &_this, std::vector<size_t> _idx) {
 				return _this[_idx];
 			})
+// 			.def("reshuffle_nodes", +[](TensorNetwork &_this, boost::python::object _f) { //TODO
+// 				_this.reshuffle_nodes(_f);
+// 			})
+			.def("require_valid_network", +[](TensorNetwork &_this) {
+				_this.require_valid_network();
+			})
+			.def("require_correct_format", &TensorNetwork::require_correct_format)
+			.def("swap_external_links", &TensorNetwork::swap_external_links)
+			.def("round_edge", &TensorNetwork::round_edge)
+			.def("transfer_core", &TensorNetwork::transfer_core)
+			.def("transfer_core", +[](TensorNetwork &_this, size_t _from, size_t _to) {
+				_this.transfer_core(_from, _to);
+			})
+			.def("reduce_representation", &TensorNetwork::reduce_representation)
+			//TODO find_common_edge (wrapper that returns python::tuple
+			.def("sanitize", &TensorNetwork::sanitize)
+			.def("fix_slate", &TensorNetwork::fix_slate) //TODO rename
+			.def("remove_slate", &TensorNetwork::remove_slate)
+			.def("resize_dimension", &TensorNetwork::resize_dimension)
+			.def("resize_dimension", +[](TensorNetwork &_this, size_t _mode,  size_t _newDim) {
+				_this.resize_dimension(_mode, _newDim);
+			})
+			.def("contract", static_cast<void (TensorNetwork::*)(size_t, size_t)>(&TensorNetwork::contract))
+			.def("contract", static_cast<size_t (TensorNetwork::*)(const std::set<size_t>&)>(&TensorNetwork::contract)) //TODO write converter
+			.def("contraction_cost", &TensorNetwork::contraction_cost)
+			.def("draw", &TensorNetwork::draw)
 			.def("frob_norm", &TensorNetwork::frob_norm)
 		;
 		
-		// TODO add Link, Node and expose nodes
+		class_<TensorNetwork::TensorNode>("TensorNode")
+			.def("size", &TensorNetwork::TensorNode::size)
+			.def("degree", &TensorNetwork::TensorNode::degree)
+// 			.def_readonly("erased", &TensorNetwork::TensorNode::erased) // internal
+// 			.def("erase", &TensorNetwork::TensorNode::erase) // internal
+			.def_readonly("tensorObject", &TensorNetwork::TensorNode::tensorObject) // TODO should return an optional
+			.add_property("neighbors", +[](TensorNetwork::TensorNode &_this){
+				return _this.neighbors;
+			})
+		;
+		
+		class_<TensorNetwork::Link>("TensorNetworkLink")
+			.def_readonly("other", &TensorNetwork::Link::other)
+			.def_readonly("indexPosition", &TensorNetwork::Link::indexPosition)
+			.def_readonly("dimension", &TensorNetwork::Link::dimension)
+			.def_readonly("external", &TensorNetwork::Link::external)
+			.def("links", &TensorNetwork::Link::links)
+		;
 	} // closes TN_scope
+
 	
+	// ------------------------------------------------------------- TTNetwork	
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
 		.def(init<const Tensor&, optional<value_t, size_t>>())
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
@@ -383,9 +447,28 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 	def("ASD_SPD", &ASD_SPD.operator());
 	
 	// ------------------------------------------------------------- misc
+	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
+	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
+	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const Tensor&, double)>(&approx_equal));
+	def("approx_equal", static_cast<bool (*)(const Tensor&, const Tensor&, double)>(&approx_equal));
+	def("approx_equal", +[](const Tensor& _l, const Tensor& _r) {
+		return approx_equal(_l, _r);
+	});
+	def("approx_equal", +[](const Tensor& _l, const TensorNetwork& _r) {
+		return approx_equal(_l, _r);
+	});
+	def("approx_equal", +[](const TensorNetwork& _l, const TensorNetwork& _r) {
+		return approx_equal(_l, _r);
+	});
+	def("approx_equal", +[](const TensorNetwork& _l, const TensorNetwork& _r) {
+		return approx_equal(_l, _r);
+	});
+	
 	def("log", +[](std::string _msg){
 		LOG_SHORT(info, _msg);
 	});
+	
+	// TODO streamwriter stuff
 	
 	// identity returns the cpp name to a python object
 // 	def("identity", identity_);
