@@ -225,6 +225,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		)
 			.def(init<const Tensor::DimensionTuple&>(args("dimensions"), "constructs a Tensor with the given dimensions"))
 			.def(init<const TensorNetwork&>())
+			.def(init<const Tensor &>())
 	// 		.def(init<const Tensor::DimensionTuple&, const boost::function<value_t()> &>()) // could define as argument boost::python::object _f, but maybe rather create a new converter?
 			.add_property("dimensions", +[](Tensor &_A) {
 				return _A.dimensions;
@@ -267,6 +268,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(self / other<value_t>())
 			.def(self + self)
 			.def(self - self)
+			.def(self += self)
+			.def(self -= self)
 			.def("__getitem__", +[](Tensor &_this, size_t _i) {
 				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
 				return _this[_i];
@@ -292,9 +295,11 @@ BOOST_PYTHON_MODULE(libxerus) {
 	// ------------------------------------------------------------- TensorNetwork
 	VECTOR_TO_PY(TensorNetwork::Link, "LinkVector");
 	VECTOR_TO_PY(TensorNetwork::TensorNode, "TensorNetworkNodeVector");
+	// TODO allow modification of the network
 	{ scope TN_scope =
 		class_<TensorNetwork>("TensorNetwork")
 			.def(init<Tensor>())
+			.def(init<const TensorNetwork &>())
 			.add_property("dimensions", +[](TensorNetwork &_A) {
 				return _A.dimensions;
 			})
@@ -383,6 +388,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
 		.def(init<Tensor::DimensionTuple>())
 		.def(init<size_t>())
+		.def(init<const TTTensor &>())
 		.def("get_component", &TTTensor::get_component, return_value_policy<copy_const_reference>())
 		.def("set_component", &TTTensor::set_component)
 		.def_readonly("cannonicalized", &TTTensor::cannonicalized)
@@ -439,6 +445,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(self * other<value_t>())
 		.def(other<value_t>() * self)
 		.def(self / other<value_t>())
+		.def(self += self)
+		.def(self -= self)
 	;
 	def("entrywise_product", static_cast<TTTensor (*)(const TTTensor&, const TTTensor&)>(&entrywise_product));
 	
@@ -447,6 +455,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
 		.def(init<Tensor::DimensionTuple>())
 		.def(init<size_t>())
+		.def(init<const TTOperator &>())
 		.def("get_component", &TTOperator::get_component, return_value_policy<copy_const_reference>())
 		.def("set_component", &TTOperator::set_component)
 		.def_readonly("cannonicalized", &TTOperator::cannonicalized)
@@ -499,6 +508,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("cannonicalize_right", &TTOperator::cannonicalize_right)
 		.def(self + self)
 		.def(self - self)
+		.def(self += self)
+		.def(self -= self)
 		.def(self * other<value_t>())
 		.def(other<value_t>() * self)
 		.def(self / other<value_t>())
@@ -550,6 +561,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 			})
 			.def("__nonzero__", +[](PerformanceData &_this){ return bool(_this); })
 			.def("dump_to_file", &PerformanceData::dump_to_file)
+			.def("__iadd__", +[](PerformanceData &_this, const std::string &_s){
+				_this << _s;
+			})
 			// TODO histogram
 		;
 		
@@ -564,6 +578,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 	}
 	
 	class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
+		.def(init<const ALSVariant&>())
 		.def_readwrite("sites", &ALSVariant::sites)
 		.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
 		.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
@@ -572,10 +587,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
 		.def_readwrite("localSolver", &ALSVariant::localSolver) // TODO we need some wrapper here
 		
-		// TODO add variants with perfdata
-		// TODO test the following!
-		// NOTE it is functionally enough to export the (A,x,b) and (x,b) variant without _eps or _numHalfSweeps
-		//      as it is expected that there will be problems with ambiguity in python we thus leave out the _eps / _numHalfSweeps variants
 		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
 			_this(_A, _x, _b);
 		})
@@ -594,11 +605,32 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
 			_this(_x, _b, _numHalfSweeps);
 		})
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_A, _x, _b, _pd);
+		})
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _numHalfSweeps, _pd);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_x, _b, _pd);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			_this(_x, _b, _numHalfSweeps, _pd);
+		})
 	;
-// 	add_property("ALS", +[](){ return ALS; });
-	def("ALS", +[](TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
-			ALS(_x, _b, _pd);
-		});
+	scope().attr("ALS") = object(ptr(&ALS));
+	scope().attr("ALS_SPD") = object(ptr(&ALS_SPD));
+	scope().attr("DMRG") = object(ptr(&DMRG));
+	scope().attr("DMRG_SPD") = object(ptr(&DMRG_SPD));
+	scope().attr("ASD") = object(ptr(&ASD));
+	scope().attr("ASD_SPD") = object(ptr(&ASD_SPD));
+	
 	// ------------------------------------------------------------- misc
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
