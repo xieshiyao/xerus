@@ -24,6 +24,7 @@
 
 #ifdef XERUS_EXPERIMENTAL_PYTHON_WRAPPER
 
+#include <boost/function.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 #include "xerus.h"
@@ -72,6 +73,10 @@ struct custom_vector_from_seq{
 BOOST_PYTHON_MODULE(libxerus) {
 	using namespace xerus;
 	
+	bool show_user_defined = true;
+	bool show_signatures = false;
+	docstring_options doc_options(show_user_defined, show_signatures);
+	
 	class_<std::vector<size_t>, boost::noncopyable>("IntegerVector", no_init); // just to give it a human readable name in python
 	class_<std::vector<double>, boost::noncopyable>("DoubleVector", no_init);
 	custom_vector_from_seq<size_t>();
@@ -80,12 +85,14 @@ BOOST_PYTHON_MODULE(libxerus) {
 	to_python_converter<std::vector<double>, custom_vector_to_list<double>>();
 	
 	// --------------------------------------------------------------- index
-	class_<Index>("Index")
+	class_<Index>("Index",
+		"helper class to define objects to be used in indexed expressions"
+	)
 		.def(init<int64_t>())
-		.def("__pow__", &Index::operator^)
-		.def("__xor__", &Index::operator^)
-		.def("__div__", &Index::operator/)
-		.def("__and__", &Index::operator&)
+		.def("__pow__", &Index::operator^, "i**d changes the index i to span d indices in the current expression")
+		.def("__xor__", &Index::operator^, "i^d changes the index i to span d indices in the current expression")
+		.def("__div__", &Index::operator/, "i/n changes the index i to span 1/n of all the indices of the current object")
+		.def("__and__", &Index::operator&, "i&d changes the index i to span all but d indices of the current object")
 		.def("__str__", static_cast<std::string (*)(const Index &)>(&misc::to_string<Index>))
 	;
 	implicitly_convertible<int64_t, Index>();
@@ -95,7 +102,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 			res.append(Index());
 		}
 		return res;
-	});
+	}, args("n"), "creates n distinct indices");
 	
 	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
 	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
@@ -203,98 +210,114 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	// ----------------------------------------------------------- decompositions
 	
-	
 	// ----------------------------------------------------------- Tensor
-	class_<Tensor>("Tensor")
-		.def(init<const Tensor::DimensionTuple&>())
-		.def(init<const TensorNetwork&>())
-		.add_property("dimensions", +[](Tensor &_A) {
-			return _A.dimensions;
-		})
-		.def("degree", &Tensor::degree)
-		.def_readonly("factor", &Tensor::factor)
-		.def_readonly("size", &Tensor::size)
-		.def("frob_norm", &Tensor::frob_norm)
-		.def("random", 
-			+[](std::vector<size_t> _dim) {
-				static std::random_device rd;
-				std::mt19937_64 rnd(rd());
-				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::Tensor::random(_dim, rnd, dist);
-			}).staticmethod("random")
-		.def("ones", &Tensor::ones).staticmethod("ones")
-		.def("identity", &Tensor::identity).staticmethod("identity")
-		.def("kronecker", &Tensor::kronecker).staticmethod("kronecker")
-		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&Tensor::dirac))
-		.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const size_t)>(&Tensor::dirac)).staticmethod("dirac")
-		.def("has_factor", &Tensor::has_factor)
-		.def("is_dense", &Tensor::is_dense)
-		.def("is_sparse", &Tensor::is_sparse)
-		.def("sparsity", &Tensor::sparsity)
-// 		.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
-		.def("__call__", &indexing_wrapper<Tensor>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__str__", &Tensor::to_string)
-		.def(self * other<value_t>())
-		.def(other<value_t>() * self)
-		.def(self / other<value_t>())
-		.def(self + self)
-		.def(self - self)
-		.def("__getitem__", +[](Tensor &_this, size_t _i) {
-			// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
-			return _this[_i];
-		})
-		.def("__getitem__", +[](Tensor &_this, std::vector<size_t> _idx) {
-			return _this[_idx];
-		})
-		.def("__setitem__", +[](Tensor &_this, size_t _i, value_t _val) {
-			_this[_i] = _val;
-		})
-		.def("__setitem__", +[](Tensor &_this, std::vector<size_t> _i, value_t _val) {
-			_this[_i] = _val;
-		})
-	;
+	{ scope Tensor_scope = 
+		class_<Tensor>("Tensor",
+			"a non-decomposed Tensor in either sparse or dense representation"
+		)
+			.def(init<const Tensor::DimensionTuple&>(args("dimensions"), "constructs a Tensor with the given dimensions"))
+			.def(init<const TensorNetwork&>())
+	// 		.def(init<const Tensor::DimensionTuple&, const boost::function<value_t()> &>()) // could define as argument boost::python::object _f, but maybe rather create a new converter?
+			.add_property("dimensions", +[](Tensor &_A) {
+				return _A.dimensions;
+			})
+			.def("degree", &Tensor::degree)
+			.def_readonly("factor", &Tensor::factor)
+			.def_readonly("size", &Tensor::size)
+			.def("frob_norm", &Tensor::frob_norm)
+			.def("random", 
+				+[](std::vector<size_t> _dim) {
+					static std::random_device rd;
+					std::mt19937_64 rnd(rd());
+					std::normal_distribution<double> dist(0.0, 1.0);
+					return xerus::Tensor::random(_dim, rnd, dist);
+				}).staticmethod("random")
+			.def("ones", &Tensor::ones, args("dimensions"), 
+				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere.\n\n" \
+				 "Parameters\n" \
+				 "----------\n" \
+				 "dimensions : list or tuple of int"
+			).staticmethod("ones")
+			.def("identity", &Tensor::identity).staticmethod("identity")
+			.def("kronecker", &Tensor::kronecker).staticmethod("kronecker")
+			.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&Tensor::dirac))
+			.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const size_t)>(&Tensor::dirac)).staticmethod("dirac")
+			.def("has_factor", &Tensor::has_factor)
+			.def("is_dense", &Tensor::is_dense)
+			.def("is_sparse", &Tensor::is_sparse)
+			.def("sparsity", &Tensor::sparsity)
+	// 		.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
+			.def("__call__", &indexing_wrapper<Tensor>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__str__", &Tensor::to_string)
+			.def(self * other<value_t>())
+			.def(other<value_t>() * self)
+			.def(self / other<value_t>())
+			.def(self + self)
+			.def(self - self)
+			.def("__getitem__", +[](Tensor &_this, size_t _i) {
+				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				return _this[_i];
+			})
+			.def("__getitem__", +[](Tensor &_this, std::vector<size_t> _idx) {
+				return _this[_idx];
+			})
+			.def("__setitem__", +[](Tensor &_this, size_t _i, value_t _val) {
+				_this[_i] = _val;
+			})
+			.def("__setitem__", +[](Tensor &_this, std::vector<size_t> _i, value_t _val) {
+				_this[_i] = _val;
+			})
+		;
+		enum_<Tensor::Representation>("Representation", "Possible representations of Tensor objects.")
+			.value("Dense", Tensor::Representation::Dense)
+			.value("Sparse", Tensor::Representation::Sparse)
+// 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
+		;
+	} // close Tensor_scope
 	
 	
 	// ------------------------------------------------------------- TTNetwork
-	class_<TensorNetwork>("TensorNetwork")
-		.def(init<Tensor>())
-		.add_property("dimensions", +[](TensorNetwork &_A) {
-			return _A.dimensions;
-		})
-		.def("degree", &TensorNetwork::degree)
-		.def("datasize", &TensorNetwork::datasize)
-		.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-		.def(self * other<value_t>())
-		.def(other<value_t>() * self)
-		.def(self / other<value_t>())
-		.def("__getitem__", +[](TensorNetwork &_this, size_t _i) {
-			// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
-			return _this[_i];
-		})
-		.def("__getitem__", +[](TensorNetwork &_this, std::vector<size_t> _idx) {
-			return _this[_idx];
-		})
-		.def("frob_norm", &TensorNetwork::frob_norm)
-	;
+	{ scope TN_scope =
+		class_<TensorNetwork>("TensorNetwork")
+			.def(init<Tensor>())
+			.add_property("dimensions", +[](TensorNetwork &_A) {
+				return _A.dimensions;
+			})
+			.def("degree", &TensorNetwork::degree)
+			.def("datasize", &TensorNetwork::datasize)
+			.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def(self * other<value_t>())
+			.def(other<value_t>() * self)
+			.def(self / other<value_t>())
+			.def("__getitem__", +[](TensorNetwork &_this, size_t _i) {
+				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				return _this[_i];
+			})
+			.def("__getitem__", +[](TensorNetwork &_this, std::vector<size_t> _idx) {
+				return _this[_idx];
+			})
+			.def("frob_norm", &TensorNetwork::frob_norm)
+		;
+		
+		// TODO add Link, Node and expose nodes
+	} // closes TN_scope
 	
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
-		.def(init<const Tensor&>())
-		.def(init<const Tensor&, value_t>())
-		.def(init<const Tensor&, value_t, size_t>())
+		.def(init<const Tensor&, optional<value_t, size_t>>())
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
 		.def(init<Tensor::DimensionTuple>())
 		.def(init<size_t>())
@@ -364,7 +387,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 		LOG_SHORT(info, _msg);
 	});
 	
-	// the following is probably not necessary because we inherit from std::exception
+	// identity returns the cpp name to a python object
+// 	def("identity", identity_);
+	
+	// the following is probably not necessary because generic_error inherits from std::exception
 // 	register_exception_translator<misc::generic_error>([](const misc::generic_error &_e){
 // 		LOG(pydebug, "custom exception handler called with " << _e.what());
 // 		PyErr_SetString(PyExc_UserWarning, _e.what());
