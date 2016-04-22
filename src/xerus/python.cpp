@@ -70,6 +70,8 @@ struct custom_vector_from_seq{
 	}
 };
 
+
+// TODO get_copy() wrapper in python correct manner
 BOOST_PYTHON_MODULE(libxerus) {
 	using namespace xerus;
 	
@@ -405,6 +407,13 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
 // 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
 		
+		.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
+		.def("dyadic_product", static_cast<TTTensor (*)(const std::vector<TTTensor> &)>(&TTTensor::dyadic_product))
+			.staticmethod("dyadic_product") //  TODO should not be in TTTensor scope
+		.def("entrywise_square", &TTTensor::entrywise_square) // TODO should not be a member method?
+		.def("find_largest_entry", &TTTensor::find_largest_entry) // TODO should not be a member method!
+		// TODO chop wrapper
+		
 		.def("round", +[](TTTensor &_this, std::vector<size_t> _rank){
 			_this.round(_rank);
 		})
@@ -435,6 +444,71 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(other<value_t>() * self)
 		.def(self / other<value_t>())
 	;
+	def("entrywise_product", static_cast<TTTensor (*)(const TTTensor&, const TTTensor&)>(&entrywise_product));
+	
+	class_<TTOperator, bases<TensorNetwork>>("TTOperator")
+		.def(init<const Tensor&, optional<value_t, size_t>>())
+		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
+		.def(init<Tensor::DimensionTuple>())
+		.def(init<size_t>())
+		.def("get_component", &TTOperator::get_component, return_value_policy<copy_const_reference>())
+		.def("set_component", &TTOperator::set_component)
+		.def_readonly("cannonicalized", &TTOperator::cannonicalized)
+		.def_readonly("corePosition", &TTOperator::corePosition)
+		.def("ranks", &TTOperator::ranks)
+		.def("rank", &TTOperator::rank)
+// 		.def("frob_norm", &TTOperator::frob_norm) // NOTE unneccessary because correct call is inherited
+		.def("random", 
+			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
+				static std::random_device rd;
+				std::mt19937_64 rnd(rd());
+				std::normal_distribution<double> dist(0.0, 1.0);
+				return xerus::TTOperator::random(_dim, _rank, rnd, dist);
+			}).staticmethod("random")
+		.def("ones", &TTOperator::ones).staticmethod("ones")
+		.def("identity", &TTOperator::identity<true>).staticmethod("identity") // exists for  TTOperator only
+// 		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker") //TODO
+// 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTOperator::dirac)) //TODO
+// 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const size_t)>(&TTOperator::dirac)).staticmethod("dirac") //TODO
+		
+		.def("reduce_to_maximal_ranks", &TTOperator::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
+		.def("dyadic_product", static_cast<TTOperator (*)(const std::vector<TTOperator> &)>(&TTOperator::dyadic_product))
+			.staticmethod("dyadic_product") //  TODO should not be in TTOperator scope
+		.def("entrywise_square", &TTOperator::entrywise_square) // TODO should not be a member method?
+		.def("find_largest_entry", &TTOperator::find_largest_entry) // TODO should not be a member method!
+		// TODO chop wrapper
+		
+		.def("round", +[](TTOperator &_this, std::vector<size_t> _rank){
+			_this.round(_rank);
+		})
+		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round))
+		.def("round", static_cast<void (TTOperator::*)(double)>(&TTOperator::round))
+		.def("round", static_cast<void (TTOperator::*)(size_t)>(&TTOperator::round))
+		
+		.def("soft_threshold", +[](TTOperator &_this, double _tau) {
+			_this.soft_threshold(_tau);
+		})
+		.def("soft_threshold", +[](TTOperator &_this, std::vector<double> _taus) {
+			_this.soft_threshold(_taus);
+		})
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const double, const bool)>(&TTOperator::soft_threshold))
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const std::vector<double>&, const bool)>(&TTOperator::soft_threshold))
+		
+		.def("move_core", +[](TTOperator &_this, size_t _pos){
+			_this.move_core(_pos);
+		})
+		.def("move_core", &TTOperator::move_core)
+		
+		.def("assume_core_position", &TTOperator::assume_core_position)
+		.def("cannonicalize_left", &TTOperator::cannonicalize_left)
+		.def("cannonicalize_right", &TTOperator::cannonicalize_right)
+		.def(self + self)
+		.def(self - self)
+		.def(self * other<value_t>())
+		.def(other<value_t>() * self)
+		.def(self / other<value_t>())
+	;
+	def("entrywise_product", static_cast<TTOperator (*)(const TTOperator&, const TTOperator&)>(&entrywise_product));
 	
 	// ------------------------------------------------------------- Algorithms
 // 	def("ALS", +[](){
