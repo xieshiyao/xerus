@@ -291,7 +291,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	// ------------------------------------------------------------- TensorNetwork
 	VECTOR_TO_PY(TensorNetwork::Link, "LinkVector");
-	VECTOR_TO_PY(TensorNetwork::Node, "TensorNetworkNodeVector");
+	VECTOR_TO_PY(TensorNetwork::TensorNode, "TensorNetworkNodeVector");
 	{ scope TN_scope =
 		class_<TensorNetwork>("TensorNetwork")
 			.def(init<Tensor>())
@@ -522,13 +522,13 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return _this.data;
 			}, +[](PerformanceData &_this, std::vector<PerformanceData::DataPoint> &_newData){
 				_this.data = _newData;
-			}, )
+			})
 			// TODO convert the errFunc
-			.add_property("errorFunction", +[](PerformanceData &_this){
-				return _this.errorFunction;
-			}, +[](PerformanceData &_this, boost::python::object _f){
-				_this.errorFunction = _f;
-			}, )
+// 			.add_property("errorFunction", +[](PerformanceData &_this){
+// 				return _this.errorFunction;
+// 			}, +[](PerformanceData &_this, boost::python::object _f){
+// 				_this.errorFunction = _f;
+// 			})
 			.def(init<bool>())
 			.def("start", &PerformanceData::start)
 			.def("stop_timer", &PerformanceData::stop_timer)
@@ -598,7 +598,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 	add_property("ALS", +[](){ return ALS; });
 	def("ALS", +[](TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 			ALS(_x, _b, _pd);
-		})
+		});
 	// ------------------------------------------------------------- misc
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
