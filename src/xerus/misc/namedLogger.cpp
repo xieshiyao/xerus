@@ -73,12 +73,12 @@ namespace xerus {
 							<< get_call_stack() << std::endl;
 						
 						// Output namedLogger
-						current.flush();
 						old.flush();
+						current.flush();
 						out << "-------------------------------------------------------------------------------" << std::endl 
 							<< "  last " << (current.str().size() + old.str().size()) << " bytes of log:" << std::endl
 							<< "-------------------------------------------------------------------------------" << std::endl 
-							<< current.str() << old.str() << "horst" << std::endl; 
+							<< old.str() << current.str() << "horst" << std::endl; 
 						out.close();
 					}
 				}

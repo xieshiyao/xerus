@@ -173,6 +173,10 @@ namespace xerus { namespace misc { namespace internal {
 		if (num <= 0) {
 			return "Callstack could not be built.";
 		}
+		while (size_t(num) == stack.size()) {
+			stack.resize(stack.size()*2);
+			num = backtrace(&stack[0], stack.size());
+		}
 		stack.resize(static_cast<size_t>(num));
 		std::string res;
 		//NOTE i=0 corresponds to get_call_stack and is omitted
@@ -197,7 +201,7 @@ namespace xerus { namespace misc { namespace internal {
     namespace xerus {
         namespace misc {
             std::string get_call_stack() {
-                const size_t MAX_FRAMES = 100;
+                const size_t MAX_FRAMES = 1000;
                 std::vector<void *> stack(MAX_FRAMES);
                 int num = backtrace(&stack[0], MAX_FRAMES);
                 if (num <= 0) {
