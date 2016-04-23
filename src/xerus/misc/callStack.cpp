@@ -167,7 +167,7 @@ namespace xerus { namespace misc { namespace internal {
 	} // namespace internal
 
 	std::string get_call_stack() {
-		const size_t MAX_FRAMES = 100;
+		const size_t MAX_FRAMES = 1000;
 		std::vector<void *> stack(MAX_FRAMES);
 		int num = backtrace(&stack[0], MAX_FRAMES);
 		if (num <= 0) {
@@ -175,7 +175,7 @@ namespace xerus { namespace misc { namespace internal {
 		}
 		while (size_t(num) == stack.size()) {
 			stack.resize(stack.size()*2);
-			num = backtrace(&stack[0], stack.size());
+			num = backtrace(&stack[0], int(stack.size()));
 		}
 		stack.resize(static_cast<size_t>(num));
 		std::string res;
@@ -193,32 +193,36 @@ namespace xerus { namespace misc { namespace internal {
 } } // namespaces
 
 #else // No fancy callstack
-    #include <execinfo.h>
-    #include <iomanip>
-    #include <vector>
-    #include <sstream>
+	#include <execinfo.h>
+	#include <iomanip>
+	#include <vector>
+	#include <sstream>
 
-    namespace xerus {
-        namespace misc {
-            std::string get_call_stack() {
-                const size_t MAX_FRAMES = 1000;
-                std::vector<void *> stack(MAX_FRAMES);
-                int num = backtrace(&stack[0], MAX_FRAMES);
-                if (num <= 0) {
-                    return "Callstack could not be built.";
-                }
-                stack.resize(size_t(num));
-                std::stringstream res;
-                //NOTE i=0 corresponds to get_call_stack and is omitted
-                for (size_t i=1; i<size_t(num); ++i) {
-                    res << "[0x" << std::setw(int(sizeof(void*)*2)) << std::setfill('0') << std::hex << uintptr_t(stack[i]) << " .?] <bfd not loaded, use addr2line to resolve>\n";
-                }
-                return res.str();
-            }
+	namespace xerus {
+		namespace misc {
+			std::string get_call_stack() {
+				const size_t MAX_FRAMES = 1000;
+				std::vector<void *> stack(MAX_FRAMES);
+				int num = backtrace(&stack[0], MAX_FRAMES);
+				if (num <= 0) {
+					return "Callstack could not be built.";
+				}
+				while (size_t(num) == stack.size()) {
+					stack.resize(stack.size()*2);
+					num = backtrace(&stack[0], int(stack.size()));
+				}
+				stack.resize(size_t(num));
+				std::stringstream res;
+				//NOTE i=0 corresponds to get_call_stack and is omitted
+				for (size_t i=1; i<size_t(num); ++i) {
+					res << "[0x" << std::setw(int(sizeof(void*)*2)) << std::setfill('0') << std::hex << uintptr_t(stack[i]) << " .?] <bfd not loaded, use addr2line to resolve>\n";
+				}
+				return res.str();
+			}
 
-            std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
-                return std::pair<uintptr_t, uintptr_t>(0,0);
-            }
-        }
-    }
+			std::pair<uintptr_t, uintptr_t> get_range_of_section(void * _addr, std::string _name) {
+				return std::pair<uintptr_t, uintptr_t>(0,0);
+			}
+		}
+	}
 #endif
