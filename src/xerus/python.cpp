@@ -27,6 +27,14 @@
 #include <boost/function.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#include <numpy/ndarrayobject.h>
+#pragma GCC diagnostic pop
 #include "xerus.h"
 
 using namespace boost::python;
@@ -74,6 +82,8 @@ struct custom_vector_from_seq{
 // TODO get_copy() wrapper in python correct manner
 BOOST_PYTHON_MODULE(libxerus) {
 	using namespace xerus;
+	
+	import_array(); // for numpy
 	
 	bool show_user_defined = true;
 	bool show_signatures = false;
@@ -227,6 +237,57 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(init<const TensorNetwork&>())
 			.def(init<const Tensor &>())
 	// 		.def(init<const Tensor::DimensionTuple&, const boost::function<value_t()> &>()) // could define as argument boost::python::object _f, but maybe rather create a new converter?
+			.def("from_ndarray", +[](PyObject *_npObject){
+				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(_npObject);
+				int deg = PyArray_NDIM(npa);
+				std::vector<size_t> dims;
+				dims.resize(size_t(deg));
+				if (PyArray_ISCONTIGUOUS(npa)) {
+					for (int i=0; i<deg; ++i) {
+						dims[size_t(i)] = size_t(PyArray_DIMS(npa)[i]);
+					}
+					Tensor result(dims, Tensor::Representation::Dense, Tensor::Initialisation::None);
+					misc::copy(result.get_unsanitized_dense_data(), static_cast<double*>(PyArray_DATA(npa)), result.size);
+					return object(result);
+				} else if (PyArray_ISFORTRAN(npa)) {
+					std::vector<size_t> shuffle(dims);
+					for (int i=0; i<deg; ++i) {
+						dims[size_t(deg-i-1)] = size_t(PyArray_DIMS(npa)[i]);
+						shuffle[size_t(deg-i-1)] = size_t(i);
+					}
+					Tensor result(dims, Tensor::Representation::Dense, Tensor::Initialisation::None);
+					// TODO reduce number of copies
+					Tensor tmp(dims, Tensor::Representation::Dense, Tensor::Initialisation::None);
+					misc::copy(tmp.get_unsanitized_dense_data(), static_cast<double*>(PyArray_DATA(npa)), result.size);
+					reshuffle(result, tmp, shuffle);
+					return object(result);
+				} else {
+					LOG(error, "could not convert ndarray of neither c nor fortran striding");
+					return object();
+				}
+			}).staticmethod("from_ndarray")
+			.def("to_ndarray", +[](Tensor &_this){
+				std::vector<npy_intp> dimensions;
+				for (size_t d : _this.dimensions) {
+					dimensions.emplace_back(npy_intp(d));
+				}
+				
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wuseless-cast"
+				#pragma GCC diagnostic ignored "-Wold-style-cast"
+				#pragma GCC diagnostic ignored "-Wcast-qual"
+				PyObject *pyObj; 
+				if (_this.is_dense()) {
+					pyObj = PyArray_SimpleNewFromData(int(_this.degree()), &dimensions[0], NPY_DOUBLE, _this.get_dense_data());
+				} else {
+					Tensor cpy(_this); // NOTE leaves _this as a sparse tensor
+					//TODO reduce the numer of copies in this
+					pyObj = PyArray_SimpleNewFromData(int(_this.degree()), &dimensions[0], NPY_DOUBLE, cpy.get_dense_data());
+				}
+				
+				return PyArray_Copy(reinterpret_cast<PyArrayObject*>(pyObj)); // copy due to lifetime issues (copy is owned by numpy instead of us)
+				#pragma GCC diagnostic pop
+			})
 			.add_property("dimensions", +[](Tensor &_A) {
 				return _A.dimensions;
 			})

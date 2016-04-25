@@ -58,8 +58,8 @@ namespace xerus {
 		* @details For trivial copyable types this is only a slim wrapper for memcpy.
 		*/
 		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
-		inline void copy(T* const __restrict _x, const T* const __restrict _y, const size_t _n) {
-			memcpy(_x, _y, _n*sizeof(T));
+		inline void copy(T* const __restrict _dest, const T* const __restrict _src, const size_t _n) {
+			memcpy(_dest, _src, _n*sizeof(T));
 		}
 		
 		
