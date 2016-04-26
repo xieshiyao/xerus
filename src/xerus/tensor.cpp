@@ -284,7 +284,7 @@ namespace xerus {
 	}
 	
 	
-	size_t Tensor::reorder_costs() const {
+	size_t Tensor::reorder_cost() const {
 		return is_sparse() ? 10*sparsity() : size;
 	}
 	
@@ -627,17 +627,10 @@ namespace xerus {
 		std::shared_ptr<std::map<size_t, value_t>> newD(new std::map<size_t, value_t>(std::move(_newData)));
 		sparseData = std::move(newD);
 	}
-	
-	
-	void Tensor::reinterpret_dimensions(const DimensionTuple& _newDimensions) {
+		
+	void Tensor::reinterpret_dimensions(DimensionTuple _newDimensions) {
 		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
-		dimensions = _newDimensions;
-	}
-	
-	
-	void Tensor::reinterpret_dimensions(      DimensionTuple&& _newDimensions) {
-		REQUIRE(misc::product(_newDimensions) == size, "New dimensions must not change the size of the tensor in reinterpretation: " << misc::product(_newDimensions) << " != " << size);
-		dimensions = std::move(_newDimensions);
+		dimensions = std::move(_newDimensions); // NOTE pass-by-value
 	}
 	
 	
@@ -1369,6 +1362,12 @@ namespace xerus {
 		}
 	}
 	
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+		Tensor result;
+		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numIndices);
+		return result;
+	}
+	
 	_inline_ std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
 		REQUIRE(_splitPos <= _input.degree(), "Split position must be in range.");
 		
@@ -1555,12 +1554,18 @@ namespace xerus {
 	}
 	
 	
-	void calculate_pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
+	void pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
 		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
 		contract(_inverse, U, false, S, false, 1);
 		contract(_inverse, _inverse, false, Vt, false, 1);
+	}
+	
+	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos) {
+		Tensor result;
+		pseudo_inverse(result, _input, _splitPos);
+		return result;
 	}
 	
 	

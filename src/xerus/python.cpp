@@ -329,7 +329,28 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("is_dense", &Tensor::is_dense)
 			.def("is_sparse", &Tensor::is_sparse)
 			.def("sparsity", &Tensor::sparsity)
-	// 		.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
+			.def("all_entries_valid", &Tensor::all_entries_valid)
+			.def("reorder_cost", &Tensor::reorder_cost)
+			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
+			.def("resize_dimension", &Tensor::resize_dimension) // TODO rename -> mode
+			.def("resize_dimension", +[](Tensor &_this, size_t _dimPos, size_t _newDim){
+				_this.resize_dimension(_dimPos, _newDim);
+			})
+			.def("fix_slate", &Tensor::fix_slate)
+			.def("remove_slate", &Tensor::remove_slate)
+			.def("perform_trace", &Tensor::perform_trace)
+			.def("offset_add", &Tensor::offset_add)
+			.def("use_dense_representation", &Tensor::use_dense_representation)
+			.def("use_sparse_representation", &Tensor::use_sparse_representation)
+			.def("use_sparse_representation", +[](Tensor &_this){
+				_this.use_dense_representation();
+			})
+			.def("ensure_own_data", &Tensor::ensure_own_data)
+			.def("ensure_own_data_no_copy", &Tensor::ensure_own_data_no_copy)
+			.def("apply_factor", &Tensor::apply_factor)
+			.def("ensure_own_data_and_apply_factor", &Tensor::ensure_own_data_and_apply_factor)
+			.def("multiIndex_to_position", &Tensor::multiIndex_to_position).staticmethod("multiIndex_to_position")
+			.def("position_to_multiIndex", &Tensor::position_to_multiIndex).staticmethod("position_to_multiIndex")
 			.def("__call__", &indexing_wrapper<Tensor>, return_value_policy<manage_new_object>())
 			.def("__call__", &indexing_wrapper<Tensor,Index>, return_value_policy<manage_new_object>())
 			.def("__call__", &indexing_wrapper<Tensor,Index, Index>, return_value_policy<manage_new_object>())
@@ -366,6 +387,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
 		;
 	} // close Tensor_scope
+	def("reshuffle", static_cast<Tensor(*)(const Tensor&, const std::vector<size_t>&)>(&reshuffle));
+	def("contract", static_cast<Tensor(*)(const Tensor&, bool, const Tensor&, bool, size_t)>(&contract));
+	def("pseudo_inverse", static_cast<Tensor(*)(const Tensor&, size_t)>(&pseudo_inverse));
+	def("entrywise_product", static_cast<Tensor(*)(const Tensor&, const Tensor&)>(&entrywise_product));
+	def("approx_entrywise_equal", static_cast<bool(*)(const Tensor&, const Tensor&, value_t)>(&approx_entrywise_equal));
+	
 	
 	
 	// ------------------------------------------------------------- TensorNetwork

@@ -359,7 +359,7 @@ namespace xerus {
 		 * @brief Approximates the cost to reorder the tensor.
 		 * @return the approximated costs.
 		 */
-		size_t reorder_costs() const;
+		size_t reorder_cost() const;
 		
 		/** 
 		 * @brief Calculates the frobenious norm of the tensor.
@@ -637,18 +637,7 @@ namespace xerus {
 		 * required use resize_dimension() instead.
 		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
 		 */
-		void reinterpret_dimensions(const DimensionTuple& _newDimensions);
-		
-		
-		/** 
-		 * @brief Reinterprets the dimensions of the tensor.
-		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
-		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
-		 * required use change_dimensions() instead.
-		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
-		 */
-		void reinterpret_dimensions(	  DimensionTuple&& _newDimensions);
-		
+		void reinterpret_dimensions(DimensionTuple _newDimensions);
 		
 		/** 
 		 * @brief Resizes a specific dimension of the Tensor.
@@ -856,6 +845,7 @@ namespace xerus {
 	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
 	 */
 	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
+	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle);
 	
 	/** 
 	 * @brief Low-level contraction between Tensors.
@@ -867,6 +857,7 @@ namespace xerus {
 	 * @param _numIndices number of indices that shall be contracted.
 	 */
 	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
 	
 	/** 
 	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.
@@ -925,7 +916,8 @@ namespace xerus {
 	 * @param _input input Tensor of which the CQ shall be calculated.
 	 * @param _splitPos index position at defining the matrification for which the pseudo inverse is calculated.
 	 */
-	void calculate_pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos);
+	void pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos);
+	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos);
 	
 	/** 
 	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.

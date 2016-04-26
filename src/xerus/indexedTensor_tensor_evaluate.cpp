@@ -135,6 +135,12 @@ namespace xerus {
 		}
 	}
 	
+	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle) {
+		Tensor result;
+		reshuffle(result, _base, _shuffle);
+		return result;
+	}
+	
 	namespace internal {
 		
 		inline void increase_indices(const size_t _i, const value_t*& _oldPosition, const std::vector<size_t>& _steps, const std::vector<size_t>& _multDimensions) {

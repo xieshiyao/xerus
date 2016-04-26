@@ -94,8 +94,7 @@ namespace xerus {
 			std::unique_ptr<Tensor> newComponent(new Tensor);
 			const Tensor &UComp = baseL.get_component(currIdx);
 			Tensor V;
-			Tensor uuInv;
-			calculate_pseudo_inverse(uuInv, leftStackUU.back(), 1);
+			Tensor uuInv = pseudo_inverse(leftStackUU.back(), 1);
 			V(i1,r,j1) =  uuInv(i1,s)* leftStackUV.back()(s,i2) * _direction.get_component(currIdx)(i2,r,j2) * right(j1,j2);
 // 			if (i!=baseL.degree()) {
 // 				V(i1,r,j1) = V(i1,r,j1) + UComp(i1,r,s)*UTV(s,j1);
