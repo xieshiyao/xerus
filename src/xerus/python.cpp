@@ -720,7 +720,45 @@ BOOST_PYTHON_MODULE(libxerus) {
 		LOG_SHORT(info, _msg);
 	});
 	
-	// TODO streamwriter stuff
+	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename){
+		misc::save_to_file(_obj, _filename);
+	});
+	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename){
+		misc::save_to_file(_obj, _filename);
+	});
+	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename){
+		misc::save_to_file(_obj, _filename);
+	});
+	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename){
+		misc::save_to_file(_obj, _filename);
+	});
+	
+	def("load_from_file", +[](std::string _filename){
+		// determine type stored in the file
+		std::ifstream in(_filename);
+		if (!in) {
+			return object();
+		}
+		std::string line;
+		std::getline(in, line);
+		std::string classname;
+		in >> classname; // "Xerus"
+		in >> classname;
+		if (classname == "xerus::Tensor") {
+			return object(misc::load_from_file<Tensor>(_filename));
+		}
+		if (classname == "xerus::TensorNetwork") {
+			return object(misc::load_from_file<TensorNetwork>(_filename));
+		}
+		if (classname == "xerus::TTNetwork<false>") {
+			return object(misc::load_from_file<TTTensor>(_filename));
+		}
+		if (classname == "xerus::TTNetwork<true>") {
+			return object(misc::load_from_file<TTOperator>(_filename));
+		}
+		LOG(warning, "unknown class type '" << classname << "' in file '" << _filename << "'");
+		return object();
+	});
 	
 	// identity returns the cpp name to a python object
 // 	def("identity", identity_);

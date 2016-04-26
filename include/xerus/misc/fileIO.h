@@ -126,7 +126,7 @@ namespace xerus { namespace misc {
 			std::string firstLine;
 			std::getline(in, firstLine);
 			
-			REQUIRE(in, "Unexpected end of stream in TensorNetwork::load_from_file().");
+			REQUIRE(in, "Unexpected end of stream in load_from_file().");
 			
 			REQUIRE(firstLine == std::string("Xerus ") + misc::demangle_cxa(typeid(T).name()) + " datafile.", "Invalid binary input file " << _filename << ". DBG: " << firstLine);
 			
