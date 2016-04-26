@@ -243,7 +243,13 @@ BOOST_PYTHON_MODULE(libxerus) {
 				});
 			}).staticmethod("from_function") 
 			.def("from_ndarray", +[](PyObject *_npObject){
-				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(_npObject);
+				//TODO check for dangling pointers!
+				#pragma GCC diagnostic push
+				#pragma GCC diagnostic ignored "-Wuseless-cast"
+				#pragma GCC diagnostic ignored "-Wold-style-cast"
+				#pragma GCC diagnostic ignored "-Wcast-qual"
+				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(_npObject, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY));
+				#pragma GCC diagnostic pop
 				int deg = PyArray_NDIM(npa);
 				std::vector<size_t> dims;
 				dims.resize(size_t(deg));
@@ -253,6 +259,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 					}
 					Tensor result(dims, Tensor::Representation::Dense, Tensor::Initialisation::None);
 					misc::copy(result.get_unsanitized_dense_data(), static_cast<double*>(PyArray_DATA(npa)), result.size);
+					Py_DECREF(npa);
 					return object(result);
 				} else if (PyArray_ISFORTRAN(npa)) {
 					std::vector<size_t> shuffle(dims);
@@ -265,9 +272,11 @@ BOOST_PYTHON_MODULE(libxerus) {
 					Tensor tmp(dims, Tensor::Representation::Dense, Tensor::Initialisation::None);
 					misc::copy(tmp.get_unsanitized_dense_data(), static_cast<double*>(PyArray_DATA(npa)), result.size);
 					reshuffle(result, tmp, shuffle);
+					Py_DECREF(npa);
 					return object(result);
 				} else {
 					LOG(error, "could not convert ndarray of neither c nor fortran striding");
+					Py_DECREF(npa);
 					return object();
 				}
 			}).staticmethod("from_ndarray")
@@ -289,8 +298,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 					//TODO reduce the numer of copies in this
 					pyObj = PyArray_SimpleNewFromData(int(_this.degree()), &dimensions[0], NPY_DOUBLE, cpy.get_dense_data());
 				}
-				
-				return PyArray_Copy(reinterpret_cast<PyArrayObject*>(pyObj)); // copy due to lifetime issues (copy is owned by numpy instead of us)
+				PyObject * res = PyArray_Copy(reinterpret_cast<PyArrayObject*>(pyObj));  // copy due to lifetime issues (copy is owned by numpy instead of us)
+				Py_DECREF(pyObj);
+				return res;
 				#pragma GCC diagnostic pop
 			})
 			.add_property("dimensions", +[](Tensor &_A) {
