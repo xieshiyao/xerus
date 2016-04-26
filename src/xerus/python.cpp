@@ -118,8 +118,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 			res.append(Index());
 		}
 		return res;
-	}, args("n"), "Creates n distinct indices."
-		parametersDocstr "n : int"
+	}, arg("n")=1, "Creates n distinct indices."
+		parametersDocstr "n : int, optional"
 		returnsDocstr "list of Index"
 	);
 	
@@ -513,7 +513,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return xerus::TTTensor::random(_dim, _rank, rnd, dist);
 			}).staticmethod("random")
 		.def("ones", &TTTensor::ones).staticmethod("ones")
-// 		.def("identity", &TTTensor::identity).staticmethod("identity") // exists for  TTOperator only
 // 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
 // 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
 // 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
@@ -587,7 +586,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("reduce_to_maximal_ranks", &TTOperator::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
 		.def("dyadic_product", static_cast<TTOperator (*)(const std::vector<TTOperator> &)>(&TTOperator::dyadic_product))
 			.staticmethod("dyadic_product") //  TODO should not be in TTOperator scope
-		.def("entrywise_square", &TTOperator::entrywise_square) // TODO should not be a member method?
+		.def("entrywise_square", &TTOperator::entrywise_square) // TODO should not be a member method!
 		.def("find_largest_entry", &TTOperator::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
@@ -625,8 +624,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 		
 		
 		// for  TTOperator only:
-		.def("identity", &TTOperator::identity<true>).staticmethod("identity") 
-		.def("transpose", &TTOperator::transpose<true>)
+		.def("identity", &TTOperator::identity<>).staticmethod("identity") 
+		.def("transpose", &TTOperator::transpose<>)
 	;
 	def("entrywise_product", static_cast<TTOperator (*)(const TTOperator&, const TTOperator&)>(&entrywise_product));
 	
