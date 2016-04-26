@@ -30,58 +30,53 @@
 
 #include <xerus/misc/namedLogger.h>
 
-namespace xerus {
-    namespace misc {
-        namespace internal {
-            //Look if Log shall be streamed into a file
-			std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
-                
-                std::mutex namedLoggerMutex;
-                std::string logFilePrefix;
-                bool silenced = false;
-				std::chrono::system_clock::time_point programStartTime;
-				static void __attribute__((constructor)) initTime() {
-					programStartTime = std::chrono::system_clock::now();
-				}
-                
-				namespace buffer {
-					std::stringstream current;
-					std::stringstream old;
-					
-					void checkSwitch() {
-						if (current.str().size() > 1024*1024) {
-							#if defined(__GNUC__) && __GNUC__ < 5
-								old.str(current.str());
-								current.str(std::string());
-								current.clear();
-							#else
-								old = std::move(current);
-								current = std::stringstream();
-							#endif
-						}
-					}
-					
-					void dump_log(std::string _comment)  {
-						std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(nullptr)) + ".txt";
-						std::ofstream out(name, std::ofstream::out);
-						out << "Error: " << _comment << std::endl << std::endl;
+namespace xerus { namespace misc { namespace internal {
+	std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
+	
+	std::mutex namedLoggerMutex;
+	std::string logFilePrefix;
+	bool silenced = false;
+	std::chrono::system_clock::time_point programStartTime;
+	static void __attribute__((constructor)) initTime() {
+		programStartTime = std::chrono::system_clock::now();
+	}
+	
+	namespace buffer {
+		std::stringstream current;
+		std::stringstream old;
+		
+		void checkSwitch() {
+			if (current.str().size() > 1024*1024) {
+				#if defined(__GNUC__) && __GNUC__ < 5
+					old.str(current.str());
+					current.str(std::string());
+					current.clear();
+				#else
+					old = std::move(current);
+					current = std::stringstream();
+				#endif
+			}
+		}
+		
+		void dump_log(std::string _comment)  {
+			std::string name = std::string("errors/") + logFilePrefix + std::to_string(std::time(nullptr)) + ".txt";
+			std::ofstream out(name, std::ofstream::out);
+			out << "Error: " << _comment << std::endl << std::endl;
 
-						// Get callstack
-						out << "-------------------------------------------------------------------------------" << std::endl 
-							<< "  Callstack : " << std::endl
-							<< "-------------------------------------------------------------------------------" << std::endl
-							<< get_call_stack() << std::endl;
-						
-						// Output namedLogger
-						old.flush();
-						current.flush();
-						out << "-------------------------------------------------------------------------------" << std::endl 
-							<< "  last " << (current.str().size() + old.str().size()) << " bytes of log:" << std::endl
-							<< "-------------------------------------------------------------------------------" << std::endl 
-							<< old.str() << current.str() << "horst" << std::endl; 
-						out.close();
-					}
-				}
-        }
-    }
-}
+			// Get callstack
+			out << "-------------------------------------------------------------------------------" << std::endl 
+				<< "  Callstack : " << std::endl
+				<< "-------------------------------------------------------------------------------" << std::endl
+				<< get_call_stack() << std::endl;
+			
+			// Output namedLogger
+			old.flush();
+			current.flush();
+			out << "-------------------------------------------------------------------------------" << std::endl 
+				<< "  last " << (current.str().size() + old.str().size()) << " bytes of log:" << std::endl
+				<< "-------------------------------------------------------------------------------" << std::endl 
+				<< old.str() << current.str() << "horst" << std::endl; 
+			out.close();
+		}
+	}
+}}} // namespace xerus::misc::internal

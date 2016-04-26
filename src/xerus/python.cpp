@@ -27,6 +27,7 @@
 #include <boost/function.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
+#include <boost/python/call.hpp>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuseless-cast"
@@ -236,7 +237,11 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(init<const Tensor::DimensionTuple&>(args("dimensions"), "constructs a Tensor with the given dimensions"))
 			.def(init<const TensorNetwork&>())
 			.def(init<const Tensor &>())
-	// 		.def(init<const Tensor::DimensionTuple&, const boost::function<value_t()> &>()) // could define as argument boost::python::object _f, but maybe rather create a new converter?
+			.def("from_function", +[](const Tensor::DimensionTuple& _dim, PyObject *_f){
+				return Tensor(_dim, [&](std::vector<size_t> _p) {
+					return boost::python::call<double>(_f, _p);
+				});
+			}).staticmethod("from_function") 
 			.def("from_ndarray", +[](PyObject *_npObject){
 				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(_npObject);
 				int deg = PyArray_NDIM(npa);
@@ -720,17 +725,34 @@ BOOST_PYTHON_MODULE(libxerus) {
 		LOG_SHORT(info, _msg);
 	});
 	
+	enum_<misc::FileFormat>("FileFormat")
+		.value("BINARY", misc::FileFormat::BINARY)
+		.value("TSV", misc::FileFormat::TSV)
+	;
+	
 	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename){
 		misc::save_to_file(_obj, _filename);
+	});
+	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename, misc::FileFormat _format){
+		misc::save_to_file(_obj, _filename, _format);
 	});
 	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename){
 		misc::save_to_file(_obj, _filename);
 	});
+	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename, misc::FileFormat _format){
+		misc::save_to_file(_obj, _filename, _format);
+	});
 	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename){
 		misc::save_to_file(_obj, _filename);
 	});
+	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename, misc::FileFormat _format){
+		misc::save_to_file(_obj, _filename, _format);
+	});
 	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename){
 		misc::save_to_file(_obj, _filename);
+	});
+	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename, misc::FileFormat _format){
+		misc::save_to_file(_obj, _filename, _format);
 	});
 	
 	def("load_from_file", +[](std::string _filename){
@@ -739,11 +761,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 		if (!in) {
 			return object();
 		}
-		std::string line;
-		std::getline(in, line);
 		std::string classname;
 		in >> classname; // "Xerus"
 		in >> classname;
+		in.close();
 		if (classname == "xerus::Tensor") {
 			return object(misc::load_from_file<Tensor>(_filename));
 		}
