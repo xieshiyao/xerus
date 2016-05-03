@@ -184,7 +184,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 			})
 	;
 	
-	
 	// --------------------------------------------- indexedTensor<Tensor>
 	
 	class_<internal::IndexedTensorReadOnly<Tensor>, boost::noncopyable>("IndexedTensorReadOnly", no_init)
@@ -225,9 +224,24 @@ BOOST_PYTHON_MODULE(libxerus) {
 				std::move(_lhs) = std::move(_rhs);
 			})
 	;
+	VECTOR_TO_PY(IndexedTensor<Tensor>, "IndexedTensorList");
 	
 	
 	// ----------------------------------------------------------- decompositions
+	class_<TensorFactorisation, boost::noncopyable>("TensorFactorisation", boost::python::no_init)
+		.def("__rlshift__", +[](TensorFactorisation *_rhs, std::vector<IndexedTensor<Tensor>> &_lhs){
+			std::vector<IndexedTensor<Tensor>*> tmp;
+			for (IndexedTensor<Tensor> &i : _lhs) {
+				tmp.emplace_back(&i);
+			}
+			(*_rhs)(tmp);
+		})
+	;
+	class_<SVD, bases<TensorFactorisation>, boost::noncopyable>("SVD_tmp", boost::python::no_init);
+	def("SVD", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new SVD(std::move(_rhs));
+	}, return_value_policy<manage_new_object>());
+	
 	
 	// ----------------------------------------------------------- Tensor
 	{ scope Tensor_scope = 
