@@ -642,12 +642,14 @@ BOOST_PYTHON_MODULE(libxerus) {
 			}, +[](PerformanceData &_this, std::vector<PerformanceData::DataPoint> &_newData){
 				_this.data = _newData;
 			})
-			// TODO convert the errFunc
-// 			.add_property("errorFunction", +[](PerformanceData &_this){
-// 				return _this.errorFunction;
-// 			}, +[](PerformanceData &_this, boost::python::object _f){
-// 				_this.errorFunction = _f;
-// 			})
+			.add_property("errorFunction", 
+						  +[](PerformanceData &_this){ return _this.errorFunction; }, 
+						  +[](PerformanceData &_this, PyObject *_f){ 
+							  // TODO increase ref count for _f? also decrease it on overwrite?!
+							  _this.errorFunction = [_f](const TTTensor &_x)->double{
+								  return call<double>(_f, _x);
+							}; 
+						})
 			.def(init<bool>())
 			.def("start", &PerformanceData::start)
 			.def("stop_timer", &PerformanceData::stop_timer)
@@ -685,59 +687,178 @@ BOOST_PYTHON_MODULE(libxerus) {
 		;
 	}
 	
-	class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
-		.def(init<const ALSVariant&>())
-		.def_readwrite("sites", &ALSVariant::sites)
-		.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
-		.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
-		.def_readwrite("useResidualForEndCriterion", &ALSVariant::useResidualForEndCriterion)
-		.def_readwrite("preserveCorePosition", &ALSVariant::preserveCorePosition)
-		.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
-		.def_readwrite("localSolver", &ALSVariant::localSolver) // TODO we need some wrapper here
-		
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
-			_this(_A, _x, _b);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_A, _x, _b, _eps);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-			_this(_A, _x, _b, _numHalfSweeps);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b) {
-			_this(_x, _b);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_x, _b, _eps);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-			_this(_x, _b, _numHalfSweeps);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
-			_this(_A, _x, _b, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
-			_this(_A, _x, _b, _eps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
-			_this(_A, _x, _b, _numHalfSweeps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
-			_this(_x, _b, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
-			_this(_x, _b, _eps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
-			_this(_x, _b, _numHalfSweeps, _pd);
-		})
-	;
+	class_<TTRetractionI>("TTRetractionI", init<const TTRetractionI &>());
+	scope().attr("ALSRetractionI") = object(TTRetractionI(&ALSRetractionI));
+	scope().attr("SubmanifoldRetractionI") = object(TTRetractionI(&SubmanifoldRetractionI));
+	scope().attr("HOSVDRetractionI") = object(TTRetractionI(&HOSVDRetractionI));
+	
+	class_<TTRetractionII>("TTRetractionII", init<const TTRetractionII &>());
+	scope().attr("ALSRetractionII") = object(TTRetractionII(&ALSRetractionII));
+	scope().attr("SubmanifoldRetractionII") = object(TTRetractionII(&SubmanifoldRetractionII));
+	scope().attr("HOSVDRetractionII") = object(TTRetractionII(&HOSVDRetractionII));
+	
+	class_<TTVectorTransport>("TTVectorTransport", init<const TTVectorTransport &>());
+	scope().attr("ProjectiveVectorTransport") = object(TTVectorTransport(&ProjectiveVectorTransport));
+	
+	{ scope als_scope = 
+		class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
+			.def(init<const ALSVariant&>())
+			.def_readwrite("sites", &ALSVariant::sites)
+			.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
+			.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
+			.def_readwrite("useResidualForEndCriterion", &ALSVariant::useResidualForEndCriterion)
+			.def_readwrite("preserveCorePosition", &ALSVariant::preserveCorePosition)
+			.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
+			.add_property("localSolver", 
+						  +[](ALSVariant &_this){ return _this.localSolver; },
+						  +[](ALSVariant &_this, ALSVariant::LocalSolver _s){ _this.localSolver = _s; })
+			
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
+				_this(_A, _x, _b);
+			})
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+				_this(_A, _x, _b, _eps);
+			})
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
+				_this(_A, _x, _b, _numHalfSweeps);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b) {
+				_this(_x, _b);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+				_this(_x, _b, _eps);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
+				_this(_x, _b, _numHalfSweeps);
+			})
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+				_this(_A, _x, _b, _pd);
+			})
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+				_this(_A, _x, _b, _eps, _pd);
+			})
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+				_this(_A, _x, _b, _numHalfSweeps, _pd);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+				_this(_x, _b, _pd);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+				_this(_x, _b, _eps, _pd);
+			})
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+				_this(_x, _b, _numHalfSweeps, _pd);
+			})
+		;
+		class_<ALSVariant::LocalSolver>("LocalSolver", boost::python::no_init);
+		als_scope.attr("lapack_solver") = object(ALSVariant::LocalSolver(&ALSVariant::lapack_solver));
+		als_scope.attr("ASD_solver") = object(ALSVariant::LocalSolver(&ALSVariant::ASD_solver));
+	}
 	scope().attr("ALS") = object(ptr(&ALS));
 	scope().attr("ALS_SPD") = object(ptr(&ALS_SPD));
 	scope().attr("DMRG") = object(ptr(&DMRG));
 	scope().attr("DMRG_SPD") = object(ptr(&DMRG_SPD));
 	scope().attr("ASD") = object(ptr(&ASD));
 	scope().attr("ASD_SPD") = object(ptr(&ASD_SPD));
+	
+	class_<GeometricCGVariant>("GeometricCGVariant", init<size_t, value_t, bool, TTRetractionI, TTVectorTransport>())
+		.def(init<const GeometricCGVariant&>())
+		.def_readwrite("numSteps", &GeometricCGVariant::numSteps)
+		.def_readwrite("convergenceEpsilon", &GeometricCGVariant::convergenceEpsilon)
+		.def_readwrite("assumeSymmetricPositiveDefiniteOperator", &GeometricCGVariant::assumeSymmetricPositiveDefiniteOperator)
+		.add_property("retraction", 
+					  +[](GeometricCGVariant &_this){ return _this.retraction; }, 
+					  +[](GeometricCGVariant &_this, TTRetractionI _r){ _this.retraction = _r; })
+		.add_property("vectorTransport", 
+					  +[](GeometricCGVariant &_this){ return _this.vectorTransport; }, 
+					  +[](GeometricCGVariant &_this, TTVectorTransport _transp){ _this.vectorTransport = _transp; })
+		
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
+			_this(_A, _x, _b);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_A, _x, _b, _eps);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
+			_this(_A, _x, _b, _numSteps);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b) {
+			_this(_x, _b);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_x, _b, _eps);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
+			_this(_x, _b, _numSteps);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_A, _x, _b, _pd);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _numSteps, _pd);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_x, _b, _pd);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_x, _b, _numSteps, _pd);
+		})
+	;
+	scope().attr("GeometricCG") = object(ptr(&GeometricCG));
+	
+	class_<SteepestDescentVariant>("SteepestDescentVariant", init<size_t, value_t, bool, TTRetractionII>())
+		.def(init<const SteepestDescentVariant&>())
+		.def_readwrite("numSteps", &SteepestDescentVariant::numSteps)
+		.def_readwrite("convergenceEpsilon", &SteepestDescentVariant::convergenceEpsilon)
+		.def_readwrite("assumeSymmetricPositiveDefiniteOperator", &SteepestDescentVariant::assumeSymmetricPositiveDefiniteOperator)
+		.add_property("retraction", 
+					  +[](SteepestDescentVariant &_this){ return _this.retraction; }, 
+					  +[](SteepestDescentVariant &_this, TTRetractionII _r){ _this.retraction = _r; })
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
+			_this(_A, _x, _b);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_A, _x, _b, _eps);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
+			_this(_A, _x, _b, _numSteps);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b) {
+			_this(_x, _b);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
+			_this(_x, _b, _eps);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
+			_this(_x, _b, _numSteps);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_A, _x, _b, _pd);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _numSteps, _pd);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_x, _b, _pd);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_x, _b, _eps, _pd);
+		})
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_x, _b, _numSteps, _pd);
+		})
+	;
+	scope().attr("SteepestDescent") = object(ptr(&SteepestDescent));
 	
 	// ------------------------------------------------------------- misc
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
