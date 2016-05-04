@@ -67,13 +67,13 @@ struct custom_vector_from_seq{
 		return obj_ptr;
 	}
 	static void construct(PyObject* obj_ptr, converter::rvalue_from_python_stage1_data* data){
-		void* storage=(reinterpret_cast<converter::rvalue_from_python_storage<std::vector<size_t> >*>(data))->storage.bytes;
-		new (storage) std::vector<size_t>();
-		std::vector<size_t>* v=reinterpret_cast<std::vector<size_t>*>(storage);
+		void* storage=(reinterpret_cast<converter::rvalue_from_python_storage<std::vector<containedType> >*>(data))->storage.bytes;
+		new (storage) std::vector<containedType>();
+		std::vector<containedType>* v=reinterpret_cast<std::vector<containedType>*>(storage);
 		Py_ssize_t l=PySequence_Size(obj_ptr); if(l<0) abort();
 		v->reserve(size_t(l)); 
 		for (Py_ssize_t i=0; i<l; i++) { 
-			v->push_back(extract<size_t>(PySequence_GetItem(obj_ptr,i))); 
+			v->push_back(extract<containedType>(PySequence_GetItem(obj_ptr,i))); 
 		}
 		data->convertible=storage;
 	}
@@ -98,7 +98,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 		to_python_converter<std::vector<type>, custom_vector_to_list<type>>(); void(0)
 	
 	VECTOR_TO_PY(size_t, "IntegerVector");
-	VECTOR_TO_PY(double, "DoubleVector");
 	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index",
@@ -224,23 +223,45 @@ BOOST_PYTHON_MODULE(libxerus) {
 				std::move(_lhs) = std::move(_rhs);
 			})
 	;
-	VECTOR_TO_PY(IndexedTensor<Tensor>, "IndexedTensorList");
+	VECTOR_TO_PY(IndexedTensor<Tensor>*, "IndexedTensorList");
 	
 	
-	// ----------------------------------------------------------- decompositions
+	// ----------------------------------------------------------- factorizations
 	class_<TensorFactorisation, boost::noncopyable>("TensorFactorisation", boost::python::no_init)
-		.def("__rlshift__", +[](TensorFactorisation *_rhs, std::vector<IndexedTensor<Tensor>> &_lhs){
-			std::vector<IndexedTensor<Tensor>*> tmp;
-			for (IndexedTensor<Tensor> &i : _lhs) {
-				tmp.emplace_back(&i);
-			}
-			(*_rhs)(tmp);
+		.def("__rlshift__", +[](TensorFactorisation &_rhs, object &_lhs){
+			std::vector<IndexedTensor<Tensor>*> tmp = extract<std::vector<IndexedTensor<Tensor>*>>(_lhs);
+			_rhs(tmp);
 		})
 	;
-	class_<SVD, bases<TensorFactorisation>, boost::noncopyable>("SVD_tmp", boost::python::no_init);
+	class_<SVD, bases<TensorFactorisation>, boost::noncopyable>("SVD_temporary", boost::python::no_init);
 	def("SVD", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
 		return new SVD(std::move(_rhs));
-	}, return_value_policy<manage_new_object>());
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<QR, bases<TensorFactorisation>, boost::noncopyable>("QR_temporary", boost::python::no_init);
+	def("QR", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new QR(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<RQ, bases<TensorFactorisation>, boost::noncopyable>("RQ_temporary", boost::python::no_init);
+	def("RQ", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new RQ(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<QC, bases<TensorFactorisation>, boost::noncopyable>("QC_temporary", boost::python::no_init);
+	def("QC", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new QC(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<CQ, bases<TensorFactorisation>, boost::noncopyable>("CQ_temporary", boost::python::no_init);
+	def("CQ", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new CQ(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
 	
 	
 	// ----------------------------------------------------------- Tensor
