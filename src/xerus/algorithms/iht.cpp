@@ -25,7 +25,7 @@
 #include <xerus.h>
 
 namespace xerus {
-	double iht(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData) {
+	double IHT(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData) {
 		const size_t numMeasurments = _measurments.size();
 		const size_t degree = _x.degree();
 		const size_t USER_MEASUREMENTS_PER_ITR = numMeasurments;

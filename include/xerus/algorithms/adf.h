@@ -77,7 +77,7 @@ namespace xerus {
 			const double targetResidualNorm;
 			
 			///@brief Minimal relative decrease of the residual norm ( (oldRes-newRes)/oldRes ) until either the ranks are increased (if allowed) or the algorithm stops.
-			const double minimalResidualNormDecrese; 
+			const double minimalResidualNormDecrease; 
 			
 			///@brief The current iteration.
 			size_t iteration;
@@ -188,7 +188,7 @@ namespace xerus {
 							const MeasurmentSet& _measurments, 
 							const size_t _maxIteration, 
 							const double _targetResidualNorm, 
-							const double _minimalResidualNormDecrese, 
+							const double _minimalResidualNormDecrease, 
 							PerformanceData& _perfData ) : 
 				x(_x),
 				degree(_x.degree()),
@@ -200,7 +200,7 @@ namespace xerus {
 				
 				maxIterations(_maxIteration),
 				targetResidualNorm(_targetResidualNorm),
-				minimalResidualNormDecrese(_minimalResidualNormDecrese),
+				minimalResidualNormDecrease(_minimalResidualNormDecrease),
 				
 				iteration(0),
 				residualNorm(std::numeric_limits<double>::max()), 
@@ -228,12 +228,11 @@ namespace xerus {
 	public:
         size_t maxIterations; ///< Maximum number of sweeps to perform. Set to 0 for infinite.
         double targetResidualNorm; ///< Target residual. The algorithm will stop upon reaching a residual smaller than this value.
-        double minimalResidualNormDecrese; // The minimal relative decrese of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
-        bool printProgress; ///< informs the user about the current progress via std::cout (one continuously overwritten line)
+        double minimalResidualNormDecrease; // The minimal relative decrease of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrese, const bool _printProgress) 
-                : maxIterations(_maxIteration), targetResidualNorm(_targetResidual), minimalResidualNormDecrese(_minimalResidualDecrese), printProgress(_printProgress) { }
+        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrease) 
+                : maxIterations(_maxIteration), targetResidualNorm(_targetResidual), minimalResidualNormDecrease(_minimalResidualDecrease) { }
         
         /**
 		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
@@ -244,7 +243,7 @@ namespace xerus {
 		*/
 		template<class MeasurmentSet>
 		double operator()(TTTensor& _x, const MeasurmentSet& _measurments, PerformanceData& _perfData) const {
-			InternalSolver<MeasurmentSet> solver(_x, _x.ranks(), _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
+			InternalSolver<MeasurmentSet> solver(_x, _x.ranks(), _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrease, _perfData);
 			return solver.solve();
 		}
 		
@@ -258,7 +257,7 @@ namespace xerus {
 		*/
 		template<class MeasurmentSet>
 		double operator()(TTTensor& _x, const MeasurmentSet& _measurments, const std::vector<size_t>& _maxRanks, PerformanceData& _perfData) const {
-			InternalSolver<MeasurmentSet> solver(_x, _maxRanks, _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrese, _perfData);
+			InternalSolver<MeasurmentSet> solver(_x, _maxRanks, _measurments, maxIterations, targetResidualNorm, minimalResidualNormDecrease, _perfData);
 			return solver.solve();
 		}
 	};

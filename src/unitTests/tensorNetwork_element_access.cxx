@@ -83,18 +83,18 @@ UNIT_TEST(TensorNetwork, many_element_access,
     res(i,j,k,l) = A(i,j) * B(k,l);
 
 	SinglePointMeasurmentSet measurments;
-	measurments.add_measurment({0,0,0,0}, 0);
-	measurments.add_measurment({0,0,0,1}, 0);
-	measurments.add_measurment({0,0,0,2}, 0);
-	measurments.add_measurment({0,0,1,0}, 0);
-	measurments.add_measurment({0,0,1,1}, 0);
-	measurments.add_measurment({0,0,1,2}, 0);
-	measurments.add_measurment({0,1,0,0}, 0);
-	measurments.add_measurment({0,1,0,1}, 0);
-	measurments.add_measurment({0,1,0,2}, 0);
-	measurments.add_measurment({0,1,1,0}, 0);
-	measurments.add_measurment({0,1,1,1}, 0);
-	measurments.add_measurment({0,1,1,2}, 0);
+	measurments.add({0,0,0,0}, 0);
+	measurments.add({0,0,0,1}, 0);
+	measurments.add({0,0,0,2}, 0);
+	measurments.add({0,0,1,0}, 0);
+	measurments.add({0,0,1,1}, 0);
+	measurments.add({0,0,1,2}, 0);
+	measurments.add({0,1,0,0}, 0);
+	measurments.add({0,1,0,1}, 0);
+	measurments.add({0,1,0,2}, 0);
+	measurments.add({0,1,1,0}, 0);
+	measurments.add({0,1,1,1}, 0);
+	measurments.add({0,1,1,2}, 0);
 	
 	res.measure(measurments);
 	

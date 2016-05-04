@@ -98,6 +98,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		to_python_converter<std::vector<type>, custom_vector_to_list<type>>(); void(0)
 	
 	VECTOR_TO_PY(size_t, "IntegerVector");
+	VECTOR_TO_PY(double, "DoubleVector");
 	
 	// --------------------------------------------------------------- index
 	class_<Index>("Index",
@@ -796,6 +797,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 	scope().attr("ASD") = object(ptr(&ASD));
 	scope().attr("ASD_SPD") = object(ptr(&ASD_SPD));
 	
+	def("decomposition_als", &decomposition_als, (arg("x"), arg("b"), arg("epsilon")=EPSILON, arg("maxIterations")=1000));
+	
 	class_<GeometricCGVariant>("GeometricCGVariant", init<size_t, value_t, bool, TTRetractionI, TTVectorTransport>())
 		.def(init<const GeometricCGVariant&>())
 		.def_readwrite("numSteps", &GeometricCGVariant::numSteps)
@@ -894,6 +897,84 @@ BOOST_PYTHON_MODULE(libxerus) {
 		})
 	;
 	scope().attr("SteepestDescent") = object(ptr(&SteepestDescent));
+	
+	// ------------------------------------------------------------- measurements
+	
+	class_<SinglePointMeasurmentSet>("SinglePointMeasurmentSet")
+		.def(init<const SinglePointMeasurmentSet&>())
+		.def("get_position", +[](SinglePointMeasurmentSet &_this, size_t _i){
+			return _this.positions[_i];
+		})
+		.def("set_position", +[](SinglePointMeasurmentSet &_this, size_t _i, std::vector<size_t> _pos){
+			_this.positions[_i] = _pos;
+		})
+		.def("get_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i){
+			return _this.measuredValues[_i];
+		})
+		.def("set_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i, value_t _val){
+			_this.measuredValues[_i] = _val;
+		})
+		.def("add", &SinglePointMeasurmentSet::add)
+		.def("size", &SinglePointMeasurmentSet::size)
+		.def("degree", &SinglePointMeasurmentSet::degree)
+		.def("test_solution", &SinglePointMeasurmentSet::test_solution)
+		
+		.def("random", +[](const std::vector<size_t> &_dim, size_t _numMeas){
+			static std::random_device rd;
+			std::mt19937_64 rnd(rd());
+			return SinglePointMeasurmentSet::random(_dim, _numMeas, rnd);
+		}).staticmethod("random")
+	;
+	def("sort", static_cast<void (*)(SinglePointMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	def("IHT", &IHT, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) );
+	
+	
+	VECTOR_TO_PY(Tensor, "TensorVector");
+	
+	class_<RankOneMeasurmentSet>("RankOneMeasurmentSet")
+		.def(init<const RankOneMeasurmentSet&>())
+		.def("get_position", +[](RankOneMeasurmentSet &_this, size_t _i){
+			return _this.positions[_i];
+		})
+		.def("set_position", +[](RankOneMeasurmentSet &_this, size_t _i, std::vector<Tensor> _pos){
+			_this.positions[_i] = _pos;
+		})
+		.def("get_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i){
+			return _this.measuredValues[_i];
+		})
+		.def("set_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i, value_t _val){
+			_this.measuredValues[_i] = _val;
+		})
+		.def("add", &RankOneMeasurmentSet::add)
+		.def("size", &RankOneMeasurmentSet::size)
+		.def("degree", &RankOneMeasurmentSet::degree)
+		.def("test_solution", &RankOneMeasurmentSet::test_solution)
+	;
+	def("sort", static_cast<void (*)(RankOneMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	
+	
+	class_<ADFVariant>("ADFVariant", init<size_t, double, double>())
+		.def(init<ADFVariant>())
+		.def_readwrite("maxIterations", &ADFVariant::maxIterations)
+		.def_readwrite("targetResidualNorm", &ADFVariant::targetResidualNorm)
+		.def_readwrite("minimalResidualNormDecrease", &ADFVariant::minimalResidualNormDecrease)
+		
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, PerformanceData& _pd){
+			return _this(_x, _meas, _pd);
+		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+			return _this(_x, _meas, _maxRanks, _pd);
+		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, PerformanceData& _pd){
+			return _this(_x, _meas, _pd);
+		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+			return _this(_x, _meas, _maxRanks, _pd);
+		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
+	;
+	scope().attr("ADF") = object(ptr(&ADF));
+	
 	
 	// ------------------------------------------------------------- misc
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
