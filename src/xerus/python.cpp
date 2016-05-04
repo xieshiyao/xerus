@@ -41,12 +41,16 @@
 using namespace boost::python;
 
 
-
-template<class t_type, class... args>
-static xerus::internal::IndexedTensor<t_type>* indexing_wrapper(t_type &_this, args... _indices) {
-	return new xerus::internal::IndexedTensor<t_type>(std::move(_this(_indices...)));
+void variable_argument_member_to_tuple_wrapper(const std::string &_name, const std::string &_tmpName = "new_fn") {
+	boost::python::str pyCode;
+	pyCode += "def patch_call_fn():\n";
+	pyCode += std::string("  original = ")+_name+"\n";
+	pyCode += std::string("  def ")+_tmpName+"( this, *args ):\n";
+	pyCode += "    return original( this, args )\n";
+	pyCode += std::string("  return ")+_tmpName+"\n";
+	pyCode += _name + " = patch_call_fn()\n";
+	boost::python::exec(pyCode, scope().attr("__dict__"));
 }
-
 
 template<typename containedType>
 struct custom_vector_to_list{
@@ -122,6 +126,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		parametersDocstr "n : int, optional"
 		returnsDocstr "list of Index"
 	);
+	VECTOR_TO_PY(Index, "IndexVector");
 	
 	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
 	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
@@ -385,14 +390,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("ensure_own_data_and_apply_factor", &Tensor::ensure_own_data_and_apply_factor)
 			.def("multiIndex_to_position", &Tensor::multiIndex_to_position).staticmethod("multiIndex_to_position")
 			.def("position_to_multiIndex", &Tensor::position_to_multiIndex).staticmethod("position_to_multiIndex")
-			.def("__call__", &indexing_wrapper<Tensor>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", +[](Tensor &_this, const std::vector<Index> &_idx){
+				return  new xerus::internal::IndexedTensor<Tensor>(std::move(_this(_idx)));
+			}, return_value_policy<manage_new_object>())
 			.def("__str__", &Tensor::to_string)
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
@@ -421,6 +421,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
 		;
 	} // close Tensor_scope
+	variable_argument_member_to_tuple_wrapper("Tensor.__call__", "TensorCallOperator");
 	def("reshuffle", static_cast<Tensor(*)(const Tensor&, const std::vector<size_t>&)>(&reshuffle));
 	def("contract", static_cast<Tensor(*)(const Tensor&, bool, const Tensor&, bool, size_t)>(&contract));
 	def("pseudo_inverse", static_cast<Tensor(*)(const Tensor&, size_t)>(&pseudo_inverse));
@@ -451,14 +452,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.add_property("externalLinks", +[](TensorNetwork &_this){
 				return _this.externalLinks;
 			})
-			.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", +[](TensorNetwork &_this, const std::vector<Index> &_idx){
+				return  new xerus::internal::IndexedTensor<TensorNetwork>(std::move(_this(_idx)));
+			}, return_value_policy<manage_new_object>())
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
 			.def(self / other<value_t>())
@@ -522,7 +518,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("links", &TensorNetwork::Link::links)
 		;
 	} // closes TN_scope
-
+	variable_argument_member_to_tuple_wrapper("TensorNetwork.__call__", "TensorNetworkCallOperator");
 	
 	// ------------------------------------------------------------- TTNetwork	
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
