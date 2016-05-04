@@ -368,19 +368,17 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("all_entries_valid", &Tensor::all_entries_valid)
 			.def("reorder_cost", &Tensor::reorder_cost)
 			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
-			.def("resize_dimension", &Tensor::resize_dimension) // TODO rename -> mode
-			.def("resize_dimension", +[](Tensor &_this, size_t _dimPos, size_t _newDim){
-				_this.resize_dimension(_dimPos, _newDim);
-			})
+			.def("resize_dimension", &Tensor::resize_dimension,
+				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
+			) // TODO rename -> mode
 			.def("fix_slate", &Tensor::fix_slate)
 			.def("remove_slate", &Tensor::remove_slate)
 			.def("perform_trace", &Tensor::perform_trace)
 			.def("offset_add", &Tensor::offset_add)
 			.def("use_dense_representation", &Tensor::use_dense_representation)
-			.def("use_sparse_representation", &Tensor::use_sparse_representation)
-			.def("use_sparse_representation", +[](Tensor &_this){
-				_this.use_dense_representation();
-			})
+			.def("use_sparse_representation", &Tensor::use_sparse_representation,
+				(arg("epsilon")=EPSILON)
+			)
 			.def("ensure_own_data", &Tensor::ensure_own_data)
 			.def("ensure_own_data_no_copy", &Tensor::ensure_own_data_no_copy)
 			.def("apply_factor", &Tensor::apply_factor)
@@ -478,21 +476,20 @@ BOOST_PYTHON_MODULE(libxerus) {
 				_this.require_valid_network();
 			})
 			.def("require_correct_format", &TensorNetwork::require_correct_format)
+			.def("measure", &TensorNetwork::measure)
 			.def("swap_external_links", &TensorNetwork::swap_external_links)
 			.def("round_edge", &TensorNetwork::round_edge)
-			.def("transfer_core", &TensorNetwork::transfer_core)
-			.def("transfer_core", +[](TensorNetwork &_this, size_t _from, size_t _to) {
-				_this.transfer_core(_from, _to);
-			})
+			.def("transfer_core", &TensorNetwork::transfer_core,
+				(arg("from"), arg("to"), arg("allowRankReduction")=true)
+			)
 			.def("reduce_representation", &TensorNetwork::reduce_representation)
 			//TODO find_common_edge (wrapper that returns python::tuple
 			.def("sanitize", &TensorNetwork::sanitize)
 			.def("fix_slate", &TensorNetwork::fix_slate) //TODO rename
 			.def("remove_slate", &TensorNetwork::remove_slate)
-			.def("resize_dimension", &TensorNetwork::resize_dimension)
-			.def("resize_dimension", +[](TensorNetwork &_this, size_t _mode,  size_t _newDim) {
-				_this.resize_dimension(_mode, _newDim);
-			})
+			.def("resize_dimension", &TensorNetwork::resize_dimension,
+				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
+			)
 			.def("contract", static_cast<void (TensorNetwork::*)(size_t, size_t)>(&TensorNetwork::contract))
 			.def("contract", static_cast<size_t (TensorNetwork::*)(const std::set<size_t>&)>(&TensorNetwork::contract)) //TODO write converter
 			.def("contraction_cost", &TensorNetwork::contraction_cost)
@@ -560,26 +557,22 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("find_largest_entry", &TTTensor::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
-		.def("round", +[](TTTensor &_this, std::vector<size_t> _rank){
-			_this.round(_rank);
-		})
-		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round))
+		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
+			(arg("ranks"), arg("epsilon")=EPSILON)
+		)
 		.def("round", static_cast<void (TTTensor::*)(double)>(&TTTensor::round))
 		.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
 		
-		.def("soft_threshold", +[](TTTensor &_this, double _tau) {
-			_this.soft_threshold(_tau);
-		})
-		.def("soft_threshold", +[](TTTensor &_this, std::vector<double> _taus) {
-			_this.soft_threshold(_taus);
-		})
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold))
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold))
+		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
+		.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
 		
-		.def("move_core", +[](TTTensor &_this, size_t _pos){
-			_this.move_core(_pos);
-		})
-		.def("move_core", &TTTensor::move_core)
+		.def("move_core", &TTTensor::move_core,
+			(arg("position"), arg("keepRank")=false)
+		)
 		
 		.def("assume_core_position", &TTTensor::assume_core_position)
 		.def("cannonicalize_left", &TTTensor::cannonicalize_left)
@@ -626,26 +619,22 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("find_largest_entry", &TTOperator::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
-		.def("round", +[](TTOperator &_this, std::vector<size_t> _rank){
-			_this.round(_rank);
-		})
-		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round))
+		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round),
+			(arg("ranks"), arg("epsilon")=EPSILON)
+		)
 		.def("round", static_cast<void (TTOperator::*)(double)>(&TTOperator::round))
 		.def("round", static_cast<void (TTOperator::*)(size_t)>(&TTOperator::round))
 		
-		.def("soft_threshold", +[](TTOperator &_this, double _tau) {
-			_this.soft_threshold(_tau);
-		})
-		.def("soft_threshold", +[](TTOperator &_this, std::vector<double> _taus) {
-			_this.soft_threshold(_taus);
-		})
-		.def("soft_threshold", static_cast<void (TTOperator::*)(const double, const bool)>(&TTOperator::soft_threshold))
-		.def("soft_threshold", static_cast<void (TTOperator::*)(const std::vector<double>&, const bool)>(&TTOperator::soft_threshold))
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const double, const bool)>(&TTOperator::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const std::vector<double>&, const bool)>(&TTOperator::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
 		
-		.def("move_core", +[](TTOperator &_this, size_t _pos){
-			_this.move_core(_pos);
-		})
-		.def("move_core", &TTOperator::move_core)
+		.def("move_core", &TTOperator::move_core,
+			(arg("position"), arg("keepRank")=false)
+		)
 		
 		.def("assume_core_position", &TTOperator::assume_core_position)
 		.def("cannonicalize_left", &TTOperator::cannonicalize_left)
@@ -696,15 +685,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res){
 				_this.add(_itr, _res);
 			})
-			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x){
-				_this.add(_itr, _res, _x);
-			})
 			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x, size_t _flags){
 				_this.add(_itr, _res, _x, _flags);
-			})
+			}, (arg("iterationCount"), arg("residual"), arg("x"), arg("flags")=0) )
 			.def("add", +[](PerformanceData &_this, value_t _res, const TTTensor &_x, size_t _flags){
 				_this.add(_res, _x, _flags);
-			})
+			}, (arg("residual"), arg("x"), arg("flags")=0) )
 			.def("__nonzero__", +[](PerformanceData &_this){ return bool(_this); })
 			.def("dump_to_file", &PerformanceData::dump_to_file)
 			.def("__iadd__", +[](PerformanceData &_this, const std::string &_s){
@@ -749,42 +735,29 @@ BOOST_PYTHON_MODULE(libxerus) {
 						  +[](ALSVariant &_this){ return _this.localSolver; },
 						  +[](ALSVariant &_this, ALSVariant::LocalSolver _s){ _this.localSolver = _s; })
 			
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
-				_this(_A, _x, _b);
-			})
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-				_this(_A, _x, _b, _eps);
-			})
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-				_this(_A, _x, _b, _numHalfSweeps);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b) {
-				_this(_x, _b);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-				_this(_x, _b, _eps);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-				_this(_x, _b, _numHalfSweeps);
-			})
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 				_this(_A, _x, _b, _pd);
-			})
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 				_this(_A, _x, _b, _eps, _pd);
-			})
-			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
 				_this(_A, _x, _b, _numHalfSweeps, _pd);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			}, (arg("A"), arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 				_this(_x, _b, _pd);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 				_this(_x, _b, _eps, _pd);
-			})
-			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
 				_this(_x, _b, _numHalfSweeps, _pd);
-			})
+			}, (arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
 		;
 		class_<ALSVariant::LocalSolver>("LocalSolver", boost::python::no_init);
 		als_scope.attr("lapack_solver") = object(ALSVariant::LocalSolver(&ALSVariant::lapack_solver));
@@ -811,42 +784,29 @@ BOOST_PYTHON_MODULE(libxerus) {
 					  +[](GeometricCGVariant &_this){ return _this.vectorTransport; }, 
 					  +[](GeometricCGVariant &_this, TTVectorTransport _transp){ _this.vectorTransport = _transp; })
 		
-		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
-			_this(_A, _x, _b);
-		})
-		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_A, _x, _b, _eps);
-		})
-		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
-			_this(_A, _x, _b, _numSteps);
-		})
-		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b) {
-			_this(_x, _b);
-		})
-		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_x, _b, _eps);
-		})
-		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
-			_this(_x, _b, _numSteps);
-		})
 		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 			_this(_A, _x, _b, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 			_this(_A, _x, _b, _eps, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
 			_this(_A, _x, _b, _numSteps, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 			_this(_x, _b, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 			_this(_x, _b, _eps, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
 			_this(_x, _b, _numSteps, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
 	;
 	scope().attr("GeometricCG") = object(ptr(&GeometricCG));
 	
@@ -859,42 +819,29 @@ BOOST_PYTHON_MODULE(libxerus) {
 					  +[](SteepestDescentVariant &_this){ return _this.retraction; }, 
 					  +[](SteepestDescentVariant &_this, TTRetractionII _r){ _this.retraction = _r; })
 		
-		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
-			_this(_A, _x, _b);
-		})
-		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_A, _x, _b, _eps);
-		})
-		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
-			_this(_A, _x, _b, _numSteps);
-		})
-		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b) {
-			_this(_x, _b);
-		})
-		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_x, _b, _eps);
-		})
-		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps) {
-			_this(_x, _b, _numSteps);
-		})
 		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 			_this(_A, _x, _b, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 			_this(_A, _x, _b, _eps, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
 			_this(_A, _x, _b, _numSteps, _pd);
-		})
+		}, (arg("A"), arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 			_this(_x, _b, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 			_this(_x, _b, _eps, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
 		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
 			_this(_x, _b, _numSteps, _pd);
-		})
+		}, (arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
 	;
 	scope().attr("SteepestDescent") = object(ptr(&SteepestDescent));
 	
@@ -977,6 +924,11 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	
 	// ------------------------------------------------------------- misc
+	def("frob_norm", +[](const Tensor& _x){ return _x.frob_norm(); });
+	def("frob_norm", +[](const TensorNetwork& _x){ return _x.frob_norm(); });
+	def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<Tensor>&)>(&frob_norm));
+	def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<TensorNetwork>&)>(&frob_norm));
+	
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const Tensor&, double)>(&approx_equal));
@@ -1003,30 +955,21 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.value("TSV", misc::FileFormat::TSV)
 	;
 	
-	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
 	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
 	
 	def("load_from_file", +[](std::string _filename){
 		// determine type stored in the file
