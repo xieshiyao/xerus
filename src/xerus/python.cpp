@@ -116,16 +116,14 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("__str__", static_cast<std::string (*)(const Index &)>(&misc::to_string<Index>))
 	;
 	implicitly_convertible<int64_t, Index>();
-	def("indices", +[](int _n)->boost::python::list{
-		list res;
-		for (int i = 0; i < _n; ++i) {
-			res.append(Index());
-		}
-		return res;
-	}, arg("n")=1, "Creates n distinct indices."
-		parametersDocstr "n : int, optional"
-		returnsDocstr "list of Index"
-	);
+	exec(
+		"def indices(n=1):\n"
+		"  \"\"\"Create n distinct indices.\"\"\"\n"
+		"  i = 0\n"
+		"  while i<n:\n"
+		"    yield Index()\n"
+		"    i += 1\n"
+	, scope().attr("__dict__"));
 	VECTOR_TO_PY(Index, "IndexVector");
 	
 	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
@@ -402,7 +400,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(self += self)
 			.def(self -= self)
 			.def("__getitem__", +[](Tensor &_this, size_t _i) {
-				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				if (_i >= _this.size) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range");
+					throw_error_already_set();
+				}
 				return _this[_i];
 			})
 			.def("__getitem__", +[](Tensor &_this, std::vector<size_t> _idx) {
@@ -459,7 +460,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(other<value_t>() * self)
 			.def(self / other<value_t>())
 			.def("__getitem__", +[](TensorNetwork &_this, size_t _i) {
-				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				if (_i >= misc::product(_this.dimensions)) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range");
+					throw_error_already_set();
+				}
 				return _this[_i];
 			})
 			.def("__getitem__", +[](TensorNetwork &_this, std::vector<size_t> _idx) {
