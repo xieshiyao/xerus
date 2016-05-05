@@ -262,7 +262,7 @@ namespace xerus {
 			return count;
 		} else {
 			size_t count = 0;
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+			for(const auto& entry : *sparseData) {
 				if(std::abs(entry.second) > _eps) { count++; } 
 			}
 			return count;
@@ -276,7 +276,7 @@ namespace xerus {
 				if(!std::isfinite(denseData.get()[i])) { return false; } 
 			}
 		} else {
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+			for(const auto& entry : *sparseData) {
 				if(!std::isfinite(entry.second)) {return false; } 
 			}
 		}
@@ -294,7 +294,7 @@ namespace xerus {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
 		} else {
 			value_t norm = 0;
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+			for(const auto& entry : *sparseData) {
 				norm += misc::sqr(entry.second);
 			}
 			return std::abs(factor)*sqrt(norm);
@@ -705,7 +705,7 @@ namespace xerus {
 			
 			if (_newDim > oldDim) { // Add new slates
 				const size_t slatesAdded = _newDim-oldDim;
-				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+				for(const auto& entry : *sparseData.get()) {
 					// Decode the position as i*oldStepSize + j*DimStepSize + k
 					const size_t k = entry.first%dimStepSize;
 					const size_t j = (entry.first%oldStepSize)/dimStepSize;
@@ -719,7 +719,7 @@ namespace xerus {
 				}
 			} else { // Remove slates
 				const size_t slatesRemoved = oldDim-_newDim;
-				for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+				for(const auto& entry : *sparseData.get()) {
 					// Decode the position as i*oldStepSize + j*DimStepSize + k
 					const size_t k = entry.first%dimStepSize;
 					const size_t j = (entry.first%oldStepSize)/dimStepSize;
@@ -760,7 +760,7 @@ namespace xerus {
 		} else {
 			std::unique_ptr<std::map<size_t, value_t>> tmpData(new std::map<size_t, value_t>());
 			
-			for(const std::pair<size_t, value_t>& entry : *sparseData.get()) {
+			for(const auto& entry : *sparseData.get()) {
 				// Decode the position as i*stepSize + j*blockSize + k
 				const size_t k = entry.first%blockSize;
 				const size_t j = (entry.first%stepSize)/blockSize;
@@ -823,7 +823,7 @@ namespace xerus {
 		} else {
 			std::unique_ptr<std::map<size_t, value_t>> newData( new std::map<size_t, value_t>());
 			
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+			for(const auto& entry : *sparseData) {
 				size_t pos = entry.first;
 				const size_t backIdx = pos%back;
 				pos /= back;
@@ -1021,13 +1021,13 @@ namespace xerus {
 			const size_t offset = multiIndex_to_position(_offsets, dimensions);
 			if(is_dense()) {
 				value_t* const dataPtr = get_dense_data();
-				for(const std::pair<size_t, value_t>& entry : _other.get_unsanitized_sparse_data()) {
+				for(const auto& entry : _other.get_unsanitized_sparse_data()) {
 					const size_t newPos = multiIndex_to_position(position_to_multiIndex(entry.first, _other.dimensions), dimensions) + offset;
 					dataPtr[newPos] += _other.factor*entry.second;
 				}
 			} else {
 				std::map<size_t, value_t>& data = get_sparse_data(); 
-				for(const std::pair<size_t, value_t>& entry : _other.get_unsanitized_sparse_data()) {
+				for(const auto& entry : _other.get_unsanitized_sparse_data()) {
 					const size_t newPos = multiIndex_to_position(position_to_multiIndex(entry.first, _other.dimensions), dimensions) + offset;
 					data[newPos] += _other.factor*entry.second;
 				}
@@ -1040,7 +1040,7 @@ namespace xerus {
 		if(is_sparse()) {
 			denseData.reset(new value_t[size], internal::array_deleter_vt);
 			misc::set_zero(denseData.get(), size);
-			for(const std::pair<size_t, value_t>& entry : *sparseData) {
+			for(const auto& entry : *sparseData) {
 				denseData.get()[entry.first] = factor*entry.second;
 			}
 			
@@ -1123,14 +1123,14 @@ namespace xerus {
 	
 	
 	void Tensor::add_sparse_to_full(const std::shared_ptr<value_t>& _denseData, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _sparseData) {
-		for(const std::pair<size_t, value_t>& entry : *_sparseData) {
+		for(const auto& entry : *_sparseData) {
 			_denseData.get()[entry.first] += _factor*entry.second;
 		}
 	}
 	
 	
 	void Tensor::add_sparse_to_sparse(const std::shared_ptr<std::map<size_t, value_t>>& _sum, const value_t _factor, const std::shared_ptr<const std::map<size_t, value_t>>& _summand) {
-		for(const std::pair<size_t, value_t>& entry : *_summand) {
+		for(const auto& entry : *_summand) {
 			std::pair<std::map<size_t, value_t>::iterator, bool> result = _sum->emplace(entry.first, _factor*entry.second);
 			if(!result.second) {
 				result.first->second += _factor*entry.second;
@@ -1614,11 +1614,11 @@ namespace xerus {
 				"The dimensions of the compared tensors don't match: " << _a.dimensions <<" vs. " << _b.dimensions << " and " << _a.size << " vs. " << _b.size);
 		
 		if (_a.is_sparse() && _b.is_sparse()) { // Special treatment if both are sparse, because better asyptotic is possible.
-			for(const std::pair<size_t, value_t>& entry : _a.get_unsanitized_sparse_data()) {
+			for(const auto& entry : _a.get_unsanitized_sparse_data()) {
 				if(!misc::approx_equal(_a.factor*entry.second, _b[entry.first], _eps)) { return false; }
 			}
 			
-			for(const std::pair<size_t, value_t>& entry : _b.get_unsanitized_sparse_data()) {
+			for(const auto& entry : _b.get_unsanitized_sparse_data()) {
 				if(!misc::approx_equal(_a[entry.first], _b.factor*entry.second, _eps)) { return false; }
 			}
 		} else {

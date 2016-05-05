@@ -47,7 +47,7 @@ namespace xerus {
     
     
     _inline_ void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
-        for(const std::pair<size_t, double>& entry : _in) {
+        for(const auto& entry : _in) {
             const size_t i = entry.first/_rightDim;
             const size_t j = entry.first%_rightDim;
             _out.emplace(j*_leftDim + i, entry.second);
@@ -77,13 +77,13 @@ namespace xerus {
         
         // Transposition of A only changes how i and j are calculated
         if(!_transposeA) {
-            for(const std::pair<size_t, double>& entry : _A) {
+            for(const auto& entry : _A) {
                 const size_t i = entry.first/_midDim;
                 const size_t j = entry.first%_midDim;
                 misc::add_scaled(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
             }
         } else {
-            for(const std::pair<size_t, double>& entry : _A) {
+            for(const auto& entry : _A) {
                 const size_t i = entry.first%_leftDim;
                 const size_t j = entry.first/_leftDim;
                 misc::add_scaled(_C+i*_rightDim, _alpha*entry.second, _B+j*_rightDim, _rightDim);
@@ -141,7 +141,7 @@ namespace xerus {
         std::unique_ptr<double[]> row(new double[_rightDim]);
         misc::set_zero(row.get(), _rightDim);
         
-        for(const std::pair<size_t, double>& entry : _A) {
+        for(const auto& entry : _A) {
             const size_t i = entry.first/_midDim;
             const size_t j = entry.first%_midDim;
             

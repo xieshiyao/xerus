@@ -121,7 +121,7 @@ namespace xerus {
 			const std::map<size_t, value_t>& baseEntries = usedBase->get_unsanitized_sparse_data();
 			std::map<size_t, value_t>& outEntries = _out.override_sparse_data();
 			
-			for(const std::pair<size_t, value_t>& entry : baseEntries) {
+			for(const auto& entry : baseEntries) {
 				size_t basePosition = entry.first;
 				size_t position = basePosition%blockSize;
 				basePosition /= blockSize;
@@ -438,12 +438,12 @@ namespace xerus {
 				PA_START;
 				
 				if(peacefullIndices) {
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
+					for(const auto& entry : baseEntries) {
 						outEntries.emplace(get_position(entry, baseIndexDimensions.data(), baseIndexStepSizes.data(), attributes, _base.indices.size()), factor*entry.second);
 					}
 				} else {
 					size_t newPosition;
-					for(const std::pair<size_t, value_t>& entry : baseEntries) {
+					for(const auto& entry : baseEntries) {
 						if(check_position(newPosition, entry, baseIndexDimensions.data(), baseIndexStepSizes.data(), attributes, fixedFlags, traceFlags, _base.indices.size())) {
 							outEntries[newPosition] += factor*entry.second;
 						}

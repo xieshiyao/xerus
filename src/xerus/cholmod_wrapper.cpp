@@ -103,7 +103,7 @@ namespace xerus { namespace internal {
 		
 		long currRow = -1;
 		
-		for(const std::pair<size_t, value_t>& entry : _input) {
+		for(const auto& entry : _input) {
 			x[entryPos] = entry.second;
 			i[entryPos] = static_cast<long>(entry.first%_n);
 			while(currRow < static_cast<long>(entry.first/_n)) {

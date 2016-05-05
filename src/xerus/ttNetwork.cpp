@@ -529,7 +529,7 @@ namespace xerus {
 		
 		std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groups(externalDim);
 		
-		for(const std::pair<size_t, value_t>& entry : _component.get_unsanitized_sparse_data()) {
+		for(const auto& entry : _component.get_unsanitized_sparse_data()) {
 			const size_t r2 = entry.first%_component.dimensions.back();
 			const size_t n = (entry.first/_component.dimensions.back())%externalDim;
 			const size_t r1 = (entry.first/_component.dimensions.back())/externalDim;
@@ -1383,7 +1383,7 @@ namespace xerus {
 			LOG(woot, "");
 			value_t* const newCompData = _newComponent.get_dense_data();
 			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
-			for(const std::pair<size_t, value_t>& entryA : _componentA.get_unsanitized_sparse_data()) {
+			for(const auto& entryA : _componentA.get_unsanitized_sparse_data()) {
 				const size_t r2 = entryA.first%_componentA.dimensions.back();
 				const size_t n = (entryA.first/_componentA.dimensions.back())%externalDim;
 				const size_t r1 = (entryA.first/_componentA.dimensions.back())/externalDim;
@@ -1398,7 +1398,7 @@ namespace xerus {
 			const std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntriesB = get_grouped_entries<isOperator>(_componentB);
 			std::map<size_t, value_t>& dataMap = _newComponent.get_sparse_data();
 			REQUIRE(dataMap.empty(), "IE");
-			for(const std::pair<size_t, value_t>& entryA : _componentA.get_unsanitized_sparse_data()) {
+			for(const auto& entryA : _componentA.get_unsanitized_sparse_data()) {
 				const size_t r2 = entryA.first%_componentA.dimensions.back();
 				const size_t n = (entryA.first/_componentA.dimensions.back())%externalDim;
 				const size_t r1 = (entryA.first/_componentA.dimensions.back())/externalDim;				
