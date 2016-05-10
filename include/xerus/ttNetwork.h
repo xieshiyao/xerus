@@ -71,7 +71,7 @@ namespace xerus {
 		
 		
 		///@brief TTNetworks are default move constructable.
-		TTNetwork(      TTNetwork&& _mov) = default;
+		TTNetwork(      TTNetwork&& _mov) noexcept = default;
 		
 		
 		/** 

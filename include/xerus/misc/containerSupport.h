@@ -49,7 +49,7 @@ namespace xerus {
 			///@brief: Counts how often an element is contained in an arbitary container
 			template<template<class, class...> class container_t, class item_t, class... rest_t,
 				typename std::enable_if<has_count<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
-			inline size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
+			inline size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) { // noexcept(noexcept(_container.count(_itm)))  ?
 				return _container.count(_item);
 			}
 			

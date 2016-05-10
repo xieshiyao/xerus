@@ -40,7 +40,7 @@ namespace xerus {
 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
 	}
 	
-	Index::Index(const uint32 _i) : valueId(_i), span(1) {
+	Index::Index(const uint32 _i) noexcept : valueId(_i), span(1) {
 		flags[Flag::FIXED] = true;
 	}
 	
@@ -48,14 +48,14 @@ namespace xerus {
 		REQUIRE(_i >= 0, "Negative valueId= " <<_i<< " given");
 	}
 	
-	Index::Index(const uint64 _i) : valueId(_i), span(1) {
+	Index::Index(const uint64 _i) noexcept : valueId(_i), span(1) {
 		flags[Flag::FIXED] = true;
 	}
 	
-	Index::Index(const uint64 _valueId, const size_t _span) : valueId(_valueId), span(_span) {}
+	Index::Index(const uint64 _valueId, const size_t _span) noexcept : valueId(_valueId), span(_span) {}
 	
 	
-	Index::Index(const uint64 _valueId, const size_t _span, const Flag _flag1) : valueId(_valueId), span(_span) {
+	Index::Index(const uint64 _valueId, const size_t _span, const Flag _flag1) noexcept : valueId(_valueId), span(_span) {
 		flags[_flag1] = true;
 	}
 	

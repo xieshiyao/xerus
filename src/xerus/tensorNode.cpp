@@ -31,8 +31,6 @@ namespace xerus {
     
     TensorNetwork::TensorNode::TensorNode(const TensorNetwork::TensorNode&  _other) : tensorObject(_other.tensorObject ? new Tensor(*_other.tensorObject) : nullptr), neighbors(_other.neighbors), erased(_other.erased) { }
     
-    TensorNetwork::TensorNode::TensorNode(      TensorNetwork::TensorNode&& _other) : tensorObject(std::move(_other.tensorObject)), neighbors(std::move(_other.neighbors)), erased(_other.erased) { }
-    
     TensorNetwork::TensorNode::TensorNode(      std::unique_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), neighbors(), erased(false) {}
     
     TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(_neighbors), erased(false) {}
@@ -67,7 +65,7 @@ namespace xerus {
         return TensorNetwork::TensorNode(std::unique_ptr<Tensor>(), neighbors);
     }
         
-    size_t TensorNetwork::TensorNode::size() const {
+    size_t TensorNetwork::TensorNode::size() const noexcept {
         size_t s = 1;
         for (const Link &l : neighbors) {
             s *= l.dimension;
@@ -75,11 +73,11 @@ namespace xerus {
         return s;
     }
     
-    size_t TensorNetwork::TensorNode::degree() const {
+    size_t TensorNetwork::TensorNode::degree() const noexcept {
         return neighbors.size();
     }
     
-    void TensorNetwork::TensorNode::erase() {
+    void TensorNetwork::TensorNode::erase() noexcept {
         erased = true;
         neighbors.clear();
         tensorObject.reset();

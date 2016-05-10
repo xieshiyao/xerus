@@ -107,7 +107,7 @@ namespace xerus {
 		
 		
 		/// @brief Tensors are default move constructable.
-		Tensor(       Tensor&& _other ) = default;
+		Tensor(       Tensor&& _other ) noexcept = default;
 		
 		/** 
 		 * @brief: Creates a new tensor with the given dimensions.
