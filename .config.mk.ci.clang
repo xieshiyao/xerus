@@ -10,6 +10,7 @@ LOGGING += -D INFO_                     # Information that is not linked to any 
 #=================================================================================================
 # External libraries
 #=================================================================================================
+STRICT_WARNINGS = TRUE
 
 # Uncomment or add the appropriate blas libraries 
 BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial

@@ -3,6 +3,8 @@
 #=================================================================================================
 CXX = g++
 
+STRICT_WARNINGS = TRUE
+
  DEBUG += -g                # Adds debug symbols
 
 LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.

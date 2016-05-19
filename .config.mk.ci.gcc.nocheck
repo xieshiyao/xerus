@@ -3,6 +3,8 @@
 #=================================================================================================
 CXX = g++
 
+STRICT_WARNINGS = TRUE
+
 HIGH_OPTIMIZATION = TRUE          # Activates -O3 -march=native and some others
 DEBUG += -D DISABLE_RUNTIME_CHECKS_    # Disable all runtime checks
 DEBUG += -D REPLACE_ALLOCATOR
