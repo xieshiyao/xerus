@@ -34,6 +34,7 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include <numpy/ndarrayobject.h>
 #pragma GCC diagnostic pop
 #include "xerus.h"
@@ -287,6 +288,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				#pragma GCC diagnostic ignored "-Wuseless-cast"
 				#pragma GCC diagnostic ignored "-Wold-style-cast"
 				#pragma GCC diagnostic ignored "-Wcast-qual"
+				#pragma GCC diagnostic ignored "-Wpedantic"
 				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(_npObject, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY));
 				#pragma GCC diagnostic pop
 				int deg = PyArray_NDIM(npa);
@@ -329,6 +331,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				#pragma GCC diagnostic ignored "-Wuseless-cast"
 				#pragma GCC diagnostic ignored "-Wold-style-cast"
 				#pragma GCC diagnostic ignored "-Wcast-qual"
+				#pragma GCC diagnostic ignored "-Wpedantic"
 				PyObject *pyObj; 
 				if (_this.is_dense()) {
 					pyObj = PyArray_SimpleNewFromData(int(_this.degree()), &dimensions[0], NPY_DOUBLE, _this.get_dense_data());
