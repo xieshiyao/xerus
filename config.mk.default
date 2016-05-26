@@ -70,12 +70,11 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 
 
 # Xerus has a buildin logging system to provide runtime information. Here you can adjust the logging level used by the library.
-# LOGGING += -D DEBUG_					# All non problem specific information is provided.
-LOGGING += -D INFO_						# Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
-# LOGGING += -D WARNING_				# Informations that is linked to unexpected or erroneous behaviour from which the library is able to recover internally.
-# LOGGING += -D ERROR_					# Information about errors that occourt, but don't require immediate attention. 
-										# Since this is a numerical library which relies on correct results, there are barely any such errors.
-# LOGGING += -D CRITICAL_				# Same as above only for more severe errors. Again there are nearly no such errors.
+# LOGGING += -D DEBUG_                  # Debug infomation, can significantly slow down the library.
+LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
+# LOGGING += -D WARNING_                # Informations that is linked to unexpected behaviour which indicates incorrect use of the library but are no errors as such.
+# LOGGING += -D ERROR_                  # Information about errors that occourt, assumedly by incorrect use of the library. 
+# LOGGING += -D CRITICAL_               # Information abount internal errors within the library.
 
 # Per default the logs are printed to cerr. Uncomment the following line to print the log messages to the file error.log instead.
 # LOGGING += -D LOGFILE_				# Use error file instead of cerr
