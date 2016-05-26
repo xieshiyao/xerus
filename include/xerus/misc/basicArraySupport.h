@@ -48,7 +48,7 @@ namespace xerus {
 		* @details This is done directly by memset and therefore requires the type to be trivial.
 		*/
 		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
-		inline void set_zero(T* const __restrict _x, const size_t _n) {
+		inline void set_zero(T* const __restrict _x, const size_t _n) noexcept {
 			memset(_x, 0, _n*sizeof(T));
 		}
 		
@@ -58,7 +58,7 @@ namespace xerus {
 		* @details For trivial copyable types this is only a slim wrapper for memcpy.
 		*/
 		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
-		inline void copy(T* const __restrict _dest, const T* const __restrict _src, const size_t _n) {
+		inline void copy(T* const __restrict _dest, const T* const __restrict _src, const size_t _n) noexcept {
 			memcpy(_dest, _src, _n*sizeof(T));
 		}
 		
@@ -68,7 +68,7 @@ namespace xerus {
 		* @details For trivial copyable types this is only a slim wrapper for memmove.
 		*/
 		template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
-		inline void copy_inplace(T* const _x, const T* const _y, const size_t _n) {
+		inline void copy_inplace(T* const _x, const T* const _y, const size_t _n) noexcept {
 			memmove(_x, _y, _n*sizeof(T));
 		}
 		
@@ -77,7 +77,7 @@ namespace xerus {
 		* @brief Copys @a _n entries from @a _y to @a _x, simulationously scaling each entry by the factor @a _alpha. I.e x = alpha*y.
 		*/
 		template <typename T>
-		inline void copy_scaled(T* const __restrict _x, const T _alpha, const T* const _y, const size_t _n) {
+		inline void copy_scaled(T* const __restrict _x, const T _alpha, const T* const _y, const size_t _n) noexcept {
 			for(size_t i = 0; i < _n; ++i) {
 				_x[i] = _alpha*_y[i];
 			}
@@ -88,7 +88,7 @@ namespace xerus {
 		* @brief Scales @a _n entries of @a _x by the factor @a _alpha. I.e. x = alpha*x.
 		*/
 		template <typename T>
-		inline void scale(T* const __restrict _x, const T _alpha, const size_t _n) {
+		inline void scale(T* const __restrict _x, const T _alpha, const size_t _n) noexcept {
 			for(size_t i = 0; i < _n; i++) {
 				_x[i] *= _alpha;
 			}
@@ -99,7 +99,7 @@ namespace xerus {
 		* @brief Adds @a _n entries of @a _y to the ones of @a _x. I.e. x += y.
 		*/
 		template <typename T>
-		inline void add(T* const __restrict _x, const T* const __restrict _y, const size_t _n) {
+		inline void add(T* const __restrict _x, const T* const __restrict _y, const size_t _n) noexcept {
 			for(size_t i = 0; i < _n; i++) {
 				_x[i] += _y[i];
 			}
@@ -110,7 +110,7 @@ namespace xerus {
 		* @brief Adds @a _n entries of @a _y, scaled by @a _alpha to the ones of @a _x. I.e. x += alpha*y.
 		*/
 		template <typename T>
-		inline void add_scaled(T* const __restrict _x, const T _alpha, const T* const __restrict _y, const size_t _n) {
+		inline void add_scaled(T* const __restrict _x, const T _alpha, const T* const __restrict _y, const size_t _n) noexcept {
 			for(size_t i = 0; i < _n; i++) {
 				_x[i] += _alpha*_y[i];
 			}

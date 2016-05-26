@@ -62,21 +62,21 @@ namespace xerus {
 			///@brief Flag indicating whether this link correspond to an external index.
 			bool external;
 			
-			Link() = default;
-			Link(const Link& ) = default;
-			Link(      Link&&) = default;
+			Link() noexcept = default;
+			Link(const Link& ) noexcept = default;
+			Link(      Link&&) noexcept = default;
 			
-			Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external);
+			Link(const size_t _other, const size_t _indexPos, const size_t _dim, const bool _external) noexcept;
 			
-			Link& operator=(const Link& ) = default;
-			Link& operator=(      Link&&) = default;
+			Link& operator=(const Link& ) noexcept = default;
+			Link& operator=(      Link&&) noexcept = default;
 			
 			/**
 			* @brief Checks whether this link links to a particular node
 			* @param _other the other node for which the linkage shall be checked
 			* @return TRUE if _other is the target of this Link, FALSE otherwise.
 			*/
-			bool links(const size_t _other) const;
+			bool links(const size_t _other) const noexcept;
 		};
 		
 		
@@ -97,7 +97,7 @@ namespace xerus {
 			explicit TensorNode();
 			
 			TensorNode(const TensorNode&  _other);
-			TensorNode(      TensorNode&& _other);
+			TensorNode(      TensorNode&& _other) noexcept = default;
 			
 			explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
 			
@@ -113,11 +113,11 @@ namespace xerus {
 			
 			// All getters are written without the use of tensorObject so that they also work for empty nodes
 			
-			size_t size() const;
+			size_t size() const noexcept;
 			
-			size_t degree() const;
+			size_t degree() const noexcept;
 			
-			void erase();
+			void erase() noexcept;
 		};
 		
 	protected:
@@ -154,7 +154,7 @@ namespace xerus {
 		
 		
 		///@brief Move Constructor
-		TensorNetwork(TensorNetwork&& _mv) = default;
+		TensorNetwork(TensorNetwork&& _mv) noexcept = default;
 		
 		
 		/** 

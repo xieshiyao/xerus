@@ -51,7 +51,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 				}
 				
 				if(!misc::contains(measurements.positions, pos)) {
-					measurements.add_measurment(pos, 0.0);
+					measurements.add(pos, 0.0);
 				}
 			}
 		}
@@ -60,7 +60,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	examples::completion::inverse_index_ratios(measurements);
 
 	
-	SinglePointMeasurmentSet ctrSet = SinglePointMeasurmentSet::random(D, N, D*N*CS*R*R, rnd);
+	SinglePointMeasurmentSet ctrSet = SinglePointMeasurmentSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd);
 	examples::completion::inverse_index_ratios(ctrSet);
 	value_t ctrNorm = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
@@ -116,7 +116,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 
-	SinglePointMeasurmentSet measurements(SinglePointMeasurmentSet::random(D, N, D*N*CS*R*R, rnd));
+	SinglePointMeasurmentSet measurements(SinglePointMeasurmentSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd));
 	trueSolution.measure(measurements);
 	
 	bool test = true;
@@ -125,7 +125,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	}
 	TEST(test);
 	
-	ADFVariant ourADF(2500, 1e-6, 1e-6, true);
+	ADFVariant ourADF(2500, 1e-6, 1e-6);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	PerformanceData perfData([&](const TTTensor& _x) {return frob_norm(_x - trueSolution)/frob_norm(trueSolution);}, true, false);

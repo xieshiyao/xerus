@@ -116,12 +116,6 @@ namespace xerus {
 		
 		auto updatePerfdata = [&]() {
 			_perfData.add(currResidual);
-			if (printProgress && stepCount%1==0) {
-				std::cout << "step \t" << stepCount << "\tresidual:" << currResidual << " (" 
-						  << (lastResidual-currResidual) << ", " << std::abs(1-currResidual/lastResidual) 
-						  << " vs " << _convergenceEpsilon << ")\r" << std::flush;
-				std::cout << "                                                                               \r"; // note: not flushed so it will only erase content on next output
-			}
 		};
 		updateResidual();
 		updatePerfdata();

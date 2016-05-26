@@ -76,28 +76,28 @@ namespace xerus {
 		Index();
 		
 		/// @brief Indices are default copy constructable.
-		Index(const Index&) = default;
+		Index(const Index&) noexcept = default;
 		
 		/// @brief Indices are default move constructable.
-		Index(Index&&) = default;
+		Index(Index&&) noexcept = default;
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
 		Index(const int32 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		Index(const uint32 _i);
+		Index(const uint32 _i) noexcept;
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
 		Index(const int64 _i);
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
-		Index(const uint64 _i);
+		Index(const uint64 _i) noexcept;
 
 		/// @brief Internal constructor, do not use this unless you know what you are doing.
-		explicit Index(const uint64 _valueId, const size_t _span);
+		explicit Index(const uint64 _valueId, const size_t _span) noexcept;
 		
 		/// @brief Internal constructor, do not use this unless you know what you are doing.
-		explicit Index(const uint64 _valueId, const size_t _span, const Flag _flag1);
+		explicit Index(const uint64 _valueId, const size_t _span, const Flag _flag1) noexcept;
 		
 		
 		
@@ -105,7 +105,7 @@ namespace xerus {
 		Index& operator=(const Index&) = default;
 		
 		/// @brief Indices are default moveable.
-		Index& operator=(Index&&) = default;
+		Index& operator=(Index&&) noexcept = default;
 		
 		/// @brief Returns the span this index actually represents in a tensor of given order.
 		void set_span(const size_t _degree);

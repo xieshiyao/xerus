@@ -61,7 +61,7 @@ namespace xerus {
             return ret;
         }
 
-        _const_ std::vector<std::string> explode(const std::string& _string, const char delim) {
+        std::vector<std::string> explode(const std::string& _string, const char delim) {
             std::vector<std::string> result;
             std::istringstream iss(_string);
 

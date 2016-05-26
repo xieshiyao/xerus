@@ -109,7 +109,7 @@ namespace xerus { namespace misc { namespace internal {
 			}
 				
 			std::stringstream res;
-			res << "[0x" << std::setw(sizeof(void*)*2) << std::setfill('0') << std::hex << reinterpret_cast<uintptr_t>(address);
+			res << "[0x" << std::setw(int(sizeof(void*)*2)) << std::setfill('0') << std::hex << reinterpret_cast<uintptr_t>(address);
 			
 			// get path and offset of shared object that contains this address
 			Dl_info info;

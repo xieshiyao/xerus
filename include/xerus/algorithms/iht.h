@@ -29,6 +29,6 @@
 #include "../measurments.h"
 
 namespace xerus {
-	double iht(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData);
+	double IHT(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData = NoPerfData);
 }
 

@@ -58,7 +58,8 @@ namespace xerus {
 		
 		bool printProgress;
 		
-		std::function<double(const TTTensor&)> errorFunction;
+		using ErrorFunction = std::function<double(const TTTensor&)>;
+		ErrorFunction errorFunction;
 		
 		size_t startTime;
 		size_t stopTime;
@@ -70,7 +71,7 @@ namespace xerus {
 		explicit PerformanceData(const bool _printProgress = false, const bool _active = true) : 
 			active(_active), printProgress(_printProgress), startTime(~0ul), stopTime(~0ul) {}
 		
-		explicit PerformanceData(const std::function<double(const TTTensor&)>& _errorFunction, const bool _printProgress = false, const bool _active = true) : 
+		explicit PerformanceData(const ErrorFunction& _errorFunction, const bool _printProgress = false, const bool _active = true) : 
 			active(_active), printProgress(_printProgress), errorFunction(_errorFunction), startTime(~0ul), stopTime(~0ul) {}
 		
 		void start() {

@@ -587,7 +587,7 @@ namespace xerus {
 			// Check for termination criteria
 			resDec3 = resDec2; resDec2 = resDec1;
 			resDec1 = (lastResidualNorm-residualNorm)/lastResidualNorm;
-			if(residualNorm < targetResidualNorm || resDec1+resDec2+resDec3 < 3*minimalResidualNormDecrese) { break; }
+			if(residualNorm < targetResidualNorm || resDec1+resDec2+resDec3 < 3*minimalResidualNormDecrease) { break; }
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -649,5 +649,5 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<SinglePointMeasurmentSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
 	
-	const ADFVariant ADF(0, 1e-8, 1e-3, true);
+	const ADFVariant ADF(0, 1e-8, 1e-3);
 }

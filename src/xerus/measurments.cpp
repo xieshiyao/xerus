@@ -29,6 +29,7 @@
 
 #include <xerus/index.h>
 #include <xerus/tensor.h> 
+#include <xerus/tensorNetwork.h>
 #include <xerus/ttNetwork.h>
 #include <xerus/indexedTensor.h>
  
@@ -50,13 +51,13 @@ namespace xerus {
 		return positions.empty() ? 0 : positions[0].size();
 	}
 	
-	void SinglePointMeasurmentSet::add_measurment(const std::vector<size_t>& _position, const value_t _measuredValue) {
+	void SinglePointMeasurmentSet::add(const std::vector<size_t>& _position, const value_t _measuredValue) {
 		positions.emplace_back(_position);
 		measuredValues.emplace_back(_measuredValue);
 	}
 	
 	
-	value_t SinglePointMeasurmentSet::test_solution(const TTTensor& _solution) const {
+	value_t SinglePointMeasurmentSet::test_solution(const TensorNetwork& _solution) const {
 		value_t residualNorm = 0.0;
 		value_t measurementNorm = 0.0;
 		
@@ -75,19 +76,18 @@ namespace xerus {
 	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
-		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
-			if (_lhs[i] < _rhs[i]) return true;
-			if (_lhs[i] > _rhs[i]) return false;
-		}
-		for (size_t i = _lhs.size(); i > _splitPos; --i) {
-			if (_lhs[i-1] < _rhs[i-1]) return true;
-			if (_lhs[i-1] > _rhs[i-1]) return false;
-		}
-// 		LOG(fatal, "Measurments must not appear twice. ");
-		return false; // equality
-	});
+			for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
+				if (_lhs[i] < _rhs[i]) return true;
+				if (_lhs[i] > _rhs[i]) return false;
+			}
+			for (size_t i = _lhs.size(); i > _splitPos; --i) {
+				if (_lhs[i-1] < _rhs[i-1]) return true;
+				if (_lhs[i-1] > _rhs[i-1]) return false;
+			}
+	// 		LOG(fatal, "Measurments must not appear twice. ");
+			return false; // equality
+		});
 	}
-	
 	
 	// --------------------- RankOneMeasurmentSet -----------------
 	
@@ -106,14 +106,14 @@ namespace xerus {
 		}
 			
 		for(size_t i = 0; i < _other.size(); ++i) {
-			add_measurment(zeroPosition, _other.measuredValues[i]);
+			add(zeroPosition, _other.measuredValues[i]);
 			for(size_t j = 0; j < _other.degree(); ++j) {
 				positions.back()[j][_other.positions[i][j]] = 1.0;
 			}
 		}
 	}
 	
-	void RankOneMeasurmentSet::add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue) {
+	void RankOneMeasurmentSet::add(const std::vector<Tensor>& _position, const value_t _measuredValue) {
 		IF_CHECK(
 			REQUIRE(positions.size() == measuredValues.size(), "Internal Error.");
 			if(size() > 0) {

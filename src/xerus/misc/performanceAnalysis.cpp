@@ -43,15 +43,15 @@ namespace xerus {
 					mainStream << "| ============================== Performance Analysis ==============================" << std::endl;
 					mainStream << "| ==================================================================================" << std::endl << std::endl;
 
-					for(const std::pair<std::string, std::map<std::string, std::map<std::string, std::pair<size_t, size_t>>>>& group : calls) {
+					for(const auto& group : calls) {
 						size_t totalGroupCalls = 0, totalGroupTime = 0;
 						std::stringstream groupStream;
 						
-						for(const std::pair<std::string, std::map<std::string, std::pair<size_t, size_t>>>& call : group.second) {
+						for(const auto& call : group.second) {
 							size_t totalCallCalls = 0, totalCallTime = 0;
 							std::stringstream callStream;
 							
-							for(const std::pair<std::string, std::pair<size_t, size_t>>& subCall : call.second) {
+							for(const auto& subCall : call.second) {
 								totalGroupCalls += subCall.second.first; totalCallCalls += subCall.second.first;
 								totalGroupTime += subCall.second.second; totalCallTime += subCall.second.second;
 								if(1000*subCall.second.second > totalTime) {

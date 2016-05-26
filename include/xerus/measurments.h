@@ -28,11 +28,13 @@
 #include <random>
 
 #include "basic.h"
- 
+
 #include "misc/math.h"
+#include "misc/containerSupport.h"
 
 namespace xerus {
 	class Tensor;
+	class TensorNetwork;
 	template<bool isOperator> class TTNetwork;
 	
 	/** 
@@ -51,30 +53,33 @@ namespace xerus {
 		SinglePointMeasurmentSet& operator=(      SinglePointMeasurmentSet&& _other) = default;
 		
 		template<class random_engine>
-		static SinglePointMeasurmentSet random(const size_t _degree, const size_t _n, const size_t _numMeasurements, random_engine _rnd) {
-			REQUIRE(misc::pow(_n, _degree) >= _numMeasurements, "It's impossible to perform as many measurements as requested");
-			std::uniform_int_distribution<size_t> indexDist(0, _n-1);
+		static SinglePointMeasurmentSet random(const std::vector<size_t> &_dim, const size_t _numMeasurements, random_engine _rnd) {
+			REQUIRE(misc::product(_dim) >= _numMeasurements, "It's impossible to perform as many measurements as requested. " << _numMeasurements << " > " << _dim);
+			std::vector<std::uniform_int_distribution<size_t>> indexDist;
+			for (size_t i=0; i<_dim.size(); ++i) {
+				indexDist.emplace_back(0, _dim[i]-1);
+			}
 			std::set<std::vector<size_t>> measuredPositions;
 			SinglePointMeasurmentSet result;
 			while (result.size() < _numMeasurements) {
 				std::vector<size_t> pos;
-				for (size_t i = 0; i < _degree; ++i) {
-					pos.emplace_back(indexDist(_rnd));
+				for (size_t i = 0; i < _dim.size(); ++i) {
+					pos.emplace_back(indexDist[i](_rnd));
 				}
 				if (measuredPositions.count(pos) > 0) continue;
 				measuredPositions.insert(pos);
-				result.add_measurment(pos, 0.0);
+				result.add(pos, 0.0);
 			}
 			return result;
 		}
 		
-		void add_measurment(const std::vector<size_t>& _position, const value_t _measuredValue);
+		void add(const std::vector<size_t>& _position, const value_t _measuredValue);
 		
 		size_t size() const;
 		
 		size_t degree() const;
 		
-		value_t test_solution(const TTNetwork<false>& _solution) const;
+		value_t test_solution(const TensorNetwork& _solution) const;
 	};
 	
 	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos = ~0ul);
@@ -94,7 +99,7 @@ namespace xerus {
 		RankOneMeasurmentSet& operator=(const RankOneMeasurmentSet&  _other) = default;
 		RankOneMeasurmentSet& operator=(      RankOneMeasurmentSet&& _other) = default;
 		
-		void add_measurment(const std::vector<Tensor>& _position, const value_t _measuredValue);
+		void add(const std::vector<Tensor>& _position, const value_t _measuredValue);
 		
 		size_t size() const;
 		

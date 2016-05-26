@@ -67,6 +67,14 @@ namespace xerus {
 		HOSVDRetraction(const std::vector<size_t> &_rank) : roundByVector(true), rank(~0ul), rankVector(_rank) {}
 	};
 	
+	using TTRetractionI = std::function<void(TTTensor &, const TTTangentVector &)>;
+	using TTRetractionII = std::function<void(TTTensor &, const TTTensor &)>;
+	using TTVectorTransport = std::function<void(const TTTensor &, TTTangentVector &)>;
+	
+	/// retraction that performs a HOSVD to project back onto the Manifold
+	void HOSVDRetractionI(TTTensor &_U, const TTTangentVector &_change);
+	void HOSVDRetractionII(TTTensor &_U, const TTTensor &_change);
+	
 	/// retraction that performs an ALS half-sweep to project back onto the Manifold. Automatically retains the ranks of @a _U
 	void ALSRetractionII(TTTensor &_U, const TTTensor &_change);
 	

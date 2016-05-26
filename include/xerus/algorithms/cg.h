@@ -47,22 +47,22 @@ namespace xerus {
 		value_t convergenceEpsilon; ///< default value for the change in the residual at which the algorithm assumes it is converged
 		bool assumeSymmetricPositiveDefiniteOperator; ///< calculates the gradient as b-Ax instead of A^T(b-Ax)
 		
-		std::function<void(TTTensor &, const TTTangentVector &)> retraction; ///< the retraction type I to project from point + tangent vector to a new point on the manifold
-		std::function<void(const TTTensor &, TTTangentVector &)> vectorTransport; ///< the vector transport from old tangent space to new one
+		TTRetractionI retraction; ///< the retraction type I to project from point + tangent vector to a new point on the manifold
+		TTVectorTransport vectorTransport; ///< the vector transport from old tangent space to new one
 		
 		// TODO preconditioner
 		
 		/// fully defining constructor. alternatively CGVariant can be created by copying a predefined variant and modifying it
 		GeometricCGVariant(size_t _numSteps, value_t _convergenceEpsilon, bool _symPosOp,
-						   std::function<void(TTTensor &, const TTTangentVector &)> _retraction,
-						   std::function<void(const TTTensor &, TTTangentVector &)> _vectorTransport
+						   TTRetractionI _retraction,
+						   TTVectorTransport _vectorTransport
   						)
 				: numSteps(_numSteps), convergenceEpsilon(_convergenceEpsilon), assumeSymmetricPositiveDefiniteOperator(_symPosOp), 
 				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }
 		
 		/// definition using only the retraction. In the following an operator() including either convergenceEpsilon or numSteps must be called or the algorithm will never terminate
-		GeometricCGVariant(std::function<void(TTTensor &, const TTTangentVector &)> _retraction, std::function<void(const TTTensor &, TTTangentVector &)> _vectorTransport)
+		GeometricCGVariant(TTRetractionI _retraction, TTVectorTransport _vectorTransport)
 				: numSteps(0), convergenceEpsilon(0.0), assumeSymmetricPositiveDefiniteOperator(false), 
 				  retraction(_retraction), vectorTransport(_vectorTransport)
 		{ }

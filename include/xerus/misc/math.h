@@ -33,34 +33,34 @@ namespace xerus {
 	namespace misc {
 		///@brief: Calculates the signum (-1, 0, 1) of a given value.
 		template<class T> 
-		int sgn(const T _value) {
+		constexpr int sgn(const T _value) noexcept {
 			return (T(0) < _value) - (_value < T(0));
 		}
 		
 		
 		///@brief: Calculates _a*_a.
 		template<class T>
-		T sqr(const T &_a) {
+		constexpr T sqr(const T &_a) noexcept {
 			return _a*_a;
 		}
 		
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
-		constexpr T pow(const T& _base, const uint32 _exp) {
+		constexpr T pow(const T& _base, const uint32 _exp) noexcept {
 			return _exp==0 ? T(1) : (_exp%2==0 ? pow(T(_base*_base), _exp/2) : T(_base*pow(_base, _exp-1)));
 		}
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
-		constexpr T pow(const T &_base, const uint64 _exp) {
+		constexpr T pow(const T &_base, const uint64 _exp) noexcept {
 			return _exp==0 ? T(1) : (_exp%2==0 ? pow(T(_base*_base), _exp/2) : T(_base*pow(_base, _exp-1)));
 		}
 		
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
-		constexpr T pow(const T &_base, const int64 _exp) {
+		constexpr T pow(const T &_base, const int64 _exp) noexcept {
 			return _exp==0 ? 
 						T(1) :
 						(
@@ -74,7 +74,7 @@ namespace xerus {
 		
 		///@brief: Calculates _base^_exp by binary exponentiation
 		template<class T> 
-		constexpr T pow(const T &_base, const int32 _exp) {
+		constexpr T pow(const T &_base, const int32 _exp) noexcept {
 			return _exp==0 ? 
 						T(1) :
 						(
@@ -88,7 +88,7 @@ namespace xerus {
 		
 		///@brief: Checks whether the relative difference between @a _a and @a _b (i.e. |a-b|/(|a|/2+|b|/2)) is smaller than @a _eps.
 		template<class T, typename std::enable_if<std::is_floating_point<T>::value, bool>::type = true>
-		bool approx_equal(T _a, T _b, T _eps = 4*std::numeric_limits<T>::epsilon()) {
+		bool approx_equal(T _a, T _b, T _eps = 4*std::numeric_limits<T>::epsilon()) noexcept {
 			return std::abs(_a-_b) <= _eps*0.5*(std::abs(_a)+std::abs(_b));
 		}
 		
@@ -102,7 +102,7 @@ namespace xerus {
 		
 		///@brief: Checks for hard equality ( == operator) without compiler warnings.
 		template<class T>
-		bool hard_equal(const T _a, const T _b) {
+		constexpr bool hard_equal(const T _a, const T _b) noexcept {
 			#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Wfloat-equal"
 				return _a == _b;
@@ -112,7 +112,7 @@ namespace xerus {
 		
 		///@brief: Checks for hard inequality ( != operator) without compiler warnings.
 		template<class T>
-		bool hard_not_equal(const T _a, const T _b) {
+		constexpr bool hard_not_equal(const T _a, const T _b) noexcept {
 			#pragma GCC diagnostic push
 				#pragma GCC diagnostic ignored "-Wfloat-equal"
 				return _a != _b;

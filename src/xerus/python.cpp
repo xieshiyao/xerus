@@ -34,6 +34,7 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include <numpy/ndarrayobject.h>
 #pragma GCC diagnostic pop
 #include "xerus.h"
@@ -41,12 +42,16 @@
 using namespace boost::python;
 
 
-
-template<class t_type, class... args>
-static xerus::internal::IndexedTensor<t_type>* indexing_wrapper(t_type &_this, args... _indices) {
-	return new xerus::internal::IndexedTensor<t_type>(std::move(_this(_indices...)));
+void variable_argument_member_to_tuple_wrapper(const std::string &_name, const std::string &_tmpName = "new_fn") {
+	boost::python::str pyCode;
+	pyCode += "def patch_call_fn():\n";
+	pyCode += std::string("  original = ")+_name+"\n";
+	pyCode += std::string("  def ")+_tmpName+"( this, *args ):\n";
+	pyCode += "    return original( this, args )\n";
+	pyCode += std::string("  return ")+_tmpName+"\n";
+	pyCode += _name + " = patch_call_fn()\n";
+	boost::python::exec(pyCode, scope().attr("__dict__"));
 }
-
 
 template<typename containedType>
 struct custom_vector_to_list{
@@ -67,13 +72,13 @@ struct custom_vector_from_seq{
 		return obj_ptr;
 	}
 	static void construct(PyObject* obj_ptr, converter::rvalue_from_python_stage1_data* data){
-		void* storage=(reinterpret_cast<converter::rvalue_from_python_storage<std::vector<size_t> >*>(data))->storage.bytes;
-		new (storage) std::vector<size_t>();
-		std::vector<size_t>* v=reinterpret_cast<std::vector<size_t>*>(storage);
+		void* storage=(reinterpret_cast<converter::rvalue_from_python_storage<std::vector<containedType> >*>(data))->storage.bytes;
+		new (storage) std::vector<containedType>();
+		std::vector<containedType>* v=reinterpret_cast<std::vector<containedType>*>(storage);
 		Py_ssize_t l=PySequence_Size(obj_ptr); if(l<0) abort();
 		v->reserve(size_t(l)); 
 		for (Py_ssize_t i=0; i<l; i++) { 
-			v->push_back(extract<size_t>(PySequence_GetItem(obj_ptr,i))); 
+			v->push_back(extract<containedType>(PySequence_GetItem(obj_ptr,i))); 
 		}
 		data->convertible=storage;
 	}
@@ -112,16 +117,15 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("__str__", static_cast<std::string (*)(const Index &)>(&misc::to_string<Index>))
 	;
 	implicitly_convertible<int64_t, Index>();
-	def("indices", +[](int _n)->boost::python::list{
-		list res;
-		for (int i = 0; i < _n; ++i) {
-			res.append(Index());
-		}
-		return res;
-	}, arg("n")=1, "Creates n distinct indices."
-		parametersDocstr "n : int, optional"
-		returnsDocstr "list of Index"
-	);
+	exec(
+		"def indices(n=1):\n"
+		"  \"\"\"Create n distinct indices.\"\"\"\n"
+		"  i = 0\n"
+		"  while i<n:\n"
+		"    yield Index()\n"
+		"    i += 1\n"
+	, scope().attr("__dict__"));
+	VECTOR_TO_PY(Index, "IndexVector");
 	
 	implicitly_convertible<internal::IndexedTensorReadOnly<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
 	implicitly_convertible<internal::IndexedTensorWritable<Tensor>, internal::IndexedTensorMoveable<TensorNetwork>>();
@@ -184,7 +188,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 			})
 	;
 	
-	
 	// --------------------------------------------- indexedTensor<Tensor>
 	
 	class_<internal::IndexedTensorReadOnly<Tensor>, boost::noncopyable>("IndexedTensorReadOnly", no_init)
@@ -225,9 +228,46 @@ BOOST_PYTHON_MODULE(libxerus) {
 				std::move(_lhs) = std::move(_rhs);
 			})
 	;
+	VECTOR_TO_PY(IndexedTensor<Tensor>*, "IndexedTensorList");
 	
 	
-	// ----------------------------------------------------------- decompositions
+	// ----------------------------------------------------------- factorizations
+	class_<TensorFactorisation, boost::noncopyable>("TensorFactorisation", boost::python::no_init)
+		.def("__rlshift__", +[](TensorFactorisation &_rhs, object &_lhs){
+			std::vector<IndexedTensor<Tensor>*> tmp = extract<std::vector<IndexedTensor<Tensor>*>>(_lhs);
+			_rhs(tmp);
+		})
+	;
+	class_<SVD, bases<TensorFactorisation>, boost::noncopyable>("SVD_temporary", boost::python::no_init);
+	def("SVD", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new SVD(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<QR, bases<TensorFactorisation>, boost::noncopyable>("QR_temporary", boost::python::no_init);
+	def("QR", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new QR(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<RQ, bases<TensorFactorisation>, boost::noncopyable>("RQ_temporary", boost::python::no_init);
+	def("RQ", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new RQ(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<QC, bases<TensorFactorisation>, boost::noncopyable>("QC_temporary", boost::python::no_init);
+	def("QC", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new QC(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
+	class_<CQ, bases<TensorFactorisation>, boost::noncopyable>("CQ_temporary", boost::python::no_init);
+	def("CQ", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
+		return new CQ(std::move(_rhs));
+	}, return_value_policy<manage_new_object,  // result is treated as a new object
+	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+	
 	
 	// ----------------------------------------------------------- Tensor
 	{ scope Tensor_scope = 
@@ -248,6 +288,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				#pragma GCC diagnostic ignored "-Wuseless-cast"
 				#pragma GCC diagnostic ignored "-Wold-style-cast"
 				#pragma GCC diagnostic ignored "-Wcast-qual"
+				#pragma GCC diagnostic ignored "-Wpedantic"
 				PyArrayObject *npa = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(_npObject, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY));
 				#pragma GCC diagnostic pop
 				int deg = PyArray_NDIM(npa);
@@ -290,6 +331,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				#pragma GCC diagnostic ignored "-Wuseless-cast"
 				#pragma GCC diagnostic ignored "-Wold-style-cast"
 				#pragma GCC diagnostic ignored "-Wcast-qual"
+				#pragma GCC diagnostic ignored "-Wpedantic"
 				PyObject *pyObj; 
 				if (_this.is_dense()) {
 					pyObj = PyArray_SimpleNewFromData(int(_this.degree()), &dimensions[0], NPY_DOUBLE, _this.get_dense_data());
@@ -332,33 +374,26 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("all_entries_valid", &Tensor::all_entries_valid)
 			.def("reorder_cost", &Tensor::reorder_cost)
 			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
-			.def("resize_dimension", &Tensor::resize_dimension) // TODO rename -> mode
-			.def("resize_dimension", +[](Tensor &_this, size_t _dimPos, size_t _newDim){
-				_this.resize_dimension(_dimPos, _newDim);
-			})
+			.def("resize_dimension", &Tensor::resize_dimension,
+				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
+			) // TODO rename -> mode
 			.def("fix_slate", &Tensor::fix_slate)
 			.def("remove_slate", &Tensor::remove_slate)
 			.def("perform_trace", &Tensor::perform_trace)
 			.def("offset_add", &Tensor::offset_add)
 			.def("use_dense_representation", &Tensor::use_dense_representation)
-			.def("use_sparse_representation", &Tensor::use_sparse_representation)
-			.def("use_sparse_representation", +[](Tensor &_this){
-				_this.use_dense_representation();
-			})
+			.def("use_sparse_representation", &Tensor::use_sparse_representation,
+				(arg("epsilon")=EPSILON)
+			)
 			.def("ensure_own_data", &Tensor::ensure_own_data)
 			.def("ensure_own_data_no_copy", &Tensor::ensure_own_data_no_copy)
 			.def("apply_factor", &Tensor::apply_factor)
 			.def("ensure_own_data_and_apply_factor", &Tensor::ensure_own_data_and_apply_factor)
 			.def("multiIndex_to_position", &Tensor::multiIndex_to_position).staticmethod("multiIndex_to_position")
 			.def("position_to_multiIndex", &Tensor::position_to_multiIndex).staticmethod("position_to_multiIndex")
-			.def("__call__", &indexing_wrapper<Tensor>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<Tensor,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", +[](Tensor &_this, const std::vector<Index> &_idx){
+				return  new xerus::internal::IndexedTensor<Tensor>(std::move(_this(_idx)));
+			}, return_value_policy<manage_new_object>())
 			.def("__str__", &Tensor::to_string)
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
@@ -368,7 +403,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def(self += self)
 			.def(self -= self)
 			.def("__getitem__", +[](Tensor &_this, size_t _i) {
-				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				if (_i >= _this.size) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range");
+					throw_error_already_set();
+				}
 				return _this[_i];
 			})
 			.def("__getitem__", +[](Tensor &_this, std::vector<size_t> _idx) {
@@ -387,6 +425,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
 		;
 	} // close Tensor_scope
+	variable_argument_member_to_tuple_wrapper("Tensor.__call__", "TensorCallOperator");
 	def("reshuffle", static_cast<Tensor(*)(const Tensor&, const std::vector<size_t>&)>(&reshuffle));
 	def("contract", static_cast<Tensor(*)(const Tensor&, bool, const Tensor&, bool, size_t)>(&contract));
 	def("pseudo_inverse", static_cast<Tensor(*)(const Tensor&, size_t)>(&pseudo_inverse));
@@ -417,19 +456,17 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.add_property("externalLinks", +[](TensorNetwork &_this){
 				return _this.externalLinks;
 			})
-			.def("__call__", &indexing_wrapper<TensorNetwork>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
-			.def("__call__", &indexing_wrapper<TensorNetwork,Index, Index, Index, Index, Index, Index, Index>, return_value_policy<manage_new_object>())
+			.def("__call__", +[](TensorNetwork &_this, const std::vector<Index> &_idx){
+				return  new xerus::internal::IndexedTensor<TensorNetwork>(std::move(_this(_idx)));
+			}, return_value_policy<manage_new_object>())
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
 			.def(self / other<value_t>())
 			.def("__getitem__", +[](TensorNetwork &_this, size_t _i) {
-				// TODO Note: for loops expect that an IndexError will be raised for illegal indexes to allow proper detection of the end of the sequence.
+				if (_i >= misc::product(_this.dimensions)) {
+					PyErr_SetString(PyExc_IndexError, "Index out of range");
+					throw_error_already_set();
+				}
 				return _this[_i];
 			})
 			.def("__getitem__", +[](TensorNetwork &_this, std::vector<size_t> _idx) {
@@ -442,21 +479,20 @@ BOOST_PYTHON_MODULE(libxerus) {
 				_this.require_valid_network();
 			})
 			.def("require_correct_format", &TensorNetwork::require_correct_format)
+			.def("measure", &TensorNetwork::measure)
 			.def("swap_external_links", &TensorNetwork::swap_external_links)
 			.def("round_edge", &TensorNetwork::round_edge)
-			.def("transfer_core", &TensorNetwork::transfer_core)
-			.def("transfer_core", +[](TensorNetwork &_this, size_t _from, size_t _to) {
-				_this.transfer_core(_from, _to);
-			})
+			.def("transfer_core", &TensorNetwork::transfer_core,
+				(arg("from"), arg("to"), arg("allowRankReduction")=true)
+			)
 			.def("reduce_representation", &TensorNetwork::reduce_representation)
 			//TODO find_common_edge (wrapper that returns python::tuple
 			.def("sanitize", &TensorNetwork::sanitize)
 			.def("fix_slate", &TensorNetwork::fix_slate) //TODO rename
 			.def("remove_slate", &TensorNetwork::remove_slate)
-			.def("resize_dimension", &TensorNetwork::resize_dimension)
-			.def("resize_dimension", +[](TensorNetwork &_this, size_t _mode,  size_t _newDim) {
-				_this.resize_dimension(_mode, _newDim);
-			})
+			.def("resize_dimension", &TensorNetwork::resize_dimension,
+				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
+			)
 			.def("contract", static_cast<void (TensorNetwork::*)(size_t, size_t)>(&TensorNetwork::contract))
 			.def("contract", static_cast<size_t (TensorNetwork::*)(const std::set<size_t>&)>(&TensorNetwork::contract)) //TODO write converter
 			.def("contraction_cost", &TensorNetwork::contraction_cost)
@@ -489,7 +525,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("links", &TensorNetwork::Link::links)
 		;
 	} // closes TN_scope
-
+	variable_argument_member_to_tuple_wrapper("TensorNetwork.__call__", "TensorNetworkCallOperator");
 	
 	// ------------------------------------------------------------- TTNetwork	
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
@@ -524,26 +560,22 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("find_largest_entry", &TTTensor::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
-		.def("round", +[](TTTensor &_this, std::vector<size_t> _rank){
-			_this.round(_rank);
-		})
-		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round))
+		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
+			(arg("ranks"), arg("epsilon")=EPSILON)
+		)
 		.def("round", static_cast<void (TTTensor::*)(double)>(&TTTensor::round))
 		.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
 		
-		.def("soft_threshold", +[](TTTensor &_this, double _tau) {
-			_this.soft_threshold(_tau);
-		})
-		.def("soft_threshold", +[](TTTensor &_this, std::vector<double> _taus) {
-			_this.soft_threshold(_taus);
-		})
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold))
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold))
+		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
+		.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
 		
-		.def("move_core", +[](TTTensor &_this, size_t _pos){
-			_this.move_core(_pos);
-		})
-		.def("move_core", &TTTensor::move_core)
+		.def("move_core", &TTTensor::move_core,
+			(arg("position"), arg("keepRank")=false)
+		)
 		
 		.def("assume_core_position", &TTTensor::assume_core_position)
 		.def("cannonicalize_left", &TTTensor::cannonicalize_left)
@@ -590,26 +622,22 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("find_largest_entry", &TTOperator::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
-		.def("round", +[](TTOperator &_this, std::vector<size_t> _rank){
-			_this.round(_rank);
-		})
-		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round))
+		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round),
+			(arg("ranks"), arg("epsilon")=EPSILON)
+		)
 		.def("round", static_cast<void (TTOperator::*)(double)>(&TTOperator::round))
 		.def("round", static_cast<void (TTOperator::*)(size_t)>(&TTOperator::round))
 		
-		.def("soft_threshold", +[](TTOperator &_this, double _tau) {
-			_this.soft_threshold(_tau);
-		})
-		.def("soft_threshold", +[](TTOperator &_this, std::vector<double> _taus) {
-			_this.soft_threshold(_taus);
-		})
-		.def("soft_threshold", static_cast<void (TTOperator::*)(const double, const bool)>(&TTOperator::soft_threshold))
-		.def("soft_threshold", static_cast<void (TTOperator::*)(const std::vector<double>&, const bool)>(&TTOperator::soft_threshold))
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const double, const bool)>(&TTOperator::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
+		.def("soft_threshold", static_cast<void (TTOperator::*)(const std::vector<double>&, const bool)>(&TTOperator::soft_threshold),
+			(arg("tau"), arg("preventZero")=false)
+		)
 		
-		.def("move_core", +[](TTOperator &_this, size_t _pos){
-			_this.move_core(_pos);
-		})
-		.def("move_core", &TTOperator::move_core)
+		.def("move_core", &TTOperator::move_core,
+			(arg("position"), arg("keepRank")=false)
+		)
 		
 		.def("assume_core_position", &TTOperator::assume_core_position)
 		.def("cannonicalize_left", &TTOperator::cannonicalize_left)
@@ -642,12 +670,14 @@ BOOST_PYTHON_MODULE(libxerus) {
 			}, +[](PerformanceData &_this, std::vector<PerformanceData::DataPoint> &_newData){
 				_this.data = _newData;
 			})
-			// TODO convert the errFunc
-// 			.add_property("errorFunction", +[](PerformanceData &_this){
-// 				return _this.errorFunction;
-// 			}, +[](PerformanceData &_this, boost::python::object _f){
-// 				_this.errorFunction = _f;
-// 			})
+			.add_property("errorFunction", 
+						  +[](PerformanceData &_this){ return _this.errorFunction; }, 
+						  +[](PerformanceData &_this, PyObject *_f){ 
+							  // TODO increase ref count for _f? also decrease it on overwrite?!
+							  _this.errorFunction = [_f](const TTTensor &_x)->double{
+								  return call<double>(_f, _x);
+							}; 
+						})
 			.def(init<bool>())
 			.def("start", &PerformanceData::start)
 			.def("stop_timer", &PerformanceData::stop_timer)
@@ -658,15 +688,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res){
 				_this.add(_itr, _res);
 			})
-			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x){
-				_this.add(_itr, _res, _x);
-			})
 			.def("add", +[](PerformanceData &_this, size_t _itr,  value_t _res, const TTTensor &_x, size_t _flags){
 				_this.add(_itr, _res, _x, _flags);
-			})
+			}, (arg("iterationCount"), arg("residual"), arg("x"), arg("flags")=0) )
 			.def("add", +[](PerformanceData &_this, value_t _res, const TTTensor &_x, size_t _flags){
 				_this.add(_res, _x, _flags);
-			})
+			}, (arg("residual"), arg("x"), arg("flags")=0) )
 			.def("__nonzero__", +[](PerformanceData &_this){ return bool(_this); })
 			.def("dump_to_file", &PerformanceData::dump_to_file)
 			.def("__iadd__", +[](PerformanceData &_this, const std::string &_s){
@@ -685,53 +712,60 @@ BOOST_PYTHON_MODULE(libxerus) {
 		;
 	}
 	
-	class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
-		.def(init<const ALSVariant&>())
-		.def_readwrite("sites", &ALSVariant::sites)
-		.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
-		.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
-		.def_readwrite("useResidualForEndCriterion", &ALSVariant::useResidualForEndCriterion)
-		.def_readwrite("preserveCorePosition", &ALSVariant::preserveCorePosition)
-		.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
-		.def_readwrite("localSolver", &ALSVariant::localSolver) // TODO we need some wrapper here
-		
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b) {
-			_this(_A, _x, _b);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_A, _x, _b, _eps);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-			_this(_A, _x, _b, _numHalfSweeps);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b) {
-			_this(_x, _b);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps) {
-			_this(_x, _b, _eps);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps) {
-			_this(_x, _b, _numHalfSweeps);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
-			_this(_A, _x, _b, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
-			_this(_A, _x, _b, _eps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
-			_this(_A, _x, _b, _numHalfSweeps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
-			_this(_x, _b, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
-			_this(_x, _b, _eps, _pd);
-		})
-		.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
-			_this(_x, _b, _numHalfSweeps, _pd);
-		})
-	;
+	class_<TTRetractionI>("TTRetractionI", init<const TTRetractionI &>());
+	scope().attr("ALSRetractionI") = object(TTRetractionI(&ALSRetractionI));
+	scope().attr("SubmanifoldRetractionI") = object(TTRetractionI(&SubmanifoldRetractionI));
+	scope().attr("HOSVDRetractionI") = object(TTRetractionI(&HOSVDRetractionI));
+	
+	class_<TTRetractionII>("TTRetractionII", init<const TTRetractionII &>());
+	scope().attr("ALSRetractionII") = object(TTRetractionII(&ALSRetractionII));
+	scope().attr("SubmanifoldRetractionII") = object(TTRetractionII(&SubmanifoldRetractionII));
+	scope().attr("HOSVDRetractionII") = object(TTRetractionII(&HOSVDRetractionII));
+	
+	class_<TTVectorTransport>("TTVectorTransport", init<const TTVectorTransport &>());
+	scope().attr("ProjectiveVectorTransport") = object(TTVectorTransport(&ProjectiveVectorTransport));
+	
+	{ scope als_scope = 
+		class_<ALSVariant>("ALSVariant", init<uint, size_t, ALSVariant::LocalSolver, bool, optional<bool>>())
+			.def(init<const ALSVariant&>())
+			.def_readwrite("sites", &ALSVariant::sites)
+			.def_readwrite("numHalfSweeps", &ALSVariant::numHalfSweeps)
+			.def_readwrite("convergenceEpsilon", &ALSVariant::convergenceEpsilon)
+			.def_readwrite("useResidualForEndCriterion", &ALSVariant::useResidualForEndCriterion)
+			.def_readwrite("preserveCorePosition", &ALSVariant::preserveCorePosition)
+			.def_readwrite("assumeSPD", &ALSVariant::assumeSPD)
+			.add_property("localSolver", 
+						  +[](ALSVariant &_this){ return _this.localSolver; },
+						  +[](ALSVariant &_this, ALSVariant::LocalSolver _s){ _this.localSolver = _s; })
+			
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+				_this(_A, _x, _b, _pd);
+			}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+				_this(_A, _x, _b, _eps, _pd);
+			}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+				_this(_A, _x, _b, _numHalfSweeps, _pd);
+			}, (arg("A"), arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+				_this(_x, _b, _pd);
+			}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+				_this(_x, _b, _eps, _pd);
+			}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+			
+			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+				_this(_x, _b, _numHalfSweeps, _pd);
+			}, (arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
+		;
+		class_<ALSVariant::LocalSolver>("LocalSolver", boost::python::no_init);
+		als_scope.attr("lapack_solver") = object(ALSVariant::LocalSolver(&ALSVariant::lapack_solver));
+		als_scope.attr("ASD_solver") = object(ALSVariant::LocalSolver(&ALSVariant::ASD_solver));
+	}
 	scope().attr("ALS") = object(ptr(&ALS));
 	scope().attr("ALS_SPD") = object(ptr(&ALS_SPD));
 	scope().attr("DMRG") = object(ptr(&DMRG));
@@ -739,7 +773,165 @@ BOOST_PYTHON_MODULE(libxerus) {
 	scope().attr("ASD") = object(ptr(&ASD));
 	scope().attr("ASD_SPD") = object(ptr(&ASD_SPD));
 	
+	def("decomposition_als", &decomposition_als, (arg("x"), arg("b"), arg("epsilon")=EPSILON, arg("maxIterations")=1000));
+	
+	class_<GeometricCGVariant>("GeometricCGVariant", init<size_t, value_t, bool, TTRetractionI, TTVectorTransport>())
+		.def(init<const GeometricCGVariant&>())
+		.def_readwrite("numSteps", &GeometricCGVariant::numSteps)
+		.def_readwrite("convergenceEpsilon", &GeometricCGVariant::convergenceEpsilon)
+		.def_readwrite("assumeSymmetricPositiveDefiniteOperator", &GeometricCGVariant::assumeSymmetricPositiveDefiniteOperator)
+		.add_property("retraction", 
+					  +[](GeometricCGVariant &_this){ return _this.retraction; }, 
+					  +[](GeometricCGVariant &_this, TTRetractionI _r){ _this.retraction = _r; })
+		.add_property("vectorTransport", 
+					  +[](GeometricCGVariant &_this){ return _this.vectorTransport; }, 
+					  +[](GeometricCGVariant &_this, TTVectorTransport _transp){ _this.vectorTransport = _transp; })
+		
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_A, _x, _b, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _eps, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _numSteps, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_x, _b, _pd);
+		}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_x, _b, _eps, _pd);
+		}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_x, _b, _numSteps, _pd);
+		}, (arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+	;
+	scope().attr("GeometricCG") = object(ptr(&GeometricCG));
+	
+	class_<SteepestDescentVariant>("SteepestDescentVariant", init<size_t, value_t, bool, TTRetractionII>())
+		.def(init<const SteepestDescentVariant&>())
+		.def_readwrite("numSteps", &SteepestDescentVariant::numSteps)
+		.def_readwrite("convergenceEpsilon", &SteepestDescentVariant::convergenceEpsilon)
+		.def_readwrite("assumeSymmetricPositiveDefiniteOperator", &SteepestDescentVariant::assumeSymmetricPositiveDefiniteOperator)
+		.add_property("retraction", 
+					  +[](SteepestDescentVariant &_this){ return _this.retraction; }, 
+					  +[](SteepestDescentVariant &_this, TTRetractionII _r){ _this.retraction = _r; })
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_A, _x, _b, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _eps, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_A, _x, _b, _numSteps, _pd);
+		}, (arg("A"), arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			_this(_x, _b, _pd);
+		}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			_this(_x, _b, _eps, _pd);
+		}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](SteepestDescentVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numSteps, PerformanceData &_pd) {
+			_this(_x, _b, _numSteps, _pd);
+		}, (arg("x"), arg("b"), arg("numSteps"), arg("perfData")=NoPerfData) )
+	;
+	scope().attr("SteepestDescent") = object(ptr(&SteepestDescent));
+	
+	// ------------------------------------------------------------- measurements
+	
+	class_<SinglePointMeasurmentSet>("SinglePointMeasurmentSet")
+		.def(init<const SinglePointMeasurmentSet&>())
+		.def("get_position", +[](SinglePointMeasurmentSet &_this, size_t _i){
+			return _this.positions[_i];
+		})
+		.def("set_position", +[](SinglePointMeasurmentSet &_this, size_t _i, std::vector<size_t> _pos){
+			_this.positions[_i] = _pos;
+		})
+		.def("get_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i){
+			return _this.measuredValues[_i];
+		})
+		.def("set_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i, value_t _val){
+			_this.measuredValues[_i] = _val;
+		})
+		.def("add", &SinglePointMeasurmentSet::add)
+		.def("size", &SinglePointMeasurmentSet::size)
+		.def("degree", &SinglePointMeasurmentSet::degree)
+		.def("test_solution", &SinglePointMeasurmentSet::test_solution)
+		
+		.def("random", +[](const std::vector<size_t> &_dim, size_t _numMeas){
+			static std::random_device rd;
+			std::mt19937_64 rnd(rd());
+			return SinglePointMeasurmentSet::random(_dim, _numMeas, rnd);
+		}).staticmethod("random")
+	;
+	def("sort", static_cast<void (*)(SinglePointMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	def("IHT", &IHT, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) );
+	
+	
+	VECTOR_TO_PY(Tensor, "TensorVector");
+	
+	class_<RankOneMeasurmentSet>("RankOneMeasurmentSet")
+		.def(init<const RankOneMeasurmentSet&>())
+		.def("get_position", +[](RankOneMeasurmentSet &_this, size_t _i){
+			return _this.positions[_i];
+		})
+		.def("set_position", +[](RankOneMeasurmentSet &_this, size_t _i, std::vector<Tensor> _pos){
+			_this.positions[_i] = _pos;
+		})
+		.def("get_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i){
+			return _this.measuredValues[_i];
+		})
+		.def("set_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i, value_t _val){
+			_this.measuredValues[_i] = _val;
+		})
+		.def("add", &RankOneMeasurmentSet::add)
+		.def("size", &RankOneMeasurmentSet::size)
+		.def("degree", &RankOneMeasurmentSet::degree)
+		.def("test_solution", &RankOneMeasurmentSet::test_solution)
+	;
+	def("sort", static_cast<void (*)(RankOneMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	
+	
+	class_<ADFVariant>("ADFVariant", init<size_t, double, double>())
+		.def(init<ADFVariant>())
+		.def_readwrite("maxIterations", &ADFVariant::maxIterations)
+		.def_readwrite("targetResidualNorm", &ADFVariant::targetResidualNorm)
+		.def_readwrite("minimalResidualNormDecrease", &ADFVariant::minimalResidualNormDecrease)
+		
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, PerformanceData& _pd){
+			return _this(_x, _meas, _pd);
+		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+			return _this(_x, _meas, _maxRanks, _pd);
+		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
+		
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, PerformanceData& _pd){
+			return _this(_x, _meas, _pd);
+		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+			return _this(_x, _meas, _maxRanks, _pd);
+		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
+	;
+	scope().attr("ADF") = object(ptr(&ADF));
+	
+	
 	// ------------------------------------------------------------- misc
+	def("frob_norm", +[](const Tensor& _x){ return _x.frob_norm(); });
+	def("frob_norm", +[](const TensorNetwork& _x){ return _x.frob_norm(); });
+	def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<Tensor>&)>(&frob_norm));
+	def("frob_norm", static_cast<value_t (*)(const IndexedTensorReadOnly<TensorNetwork>&)>(&frob_norm));
+	
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const Tensor&, const TensorNetwork&, double)>(&approx_equal));
 	def("approx_equal", static_cast<bool (*)(const TensorNetwork&, const Tensor&, double)>(&approx_equal));
@@ -766,30 +958,21 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.value("TSV", misc::FileFormat::TSV)
 	;
 	
-	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
 	def("save_to_file", +[](const Tensor &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TensorNetwork &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TTTensor &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
-	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename){
-		misc::save_to_file(_obj, _filename);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
+	
 	def("save_to_file", +[](const TTOperator &_obj, const std::string &_filename, misc::FileFormat _format){
 		misc::save_to_file(_obj, _filename, _format);
-	});
+	}, (arg("object"), arg("filename"), arg("format")=misc::FileFormat::BINARY) );
 	
 	def("load_from_file", +[](std::string _filename){
 		// determine type stored in the file

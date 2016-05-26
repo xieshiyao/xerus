@@ -68,20 +68,23 @@ ifdef USE_ICC
 endif
 
 ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Error Options - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ##
-WARNINGS += -Werror				        	# Promote ALL Warnings to Errors
+ifdef STRICT_WARNINGS
 
-ifdef USE_CLANG
-	WARNINGS += -ferror-limit=3				# Abort at third error
-else
-	WARNINGS += -fmax-errors=3				# Abort at third error
-endif
-
-# Exceptions from Error Promotion
-WARNINGS += -Wno-error=unused-parameter				# Do not Promote to Error
-WARNINGS += -Wno-error=unused-variable				# Do not Promote to Error
-WARNINGS += -Wno-error=disabled-optimization			# Do not Promote to Error
+	WARNINGS += -Werror				        	# Promote ALL Warnings to Errors
 	
-ifndef USE_CLANG
-	WARNINGS += -Wno-error=unused-but-set-variable		# Do not Promote to Error
-	WARNINGS += -Wno-error=maybe-uninitialized		# Do not Promote to Error
+	ifdef USE_CLANG
+		WARNINGS += -ferror-limit=3				# Abort at third error
+	else
+		WARNINGS += -fmax-errors=3				# Abort at third error
+	endif
+
+	# Exceptions from Error Promotion
+	WARNINGS += -Wno-error=unused-parameter				# Do not Promote to Error
+	WARNINGS += -Wno-error=unused-variable				# Do not Promote to Error
+	WARNINGS += -Wno-error=disabled-optimization			# Do not Promote to Error
+	
+	ifndef USE_CLANG
+		WARNINGS += -Wno-error=unused-but-set-variable		# Do not Promote to Error
+		WARNINGS += -Wno-error=maybe-uninitialized		# Do not Promote to Error
+	endif
 endif

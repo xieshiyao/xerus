@@ -46,6 +46,18 @@ namespace xerus {
 		}
 	}
 	
+	void HOSVDRetractionII(TTTensor &_U, const TTTensor &_change) {
+		std::vector<size_t> oldRank = _U.ranks();
+		_U = _U + _change;
+		_U.round(oldRank);
+	}
+	
+	void HOSVDRetractionI(TTTensor &_U, const TTTangentVector &_change) {
+		std::vector<size_t> oldRank = _U.ranks();
+		_U = _change.added_to_base();
+		_U.round(oldRank);
+	}
+	
 	void ALSRetractionII(TTTensor &_U, const TTTensor &_change) {
 		static const ALSVariant roundingALS(1, 2, ALSVariant::lapack_solver, false);
 		TTTensor target = _U + _change;

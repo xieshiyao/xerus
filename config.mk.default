@@ -29,6 +29,9 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 #=================================================================================================
 # Debug and Logging   
 #=================================================================================================
+# Use errors instead of warnings in many places.
+# STRICT_WARNINGS = TRUE
+
 # The Xerus library performs a number of runtime checks to ensure a valid input to all routines.
 # While not recommended these runtime checks can be completly disabled by uncommenting the following
 # line. This slighlty improves the performance.
