@@ -34,7 +34,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
-	SinglePointMeasurmentSet measurements;
+	SinglePointMeasurementSet measurements;
 	
 	REQUIRE(D*N*CS*R*R < misc::pow(N, D), "CS too large");
 
@@ -60,7 +60,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	examples::completion::inverse_index_ratios(measurements);
 
 	
-	SinglePointMeasurmentSet ctrSet = SinglePointMeasurmentSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd);
+	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd);
 	examples::completion::inverse_index_ratios(ctrSet);
 	value_t ctrNorm = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
@@ -116,7 +116,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 
-	SinglePointMeasurmentSet measurements(SinglePointMeasurmentSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd));
+	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd));
 	trueSolution.measure(measurements);
 	
 	bool test = true;

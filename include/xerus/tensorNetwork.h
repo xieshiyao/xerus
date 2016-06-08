@@ -34,7 +34,7 @@ namespace xerus {
 	// Necessary forward declaritons
 	class Tensor;
 	struct SinglePointMeasurment;
-	class SinglePointMeasurmentSet;
+	class SinglePointMeasurementSet;
 	
 	/** 
 	* @brief Very general class used to represent arbitary tensor networks. 
@@ -290,10 +290,10 @@ namespace xerus {
 		
 		/** 
 		* @brief Calculates the value of the tensor at the given positions.
-		* @param _measurments SinglePointMeasurmentSet defining the positions. On output the values are those of the tensor. 
+		* @param _measurments SinglePointMeasurementSet defining the positions. On output the values are those of the tensor. 
 		* Note that the order of the measurments may be changed.
 		*/
-		virtual void measure(SinglePointMeasurmentSet& _measurments) const;
+		virtual void measure(SinglePointMeasurementSet& _measurments) const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

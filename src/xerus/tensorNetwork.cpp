@@ -367,7 +367,7 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::measure(SinglePointMeasurmentSet& _measurments) const {
+	void TensorNetwork::measure(SinglePointMeasurementSet& _measurments) const {
 		std::vector<TensorNetwork> stack(degree()+1);
 		stack[0] = *this;
 		stack[0].reduce_representation();

@@ -82,7 +82,7 @@ UNIT_TEST(TensorNetwork, many_element_access,
     //No Index contracted
     res(i,j,k,l) = A(i,j) * B(k,l);
 
-	SinglePointMeasurmentSet measurments;
+	SinglePointMeasurementSet measurments;
 	measurments.add({0,0,0,0}, 0);
 	measurments.add({0,0,0,1}, 0);
 	measurments.add({0,0,0,2}, 0);

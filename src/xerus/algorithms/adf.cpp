@@ -126,10 +126,10 @@ namespace xerus {
 	};
 	
 	template<>
-	MeasurmentComparator<SinglePointMeasurmentSet>::MeasurmentComparator(const SinglePointMeasurmentSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
+	MeasurmentComparator<SinglePointMeasurementSet>::MeasurmentComparator(const SinglePointMeasurementSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
 	
 	template<>
-	bool MeasurmentComparator<SinglePointMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
+	bool MeasurmentComparator<SinglePointMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
 				if (measurments.positions[_a][j] < measurments.positions[_b][j]) return true;
@@ -286,7 +286,7 @@ namespace xerus {
 	}
 	
 	template<>
-	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
@@ -323,7 +323,7 @@ namespace xerus {
 	
 	
 	template<>
-	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
@@ -383,7 +383,7 @@ namespace xerus {
 	}
 	
 	template<> template<>
-	inline void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::perform_dyadic_product(	const size_t _localLeftRank,
+	inline void ADFVariant::InternalSolver<SinglePointMeasurementSet>::perform_dyadic_product(	const size_t _localLeftRank,
 																					const size_t _localRightRank,
 																					const value_t* const _leftPtr, 
 																					const value_t* const _rightPtr, 
@@ -470,7 +470,7 @@ namespace xerus {
 	inline size_t position_or_zero(const MeasurmentSet& _measurments, const size_t _meas, const size_t _corePosition);
 	
 	template<>
-	inline size_t position_or_zero<SinglePointMeasurmentSet>(const SinglePointMeasurmentSet& _measurments, const size_t _meas, const size_t _corePosition) {
+	inline size_t position_or_zero<SinglePointMeasurementSet>(const SinglePointMeasurementSet& _measurments, const size_t _meas, const size_t _corePosition) {
 		return _measurments.positions[_meas][_corePosition];
 	}
 	
@@ -537,7 +537,7 @@ namespace xerus {
 	
 	
 	template<>
-	void ADFVariant::InternalSolver<SinglePointMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
+	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
 		for(size_t j = 0; j < x.dimensions[_corePosition]; ++j) {
 			Tensor localDelta;
 			localDelta(r1, r2) = projectedGradientComponent(r1, j, r2);
@@ -646,7 +646,7 @@ namespace xerus {
 	}
 	
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
-	template class ADFVariant::InternalSolver<SinglePointMeasurmentSet>;
+	template class ADFVariant::InternalSolver<SinglePointMeasurementSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
 	
 	const ADFVariant ADF(0, 1e-8, 1e-3);

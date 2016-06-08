@@ -25,7 +25,7 @@
 #include <xerus.h>
 
 namespace xerus {
-	double IHT(TTTensor& _x, const SinglePointMeasurmentSet& _measurments, PerformanceData& _perfData) {
+	double IHT(TTTensor& _x, const SinglePointMeasurementSet& _measurments, PerformanceData& _perfData) {
 		const size_t numMeasurments = _measurments.size();
 		const size_t degree = _x.degree();
 		const size_t USER_MEASUREMENTS_PER_ITR = numMeasurments;
@@ -33,7 +33,7 @@ namespace xerus {
 		
 
 		TTTensor largeX(_x);
-		// 		SinglePointMeasurmentSet currentValues(_measurments);
+		// 		SinglePointMeasurementSet currentValues(_measurments);
 		std::vector<value_t> currentValues(numMeasurments);
 		std::vector<size_t> measurementOrder(numMeasurments);
 		std::iota(measurementOrder.begin(), measurementOrder.end(), 0);

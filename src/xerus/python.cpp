@@ -850,32 +850,32 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	// ------------------------------------------------------------- measurements
 	
-	class_<SinglePointMeasurmentSet>("SinglePointMeasurmentSet")
-		.def(init<const SinglePointMeasurmentSet&>())
-		.def("get_position", +[](SinglePointMeasurmentSet &_this, size_t _i){
+	class_<SinglePointMeasurementSet>("SinglePointMeasurementSet")
+		.def(init<const SinglePointMeasurementSet&>())
+		.def("get_position", +[](SinglePointMeasurementSet &_this, size_t _i){
 			return _this.positions[_i];
 		})
-		.def("set_position", +[](SinglePointMeasurmentSet &_this, size_t _i, std::vector<size_t> _pos){
+		.def("set_position", +[](SinglePointMeasurementSet &_this, size_t _i, std::vector<size_t> _pos){
 			_this.positions[_i] = _pos;
 		})
-		.def("get_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i){
+		.def("get_measuredValue", +[](SinglePointMeasurementSet &_this, size_t _i){
 			return _this.measuredValues[_i];
 		})
-		.def("set_measuredValue", +[](SinglePointMeasurmentSet &_this, size_t _i, value_t _val){
+		.def("set_measuredValue", +[](SinglePointMeasurementSet &_this, size_t _i, value_t _val){
 			_this.measuredValues[_i] = _val;
 		})
-		.def("add", &SinglePointMeasurmentSet::add)
-		.def("size", &SinglePointMeasurmentSet::size)
-		.def("degree", &SinglePointMeasurmentSet::degree)
-		.def("test_solution", &SinglePointMeasurmentSet::test_solution)
+		.def("add", &SinglePointMeasurementSet::add)
+		.def("size", &SinglePointMeasurementSet::size)
+		.def("degree", &SinglePointMeasurementSet::degree)
+		.def("test_solution", &SinglePointMeasurementSet::test_solution)
 		
 		.def("random", +[](const std::vector<size_t> &_dim, size_t _numMeas){
 			static std::random_device rd;
 			std::mt19937_64 rnd(rd());
-			return SinglePointMeasurmentSet::random(_dim, _numMeas, rnd);
+			return SinglePointMeasurementSet::random(_dim, _numMeas, rnd);
 		}).staticmethod("random")
 	;
-	def("sort", static_cast<void (*)(SinglePointMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	def("sort", static_cast<void (*)(SinglePointMeasurementSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
 	def("IHT", &IHT, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) );
 	
 	
@@ -909,10 +909,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def_readwrite("targetResidualNorm", &ADFVariant::targetResidualNorm)
 		.def_readwrite("minimalResidualNormDecrease", &ADFVariant::minimalResidualNormDecrease)
 		
-		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, PerformanceData& _pd){
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurementSet& _meas, PerformanceData& _pd){
 			return _this(_x, _meas, _pd);
 		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
-		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const SinglePointMeasurementSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
 			return _this(_x, _meas, _maxRanks, _pd);
 		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
 		

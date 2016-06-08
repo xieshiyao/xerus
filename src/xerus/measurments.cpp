@@ -35,14 +35,14 @@
  
 
 namespace xerus {
-	// --------------------- SinglePointMeasurmentSet -----------------
+	// --------------------- SinglePointMeasurementSet -----------------
 	
-	size_t SinglePointMeasurmentSet::size() const {
+	size_t SinglePointMeasurementSet::size() const {
 		REQUIRE(positions.size() == measuredValues.size(), "I.E.");
 		return positions.size();
 	}
 	
-	size_t SinglePointMeasurmentSet::degree() const {
+	size_t SinglePointMeasurementSet::degree() const {
 		IF_CHECK(
 			for(size_t i = 0; i+1 < positions.size(); ++i) {
 				REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsitent degrees in measurment set.");
@@ -51,17 +51,17 @@ namespace xerus {
 		return positions.empty() ? 0 : positions[0].size();
 	}
 	
-	void SinglePointMeasurmentSet::add(const std::vector<size_t>& _position, const value_t _measuredValue) {
+	void SinglePointMeasurementSet::add(const std::vector<size_t>& _position, const value_t _measuredValue) {
 		positions.emplace_back(_position);
 		measuredValues.emplace_back(_measuredValue);
 	}
 	
 	
-	value_t SinglePointMeasurmentSet::test_solution(const TensorNetwork& _solution) const {
+	value_t SinglePointMeasurementSet::test_solution(const TensorNetwork& _solution) const {
 		value_t residualNorm = 0.0;
 		value_t measurementNorm = 0.0;
 		
-		SinglePointMeasurmentSet test(*this);
+		SinglePointMeasurementSet test(*this);
 		
 		_solution.measure(test);
 		
@@ -74,7 +74,7 @@ namespace xerus {
 	}
 	
 	
-	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos) {
+	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
 			for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
 				if (_lhs[i] < _rhs[i]) return true;
@@ -99,7 +99,7 @@ namespace xerus {
 		return positions[0].size();
 	}
 	
-	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions) {
+	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions) {
 		std::vector<Tensor> zeroPosition;
 		for(size_t j = 0; j < +_other.degree(); ++j) {
 			zeroPosition.emplace_back(Tensor({_dimensions[j]}));

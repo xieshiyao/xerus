@@ -237,7 +237,7 @@ namespace xerus {
         /**
 		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
 		* @param[in,out] _x On input: an initial guess of the solution, also defining the ranks. On output: The reconstruction found by the algorithm.
-		* @param _measurments the available measurments, can be either a SinglePointMeasurmentSet or RankOneMeasurmentSet.
+		* @param _measurments the available measurments, can be either a SinglePointMeasurementSet or RankOneMeasurmentSet.
 		* @param _perfData optinal performanceData object to be used.
 		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.
 		*/
@@ -250,7 +250,7 @@ namespace xerus {
 		/**
 		* @brief Tries to reconstruct the (low rank) tensor _x from the given measurments. 
 		* @param[in,out] _x On input: an initial guess of the solution, may be of smaller rank. On output: The reconstruction found by the algorithm.
-		* @param _measurments the available measurments, can be either a SinglePointMeasurmentSet or RankOneMeasurmentSet.
+		* @param _measurments the available measurments, can be either a SinglePointMeasurementSet or RankOneMeasurmentSet.
 		* @param _maxRanks the maximal ranks the algorithm may use to decrease the resdiual.
 		* @param _perfData optinal performanceData object to be used.
 		* @returns the residual @f$|P_\Omega(x-b)|_2@f$ of the final @a _x.

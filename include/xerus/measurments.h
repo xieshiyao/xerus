@@ -40,27 +40,27 @@ namespace xerus {
 	/** 
 	* @brief Class used to represent a single point measurments.
 	*/
-    class SinglePointMeasurmentSet {
+    class SinglePointMeasurementSet {
 	public:
 		std::vector<std::vector<size_t>> positions;
 		std::vector<value_t> measuredValues;
 		
-		SinglePointMeasurmentSet() = default;
-		SinglePointMeasurmentSet(const SinglePointMeasurmentSet&  _other) = default;
-		SinglePointMeasurmentSet(      SinglePointMeasurmentSet&& _other) = default;
+		SinglePointMeasurementSet() = default;
+		SinglePointMeasurementSet(const SinglePointMeasurementSet&  _other) = default;
+		SinglePointMeasurementSet(      SinglePointMeasurementSet&& _other) = default;
 		
-		SinglePointMeasurmentSet& operator=(const SinglePointMeasurmentSet&  _other) = default;
-		SinglePointMeasurmentSet& operator=(      SinglePointMeasurmentSet&& _other) = default;
+		SinglePointMeasurementSet& operator=(const SinglePointMeasurementSet&  _other) = default;
+		SinglePointMeasurementSet& operator=(      SinglePointMeasurementSet&& _other) = default;
 		
 		template<class random_engine>
-		static SinglePointMeasurmentSet random(const std::vector<size_t> &_dim, const size_t _numMeasurements, random_engine _rnd) {
+		static SinglePointMeasurementSet random(const std::vector<size_t> &_dim, const size_t _numMeasurements, random_engine _rnd) {
 			REQUIRE(misc::product(_dim) >= _numMeasurements, "It's impossible to perform as many measurements as requested. " << _numMeasurements << " > " << _dim);
 			std::vector<std::uniform_int_distribution<size_t>> indexDist;
 			for (size_t i=0; i<_dim.size(); ++i) {
 				indexDist.emplace_back(0, _dim[i]-1);
 			}
 			std::set<std::vector<size_t>> measuredPositions;
-			SinglePointMeasurmentSet result;
+			SinglePointMeasurementSet result;
 			while (result.size() < _numMeasurements) {
 				std::vector<size_t> pos;
 				for (size_t i = 0; i < _dim.size(); ++i) {
@@ -82,7 +82,7 @@ namespace xerus {
 		value_t test_solution(const TensorNetwork& _solution) const;
 	};
 	
-	void sort(SinglePointMeasurmentSet& _set, const size_t _splitPos = ~0ul);
+	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos = ~0ul);
 	
 	
 	class RankOneMeasurmentSet {
@@ -94,7 +94,7 @@ namespace xerus {
 		RankOneMeasurmentSet(const RankOneMeasurmentSet&  _other) = default;
 		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
 		
-		RankOneMeasurmentSet(const SinglePointMeasurmentSet&  _other, const std::vector<size_t> _dimensions);
+		RankOneMeasurmentSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions);
 
 		RankOneMeasurmentSet& operator=(const RankOneMeasurmentSet&  _other) = default;
 		RankOneMeasurmentSet& operator=(      RankOneMeasurmentSet&& _other) = default;
