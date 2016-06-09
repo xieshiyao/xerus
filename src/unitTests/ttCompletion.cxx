@@ -92,7 +92,7 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	perfData.reset();
 	X = TTTensor::ones(std::vector<size_t>(D, N));
 	
-	ADF(X, RankOneMeasurmentSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ADF(X, RankOneMeasurementSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
 	ctrValue = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
@@ -139,7 +139,7 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	X = TTTensor::ones(std::vector<size_t>(D, N));
 	perfData.reset();
 	
-	ourADF(X, RankOneMeasurmentSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
+	ourADF(X, RankOneMeasurementSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 )

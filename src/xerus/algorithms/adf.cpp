@@ -147,10 +147,10 @@ namespace xerus {
 	
 	
 	template<>
-	MeasurmentComparator<RankOneMeasurmentSet>::MeasurmentComparator(const RankOneMeasurmentSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
+	MeasurmentComparator<RankOneMeasurementSet>::MeasurmentComparator(const RankOneMeasurementSet& _measurments, const bool _forward) : forward(_forward), degree(_measurments.degree()), measurments(_measurments) { }
 	
 	template<>
-	bool MeasurmentComparator<RankOneMeasurmentSet>::operator()(const size_t _a, const size_t _b) const {
+	bool MeasurmentComparator<RankOneMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
 				const int res = comp(measurments.positions[_a][j], measurments.positions[_b][j]);
@@ -302,7 +302,7 @@ namespace xerus {
 	}
 	
 	template<>
-	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
+	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
@@ -339,7 +339,7 @@ namespace xerus {
 	}
 	
 	template<>
-	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
+	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
 		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
@@ -402,7 +402,7 @@ namespace xerus {
 	}
 	
 	template<> template<>
-	inline void ADFVariant::InternalSolver<RankOneMeasurmentSet>::perform_dyadic_product(	const size_t _localLeftRank,
+	inline void ADFVariant::InternalSolver<RankOneMeasurementSet>::perform_dyadic_product(	const size_t _localLeftRank,
 																					const size_t _localRightRank,
 																					const value_t* const _leftPtr, 
 																					const value_t* const _rightPtr, 
@@ -438,7 +438,7 @@ namespace xerus {
 		{
 			Tensor partialProjGradComp({x.dimensions[_corePosition], localLeftRank, localRightRank}, Tensor::Representation::Dense);
 			
-			std::unique_ptr<value_t[]> dyadicComponent(std::is_same<MeasurmentSet, RankOneMeasurmentSet>::value ? new value_t[localLeftRank*localRightRank] : nullptr);
+			std::unique_ptr<value_t[]> dyadicComponent(std::is_same<MeasurmentSet, RankOneMeasurementSet>::value ? new value_t[localLeftRank*localRightRank] : nullptr);
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
@@ -475,7 +475,7 @@ namespace xerus {
 	}
 	
 	template<>
-	inline size_t position_or_zero<RankOneMeasurmentSet>(const RankOneMeasurmentSet& _measurments, const size_t _meas, const size_t _corePosition) {
+	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet& _measurments, const size_t _meas, const size_t _corePosition) {
 		return 0;
 	}
 	
@@ -550,7 +550,7 @@ namespace xerus {
 	
 	
 	template<>
-	void ADFVariant::InternalSolver<RankOneMeasurmentSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
+	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_x(const std::vector<value_t>& _normAProjGrad, const size_t _corePosition) {
 		const value_t PyR = misc::sqr(frob_norm(projectedGradientComponent));
 		
 		// Update
@@ -647,7 +647,7 @@ namespace xerus {
 	
 	// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 	template class ADFVariant::InternalSolver<SinglePointMeasurementSet>;
-	template class ADFVariant::InternalSolver<RankOneMeasurmentSet>;
+	template class ADFVariant::InternalSolver<RankOneMeasurementSet>;
 	
 	const ADFVariant ADF(0, 1e-8, 1e-3);
 }

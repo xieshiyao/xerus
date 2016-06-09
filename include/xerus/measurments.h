@@ -85,19 +85,19 @@ namespace xerus {
 	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos = ~0ul);
 	
 	
-	class RankOneMeasurmentSet {
+	class RankOneMeasurementSet {
 	public:
 		std::vector<std::vector<Tensor>> positions;
 		std::vector<value_t> measuredValues;
 		
-		RankOneMeasurmentSet() = default;
-		RankOneMeasurmentSet(const RankOneMeasurmentSet&  _other) = default;
-		RankOneMeasurmentSet(      RankOneMeasurmentSet&& _other) = default;
+		RankOneMeasurementSet() = default;
+		RankOneMeasurementSet(const RankOneMeasurementSet&  _other) = default;
+		RankOneMeasurementSet(      RankOneMeasurementSet&& _other) = default;
 		
-		RankOneMeasurmentSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions);
+		RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions);
 
-		RankOneMeasurmentSet& operator=(const RankOneMeasurmentSet&  _other) = default;
-		RankOneMeasurmentSet& operator=(      RankOneMeasurmentSet&& _other) = default;
+		RankOneMeasurementSet& operator=(const RankOneMeasurementSet&  _other) = default;
+		RankOneMeasurementSet& operator=(      RankOneMeasurementSet&& _other) = default;
 		
 		void add(const std::vector<Tensor>& _position, const value_t _measuredValue);
 		
@@ -108,6 +108,6 @@ namespace xerus {
 		value_t test_solution(const TTNetwork<false>& _solution) const;
 	};
 	
-	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos = ~0ul);
+	void sort(RankOneMeasurementSet& _set, const size_t _splitPos = ~0ul);
 	
 }

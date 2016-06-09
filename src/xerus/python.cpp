@@ -885,26 +885,26 @@ BOOST_PYTHON_MODULE(libxerus) {
 	
 	VECTOR_TO_PY(Tensor, "TensorVector");
 	
-	class_<RankOneMeasurmentSet>("RankOneMeasurmentSet")
-		.def(init<const RankOneMeasurmentSet&>())
-		.def("get_position", +[](RankOneMeasurmentSet &_this, size_t _i){
+	class_<RankOneMeasurementSet>("RankOneMeasurementSet")
+		.def(init<const RankOneMeasurementSet&>())
+		.def("get_position", +[](RankOneMeasurementSet &_this, size_t _i){
 			return _this.positions[_i];
 		})
-		.def("set_position", +[](RankOneMeasurmentSet &_this, size_t _i, std::vector<Tensor> _pos){
+		.def("set_position", +[](RankOneMeasurementSet &_this, size_t _i, std::vector<Tensor> _pos){
 			_this.positions[_i] = _pos;
 		})
-		.def("get_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i){
+		.def("get_measuredValue", +[](RankOneMeasurementSet &_this, size_t _i){
 			return _this.measuredValues[_i];
 		})
-		.def("set_measuredValue", +[](RankOneMeasurmentSet &_this, size_t _i, value_t _val){
+		.def("set_measuredValue", +[](RankOneMeasurementSet &_this, size_t _i, value_t _val){
 			_this.measuredValues[_i] = _val;
 		})
-		.def("add", &RankOneMeasurmentSet::add)
-		.def("size", &RankOneMeasurmentSet::size)
-		.def("degree", &RankOneMeasurmentSet::degree)
-		.def("test_solution", &RankOneMeasurmentSet::test_solution)
+		.def("add", &RankOneMeasurementSet::add)
+		.def("size", &RankOneMeasurementSet::size)
+		.def("degree", &RankOneMeasurementSet::degree)
+		.def("test_solution", &RankOneMeasurementSet::test_solution)
 	;
-	def("sort", static_cast<void (*)(RankOneMeasurmentSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
+	def("sort", static_cast<void (*)(RankOneMeasurementSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
 	
 	
 	class_<ADFVariant>("ADFVariant", init<size_t, double, double>())
@@ -920,10 +920,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			return _this(_x, _meas, _maxRanks, _pd);
 		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
 		
-		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, PerformanceData& _pd){
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurementSet& _meas, PerformanceData& _pd){
 			return _this(_x, _meas, _pd);
 		}, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) )
-		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurmentSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
+		.def("__call__", +[](ADFVariant &_this, TTTensor& _x, const RankOneMeasurementSet& _meas, const std::vector<size_t>& _maxRanks, PerformanceData& _pd){
 			return _this(_x, _meas, _maxRanks, _pd);
 		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
 	;

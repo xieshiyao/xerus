@@ -89,17 +89,17 @@ namespace xerus {
 		});
 	}
 	
-	// --------------------- RankOneMeasurmentSet -----------------
+	// --------------------- RankOneMeasurementSet -----------------
 	
-	size_t RankOneMeasurmentSet::size() const {
+	size_t RankOneMeasurementSet::size() const {
 		return measuredValues.size();
 	}
 	
-	size_t RankOneMeasurmentSet::degree() const {
+	size_t RankOneMeasurementSet::degree() const {
 		return positions[0].size();
 	}
 	
-	RankOneMeasurmentSet::RankOneMeasurmentSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions) {
+	RankOneMeasurementSet::RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions) {
 		std::vector<Tensor> zeroPosition;
 		for(size_t j = 0; j < +_other.degree(); ++j) {
 			zeroPosition.emplace_back(Tensor({_dimensions[j]}));
@@ -113,7 +113,7 @@ namespace xerus {
 		}
 	}
 	
-	void RankOneMeasurmentSet::add(const std::vector<Tensor>& _position, const value_t _measuredValue) {
+	void RankOneMeasurementSet::add(const std::vector<Tensor>& _position, const value_t _measuredValue) {
 		IF_CHECK(
 			REQUIRE(positions.size() == measuredValues.size(), "Internal Error.");
 			if(size() > 0) {
@@ -130,7 +130,7 @@ namespace xerus {
 	}
 	
 	
-	value_t RankOneMeasurmentSet::test_solution(const TTTensor& _solution) const {
+	value_t RankOneMeasurementSet::test_solution(const TTTensor& _solution) const {
 		value_t residualNorm = 0.0;
 		value_t measurementNorm = 0.0;
 		
@@ -180,7 +180,7 @@ namespace xerus {
 	}
 	
 	
-	void sort(RankOneMeasurmentSet& _set, const size_t _splitPos) {
+	void sort(RankOneMeasurementSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) {
 		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
 			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
