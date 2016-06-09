@@ -245,13 +245,23 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	public:
 		/** 
-		* @brief Reduces the given ranks to the maximal possible.
-		* @details If a given rank is allready smaller or equal it is left unchanged.
-		* @param _ranks the inital ranks to be reduced.
-		* @param _dimensions the dimensions used to calculate the maximal ranks.
-		* @return the reduced ranks.
-		*/
+		 * @brief Reduces the given ranks to the maximal possible.
+		 * @details If a given rank is allready smaller or equal it is left unchanged.
+		 * @param _ranks the inital ranks to be reduced.
+		 * @param _dimensions the dimensions used to calculate the maximal ranks.
+		 * @return the reduced ranks.
+		 */
 		static std::vector<size_t> reduce_to_maximal_ranks(std::vector<size_t> _ranks, const std::vector<size_t>& _dimensions);
+		
+		/** 
+		 * @brief calculates the number of degrees of freedom of the manifold of fixed tt-rank @a _ranks with the given @a _dimensions
+		 */
+		static size_t degrees_of_freedom(const std::vector<size_t> &_dimensions, const std::vector<size_t> &_ranks);
+		
+		/** 
+		 * @brief calculates the number of degrees of freedom of the manifold of fixed tt-rank that the given TTTensor is part of
+		 */
+		size_t degrees_of_freedom();
 		
 		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
 		

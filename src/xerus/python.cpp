@@ -554,6 +554,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
 		
 		.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
+// 		.def("degrees_of_freedom", static_cast<size_t (TTTensor::*)()>(&TTTensor::degrees_of_freedom))
+		.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTTensor::degrees_of_freedom)).staticmethod("degrees_of_freedom")
 		.def("dyadic_product", static_cast<TTTensor (*)(const std::vector<TTTensor> &)>(&TTTensor::dyadic_product))
 			.staticmethod("dyadic_product") //  TODO should not be in TTTensor scope
 		.def("entrywise_square", &TTTensor::entrywise_square) // TODO should not be a member method?
@@ -616,6 +618,8 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const size_t)>(&TTOperator::dirac)).staticmethod("dirac") //TODO
 		
 		.def("reduce_to_maximal_ranks", &TTOperator::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
+// 		.def("degrees_of_freedom", static_cast<size_t (TTOperator::*)()>(&TTOperator::degrees_of_freedom))
+		.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTOperator::degrees_of_freedom)).staticmethod("degrees_of_freedom")
 		.def("dyadic_product", static_cast<TTOperator (*)(const std::vector<TTOperator> &)>(&TTOperator::dyadic_product))
 			.staticmethod("dyadic_product") //  TODO should not be in TTOperator scope
 		.def("entrywise_square", &TTOperator::entrywise_square) // TODO should not be a member method!

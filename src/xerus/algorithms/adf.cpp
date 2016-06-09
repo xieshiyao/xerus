@@ -141,7 +141,7 @@ namespace xerus {
 				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) return false;
 			}
 		}
-		LOG(fatal, "Measurments must not appear twice.");
+// 		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
@@ -165,7 +165,7 @@ namespace xerus {
 			}
 		}
 		
-		LOG(fatal, "Measurments must not appear twice. ");
+// 		LOG(fatal, "Measurments must not appear twice. "); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
