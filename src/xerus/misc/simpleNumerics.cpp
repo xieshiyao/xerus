@@ -135,7 +135,7 @@ namespace xerus {
 					return mid;
 				}
 				REQUIRE(std::isfinite(fmid), "invalid function value f("<<mid<<") = " << fmid << " reached in bisection");
-				if (fmid * fmid < 0) {
+				if (fmin * fmid < 0) {
 					fmax = fmid;
 					_max = mid;
 				} else {
@@ -151,7 +151,7 @@ namespace xerus {
         
         Polynomial::Polynomial() {}
         
-        Polynomial::Polynomial(const std::vector<double> _coeff) : coefficients(_coeff) {}
+        Polynomial::Polynomial(std::vector<double> _coeff) : coefficients(std::move(_coeff)) {}
         
         size_t Polynomial::terms() const {
             return coefficients.size();

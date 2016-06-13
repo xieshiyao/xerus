@@ -318,20 +318,20 @@ namespace xerus {
 	
 	ALSVariant::ALSAlgorithmicData::ALSAlgorithmicData(const ALSVariant &_ALS, const TTOperator *_A, TTTensor &_x, const TTTensor &_b) 
 		: ALS(_ALS), A(_A), x(_x), b(_b)
+		, targetRank(_x.ranks())
+		, normB(frob_norm(_b))
+		, cannonicalizeAtTheEnd(_x.cannonicalized)
+		, corePosAtTheEnd(_x.corePosition)
+		, lastEnergy2(1e102)
+		, lastEnergy(1e101)
+		, energy(1e100)
+		, halfSweepCount(0)
+		, direction(Increasing)
 	{
-		targetRank = _x.ranks();
-		cannonicalizeAtTheEnd = _x.cannonicalized;
-		corePosAtTheEnd = _x.corePosition;
-		normB = frob_norm(_b);
 		prepare_x_for_als();
 		prepare_stacks();
 		currIndex = optimizedRange.first;
-		direction = Increasing;
 		choose_energy_functional();
-		lastEnergy2 = 1e102;
-		lastEnergy = 1e101;
-		energy = 1e100;
-		halfSweepCount = 0;
 	}
 
 	void ALSVariant::ALSAlgorithmicData::move_to_next_index() {

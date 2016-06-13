@@ -559,7 +559,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
-		double resDec1 = 1.0, resDec2 = 1.0, resDec3 = 1.0;
+		double resDec1 = 1.0, resDec2 = 1.0;
 			
 		for(; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 			
@@ -585,7 +585,7 @@ namespace xerus {
 			perfData.add(iteration, residualNorm, x, 0);
 			
 			// Check for termination criteria
-			resDec3 = resDec2; resDec2 = resDec1;
+			double resDec3 = resDec2; resDec2 = resDec1;
 			resDec1 = (lastResidualNorm-residualNorm)/lastResidualNorm;
 			if(residualNorm < targetResidualNorm || resDec1+resDec2+resDec3 < 3*minimalResidualNormDecrease) { break; }
 			

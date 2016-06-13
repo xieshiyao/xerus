@@ -1667,7 +1667,7 @@ namespace xerus {
 		
 		
 		void stream_reader(std::istream& _stream, Tensor &_obj, const FileFormat _format) {
-			uint64 ver = read_from_stream<uint64>(_stream, _format);
+			IF_CHECK(uint64 ver = )read_from_stream<uint64>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
