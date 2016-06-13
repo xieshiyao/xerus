@@ -23,7 +23,8 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST2(SaveAndLoad, TensorTSV) {
+static misc::UnitTest saveload_tensor("SaveAndLoad", "TensorTSV", [](){
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
@@ -61,11 +62,12 @@ UNIT_TEST2(SaveAndLoad, TensorTSV) {
 	}
 	
 	xerus::misc::exec("rm -r unitTestFiles");
-}});
+});
 
 
 
-UNIT_TEST2(SaveAndLoad, TensorBinary) {
+static misc::UnitTest saveload_tensorbin("SaveAndLoad", "TensorBinary", [](){
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
@@ -103,10 +105,11 @@ UNIT_TEST2(SaveAndLoad, TensorBinary) {
 	}
 	
 	xerus::misc::exec("rm -r unitTestFiles");
-}});
+});
 
 
-UNIT_TEST2(SaveAndLoad, TensorNetworkTSV) {
+static misc::UnitTest saveload_tntsv("SaveAndLoad", "TensorNetworkTSV", [](){
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
@@ -135,11 +138,12 @@ UNIT_TEST2(SaveAndLoad, TensorNetworkTSV) {
 	}
 	
 	xerus::misc::exec("rm -r unitTestFiles");
-}});
+});
 
 
 
-UNIT_TEST2(SaveAndLoad, TensorNetworkBinary) {
+static misc::UnitTest saveload_tnbin("SaveAndLoad", "TensorNetworkBinary", [](){
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
@@ -170,5 +174,5 @@ UNIT_TEST2(SaveAndLoad, TensorNetworkBinary) {
 	}
 	
 	xerus::misc::exec("rm -r unitTestFiles");
-}});
+});
 

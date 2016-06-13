@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, solve_Ax_equals_b,
+static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
     Index i,j,k;
           
     Tensor A1({4,2,2});
@@ -68,9 +68,9 @@ UNIT_TEST(Tensor, solve_Ax_equals_b,
     TEST((b2[1] - x2[{0,1}]) < 1e-14);
     TEST((x2[{1,0}]) < 1e-14);
     TEST((x2[{1,1}]) < 1e-14);
-)
+});
 
-UNIT_TEST(Tensor, solve_sparse,
+static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	std::mt19937_64 rnd(0x5EED);
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
@@ -110,9 +110,9 @@ UNIT_TEST(Tensor, solve_sparse,
 	fx(i) = r(j) / fid(j,i);
 	x(i) = r(j) / id(j,i);
 	MTEST(frob_norm(fx-x)/frob_norm(x)<3e-14, frob_norm(fx-x)/frob_norm(x));
-)
+});
 
-UNIT_TEST(Tensor, solve_transposed,
+static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	std::mt19937_64 rnd(0x5EED);
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
@@ -143,4 +143,4 @@ UNIT_TEST(Tensor, solve_transposed,
 	x4(i) = r(j) / At(j,i);
 	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4));
 	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
-)
+});

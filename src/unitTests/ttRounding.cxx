@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(TT, TTTensor_Rounding,
+static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -102,10 +102,10 @@ UNIT_TEST(TT, TTTensor_Rounding,
     TTA5.round(576);
     B5(j,i^7) = TTA5(j,i^7);
     TEST(approx_equal(B5,A5, 1e-14));
-)
+});
 
 
-UNIT_TEST(TT, no_rounding,
+static misc::UnitTest tt_noround("TT", "no_rounding", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -119,4 +119,4 @@ UNIT_TEST(TT, no_rounding,
 	LOG(unit_test, a.ranks());
 	a.round(2);
 	TEST(approx_equal(Tensor(a), Tensor(b), 1e-14));
-)
+});

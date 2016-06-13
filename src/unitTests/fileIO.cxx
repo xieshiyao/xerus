@@ -24,7 +24,7 @@
 using namespace xerus;
 
 
-UNIT_TEST(Tensor, read_write_file,
+static misc::UnitTest tensor_rw("Tensor", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
 	Tensor A = Tensor::random({12,13,14}, rnd, dist);
@@ -49,9 +49,9 @@ UNIT_TEST(Tensor, read_write_file,
 	Ab = misc::load_from_file<Tensor>("test.dat");
 	TEST(Ab.is_sparse());
 	MTEST(frob_norm(S - Ab) < 1e-16, "sparse tsv " << frob_norm(S-Ab));
-)
+});
 
-UNIT_TEST(TensorNetwork, read_write_file,
+static misc::UnitTest tn_rw("TensorNetwork", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
 	Tensor A = Tensor::random({12,13,14}, rnd, dist);
@@ -72,10 +72,10 @@ UNIT_TEST(TensorNetwork, read_write_file,
 	MTEST(T.dimensions == Tb.dimensions, T.dimensions << " vs " << Tb.dimensions);
 	Tb.require_valid_network();
 	MTEST(frob_norm(T(i&0)-Tb(i&0))/frob_norm(T) < 6e-16, frob_norm(T(i&0)-Tb(i&0))/frob_norm(T));
-)
+});
 
 
-UNIT_TEST(TT, read_write_file,
+static misc::UnitTest tt_rw("TT", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
 	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
@@ -89,4 +89,4 @@ UNIT_TEST(TT, read_write_file,
 	MTEST(Ab.cannonicalized && Ab.corePosition == 0, Ab.cannonicalized << " " << Ab.corePosition);
 	MTEST(A.dimensions == Ab.dimensions, A.dimensions << " vs " << Ab.dimensions);
 	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
-)
+});

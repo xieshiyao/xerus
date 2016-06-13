@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(TT, TTTensor_Creation,
+static misc::UnitTest tt_crea("TT", "TTTensor_Creation", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -58,10 +58,10 @@ UNIT_TEST(TT, TTTensor_Creation,
     Tensor B5;
     B5(j,i^7) = TTA5(j,i&1);
     TEST(approx_equal(B5,A5, 1e-14));
-)
+});
 
 
-UNIT_TEST(TT, TTOperator_Creation,
+static misc::UnitTest tt_opcrea("TT", "TTOperator_Creation", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -96,10 +96,10 @@ UNIT_TEST(TT, TTOperator_Creation,
     Tensor B5;
     B5(j,i^7) = TTA5(j,i^7);
     TEST(approx_equal(B5,A5, 1e-14));
-)
+});
 
 
-UNIT_TEST(TT, creation_with_epsilon,
+static misc::UnitTest tt_crea_eps("TT", "creation_with_epsilon", [](){
 	const value_t EPS = 0.01;
 	//Random numbers
 	std::mt19937_64 rnd;
@@ -117,9 +117,9 @@ UNIT_TEST(TT, creation_with_epsilon,
 	TEST(ttA.ranks()[1] < 25);
 	TEST(frob_norm(A(i&0)-Tensor(ttB)(i&0)) < 0.1);
 	TEST(ttB.ranks()[1] < 25);
-)
+});
 
-UNIT_TEST(TT, creation_from_fullTensor_5x5x5x5,
+static misc::UnitTest tt_crea_full5("TT", "creation_from_fullTensor_5x5x5x5", [](){
 	//Random numbers
 	std::mt19937_64 rnd;
 	rnd.seed(73);
@@ -133,10 +133,10 @@ UNIT_TEST(TT, creation_from_fullTensor_5x5x5x5,
 	
 	TEST(approx_equal(A,B, 1e-14));
 	TEST(frob_norm(A(i&0)-B(i&0)) < 1e-13*5*5*5*5);
-)
+});
 
 
-UNIT_TEST(TT, named_constructors,
+static misc::UnitTest tt_namedconstr("TT", "named_constructors", [](){
 	//Random numbers
 	std::mt19937_64 rnd(0xDEADBEEF);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
@@ -193,10 +193,10 @@ UNIT_TEST(TT, named_constructors,
 	
 	fones = Tensor(ttopones);
 	MTEST(frob_norm(fones - Tensor::ones(dimensions)) < 1e-14*1024, "op " << frob_norm(fones - Tensor::ones(dimensions)) );
-)
+});
 
 
-UNIT_TEST(TT, dyadic_product,
+static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	//Random numbers
 	std::mt19937_64 rnd(0xDEADBEEF);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
@@ -238,5 +238,5 @@ UNIT_TEST(TT, dyadic_product,
 	S = TTTensor::dyadic_product(S,TTTensor(e0)) + TTTensor::dyadic_product(TTTensor(e1), S);
 	TEST(S.cannonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
-)
+});
 

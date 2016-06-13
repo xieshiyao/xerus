@@ -25,7 +25,7 @@
 using namespace xerus;
 
 
-UNIT_TEST(Algorithm, adf_inverse_index_ratios,
+static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios", [](){
 	const size_t D = 6;
 	const size_t N = 10;
 	const size_t R = 3;
@@ -101,10 +101,10 @@ UNIT_TEST(Algorithm, adf_inverse_index_ratios,
 	ctrValue = std::sqrt(ctrValue)/ctrNorm;
 	
 	MTEST(ctrValue < 2e-2, ctrValue);
-)
+});
 
 
-UNIT_TEST(Algorithm, adf_random_low_rank,
+static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	const size_t D = 6;
 	const size_t N = 4;
 	const size_t R = 3;
@@ -142,4 +142,4 @@ UNIT_TEST(Algorithm, adf_random_low_rank,
 	ourADF(X, RankOneMeasurementSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
 	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
-)
+});

@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, Traces,
+static misc::UnitTest tensor_traces("Tensor", "Traces", [](){
     Tensor A({2,2});
     Tensor B({2,2,2});
     Tensor C({2,2,2,2});
@@ -118,4 +118,4 @@ UNIT_TEST(Tensor, Traces,
     MTEST(approx_entrywise_equal(res1, {1+32+1024+32768}), res1.to_string());
     res1() = C(i,j,j,i);
     MTEST(approx_entrywise_equal(res1, {1+64+512+32768}), res1.to_string());
-)
+});

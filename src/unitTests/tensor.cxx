@@ -24,14 +24,15 @@
 
 using namespace xerus;
 
-Tensor::DimensionTuple random_dimensions(const size_t _degree, const size_t _maxDim, std::mt19937_64 _rnd) {
+static Tensor::DimensionTuple random_dimensions(const size_t _degree, const size_t _maxDim, std::mt19937_64 _rnd) {
 	std::uniform_int_distribution<size_t> dist(1, _maxDim);
 	Tensor::DimensionTuple dims;
 	for(size_t i = 0; i < _degree; ++i) { dims.emplace_back(dist(_rnd)); }
 	return dims;
 }
 
-UNIT_TEST2(Tensor, Constructors) {
+static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
+	UNIT_TEST_RND;
 	std::vector<Tensor> tensors;
 	tensors.emplace_back();
 	tensors.push_back(tensors.back());
@@ -138,11 +139,12 @@ UNIT_TEST2(Tensor, Constructors) {
 	FAILTEST(Tensor(fixedDimensions, misc::product(fixedDimensions), [](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n, value_t(_n)); }));
 	FAILTEST(Tensor(fixedDimensions, [](const size_t _i)->value_t{ return value_t(_i); }));
 	FAILTEST(Tensor(fixedDimensions, [=](const Tensor::MultiIndex& _i)->value_t{ return value_t(Tensor::multiIndex_to_position(_i, fixedDimensions)); }));
-}});
+});
 
 
 
-UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
+static misc::UnitTest tensor_sparse_dense("Tensor", "Sparse_Dense_Conversions", [](){
+	UNIT_TEST_RND;
 	Tensor n({3,3,3,3});
 	const size_t dim = 100;
 	MTEST(frob_norm(n) < 1e-20, "This should be a sparse tensor with no entries, so frob norm exactly = 0!");
@@ -209,6 +211,6 @@ UNIT_TEST2(Tensor, Sparse_Dense_Conversions) {
 	(Q(i1,i2), R(i2,i3)) = QR(e(i1,i3));
 	TEST(Q.representation == Tensor::Representation::Dense);
 	TEST(R.representation == Tensor::Representation::Dense);
-}});
+});
 
 

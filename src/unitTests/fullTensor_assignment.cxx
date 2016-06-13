@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, Assignment_Trivia, 
+static misc::UnitTest tensor_assign_triv("Tensor", "Assignment_Trivia", [](){
     Tensor A({2,2,3,1,2});
     Tensor res({2,2,3,1,2});
     Tensor res2({2,3,2,1,2});
@@ -83,9 +83,9 @@ UNIT_TEST(Tensor, Assignment_Trivia,
     TEST(approx_entrywise_equal(res, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i,j,l,k,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
-)
+});
 
-UNIT_TEST(Tensor, Assignment_Const, 
+static misc::UnitTest tensor_assign_const("Tensor", "Assignment_Const", [](){
     Tensor A({2,2,3,1,2});
     Tensor res({2,2,3,1,2});
 
@@ -129,9 +129,9 @@ UNIT_TEST(Tensor, Assignment_Const,
     TEST(misc::approx_equal(resC2[{0,0,0,0,0}], 1.0));
     TEST(misc::approx_equal(resC2[{0,1,2,0,0}], 17.0));
     TEST(misc::approx_equal(resC2[{1,1,2,0,0}], 23.0));
-)
+});
 
-UNIT_TEST(Tensor, Assignment_Overwriting_Dimensions,
+static misc::UnitTest tensor_assign_overwriting_dim("Tensor", "Assignment_Overwriting_Dimensions", [](){
     Tensor A({2,2,3,1,2});
     Tensor res1({2,2,3,1,2});
     Tensor res2({1,3,5,1,7});
@@ -200,10 +200,10 @@ UNIT_TEST(Tensor, Assignment_Overwriting_Dimensions,
     TEST(approx_entrywise_equal(res11, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res12(i,j,l,k,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res12, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
-)
+});
 
-UNIT_TEST(Tensor, Assignment_LHS_Equals_RHS, 
-    Tensor B({2,2});
+static misc::UnitTest tensor_assign_eq("Tensor", "Assignment_LHS_Equals_RHS", [](){
+	Tensor B({2,2});
     Tensor C({2,2});
 
     Index i, J, K;
@@ -222,9 +222,9 @@ UNIT_TEST(Tensor, Assignment_LHS_Equals_RHS,
     TEST(approx_entrywise_equal(B, {1,2,3,4}));
     B(i,J) = B(J,i);
     TEST(approx_entrywise_equal(B, {1,3,2,4}));
-)
+});
 
-UNIT_TEST(Tensor, Assignment_Fixed_Indices,
+static misc::UnitTest tensor_assign_fixed_idx("Tensor", "Assignment_Fixed_Indices", [](){
     Tensor A({2,2,3,1,2});
     Tensor res1({2,3,1,2});
     Tensor res2;
@@ -286,9 +286,9 @@ UNIT_TEST(Tensor, Assignment_Fixed_Indices,
     TEST(approx_entrywise_equal(res3, {6,18,12,24}));
     res3(i,j) = A(1,i,2,j,1);
     TEST(approx_entrywise_equal(res3, {18,24}));
-)
+});
 
-UNIT_TEST(Tensor, Assignment_Negatives,
+static misc::UnitTest tensor_assign_neg("Tensor", "Assignment_Negatives", [](){
     Tensor A({2,2,2,2});
     Tensor A2({2,2,2,2});
     Tensor B({2,2,2});
@@ -316,7 +316,7 @@ UNIT_TEST(Tensor, Assignment_Negatives,
     FAILTEST(C(i,j) = D(i^2));
     FAILTEST(C(i,j) = D(i^2));
 	static_assert(!std::is_assignable<decltype(D(i,j) * D(j,k)), decltype(D(i,k))>::value,"");
-)
+});
 
 
     

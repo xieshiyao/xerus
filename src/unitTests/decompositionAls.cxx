@@ -24,7 +24,7 @@
 
 using namespace xerus;
 
-UNIT_TEST(ALS, decomposition_als,
+static misc::UnitTest decomp_als("ALS", "decomposition_als", [](){
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
@@ -42,4 +42,4 @@ UNIT_TEST(ALS, decomposition_als,
 	xerus::decomposition_als(X, B);
 	
 	TEST(frob_norm(X(i&0)-B(i&0)) < 1e-8);
-)
+});

@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Misc, romberg_integration, 
+static misc::UnitTest misc_romberg("Misc", "romberg_integration", [](){
 	double npi;
 	npi = 2*misc::integrate([](double x){ return std::sqrt(1-x*x); }, -1, 1, 1e-16);
 	LOG(unit_test, npi << " err: " << std::abs(npi - M_PI));
@@ -52,10 +52,10 @@ UNIT_TEST(Misc, romberg_integration,
 	npi = misc::integrate([](double x){ return (x>0&&x<=1?1:0); }, -2, 2, 1e-14, 3);
 	LOG(unit_test, npi << " " << 1 << " " << std::abs(npi-1));
 	TEST(misc::approx_equal(npi,1.0,2e-14));
-)
+});
 
 
-UNIT_TEST(Misc, polynomial,
+static misc::UnitTest misc_poly("Misc", "polynomial", [](){
 	auto weight = [](double _x){
 		return std::abs(std::sin(_x));
 	};
@@ -68,10 +68,10 @@ UNIT_TEST(Misc, polynomial,
 			TEST(std::abs(base[i].scalar_product(base[j], weight, -1, 1)) < 1e-10);
 		}
 	}
-)
+});
 
 
-UNIT_TEST(Misc, exceptions,
+static misc::UnitTest misc_exc("Misc", "exceptions", [](){
 	try {
 		XERUS_THROW(misc::generic_error());
 	} catch (misc::generic_error &e) {
@@ -105,4 +105,4 @@ UNIT_TEST(Misc, exceptions,
 	} catch (...) {
 		MTEST(false, "4");
 	}
-)
+});

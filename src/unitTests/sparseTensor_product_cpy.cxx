@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Product_Order_0,
+static misc::UnitTest sparse_prod0("SparseTensor", "Product_Order_0", [](){
     Tensor A({}, Tensor::Representation::Sparse);
     Tensor B({}, Tensor::Representation::Sparse);
     Tensor res1({}, Tensor::Representation::Sparse);
@@ -36,9 +36,9 @@ UNIT_TEST(SparseTensor, Product_Order_0,
 	
     res1() = A() * B();
     TEST(approx_entrywise_equal(res1, {42*73}));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Order_1,
+static misc::UnitTest sparse_prod1("SparseTensor", "Product_Order_1", [](){
     Tensor A({2}, Tensor::Representation::Sparse);
     Tensor B({2}, Tensor::Representation::Sparse);
     Tensor C({3}, Tensor::Representation::Sparse);
@@ -97,9 +97,9 @@ UNIT_TEST(SparseTensor, Product_Order_1,
     TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
     res3(j,i) = C(i) * A(j);
     TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Order_2_Same_Dimensions,
+static misc::UnitTest sparse_prod2same("SparseTensor", "Product_Order_2_Same_Dimensions", [](){
     Tensor A({2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor res1({2,2,2,2}, Tensor::Representation::Sparse);
@@ -201,9 +201,9 @@ UNIT_TEST(SparseTensor, Product_Order_2_Same_Dimensions,
     TEST(approx_entrywise_equal(res3, {69}));
     res3() = A(i^2) * B(i^2);
     TEST(approx_entrywise_equal(res3, {70}));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Order_2_Different_Dimensions,
+static misc::UnitTest sparse_prod2diff("SparseTensor", "Product_Order_2_Different_Dimensions", [](){
     Tensor A({1,2}, Tensor::Representation::Sparse);
     Tensor B({2,3}, Tensor::Representation::Sparse);
     Tensor res1({1,2,2,3}, Tensor::Representation::Sparse);
@@ -242,9 +242,9 @@ UNIT_TEST(SparseTensor, Product_Order_2_Different_Dimensions,
     TEST(approx_entrywise_equal(res2, {15,18,21}));
     res3(k,i) = B(j,k) * A(i,j);
     TEST(approx_entrywise_equal(res2, {15,18,21}));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Order_3_Same_Dimensions,
+static misc::UnitTest sparse_prod3same("SparseTensor", "Product_Order_3_Same_Dimensions", [](){
     Tensor A({2,2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2,2}, Tensor::Representation::Sparse);
     Tensor res2({2,2}, Tensor::Representation::Sparse);
@@ -277,9 +277,9 @@ UNIT_TEST(SparseTensor, Product_Order_3_Same_Dimensions,
     TEST(approx_entrywise_equal(res2, {5+2*7+3*9+4*11, 5*5+6*7+7*9+8*11, 6+2*8+3*10+4*12, 5*6+6*8+7*10+8*12}));
     res3() = A(i,j,k) * B(i,k,j);
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Multiindices, 
+static misc::UnitTest sparse_prodmulti("SparseTensor", "Product_Multiindices", [](){ 
     Tensor res({2,2,2}, Tensor::Representation::Sparse);
     Tensor res2({2,2}, Tensor::Representation::Sparse);
     Tensor res4({2}, Tensor::Representation::Sparse);
@@ -317,9 +317,9 @@ UNIT_TEST(SparseTensor, Product_Multiindices,
     TEST(misc::approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
     res3(j^0) = B(i&0) * C(i^3);
     TEST(misc::approx_equal(res3[0], 5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Threefold, 
+static misc::UnitTest sparse_prod_three("SparseTensor", "Product_Threefold", [](){ 
     Tensor res({2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor C({2,2}, Tensor::Representation::Sparse);
@@ -354,9 +354,9 @@ UNIT_TEST(SparseTensor, Product_Threefold,
     TEST(approx_entrywise_equal(res, {477, 710, 649, 966}));
     res(i,L) = B(J,K) * C(K,L) * D(i,J);
     TEST(approx_entrywise_equal(res, {601, 698, 725, 842}));
-)
+});
 
-UNIT_TEST(SparseTensor, Product_Many_Degree_2, 
+static misc::UnitTest sparse_prodmany2("SparseTensor", "Product_Many_Degree_2", [](){ 
     Tensor A({2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor C({2,2}, Tensor::Representation::Sparse);
@@ -415,6 +415,6 @@ UNIT_TEST(SparseTensor, Product_Many_Degree_2,
     TEST(approx_entrywise_equal(res1, {20596523, 21531582, 46728183, 48849590}));
     res1(i,o) = E(m,n) * (B(j,k) * A(i,j) * F(n,o)) * (C(k,l) * D(l,m)); 
     TEST(approx_entrywise_equal(res1, {20596523, 21531582, 46728183, 48849590}));
-)
+});
 
 

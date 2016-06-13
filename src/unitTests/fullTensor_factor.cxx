@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, Factors,
+static misc::UnitTest tensor_factors("Tensor", "Factors", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -52,9 +52,9 @@ UNIT_TEST(Tensor, Factors,
     (Q(i,j,k,l), R(l,m,n,r)) = QR(B7(i,j,k,m,n,r));
     res4(i,j,k,m,n,r) = (Q(i,j,k,o)/12.5)*(12.5*R(o,m,n,r)/7);
     TEST(approx_equal(res4, B, 1e-12));
-)
+});
 
-UNIT_TEST(Tensor, value_t_Product,
+static misc::UnitTest tensor_value_t("Tensor", "value_t_Product", [](){
     Tensor A({4,2,2,7});
     Tensor B;
     Tensor C;
@@ -74,4 +74,4 @@ UNIT_TEST(Tensor, value_t_Product,
     TEST(approx_entrywise_equal(C, std::vector<value_t>(A.size, 219)));
     TEST(approx_entrywise_equal(D, std::vector<value_t>(A.size, 1)));
     TEST(approx_entrywise_equal(A, std::vector<value_t>(A.size, 36.5)));
-)
+});

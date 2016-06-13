@@ -41,13 +41,14 @@
     
     // TODO put all this into xerus::misc::unitTesting (or something similar)
 
-    namespace xerus { namespace misc { namespace internal {
+    namespace xerus { namespace misc {
 				
-		std::map<std::string, std::map<std::string, std::function<bool ()>>> *xerus::misc::internal::UnitTest::tests;
+		std::map<std::string, std::map<std::string, std::function<void()>>> *xerus::misc::UnitTest::tests;
+		bool xerus::misc::UnitTest::passed;
 			
-		UnitTest::UnitTest(std::string _group, std::string _name, std::function<bool ()> _f) {
+		UnitTest::UnitTest(std::string _group, std::string _name, std::function<void()> _f) {
 			if (!tests) {
-				tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
+				tests = new std::map<std::string, std::map<std::string, std::function<void()>>>();
 			}
 			if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
 				LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
@@ -55,16 +56,7 @@
 			(*tests)[_group][_name] = _f;
 		}
 		
-		UnitTest::UnitTest(std::string _group, std::string _name, std::function<void(bool&)> _f) {
-			if (!tests) {
-				tests = new std::map<std::string, std::map<std::string, std::function<bool ()>>>();
-			}
-			if (tests->count(_group) > 0 && (*tests)[_group].count(_name) > 0) {
-				LOG(error, "Unit test '" << _group << "::" << _name << "' defined multiple times!");
-			}
-			(*tests)[_group][_name] = [=]()->bool{bool passed = true; _f(passed); return passed;} ;
-		}
-		
+		namespace internal {
 		#ifdef TEST_COVERAGE_
 			std::map<RequiredTest::Identifier, size_t> *RequiredTest::tests;
 			
@@ -100,41 +92,39 @@
 		// 		std::cout << "encountered " << _functionName << " (" << _fileName << ":" << _lineNb << ")" << std::endl;
 				(*tests)[key] += 1;
 			}
-				
 		#endif
 			
-		bool test(const std::pair<std::string, std::function<bool ()>> &_t) {
-			bool passed = false;
-			
+		bool test(const std::pair<std::string, std::function<void()>> &_t) {
 			std::cout << "| " << _t.first << " starting: "  << std::flush;
 			
 			std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 			try {
-				passed = _t.second(); // executes the test
+				::xerus::misc::UnitTest::passed = true;
+				_t.second(); // executes the test
 			} catch (const xerus::misc::generic_error &e) {
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
 				std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
 				std::cerr << e.what() << std::endl;
-				passed = false;
+				::xerus::misc::UnitTest::passed = false;
 			} catch (const std::exception &e) {
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
 				std::cerr << "| Test has thrown an uncaught std::exception:" << std::endl;
 				std::cerr << e.what() << std::endl;
-				passed = false;
+				::xerus::misc::UnitTest::passed = false;
 			} catch (...) {
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
 				std::cerr << "| Test has thrown an uncaught unknown exception..." << std::endl;
-				passed = false;
+				::xerus::misc::UnitTest::passed = false;
 			}
 			std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 			
-			if (passed) { 
+			if (::xerus::misc::UnitTest::passed) { 
 				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
 			} else {
 				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
 			}
 			
-			return passed;
+			return ::xerus::misc::UnitTest::passed;
 		}
 
 		void print_group_name(std::string _g) {
@@ -161,7 +151,7 @@
 		_noreturn_ void catch_signals(int _sig)  {
 			XERUS_THROW(xerus::misc::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << xerus::misc::get_call_stack());
 		}
-	}}}
+	}}} // namespaces
 	
     #undef main
     int main(int argc, char* argv[]) {
@@ -197,7 +187,7 @@
         std::cout << "#                                unit-testing                                 #" << std::endl;
         std::cout << "###############################################################################" << std::endl;
 		// no unittests defined (ie. the map tests does not exist!)
-		if (!xerus::misc::internal::UnitTest::tests) {
+		if (!xerus::misc::UnitTest::tests) {
 			std::cout << "no unittests defined." << std::endl;
 			std::cout << "use the macro UNIT_TEST(group, testname, ...) to define unittests inside the sourcecode." << std::endl;
 			return 0;
@@ -209,7 +199,7 @@
             std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ..." << std::endl;
             std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all" << std::endl << std::endl;
             std::cout << "available groups:" << std::endl;
-            for (const auto &p : *xerus::misc::internal::UnitTest::tests) {
+            for (const auto &p : *xerus::misc::UnitTest::tests) {
                 std::cout << "# " <<  p.first << std::endl;
             }
             return 0;
@@ -223,7 +213,7 @@
             std::string grp = argv[currArg];
             // do all unit tests
             if (grp == "all") {
-                for (const auto &p : *xerus::misc::internal::UnitTest::tests) {
+                for (const auto &p : *xerus::misc::UnitTest::tests) {
                     xerus::misc::internal::print_group_name(p.first);
                     passCount=0;
                     for (const auto &t : p.second) {
@@ -244,31 +234,31 @@
                     std::cout << "########## \033[1;31munknown syntax '" << grp << "'\033[0m" << std::endl;
                     continue;
                 }
-                if (!xerus::misc::internal::UnitTest::tests->count(cmd[0]) || (*xerus::misc::internal::UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
+                if (!xerus::misc::UnitTest::tests->count(cmd[0]) || (*xerus::misc::UnitTest::tests)[cmd[0]].count(cmd[1]) == 0) {
                     std::cout << "########## \033[1;31munknown unittest '" << cmd[0] << ":" << cmd[1] << "'\033[0m" << std::endl;
                     continue;
                 }
                 totalCount += 1;
-                if (xerus::misc::internal::test({grp, (*xerus::misc::internal::UnitTest::tests)[cmd[0]][cmd[1]]}) ) {
+                if (xerus::misc::internal::test({grp, (*xerus::misc::UnitTest::tests)[cmd[0]][cmd[1]]}) ) {
                     totalPassCount += 1;
                 }
             } else {
                 // unknown group
-                if (xerus::misc::internal::UnitTest::tests->count(grp) == 0) {
+                if (xerus::misc::UnitTest::tests->count(grp) == 0) {
                     std::cout << "########## \033[1;31munknown group or unittest '" << grp << "'\033[0m" << std::endl;
                     continue;
                 }
                 // one (whole) group
                 xerus::misc::internal::print_group_name(grp);
                 passCount=0; 
-                for (const auto &t : (*xerus::misc::internal::UnitTest::tests)[grp]) {
+                for (const auto &t : (*xerus::misc::UnitTest::tests)[grp]) {
                     totalCount += 1;
                     if (xerus::misc::internal::test(t)) {
                         passCount += 1;
                         totalPassCount += 1;
                     }
                 }
-                xerus::misc::internal::print_group_summary(grp, passCount, (*xerus::misc::internal::UnitTest::tests)[grp].size());
+                xerus::misc::internal::print_group_summary(grp, passCount, (*xerus::misc::UnitTest::tests)[grp].size());
             }
         }
         
@@ -310,7 +300,7 @@
         #endif
         
 		// Destroy all stored tests to make memory-leak detection simpler
-		delete xerus::misc::internal::UnitTest::tests;
+		delete xerus::misc::UnitTest::tests;
 		#ifdef TEST_COVERAGE_
 			delete xerus::misc::internal::RequiredTest::tests;
 		#endif

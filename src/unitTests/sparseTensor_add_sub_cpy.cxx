@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, sum_matrix_2x2,
+static misc::UnitTest sparse_sum2("SparseTensor", "sum_matrix_2x2", [](){
     Tensor res({2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor C({2,2}, Tensor::Representation::Sparse);
@@ -40,13 +40,16 @@ UNIT_TEST(SparseTensor, sum_matrix_2x2,
     C[{1,0}]=7;
     C[{1,1}]=8;
     
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+	
     res(i,J) = B(i,J) + C(i,J);
     TEST(approx_entrywise_equal(res, {6,8,10,12}));
     res(i,J) = B(i,J) + C(J,i);
     TEST(approx_entrywise_equal(res, {6,9,9,12}));
-)
+});
  
-UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
+static misc::UnitTest sparse_sum_eq("SparseTensor", "sum_lhs_equals_rhs", [](){
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor C({2,2}, Tensor::Representation::Sparse);
 
@@ -62,14 +65,16 @@ UNIT_TEST(SparseTensor, sum_lhs_equals_rhs,
     C[{1,0}]=7;
     C[{1,1}]=8;
     
+	B.use_sparse_representation();
+	C.use_sparse_representation();
     B(i,J) = B(i,J) + C(i,J);
 	TEST(approx_entrywise_equal(B, {6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
     TEST(approx_entrywise_equal(B, {12,18,18,24}));
-)
+});
 
 
-UNIT_TEST(SparseTensor, sum_dyadic,
+static misc::UnitTest sparse_dyadicsum("SparseTensor", "sum_dyadic", [](){
     Tensor res({2,2}, Tensor::Representation::Sparse);
     Tensor B({2}, Tensor::Representation::Sparse);
     Tensor C({2}, Tensor::Representation::Sparse);
@@ -77,9 +82,9 @@ UNIT_TEST(SparseTensor, sum_dyadic,
     Index i, J, K;
     
     FAILTEST(res(i,J) = B(i) + C(J));
-)
+});
 
-UNIT_TEST(SparseTensor, sum_threefold,
+static misc::UnitTest sparse_sum_three("SparseTensor", "sum_threefold", [](){
     Tensor res({2}, Tensor::Representation::Sparse);
     Tensor B({2}, Tensor::Representation::Sparse);
     Tensor C({2}, Tensor::Representation::Sparse);
@@ -96,6 +101,10 @@ UNIT_TEST(SparseTensor, sum_threefold,
     D[0]=7;
     D[1]=13;
     
+	B.use_sparse_representation();
+	C.use_sparse_representation();
+	D.use_sparse_representation();
+	
     res(i) = B(i) + C(i) + D(i);
     TEST(approx_entrywise_equal(res, {13,24}));
-)
+});

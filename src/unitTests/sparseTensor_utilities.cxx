@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, remove_slate,
+static misc::UnitTest sparse_remove_slate("SparseTensor", "remove_slate", [](){
     std::mt19937_64 rnd;
     rnd.seed(0X5EED);
     
@@ -44,26 +44,26 @@ UNIT_TEST(SparseTensor, remove_slate,
 	
 	A.resize_dimension(1,3,1);
 	TEST(approx_entrywise_equal(A, {4,5,6,0,0,0,7,8,9, 0,0,0,0,0,0,0,0,0, 22,23,24,0,0,0,25,26,27}, 1e-14));
-)
+});
 
-UNIT_TEST(SparseTensor, fix_slate,
-		std::mt19937_64 rnd;
-		rnd.seed(0X5EED);
-		
-		double n = 0.0;
-		Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
-		A.use_sparse_representation();
-		
-		TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
-		
-		A.fix_slate(0,1);
-		TEST(approx_entrywise_equal(A, {10,11,12,13,14,15,16,17,18}, 1e-14));
-		
-		A.fix_slate(1,2);
-		TEST(approx_entrywise_equal(A, {12,15,18}, 1e-14));
-)
+static misc::UnitTest sparse_fix_slate("SparseTensor", "fix_slate", [](){
+	std::mt19937_64 rnd;
+	rnd.seed(0X5EED);
 
-UNIT_TEST(SparseTensor, dimension_reduction,
+	double n = 0.0;
+	Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
+	A.use_sparse_representation();
+
+	TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18, 19,20,21,22,23,24,25,26,27}, 1e-14));
+
+	A.fix_slate(0,1);
+	TEST(approx_entrywise_equal(A, {10,11,12,13,14,15,16,17,18}, 1e-14));
+
+	A.fix_slate(1,2);
+	TEST(approx_entrywise_equal(A, {12,15,18}, 1e-14));
+});
+
+static misc::UnitTest sparse_dim_red("SparseTensor", "dimension_reduction", [](){
     Tensor A({2,2,2}, Tensor::Representation::Sparse);
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
@@ -73,6 +73,7 @@ UNIT_TEST(SparseTensor, dimension_reduction,
     A[{1,0,1}] = 6;
     A[{1,1,0}] = 7;
     A[{1,1,1}] = 8;
+	A.use_sparse_representation();
     
     Tensor B = A;
     Tensor C;
@@ -92,9 +93,9 @@ UNIT_TEST(SparseTensor, dimension_reduction,
     TEST(approx_entrywise_equal(C, {1,3,5,7}, 1e-13));
     TEST(C.dimensions[2] == 1);
     TEST(C.size == 4);
-)
+});
 
-UNIT_TEST(SparseTensor, dimension_expansion,
+static misc::UnitTest sparse_dim_exp("SparseTensor", "dimension_expansion", [](){
 	Tensor A({2,2,2}, Tensor::Representation::Sparse);
     A[{0,0,0}] = 1;
     A[{0,0,1}] = 2;
@@ -104,6 +105,7 @@ UNIT_TEST(SparseTensor, dimension_expansion,
     A[{1,0,1}] = 6;
     A[{1,1,0}] = 7;
     A[{1,1,1}] = 8;
+	A.use_sparse_representation();
     
     Tensor B = A;
     Tensor C;
@@ -123,9 +125,9 @@ UNIT_TEST(SparseTensor, dimension_expansion,
     TEST(approx_entrywise_equal(C, {1,2,0,3,4,0,5,6,0,7,8,0}, 1e-13));
     TEST(C.dimensions[2] == 3);
     TEST(C.size == 12);
-)
+});
 
-UNIT_TEST(SparseTensor, modify_elements,
+static misc::UnitTest sparse_mod("SparseTensor", "modify_elements", [](){
 	Tensor A({4,4}, Tensor::Representation::Sparse);
 	Tensor B({4,4,7}, Tensor::Representation::Sparse);
 	Tensor C({2,8}, Tensor::Representation::Sparse);
@@ -146,6 +148,7 @@ UNIT_TEST(SparseTensor, modify_elements,
     A[{3,1}] = 14;
     A[{3,2}] = 15;
     A[{3,3}] = 16;
+	A.use_sparse_representation();
     
     A.modify_diag_elements([](value_t& _entry){});
     TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}));
@@ -160,7 +163,6 @@ UNIT_TEST(SparseTensor, modify_elements,
     
     A.modify_diag_elements([](value_t& _entry){_entry = 0;});
     TEST(approx_entrywise_equal(A, {0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
-    
-)
+});
 
 

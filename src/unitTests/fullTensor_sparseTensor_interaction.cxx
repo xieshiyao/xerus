@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, Assignment, 
+static misc::UnitTest tensor_assign("Tensor", "Assignment",  [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor B;
     Tensor resF;
@@ -65,10 +65,9 @@ UNIT_TEST(Tensor, Assignment,
     
     resF = B - A;
     TEST(approx_entrywise_equal(resF, {1-1,2-2,3-3,4-4,5-5,6-6,13-7,14-8,15-9,16-10,17-11,18-12,7-13,8-14,9-15,10-16,11-17,12-18,19-19,20-20,21-21,22-22,23-23,24-24}));
-    
-)
+});
 
-UNIT_TEST(Tensor, Product,
+static misc::UnitTest tensor_prod("Tensor", "Product", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -107,10 +106,10 @@ UNIT_TEST(Tensor, Product,
     TEST(approx_equal(check, resSF, 1e-14));
     resFS(i,m,n,q) = AF(q,j,k,l,n)*BS(m,l,k,i,j);
     TEST(approx_equal(check, resFS, 1e-14));
-)
+});
 
-UNIT_TEST(Tensor, Random_Add_Sub,
-    std::mt19937_64 rnd(0x938429347);
+static misc::UnitTest tensor_rnd_add_sub("Tensor", "Random_Add_Sub", [](){
+	std::mt19937_64 rnd(0x938429347);
     std::normal_distribution<value_t> dist (0.0, 10.0);
     std::uniform_int_distribution<size_t> intDist (1, 5);
     std::uniform_int_distribution<size_t> idxDist (0, 4);
@@ -239,5 +238,5 @@ UNIT_TEST(Tensor, Random_Add_Sub,
 		dimensions.push_back(intDist(rnd));
 		idxPow[idxDist(rnd)]++;
 	}
-)
+});
 

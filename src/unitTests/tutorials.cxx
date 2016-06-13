@@ -3,7 +3,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tutorials, quick_start,
+static misc::UnitTest tut_quick("Tutorials", "quick_start", [](){
 	xerus::Tensor A({512,512}, [](const std::vector<size_t> &idx){
 		if (idx[0] == idx[1]) {
 			return 2.0;
@@ -45,4 +45,4 @@ UNIT_TEST(Tutorials, quick_start,
 	MTEST(frob_norm(x(i&0) - ttx(i&0)) < 3.5e-9, frob_norm(x(i&0) - ttx(i&0)));
 // 	std::cout << Tensor(ttx).to_string() << std::endl;
 // 	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
-)
+});
