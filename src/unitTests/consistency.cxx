@@ -619,9 +619,8 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_dimension", []() {
 		
 		const size_t newDim1 = dimDist(rnd);
 		const size_t newDim2 = dimDist(rnd);
-		
-		std::uniform_int_distribution<size_t> posSelect1(newDim1 - std::min(newDim1, dimsX[dimension]), dimsX[dimension]);
-		std::uniform_int_distribution<size_t> posSelect2(newDim1 - std::min(newDim2, dimsX[dimension]), dimsY[dimension]);
+		std::uniform_int_distribution<size_t> posSelect1(dimsX[dimension] - std::min(newDim1, dimsX[dimension]), dimsX[dimension]);
+		std::uniform_int_distribution<size_t> posSelect2(dimsY[dimension] - std::min(newDim2, dimsY[dimension]), dimsY[dimension]);
 		const size_t position1 = posSelect1(rnd);
 		const size_t position2 = posSelect2(rnd);
 		
