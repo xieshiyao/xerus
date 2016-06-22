@@ -25,7 +25,7 @@ using namespace xerus;
 
 #ifdef PERFORMANCE_ANALYSIS
 	#ifdef REPLACE_ALLOCATOR  
-		UNIT_TEST(x_PerformanceAnalysis_x, Analysis,
+		static misc::UnitTest perfana("x_PerformanceAnalysis_x", "Analysis", [](){
 			std::cout << misc::performanceAnalysis::get_analysis();
 			LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
 			
@@ -47,11 +47,11 @@ using namespace xerus;
 			LOG(Tensor, sizeof(Tensor));
 			LOG(tt, sizeof(TTTensor) << " | " << sizeof(TTOperator));
 			LOG(measurement, sizeof(SinglePointMeasurment));
-		)
+		});
 	#else
-		UNIT_TEST(x_PerformanceAnalysis_x, Analysis,
+		static misc::UnitTest perfana("x_PerformanceAnalysis_x", "Analysis", [](){
 			std::cout << misc::performanceAnalysis::get_analysis();
 			LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");
-		)
+		});
 	#endif
 #endif

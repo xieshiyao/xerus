@@ -94,7 +94,7 @@ namespace xerus {
 		RankOneMeasurementSet(const RankOneMeasurementSet&  _other) = default;
 		RankOneMeasurementSet(      RankOneMeasurementSet&& _other) = default;
 		
-		RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions);
+		RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> &_dimensions);
 
 		RankOneMeasurementSet& operator=(const RankOneMeasurementSet&  _other) = default;
 		RankOneMeasurementSet& operator=(      RankOneMeasurementSet&& _other) = default;

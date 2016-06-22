@@ -26,7 +26,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, sum_matrix_2x2,
+static misc::UnitTest tensor_sum_mat2("Tensor", "sum_matrix_2x2", [](){
     Tensor res({2,2});
     Tensor B({2,2});
     Tensor C({2,2});
@@ -47,9 +47,9 @@ UNIT_TEST(Tensor, sum_matrix_2x2,
     TEST(approx_entrywise_equal(res, {6,8,10,12}));
     res(i,J) = B(i,J) + C(J,i);
     TEST(approx_entrywise_equal(res, {6,9,9,12}));
-)
+});
  
-UNIT_TEST(Tensor, sum_lhs_equals_rhs,
+static misc::UnitTest tensor_sum_eq("Tensor", "sum_lhs_equals_rhs", [](){
     Tensor B({2,2});
     Tensor C({2,2});
 
@@ -69,9 +69,9 @@ UNIT_TEST(Tensor, sum_lhs_equals_rhs,
 	TEST(approx_entrywise_equal(B, {6,8,10,12}));
     B(i,J) = B(i,J) + B(J,i);
     TEST(approx_entrywise_equal(B, {12,18,18,24}));
-)
+});
 
-UNIT_TEST(Tensor, sum_matrix_1000x1000,
+static misc::UnitTest tensor_sum_mat1000("Tensor", "sum_matrix_1000x1000", [](){
     Tensor res({1024,1024});
     Tensor A({1024,1024}, [](const std::vector<size_t> &_idx) {
 		return double(_idx[0] + _idx[1]);
@@ -89,9 +89,9 @@ UNIT_TEST(Tensor, sum_matrix_1000x1000,
     TEST(approx_entrywise_equal(res, C, 1e-14));
     res(J,i) = A(J,i) + B(i,J);
     TEST(approx_entrywise_equal(res, C, 1e-14));
-)
+});
 
-UNIT_TEST(Tensor, sum_dyadic,
+static misc::UnitTest tensor_dyadic("Tensor", "sum_dyadic", [](){
     Tensor res({2,2});
     Tensor B({2});
     Tensor C({2});
@@ -106,9 +106,9 @@ UNIT_TEST(Tensor, sum_dyadic,
     
     FAILTEST(res(i,J) = B(i) + C(J));
 //     TEST(approx_entrywise_equal(res, {6,10,7,11}));
-)
+});
 
-UNIT_TEST(Tensor, sum_threefold_sum,
+static misc::UnitTest tensor_sum_threefold("Tensor", "sum_threefold_sum", [](){
     Tensor res({2});
     Tensor B({2});
     Tensor C({2});
@@ -127,4 +127,4 @@ UNIT_TEST(Tensor, sum_threefold_sum,
     
     res(i) = B(i) + C(i) + D(i);
     TEST(approx_entrywise_equal(res, {13,24}));
-)
+});

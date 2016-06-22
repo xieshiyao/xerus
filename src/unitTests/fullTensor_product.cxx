@@ -26,7 +26,7 @@
 
 using namespace xerus;
 
-UNIT_TEST(Tensor, Product_Order_0,
+static misc::UnitTest tensor_prod0("Tensor", "Product_Order_0", [](){
     Tensor A({});
     Tensor B({});
     Tensor res1({});
@@ -36,9 +36,9 @@ UNIT_TEST(Tensor, Product_Order_0,
     
     res1() = A() * B();
     TEST(approx_entrywise_equal(res1, {42*73}));
-)
+});
 
-UNIT_TEST(Tensor, Product_Order_1,
+static misc::UnitTest tensor_prod1("Tensor", "Product_Order_1", [](){
     Tensor A({2});
     Tensor B({2});
     Tensor C({3});
@@ -93,9 +93,9 @@ UNIT_TEST(Tensor, Product_Order_1,
     TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
     res3(j,i) = C(i) * A(j);
     TEST(approx_entrywise_equal(res3, {5,6,7,10,12,14}));
-)
+});
 
-UNIT_TEST(Tensor, Product_Order_2_Same_Dimensions,
+static misc::UnitTest tensor_prod2_same("Tensor", "Product_Order_2_Same_Dimensions", [](){
     Tensor A({2,2});
     Tensor B({2,2});
     Tensor res1({2,2,2,2});
@@ -194,9 +194,9 @@ UNIT_TEST(Tensor, Product_Order_2_Same_Dimensions,
     TEST(approx_entrywise_equal(res3, {69}));
     res3() = A(i^2) * B(i^2);
     TEST(approx_entrywise_equal(res3, {70}));
-)
+});
 
-UNIT_TEST(Tensor, Product_Order_2_Different_Dimensions,
+static misc::UnitTest tensor_prod2_diff("Tensor", "Product_Order_2_Different_Dimensions", [](){
     Tensor A({1,2});
     Tensor B({2,3});
     Tensor res1({1,2,2,3});
@@ -232,9 +232,9 @@ UNIT_TEST(Tensor, Product_Order_2_Different_Dimensions,
     TEST(approx_entrywise_equal(res2, {15,18,21}));
     res3(k,i) = B(j,k) * A(i,j);
     TEST(approx_entrywise_equal(res2, {15,18,21}));
-)
+});
 
-UNIT_TEST(Tensor, Product_Order_3_Same_Dimensions,
+static misc::UnitTest tensor_prod3_same("Tensor", "Product_Order_3_Same_Dimensions", [](){
     Tensor A({2,2,2});
     Tensor B({2,2,2});
     Tensor res2({2,2});
@@ -272,10 +272,10 @@ UNIT_TEST(Tensor, Product_Order_3_Same_Dimensions,
     
     res3() = A(i,j,k) * B(i,k,j);
     TEST(misc::approx_equal(res3[0], 5.0+5*6+2*9+6*10+3*7+7*8+4*11+8*12, 1e-13));
-)
+});
 
-UNIT_TEST(Tensor, Product_Multiindices, 
-    Tensor res({2,2,2});
+static misc::UnitTest tensor_prod_multi("Tensor", "Product_Multiindices", [](){
+	Tensor res({2,2,2});
     Tensor res2({2,2});
     Tensor res4({2});
     Tensor res3({});
@@ -309,9 +309,9 @@ UNIT_TEST(Tensor, Product_Multiindices,
     TEST(misc::approx_equal(res3[0],5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
     res3(j^0) = B(i&0) * C(i^3);
     TEST(misc::approx_equal(res3[0],5.0+2*6+3*7+4*8+5*9+6*10+7*11+8*12 , 1e-13));
-)
+});
 
-UNIT_TEST(Tensor, Product_Threefold, 
+static misc::UnitTest tensor_prod_three("Tensor", "Product_Threefold",  [](){
     Tensor res({2,2});
     Tensor B({2,2});
     Tensor C({2,2});
@@ -342,9 +342,9 @@ UNIT_TEST(Tensor, Product_Threefold,
     TEST(approx_entrywise_equal(res, {477, 710, 649, 966}));
     res(i,L) = B(J,K) * C(K,L) * D(i,J);
     TEST(approx_entrywise_equal(res, {601, 698, 725, 842}));
-)
+});
 
-UNIT_TEST(Tensor, Product_Many_Degree_2, 
+static misc::UnitTest tensor_prod_many_2("Tensor", "Product_Many_Degree_2", [](){
     Tensor A({2,2});
     Tensor B({2,2});
     Tensor C({2,2});
@@ -394,10 +394,10 @@ UNIT_TEST(Tensor, Product_Many_Degree_2,
     TEST(approx_entrywise_equal(res1, {20596523, 21531582, 46728183, 48849590}));
     res1(i,o) = E(m,n) * (B(j,k) * A(i,j) * F(n,o)) * (C(k,l) * D(l,m)); 
     TEST(approx_entrywise_equal(res1, {20596523, 21531582, 46728183, 48849590}));
-)
+});
 
-UNIT_TEST(Tensor, Product_1000x1000,
-    Tensor res({1000,1000});
+static misc::UnitTest tensor_prod1000("Tensor", "Product_1000x1000", [](){
+	Tensor res({1000,1000});
     Tensor A({1000,1000}, [] (const std::vector<size_t> &_idx) { return double(_idx[0] + _idx[1]); });
     Tensor B({1000,1000}, [] (const std::vector<size_t> &_idx) { return double((1000-_idx[0]) * (1000-_idx[1])); });
     Tensor C({1000,1000}, Tensor::Representation::Dense);
@@ -414,4 +414,4 @@ UNIT_TEST(Tensor, Product_1000x1000,
     blasWrapper::matrix_matrix_product(C.get_dense_data(), 1000, 1000, 1.0, A.get_dense_data(), true, 1000, &B[0], true);
     res(i,K) = A(J,i) * B(K,J);
     TEST(memcmp(res.get_dense_data(), C.get_dense_data(), sizeof(value_t)*1000*1000)==0);
-)
+});

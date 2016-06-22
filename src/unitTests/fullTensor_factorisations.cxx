@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, SVD_Identity,
+static misc::UnitTest tensor_svd_id("Tensor", "SVD_Identity", [](){
     Tensor A({2,2,2,2});
     Tensor res1({2,2,4});
     Tensor res2({4,4});
@@ -49,9 +49,9 @@ UNIT_TEST(Tensor, SVD_Identity,
 	res2.reinterpret_dimensions({4,4});
 	MTEST(frob_norm(res1(m, i^2)*res1(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(k,m,l)*res3(k,n,l) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, SVD_zero,
+static misc::UnitTest tensor_svd_zero("Tensor", "SVD_zero", [](){
     Tensor A({2,2,2,2});
     Tensor res1({2,2,4});
     Tensor res2({4,4});
@@ -64,9 +64,9 @@ UNIT_TEST(Tensor, SVD_zero,
 	MTEST(std::abs(res2[0]) < 1e-15, res2[0]);
 	MTEST(frob_norm(res1(i^2, m)*res1(i^2, n) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(m, i^2)*res3(n, i^2) - Tensor::identity(res2.dimensions)(m, n)) < 1e-12, " Vt not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, SVD_Random_512x512,
+static misc::UnitTest tensor_svd_rnd512("Tensor", "SVD_Random_512x512", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -109,9 +109,9 @@ UNIT_TEST(Tensor, SVD_Random_512x512,
 	TEST(approx_equal(-1*res4, A, 1e-14));
 	MTEST(frob_norm(res1(k,o,i,j)*res1(k,p,i,j) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(l,n,m,o)*res3(l,n,m,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, SVD_soft_thresholding,
+static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -143,9 +143,9 @@ UNIT_TEST(Tensor, SVD_soft_thresholding,
 	TEST(approx_equal(A, Ax, 1e-12));
 	MTEST(frob_norm(U(i,j,k,o)*U(i,j,k,p) - Tensor::identity(S.dimensions)(o, p)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(V(o,l,m,n)*V(p,l,m,n) - Tensor::identity(S.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, SVD_Random_Order_Six,
+static misc::UnitTest tensor_svd_order_6("Tensor", "SVD_Random_Order_Six", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -169,9 +169,9 @@ UNIT_TEST(Tensor, SVD_Random_Order_Six,
     TEST(approx_equal(res4, A, 1e-14));
 	MTEST(frob_norm(res1(i,j,k,o)*res1(i,j,k,p) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " U not orthogonal");
 	MTEST(frob_norm(res3(o,l,m,n)*res3(p,l,m,n) - Tensor::identity(res2.dimensions)(o, p)) < 1e-12, " Vt not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, QR_AND_RQ_Random_Order_Six,
+static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -244,10 +244,10 @@ UNIT_TEST(Tensor, QR_AND_RQ_Random_Order_Six,
     res4(i,j,k,n,r) = R3(i,k,o)*Q4(o,j,n,r);
     TEST(frob_norm(A(i,j,k,3,n,r) - res4(i,j,k,n,r)) < 1e-12);
 	MTEST(frob_norm(Q4(q,j,n,r)*Q4(p,j,n,r) - Tensor::identity({Q4.dimensions[0], Q4.dimensions[0]})(p, q)) < 1e-12, " Q not orthogonal");
-)
+});
 
 
-UNIT_TEST(Tensor, QC,
+static misc::UnitTest tensor_qc("Tensor", "QC", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -288,9 +288,9 @@ UNIT_TEST(Tensor, QC,
     res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
     TEST(approx_equal(res4, A, 1e-15));
 	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
-)
+});
 
-UNIT_TEST(Tensor, Sparse_QR,
+static misc::UnitTest tensor_sqr("Tensor", "Sparse_QR", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -333,10 +333,10 @@ UNIT_TEST(Tensor, Sparse_QR,
     res4(i,j,k,m,n,r) = Q(i,o,j,k,m)*R(o,n,r);
     TEST(approx_equal(res4, A, 1e-15));
 	MTEST(frob_norm(Q(i,l,j,k,m)*Q(i,q,j,k,m) - Tensor::identity({Q.dimensions[1], Q.dimensions[1]})(l, q)) < 1e-12, " Q not orthogonal");
-)
+});
 
 
-UNIT_TEST(Tensor, Sparse_CQ,
+static misc::UnitTest tensor_scq("Tensor", "Sparse_CQ", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -358,4 +358,4 @@ UNIT_TEST(Tensor, Sparse_CQ,
 	TEST(approx_equal(Qs, Qf, 1e-15));
 	TEST(approx_equal(Cs, Cf, 1e-15));
 	MTEST(frob_norm(Qs(l,i,j,k)*Qs(m,i,j,k) - Tensor::identity({Qs.dimensions[0], Qs.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
-)
+});

@@ -57,7 +57,7 @@ namespace xerus {  namespace misc {
 		
 		Polynomial();
 		
-		Polynomial(const std::vector<double> _coeff);
+		Polynomial(std::vector<double> _coeff);
 		
 		size_t terms() const;
 		

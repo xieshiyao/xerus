@@ -24,7 +24,8 @@
 using namespace xerus;
 
 
-UNIT_TEST2(Consistency, sum_and_difference) {
+static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -157,10 +158,11 @@ UNIT_TEST2(Consistency, sum_and_difference) {
 		dimsA = dims1 | dims1;
 		dimsB = dims1 | dims1;
 	}
-}});
+});
 
 
-UNIT_TEST2(Consistency, fixed_indices) {
+static misc::UnitTest con_fixI("Consistency", "fixed_indices", []() {
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(2, 4);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -277,10 +279,11 @@ UNIT_TEST2(Consistency, fixed_indices) {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 	}
-}});
+});
 
 
-UNIT_TEST2(Consistency, operator_times_tensor) {
+static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 4);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -402,9 +405,10 @@ UNIT_TEST2(Consistency, operator_times_tensor) {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 	}
-}});
+});
 
-UNIT_TEST2(Consistency, fix_slate) {
+static misc::UnitTest cons_fix_slate("Consistency", "fix_slate", []() {
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -561,10 +565,11 @@ UNIT_TEST2(Consistency, fix_slate) {
 		TEST(approx_equal(sC, ttC, 1e-14));
 		
 	}
-}});
+});
 
 
-UNIT_TEST2(Consistency, resize_dimension) {
+static misc::UnitTest cons_resize_dim("Consistency", "resize_dimension", []() {
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -614,9 +619,8 @@ UNIT_TEST2(Consistency, resize_dimension) {
 		
 		const size_t newDim1 = dimDist(rnd);
 		const size_t newDim2 = dimDist(rnd);
-		
-		std::uniform_int_distribution<size_t> posSelect1(newDim1 - std::min(newDim1, dimsX[dimension]), dimsX[dimension]);
-		std::uniform_int_distribution<size_t> posSelect2(newDim1 - std::min(newDim2, dimsX[dimension]), dimsY[dimension]);
+		std::uniform_int_distribution<size_t> posSelect1(dimsX[dimension] - std::min(newDim1, dimsX[dimension]), dimsX[dimension]);
+		std::uniform_int_distribution<size_t> posSelect2(dimsY[dimension] - std::min(newDim2, dimsY[dimension]), dimsY[dimension]);
 		const size_t position1 = posSelect1(rnd);
 		const size_t position2 = posSelect2(rnd);
 		
@@ -724,10 +728,11 @@ UNIT_TEST2(Consistency, resize_dimension) {
 		TEST(approx_equal(sC, tnC, 1e-14));
 		TEST(approx_equal(sC, ttC, 1e-14));
 	}
-}});
+});
 
 
-UNIT_TEST2(Consistency, entrywise_product) {
+static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []() {
+	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -844,4 +849,4 @@ UNIT_TEST2(Consistency, entrywise_product) {
 		dimsA = dims1 | dims1;
 		dimsB = dims1 | dims1;
 	}
-}});
+});

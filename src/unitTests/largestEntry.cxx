@@ -75,7 +75,7 @@ using namespace xerus;
 // 	LOG(test, "X: " << std::endl << X.to_string());
 // )
 
-UNIT_TEST(Algorithm, largestEntry,
+static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
     //Random numbers
     std::mt19937_64 rnd;
     rnd.seed(73);
@@ -125,7 +125,7 @@ UNIT_TEST(Algorithm, largestEntry,
 			}
 		}
 	}
-)
+});
 
 // UNIT_TEST(Algorithm, rankRange,
 //     //Random numbers

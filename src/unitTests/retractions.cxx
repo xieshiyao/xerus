@@ -24,7 +24,7 @@
 using namespace xerus;
 
 
-UNIT_TEST(Algorithm, retractions,
+static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -148,10 +148,10 @@ UNIT_TEST(Algorithm, retractions,
 		MTEST(fnorm > EPS * 1e-4, "hosvdII " << fnorm << " " << angle << " " << EPS);
 		MTEST(fnorm < EPS, "hosvdII " << fnorm << " " << angle << " " << EPS);
 	}
-)
+});
 
 
-UNIT_TEST(TTTangentVector, orthogonality,
+static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
 	std::mt19937_64 rnd(0xDEADBEEF);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -183,10 +183,10 @@ UNIT_TEST(TTTangentVector, orthogonality,
 			MTEST(misc::approx_equal(value_t(delta(j&0) * b(j&0)), value_t(Pdelta(j&0) * b(j&0)), 2e-10),  n << " " << i << " " << value_t(delta(j&0) * b(j&0)) << " " << value_t(Pdelta(j&0) * b(j&0)));
 		}
 	}
-)
+});
 
 
-UNIT_TEST(TTTangentVector, creation,
+static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	std::mt19937_64 rnd(0xDEADBEEF);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -233,10 +233,10 @@ UNIT_TEST(TTTangentVector, creation,
 	// tangent space of 10*X should be equal to tangent space of X
 	tangentChange2 = TTTangentVector(10 * X, change);
 	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 5e-15, "10X " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
-)
+});
 
 
-UNIT_TEST(Algorithm, vectorTransport,
+static misc::UnitTest alg_vecTrans("Algorithm", "vectorTransport", [](){
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	
@@ -267,6 +267,6 @@ UNIT_TEST(Algorithm, vectorTransport,
 		MTEST(1 - std::abs(changeAngle) < std::max(eps*eps, 5e-16), eps << " 1-angle: " << (1-changeAngle));
 		MTEST(normNew <= normOld + 1e-13, eps << " norm: " << normNew << " vs " << normOld << " diff " << normNew-normOld);
 	}
-)
+});
 
 

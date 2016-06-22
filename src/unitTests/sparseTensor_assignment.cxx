@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Assignment_Trivia2, 
+static misc::UnitTest sparse_assign_triv2("SparseTensor", "Assignment_Trivia2", [](){ 
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
 
@@ -36,9 +36,9 @@ UNIT_TEST(SparseTensor, Assignment_Trivia2,
     
     res(j,i,k,l,m) = A(i,j,k,l,m);
     TEST(misc::approx_equal(res[{1,0,0,0,0}], 73.0, 1e-14));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse, 
+static misc::UnitTest sparse_assign_s_s("SparseTensor", "Assignment_Sparse_To_Sparse", [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res2({2,3,2,1,2}, Tensor::Representation::Sparse);
@@ -53,6 +53,8 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse,
     A[{1,0,0,0,1}]=14;
     A[{1,1,0,0,0}]=19;
     A[{1,1,2,0,0}]=23;
+	
+	A.use_sparse_representation();
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
@@ -80,9 +82,9 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Sparse,
     TEST(approx_entrywise_equal(res2, {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
     res2(i,j,k,l,m) = A(i,k,j,l,m);
     TEST(approx_entrywise_equal(res2, {1,0,0,8,0,4,0,0,0,0,11,0,0,14,19,0,0,0,0,0,0,0,23,0}));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_Sparse_To_Full, 
+static misc::UnitTest sparse_assign_s_f("SparseTensor", "Assignment_Sparse_To_Full", [](){ 
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res;
     Tensor res2;
@@ -97,6 +99,8 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Full,
     A[{1,0,0,0,1}]=14;
     A[{1,1,0,0,0}]=19;
     A[{1,1,2,0,0}]=23;
+	
+	A.use_sparse_representation();
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res, {1,0,0,4,0,0,0,8,0,0,11,0,0,14,0,0,0,0,19,0,0,0,23,0}));
@@ -128,4 +132,4 @@ UNIT_TEST(SparseTensor, Assignment_Sparse_To_Full,
     
     res3(i,k,j) = A(l,l,i,j,k);
     TEST(approx_entrywise_equal(res3, {20,0,0,4,23,0}));
-)
+});

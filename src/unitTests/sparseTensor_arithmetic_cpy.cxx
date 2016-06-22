@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Arithmetic_Negatives,
+static misc::UnitTest sparse_arith_neg("SparseTensor", "Arithmetic_Negatives", [](){
     Tensor A({2,2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor B2({3,3}, Tensor::Representation::Sparse);
@@ -42,9 +42,9 @@ UNIT_TEST(SparseTensor, Arithmetic_Negatives,
     FAILTEST(B(i,j) = B(i,j) + B3(j,j));
     FAILTEST(B(i,j) = B(i,j) + B4(j,j));
     FAILTEST(B(i,j) = B(i,j) + B5(j,j,j));
-)
+});
 
-UNIT_TEST(SparseTensor, triple_indices,
+static misc::UnitTest sparse_tripleIdx("SparseTensor", "triple_indices", [](){
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
@@ -72,5 +72,5 @@ UNIT_TEST(SparseTensor, triple_indices,
 // 	FAILTEST(E2(i2,i3) = B(i1,i2)*C(i2,i3)*D(i1,i2)); //FEATURE
 	FAILTEST(E0()      = B(i1,i2)*C(i2,i3)*D(i3,i4)*F(i4,i2));
 // 	FAILTEST(E2(i1,i2) = B(i1,i2)*C(i2,i3)*D(i3,i4)*F(i4,i2)); //FEATURE
-)
+});
     

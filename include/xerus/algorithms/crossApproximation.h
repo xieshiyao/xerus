@@ -30,6 +30,6 @@
 
 
 namespace xerus {
-// 	TTTensor cross_approximation(const Tensor& _input, const std::vector<size_t> _ranks);
+// 	TTTensor cross_approximation(const Tensor& _input, const std::vector<size_t> &_ranks);
 }
 

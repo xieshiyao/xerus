@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Assignment_Trivia, 
+static misc::UnitTest sparse_assign_triv("SparseTensor", "Assignment_Trivia", [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res2({2,3,2,1,2}, Tensor::Representation::Sparse);
@@ -56,6 +56,8 @@ UNIT_TEST(SparseTensor, Assignment_Trivia,
     A[{1,1,2,0,0}]=23;
     A[{1,1,2,0,1}]=24;
     
+	A.use_sparse_representation();
+	
     res(i,j,k,l,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i&0) = A(i&0);
@@ -83,10 +85,10 @@ UNIT_TEST(SparseTensor, Assignment_Trivia,
     TEST(approx_entrywise_equal(res, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res(i,j,l,k,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
-)
+});
 
 
-UNIT_TEST(SparseTensor, Assignment_Const, 
+static misc::UnitTest sparse_assign_const("SparseTensor", "Assignment_Const", [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res({2,2,3,1,2}, Tensor::Representation::Sparse);
 
@@ -116,6 +118,7 @@ UNIT_TEST(SparseTensor, Assignment_Const,
     A[{1,1,1,0,1}]=22;
     A[{1,1,2,0,0}]=23;
     A[{1,1,2,0,1}]=24;
+	A.use_sparse_representation();
     
     res(i,j,k,l,m) = A(i,j,k,l,m);
     const Tensor resC1(res.sparse_copy());
@@ -134,9 +137,9 @@ UNIT_TEST(SparseTensor, Assignment_Const,
     TEST(misc::approx_equal(resC2[{1,1,2,0,0}], 23.0));
     TEST(misc::approx_equal(resC2[{1,0,0,0,1}], 8.0));
     TEST(misc::approx_equal(resC2[{1,0,1,0,1}], 10.0));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
+static misc::UnitTest sparse_assign_overwriting_dim("SparseTensor", "Assignment_Overwriting_Dimensions", [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res1({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res2({1,3,5,1,7}, Tensor::Representation::Sparse);
@@ -177,6 +180,7 @@ UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
     A[{1,1,1,0,1}]=22;
     A[{1,1,2,0,0}]=23;
     A[{1,1,2,0,1}]=24;
+	A.use_sparse_representation();
     
     res1(i,j,k,l,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res1, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
@@ -205,9 +209,9 @@ UNIT_TEST(SparseTensor, Assignment_Overwriting_Dimensions,
     TEST(approx_entrywise_equal(res11, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
     res12(i,j,l,k,m) = A(i,j,k,l,m);
     TEST(approx_entrywise_equal(res12, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_LHS_Equals_RHS, 
+static misc::UnitTest sparse_assign_eq("SparseTensor", "Assignment_LHS_Equals_RHS", [](){ 
     Tensor B({2,2}, Tensor::Representation::Sparse);
     Tensor C({2,2}, Tensor::Representation::Sparse);
 
@@ -227,9 +231,9 @@ UNIT_TEST(SparseTensor, Assignment_LHS_Equals_RHS,
     TEST(approx_entrywise_equal(B, {1,2,3,4}));
     B(i,J) = B(J,i);
     TEST(approx_entrywise_equal(B, {1,3,2,4}));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
+static misc::UnitTest sparse_assign_fixed("SparseTensor", "Assignment_Fixed_Indices", [](){
     Tensor A({2,2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res1({2,3,1,2}, Tensor::Representation::Sparse);
     Tensor res2( Tensor::Representation::Sparse );
@@ -261,6 +265,7 @@ UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
     A[{1,1,1,0,1}]=22;
     A[{1,1,2,0,0}]=23;
     A[{1,1,2,0,1}]=24;
+	A.use_sparse_representation();
     
     res1(i,j,k,l) = A(0,i,j,k,l);
     TEST(approx_entrywise_equal(res1, {1,2,3,4,5,6,7,8,9,10,11,12}));
@@ -291,9 +296,9 @@ UNIT_TEST(SparseTensor, Assignment_Fixed_Indices,
     TEST(approx_entrywise_equal(res3, {6,18,12,24}));
     res3(i,j) = A(1,i,2,j,1);
     TEST(approx_entrywise_equal(res3, {18,24}));
-)
+});
 
-UNIT_TEST(SparseTensor, Assignment_Negatives,
+static misc::UnitTest sparse_assign_neg("SparseTensor", "Assignment_Negatives", [](){
     Tensor A({2,2,2,2}, Tensor::Representation::Sparse);
     Tensor A2({2,2,2,2}, Tensor::Representation::Sparse);
     Tensor B({2,2,2}, Tensor::Representation::Sparse);
@@ -321,7 +326,7 @@ UNIT_TEST(SparseTensor, Assignment_Negatives,
     FAILTEST(C(i,j) = D(i^2));
     FAILTEST(C(i,j) = D(i^2));
 	static_assert(!std::is_assignable<decltype(D(i,j) * D(j,k)), decltype(D(i,k))>::value,"");
-)
+});
 
 
     

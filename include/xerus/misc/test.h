@@ -26,7 +26,7 @@
 
 /**
  * @def UNIT_TEST(grp, name, code)
- * @brief Defines a unit test of name @a name in the group @a grp dat performs the source code @a code.
+ * @brief Defines a unit test of name @a name in the group @a grp that performs the source code @a code.
  * @details Will automatically be performed if it is part of the executable and the application was built with -D TEST_.
  */
 
@@ -36,22 +36,13 @@
  * REQUIRE_TEST is implied by any REQUIRE(...) macro if test coverage is enabled.
  */
 
+#include "namedLogger.h"
+
+#include <map>
+#include <string>
+#include <functional>
+
 #ifdef TEST_
-	#include "namedLogger.h"
-	
-	#include <map>
-    #include <string>
-    #include <functional>
-
-    #define PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
-    #define PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
-
-	#define PASTE2( a, b) a##b
-	#define PASTE( a, b) PASTE2( a, b)
-
-	#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); passed = false;} else {PRINTCHECK;} void(0)
-	#define MTEST(cond, ...) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed, msg: " << __VA_ARGS__); passed = false;} else {PRINTCHECK;} void(0)
-	
 	#ifdef TEST_COVERAGE_
 		#define REQUIRE_TEST \
 			do { \
@@ -75,62 +66,64 @@
 				xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
 				try { test; } catch (...) {failtestFailed = true; PRINTCHECK;} \
 				xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
-				if(!failtestFailed) { PRINTFAIL; LOG(error, #test << " returned without error"); passed = false; } \
+				if(!failtestFailed) { PRINTFAIL; LOG(error, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
 			}\
 			void(0)
 	#else
 		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")
 	#endif
 	
-	#define UNIT_TEST(grp, name, ...) \
-		xerus::misc::internal::UnitTest PASTE(grp,name)(#grp, #name, []()->bool{\
-				bool passed = true;\
-				__VA_ARGS__\
-				return passed;\
-			});
-			
-			
-	#define UNIT_TEST2(grp, name) \
-		xerus::misc::internal::UnitTest PASTE(grp,name)(#grp, #name, [](bool& passed) {\
-				std::mt19937_64 rnd;\
-				rnd.seed(0xC0CAC01A);\
-				\
-				std::normal_distribution<value_t> normalDist (0.0, 1.0);\
-				std::uniform_real_distribution<value_t> uniformDist (-1.0, 1.0);\
-			
-	
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
-
-    namespace xerus { namespace misc { namespace internal {
-		struct UnitTest final {
-			// order of contruction of global objects is random so the first one has to create the map
-			static std::map<std::string, std::map<std::string, std::function<bool ()>>> *tests;
-			
-			UnitTest(std::string _group, std::string _name, std::function<bool ()> _f);
-			UnitTest(std::string _group, std::string _name, std::function<void(bool&)> _f);
-		};
-
-		#ifdef TEST_COVERAGE_
-			struct RequiredTest {
-				struct Identifier {
-					std::string functionName;
-					std::string filename;
-					size_t lineNumber;
-					Identifier(std::string _func, std::string _file, size_t _line);
-					bool operator<(const Identifier &_rhs) const;
-				};
-				
-				// order of construction of global objects is random so the first one has to create the map
-				static std::map<Identifier, size_t> *tests;
-				
-				static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb);
-				
-				static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb);
-			};
-		#endif
-	}}}
 #else
-	#define UNIT_TEST(grp, name, ...)
-	#define UNIT_TEST2(grp, name, ...)
 	#define REQUIRE_TEST (void)0
 #endif
+
+
+#define PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
+#define PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
+
+#define PASTE2( a, b) a##b
+#define PASTE( a, b) PASTE2( a, b)
+
+#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {PRINTCHECK;} void(0)
+#define MTEST(cond, ...) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {PRINTCHECK;} void(0)
+
+
+#define UNIT_TEST_RND \
+	std::mt19937_64 rnd;\
+	rnd.seed(0xC0CAC01A);\
+	std::normal_distribution<value_t> normalDist (0.0, 1.0);\
+	std::uniform_real_distribution<value_t> uniformDist (-1.0, 1.0)
+		
+
+
+
+namespace xerus { namespace misc {
+	struct UnitTest final {
+		// order of contruction of global objects is random so the first one has to create the map
+		static std::map<std::string, std::map<std::string, std::function<void()>>> *tests;
+		static bool passed;
+		
+		UnitTest(std::string _group, std::string _name, std::function<void()> _f);
+	};
+
+	namespace internal {
+	#ifdef TEST_COVERAGE_
+		struct RequiredTest {
+			struct Identifier {
+				std::string functionName;
+				std::string filename;
+				size_t lineNumber;
+				Identifier(std::string _func, std::string _file, size_t _line);
+				bool operator<(const Identifier &_rhs) const;
+			};
+			
+			// order of construction of global objects is random so the first one has to create the map
+			static std::map<Identifier, size_t> *tests;
+			
+			static void register_test(std::string _functionName, std::string _fileName, size_t _lineNb);
+			
+			static void increase_counter(std::string _functionName, std::string _fileName, size_t _lineNb);
+		};
+	#endif
+}}}

@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Creation,
+static misc::UnitTest sparse_creation("SparseTensor", "Creation", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0); 
     
@@ -128,4 +128,4 @@ UNIT_TEST(SparseTensor, Creation,
     
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
-)
+});

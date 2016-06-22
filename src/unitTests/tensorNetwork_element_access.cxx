@@ -24,7 +24,7 @@
 
 using namespace xerus;
 
-UNIT_TEST(TensorNetwork, element_access,
+static misc::UnitTest tn_elem_access("TensorNetwork", "element_access", [](){
     Tensor A({1,2});
     Tensor B({2,3});
     TensorNetwork res;
@@ -59,10 +59,10 @@ UNIT_TEST(TensorNetwork, element_access,
     TEST(misc::approx_equal(res[{0,0}], 15.0));
     TEST(misc::approx_equal(res[{1,0}], 18.0));
     TEST(misc::approx_equal(res[{2,0}], 21.0));
-)
+});
 
 
-UNIT_TEST(TensorNetwork, many_element_access,
+static misc::UnitTest tn_many_access("TensorNetwork", "many_element_access", [](){
     Tensor A({1,2});
     Tensor B({2,3});
     TensorNetwork res;
@@ -101,4 +101,4 @@ UNIT_TEST(TensorNetwork, many_element_access,
 	for(size_t m = 0; m < measurments.size(); ++m) {
 		TEST(misc::approx_equal(measurments.measuredValues[m], res[measurments.positions[m]]));
     }
-)
+});

@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(Tensor, SelfContained,
+static misc::UnitTest tensor_contained("Tensor", "SelfContained", [](){
     std::mt19937_64 rnd;
 	std::uniform_int_distribution<size_t> spanDist(0, 3);
 	std::uniform_int_distribution<size_t> dimDist(1, 4);
@@ -117,4 +117,4 @@ UNIT_TEST(Tensor, SelfContained,
 			MTEST(frob_norm(res) <= 1e-10, frob_norm(res) << " >  1e-10");
 	}
 	
-)
+});

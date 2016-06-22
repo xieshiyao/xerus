@@ -23,8 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-
-UNIT_TEST(ALS, identity,
+static misc::UnitTest als_id("ALS", "identity", [](){
     //Random numbers
     std::mt19937_64 rnd;
     rnd.seed(73);
@@ -65,10 +64,10 @@ UNIT_TEST(ALS, identity,
 	result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
     MTEST(result < 0.01, "2 " << result);
 	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
-)
+});
 
 
-UNIT_TEST(ALS, projectionALS,
+static misc::UnitTest als_proj("ALS", "projectionALS", [](){
     //Random numbers
     std::mt19937_64 rnd;
     rnd.seed(0x5EED);
@@ -88,12 +87,12 @@ UNIT_TEST(ALS, projectionALS,
 		TEST(projNorm < roundNorm);
 	}
 	TEST(misc::approx_equal(frob_norm(B), normB, 0.));
-)
+});
 
 #include <iomanip>
 #include <fstream>
 
-UNIT_TEST(ALS, tutorial,
+static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	std::mt19937_64 rnd(0xC0CAC01A);
 	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
@@ -141,4 +140,4 @@ UNIT_TEST(ALS, tutorial,
 // 	ALSb(A, X, B, 1e-4, &perfdata);
 // 	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
 // 	std::cout << perfdata << std::endl;
-)
+});

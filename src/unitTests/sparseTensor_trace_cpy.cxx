@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(SparseTensor, Traces,
+static misc::UnitTest sparse_traces("SparseTensor", "Traces", [](){
     Tensor A({2,2});
     Tensor B({2,2,2});
     Tensor C({2,2,2,2});
@@ -119,4 +119,4 @@ UNIT_TEST(SparseTensor, Traces,
     TEST(approx_entrywise_equal(res1, {1+32+1024+32768}));
     res1() = C(i,j,j,i);
     TEST(approx_entrywise_equal(res1, {1+64+512+32768}));
-)
+});

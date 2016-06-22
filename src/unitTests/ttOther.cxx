@@ -3,7 +3,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-UNIT_TEST(TT, entrywise_product,
+static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -41,9 +41,9 @@ UNIT_TEST(TT, entrywise_product,
 	TEST(approx_equal(Df, Tensor(D2), 1e-14));
 	TEST(approx_equal(Df, Tensor(Do1), 1e-14));
 	TEST(approx_equal(Df, Tensor(Do2), 1e-14));
-)
+});
 
-UNIT_TEST(TT, soft_thresholding,
+static misc::UnitTest tt_soft("TT", "soft_thresholding", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 1.0);
 
@@ -65,4 +65,4 @@ UNIT_TEST(TT, soft_thresholding,
 	
 	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);
 	TEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-14);
-)
+});

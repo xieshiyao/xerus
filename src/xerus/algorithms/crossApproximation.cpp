@@ -57,7 +57,7 @@ namespace xerus {
 		return tuples;
 	}
 	
-	TTTensor cross_approximation(const Tensor& _input, const std::vector<size_t> _ranks) {
+	TTTensor cross_approximation(const Tensor& _input, const std::vector<size_t> &_ranks) {
 		std::random_device rd;
 		std::mt19937_64 rnd(rd());
 		

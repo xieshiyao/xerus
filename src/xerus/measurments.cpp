@@ -99,7 +99,7 @@ namespace xerus {
 		return positions[0].size();
 	}
 	
-	RankOneMeasurementSet::RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> _dimensions) {
+	RankOneMeasurementSet::RankOneMeasurementSet(const SinglePointMeasurementSet&  _other, const std::vector<size_t> &_dimensions) {
 		std::vector<Tensor> zeroPosition;
 		for(size_t j = 0; j < +_other.degree(); ++j) {
 			zeroPosition.emplace_back(Tensor({_dimensions[j]}));
