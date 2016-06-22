@@ -48,11 +48,13 @@ namespace xerus {
 			 * @brief Hashes a given c-string using the FNV-1a standard hash.
 			 * @details This is used eg. to use strings as template arguments.
 			 */
-            constexpr uint64_t log_namehash(const char* x) {
-                return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*1099511628211ul : 14695981039346656037ul;
-            }
-
-			// If the LOG_BUFFER is aktive there is the additional option only to print the log if an error occours.
+			constexpr uint64_t log_namehash(const char* x) {
+				return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*0x100000001B3ul : 0xCBF29CE484222325ul;
+			}
+			
+			void log_timestamp(std::ostream &_out);
+			
+			// If the LOG_BUFFER is active there is the additional option only to print the log if an error occours.
 			#ifdef LOG_BUFFER_
 				enum {
 					NOT_LOGGING = 0,
@@ -73,7 +75,7 @@ namespace xerus {
 			extern std::chrono::system_clock::time_point programStartTime;
 
 			extern std::ofstream fileStream;
-
+			
 			namespace buffer {
 				extern std::stringstream current;
 				extern std::stringstream old;
@@ -225,6 +227,7 @@ namespace xerus {
 
 #ifdef LOG_BUFFER_
     #define NAMED_LOGGER_LOGBUFFER \
+		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current); \
         xerus::misc::internal::buffer::current << tmpStream.str(); \
         xerus::misc::internal::buffer::checkSwitch(); \
         if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
@@ -233,30 +236,7 @@ namespace xerus {
 #else // no log buffer
     #define NAMED_LOGGER_LOGBUFFER
 #endif
-
-#ifdef LOG_ABSOLUTE_TIME
-	//NOTE must not use std::put_time as it was not defined before GCC 5.0
-	#define XERUS_LOGGER_TIMESTAMP \
-		std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); \
-		std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);\
-		tmpStream \
-				<< std::right << (1900+xerus_err_ltm->tm_year) \
-				<< '-' << std::setw(2) << std::setfill('0') << (xerus_err_ltm->tm_mon +1) \
-				<< '-' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday \
-				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour \
-				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min \
-				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' ' << std::left
-#else
-	#define XERUS_LOGGER_TIMESTAMP \
-		std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();\
-		auto xerus_err_timediff = std::chrono::duration_cast<std::chrono::milliseconds>(xerus_err_t - xerus::misc::internal::programStartTime).count(); \
-		tmpStream \
-				<< std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000) \
-				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60) \
-				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60) \
-				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' ' << std::left
-#endif
-
+		
 
 /**
  * @def LOG(lvl, msg)
@@ -267,14 +247,15 @@ namespace xerus {
 #define LOG(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        XERUS_LOGGER_TIMESTAMP \
+        tmpStream \
 				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ':' \
 				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
 				<< std::setfill(' ') << std::setw(12) << std::left \
 				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
         if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-            XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
+            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM); \
+			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         NAMED_LOGGER_LOGBUFFER \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
@@ -293,11 +274,12 @@ namespace xerus {
 #define LOG_SHORT(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        XERUS_LOGGER_TIMESTAMP \
+        tmpStream \
 				<< std::setfill(' ') << std::setw(12) << std::left \
 				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
         if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+			::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM); \
             XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         NAMED_LOGGER_LOGBUFFER \

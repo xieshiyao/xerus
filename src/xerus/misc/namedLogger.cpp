@@ -41,6 +41,27 @@ namespace xerus { namespace misc { namespace internal {
 		programStartTime = std::chrono::system_clock::now();
 	}
 	
+	void log_timestamp(std::ostream &_out) {
+		#ifdef LOG_ABSOLUTE_TIME
+			//NOTE must not use std::put_time as it was not defined before GCC 5.0
+			std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);
+			_out << std::right << (1900+xerus_err_ltm->tm_year)
+				<< '-' << std::setw(2) << std::setfill('0') << (xerus_err_ltm->tm_mon +1)
+				<< '-' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday
+				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' ' << std::left;
+		#else
+			std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();
+			auto xerus_err_timediff = std::chrono::duration_cast<std::chrono::milliseconds>(xerus_err_t - xerus::misc::internal::programStartTime).count();
+			_out << std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000)
+				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60)
+				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60)
+				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' ' << std::left;
+		#endif
+	}
+	
 	namespace buffer {
 		std::stringstream current;
 		std::stringstream old;
