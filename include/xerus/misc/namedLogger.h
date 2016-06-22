@@ -52,6 +52,8 @@ namespace xerus {
 				return *x ? (uint64_t(*x) ^ xerus::misc::internal::log_namehash(x+1))*0x100000001B3ul : 0xCBF29CE484222325ul;
 			}
 			
+			void log_timestamp(std::ostream &_out, const char* _file, int _line, const char* _lvl);
+			void log_timestamp(std::ostream &_out, const char* _lvl);
 			void log_timestamp(std::ostream &_out);
 			std::ostream &get_fileStream();
 			
@@ -226,7 +228,7 @@ namespace xerus {
 
 #ifdef LOG_BUFFER_
     #define NAMED_LOGGER_LOGBUFFER \
-		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current); \
+		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__,STRINGIFY(lvl)); \
         xerus::misc::internal::buffer::current << tmpStream.str(); \
         xerus::misc::internal::buffer::checkSwitch(); \
         if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
@@ -237,6 +239,8 @@ namespace xerus {
 #endif
 		
 
+		
+		
 /**
  * @def LOG(lvl, msg)
  * @brief logs the message @a msg with severity level @a lvl
@@ -246,14 +250,10 @@ namespace xerus {
 #define LOG(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        tmpStream \
-				<< std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(__FILE__, '/').back() << ':' \
-				<< std::right << std::setfill(' ') << std::setw(4) <<__LINE__ << " : " \
-				<< std::setfill(' ') << std::setw(12) << std::left \
-				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
+        tmpStream << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
         if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM); \
+            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, __FILE__, __LINE__, STRINGIFY(lvl)); \
 			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         NAMED_LOGGER_LOGBUFFER \
@@ -273,12 +273,10 @@ namespace xerus {
 #define LOG_SHORT(lvl, ...) \
     if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
-        tmpStream \
-				<< std::setfill(' ') << std::setw(12) << std::left \
-				<< std::string(STRINGIFY(lvl) ": ") << __VA_ARGS__ << std::endl; \
+        tmpStream << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
         if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-			::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM); \
+			::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, STRINGIFY(lvl)); \
             XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         NAMED_LOGGER_LOGBUFFER \

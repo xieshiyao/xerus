@@ -60,6 +60,20 @@ namespace xerus { namespace misc { namespace internal {
 		#endif
 	}
 	
+	void log_timestamp(std::ostream &_out, const char* _file, int _line, const char* _lvl) {
+		log_timestamp(_out);
+		_out << std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(_file, '/').back() << ':' \
+				<< std::right << std::setfill(' ') << std::setw(4) <<_line << " : " \
+				<< std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(_lvl) << ": ";
+	}
+	
+	void log_timestamp(std::ostream &_out, const char* _lvl) {
+		log_timestamp(_out);
+		_out << std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(_lvl) << ": ";
+	}
+	
 	std::ostream &get_fileStream() {
 		static std::ofstream fileStream;
 		if (!fileStream || !fileStream.is_open()) {
