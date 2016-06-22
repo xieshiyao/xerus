@@ -26,6 +26,11 @@
 
 // Provide an implementation of the internal deleter functions
 namespace xerus {
+	const int VERSION_MAJOR = XERUS_VERSION_MAJOR;
+	const int VERSION_MINOR = XERUS_VERSION_MINOR;
+	const int VERSION_REVISION = XERUS_VERSION_REVISION;
+	const int VERSION_COMMIT = XERUS_VERSION_COMMIT;
+	
     namespace internal {
         void array_deleter_vt(value_t* const _toDelete) { delete[] _toDelete; }
         void array_deleter_st( size_t* const _toDelete) { delete[] _toDelete; }
