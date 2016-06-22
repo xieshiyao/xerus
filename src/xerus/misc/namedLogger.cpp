@@ -31,8 +31,6 @@
 #include <xerus/misc/namedLogger.h>
 
 namespace xerus { namespace misc { namespace internal {
-	std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
-	
 	std::mutex namedLoggerMutex;
 	std::string logFilePrefix;
 	bool silenced = false;
@@ -60,6 +58,15 @@ namespace xerus { namespace misc { namespace internal {
 				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60)
 				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' ' << std::left;
 		#endif
+	}
+	
+	std::ostream &get_fileStream() {
+		static std::ofstream fileStream;
+		if (!fileStream || !fileStream.is_open()) {
+			fileStream.close();
+			fileStream.open("error.log", std::ofstream::app | std::ofstream::out);
+		}
+		return fileStream;
 	}
 	
 	namespace buffer {
