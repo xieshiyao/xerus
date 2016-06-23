@@ -23,7 +23,7 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
-#ifdef PERFORMANCE_ANALYSIS
+#ifdef XERUS_PERFORMANCE_ANALYSIS
 	#ifdef REPLACE_ALLOCATOR  
 		static misc::UnitTest perfana("x_PerformanceAnalysis_x", "Analysis", [](){
 			std::cout << misc::performanceAnalysis::get_analysis();

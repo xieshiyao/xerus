@@ -29,7 +29,7 @@
 namespace xerus {
 	namespace misc {
 		namespace performanceAnalysis {
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				const size_t startupTime = uTime();
 				std::map<std::string, std::map<std::string, std::map<std::string, std::pair<size_t, size_t>>>> calls;
 				
@@ -81,7 +81,7 @@ namespace xerus {
 					return mainStream.str();
 				}
 			#else 
-				std::string get_analysis() { return "PERFORMANCE_ANALYSIS must be set to obtain an analysis."; }
+				std::string get_analysis() { return "XERUS_PERFORMANCE_ANALYSIS must be set to obtain an analysis."; }
 			#endif
 		}
 	}

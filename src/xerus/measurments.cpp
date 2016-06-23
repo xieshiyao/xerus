@@ -38,7 +38,7 @@ namespace xerus {
 	// --------------------- SinglePointMeasurementSet -----------------
 	
 	size_t SinglePointMeasurementSet::size() const {
-		REQUIRE(positions.size() == measuredValues.size(), "I.E.");
+		INTERNAL_CHECK(positions.size() == measuredValues.size(), "I.E.");
 		return positions.size();
 	}
 	
@@ -115,7 +115,7 @@ namespace xerus {
 	
 	void RankOneMeasurementSet::add(const std::vector<Tensor>& _position, const value_t _measuredValue) {
 		IF_CHECK(
-			REQUIRE(positions.size() == measuredValues.size(), "Internal Error.");
+			INTERNAL_CHECK(positions.size() == measuredValues.size(), "Internal Error.");
 			if(size() > 0) {
 				for(size_t i = 0; i < degree(); ++i) {
 					REQUIRE(positions[0][i].dimensions == _position[i].dimensions, "Inconsitend dimensions obtained");
@@ -161,7 +161,7 @@ namespace xerus {
 				intermediates[d].reset({_solution.get_component(d).dimensions[0], _solution.get_component(d).dimensions[2]}, Tensor::Initialisation::None);
 			}
 			
-			REQUIRE(stack[degree()-1].size == 1 , "IE");
+			INTERNAL_CHECK(stack[degree()-1].size == 1 , "IE");
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < size(); ++i) {

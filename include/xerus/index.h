@@ -42,7 +42,7 @@ namespace xerus {
 	*/
 	class Index {
 	public:
-		#ifndef DISABLE_RUNTIME_CHECKS_
+		#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 		/// Enum defining the possible flags an Index my possess.
 			enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, ASSINGED, OPEN, NUM_FLAGS};
 		#else

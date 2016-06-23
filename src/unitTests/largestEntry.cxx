@@ -94,7 +94,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 		for(size_t d = 2; d <= D; ++d) {
 			stateDims.push_back(dimDist(rnd));
 			ranks.push_back(rankDist(rnd));
-			REQUIRE(d == stateDims.size() && d == ranks.size()+1, "IE");
+			INTERNAL_CHECK(d == stateDims.size() && d == ranks.size()+1, "IE");
 			
 			TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
 			X /= X.frob_norm();

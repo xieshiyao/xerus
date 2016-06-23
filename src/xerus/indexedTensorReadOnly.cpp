@@ -119,7 +119,7 @@ namespace xerus {
 		
 		template<class tensor_type>
 		void IndexedTensorReadOnly<tensor_type>::assign_index_dimensions() {
-			REQUIRE(indicesAssigned, "bla");
+			INTERNAL_CHECK(indicesAssigned, "bla");
 			
 			size_t dimensionCount = 0;
 			for(size_t i = 0; i < indices.size(); ++i) {
@@ -340,7 +340,7 @@ namespace xerus {
 		size_t get_eval_degree(const std::vector<Index>& _indices) {
 			size_t degree = 0;
 			for(const Index& idx : _indices) {
-				REQUIRE(idx.flags[Index::Flag::ASSINGED], "Internal Error");
+				INTERNAL_CHECK(idx.flags[Index::Flag::ASSINGED], "Internal Error");
 				if(!idx.fixed() && misc::count(_indices, idx) != 2) { degree += idx.span; }
 			}
 			return degree;

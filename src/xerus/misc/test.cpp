@@ -57,7 +57,7 @@
 		}
 		
 		namespace internal {
-		#ifdef TEST_COVERAGE_
+		#ifdef XERUS_TEST_COVERAGE
 			std::map<RequiredTest::Identifier, size_t> *RequiredTest::tests;
 			
 			RequiredTest::Identifier::Identifier(std::string _func, std::string _file, size_t _line) : functionName(_func), filename(_file), lineNumber(_line) {}
@@ -271,7 +271,7 @@
         std::cout << "|" << std::string(23, ' ') << "Total time elapsed: " << static_cast<double>(totalTime)/1000.0 << " ms" << std::string(50, ' ')  << ' ' << std::endl;
         std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		
-        #ifdef TEST_COVERAGE_
+        #ifdef XERUS_TEST_COVERAGE
                 // check whether all REQUIRED_TESTs were tested
                 std::map<std::string, std::pair<size_t, size_t>> perFile;
                 
@@ -301,7 +301,7 @@
         
 		// Destroy all stored tests to make memory-leak detection simpler
 		delete xerus::misc::UnitTest::tests;
-		#ifdef TEST_COVERAGE_
+		#ifdef XERUS_TEST_COVERAGE
 			delete xerus::misc::internal::RequiredTest::tests;
 		#endif
         

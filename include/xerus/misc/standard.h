@@ -35,6 +35,14 @@ namespace xerus {
 		/// @brief Namespace for function and classes designated only for internal use.
 		namespace internal {}
 	}
+	
+	/**
+	 * The version of the compiled xerus library
+	 */
+	extern const int VERSION_MAJOR;
+	extern const int VERSION_MINOR;
+	extern const int VERSION_REVISION;
+	extern const int VERSION_COMMIT;
 
     // Shorter names for unsigned types
     typedef uint8_t byte; ///< unsigned int type of exactly 8 bit

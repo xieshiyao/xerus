@@ -37,26 +37,44 @@
 
 /**
 * @def IF_CHECK(expression)
-* @brief Executes @a expression only if the compilation was without DISABLE_RUNTIME_CHECKS_ set.
+* @brief Executes @a expression only if the compilation was without XERUS_DISABLE_RUNTIME_CHECKS set.
 */
 
-#ifdef TEST_COVERAGE_
+#ifdef XERUS_TEST_COVERAGE
 	#include "test.h"
 #else
 	#define REQUIRE_TEST (void)0
 #endif
 
-// Only do anything if the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
-#ifndef DISABLE_RUNTIME_CHECKS_
+// Only do anything if the check macros if XERUS_DISABLE_RUNTIME_CHECKS is inaktive
+#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	#include "namedLogger.h"
+	#include "callStack.h"
 
-	#ifdef TEST_COVERAGE_
-		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#ifdef XERUS_TEST_COVERAGE
+		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition " failed msg: " << message); } else void(0)
 	#else
-		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition " failed msg: " << message); } else void(0)
 	#endif
 
-	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
+	#define REQUIRE(condition, message) CHECK(condition, error, message)
+	
+	#define INTERNAL_CHECK(condition, message) \
+		if(!(condition)) { \
+			::std::cerr << "\n"\
+				"########################################################################\n"\
+				"###                    AN INTERNAL ERROR OCCURED!                    ###\n"\
+				"###  Please send the following information to contact@libxerus.org ! ###\n"\
+				"########################################################################\n"\
+				"xerus version: " << ::xerus::VERSION_MAJOR << '.' << ::xerus::VERSION_MINOR << '.' << ::xerus::VERSION_REVISION << '-' << ::xerus::VERSION_COMMIT << "\n" \
+				"at: " __FILE__ " : " STRINGIFY(__LINE__) "\n" \
+				"message: " #condition " failed: " << message << '\n' \
+				<< "callstack: \n" << ::xerus::misc::get_call_stack() << "\n" \
+				"########################################################################\n"\
+				"###                           thank you :-)                          ###\n"\
+				"########################################################################" << std::endl; \
+			LOG(critical, #condition " failed msg: " << message); \
+		} else void(0)
 	
 	#define IF_CHECK(expression) expression
 	

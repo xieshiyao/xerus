@@ -148,7 +148,7 @@ namespace xerus {
             if(i == currentRow) {
                 misc::add_scaled(row.get(), _alpha*entry.second, _B+j*_rightDim, _rightDim);
             } else {
-                REQUIRE(i > currentRow, "Internal Error");
+                INTERNAL_CHECK(i > currentRow, "Internal Error");
                 
                 // Copy old row to _C
                 for(size_t k = 0; k < _rightDim; ++k) {

@@ -43,8 +43,8 @@ namespace xerus {
 			}
 			return 0;
 		} else {
-			REQUIRE(!_a.has_factor(), "IE");
-			REQUIRE(!_b.has_factor(), "IE");
+			INTERNAL_CHECK(!_a.has_factor(), "IE");
+			INTERNAL_CHECK(!_b.has_factor(), "IE");
 			
 			const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
 			const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
@@ -216,7 +216,7 @@ namespace xerus {
 					calculationMap[realId + corePosition*numMeasurments] = realId;
 				} else if( realId < calculationMap[realPreviousId + corePosition*numMeasurments]) {
 					const size_t nextOther = calculationMap[realPreviousId + corePosition*numMeasurments];
-					REQUIRE(calculationMap[nextOther + corePosition*numMeasurments] == nextOther, "IE");
+					INTERNAL_CHECK(calculationMap[nextOther + corePosition*numMeasurments] == nextOther, "IE");
 					calculationMap[realPreviousId + corePosition*numMeasurments] = realId;
 					calculationMap[nextOther + corePosition*numMeasurments] = realId;
 					calculationMap[realId + corePosition*numMeasurments] = realId;
@@ -257,7 +257,7 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+		INTERNAL_CHECK(usedSlots == numUniqueStackEntries, "Internal Error.");
 		perfData << "We have " << numUniqueStackEntries << " unique stack entries. There are " << numMeasurments*degree+1 << " virtual stack entries.";
 	}
 	
@@ -287,7 +287,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
@@ -303,7 +303,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
@@ -324,7 +324,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
@@ -340,7 +340,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
@@ -442,7 +442,7 @@ namespace xerus {
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+				INTERNAL_CHECK(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 				
 				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 				perform_dyadic_product(	localLeftRank, 

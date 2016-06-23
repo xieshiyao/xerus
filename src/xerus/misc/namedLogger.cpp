@@ -27,7 +27,7 @@
 #include <chrono>
 #include <fstream>
 
-#ifdef LOG_BUFFER_
+#ifdef XERUS_LOG_BUFFER
     #include <fstream>
 #endif
 
@@ -43,7 +43,7 @@ namespace xerus { namespace misc { namespace internal {
 	}
 	
 	void log_timestamp(std::ostream &_out) {
-		#ifdef LOG_ABSOLUTE_TIME
+		#ifdef XERUS_LOG_ABSOLUTE_TIME
 			//NOTE must not use std::put_time as it was not defined before GCC 5.0
 			std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);

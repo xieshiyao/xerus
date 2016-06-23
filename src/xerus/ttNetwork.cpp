@@ -222,7 +222,7 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
-	#ifndef DISABLE_RUNTIME_CHECKS_
+	#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 		template<bool isOperator>
 		void TTNetwork<isOperator>::require_correct_format() const {
 			require_valid_network(); // Network must at least be valid.
@@ -886,7 +886,7 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(corePosition < degree() || !cannonicalized, "Woot");
+		INTERNAL_CHECK(corePosition < degree() || !cannonicalized, "Woot");
 		
 		sanitize();
 	}
@@ -1060,7 +1060,7 @@ namespace xerus {
 		
 		const TTNetwork* const meTT = dynamic_cast<const TTNetwork*>(_me.tensorObjectReadOnly);
 		const internal::TTStack<true>* const meTTStack = dynamic_cast<const internal::TTStack<true>*>(_me.tensorObjectReadOnly);
-		REQUIRE(meTT || meTTStack, "Internal Error.");
+		INTERNAL_CHECK(meTT || meTTStack, "Internal Error.");
 		
 		const TTTensor* const otherTT = dynamic_cast<const TTTensor*>(_other.tensorObjectReadOnly);
 		const internal::TTStack<false>* const otherTTStack = dynamic_cast<const internal::TTStack<false>*>(_other.tensorObjectReadOnly);
@@ -1088,7 +1088,7 @@ namespace xerus {
 		std::vector<Index>::iterator midIndexItr = _me.indices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
-			REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
+			INTERNAL_CHECK(midIndexItr != _me.indices.end(), "Internal Error.");
 			spanSum += midIndexItr->span;
 			++midIndexItr;
 		}
@@ -1111,7 +1111,7 @@ namespace xerus {
 			auto otherMidIndexItr = _other.indices.begin();
 			spanSum = 0;
 			while (spanSum < _other.degree() / 2) {
-				REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
+				INTERNAL_CHECK(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 				spanSum += otherMidIndexItr->span;
 				++otherMidIndexItr;
 			}
@@ -1195,9 +1195,9 @@ namespace xerus {
 			meStorage.reset(new TTNetwork());
 			usedMe = meStorage.get();
 			*meStorage.get() = TTNetwork(*stackMe);
-			REQUIRE(usedMe->dimensions == stackMe->dimensions, "Ie " << stackMe->dimensions << " vs "  << usedMe->dimensions);
+			INTERNAL_CHECK(usedMe->dimensions == stackMe->dimensions, "Ie " << stackMe->dimensions << " vs "  << usedMe->dimensions);
 		} else { // I am normal
-			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
+			INTERNAL_CHECK(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
 			usedMe = static_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly);
 		}
 		const TTNetwork& ttMe = *usedMe;
@@ -1210,9 +1210,9 @@ namespace xerus {
 		internal::TTStack<isOperator>* stackOther;
 		if(moveOther && (stackOther = dynamic_cast<internal::TTStack<isOperator>*>(moveOther->tensorObject))) {
 			ttOther = TTNetwork(*stackOther);
-			REQUIRE(ttOther.dimensions == stackOther->dimensions, "Ie");
+			INTERNAL_CHECK(ttOther.dimensions == stackOther->dimensions, "Ie");
 		} else { // Other is normal
-			REQUIRE(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
+			INTERNAL_CHECK(dynamic_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
 			ttOther = *static_cast<const TTNetwork<isOperator>*>(_other.tensorObjectReadOnly);
 			
 		}
@@ -1230,7 +1230,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::specialized_evaluation(internal::IndexedTensorWritable<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) {
-		REQUIRE(_me.tensorObject == this, "Internal Error.");
+		INTERNAL_CHECK(_me.tensorObject == this, "Internal Error.");
 		
 		_me.assign_indices(_other.degree());
 		_other.assign_indices();
@@ -1244,7 +1244,7 @@ namespace xerus {
 		
 		if(otherTTN || otherTTStack) {
 			if (otherTTStack) {
-				REQUIRE(movOther, "Not moveable TTStack encountered...");
+				INTERNAL_CHECK(movOther, "Not moveable TTStack encountered...");
 				internal::TTStack<isOperator>::contract_stack(std::move(*movOther));
 			}
 			
@@ -1269,7 +1269,7 @@ namespace xerus {
 				auto midIndexItr = _me.indices.begin();
 				size_t spanSum = 0;
 				while (spanSum < numComponents) {
-					REQUIRE(midIndexItr != _me.indices.end(), "Internal Error.");
+					INTERNAL_CHECK(midIndexItr != _me.indices.end(), "Internal Error.");
 					spanSum += midIndexItr->span;
 					++midIndexItr;
 				}
@@ -1278,7 +1278,7 @@ namespace xerus {
 					auto otherMidIndexItr = _other.indices.begin();
 					spanSum = 0;
 					while (spanSum < numComponents) {
-						REQUIRE(otherMidIndexItr != _other.indices.end(), "Internal Error.");
+						INTERNAL_CHECK(otherMidIndexItr != _other.indices.end(), "Internal Error.");
 						spanSum += otherMidIndexItr->span;
 						++otherMidIndexItr;
 					}
@@ -1377,7 +1377,7 @@ namespace xerus {
 		const size_t externalDim = isOperator ? _componentA.dimensions[1] * _componentA.dimensions[2] : _componentA.dimensions[1];
 		
 		if(_componentA.is_dense() && _componentB.is_dense()) {
-			REQUIRE(_newComponent.is_dense(), "IE");
+			INTERNAL_CHECK(_newComponent.is_dense(), "IE");
 			value_t* const newCompData = _newComponent.get_dense_data();
 			const value_t* const compBData = _componentB.get_unsanitized_dense_data();
 			for (size_t r1 = 0; r1 < _componentA.dimensions.front(); ++r1) {
@@ -1424,7 +1424,7 @@ namespace xerus {
 		} else {
 			const std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntriesB = get_grouped_entries<isOperator>(_componentB);
 			std::map<size_t, value_t>& dataMap = _newComponent.get_sparse_data();
-			REQUIRE(dataMap.empty(), "IE");
+			INTERNAL_CHECK(dataMap.empty(), "IE");
 			for(const auto& entryA : _componentA.get_unsanitized_sparse_data()) {
 				const size_t r2 = entryA.first%_componentA.dimensions.back();
 				const size_t n = (entryA.first/_componentA.dimensions.back())%externalDim;

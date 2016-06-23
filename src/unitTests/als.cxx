@@ -30,7 +30,7 @@ static misc::UnitTest als_id("ALS", "identity", [](){
 	std::normal_distribution<value_t> dist (0.0, 1.0);
     
     Index k,l,m,n,o,p;
-    
+	
     Tensor X({10, 10, 10});
     Tensor B = Tensor::random({10, 10, 10}, rnd, dist);
     

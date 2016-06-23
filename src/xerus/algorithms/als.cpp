@@ -182,7 +182,7 @@ namespace xerus {
 		//TODO optimization: create these networks without indices
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3;
 		TensorNetwork res;
-		REQUIRE(A, "ie");
+		INTERNAL_CHECK(A, "ie");
 		if (ALS.assumeSPD) {
 			res(r1,r2,r3, cr1,cr2,cr3) = x.get_component(_pos)(r1, n1, cr1) 
 										* A->get_component(_pos)(r2, n1, n2, cr2) 
@@ -338,7 +338,7 @@ namespace xerus {
 		Index r1,r2;
 		Tensor tmpA, tmpB;
 		if (direction == Increasing) {
-			REQUIRE(currIndex+ALS.sites < optimizedRange.second, "ie " << currIndex << " " << ALS.sites << " " << optimizedRange.first << " " << optimizedRange.second);
+			INTERNAL_CHECK(currIndex+ALS.sites < optimizedRange.second, "ie " << currIndex << " " << ALS.sites << " " << optimizedRange.first << " " << optimizedRange.second);
 			// Move core to next position (assumed to be done by the solver if sites > 1)
 			if (ALS.sites == 1) {
 				x.move_core(currIndex+1, true);
@@ -356,7 +356,7 @@ namespace xerus {
 			rhsCache.left.emplace_back(std::move(tmpB));
 			currIndex++;
 		} else {
-			REQUIRE(currIndex > optimizedRange.first, "ie");
+			INTERNAL_CHECK(currIndex > optimizedRange.first, "ie");
 			// Move core to next position (assumed to be done by the solver if sites > 1)
 			if (ALS.sites == 1) {
 				x.move_core(currIndex-1, true);
@@ -378,7 +378,7 @@ namespace xerus {
 	
 	
 	TensorNetwork ALSVariant::construct_local_operator(ALSVariant::ALSAlgorithmicData& _data) const {
-		REQUIRE(_data.A, "IE");
+		INTERNAL_CHECK(_data.A, "IE");
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork ATilde = _data.localOperatorCache.left.back();
 		if (assumeSPD) {
@@ -479,7 +479,7 @@ namespace xerus {
 	
 	double ALSVariant::solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData) const {
 		LOG(ALS, "ALS("<< sites <<") called");
-		#ifndef DISABLE_RUNTIME_CHECKS_
+		#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 			_x.require_correct_format();
 			_b.require_correct_format();
 			REQUIRE(_x.degree() > 0, "");

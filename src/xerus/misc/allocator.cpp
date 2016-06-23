@@ -86,7 +86,7 @@
 				res = xm::astore.buckets[numBucket].back();
 				xm::astore.buckets[numBucket].pop_back();
 			}
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				xm::astore.allocCount[numBucket] += 1;
 				xm::astore.currAlloc[numBucket] += 1;
 				if (xm::astore.currAlloc[numBucket] > xm::astore.maxAlloc[numBucket]) {
@@ -141,7 +141,7 @@
 	void mydelete(void *ptr) noexcept {
 		uint8_t n = *(static_cast<uint8_t*>(ptr)-1);
 		if (n<0xFF) {
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				xm::astore.currAlloc[n] -= 1;
 			#endif
 			if (programIsRunning) {

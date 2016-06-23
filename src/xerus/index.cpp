@@ -93,7 +93,7 @@ namespace xerus {
 	
 	
 	bool Index::fixed() const {
-		#ifndef DISABLE_RUNTIME_CHECKS_
+		#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 			if(flags[Index::Flag::FIXED]) {
 				REQUIRE(!flags[Flag::INVERSE_SPAN], "Fixed indices must not have inverse span."); 
 				REQUIRE(!flags[Flag::FRACTIONAL_SPAN], "Fixed indices must not have fractional span.");

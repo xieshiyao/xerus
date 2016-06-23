@@ -43,7 +43,7 @@
 #include <functional>
 
 #ifdef TEST_
-	#ifdef TEST_COVERAGE_
+	#ifdef XERUS_TEST_COVERAGE
 		#define REQUIRE_TEST \
 			do { \
 				static const char * xerus_test_fname = __PRETTY_FUNCTION__;\
@@ -59,7 +59,7 @@
 		#define REQUIRE_TEST (void)0
 	#endif
 	
-	#ifndef DISABLE_RUNTIME_CHECKS_
+	#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 		#define FAILTEST(test) \
 			{\
 				bool failtestFailed = false; \
@@ -70,7 +70,7 @@
 			}\
 			void(0)
 	#else
-		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag DISABLE_RUNTIME_CHECKS_")
+		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag XERUS_DISABLE_RUNTIME_CHECKS")
 	#endif
 	
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
@@ -108,7 +108,7 @@ namespace xerus { namespace misc {
 	};
 
 	namespace internal {
-	#ifdef TEST_COVERAGE_
+	#ifdef XERUS_TEST_COVERAGE
 		struct RequiredTest {
 			struct Identifier {
 				std::string functionName;

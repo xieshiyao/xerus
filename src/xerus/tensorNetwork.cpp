@@ -119,8 +119,8 @@ namespace xerus {
 				toErase.emplace_back(long(eid));
 				correction++;
 			} else {
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
+				INTERNAL_CHECK(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
+				INTERNAL_CHECK(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
 				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
 			}
 		}
@@ -182,7 +182,7 @@ namespace xerus {
 			if (!toContract.empty()) {
 				const size_t remaining = contract(toContract);
 				
-				REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
+				INTERNAL_CHECK(nodes[remaining].degree() == 0, "Internal Error.");
 				
 				// Remove contracted degree-0 tensor
 				nodes[remaining].erased = true;
@@ -191,14 +191,14 @@ namespace xerus {
 						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject.get())[0];
 						break;
 					}
-					REQUIRE(i < nodes.size()-1, "Internal Error.");
+					INTERNAL_CHECK(i < nodes.size()-1, "Internal Error.");
 				}
 			}
 		}
 		
 		sanitize();
 		
-		REQUIRE(nodes.size() > 0, "Internal error");
+		INTERNAL_CHECK(nodes.size() > 0, "Internal error");
 	}
 	
 	
@@ -299,7 +299,7 @@ namespace xerus {
 		
 		std::vector<size_t> shuffle(degree());
 		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) {
-			REQUIRE(cpy.nodes[res].neighbors[i].external, "Internal Error");
+			INTERNAL_CHECK(cpy.nodes[res].neighbors[i].external, "Internal Error");
 			shuffle[i] = cpy.nodes[res].neighbors[i].indexPosition;
 		}
 		Tensor result;
@@ -361,7 +361,7 @@ namespace xerus {
 		// Contract the complete network (there are not external Links)
 		partialCopy.contract_unconnected_subnetworks();
 		
-		REQUIRE(partialCopy.nodes.size() == 1, "Internal Error.");
+		INTERNAL_CHECK(partialCopy.nodes.size() == 1, "Internal Error.");
 		
 		return (*partialCopy.nodes[0].tensorObject)[0];
 	}
@@ -524,7 +524,7 @@ namespace xerus {
 		}
 	}
 	
-#ifndef DISABLE_RUNTIME_CHECKS_
+#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	void TensorNetwork::require_valid_network(const bool _check_erased) const {
 		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
 		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
@@ -1083,13 +1083,13 @@ namespace xerus {
 		
 		REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << "  was already contracted?");
 		REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << "  was already contracted?");
-		REQUIRE(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
+		INTERNAL_CHECK(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
 		
 		std::vector<TensorNetwork::Link> newLinks;
 		newLinks.reserve(node1.degree() + node2.degree());
 		
 		if (!node1.tensorObject) {
-			REQUIRE(!node2.tensorObject, "Internal Error.");
+			INTERNAL_CHECK(!node2.tensorObject, "Internal Error.");
 			
 			// Determine the links of the resulting tensor (first half)
 			for ( const Link& l : node1.neighbors ) {
@@ -1104,7 +1104,7 @@ namespace xerus {
 				}
 			}
 		} else {
-			REQUIRE(node2.tensorObject, "Internal Error.");
+			INTERNAL_CHECK(node2.tensorObject, "Internal Error.");
 			
 			size_t contractedDimCount = 0;
 			bool separated1;
@@ -1210,7 +1210,7 @@ namespace xerus {
 					}
 				}
 				
-				REQUIRE(pos == node1.degree(), "IE");
+				INTERNAL_CHECK(pos == node1.degree(), "IE");
 				reshuffle(*node1.tensorObject, *node1.tensorObject, shuffle);
 				
 				matchingOrder = true;
@@ -1242,7 +1242,7 @@ namespace xerus {
 					}
 				}
 				
-				REQUIRE(pos == node2.degree(), "IE");
+				INTERNAL_CHECK(pos == node2.degree(), "IE");
 				reshuffle(*node2.tensorObject, *node2.tensorObject, shuffle);
 			}
 			
@@ -1365,7 +1365,7 @@ namespace xerus {
 			c(bestCost, bestOrder, strippedNetwork);
 		}
 		
-		REQUIRE(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
+		INTERNAL_CHECK(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
 		
 		for (const std::pair<size_t,size_t> &c : bestOrder) {
 			contract(c.first, c.second);

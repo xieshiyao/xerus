@@ -233,13 +233,13 @@ namespace xerus {
 	
 	
 	bool Tensor::is_dense() const {
-		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		INTERNAL_CHECK((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
 	
 	bool Tensor::is_sparse() const {
-		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		INTERNAL_CHECK((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
 	
@@ -468,7 +468,7 @@ namespace xerus {
 	std::map<size_t, value_t>& Tensor::override_sparse_data() {
 		factor = 1.0;
 		if(sparseData.unique()) {
-			REQUIRE(is_sparse(), "Internal Error");
+			INTERNAL_CHECK(is_sparse(), "Internal Error");
 			sparseData->clear();
 		} else {
 			denseData.reset();
@@ -685,7 +685,7 @@ namespace xerus {
 					const size_t preBlockSize = (_cutPos-removedSlates)*dimStepSize;
 					const size_t postBlockSize = (oldDim-_cutPos)*dimStepSize;
 					
-					REQUIRE(removedBlockSize+preBlockSize+postBlockSize == oldStepSize && preBlockSize+postBlockSize == newStepSize, "IE");
+					INTERNAL_CHECK(removedBlockSize+preBlockSize+postBlockSize == oldStepSize && preBlockSize+postBlockSize == newStepSize, "IE");
 					
 					for (size_t i = 0; i < blockCount; ++i) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
@@ -904,7 +904,7 @@ namespace xerus {
 					at(i) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 		}
@@ -924,7 +924,7 @@ namespace xerus {
 					at(i) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 		}
@@ -947,7 +947,7 @@ namespace xerus {
 					at(idx) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(idx);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 			
@@ -1484,7 +1484,7 @@ namespace xerus {
 		if (_input.is_sparse()) {
 			std::map<size_t, double> qdata, rdata;
 			std::tie(qdata, rdata, rank) = internal::CholmodSparse::qc(_input.get_unsanitized_sparse_data(), false, lhsSize, rhsSize, true);
-			REQUIRE(rank == std::min(lhsSize, rhsSize), "IE, sparse qr reduced rank");
+			INTERNAL_CHECK(rank == std::min(lhsSize, rhsSize), "IE, sparse qr reduced rank");
 			set_factorization_output(_Q, std::move(qdata), _R, std::move(rdata), _input, _splitPos, rank);
 			_Q.use_dense_representation_if_desirable();
 			_R.use_dense_representation_if_desirable();

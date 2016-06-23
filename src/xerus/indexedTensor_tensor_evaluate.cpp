@@ -53,7 +53,7 @@ namespace xerus {
 	 */
 	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle) {
 		IF_CHECK(
-			REQUIRE(_shuffle.size() == _base.degree(), "IE");
+			INTERNAL_CHECK(_shuffle.size() == _base.degree(), "IE");
 			for(size_t x = 0; x < _base.degree(); ++x) {
 				REQUIRE(_shuffle[x] < _base.degree(), _shuffle[x] << " is no valid new position!");
 				REQUIRE(misc::count(_shuffle, x) == 1, x << " illegally appeared twice.");
@@ -256,7 +256,7 @@ namespace xerus {
 			_out.assign_index_dimensions();
 			
 			
-			#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
+			#ifndef XERUS_DISABLE_RUNTIME_CHECKS // Performe complete check whether the input is valid
 				// Check base indices
 				for(size_t i = 0; i < _base.indices.size(); ++i) {
 					// If the index is fixed we don't expect to find it anywhere

@@ -175,7 +175,7 @@ std::vector<LeastSquaresProblem> leastSquaresProblems{
 
 std::string generate_profile_name() {
 	std::string profileName;
-#ifdef TEST_COVERAGE_
+#ifdef XERUS_TEST_COVERAGE
 	static_assert(false, "test coverage checking nonsensical with benchmark run");
 #endif
 	
@@ -200,13 +200,13 @@ std::string generate_profile_name() {
 #ifdef USE_LTO
 	profileName += "_lto";
 #endif
-#ifdef DISABLE_RUNTIME_CHECKS_
+#ifdef XERUS_DISABLE_RUNTIME_CHECKS
 	profileName += "_noChecks";
 #endif
 #ifdef REPLACE_ALLOCATOR
 	profileName += "_replaceAlloc";
 #endif
-#ifdef PERFORMANCE_ANALYSIS
+#ifdef XERUS_PERFORMANCE_ANALYSIS
 	profileName += "_perfAnalysis";
 #endif
 	return profileName;

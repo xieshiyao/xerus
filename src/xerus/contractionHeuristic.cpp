@@ -347,7 +347,7 @@ namespace xerus {
 				openPairs = std::move(newOpenPairs);
 			}
 			
-			REQUIRE(openPairs.size() == 1, "ie");
+			INTERNAL_CHECK(openPairs.size() == 1, "ie");
 			
 			ourFinalCost += _network.contraction_cost(openPairs.front().first, openPairs.front().second);
 			ourContractions.emplace_back(openPairs.front());

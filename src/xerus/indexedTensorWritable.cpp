@@ -95,7 +95,7 @@ namespace xerus {
 			
 			std::vector<Index> internalOrder;
 			for(const TensorNetwork::Link& link: cpy.tensorObject->nodes[res].neighbors) {
-				REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
+				INTERNAL_CHECK(link.external, "Internal Error " << link.other << " " << link.indexPosition);
 				internalOrder.emplace_back(externalOrder[link.indexPosition]);
 			}
 			
@@ -105,7 +105,7 @@ namespace xerus {
 				REQUIRE(misc::contains(cpy.indices, idx), "Every index on the LHS must appear somewhere on the RHS, here: " << cpy.indices << ' ' << indices);
 				size_t spanSum = 0;
 				for (size_t j = 0; cpy.indices[j] != idx; ++j) {
-					REQUIRE(j < cpy.indices.size()-1, "ie");
+					INTERNAL_CHECK(j < cpy.indices.size()-1, "ie");
 					spanSum += cpy.indices[j].span;
 				}
 				

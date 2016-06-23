@@ -2,6 +2,10 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-??-?? v3.0.0
+ * ! REQUIRE macro now logs as error instead of fatal error.
+ * ! Most macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
+
 * 2016-06-23 v2.4.0
  * Introduced nomeclature 'mode'. Marked all functions that will be renamed / removed in v3.0.0 as deprecated.
  * Added an experimental python wrapper when 'OTHER += -DXERUS_EXPERIMENTAL_PYTHON_WRAPPER' is defined in the config file.

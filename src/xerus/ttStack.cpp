@@ -60,7 +60,7 @@ namespace xerus {
 			const size_t numNodes = degree()/N+2;
 			const size_t stackSize = nodes.size()/numNodes;
 			
-			REQUIRE(nodes.size()%numNodes == 0, "IE");
+			INTERNAL_CHECK(nodes.size()%numNodes == 0, "IE");
 			
 			// Contract the stack to a TTNetwork node structure.
 			std::set<size_t> toContract;
@@ -75,7 +75,7 @@ namespace xerus {
 			// Reshuffle the nodes to be in the correct order after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction) so modulus gives the correct wanted id.
 			reshuffle_nodes([numNodes](const size_t _i){return _i%(numNodes);});
 			
-			REQUIRE(nodes.size() == numNodes, "Internal Error.");
+			INTERNAL_CHECK(nodes.size() == numNodes, "Internal Error.");
 			
 			// Reset to new external links
 			for(size_t i = 0; i < numComponents; ++i) {
@@ -102,14 +102,14 @@ namespace xerus {
 				size_t leftDim = 1, rightDim = 1;
 				size_t fullDim = 1;
 				for(size_t k = 0; k < N+2*stackSize; ++k) {
-					REQUIRE(!nodes[i].erased, "IE");
+					INTERNAL_CHECK(!nodes[i].erased, "IE");
 					const TensorNetwork::Link& link = nodes[i].neighbors[k];
 					fullDim *= link.dimension;
 					if(link.external) {
 						if(link.indexPosition < numComponents) {
 							shuffle[k] = stackSize;
 						} else {
-							REQUIRE(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << degree());
+							INTERNAL_CHECK(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << degree());
 							shuffle[k] = stackSize+1;
 						}
 					} else {
@@ -133,8 +133,8 @@ namespace xerus {
 						}
 					}
 				}
-				REQUIRE(fullDim == nodes[i].tensorObject->size, "Uhh");
-				REQUIRE(leftCount == stackSize, "IE");
+				INTERNAL_CHECK(fullDim == nodes[i].tensorObject->size, "Uhh");
+				INTERNAL_CHECK(leftCount == stackSize, "IE");
 				
 				xerus::reshuffle(*nodes[i].tensorObject, *nodes[i].tensorObject, shuffle);
 				if(isOperator) {
@@ -173,7 +173,7 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void TTStack<isOperator>::operator*=(const value_t _factor) {
-			REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+			INTERNAL_CHECK(nodes.size() > 0, "There must not be a TTNetwork without any node");
 			
 			if(cannonicalization_required) {
 				*nodes[futureCorePosition+1].tensorObject *= _factor;
@@ -210,7 +210,7 @@ namespace xerus {
 			const size_t numNodes = _me.tensorObject->degree()/N+2;
 			const size_t stackSize = _me.tensorObject->nodes.size()/numNodes;
 			
-			REQUIRE(_me.tensorObject->nodes.size()%numNodes == 0, "IE");
+			INTERNAL_CHECK(_me.tensorObject->nodes.size()%numNodes == 0, "IE");
 			
 			// Contract the stack to a TTNetwork node structure.
 			std::set<size_t> toContract;
@@ -225,7 +225,7 @@ namespace xerus {
 			// Reshuffle the nodes to be in the correct order after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction) so modulus gives the correct wanted id.
 			_me.tensorObject->reshuffle_nodes([numNodes](const size_t _i){return _i%(numNodes);});
 			
-			REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
+			INTERNAL_CHECK(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
 			
 			// Reset to new external links
 			for(size_t i = 0; i < numComponents; ++i) {
@@ -252,14 +252,14 @@ namespace xerus {
 				size_t leftDim = 1, rightDim = 1;
 				size_t fullDim = 1;
 				for(size_t k = 0; k < N+2*stackSize; ++k) {
-					REQUIRE(!_me.tensorObject->nodes[i].erased, "IE");
+					INTERNAL_CHECK(!_me.tensorObject->nodes[i].erased, "IE");
 					const TensorNetwork::Link& link = _me.tensorObject->nodes[i].neighbors[k];
 					fullDim *= link.dimension;
 					if(link.external) {
 						if(link.indexPosition < numComponents) {
 							shuffle[k] = stackSize;
 						} else {
-							REQUIRE(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << _me.tensorObject->degree());
+							INTERNAL_CHECK(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << _me.tensorObject->degree());
 							shuffle[k] = stackSize+1;
 						}
 					} else {
@@ -283,8 +283,8 @@ namespace xerus {
 						}
 					}
 				}
-				REQUIRE(fullDim == _me.tensorObject->nodes[i].tensorObject->size, "Uhh");
-				REQUIRE(leftCount == stackSize, "IE");
+				INTERNAL_CHECK(fullDim == _me.tensorObject->nodes[i].tensorObject->size, "Uhh");
+				INTERNAL_CHECK(leftCount == stackSize, "IE");
 				
 				xerus::reshuffle(*_me.tensorObject->nodes[i].tensorObject, *_me.tensorObject->nodes[i].tensorObject, shuffle);
 				if(isOperator) {

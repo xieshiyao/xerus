@@ -112,7 +112,7 @@ namespace xerus { namespace internal {
 			entryPos++;
 		}
 		
-		REQUIRE(size_t(currRow) < _m && entryPos == _input.size(), "Internal Error " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
+		REQUIRE(size_t(currRow) < _m && entryPos == _input.size(), "cholmod error - invalid input? " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
 		
 		while(currRow < static_cast<long>(_m)) {
 			p[++currRow] = long(entryPos);
@@ -133,7 +133,7 @@ namespace xerus { namespace internal {
 		for(size_t i = 0; i < matrix->ncol; ++i) {
 			for(long j = p[i]; j < p[i+1]; ++j) {
 				IF_CHECK( auto ret = ) result.emplace(size_t(mi[size_t(j)])*matrix->ncol+i, _alpha*x[j]);
-				REQUIRE(ret.second, "Internal Error");
+				INTERNAL_CHECK(ret.second, "Internal Error");
 			}
 		}
 		return result;
@@ -203,8 +203,8 @@ namespace xerus { namespace internal {
 				cholmod_l_free_dense(&_toDelete, cholmodObject.get());
 			}
 		);
-		REQUIRE(x->z == nullptr, "IE");
-		REQUIRE(x->nrow == _xDim, "IE");
+		INTERNAL_CHECK(x->z == nullptr, "IE");
+		INTERNAL_CHECK(x->nrow == _xDim, "IE");
 		misc::copy(_x, static_cast<double*>(x->x), _xDim);
 	}
 	
@@ -225,8 +225,8 @@ namespace xerus { namespace internal {
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
-		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
+		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		INTERNAL_CHECK((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
 		return std::make_tuple(Qs.to_map(), Rs.to_map(), _fullrank?std::min(_m,_n):size_t(rank));
 	}
 	
@@ -247,8 +247,8 @@ namespace xerus { namespace internal {
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
-		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
+		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		INTERNAL_CHECK((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
 		//transpose q and r to get r*q=A
 		Qs.transpose();
 		Rs.transpose();

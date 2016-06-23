@@ -35,13 +35,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 # The Xerus library performs a number of runtime checks to ensure a valid input to all routines.
 # While not recommended these runtime checks can be completly disabled by uncommenting the following
 # line. This slighlty improves the performance.
-# DEBUG += -D DISABLE_RUNTIME_CHECKS_	# Disable all runtime checks
-
-
-# In the default configuration xerus will throw exceptions if it encounters invalid inputs
-# or (hopefully never) suffers an internal error. For some debugging purposes however it is
-# more convinient to instruct xerus to directly exit in such cases.
-# NO_XERUS_EXCEPTIONS = TRUE			# Disable the use of exceptions by the xerus library
+# DEBUG += -D XERUS_DISABLE_RUNTIME_CHECKS	# Disable all runtime checks
 
 
 # With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
@@ -53,7 +47,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 # When performing tests it is useful to ensure that all of the code in covered. This is ensured by
 # a set of macros including REQUIRE_TEST to mark lines that need to be tested. With the following
 # definition this coverage is tested.
-# DEBUG += -D TEST_COVERAGE_			# Enable coverage tests
+# DEBUG += -D XERUS_TEST_COVERAGE			# Enable coverage tests
 
 
 # Xerus uses many small objects (Indices, vectors of dimensions etc.) for which the standard allocator
@@ -73,24 +67,23 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 
 
 # Xerus has a buildin logging system to provide runtime information. Here you can adjust the logging level used by the library.
-# LOGGING += -D DEBUG_                  # Debug infomation, can significantly slow down the library.
-LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
-# LOGGING += -D WARNING_                # Informations that is linked to unexpected behaviour which indicates incorrect use of the library but are no errors as such.
-# LOGGING += -D ERROR_                  # Information about errors that occourt, assumedly by incorrect use of the library. 
-# LOGGING += -D CRITICAL_               # Information abount internal errors within the library.
+# LOGGING += -D XERUS_LOG_DEBUG                  # Debug infomation, can significantly slow down the library.
+LOGGING += -D XERUS_LOG_INFO                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
+# LOGGING += -D XERUS_LOG_WARNING                # Informations that is linked to unexpected behaviour which indicates incorrect use of the library but are no errors as such.
+# LOGGING += -D XERUS_LOG_ERROR                  # Information about errors that occourt, assumedly by incorrect use of the library. 
 
 # Per default the logs are printed to cerr. Uncomment the following line to print the log messages to the file error.log instead.
-# LOGGING += -D LOGFILE_				# Use error file instead of cerr
+# LOGGING += -D XERUS_LOGFILE				# Use error file instead of cerr
 
 # Print absolute times instead of relative to program time
-# LOGGING += -D LOG_ABSOLUTE_TIME
+# LOGGING += -D XERUS_LOG_ABSOLUTE_TIME
 
 # Uncomment the following line to save the last Logs in a circular buffer (without printing them) to allow detailed reports in case of errors.
 # Note that this can significatly slow down the library.
-# LOGGING += -D LOG_BUFFER_					# Activate the log buffer
+# LOGGING += -D XERUS_LOG_BUFFER					# Activate the log buffer
 
 # Add time measurments for the relevant low level function calls. This allow to use get_analysis() to get a listing on all called low level fucntions and the time spend on them.
-# LOGGING += -D PERFORMANCE_ANALYSIS 		# Enable performance analysis
+# LOGGING += -D XERUS_PERFORMANCE_ANALYSIS 		# Enable performance analysis
 
 
 #=================================================================================================
