@@ -95,6 +95,12 @@ BOOST_PYTHON_MODULE(libxerus) {
 	bool show_signatures = false;
 	docstring_options doc_options(show_user_defined, show_signatures);
 	
+	// xerus version
+	scope().attr("VERSION_MAJOR") = VERSION_MAJOR;
+	scope().attr("VERSION_MINOR") = VERSION_MINOR;
+	scope().attr("VERSION_REVISION") = VERSION_REVISION;
+	scope().attr("VERSION_COMMIT") = VERSION_COMMIT;
+	
 #define parametersDocstr "\n\nParameters\n----------\n"
 #define	returnsDocstr "\n\nReturns\n-------\n"
 	

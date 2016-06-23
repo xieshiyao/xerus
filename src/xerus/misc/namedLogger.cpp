@@ -23,6 +23,9 @@
  */
 
 #include <time.h>
+#include <iomanip>
+#include <chrono>
+#include <fstream>
 
 #ifdef LOG_BUFFER_
     #include <fstream>
@@ -31,14 +34,56 @@
 #include <xerus/misc/namedLogger.h>
 
 namespace xerus { namespace misc { namespace internal {
-	std::ofstream fileStream ( "error.log" , std::ofstream::app | std::ofstream::out);
-	
 	std::mutex namedLoggerMutex;
 	std::string logFilePrefix;
 	bool silenced = false;
 	std::chrono::system_clock::time_point programStartTime;
 	static void __attribute__((constructor)) initTime() {
 		programStartTime = std::chrono::system_clock::now();
+	}
+	
+	void log_timestamp(std::ostream &_out) {
+		#ifdef LOG_ABSOLUTE_TIME
+			//NOTE must not use std::put_time as it was not defined before GCC 5.0
+			std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);
+			_out << std::right << (1900+xerus_err_ltm->tm_year)
+				<< '-' << std::setw(2) << std::setfill('0') << (xerus_err_ltm->tm_mon +1)
+				<< '-' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_mday
+				<< ' ' << std::setw(2) << std::setfill('0') << xerus_err_ltm->tm_hour
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_min
+				<< ':' << std::setw(2) << std::setfill('0') <<  xerus_err_ltm->tm_sec << ' ' << std::left;
+		#else
+			std::chrono::system_clock::time_point xerus_err_t = std::chrono::system_clock::now();
+			auto xerus_err_timediff = std::chrono::duration_cast<std::chrono::milliseconds>(xerus_err_t - xerus::misc::internal::programStartTime).count();
+			_out << std::right << '+' << std::setw(2) << std::setfill('0') << (xerus_err_timediff/3600000)
+				<< ':' << std::setw(2) << std::setfill('0') << ((xerus_err_timediff/60000)%60)
+				<< ':' << std::setw(2) << std::setfill('0') <<  ((xerus_err_timediff/1000)%60)
+				<< ',' << std::setw(3) << std::setfill('0') <<  (xerus_err_timediff%1000) << ' ' << std::left;
+		#endif
+	}
+	
+	void log_timestamp(std::ostream &_out, const char* _file, int _line, const char* _lvl) {
+		log_timestamp(_out);
+		_out << std::setfill(' ') << std::setw(20) << std::left << xerus::misc::explode(_file, '/').back() << ':' \
+				<< std::right << std::setfill(' ') << std::setw(4) <<_line << " : " \
+				<< std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(_lvl) << ": ";
+	}
+	
+	void log_timestamp(std::ostream &_out, const char* _lvl) {
+		log_timestamp(_out);
+		_out << std::setfill(' ') << std::setw(12) << std::left \
+				<< std::string(_lvl) << ": ";
+	}
+	
+	std::ostream &get_fileStream() {
+		static std::ofstream fileStream;
+		if (!fileStream || !fileStream.is_open()) {
+			fileStream.close();
+			fileStream.open("error.log", std::ofstream::app | std::ofstream::out);
+		}
+		return fileStream;
 	}
 	
 	namespace buffer {
