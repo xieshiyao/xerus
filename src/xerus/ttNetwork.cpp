@@ -1502,7 +1502,7 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void stream_reader(std::istream& _stream, TTNetwork<isOperator> &_obj, const misc::FileFormat _format) {
-			uint64 ver = read_from_stream<uint64>(_stream, _format);
+			IF_CHECK( uint64 ver = ) read_from_stream<uint64>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// load TN specific data

@@ -94,7 +94,7 @@ namespace xerus {
 /**
  * @def SET_LOGGING(lvl, value)
  * @brief set the logging behaviour of severity level @a lvl to @a value (either NOT_LOGGING, LOGGING_ON_ERROR or LOGGING_FULL)
- * @details this definition must not be repeated and must be define din a global header that is included before any msg is logged with that lvl
+ * @details this definition must not be repeated and must be defined in a global header that is included before any msg is logged with that lvl
  */
 #define SET_LOGGING(lvl, value) \
     template<> struct XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>{ static const int flag = value; };

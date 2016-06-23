@@ -946,7 +946,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 	def("approx_equal", +[](const Tensor& _l, const TensorNetwork& _r) {
 		return approx_equal(_l, _r);
 	});
-	def("approx_equal", +[](const TensorNetwork& _l, const TensorNetwork& _r) {
+	def("approx_equal", +[](const TensorNetwork& _l, const Tensor& _r) {
 		return approx_equal(_l, _r);
 	});
 	def("approx_equal", +[](const TensorNetwork& _l, const TensorNetwork& _r) {
