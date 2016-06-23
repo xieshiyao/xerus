@@ -634,18 +634,18 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos) {
-		REQUIRE(_dimPos < degree(), "Can't resize dimension " << _dimPos << " as the tensor is only order " << degree());
+	void Tensor::resize_mode(const size_t _mode, const size_t _newDim, size_t _cutPos) {
+		REQUIRE(_mode < degree(), "Can't resize mode " << _mode << " as the tensor is only order " << degree());
 
-		if (dimensions[_dimPos] == _newDim) { return; }  // Trivial case: Nothing to do
+		if (dimensions[_mode] == _newDim) { return; }  // Trivial case: Nothing to do
 
-		const size_t oldDim = dimensions[_dimPos];
+		const size_t oldDim = dimensions[_mode];
 		_cutPos = std::min(_cutPos, oldDim);
 		
 		REQUIRE(_newDim > 0, "Dimension must be larger than 0! Is " << _newDim);
 		REQUIRE(_newDim > oldDim || _cutPos >= oldDim -_newDim, "Cannot remove " << oldDim -_newDim << " slates starting (exclusivly) at position " << _cutPos);
 		
-		const size_t dimStepSize = misc::product(dimensions, _dimPos+1, degree());
+		const size_t dimStepSize = misc::product(dimensions, _mode+1, degree());
 		const size_t oldStepSize = oldDim*dimStepSize;
 		const size_t newStepSize = _newDim*dimStepSize;
 		const size_t blockCount = size / oldStepSize; //  == misc::product(dimensions, 0, _n);
@@ -735,17 +735,17 @@ namespace xerus {
 			sparseData.reset(tmpData.release());
 		}
 		
-		dimensions[_dimPos] = _newDim;
+		dimensions[_mode] = _newDim;
 		size = newsize;
 	}
 	
 	
-	void Tensor::fix_slate(const size_t _dimPos, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_dimPos], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_dimPos]);
+	void Tensor::fix_mode(const size_t _mode, const size_t _slatePosition) {
+		REQUIRE(_slatePosition < dimensions[_mode], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_mode]);
 		
-		const size_t stepCount = misc::product(dimensions, 0, _dimPos);
-		const size_t blockSize = misc::product(dimensions, _dimPos+1, degree());
-		const size_t stepSize = dimensions[_dimPos]*blockSize;
+		const size_t stepCount = misc::product(dimensions, 0, _mode);
+		const size_t blockSize = misc::product(dimensions, _mode+1, degree());
+		const size_t stepSize = dimensions[_mode]*blockSize;
 		const size_t slateOffset = _slatePosition*blockSize;
 		
 		if(is_dense()) {
@@ -775,17 +775,17 @@ namespace xerus {
 		}
 		
 		// Adjust dimensions
-		dimensions.erase(dimensions.begin()+long(_dimPos));
+		dimensions.erase(dimensions.begin()+long(_mode));
 		size = stepCount*blockSize;
 	}
 	
 	
-	void Tensor::remove_slate(const size_t _indexNb, const size_t _pos) {
-		REQUIRE(_indexNb < degree(), "");
-		REQUIRE(_pos < dimensions[_indexNb], _pos << " " << dimensions[_indexNb]);
-		REQUIRE(dimensions[_indexNb] > 1, "");
+	void Tensor::remove_slate(const size_t _mode, const size_t _pos) {
+		REQUIRE(_mode < degree(), "");
+		REQUIRE(_pos < dimensions[_mode], _pos << " " << dimensions[_mode]);
+		REQUIRE(dimensions[_mode] > 1, "");
 		
-		resize_dimension(_indexNb, dimensions[_indexNb]-1, _pos+1);
+		resize_mode(_mode, dimensions[_mode]-1, _pos+1);
 	}
 	
 	
@@ -1473,8 +1473,8 @@ namespace xerus {
 			_Vt *= -1;
 		}
 		
-		_U.resize_dimension(_U.degree()-1, rank);
-		_Vt.resize_dimension(0, rank);
+		_U.resize_mode(_U.degree()-1, rank);
+		_Vt.resize_mode(0, rank);
 	}
 	
 	

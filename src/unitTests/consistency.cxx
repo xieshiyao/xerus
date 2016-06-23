@@ -407,7 +407,7 @@ static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
 	}
 });
 
-static misc::UnitTest cons_fix_slate("Consistency", "fix_slate", []() {
+static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
@@ -459,34 +459,34 @@ static misc::UnitTest cons_fix_slate("Consistency", "fix_slate", []() {
 		std::uniform_int_distribution<size_t> posSelect(0, dimsX[slate]-1);
 		const size_t position = posSelect(rnd);
 		
-		A.fix_slate(slate+d, position);
-		A.fix_slate(slate, position);
-		B.fix_slate(slate+d, position);
-		B.fix_slate(slate, position);
-		X.fix_slate(slate, position);
-		Y.fix_slate(slate, position);
+		A.fix_mode(slate+d, position);
+		A.fix_mode(slate, position);
+		B.fix_mode(slate+d, position);
+		B.fix_mode(slate, position);
+		X.fix_mode(slate, position);
+		Y.fix_mode(slate, position);
 		
-		sA.fix_slate(slate+d, position);
-		sA.fix_slate(slate, position);
-		sB.fix_slate(slate+d, position);
-		sB.fix_slate(slate, position);
-		sX.fix_slate(slate, position);
-		sY.fix_slate(slate, position);
+		sA.fix_mode(slate+d, position);
+		sA.fix_mode(slate, position);
+		sB.fix_mode(slate+d, position);
+		sB.fix_mode(slate, position);
+		sX.fix_mode(slate, position);
+		sY.fix_mode(slate, position);
 		
-		ttA = TTOperator(A); // Can't use fix_slate
-		ttB = TTOperator(B); // Can't use fix_slate
-		ttX.fix_slate(slate, position);
-		ttY.fix_slate(slate, position);
+		ttA = TTOperator(A); // Can't use fix_mode
+		ttB = TTOperator(B); // Can't use fix_mode
+		ttX.fix_mode(slate, position);
+		ttY.fix_mode(slate, position);
 		
 		ttX.require_correct_format();
 		ttY.require_correct_format();
 		
-		tnA.fix_slate(slate+d, position);
-		tnA.fix_slate(slate, position);
-		tnB.fix_slate(slate+d, position);
-		tnB.fix_slate(slate, position);
-		tnX.fix_slate(slate, position);
-		tnY.fix_slate(slate, position);
+		tnA.fix_mode(slate+d, position);
+		tnA.fix_mode(slate, position);
+		tnB.fix_mode(slate+d, position);
+		tnB.fix_mode(slate, position);
+		tnX.fix_mode(slate, position);
+		tnY.fix_mode(slate, position);
 		
 		TEST(approx_equal(A, sA));
 		TEST(approx_equal(A, tnA, 1e-14));
@@ -568,7 +568,7 @@ static misc::UnitTest cons_fix_slate("Consistency", "fix_slate", []() {
 });
 
 
-static misc::UnitTest cons_resize_dim("Consistency", "resize_dimension", []() {
+static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
@@ -624,33 +624,33 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_dimension", []() {
 		const size_t position1 = posSelect1(rnd);
 		const size_t position2 = posSelect2(rnd);
 		
-		A.resize_dimension(dimension+d, newDim1, position1);
-		A.resize_dimension(dimension, newDim1, position1);
-		B.resize_dimension(dimension+d, newDim1, position1);
-		B.resize_dimension(dimension, newDim2, position2);
-		X.resize_dimension(dimension, newDim1, position1);
-		Y.resize_dimension(dimension, newDim2, position2);
+		A.resize_mode(dimension+d, newDim1, position1);
+		A.resize_mode(dimension, newDim1, position1);
+		B.resize_mode(dimension+d, newDim1, position1);
+		B.resize_mode(dimension, newDim2, position2);
+		X.resize_mode(dimension, newDim1, position1);
+		Y.resize_mode(dimension, newDim2, position2);
 		
-		sA.resize_dimension(dimension+d, newDim1, position1);
-		sA.resize_dimension(dimension, newDim1, position1);
-		sB.resize_dimension(dimension+d, newDim1, position1);
-		sB.resize_dimension(dimension, newDim2, position2);
-		sX.resize_dimension(dimension, newDim1, position1);
-		sY.resize_dimension(dimension, newDim2, position2);
+		sA.resize_mode(dimension+d, newDim1, position1);
+		sA.resize_mode(dimension, newDim1, position1);
+		sB.resize_mode(dimension+d, newDim1, position1);
+		sB.resize_mode(dimension, newDim2, position2);
+		sX.resize_mode(dimension, newDim1, position1);
+		sY.resize_mode(dimension, newDim2, position2);
 		
-		ttA.resize_dimension(dimension+d, newDim1, position1);
-		ttA.resize_dimension(dimension, newDim1, position1);
-		ttB.resize_dimension(dimension+d, newDim1, position1);
-		ttB.resize_dimension(dimension, newDim2, position2);
-		ttX.resize_dimension(dimension, newDim1, position1);
-		ttY.resize_dimension(dimension, newDim2, position2);
+		ttA.resize_mode(dimension+d, newDim1, position1);
+		ttA.resize_mode(dimension, newDim1, position1);
+		ttB.resize_mode(dimension+d, newDim1, position1);
+		ttB.resize_mode(dimension, newDim2, position2);
+		ttX.resize_mode(dimension, newDim1, position1);
+		ttY.resize_mode(dimension, newDim2, position2);
 		
-		tnA.resize_dimension(dimension+d, newDim1, position1);
-		tnA.resize_dimension(dimension, newDim1, position1);
-		tnB.resize_dimension(dimension+d, newDim1, position1);
-		tnB.resize_dimension(dimension, newDim2, position2);
-		tnX.resize_dimension(dimension, newDim1, position1);
-		tnY.resize_dimension(dimension, newDim2, position2);
+		tnA.resize_mode(dimension+d, newDim1, position1);
+		tnA.resize_mode(dimension, newDim1, position1);
+		tnB.resize_mode(dimension+d, newDim1, position1);
+		tnB.resize_mode(dimension, newDim2, position2);
+		tnX.resize_mode(dimension, newDim1, position1);
+		tnY.resize_mode(dimension, newDim2, position2);
 		
 		TEST(approx_equal(A, sA));
 		TEST(approx_equal(A, tnA, 1e-14));

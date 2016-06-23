@@ -263,9 +263,9 @@ namespace xerus {
 		 */
 		size_t degrees_of_freedom();
 		
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition) override;
+		virtual void fix_mode(const size_t _mode, const size_t _slatePosition) override;
 		
-		virtual void resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos=~0ul) override;
+		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) override;
 		
 		/** 
 		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 

@@ -633,38 +633,48 @@ namespace xerus {
 		/** 
 		 * @brief Reinterprets the dimensions of the tensor.
 		 * @details For this simple reinterpretation it is nessecary that the size implied by the new dimensions is the same as to old size 
-		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in dimensions is 
-		 * required use resize_dimension() instead.
+		 * (a vector with 16 entries cannot be interpreted as a 10x10 matrix, but it can be interpreted as a 4x4 matrix). If a real change in size is 
+		 * required use resize_mode() instead.
 		 * @param _newDimensions the dimensions the tensor shall be interpreted to have. 
 		 */
 		void reinterpret_dimensions(DimensionTuple _newDimensions);
 		
 		/** 
-		 * @brief Resizes a specific dimension of the Tensor.
-		 * @details Use this function only if the contend of the tensor shall stay, otherwise use reset().
-		 * @param _dimPos the dimension to resize.
-		 * @param _newDim the new value that resized dimension shall have.
-		 * @param _cutPos the position within the selected dimension in front of which slates are inserted 
+		 * @brief Resizes a specific mode of the Tensor.
+		 * @details Use this function only if the content of the tensor shall stay, otherwise use reset().
+		 * @param _mode the mode to resize.
+		 * @param _newDim the new dimension that mode shall have.
+		 * @param _cutPos the position within the selected mode in front of which slates are inserted 
 		 * or removed. By default the current dimension, i.e new slates are added after the last current one
 		 * and removed starting from the last one.
 		 */
-		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul);
+		void resize_mode(const size_t _mode, const size_t _newDim, size_t _cutPos=~0ul);
+		
+		__attribute__((deprecated("function has been renamed. please use 'resize_mode'"))) 
+		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul) {
+			resize_mode(_dimPos, _newDim, _cutPos);
+		}
 		
 		
 		/** 
-		 * @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
-		 * @param _dimPos the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
-		 * @param _slatePosition the position in the corresponding dimensions that shall be used.
+		 * @brief Fixes a specific mode to a specific value, effectively reducing the order by one.
+		 * @param _mode the mode in which the slate shall be fixed, e.g. 0 to fix the first mode.
+		 * @param _slatePosition the position in the corresponding mode that shall be used. 0 <= _slatePosition < dimension[_mode]
 		 */
-		void fix_slate(const size_t _dimPos, const size_t _slatePosition);
+		void fix_mode(const size_t _mode, const size_t _slatePosition);
+		
+		__attribute__((deprecated("function has been renamed. please use 'fix_mode'"))) 
+		void fix_slate(const size_t _dimPos, const size_t _slatePosition) {
+			fix_mode(_dimPos, _slatePosition);
+		}
 		
 		
 		/** 
-		 * @brief Removes a single slate from the Tensor.
-		 * @param _indexNb the dimension defining the slate.
-		 * @param _pos the index within the selected dimension for which the slate shall be removed.
+		 * @brief Removes a single slate from the Tensor, reducing dimension[_mode] by one.
+		 * @param _mode the mode that will be reduced.
+		 * @param _pos the index within the selected mode for which the slate shall be removed.
 		 */
-		void remove_slate(const size_t _indexNb, const size_t _pos);
+		void remove_slate(const size_t _mode, const size_t _pos);
 		
 		
 		/** 

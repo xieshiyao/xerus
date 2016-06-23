@@ -344,7 +344,7 @@ namespace xerus {
 			size_t killedDimensions = 0;
 			for(size_t i = 0; i < node.neighbors.size(); ++i) {
 				if(node.neighbors[i].external) {
-					node.tensorObject->fix_slate(i-killedDimensions, _positions[node.neighbors[i].indexPosition]);
+					node.tensorObject->fix_mode(i-killedDimensions, _positions[node.neighbors[i].indexPosition]);
 					killedDimensions++;
 				}
 			}
@@ -378,7 +378,7 @@ namespace xerus {
 		// Handle first measurment
 		for(size_t i = 0; i < degree(); ++i) {
 			stack[i+1] = stack[i];
-			stack[i+1].fix_slate(0, _measurments.positions[0][i]);
+			stack[i+1].fix_mode(0, _measurments.positions[0][i]);
 			stack[i+1].reduce_representation();
 		}
 		_measurments.measuredValues[0] = stack.back()[0];
@@ -397,7 +397,7 @@ namespace xerus {
 			// Rebuild stack
 			for(size_t i = rebuildIndex; i < degree(); ++i) {
 				stack[i+1] = stack[i];
-				stack[i+1].fix_slate(0, _measurments.positions[j][i]);
+				stack[i+1].fix_mode(0, _measurments.positions[j][i]);
 				stack[i+1].reduce_representation();
 			}
 			
@@ -703,7 +703,7 @@ namespace xerus {
 			if(idx.fixed()) {
 				// Fix the slates
 				for(size_t k = passedDegree; k < passedDegree+idx.span; ++k) {
-					base.fix_slate(passedDegree, idx.fixed_position());
+					base.fix_mode(passedDegree, idx.fixed_position());
 				}
 				
 				// Remove index
@@ -952,23 +952,23 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::fix_slate(const size_t _dimension, const size_t _slatePosition) {
+	void TensorNetwork::fix_mode(const size_t _mode, const size_t _slatePosition) {
 		require_valid_network();
 		
-		REQUIRE(_dimension < degree(), "Invalid dimension to remove");
-		REQUIRE(_slatePosition < dimensions[_dimension], "Invalide _slatePosition to choose");
+		REQUIRE(_mode < degree(), "Invalid dimension to remove");
+		REQUIRE(_slatePosition < dimensions[_mode], "Invalide _slatePosition to choose");
 		
-		const size_t extNode = externalLinks[_dimension].other;
-		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		const size_t extNode = externalLinks[_mode].other;
+		const size_t extNodeIndexPos = externalLinks[_mode].indexPosition;
 		
 		// Correct the nodes external links
-		for(size_t i = _dimension+1; i < dimensions.size(); ++i) {
+		for(size_t i = _mode+1; i < dimensions.size(); ++i) {
 			REQUIRE(nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition > 0, "Woo");
 			nodes[externalLinks[i].other].neighbors[externalLinks[i].indexPosition].indexPosition--;
 		}
 		
-		externalLinks.erase(externalLinks.begin()+_dimension);
-		dimensions.erase(dimensions.begin()+_dimension);
+		externalLinks.erase(externalLinks.begin()+_mode);
+		dimensions.erase(dimensions.begin()+_mode);
 		
 		// Correct the others links of the affected node.
 		for(size_t i = extNodeIndexPos+1; i < nodes[extNode].neighbors.size(); ++i) {
@@ -985,7 +985,7 @@ namespace xerus {
 			}
 		}
 		
-		nodes[extNode].tensorObject->fix_slate(extNodeIndexPos, _slatePosition);
+		nodes[extNode].tensorObject->fix_mode(extNodeIndexPos, _slatePosition);
 		nodes[extNode].neighbors.erase(nodes[extNode].neighbors.begin() + extNodeIndexPos);
 		
 		require_valid_network();
@@ -994,18 +994,18 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::remove_slate(const size_t _dimension, const size_t _slatePosition) {
+	void TensorNetwork::remove_slate(const size_t _mode, const size_t _slatePosition) {
 		require_valid_network();
 		
-		REQUIRE(_dimension < degree(), "invalid dimension to remove a slate from");
-		REQUIRE(_slatePosition < dimensions[_dimension], "invalide slate position to choose");
-		REQUIRE(dimensions[_dimension] > 0, "removing the last possible slate from this index position would result a dimension of size 0");
+		REQUIRE(_mode < degree(), "invalid dimension to remove a slate from");
+		REQUIRE(_slatePosition < dimensions[_mode], "invalide slate position to choose");
+		REQUIRE(dimensions[_mode] > 0, "removing the last possible slate from this index position would result a dimension of size 0");
 		
-		const size_t extNode = externalLinks[_dimension].other;
-		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		const size_t extNode = externalLinks[_mode].other;
+		const size_t extNodeIndexPos = externalLinks[_mode].indexPosition;
 		
-		externalLinks[_dimension].dimension -= 1;
-		dimensions[_dimension] -= 1;
+		externalLinks[_mode].dimension -= 1;
+		dimensions[_mode] -= 1;
 		if (nodes[extNode].tensorObject) {
 			nodes[extNode].tensorObject->remove_slate(extNodeIndexPos, _slatePosition);
 		}
@@ -1014,17 +1014,17 @@ namespace xerus {
 	
 	
 	
-	void TensorNetwork::resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos) {
-		REQUIRE(_dimension < degree(), "Invalid dimension given for resize_dimension");
+	void TensorNetwork::resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos) {
+		REQUIRE(_mode < degree(), "Invalid dimension given for resize_mode");
 		require_valid_network();
 		
-		const size_t extNode = externalLinks[_dimension].other;
-		const size_t extNodeIndexPos = externalLinks[_dimension].indexPosition;
+		const size_t extNode = externalLinks[_mode].other;
+		const size_t extNodeIndexPos = externalLinks[_mode].indexPosition;
 		
-		nodes[extNode].tensorObject->resize_dimension(extNodeIndexPos, _newDim, _cutPos);
+		nodes[extNode].tensorObject->resize_mode(extNodeIndexPos, _newDim, _cutPos);
 		nodes[extNode].neighbors[extNodeIndexPos].dimension = _newDim;
-		externalLinks[_dimension].dimension = _newDim;
-		dimensions[_dimension] = _newDim;
+		externalLinks[_mode].dimension = _newDim;
+		dimensions[_mode] = _newDim;
 		
 		require_valid_network();
 	}

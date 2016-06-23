@@ -380,10 +380,10 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("all_entries_valid", &Tensor::all_entries_valid)
 			.def("reorder_cost", &Tensor::reorder_cost)
 			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
-			.def("resize_dimension", &Tensor::resize_dimension,
+			.def("resize_mode", &Tensor::resize_mode,
 				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
-			) // TODO rename -> mode
-			.def("fix_slate", &Tensor::fix_slate)
+			)
+			.def("fix_mode", &Tensor::fix_mode)
 			.def("remove_slate", &Tensor::remove_slate)
 			.def("perform_trace", &Tensor::perform_trace)
 			.def("offset_add", &Tensor::offset_add)
@@ -494,9 +494,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("reduce_representation", &TensorNetwork::reduce_representation)
 			//TODO find_common_edge (wrapper that returns python::tuple
 			.def("sanitize", &TensorNetwork::sanitize)
-			.def("fix_slate", &TensorNetwork::fix_slate) //TODO rename
+			.def("fix_mode", &TensorNetwork::fix_mode)
 			.def("remove_slate", &TensorNetwork::remove_slate)
-			.def("resize_dimension", &TensorNetwork::resize_dimension,
+			.def("resize_mode", &TensorNetwork::resize_mode,
 				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
 			)
 			.def("contract", static_cast<void (TensorNetwork::*)(size_t, size_t)>(&TensorNetwork::contract))

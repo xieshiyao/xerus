@@ -479,27 +479,36 @@ namespace xerus {
 		
 		
 		/** 
-		* @brief Fixes a specific slate in one of the dimensions, effectively reducing the order by one.
-		* @param _dimension the dimension in which the slate shall be fixed, e.g. 0 to fix the first dimensions.
-		* @param _slatePosition the position in the corresponding dimensions that shall be used.
+		* @brief Fixes a specific mode to a specific value, effectively reducing the order by one.
+		* @param _mode the mode in which the slate shall be fixed, e.g. 0 to fix the first mode.
+		* @param _slatePosition the position in the corresponding mode that shall be used.
 		*/
-		virtual void fix_slate(const size_t _dimension, const size_t _slatePosition);
+		virtual void fix_mode(const size_t _mode, const size_t _slatePosition);
+		
+		__attribute__((deprecated("function has been renamed. please use 'fix_mode'"))) 
+		void fix_slate(const size_t _dimPos, const size_t _slatePosition) {
+			fix_mode(_dimPos, _slatePosition);
+		}
 		
 		/**
-		 * @brief removes the given @a _slatePosition from the @a _dimension. this reduces the given dimension by one
+		 * @brief removes the given @a _slatePosition from the @a _mode. this reduces the given dimension by one
 		 */
-		virtual void remove_slate(const size_t _dimension, const size_t _slatePosition);
+		virtual void remove_slate(const size_t _mode, const size_t _slatePosition);
 		
 		/** 
-		 * @brief Resizes a specific dimension of the TensorNetwork.
-		 * @param _dimPos the dimension to resize.
-		 * @param _newDim the new value that resized dimension shall have.
-		 * @param _cutPos the position within the selected dimension in front of which slates are inserted 
+		 * @brief Resizes a specific mode of the TensorNetwork.
+		 * @param _mode the mode to resize.
+		 * @param _newDim the new value that resized mode shall have.
+		 * @param _cutPos the position within the selected mode in front of which slates are inserted 
 		 * or removed. By default the current dimension, i.e new slates are added after the last current one
 		 * and removed starting from the last one.
 		 */
-		virtual void resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos=~0ul);
+		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul);
 		
+		__attribute__((deprecated("function has been renamed. please use 'resize_mode'"))) 
+		void resize_dimension(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) {
+			resize_mode(_mode, _newDim, _cutPos);
+		}
 		
 		/**
 		 * @brief Contracts the nodes with indices @a _nodeId1 and @a _nodeId2.
