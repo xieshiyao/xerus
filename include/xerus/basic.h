@@ -49,6 +49,14 @@ namespace xerus {
 	constexpr const value_t EPSILON = 8*std::numeric_limits<value_t>::epsilon();
     
 	/**
+	 * The version of the compiled xerus library
+	 */
+	extern const int VERSION_MAJOR;
+	extern const int VERSION_MINOR;
+	extern const int VERSION_REVISION;
+	extern const int VERSION_COMMIT;
+	
+	/**
 	* @brief Namespace for function and classes designated only for internal use.
 	* @details End users should never be required to know or explicitly use classes or functions from this
 	* namespace. If you want to do so nevertheless be aware of the minimalistic documentation and in some cases 

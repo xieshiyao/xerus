@@ -366,18 +366,18 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::fix_slate(const size_t _dimension, const size_t _slatePosition) {
-		REQUIRE(!isOperator, "fix_slate(), does not work for TTOperators, if applicable cast to TensorNetwork first");
-		TensorNetwork::fix_slate(_dimension, _slatePosition);
+	void TTNetwork<isOperator>::fix_mode(const size_t _mode, const size_t _slatePosition) {
+		REQUIRE(!isOperator, "fix_mode(), does not work for TTOperators, if applicable cast to TensorNetwork first");
+		TensorNetwork::fix_mode(_mode, _slatePosition);
 	}
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::resize_dimension(const size_t _dimension, const size_t _newDim, const size_t _cutPos) {
-		TensorNetwork::resize_dimension(_dimension, _newDim, _cutPos);
+	void TTNetwork<isOperator>::resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos) {
+		TensorNetwork::resize_mode(_mode, _newDim, _cutPos);
 		if(cannonicalized && _newDim != corePosition) {
 			const size_t oldCorePosition = corePosition;
 			const size_t numComponents = degree()/N;
-			move_core(_dimension%numComponents);
+			move_core(_mode%numComponents);
 			move_core(oldCorePosition);
 		}
 	}
@@ -1502,7 +1502,7 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void stream_reader(std::istream& _stream, TTNetwork<isOperator> &_obj, const misc::FileFormat _format) {
-			uint64 ver = read_from_stream<uint64>(_stream, _format);
+			IF_CHECK( uint64 ver = ) read_from_stream<uint64>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// load TN specific data

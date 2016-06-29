@@ -177,8 +177,8 @@ namespace xerus {
 				}
 				*S.tensorObject = newS;
 				
-				U.tensorObject->resize_dimension(U.degree()-1, rank);
-				Vt.tensorObject->resize_dimension(0, rank);
+				U.tensorObject->resize_mode(U.degree()-1, rank);
+				Vt.tensorObject->resize_mode(0, rank);
 			}
 		}
 		

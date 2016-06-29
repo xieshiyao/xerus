@@ -13,6 +13,23 @@ TEST_NAME = XerusTest
 XERUS_VERSION = $(shell git describe --tags --always 2>/dev/null || cat VERSION)
 DEBUG += -D XERUS_VERSION="$(XERUS_VERSION)"
 
+XERUS_MAJOR_V = $(word 1, $(subst ., ,$(XERUS_VERSION)) )
+ifneq (,$(findstring v, $(XERUS_MAJOR_V)))
+	XERUS_MAJOR_V := $(strip $(subst v, ,$(XERUS_MAJOR_V)) )
+endif
+DEBUG += -DXERUS_VERSION_MAJOR=$(XERUS_MAJOR_V)
+XERUS_MINOR_V = $(word 2, $(subst ., ,$(XERUS_VERSION)) )
+DEBUG += -DXERUS_VERSION_MINOR=$(XERUS_MINOR_V)
+XERUS_REVISION_V = $(word 3, $(subst ., ,$(XERUS_VERSION)) )
+ifneq (,$(findstring -, $(XERUS_REVISION_V)))
+	XERUS_COMMIT_V := $(word 2, $(subst -, ,$(XERUS_REVISION_V)) )
+	XERUS_REVISION_V := $(word 1, $(subst -, ,$(XERUS_REVISION_V)) )
+else
+	XERUS_COMMIT_V = 0
+endif
+DEBUG += -DXERUS_VERSION_REVISION=$(XERUS_REVISION_V)
+DEBUG += -DXERUS_VERSION_COMMIT=$(XERUS_COMMIT_V)
+
 
 # ------------------------------------------------------------------------------------------------------
 #				Register source files for the xerus library      

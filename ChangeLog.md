@@ -2,6 +2,14 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2016-06-23 v2.4.0
+ * Introduced nomeclature 'mode'. Marked all functions that will be renamed / removed in v3.0.0 as deprecated.
+ * Added an experimental python wrapper when 'OTHER += -DXERUS_EXPERIMENTAL_PYTHON_WRAPPER' is defined in the config file.
+ * Added TT::degrees_of_freedom function to determine the dimension of the current tangent space.
+ * ! Corrected a typo in the class names of the measurement sets.
+ * Added constants xerus::VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION and VERSION_COMMIT.
+ * Improved compilation time and more forgiving default settings for warnings.
+
 * 2016-04-04 v2.3.0
  * Added save_to_file and load_from_file functions to store and restore Tensors and TensorNetworks in/from files.
  * Added SVD based calculate_pseudo_inverse function to Tensor.

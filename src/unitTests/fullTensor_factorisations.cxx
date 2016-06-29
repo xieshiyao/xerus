@@ -125,8 +125,8 @@ static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
     (U(i,j,k,o), S(o,p), V(p,l,m,n)) = SVD(A(i,j,k,l,m,n));
     (Us(i,j,k,o), Ss(o,p), Vs(p,l,m,n)) = SVD(A(i,j,k,l,m,n), 7.3);
 	
-	U.resize_dimension(U.degree()-1, Ss.dimensions[0]);
-	V.resize_dimension(0, Ss.dimensions[0]);
+	U.resize_mode(U.degree()-1, Ss.dimensions[0]);
+	V.resize_mode(0, Ss.dimensions[0]);
 	
     TEST(approx_equal(U, Us, 1e-12));
     TEST(approx_equal(V, Vs, 1e-12));
