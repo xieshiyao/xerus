@@ -26,6 +26,7 @@
  
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/internal.h>
 
 #ifdef _OPENMP
 	#include <omp.h>

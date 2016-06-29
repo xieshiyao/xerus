@@ -31,11 +31,11 @@
 	#include <map>
 	#include <utility>
 	#include "timeMeasure.h"
-	#define PA_START size_t pa_startTime = misc::uTime()
-	#define PA_END(group, name, parameter) { std::pair<size_t, size_t>& pa_call = xerus::misc::performanceAnalysis::calls[group][name][parameter]; pa_call.first++; pa_call.second += misc::uTime() - pa_startTime; }
+	#define XERUS_PA_START size_t pa_startTime = misc::uTime()
+	#define XERUS_PA_END(group, name, parameter) { std::pair<size_t, size_t>& pa_call = xerus::misc::performanceAnalysis::calls[group][name][parameter]; pa_call.first++; pa_call.second += misc::uTime() - pa_startTime; }
 #else 
-	#define PA_START 
-	#define PA_END(group, name, parameter)
+	#define XERUS_PA_START 
+	#define XERUS_PA_END(group, name, parameter)
 #endif
 
 namespace xerus {

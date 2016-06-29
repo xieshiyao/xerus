@@ -29,6 +29,7 @@
 #include <xerus/index.h>
 #include <xerus/indexedTensorList.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>

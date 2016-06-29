@@ -126,12 +126,12 @@ namespace xerus {
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
 		template<class generator, class distribution>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
 			const size_t numComponents = _dimensions.size()/N;
-			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
-			REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
-			REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
-			REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
+			XERUS_REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
+			XERUS_REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
+			XERUS_REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
+			XERUS_REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
 			
 			
 			TTNetwork result(_dimensions.size());
@@ -161,7 +161,7 @@ namespace xerus {
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
 		template<class generator, class distribution>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t>& _dimensions, const size_t _rank, generator& _rnd, distribution& _dist) {
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const size_t _rank, generator& _rnd, distribution& _dist) {
 			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
 		}
 		
@@ -173,7 +173,7 @@ namespace xerus {
 		 *  The callback function is assumed to take a reference to a diagonal tensor and modify it to represent the desired singular values.
 		 */
 		template<class generator, class distribution, class aloc = std::allocator<size_t>>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, 
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, 
 								generator& _rnd, distribution& _dist,
 								const std::function<void(Tensor&)> &_modifySingularValues) 
 		{
@@ -204,7 +204,7 @@ namespace xerus {
 		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static TTNetwork _warn_unused_ ones(const std::vector<size_t>& _dimensions);
+		static TTNetwork XERUS_warn_unused ones(const std::vector<size_t>& _dimensions);
 		
 		
 		/** 
@@ -213,7 +213,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new TTOperator.
 		 */
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
-		static TTNetwork _warn_unused_ identity(const std::vector<size_t>& _dimensions);
+		static TTNetwork XERUS_warn_unused identity(const std::vector<size_t>& _dimensions);
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

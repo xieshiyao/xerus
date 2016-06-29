@@ -43,7 +43,7 @@ namespace xerus {  namespace misc {
 	double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon = 1e-14);
 
 	template<class T>
-	_pure_ T difference(T _a, T _b) {
+	__attribute__((const)) T difference(T _a, T _b) {
 		if (_a > _b) {
 			return (_a-_b);
 		} else {

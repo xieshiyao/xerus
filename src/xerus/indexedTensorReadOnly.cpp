@@ -29,6 +29,7 @@
  
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 

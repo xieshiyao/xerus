@@ -41,7 +41,7 @@ namespace xerus {
             }
         }
 
-        _const_ std::string normalize_pathname(const std::string &_name) {
+        __attribute__((const, pure)) std::string normalize_pathname(const std::string &_name) {
             std::vector<std::string> oldpath = explode(_name,'/');
             std::vector<std::string *> newpath;
             for (std::string &f : oldpath) {

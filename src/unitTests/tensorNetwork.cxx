@@ -21,6 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
 static misc::UnitTest tn_contr40("TensorNetwork", "contractions_of_4_to_degree_0", [](){

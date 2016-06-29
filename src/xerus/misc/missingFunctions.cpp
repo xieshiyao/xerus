@@ -24,6 +24,7 @@
 
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace misc {

@@ -41,7 +41,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 # With the following option the callstack that is returned by get_call_stack (and thus all fatal errors)
 # includes NO function names, source-filenames and line numbers.
 # NOTE: activate this to remove the dependence on the binutils libraries -lbfd -liberty -lz and -ldl
-# NO_FANCY_CALLSTACK = TRUE				# Show simple callstacks only
+# XERUS_NO_FANCY_CALLSTACK = TRUE				# Show simple callstacks only
 
 
 # When performing tests it is useful to ensure that all of the code in covered. This is ensured by
@@ -54,7 +54,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 # is not very efficient. With the following option, an experimental replacement allocator will be 
 # included in the library, which will _globally_ replace the 'new' and 'delete' operators in your program.
 # Note also, that the replacement allocator is not (yet) thread safe!
-# DEBUG += -D REPLACE_ALLOCATOR
+# DEBUG += -D XERUS_REPLACE_ALLOCATOR
 
 
 # You can add all kind of debuging options. In the following are some examples

@@ -29,6 +29,7 @@
 #include <xerus/misc/exceptions.h>
 #include <xerus/misc/namedLogger.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace misc {

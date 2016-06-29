@@ -24,7 +24,7 @@
 
 #include <xerus/misc/test.h>
 
-#ifdef TEST_
+#ifdef XERUS_UNITTEST
     #include <iostream>
     #include <iomanip>
     #include <chrono>
@@ -38,6 +38,7 @@
     #include <xerus/misc/standard.h>
     #include <xerus/misc/exceptions.h>
     #include <xerus/misc/stringUtilities.h>
+	#include <xerus/misc/internal.h>
     
     // TODO put all this into xerus::misc::unitTesting (or something similar)
 
@@ -148,7 +149,7 @@
 			std::cout << "-------------------------------------------------------------------------------" << std::endl;
 		}
 
-		_noreturn_ void catch_signals(int _sig)  {
+		__attribute__((noreturn)) void catch_signals(int _sig)  {
 			XERUS_THROW(xerus::misc::generic_error() << "signal " << _sig << " = " << strsignal(_sig) << "callstack:\n" << xerus::misc::get_call_stack());
 		}
 	}}} // namespaces

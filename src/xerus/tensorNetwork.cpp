@@ -30,6 +30,7 @@
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/fileIO.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/basic.h>
 #include <xerus/index.h>

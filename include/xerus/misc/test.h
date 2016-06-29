@@ -24,16 +24,11 @@
 
 #pragma once
 
-/**
- * @def UNIT_TEST(grp, name, code)
- * @brief Defines a unit test of name @a name in the group @a grp that performs the source code @a code.
- * @details Will automatically be performed if it is part of the executable and the application was built with -D TEST_.
- */
 
 /**
- * @def REQUIRE_TEST
- * @brief Marked position for the code-coverage test. Any not passed REQUIRE_TEST macro will result in a warning.
- * REQUIRE_TEST is implied by any REQUIRE(...) macro if test coverage is enabled.
+ * @def XERUS_REQUIRE_TEST
+ * @brief Marked position for the code-coverage test. Any not passed XERUS_REQUIRE_TEST macro will result in a warning.
+ * XERUS_REQUIRE_TEST is implied by any XERUS_REQUIRE(...) macro if test coverage is enabled.
  */
 
 #include "namedLogger.h"
@@ -42,9 +37,9 @@
 #include <string>
 #include <functional>
 
-#ifdef TEST_
+#ifdef XERUS_UNITTEST
 	#ifdef XERUS_TEST_COVERAGE
-		#define REQUIRE_TEST \
+		#define XERUS_REQUIRE_TEST \
 			do { \
 				static const char * xerus_test_fname = __PRETTY_FUNCTION__;\
 				struct xerus_test_a{ static void rt() {\
@@ -56,7 +51,7 @@
 				xerus::misc::internal::RequiredTest::increase_counter(xerus_test_fname, __FILE__, __LINE__); \
 			} while(false)
 	#else
-		#define REQUIRE_TEST (void)0
+		#define XERUS_REQUIRE_TEST (void)0
 	#endif
 	
 	#ifndef XERUS_DISABLE_RUNTIME_CHECKS
@@ -64,29 +59,26 @@
 			{\
 				bool failtestFailed = false; \
 				xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
-				try { test; } catch (...) {failtestFailed = true; PRINTCHECK;} \
+				try { test; } catch (...) {failtestFailed = true; XERUS_PRINTCHECK;} \
 				xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
-				if(!failtestFailed) { PRINTFAIL; LOG(error, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
+				if(!failtestFailed) { XERUS_PRINTFAIL; XERUS_LOG(error, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
 			}\
 			void(0)
 	#else
-		#define FAILTEST(test) LOG(warning, "Failtest is not useful with flag XERUS_DISABLE_RUNTIME_CHECKS")
+		#define FAILTEST(test) XERUS_LOG(warning, "Failtest is not useful with flag XERUS_DISABLE_RUNTIME_CHECKS")
 	#endif
 	
 	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
 #else
-	#define REQUIRE_TEST (void)0
+	#define XERUS_REQUIRE_TEST (void)0
 #endif
 
 
-#define PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
-#define PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
+#define XERUS_PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
+#define XERUS_PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
 
-#define PASTE2( a, b) a##b
-#define PASTE( a, b) PASTE2( a, b)
-
-#define TEST(...) if (!(__VA_ARGS__)) {PRINTFAIL; LOG(error, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {PRINTCHECK;} void(0)
-#define MTEST(cond, ...) if (!(cond)) {PRINTFAIL; LOG(error, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {PRINTCHECK;} void(0)
+#define TEST(...) if (!(__VA_ARGS__)) {XERUS_PRINTFAIL; XERUS_LOG(error, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
+#define MTEST(cond, ...) if (!(cond)) {XERUS_PRINTFAIL; XERUS_LOG(error, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
 
 
 #define UNIT_TEST_RND \

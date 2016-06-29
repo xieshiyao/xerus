@@ -68,7 +68,7 @@ namespace xerus {
 									const bool _transposeB);
 		
 		///@brief: Performs the Matrix-Matrix product C = alpha*OP(A) * OP(B)
-		static _inline_ void matrix_matrix_product( double* const _C,
+		static XERUS_force_inline void matrix_matrix_product( double* const _C,
 									const size_t _leftDim,
 									const size_t _rightDim,
 									const double _alpha,

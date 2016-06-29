@@ -136,7 +136,7 @@ namespace xerus {
 				: sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
 				useResidualForEndCriterion(_useResidual), preserveCorePosition(true), assumeSPD(_assumeSPD), localSolver(_localSolver)
 		{
-			REQUIRE(_sites>0, "");
+			XERUS_REQUIRE(_sites>0, "");
 		}
 		
 		/**

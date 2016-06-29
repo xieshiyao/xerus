@@ -18,10 +18,22 @@
 // or contact us at contact@libXerus.org.
 
 
-#include<xerus.h>
+#include<xerus.h> // NOTE xerus.h header file is necessary for below check of internal header export
 
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
+
+
+static misc::UnitTest misc_internal("Misc", "internal_header", [](){
+	#ifdef REQUIRE
+		MTEST(false, "internal header file xerus/misc/internal.h is being exported in the library!");
+	#else
+		TEST(true);
+	#endif
+});
+
+
+#include "../../include/xerus/misc/internal.h"
 
 static misc::UnitTest misc_romberg("Misc", "romberg_integration", [](){
 	double npi;

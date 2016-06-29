@@ -29,6 +29,7 @@
 #include <xerus/misc/check.h>
 #include <xerus/misc/math.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/basic.h>
 #include <xerus/misc/basicArraySupport.h>
@@ -541,7 +542,7 @@ namespace xerus {
 		TTNetwork result(_tensors.back());
 		// construct dyadic products right to left as default cannonicalization is left
 		for (size_t i = _tensors.size()-1; i > 0; --i) {
-			REQUIRE_TEST;
+			XERUS_REQUIRE_TEST;
 			result = dyadic_product(_tensors[i-1], result);
 		}
 		return result;
@@ -976,7 +977,7 @@ namespace xerus {
 			return *this;
 		}
 		
-		PA_START;
+		XERUS_PA_START;
 		for(size_t position = 0; position < numComponents; ++position) {
 			// Get current components
 			const Tensor& myComponent = get_component(position);
@@ -1005,7 +1006,7 @@ namespace xerus {
 			
 			set_component(position, std::move(*newComponent));
 		}
-		PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(dimensions)+" Ranks: "+misc::to_string(ranks()));
+		XERUS_PA_END("ADD/SUB", "TTNetwork ADD/SUB", std::string("Dims:")+misc::to_string(dimensions)+" Ranks: "+misc::to_string(ranks()));
 		
 		if(initialCanonicalization) {
 			move_core(initialCorePosition);

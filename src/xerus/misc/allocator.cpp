@@ -23,7 +23,7 @@
  */
 
 
-#ifdef REPLACE_ALLOCATOR
+#ifdef XERUS_REPLACE_ALLOCATOR
 
 	#include <xerus/misc/allocator.h>
 	// #include <dlfcn.h>
@@ -97,7 +97,7 @@
 		}
 	}
 
-	#ifdef REPLACE_ALLOCATOR
+	#ifdef XERUS_REPLACE_ALLOCATOR
 		void* operator new(std::size_t n) {
 			return myalloc(n);
 		}

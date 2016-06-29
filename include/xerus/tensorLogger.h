@@ -26,13 +26,13 @@
 
 #include "misc/namedLogger.h"
 
-SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(largestEntry, xerus::misc::internal::LOGGING_ON_ERROR)
-SET_LOGGING(pydebug, xerus::misc::internal::LOGGING_ON_ERROR)
-// SET_LOGGING(ADF, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(ContractionDebug, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(TNContract, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(TensorAssignment, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(ALS, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(unit_test, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(unit_tests, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(largestEntry, xerus::misc::internal::LOGGING_ON_ERROR)
+XERUS_SET_LOGGING(pydebug, xerus::misc::internal::LOGGING_ON_ERROR)
+// XERUS_SET_LOGGING(ADF, xerus::misc::internal::LOGGING_ON_ERROR)
 /* */

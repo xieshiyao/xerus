@@ -23,6 +23,7 @@
  */
 
 #include <xerus.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 
@@ -267,7 +268,7 @@ namespace xerus {
 	
 	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const Index i1,j1,r;
-		for (size_t i=0; i<_U.degree(); ++i) { REQUIRE_TEST;
+		for (size_t i=0; i<_U.degree(); ++i) { XERUS_REQUIRE_TEST;
 			std::unique_ptr<Tensor> newComponent(new Tensor);
 			(*newComponent)(i1,r,j1) = _U.get_component(i)(i1,r,j1) + _change.components[i](i1,r,j1);
 			_U.set_component(i, std::move(*newComponent));

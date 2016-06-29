@@ -89,88 +89,90 @@ namespace xerus {
     }
 }
 
-#define STRINGIFY2( x) #x
-#define STRINGIFY(x) STRINGIFY2(x)
-#define PASTE2( a, b) a##b
-#define PASTE( a, b) PASTE2( a, b)
+#define XERUS_STRINGIFY2( x) #x
+#define XERUS_STRINGIFY(x) XERUS_STRINGIFY2(x)
 
 /**
- * @def SET_LOGGING(lvl, value)
+ * @def XERUS_SET_LOGGING(lvl, value)
  * @brief set the logging behaviour of severity level @a lvl to @a value (either NOT_LOGGING, LOGGING_ON_ERROR or LOGGING_FULL)
  * @details this definition must not be repeated and must be defined in a global header that is included before any msg is logged with that lvl
  */
-#define SET_LOGGING(lvl, value) \
-    template<> struct XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>{ static const int flag = value; };
+#define XERUS_SET_LOGGING(lvl, value) \
+	namespace xerus { namespace misc { namespace internal { \
+		template<> struct LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>{ static const int flag = value; }; \
+    }}}
 
 /**
- * @def SET_LOGGING_DEFAULT(value)
+ * @def XERUS_SET_LOGGING_DEFAULT(value)
  * @brief sets the logging behaviour of all levels that are not otherwise specified to @a value
  */
-#define SET_LOGGING_DEFAULT(value) \
-    template<uint64_t lvl> struct XERUS_logFlag { static const int flag = value; }; \
+#define XERUS_SET_LOGGING_DEFAULT(value) \
+	namespace xerus { namespace misc { namespace internal { \
+		template<uint64_t lvl> struct LogFlag { static const int flag = value; }; \
+	}}} \
     SET_DEFAULT_LOG_LEVELS
     
 
 // Default log levels  
 #define SET_DEFAULT_LOG_LEVELS \
-	SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
 
 #ifdef XERUS_LOG_ERROR
 #undef SET_DEFAULT_LOG_LEVELS
 #define SET_DEFAULT_LOG_LEVELS \
-	SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_ON_ERROR)\
-	SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
-	SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
 #endif
     
 #ifdef XERUS_LOG_WARNING
 #undef SET_DEFAULT_LOG_LEVELS
 #define SET_DEFAULT_LOG_LEVELS \
-	SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
-	SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
 #endif
     
 #ifdef XERUS_LOG_INFO
 #undef SET_DEFAULT_LOG_LEVELS
 #define SET_DEFAULT_LOG_LEVELS \
-	SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
 #endif
     
 #ifdef XERUS_LOG_DEBUG
 #undef SET_DEFAULT_LOG_LEVELS
 #define SET_DEFAULT_LOG_LEVELS \
-	SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_FULL)
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_FULL)
 #endif
 
 
 
 /**
- * @def COMPILE_TIME_EVAL(e)
+ * @def XERUS_COMPILE_TIME_EVAL(e)
  * @brief forces the compiler to evaluate @a e during compilation
  */
-#define COMPILE_TIME_EVAL(e) (std::integral_constant<decltype(e), e>::value)
+#define XERUS_COMPILE_TIME_EVAL(e) (std::integral_constant<decltype(e), e>::value)
 
 
 // in the following note that:
@@ -182,13 +184,13 @@ namespace xerus {
 
 #ifdef XERUS_LOG_BUFFER
     #define XERUS_NAMED_LOGGER_LOGBUFFER \
-		if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__,STRINGIFY(lvl)); \
+		if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__,XERUS_STRINGIFY(lvl)); \
         xerus::misc::internal::buffer::current << tmpStream.str(); \
         xerus::misc::internal::buffer::checkSwitch(); \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical"))) {xerus::misc::internal::buffer::dump_log(std::string("critical error invoked:\n")+tmpStream.str()); }; \
-        if (COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) {xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); }; 
+        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
+        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical"))) {xerus::misc::internal::buffer::dump_log(std::string("critical error invoked:\n")+tmpStream.str()); }; \
+        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) {xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); }; 
 #else // no log buffer
     #define XERUS_NAMED_LOGGER_LOGBUFFER
 #endif
@@ -197,72 +199,72 @@ namespace xerus {
 		
 		
 /**
- * @def LOG(lvl, msg)
+ * @def XERUS_LOG(lvl, msg)
  * @brief logs the message @a msg with severity level @a lvl
- * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and XERUS_SET_LOGGING macros. In case @a lvl is not being logged with the
  *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
  */
-#define LOG(lvl, ...) \
-    if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
+#define XERUS_LOG(lvl, ...) \
+    if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
         tmpStream << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
-        if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, __FILE__, __LINE__, STRINGIFY(lvl)); \
+        if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, __FILE__, __LINE__, XERUS_STRINGIFY(lvl)); \
 			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         XERUS_NAMED_LOGGER_LOGBUFFER \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
-        if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
-            XERUS_THROW(xerus::misc::generic_error() << STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
+        if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
+            XERUS_THROW(xerus::misc::generic_error() << XERUS_STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
         } \
     } else \
         (void)0
 
 /**
- * @def LOG_SHORT(lvl, msg)
+ * @def XERUS_LOG_SHORT(lvl, msg)
  * @brief logs the message @a msg with severity level @a lvl, omits the current file name and line number
- * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and XERUS_SET_LOGGING macros. In case @a lvl is not being logged with the
  *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
  */
-#define LOG_SHORT(lvl, ...) \
-    if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
+#define XERUS_LOG_SHORT(lvl, ...) \
+    if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING) { \
         std::stringstream tmpStream; \
         tmpStream << __VA_ARGS__ << std::endl; \
         xerus::misc::internal::namedLoggerMutex.lock(); \
-        if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, STRINGIFY(lvl)); \
+        if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+            ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, XERUS_STRINGIFY(lvl)); \
 			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
         XERUS_NAMED_LOGGER_LOGBUFFER \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
-        if (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
-            XERUS_THROW(xerus::misc::generic_error() << STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
+        if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
+            XERUS_THROW(xerus::misc::generic_error() << XERUS_STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
         } \
     } else \
         (void)0
 
 /**
- * @def LOG_ONCE(lvl, msg)
+ * @def XERUS_LOG_ONCE(lvl, msg)
  * @brief logs the message @a msg with severity level @a lvl at most once per program execution
- * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and SET_LOGGING macros. In case @a lvl is not being logged with the
+ * @details the exact behaviour is modified by the SET_DEFAULT_LOG_LEVELS and XERUS_SET_LOGGING macros. In case @a lvl is not being logged with the
  *   current configuration, this macro evaluates to an `if (false) {}` expression and is fully removed by the compiler.
  */
-#define LOG_ONCE(lvl, ...) \
+#define XERUS_LOG_ONCE(lvl, ...) \
 	{\
 		static bool logged = false;\
 		if (!logged) {\
-			LOG(lvl, __VA_ARGS__);\
+			XERUS_LOG(lvl, __VA_ARGS__);\
 			logged = true;\
 		}\
 	}
 
 /**
- * @def IS_LOGGING(lvl)
+ * @def XERUS_IS_LOGGING(lvl)
  * @brief evaluates to true if @a lvl is begin logged (either to cerr or into a file on error) in the current configuration 
  */
-#define IS_LOGGING(lvl) \
-    (XERUS_logFlag<xerus::misc::internal::log_namehash(STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING)
+#define XERUS_IS_LOGGING(lvl) \
+    (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING)
 
 
-SET_LOGGING_DEFAULT(xerus::misc::internal::LOGGING_FULL)
+XERUS_SET_LOGGING_DEFAULT(xerus::misc::internal::LOGGING_FULL)

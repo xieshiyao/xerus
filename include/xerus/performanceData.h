@@ -81,7 +81,7 @@ namespace xerus {
 					while (ss) {
 						std::string line;
 						std::getline(ss, line);
-						LOG_SHORT(PerformanceData, line);
+						XERUS_LOG_SHORT(PerformanceData, line);
 					}
 				}
 				startTime = misc::uTime();
@@ -141,7 +141,7 @@ namespace xerus {
 			if (active) {
 				additionalInformation += misc::to_string(_info);
 				if(printProgress) {
-					LOG_SHORT(PerformanceData, _info);
+					XERUS_LOG_SHORT(PerformanceData, _info);
 				}
 			}
 			return *this;

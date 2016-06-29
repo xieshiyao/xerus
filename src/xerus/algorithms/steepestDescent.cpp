@@ -130,7 +130,7 @@ namespace xerus {
 			stepCount += 1;
 			
 			if (_Ap) {
-				if (assumeSymmetricPositiveDefiniteOperator) { REQUIRE_TEST;
+				if (assumeSymmetricPositiveDefiniteOperator) { XERUS_REQUIRE_TEST;
 					// search direction: y = b-Ax
 					y = residual;
 					if (preconditioner) {
@@ -140,7 +140,7 @@ namespace xerus {
 // 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<y,Ay>
 // 					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
-				} else { REQUIRE_TEST;
+				} else { XERUS_REQUIRE_TEST;
 					// search direction: y = A^T(b-Ax)
 					y(i&0) = _A(j/2,i/2) * residual(j&0);
 					if (preconditioner) {

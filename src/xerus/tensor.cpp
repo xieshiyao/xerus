@@ -28,6 +28,7 @@
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/basicArraySupport.h>
 #include <xerus/misc/math.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cholmod_wrapper.h>
@@ -1368,7 +1369,7 @@ namespace xerus {
 		return result;
 	}
 	
-	_inline_ std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
+	XERUS_force_inline std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
 		REQUIRE(_splitPos <= _input.degree(), "Split position must be in range.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
@@ -1378,7 +1379,7 @@ namespace xerus {
 		return std::make_tuple(lhsSize, rhsSize, rank);
 	}
 	
-	_inline_ void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank, Tensor::Representation _rep) {
+	XERUS_force_inline void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank, Tensor::Representation _rep) {
 		_lhs.factor = 1.0;
 		_rhs.factor = 1.0;
 		
@@ -1405,7 +1406,7 @@ namespace xerus {
 		}
 	}
 	
-	_inline_ void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, 
+	XERUS_force_inline void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, 
 										   std::unique_ptr<value_t[]>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
 		Tensor::DimensionTuple newDim;
 		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
@@ -1418,7 +1419,7 @@ namespace xerus {
 		_rhs.reset(std::move(newDim), std::move(_rhsData));
 	}
 	
-	_inline_ void set_factorization_output(Tensor& _lhs, std::map<size_t, value_t>&& _lhsData, Tensor& _rhs, 
+	XERUS_force_inline void set_factorization_output(Tensor& _lhs, std::map<size_t, value_t>&& _lhsData, Tensor& _rhs, 
 										   std::map<size_t, value_t>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
 		Tensor::DimensionTuple newDim;
 		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);

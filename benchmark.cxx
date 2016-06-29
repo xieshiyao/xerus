@@ -203,7 +203,7 @@ std::string generate_profile_name() {
 #ifdef XERUS_DISABLE_RUNTIME_CHECKS
 	profileName += "_noChecks";
 #endif
-#ifdef REPLACE_ALLOCATOR
+#ifdef XERUS_REPLACE_ALLOCATOR
 	profileName += "_replaceAlloc";
 #endif
 #ifdef XERUS_PERFORMANCE_ANALYSIS

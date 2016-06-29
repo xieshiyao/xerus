@@ -23,6 +23,7 @@
  */
 
 #include <xerus/examples/specificLowRankTensors.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace examples {
 	

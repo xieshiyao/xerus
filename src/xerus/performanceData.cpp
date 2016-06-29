@@ -26,6 +26,7 @@
 #include <fstream>
 #include <xerus/ttNetwork.h>
 #include <xerus/performanceData.h>
+#include <xerus/misc/internal.h>
  
 
 namespace xerus {

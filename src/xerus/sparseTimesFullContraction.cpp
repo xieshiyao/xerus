@@ -28,10 +28,11 @@
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/sparseTimesFullContraction.h>
 #include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     
-    _inline_ void transpose(double* const __restrict _out, const double* const __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+    XERUS_force_inline void transpose(double* const __restrict _out, const double* const __restrict _in, const size_t _leftDim, const size_t _rightDim) {
         for(size_t i = 0; i < _leftDim; ++i) {
             for(size_t j = 0; j < _rightDim; ++j) {
                 _out[j*_leftDim+i] = _in[i*_rightDim+j];
@@ -39,14 +40,14 @@ namespace xerus {
         }
     }
     
-    _inline_ std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
+    XERUS_force_inline std::unique_ptr<double[]> transpose(const double* const _A, const size_t _leftDim, const size_t _rightDim) {
         std::unique_ptr<double[]> AT(new double[_leftDim*_rightDim]);
         transpose(AT.get(), _A, _leftDim, _rightDim);
         return AT;
     }
     
     
-    _inline_ void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
+    XERUS_force_inline void transpose(std::map<size_t, double>& __restrict _out, const std::map<size_t, double>& __restrict _in, const size_t _leftDim, const size_t _rightDim) {
         for(const auto& entry : _in) {
             const size_t i = entry.first/_rightDim;
             const size_t j = entry.first%_rightDim;
@@ -54,7 +55,7 @@ namespace xerus {
         }
     }
     
-    _inline_ std::map<size_t, double> transpose(const std::map<size_t, double>& _A, const size_t _leftDim, const size_t _rightDim) {
+    XERUS_force_inline std::map<size_t, double> transpose(const std::map<size_t, double>& _A, const size_t _leftDim, const size_t _rightDim) {
         std::map<size_t, double> AT;
         transpose(AT, _A, _leftDim, _rightDim);
         return AT;
@@ -70,7 +71,7 @@ namespace xerus {
                                 const bool _transposeA,
                                 const size_t _midDim,
                                 const double* const _B) {
-		PA_START;
+		XERUS_PA_START;
 		
         // Prepare output array
         misc::set_zero(_C, _leftDim*_rightDim);
@@ -90,7 +91,7 @@ namespace xerus {
             }
         }
         
-		PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Full", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
+		XERUS_PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Full", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
     }
     
     void matrix_matrix_product( double* const _C,
@@ -135,7 +136,7 @@ namespace xerus {
                                 const std::map<size_t, double>& _A,
                                 const size_t _midDim,
                                 const double* const _B) {
-		PA_START;
+		XERUS_PA_START;
 		
         size_t currentRow = 0;
         std::unique_ptr<double[]> row(new double[_rightDim]);
@@ -176,7 +177,7 @@ namespace xerus {
             #pragma GCC diagnostic pop
         }
         
-		PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Sparse", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
+		XERUS_PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Sparse", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
     }
     
     void matrix_matrix_product( std::map<size_t, double>& _C,

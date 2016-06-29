@@ -38,6 +38,7 @@
 #include <numpy/ndarrayobject.h>
 #pragma GCC diagnostic pop
 #include "xerus.h"
+#include "xerus/misc/internal.h"
 
 using namespace boost::python;
 

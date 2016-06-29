@@ -24,7 +24,7 @@
 
 #include <xerus/misc/callStack.h>
 
-#ifndef NO_FANCY_CALLSTACK
+#ifndef XERUS_NO_FANCY_CALLSTACK
     #include <execinfo.h>
     #include <bfd.h>
     #include <dlfcn.h>

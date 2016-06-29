@@ -563,7 +563,7 @@ namespace xerus {
 	* @param _network the TensorNetwork of which the frobenious norm shall be calculated.
 	* @return the frobenious norm.
 	*/
-	static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
+	static XERUS_force_inline value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
 	
 	
 	/** 

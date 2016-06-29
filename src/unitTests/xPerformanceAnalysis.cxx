@@ -24,7 +24,7 @@
 using namespace xerus;
 
 #ifdef XERUS_PERFORMANCE_ANALYSIS
-	#ifdef REPLACE_ALLOCATOR  
+	#ifdef XERUS_REPLACE_ALLOCATOR  
 		static misc::UnitTest perfana("x_PerformanceAnalysis_x", "Analysis", [](){
 			std::cout << misc::performanceAnalysis::get_analysis();
 			LOG(Indices, "A total of " << Index().valueId << " indices were used (in this thread).");

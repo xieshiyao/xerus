@@ -26,6 +26,7 @@
 
 #include <xerus/misc/standard.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 	

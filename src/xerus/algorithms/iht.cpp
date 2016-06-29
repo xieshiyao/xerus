@@ -23,6 +23,7 @@
  */
 
 #include <xerus.h>
+#include "../../../include/xerus/misc/internal.h"
 
 namespace xerus {
 	double IHT(TTTensor& _x, const SinglePointMeasurementSet& _measurments, PerformanceData& _perfData) {

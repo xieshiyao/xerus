@@ -25,7 +25,7 @@
 
 #pragma once
 
-#ifdef REPLACE_ALLOCATOR
+#ifdef XERUS_REPLACE_ALLOCATOR
 
 	#include <cstdio>
 	#include <cstdlib>

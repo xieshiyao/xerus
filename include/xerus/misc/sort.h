@@ -39,7 +39,7 @@ namespace xerus {
 		
 		template<class T>
 		void apply_permutation( std::vector<T>& _vec, const std::vector<size_t>& _permutation) {
-			REQUIRE(_vec.size() == _permutation.size(), "Vector and permutation size must coincide.");
+			XERUS_REQUIRE(_vec.size() == _permutation.size(), "Vector and permutation size must coincide.");
 			std::vector<T> sorted_vec;
 			sorted_vec.reserve(_permutation.size());
 			for(size_t i = 0; i < _permutation.size(); ++i) {
@@ -50,7 +50,7 @@ namespace xerus {
 		
 		template <class KeyType, class DataType, class Comparator>
 		void simultaneous_sort( std::vector<KeyType>& _keyVector, std::vector<DataType>& _dataVector, Comparator _comp) {
-			REQUIRE(_keyVector.size() == _dataVector.size(), "Vector sizes must coincide.");
+			XERUS_REQUIRE(_keyVector.size() == _dataVector.size(), "Vector sizes must coincide.");
 			std::vector<size_t> permutation = create_sort_permutation(_keyVector, _comp);
 			apply_permutation(_keyVector, permutation);
 			apply_permutation(_dataVector, permutation);

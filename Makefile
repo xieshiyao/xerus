@@ -79,7 +79,6 @@ include makeIncludes/optimization.mk
 # OPTIMIZE += -fprofile-use		# Use a previously generated profile output
 
 OTHER += -std=c++11			# Use the C++11 standard
-OTHER += -D MISC_NAMESPACE=xerus	# All misc function shall live in xerus namespace
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -180,7 +179,7 @@ endif
 
 
 $(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS)
-	$(CXX) -D TEST_ $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
+	$(CXX) -D XERUS_UNITTEST $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
 
 
 test:  $(TEST_NAME)
@@ -212,24 +211,24 @@ build/.libObjects/%.o: %.cpp $(MINIMAL_DEPS)
 # Build rule for test lib objects
 build/.testObjects/%.o: %.cpp $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D XERUS_UNITTEST -I include $< -c $(FLAGS) -MMD -o $@
 
 
 # Build rule for benchmark objects
 build/%.o: %.cpp $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D XERUS_UNITTEST -I include $< -c $(FLAGS) -MMD -o $@
 
 
 # Build rule for unit test objects
 ifdef USE_GCC
 build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS) build/.preCompileHeaders/xerus.h.gch
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ -I build/.preCompileHeaders $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D XERUS_UNITTEST -I build/.preCompileHeaders $< -c $(FLAGS) -MMD -o $@
 else
 build/.unitTestObjects/%.o: %.cxx $(MINIMAL_DEPS)
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ -I include $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D XERUS_UNITTEST -I include $< -c $(FLAGS) -MMD -o $@
 endif
 
 
@@ -242,7 +241,7 @@ build/.tutorialObjects/%: %.cpp $(MINIMAL_DEPS) $(LIB_NAME_STATIC)
 # Build rule for the preCompileHeader
 build/.preCompileHeaders/xerus.h.gch: include/xerus.h $(MINIMAL_DEPS) .git/ORIG_HEAD
 	mkdir -p $(dir $@)
-	$(CXX) -D TEST_ $< -c $(FLAGS) -MMD -o $@
+	$(CXX) -D XERUS_UNITTEST $< -c $(FLAGS) -MMD -o $@
 
 
 # dummy rule in case files were downloaded without git

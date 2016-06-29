@@ -24,6 +24,7 @@
 
 #include <xerus/misc/histogram.h>
 #include <xerus/misc.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace misc {
 

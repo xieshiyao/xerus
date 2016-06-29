@@ -32,6 +32,7 @@
  
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 
@@ -343,7 +344,7 @@ namespace xerus {
 				}
 				
 				// Start performance analysis for low level part
-				PA_START;
+				XERUS_PA_START;
 				
 				// Get pointers to the data and delay the deletion of the base data in case _out and _base coincide
 				const value_t* oldPosition = _base.tensorObjectReadOnly->get_unsanitized_dense_data()+fixedIndexOffset;
@@ -383,7 +384,7 @@ namespace xerus {
 						}
 					}
 				}
-				PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObject->dimensions));
+				XERUS_PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObject->dimensions));
 				
 				
 				// Propagate the constant factor, since we don't apply it for dense Tensors
@@ -391,9 +392,11 @@ namespace xerus {
 			}
 			//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Sparse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 			else if(_base.tensorObjectReadOnly->is_sparse()) {
+				#define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & name = name##_store.get();
 				VLA(bool[_base.indices.size()]  , fixedFlags); // Flag for each index indicating whether the index is fixed
 				VLA(bool[_base.indices.size()]  , traceFlags); // Flag for each index indicating whether the index is part of a trace
 				VLA(size_t[_base.indices.size()], attributes);  // Either the factor in _out, the value of an fixed index or the position of the other part of a trace
+				#undef VLA
 				bool peacefullIndices = true;
 				
 				const std::vector<size_t> outIndexStepSizes(get_step_sizes(_out.indices));
@@ -435,7 +438,7 @@ namespace xerus {
 				const value_t factor = _base.tensorObjectReadOnly->factor;
 				
 				// Start performance analysis for low level part
-				PA_START;
+				XERUS_PA_START;
 				
 				if(peacefullIndices) {
 					for(const auto& entry : baseEntries) {
@@ -449,7 +452,7 @@ namespace xerus {
 						}
 					}
 				}
-				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
+				XERUS_PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			}
 		}
 	}

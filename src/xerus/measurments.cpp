@@ -32,6 +32,7 @@
 #include <xerus/tensorNetwork.h>
 #include <xerus/ttNetwork.h>
 #include <xerus/indexedTensor.h>
+#include <xerus/misc/internal.h>
  
 
 namespace xerus {

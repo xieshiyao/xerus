@@ -29,6 +29,7 @@
 #include <xerus/misc/basicArraySupport.h>
 
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace internal {
 	

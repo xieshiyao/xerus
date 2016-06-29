@@ -59,6 +59,7 @@ extern "C"
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/misc/basicArraySupport.h>
 #include <xerus/misc/math.h>
+#include <xerus/misc/internal.h>
 
 
 
@@ -75,11 +76,11 @@ namespace xerus {
 		double two_norm(const double* const _x, const size_t _n) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			const double result = cblas_dnrm2(static_cast<int>(_n), _x, 1);
 			
-			PA_END("Dense BLAS", "Two Norm", misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Two Norm", misc::to_string(_n));
 			
 			return result;
 		}
@@ -87,11 +88,11 @@ namespace xerus {
 		double dot_product(const double* const _x, const size_t _n, const double* const _y) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			const double result = cblas_ddot(static_cast<int>(_n), _x, 1, _y, 1);
 			
-			PA_END("Dense BLAS", "Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
 			
 			return result;
 		}
@@ -106,28 +107,28 @@ namespace xerus {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			if(!_transposed) {
 				cblas_dgemv(CblasRowMajor, CblasNoTrans, static_cast<int>(_m), static_cast<int>(_n), _alpha, _A, static_cast<int>(_n), _y, 1, 0.0, _x, 1);
 			} else {
 				cblas_dgemv(CblasRowMajor, CblasTrans, static_cast<int>(_n), static_cast<int>(_m), _alpha, _A, static_cast<int>(_m) , _y, 1, 0.0, _x, 1);
 			}
 			
-			PA_END("Dense BLAS", "Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
 		}
 		
 		void dyadic_vector_product(double* _A, const size_t _m, const size_t _n, const double _alpha, const double*const  _x, const double* const _y) {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			//Blas wants to add the product to A, but we don't.
 			misc::set_zero(_A, _m*_n);
 			
 			cblas_dger(CblasRowMajor, static_cast<int>(_m), static_cast<int>(_n), _alpha, _x, 1, _y, 1, _A, static_cast<int>(_n));
 			
-			PA_END("Dense BLAS", "Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
 		}
 		
 		
@@ -159,7 +160,7 @@ namespace xerus {
 				REQUIRE(_lda <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 				REQUIRE(_ldb <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 				
-				PA_START;
+				XERUS_PA_START;
 				
 				cblas_dgemm( CblasRowMajor,                             // Array storage format
 						_transposeA ? CblasTrans : CblasNoTrans,        // LHS transposed?
@@ -177,7 +178,7 @@ namespace xerus {
 						static_cast<int>(_rightDim)                     // LDC
 				);
 				
-				PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
+				XERUS_PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
 			}
 		}
 		
@@ -198,7 +199,7 @@ namespace xerus {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			std::unique_ptr<double[]> tmpA(new double[_m*_n]);
 			misc::copy(tmpA.get(), _A, _m*_n);
 			
@@ -215,7 +216,7 @@ namespace xerus {
 				}
 			}
 			
-			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
@@ -234,7 +235,7 @@ namespace xerus {
 			REQUIRE(_n > 0, "Dimension n must be larger than zero");
 			REQUIRE(_m > 0, "Dimension m must be larger than zero");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t maxRank = std::min(_m, _n);
@@ -286,7 +287,7 @@ namespace xerus {
 				}
 			}
 			
-			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
 			
 			return std::make_tuple(std::move(Q), std::move(C), rank);
 		}
@@ -308,7 +309,7 @@ namespace xerus {
 			REQUIRE(_m > 0, "Dimension n must be larger than zero");
 			REQUIRE(_n > 0, "Dimension m must be larger than zero");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t maxRank = std::min(_n, _m);
@@ -352,7 +353,7 @@ namespace xerus {
 			std::unique_ptr<double[]> Q(new double[_n*rank]);
 			misc::copy(Q.get(), _A, _n*rank);
 			
-			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_n)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_m));
+			XERUS_PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_n)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_m));
 			
 			return std::make_tuple(std::move(C), std::move(Q), rank);
 		}
@@ -382,7 +383,7 @@ namespace xerus {
 			REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: Q:" << _Q << " R: " << _R << " A: " << _A);
 			REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t rank = std::min(_m, _n); 
@@ -421,7 +422,7 @@ namespace xerus {
 				}
 			}
 			
-			PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
@@ -449,7 +450,7 @@ namespace xerus {
 			REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: R " << _R << " Q: " << _Q << " A: " << _A);
 			REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t rank = std::min(_m, _n); 
@@ -481,7 +482,7 @@ namespace xerus {
 				misc::copy(_Q, _A+(_m-rank)*_n, rank*_n);
 			}
 			
-			PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
@@ -533,7 +534,7 @@ namespace xerus {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			std::unique_ptr<int[]> pivot(new int[_n]);
 			misc::set_zero(pivot.get(), _n);
@@ -565,7 +566,7 @@ namespace xerus {
 				misc::copy(_x, bOrX, _m);
 			}
 			
-			PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 	}

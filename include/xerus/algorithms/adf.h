@@ -219,8 +219,8 @@ namespace xerus {
 				perfData(_perfData) 
 				{
 					_x.require_correct_format();
-					REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
-					REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
+					XERUS_REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
+					XERUS_REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
 				}
 				
 		};

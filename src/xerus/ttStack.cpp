@@ -25,6 +25,7 @@
 #include <xerus/ttStack.h>
 #include <xerus/basic.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/index.h>
 #include <xerus/tensor.h>
@@ -309,7 +310,7 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		template<bool isOperator>
-		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me _unused_ , IndexedTensorReadOnly<TensorNetwork>&& _other _unused_) {
+		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&&  , IndexedTensorReadOnly<TensorNetwork>&& ) {
 			LOG(fatal, "TTStack not supported as a storing type");
 		}
 		

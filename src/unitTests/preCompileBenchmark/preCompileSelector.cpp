@@ -49,7 +49,7 @@ double* offset(double* const _p, const size_t _maxSize) {
     return _p+offsetDist(rnd);
 }
 
-static _inline_ void add_call(const std::string& _groupName, const size_t _param, const std::string& _callName, const size_t _time) {
+static XERUS_force_inline void add_call(const std::string& _groupName, const size_t _param, const std::string& _callName, const size_t _time) {
         results[_groupName][_param][_callName] += _time;
 }
 
@@ -89,27 +89,27 @@ void determine_winner(const std::string& _groupName, std::fstream& _headerFile) 
  
 
 
-static _inline_ void self_set(double* const __restrict _x, const size_t _n) {
+static XERUS_force_inline void self_set(double* const __restrict _x, const size_t _n) {
     for(size_t i=0; i<_n; ++i) { _x[i] = 0.0; }
 }
    
-static _inline_ void self_copy(double* const __restrict _x, const double* const __restrict _y, const size_t _n) {
+static XERUS_force_inline void self_copy(double* const __restrict _x, const double* const __restrict _y, const size_t _n) {
     for(size_t i=0; i<_n; ++i) { _x[i] = _y[i]; }
 }
 
-static _inline_ void self_scaled_copy(double* const __restrict _x, const double _alpha, const double* const __restrict _y, const size_t _n) {
+static XERUS_force_inline void self_scaled_copy(double* const __restrict _x, const double _alpha, const double* const __restrict _y, const size_t _n) {
     for(size_t i=0; i<_n; ++i) { _x[i] = _alpha*_y[i]; }
 }
 
-static _inline_ void self_scale(double* const __restrict _x, const size_t _n, const double _alpha) {
+static XERUS_force_inline void self_scale(double* const __restrict _x, const size_t _n, const double _alpha) {
     for(size_t i = 0; i < _n; i++ ) {  _x[i] *= _alpha; }
 }
 
-static _inline_ void self_add(double* const __restrict _x, const size_t _n, const double _alpha, const double* const __restrict _y) {
+static XERUS_force_inline void self_add(double* const __restrict _x, const size_t _n, const double _alpha, const double* const __restrict _y) {
     for(size_t i = 0; i < _n; i++ ) { _x[i] += _alpha*_y[i]; }
 }
 
-static _inline_ void self_scale_add(double* const __restrict _x, const size_t _n, const double _alpha, const double _beta, const double* const __restrict _y) {
+static XERUS_force_inline void self_scale_add(double* const __restrict _x, const size_t _n, const double _alpha, const double _beta, const double* const __restrict _y) {
     for(size_t i = 0; i < _n; i++ ) { _x[i] = _alpha*_x[i]+_beta*_y[i]; }
 }
 
@@ -138,12 +138,12 @@ int main() {
     
     // Standard template functions for ordinary types
     headerFile << "template <typename T>" << std::endl;
-    headerFile << "static _inline_ void array_set_zero(T* const __restrict _x, const size_t _n) {" << std::endl;
+    headerFile << "static XERUS_force_inline void array_set_zero(T* const __restrict _x, const size_t _n) {" << std::endl;
     headerFile << "    memset(_x, 0, _n*sizeof(T));" << std::endl;
     headerFile << "}" << std::endl << std::endl;
         
     headerFile << "template <typename T>" << std::endl;
-    headerFile << "static _inline_ void array_copy(T* const __restrict _x, const T* const _y, const size_t _n) {" << std::endl;
+    headerFile << "static XERUS_force_inline void array_copy(T* const __restrict _x, const T* const _y, const size_t _n) {" << std::endl;
     headerFile << "    memcpy(_x, _y, _n*sizeof(T));" << std::endl;
     headerFile << "}" << std::endl << std::endl;
     
@@ -164,7 +164,7 @@ int main() {
      
     LOG(Selection, "Try to determinie best function to set memory equals zero.");
     
-    functionDeclarations["set_zero"] = "static _inline_ void array_set_zero(double* const __restrict _x, const size_t _n)";
+    functionDeclarations["set_zero"] = "static XERUS_force_inline void array_set_zero(double* const __restrict _x, const size_t _n)";
     functionDefinitions["memset"] = "memset(_x, 0.0, _n*sizeof(double));";
     functionDefinitions["self_set"] = "for(size_t i=0; i<_n; ++i) { _x[i] = 0; }";
     functionDefinitions["atlas_set"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\"); \n\tcatlas_dset((int) _n, 0.0, _x, 1);";
@@ -194,7 +194,7 @@ int main() {
     
     LOG(Selection, "Try to determinie best function to copy a vector to another.");
     
-    functionDeclarations["copy"] = "static _inline_ void array_copy(double* const __restrict _x, const double* const _y, const size_t _n)";
+    functionDeclarations["copy"] = "static XERUS_force_inline void array_copy(double* const __restrict _x, const double* const _y, const size_t _n)";
     functionDefinitions["memCpy"] = "memcpy(_x, _y, _n*sizeof(double));";
     functionDefinitions["selfCpy"] = "for(size_t i=0; i<_n; ++i) { _x[i] = _y[i]; }";
     functionDefinitions["blasCpy"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\"); \n\tcblas_dcopy((int) _n, _y, 1, _x, 1);";
@@ -223,7 +223,7 @@ int main() {
     
     LOG(Selection, "Try to determinie best function to scaled copy a vector to another.");
     
-    functionDeclarations["scaledCopy"] = "static _inline_ void array_scaled_copy(double* const __restrict _x, const double _alpha, const double* const _y, const size_t _n)";
+    functionDeclarations["scaledCopy"] = "static XERUS_force_inline void array_scaled_copy(double* const __restrict _x, const double _alpha, const double* const _y, const size_t _n)";
     functionDefinitions["selfScaledCpy"] = "for(size_t i=0; i<_n; ++i) { _x[i] = _alpha*_y[i]; }";
     functionDefinitions["blasScaledCpy"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\"); \n\tcblas_dcopy((int) _n, _y, 1, _x, 1);\n\tcblas_dscal((int) _n, _alpha, _x, 1);";
     functionDefinitions["atlasScaledCpy"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\"); \n\tcatlas_daxpby((int) _n, _alpha, _y, 1, 0, _x, 1);";
@@ -258,7 +258,7 @@ int main() {
     
     LOG(Selection, "Try to determinie best function to scale a vector by a constant factor.");
      
-    functionDeclarations["scale"] = "static _inline_ void array_scale(double* const __restrict _x, const double _alpha, const size_t _n)";
+    functionDeclarations["scale"] = "static XERUS_force_inline void array_scale(double* const __restrict _x, const double _alpha, const size_t _n)";
     functionDefinitions["selfScale"] = "for(size_t i = 0; i < _n; i++ ) {  _x[i] *= _alpha; }";
     functionDefinitions["blasScale"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\");\n\tcblas_dscal((int) _n, _alpha, _x, 1);";
     
@@ -284,7 +284,7 @@ int main() {
     
     LOG(Selection, "Try to determinie best function to add a vector to another.");
     
-    functionDeclarations["add"] = "static _inline_ void array_add(double* const __restrict _x, const double _alpha, const double* const _y, const size_t _n)";
+    functionDeclarations["add"] = "static XERUS_force_inline void array_add(double* const __restrict _x, const double _alpha, const double* const _y, const size_t _n)";
     functionDefinitions["selfAdd"] = "for(size_t i = 0; i < _n; i++ ) { _x[i] += _alpha*_y[i]; }";
     functionDefinitions["blasAdd"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\");\n\tcblas_daxpy((int) _n, _alpha, _y, 1, _x, 1);";
     functionDefinitions["AtlasAdd"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\");\n\tcatlas_daxpby((int) _n, _alpha, _y, 1, 1.0, _x, 1);";
@@ -318,7 +318,7 @@ int main() {
     LOG(Selection, "Try to determinie best function to  add a vector to a rescaled other.");
     
 
-    functionDeclarations["scaleAdd"] = "static _inline_ void array_scale_add(const double _alpha, double* const __restrict _x, const double _beta, const double* const _y, const size_t _n)";
+    functionDeclarations["scaleAdd"] = "static XERUS_force_inline void array_scale_add(const double _alpha, double* const __restrict _x, const double _beta, const double* const _y, const size_t _n)";
     functionDefinitions["selfScaleAdd"] = "for(size_t i = 0; i < _n; i++ ) { _x[i] = _alpha*_x[i]+_beta*_y[i]; }";
     functionDefinitions["AtlasScaleAdd"] = "REQUIRE(_n <= (size_t) std::numeric_limits<int>::max(), \"Dimension to large for blas/lapack\");\n\tcatlas_daxpby((int) _n, _beta, _y, 1, _alpha, _x, 1);";
     
