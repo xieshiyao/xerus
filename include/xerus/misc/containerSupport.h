@@ -30,6 +30,7 @@
 #include <set>
 #include <map>
 #include <tuple>
+#include <numeric>
 
 #include <iostream>
 

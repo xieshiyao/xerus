@@ -25,11 +25,15 @@
 #pragma once
 
 #include "standard.h"
+
 #include <vector>
 #include <limits>
 #include <functional>
 
-namespace xerus {  namespace misc {
+#include <boost/math/tools/polynomial.hpp>
+
+namespace xerus { namespace misc {
+	
 	/// @brief Performs a Romberg Integration (richardson extrapolation of regular riemannian sum) + adaptive refinement
 	double integrate(const std::function<double(double)> &_f, double _a, double _b, double _eps=std::numeric_limits<double>::epsilon(), 
 					uint _minIter=4, uint _maxIter=6, uint _branchFactor=7, 
@@ -42,6 +46,20 @@ namespace xerus {  namespace misc {
 	
 	double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon = 1e-14);
 
+	double at(const boost::math::tools::polynomial<double>& _poly, const double _x);
+	
+	double scalar_product(const boost::math::tools::polynomial<double> &_lhs, const boost::math::tools::polynomial<double> &_rhs, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
+	
+	double norm(const boost::math::tools::polynomial<double> &_poly, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
+	
+	/// orthogonalizes this polynomial with respect to the provided (@note orthogonal!) basis
+	void orthogonolize(boost::math::tools::polynomial<double>& _poly, const std::vector<boost::math::tools::polynomial<double>> &_orthoBase, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
+	
+	
+	
+	std::vector<boost::math::tools::polynomial<double>> build_orthogonal_polynom_base(const size_t _degree, const std::function<double (double)>& _weight, const double _minX, const double _maxX);
+	
+	
 	template<class T>
 	_pure_ T difference(T _a, T _b) {
 		if (_a > _b) {
