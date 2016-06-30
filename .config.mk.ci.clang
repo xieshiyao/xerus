@@ -5,7 +5,7 @@ CXX = clang++
 
  DEBUG += -g                # Adds debug symbols
 
-LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
+LOGGING += -D XERUS_LOG_INFO                     # Information that is not linked to any unexpected behaviour but might 
 
 #=================================================================================================
 # External libraries

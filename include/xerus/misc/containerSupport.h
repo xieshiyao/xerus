@@ -41,8 +41,8 @@ namespace xerus { namespace misc {
 	
 	#if __GNUC__ > 4 || defined(__clang__)
 		
-		GENERATE_HAS_FUNCTION(count)
-		GENERATE_HAS_FUNCTION(find)
+		XERUS_GENERATE_HAS_FUNCTION(count)
+		XERUS_GENERATE_HAS_FUNCTION(find)
 	
 		
 		///@brief: Counts how often an element is contained in an arbitary container
