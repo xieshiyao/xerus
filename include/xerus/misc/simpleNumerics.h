@@ -50,7 +50,7 @@ namespace xerus { namespace misc {
 	
 	double scalar_product(const boost::math::tools::polynomial<double> &_lhs, const boost::math::tools::polynomial<double> &_rhs, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
 	
-	double norm(const boost::math::tools::polynomial<double> &_poly, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
+	double norm(const boost::math::tools::polynomial<double>& _poly, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
 	
 	/// orthogonalizes this polynomial with respect to the provided (@note orthogonal!) basis
 	void orthogonolize(boost::math::tools::polynomial<double>& _poly, const std::vector<boost::math::tools::polynomial<double>> &_orthoBase, const std::function<double (double)> &_weight, const double _minX, const double _maxX);
