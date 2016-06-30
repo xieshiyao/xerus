@@ -27,6 +27,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <iostream>
 
 namespace xerus { namespace misc {
 		// Internal Helper function to print tuples.

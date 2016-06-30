@@ -26,8 +26,6 @@
 
 #include <algorithm>
 
-#include <iostream>
-
 #include "standard.h"
 #include "sfinae.h"
 #include "check.h"
