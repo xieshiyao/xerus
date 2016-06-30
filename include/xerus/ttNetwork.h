@@ -284,14 +284,6 @@ namespace xerus {
 		static TTNetwork dyadic_product(const std::vector<TTNetwork> &_tensors);
 		
 		
-		
-		/**
-		* @brief Computes the entrywise square of the tensor.
-		* @details In general the resulting equals rank*(rank+1)/2. Retains the core position.
-		*/
-		void entrywise_square();
-		
-		
 		/** 
 		* @brief Complete access to a specific component of the TT decomposition.
 		* @note This function will not update rank and external dimension informations if it is used to set a component.

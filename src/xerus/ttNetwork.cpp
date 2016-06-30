@@ -567,64 +567,6 @@ namespace xerus {
 		return groups;
 	}
 	
-	template<bool isOperator>
-	void TTNetwork<isOperator>::entrywise_square() {
-		const size_t numComponents = degree() / N;
-		const bool cannonicalizedBefore = cannonicalized;
-		
-		if(degree() == 0) {
-			(*nodes[0].tensorObject)[0] *= (*nodes[0].tensorObject)[0];
-		} else {
-			
-			#pragma omp for schedule(static)
-			for (size_t i = 0; i < numComponents; ++i) {
-				const Tensor& currComp = get_component(i);
-				const size_t leftRank = currComp.dimensions.front();
-				const size_t rightRank = currComp.dimensions.back();
-				
-				Tensor newComponent(isOperator ? 
-					  std::vector<size_t>({misc::sqr(leftRank), currComp.dimensions[1], currComp.dimensions[2], misc::sqr(rightRank)})
-					: std::vector<size_t>({misc::sqr(leftRank),  currComp.dimensions[1], misc::sqr(rightRank)}),
-					currComp.representation, Tensor::Initialisation::None );
-				
-				const size_t externalDim = isOperator ? currComp.dimensions[1] * currComp.dimensions[2] : currComp.dimensions[1];
-
-				if(currComp.is_dense()) {
-					value_t* dataPtr = newComponent.get_dense_data();
-					for (size_t r1 = 0; r1 < leftRank; ++r1) {
-						for (size_t r2 = 0; r2 < leftRank; ++r2) {
-							for (size_t n = 0; n < externalDim; ++n) {
-								for (size_t s1 = 0; s1 < rightRank; ++s1) {
-									misc::copy_scaled(dataPtr, currComp.factor*currComp[(r1*externalDim + n)*rightRank + s1], currComp.get_unsanitized_dense_data() + (r2*externalDim + n)*rightRank, rightRank);
-									dataPtr += rightRank;
-								}
-							}
-						}
-					}
-				} else {
-					std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> groupedEntries = get_grouped_entries<isOperator>(currComp);
-					std::map<size_t, value_t>& dataMap = newComponent.get_sparse_data();
-					for(size_t n = 0; n < externalDim; ++n) {
-						for(const std::tuple<size_t, size_t, value_t>& entry : groupedEntries[n]) {
-							for(const std::tuple<size_t, size_t, value_t>& otherEntry : groupedEntries[n]) {
-								dataMap.emplace((((std::get<0>(entry)*leftRank + std::get<0>(otherEntry))*externalDim + n)*rightRank+std::get<1>(entry))*rightRank+std::get<1>(otherEntry), std::get<2>(entry)*std::get<2>(otherEntry));
-							}
-						}
-					}
-				}
-				
-				#pragma omp critical
-				{
-					set_component(i, std::move(newComponent));
-				}
-			}
-		}
-		
-		// Restore cannonicalization
-		if(cannonicalizedBefore) {
-			move_core(corePosition);
-		}
-	}
 	
 	template<bool isOperator>
 	std::pair<TensorNetwork, TensorNetwork> TTNetwork<isOperator>::chop(const size_t _position) const {

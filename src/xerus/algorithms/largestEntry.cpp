@@ -17,7 +17,7 @@ namespace xerus {
 			
 			X = _T;
 			while(misc::sum(X.ranks()) >= _T.degree()) {
-				X.entrywise_square();
+				X = entrywise_product(X, X);
 				
 				X.soft_threshold(tau, true);
 				

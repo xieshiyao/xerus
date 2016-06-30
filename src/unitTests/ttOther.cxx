@@ -27,20 +27,13 @@ static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
 	
 	
 	TTTensor D1 = entrywise_product(A, A);
-	TTTensor D2(A);
-	D2.entrywise_square();
-	
 	
 	TTOperator Do1 = entrywise_product(Ao, Ao);
-	TTOperator Do2(Ao);
-	Do2.entrywise_square();
 	
 	Tensor Df = entrywise_product(Af, Af);
 
 	TEST(approx_equal(Df, Tensor(D1), 1e-14));
-	TEST(approx_equal(Df, Tensor(D2), 1e-14));
 	TEST(approx_equal(Df, Tensor(Do1), 1e-14));
-	TEST(approx_equal(Df, Tensor(Do2), 1e-14));
 });
 
 static misc::UnitTest tt_soft("TT", "soft_thresholding", [](){
