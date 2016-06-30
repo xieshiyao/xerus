@@ -23,10 +23,10 @@
  */
 
 #include <xerus/misc/check.h>
-#include <xerus/misc/internal.h>
 
 #include <xerus/contractionHeuristic.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace internal {

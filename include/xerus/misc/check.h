@@ -54,6 +54,7 @@
 #ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	#include "namedLogger.h"
 	#include "callStack.h"
+	#include "containerOutput.h"
 
 	#ifdef XERUS_TEST_COVERAGE
 		#define XERUS_CHECK(condition, level, message) XERUS_REQUIRE_TEST; if(XERUS_IS_LOGGING(level) && !(condition)) { XERUS_LOG(level, #condition " failed msg: " << message); } else void(0)
