@@ -213,10 +213,8 @@ namespace xerus { namespace misc {
 			print<n + 1, Tp...>(_out, t);
 		}
 	}
-} } // namespaces xerus::misc
+	
 
-
-namespace std {
 	///@brief Allow to pipe tuples to ostreams.
 	template<class... Tp>
 	std::ostream& operator<<(std::ostream& _out, const std::tuple<Tp...>& _tuple) {
@@ -256,4 +254,7 @@ namespace std {
 		_out << "\b\b }";
 		return _out;
 	}
-}
+} } // namespaces xerus::misc
+
+
+

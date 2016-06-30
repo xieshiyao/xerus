@@ -54,6 +54,7 @@ namespace xerus {
 		
 		template<class random_engine>
 		static SinglePointMeasurementSet random(const std::vector<size_t> &_dim, const size_t _numMeasurements, random_engine _rnd) {
+			using ::xerus::misc::operator<<;
 			XERUS_REQUIRE(misc::product(_dim) >= _numMeasurements, "It's impossible to perform as many measurements as requested. " << _numMeasurements << " > " << _dim);
 			std::vector<std::uniform_int_distribution<size_t>> indexDist;
 			for (size_t i=0; i<_dim.size(); ++i) {

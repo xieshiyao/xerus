@@ -40,7 +40,11 @@
 #define IS_LOGGING		XERUS_IS_LOGGING
 
 
+
 namespace std {
+	using ::xerus::misc::operator<<; // for std::ostream << std::vector etc.
+	
+	
 	///@brief Add a + operator for iterators and size_t to avoid signed/unsigned errors.
 	template<class IteratorType, 
 		typename std::enable_if<

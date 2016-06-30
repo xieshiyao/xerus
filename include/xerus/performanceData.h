@@ -75,6 +75,7 @@ namespace xerus {
 			active(_active), printProgress(_printProgress), errorFunction(_errorFunction), startTime(~0ul), stopTime(~0ul) {}
 		
 		void start() {
+			using ::xerus::misc::operator<<;
 			if (active) {
 				if(printProgress) {
 					std::stringstream ss(additionalInformation);
@@ -138,6 +139,7 @@ namespace xerus {
 		/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
 		template<class T>
 		PerformanceData& operator<<(const T &_info) {
+			using ::xerus::misc::operator<<;
 			if (active) {
 				additionalInformation += misc::to_string(_info);
 				if(printProgress) {

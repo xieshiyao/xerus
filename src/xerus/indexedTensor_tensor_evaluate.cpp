@@ -256,7 +256,6 @@ namespace xerus {
 			_base.assign_index_dimensions();
 			_out.assign_index_dimensions();
 			
-			
 			#ifndef XERUS_DISABLE_RUNTIME_CHECKS // Performe complete check whether the input is valid
 				// Check base indices
 				for(size_t i = 0; i < _base.indices.size(); ++i) {

@@ -21,6 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
 static misc::UnitTest tt_crea("TT", "TTTensor_Creation", [](){
