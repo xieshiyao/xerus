@@ -498,7 +498,7 @@ static misc::UnitTest tt_disjoint("TT", "disjoint_product", [](){
 		TTTensor ttC;
 		
 		
-		ttC = TTTensor::dyadic_product(ttA, ttB);
+		ttC = dyadic_product(ttA, ttB);
 		C(i/2,j/2) = A(i&0)*B(j&0);
 		
 		LOG(unit_test, frob_norm(C(i&0) - Tensor(ttC)(i&0)));

@@ -424,132 +424,6 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
-	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
-		_lhs.require_correct_format();
-		_rhs.require_correct_format();
-		
-		if (_lhs.degree() == 0) {
-			TTNetwork result(_rhs);
-			result *= _lhs[0];
-			return result;
-		}
-		
-		TTNetwork result(_lhs);
-		if (_rhs.degree() == 0) {
-			result *= _rhs[0];
-			return result;
-		}
-		
-		const size_t lhsNumComponents = _lhs.degree()/N;
-		const size_t rhsNumComponents = _rhs.degree()/N;
-		
-		// fix external links of lhs nodes
-		for (size_t i=1; i<result.nodes.size(); ++i) {
-			for (TensorNetwork::Link &l : result.nodes[i].neighbors) {
-				if (l.external) {
-					if (l.indexPosition >= lhsNumComponents) {
-						l.indexPosition += rhsNumComponents;
-					}
-				}
-			}
-		}
-		
-		// Add all nodes of rhs and fix neighbor relations
-		result.nodes.pop_back();
-		result.nodes.reserve(_lhs.degree()+_rhs.degree()+2);
-		for (size_t i = 1; i < _rhs.nodes.size(); ++i) {
-			result.nodes.emplace_back(_rhs.nodes[i]);
-			for (TensorNetwork::Link &l : result.nodes.back().neighbors) {
-				if (l.external) {
-					if (l.indexPosition < rhsNumComponents) {
-						l.indexPosition += lhsNumComponents;
-					} else {
-						l.indexPosition += 2*lhsNumComponents;
-					}
-				} else {
-					if (l.other==0) {
-						l.indexPosition = N+1;
-					}
-					l.other += lhsNumComponents;
-				}
-			}
-		}
-		
-		// Add all external indices of rhs
-		result.externalLinks.clear(); // NOTE that this is necessary because in the operator case we added indices 
-		result.dimensions.clear();   //        in the wrong position when we copied the lhs
-		result.externalLinks.reserve(_lhs.degree()+_rhs.degree());
-		result.dimensions.reserve(_lhs.degree()+_rhs.degree());
-		
-		for (size_t i = 0; i < lhsNumComponents; ++i) {
-			const size_t d=_lhs.dimensions[i];
-			result.externalLinks.emplace_back(i+1, 1, d, false);
-			result.dimensions.push_back(d);
-		}
-		
-		for (size_t i = 0; i < rhsNumComponents; ++i) {
-			const size_t d = _rhs.dimensions[i];
-			result.externalLinks.emplace_back(lhsNumComponents+i+1, 1, d, false);
-			result.dimensions.push_back(d);
-		}
-		
-		if (isOperator) {
-			for (size_t i = 0; i < lhsNumComponents; ++i) {
-				const size_t d = _lhs.dimensions[i];
-				result.externalLinks.emplace_back(i+1, 2, d, false);
-				result.dimensions.push_back(d);
-			}
-			for (size_t i = 0; i < rhsNumComponents; ++i) {
-				const size_t d = _rhs.dimensions[i];
-				result.externalLinks.emplace_back(lhsNumComponents+i+1, 2, d, false);
-				result.dimensions.push_back(d);
-			}
-		}
-		
-		if (_lhs.cannonicalized && _rhs.cannonicalized) {
-			if (_lhs.corePosition == 0 && _rhs.corePosition == 0) {
-				result.cannonicalized = true;
-				result.corePosition = lhsNumComponents;
-				// the other core might have carried a factor
-				if (result.nodes[1].tensorObject->has_factor()) {
-					(*result.nodes[lhsNumComponents+1].tensorObject) *= result.nodes[1].tensorObject->factor;
-					result.nodes[1].tensorObject->factor = 1.0;
-				}
-				result.move_core(0);
-			} else if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
-				result.cannonicalized = true;
-				result.corePosition = lhsNumComponents-1;
-				const size_t lastIdx = lhsNumComponents + rhsNumComponents -1;
-				// the other core might have carried a factor
-				if (result.nodes[lastIdx+1].tensorObject->has_factor()) {
-					(*result.nodes[lhsNumComponents].tensorObject) *= result.nodes[lastIdx+1].tensorObject->factor;
-					result.nodes[lastIdx+1].tensorObject->factor = 1.0;
-				}
-				result.move_core(lastIdx);
-			}
-		} else {
-			result.cannonicalized = false;
-		}
-		
-		result.require_correct_format();
-		return result;
-	}
-	
-	template<bool isOperator>
-	TTNetwork<isOperator> TTNetwork<isOperator>::dyadic_product(const std::vector<TTNetwork<isOperator>>& _tensors) {
-		if (_tensors.empty()) { return TTNetwork(); }
-		
-		TTNetwork result(_tensors.back());
-		// construct dyadic products right to left as default cannonicalization is left
-		for (size_t i = _tensors.size()-1; i > 0; --i) {
-			XERUS_REQUIRE_TEST;
-			result = dyadic_product(_tensors[i-1], result);
-		}
-		return result;
-	}
-	
-	
-	template<bool isOperator>
 	std::vector<std::vector<std::tuple<size_t, size_t, value_t>>> get_grouped_entries(const Tensor& _component) {
 		REQUIRE(_component.is_sparse(), "Not usefull (and not implemented) for dense Tensors.");
 		
@@ -1367,6 +1241,142 @@ namespace xerus {
 	//Explicit instantiation for both types
 	template TTNetwork<false> entrywise_product(const TTNetwork<false> &_A, const TTNetwork<false> &_B);
 	template TTNetwork<true> entrywise_product(const TTNetwork<true> &_A, const TTNetwork<true> &_B);
+	
+	
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs) {
+		constexpr size_t N = isOperator?2:1;
+		_lhs.require_correct_format();
+		_rhs.require_correct_format();
+		
+		if (_lhs.degree() == 0) {
+			TTNetwork<isOperator> result(_rhs);
+			result *= _lhs[0];
+			return result;
+		}
+		
+		TTNetwork<isOperator> result(_lhs);
+		if (_rhs.degree() == 0) {
+			result *= _rhs[0];
+			return result;
+		}
+		
+		const size_t lhsNumComponents = _lhs.degree()/N;
+		const size_t rhsNumComponents = _rhs.degree()/N;
+		
+		// fix external links of lhs nodes
+		for (size_t i=1; i<result.nodes.size(); ++i) {
+			for (TensorNetwork::Link &l : result.nodes[i].neighbors) {
+				if (l.external) {
+					if (l.indexPosition >= lhsNumComponents) {
+						l.indexPosition += rhsNumComponents;
+					}
+				}
+			}
+		}
+		
+		// Add all nodes of rhs and fix neighbor relations
+		result.nodes.pop_back();
+		result.nodes.reserve(_lhs.degree()+_rhs.degree()+2);
+		for (size_t i = 1; i < _rhs.nodes.size(); ++i) {
+			result.nodes.emplace_back(_rhs.nodes[i]);
+			for (TensorNetwork::Link &l : result.nodes.back().neighbors) {
+				if (l.external) {
+					if (l.indexPosition < rhsNumComponents) {
+						l.indexPosition += lhsNumComponents;
+					} else {
+						l.indexPosition += 2*lhsNumComponents;
+					}
+				} else {
+					if (l.other==0) {
+						l.indexPosition = N+1;
+					}
+					l.other += lhsNumComponents;
+				}
+			}
+		}
+		
+		// Add all external indices of rhs
+		result.externalLinks.clear(); // NOTE that this is necessary because in the operator case we added indices 
+		result.dimensions.clear();   //        in the wrong position when we copied the lhs
+		result.externalLinks.reserve(_lhs.degree()+_rhs.degree());
+		result.dimensions.reserve(_lhs.degree()+_rhs.degree());
+		
+		for (size_t i = 0; i < lhsNumComponents; ++i) {
+			const size_t d=_lhs.dimensions[i];
+			result.externalLinks.emplace_back(i+1, 1, d, false);
+			result.dimensions.push_back(d);
+		}
+		
+		for (size_t i = 0; i < rhsNumComponents; ++i) {
+			const size_t d = _rhs.dimensions[i];
+			result.externalLinks.emplace_back(lhsNumComponents+i+1, 1, d, false);
+			result.dimensions.push_back(d);
+		}
+		
+		if (isOperator) {
+			for (size_t i = 0; i < lhsNumComponents; ++i) {
+				const size_t d = _lhs.dimensions[i];
+				result.externalLinks.emplace_back(i+1, 2, d, false);
+				result.dimensions.push_back(d);
+			}
+			for (size_t i = 0; i < rhsNumComponents; ++i) {
+				const size_t d = _rhs.dimensions[i];
+				result.externalLinks.emplace_back(lhsNumComponents+i+1, 2, d, false);
+				result.dimensions.push_back(d);
+			}
+		}
+		
+		if (_lhs.cannonicalized && _rhs.cannonicalized) {
+			if (_lhs.corePosition == 0 && _rhs.corePosition == 0) {
+				result.cannonicalized = true;
+				result.corePosition = lhsNumComponents;
+				// the other core might have carried a factor
+				if (result.nodes[1].tensorObject->has_factor()) {
+					(*result.nodes[lhsNumComponents+1].tensorObject) *= result.nodes[1].tensorObject->factor;
+					result.nodes[1].tensorObject->factor = 1.0;
+				}
+				result.move_core(0);
+			} else if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
+				result.cannonicalized = true;
+				result.corePosition = lhsNumComponents-1;
+				const size_t lastIdx = lhsNumComponents + rhsNumComponents -1;
+				// the other core might have carried a factor
+				if (result.nodes[lastIdx+1].tensorObject->has_factor()) {
+					(*result.nodes[lhsNumComponents].tensorObject) *= result.nodes[lastIdx+1].tensorObject->factor;
+					result.nodes[lastIdx+1].tensorObject->factor = 1.0;
+				}
+				result.move_core(lastIdx);
+			}
+		} else {
+			result.cannonicalized = false;
+		}
+		
+		result.require_correct_format();
+		return result;
+	}
+	
+	template TTNetwork<true> dyadic_product(const TTNetwork<true> &_lhs, const TTNetwork<true> &_rhs);
+	template TTNetwork<false> dyadic_product(const TTNetwork<false> &_lhs, const TTNetwork<false> &_rhs);
+	
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const std::vector<TTNetwork<isOperator>>& _tensors) {
+		if (_tensors.empty()) { return TTNetwork<isOperator>(); }
+		
+		TTNetwork<isOperator> result(_tensors.back());
+		// construct dyadic products right to left as default cannonicalization is left
+		for (size_t i = _tensors.size()-1; i > 0; --i) {
+			XERUS_REQUIRE_TEST;
+			result = dyadic_product(_tensors[i-1], result);
+		}
+		return result;
+	}
+	
+	template TTNetwork<true> dyadic_product(const std::vector<TTNetwork<true>>& _tensors);
+	template TTNetwork<false> dyadic_product(const std::vector<TTNetwork<false>>& _tensors);
+	
+	
 	
 	namespace misc {
 		

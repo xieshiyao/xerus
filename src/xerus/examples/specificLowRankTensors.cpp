@@ -38,11 +38,11 @@ namespace xerus { namespace examples {
 		TTTensor result(cross);
 		TTTensor buffer(e1);
 		while (result.degree() < _degree) {
-			result = TTTensor::dyadic_product(result, e1);
-			TTTensor tmp = TTTensor::dyadic_product(buffer, cross);
+			result = dyadic_product(result, e1);
+			TTTensor tmp = dyadic_product(buffer, cross);
 			result += tmp;
 			result.round(0.0);
-			buffer = TTTensor::dyadic_product(buffer, e1);
+			buffer = dyadic_product(buffer, e1);
 		}
 		return result;
 	}

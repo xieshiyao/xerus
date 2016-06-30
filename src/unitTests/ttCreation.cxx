@@ -209,8 +209,8 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	TTTensor s2 = TTTensor::random({10},{},rnd, dist);
 	TTTensor s3 = TTTensor::random({10},{},rnd, dist);
 	
-	TTOperator O = TTOperator::dyadic_product({o1,o2,o3});
-	TTTensor S = TTTensor::dyadic_product({s1,s2,s3});
+	TTOperator O = dyadic_product<true>({o1,o2,o3});
+	TTTensor S = dyadic_product<false>({s1,s2,s3});
 	
 	TEST(O.cannonicalized);
 	MTEST(O.corePosition == 0, O.corePosition);
@@ -225,7 +225,7 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	value_t R = frob_norm(O(i/2,j/2) * S(j/1));
 	TEST(std::abs(R - r1*r2*r3) < 1e-12);
 	
-	S = TTTensor::dyadic_product(S,TTTensor::ones({10})) + TTTensor::dyadic_product(TTTensor::ones({10}), S);
+	S = dyadic_product(S,TTTensor::ones({10})) + dyadic_product(TTTensor::ones({10}), S);
 	TEST(S.cannonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
 	
@@ -236,7 +236,7 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 		return (_idx[0]==1?1.0:0.0);
 	});
 	S *= 1/std::sqrt(2);
-	S = TTTensor::dyadic_product(S,TTTensor(e0)) + TTTensor::dyadic_product(TTTensor(e1), S);
+	S = dyadic_product(S,TTTensor(e0)) + dyadic_product(TTTensor(e1), S);
 	TEST(S.cannonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
 });

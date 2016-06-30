@@ -267,22 +267,6 @@ namespace xerus {
 		
 		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) override;
 		
-		/** 
-		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
-		* @details This function is currently needed to keep the resulting network in the TTNetwork class.
-		* Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
-		* @returns the dyadic product as a TTNetwork.
-		*/
-		static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
-		
-		
-		/** 
-		* @brief Computes the dyadic product of all given TTNetworks. 
-		* @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
-		* @returns the dyadic product as a TTNetwork.
-		*/
-		static TTNetwork dyadic_product(const std::vector<TTNetwork> &_tensors);
-		
 		
 		/** 
 		* @brief Complete access to a specific component of the TT decomposition.
@@ -564,6 +548,25 @@ namespace xerus {
 	*/
 	template<bool isOperator>
 	TTNetwork<isOperator> entrywise_product(const TTNetwork<isOperator>& _A, const TTNetwork<isOperator>& _B);
+	
+	/** 
+	 * @brief Computes the dyadic product of @a _lhs and @a _rhs. 
+	 * @details This function is currently needed to keep the resulting network in the TTNetwork class.
+	 * Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
+	 * @returns the dyadic product as a TTNetwork.
+	 */
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs);
+	
+	
+	/** 
+	 * @brief Computes the dyadic product of all given TTNetworks. 
+	 * @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
+	 * @returns the dyadic product as a TTNetwork.
+	 */
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const std::vector<TTNetwork<isOperator>> &_tensors);
+	
 	
 	namespace misc {
 		
