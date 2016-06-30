@@ -24,57 +24,6 @@
 #include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
-// UNIT_TEST(Test, bla,
-// 	Index i,j,k,l;
-// 	Tensor U({2,2});
-// 	Tensor S({2,2});
-// 	Tensor Vt({2,2});
-// 	
-// 	double eps = 0.001;
-// 	
-// 	U[{0,0}] = eps;
-// 	U[{0,1}] = std::sqrt(1-eps*eps);
-// 	U[{1,0}] = std::sqrt(1-eps*eps);
-// 	U[{1,1}] = -eps;
-// 	
-// 	S[{0,0}] = 1/(eps*eps);
-// 	S[{1,1}] = 1/(1-eps*eps);
-// 	
-// 	Vt[{0,0}] = eps;
-// 	Vt[{0,1}] = std::sqrt(1-eps*eps);
-// 	Vt[{1,0}] = -std::sqrt(1-eps*eps);
-// 	Vt[{1,1}] = eps;
-// 	
-// 	LOG(test, "U: " << std::endl << U.to_string());
-// 	LOG(test, "S: " << std::endl << S.to_string());
-// 	LOG(test, "Vt: " << std::endl << Vt.to_string());
-// 	
-// 	
-// 	
-// 	Tensor UU;
-// 	UU(i,k) = U(j,i) * U(j,k);
-// 	LOG(test, "UU: " << std::endl << UU.to_string());
-// 	
-// 	UU(i,k) = U(i,j) * U(k,j);
-// 	LOG(test, "UU: " << std::endl << UU.to_string());
-// 	
-// 	Tensor X;
-// 	
-// 	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
-// 	LOG(test, "X: " << std::endl << X.to_string());
-// 	
-// 	Tensor M, P, L;
-// 	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
-// 	
-// 	LOG(test, "M: " << std::endl << M.to_string());
-// 	LOG(test, "L: " << std::endl << L.to_string());
-// 	LOG(test, "P: " << std::endl << P.to_string());
-// 	
-// 	
-// 	X(i,l) = M(i,j)* L(j,k)* P(k,l);
-// 	
-// 	LOG(test, "X: " << std::endl << X.to_string());
-// )
 
 static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
     //Random numbers
@@ -117,7 +66,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 			double alpha = std::abs(fullX[posB]/fullX[posA]);
 			double Xn = std::abs(fullX[posA]);
 			
-			size_t position = X.find_largest_entry(alpha, Xn);
+			size_t position = find_largest_entry(X, alpha, Xn);
 			
 			LOG(largestEntry, "Result: " << fullX[position] << " vs " << fullX[posA] << " at positions " << position << " and " << posA);
 			TEST(position == posA);

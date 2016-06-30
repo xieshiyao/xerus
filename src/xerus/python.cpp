@@ -566,7 +566,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("dyadic_product", static_cast<TTTensor (*)(const std::vector<TTTensor> &)>(&TTTensor::dyadic_product))
 			.staticmethod("dyadic_product") //  TODO should not be in TTTensor scope
 		.def("entrywise_square", &TTTensor::entrywise_square) // TODO should not be a member method?
-		.def("find_largest_entry", &TTTensor::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
 		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
@@ -598,6 +597,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def(self -= self)
 	;
 	def("entrywise_product", static_cast<TTTensor (*)(const TTTensor&, const TTTensor&)>(&entrywise_product));
+	def("find_largest_entry", static_cast<size_t (*)(const TTTensor&, value_t, value_t)>(&find_largest_entry));
 	
 	class_<TTOperator, bases<TensorNetwork>>("TTOperator")
 		.def(init<const Tensor&, optional<value_t, size_t>>())
@@ -630,7 +630,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("dyadic_product", static_cast<TTOperator (*)(const std::vector<TTOperator> &)>(&TTOperator::dyadic_product))
 			.staticmethod("dyadic_product") //  TODO should not be in TTOperator scope
 		.def("entrywise_square", &TTOperator::entrywise_square) // TODO should not be a member method!
-		.def("find_largest_entry", &TTOperator::find_largest_entry) // TODO should not be a member method!
 		// TODO chop wrapper
 		
 		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round),
@@ -667,6 +666,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("transpose", &TTOperator::transpose<>)
 	;
 	def("entrywise_product", static_cast<TTOperator (*)(const TTOperator&, const TTOperator&)>(&entrywise_product));
+	def("find_largest_entry", static_cast<size_t (*)(const TTOperator&, value_t, value_t)>(&find_largest_entry));
 	
 	// ------------------------------------------------------------- Algorithms
 	VECTOR_TO_PY(PerformanceData::DataPoint, "PerfDataVector");

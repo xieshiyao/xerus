@@ -905,60 +905,6 @@ namespace xerus {
 	}
 	
 	
-	template<bool isOperator>
-	size_t TTNetwork<isOperator>::find_largest_entry(const double _accuracy, const value_t _lowerBound) const {
-		require_correct_format();
-		
-		// There is actual work to be done
-		if(misc::sum(ranks()) >= degree()) {
-			const double alpha = _accuracy;
-			
-			TTNetwork X = *this;
-			X.round(size_t(1));
-			double Xn = std::max(operator[](X.find_largest_entry(0.0, 0.0)), _lowerBound);
-			double tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
-			
-			X = *this;
-			while(misc::sum(X.ranks()) >= degree()) {
-				X.entrywise_square();
-				
-				X.soft_threshold(tau, true);
-				
-				TTNetwork Y = X;
-				Y.round(1);
-				const size_t yMaxPos = Y.find_largest_entry(0.0, 0.0);
-				
-				Xn = std::max(X[yMaxPos], (1-(1-alpha)*alpha/2.0)*Xn*Xn);
-				
-				const double fNorm = X.frob_norm();
-				Xn /= fNorm;
-				X /= fNorm;
-				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(degree()-1));
-			}
-			return X.find_largest_entry(0.0, 0.0);
-			
-		// We are already rank one
-		} else {
-			const size_t numComponents = degree()/N;
-			size_t position = 0;
-			size_t factor = misc::product(dimensions);
-			for(size_t c = 0; c < numComponents; ++c) {
-				const size_t localSize = isOperator ? dimensions[c]*dimensions[numComponents+c] : dimensions[c];
-				factor /= localSize;
-				
-				size_t maxPos = 0;
-				for(size_t i = 1; i < localSize; ++i) {
-					if(std::abs(get_component(c)[i]) > std::abs(get_component(c)[maxPos])) {
-						maxPos = i;
-					}
-				}
-				position += maxPos*factor;
-			}
-			return position;
-		}
-	}
-	
-	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	

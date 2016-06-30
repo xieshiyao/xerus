@@ -25,7 +25,6 @@
 
 
 #pragma once
-
 #include <type_traits>
 
 // macro shorthands

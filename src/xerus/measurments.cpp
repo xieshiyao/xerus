@@ -46,7 +46,7 @@ namespace xerus {
 	size_t SinglePointMeasurementSet::degree() const {
 		IF_CHECK(
 			for(size_t i = 0; i+1 < positions.size(); ++i) {
-				REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsitent degrees in measurment set.");
+				REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsistent degrees in measurment set.");
 			}
 		)
 		return positions.empty() ? 0 : positions[0].size();
@@ -183,22 +183,21 @@ namespace xerus {
 	
 	void sort(RankOneMeasurementSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<Tensor>& _lhs, const std::vector<Tensor>& _rhs) {
-		for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
-			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
-			for(size_t j = 0; j < _lhs[i].size; ++j) {
-				if (_lhs[i][j] < _rhs[i][j]) return true;
-				if (_lhs[i][j] > _rhs[i][j]) return false;
+			for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
+				REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
+				for(size_t j = 0; j < _lhs[i].size; ++j) {
+					if (_lhs[i][j] < _rhs[i][j]) return true;
+					if (_lhs[i][j] > _rhs[i][j]) return false;
+				}
 			}
-		}
-		for (size_t i = _lhs.size(); i > _splitPos; --i) {
-			REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
-			for(size_t j = 0; j < _lhs[i].size; ++j) {
-				if (_lhs[i-1][j] < _rhs[i-1][j]) return true;
-				if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
+			for (size_t i = _lhs.size(); i > _splitPos; --i) {
+				REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
+				for(size_t j = 0; j < _lhs[i].size; ++j) {
+					if (_lhs[i-1][j] < _rhs[i-1][j]) return true;
+					if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
+				}
 			}
-		}
-// 		LOG(fatal, "Measurments must not appear twice. ");
-		return false; // equality
-	});
+			return false; // equality
+		});
 	}
 }

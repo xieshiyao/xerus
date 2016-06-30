@@ -329,7 +329,7 @@ namespace xerus {
 		/** 
 		* @brief Splits the TTNetwork into two parts by removing the node.
 		* @param _position index of the component to be removed, thereby also defining the position 
-		*of the split.
+		*  of the split.
 		* @return a std::pair containing the two remaining parts as TensorNetworks.
 		*/
 		std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
@@ -446,19 +446,6 @@ namespace xerus {
 		
 		
 		virtual value_t frob_norm() const override;
-		
-		
-		/** 
-		* @brief Finds the position of the approximately largest entry.
-		* @details Uses an algorithms to find an entry that is at least of size @a _accuracy * X_max in absolute value,
-		* where X_max is the largest entry of the tensor. The smaller @a _accuracy, the faster the algorithm will work.
-		* @param _accuracy factor that determains the maximal deviation of the returned entry from the true largest entry.
-		* @param _lowerBound a lower bound for the largest entry, i.e. there must be an entry in the tensor which is at least of
-		* this size (in absolute value). The algorithm may fail completely if this is not fullfilled, but will work using its own 
-		* approximation if no value (i.e. 0.0) is given.
-		* @return the position of the entry found.
-		*/
-		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound = 0.0) const;
 		
 		
 		/** 
