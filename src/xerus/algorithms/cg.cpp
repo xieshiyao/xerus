@@ -74,7 +74,7 @@ namespace xerus {
 				gradient = TTTangentVector(_x, residual);
 			} else {
 				TTTensor grad;
-				grad(i&0) = _A(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
+				grad(i&0) = (*_Ap)(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
 				gradient = TTTangentVector(_x, grad);
 			}
 			gradientNorm = gradient.frob_norm();

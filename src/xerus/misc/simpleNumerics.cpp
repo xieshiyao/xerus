@@ -137,7 +137,7 @@ namespace xerus {
 				}
 				REQUIRE(std::isfinite(fmid), "invalid function value f("<<mid<<") = " << fmid << " reached in bisection");
 				if (fmin * fmid < 0) {
-					fmax = fmid;
+// 					fmax = fmid; // never needed again
 					_max = mid;
 				} else {
 					fmin = fmid;
