@@ -569,6 +569,6 @@ namespace xerus {
 			XERUS_PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
-	}
+	} // namespace blasWrapper
 
-}
+} // namespace xerus

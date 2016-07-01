@@ -454,5 +454,5 @@ namespace xerus {
 				XERUS_PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			}
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

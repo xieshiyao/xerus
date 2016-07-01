@@ -42,4 +42,4 @@ namespace xerus {
 		_out << " (" << _rhs.indexPosition << "), dim " << _rhs.dimension << "}";
         return _out;
     }
-}
+} // namespace xerus

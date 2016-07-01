@@ -1706,5 +1706,5 @@ namespace xerus {
 				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
 			}
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

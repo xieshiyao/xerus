@@ -177,4 +177,4 @@ namespace xerus {
 		_out << "index#" << _idx.valueId << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "&" : (_idx.flags[Index::Flag::FRACTIONAL_SPAN] ? "/" : "^")) << _idx.span;
 		return _out;
 	}
-}
+} // namespace xerus

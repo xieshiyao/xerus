@@ -651,4 +651,4 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<RankOneMeasurementSet>;
 	
 	const ADFVariant ADF(0, 1e-8, 1e-3);
-}
+} // namespace xerus

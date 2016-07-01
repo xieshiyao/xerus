@@ -1415,6 +1415,6 @@ namespace xerus {
 		}
 		template void stream_reader(std::istream& _stream, TTNetwork<true> &_obj, const misc::FileFormat _format);
 		template void stream_reader(std::istream& _stream, TTNetwork<false> &_obj, const misc::FileFormat _format);
-	}
+	} // namespace misc
 	
-}
+} // namespace xerus

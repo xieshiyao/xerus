@@ -257,4 +257,5 @@ namespace xerus { namespace internal {
 	}
 
 
-}}
+} // namespace internal
+} // namespace xerus

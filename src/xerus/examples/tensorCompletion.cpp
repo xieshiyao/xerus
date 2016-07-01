@@ -47,5 +47,7 @@ namespace xerus { namespace examples { namespace completion {
 			_measurements.measuredValues[i] = 1/(_additiveConst + sum);
 		}
 	}
-}}}
+} // namespace completion
+} // namespace examples
+} // namespace xerus
 

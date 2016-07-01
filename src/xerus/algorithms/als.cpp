@@ -559,4 +559,4 @@ namespace xerus {
 	
 	const ALSVariant ASD(1, 0, ALSVariant::ASD_solver, false);
 	const ALSVariant ASD_SPD(1, 0, ALSVariant::ASD_solver, true);
-}
+} // namespace xerus

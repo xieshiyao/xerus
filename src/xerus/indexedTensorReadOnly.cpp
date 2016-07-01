@@ -346,5 +346,5 @@ namespace xerus {
 			}
 			return degree;
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

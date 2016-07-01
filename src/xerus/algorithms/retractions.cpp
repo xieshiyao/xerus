@@ -285,4 +285,4 @@ namespace xerus {
 		
 		_tangentVector = TTTangentVector(_newBase, TTTensor(_tangentVector));
 	}
-}
+} // namespace xerus

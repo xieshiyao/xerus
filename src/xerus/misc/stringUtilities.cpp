@@ -121,5 +121,5 @@ namespace xerus {
         }
 
 
-    }
-}
+    } // namespace misc
+} // namespace xerus

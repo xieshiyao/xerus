@@ -176,4 +176,4 @@ namespace xerus {
 	}
 	
 	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetractionII);
-}
+} // namespace xerus

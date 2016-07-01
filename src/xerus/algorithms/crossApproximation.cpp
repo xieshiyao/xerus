@@ -92,4 +92,4 @@ namespace xerus {
 		return reconstruction;
 	}
 	
-}
+} // namespace xerus

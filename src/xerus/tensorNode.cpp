@@ -82,4 +82,4 @@ namespace xerus {
         neighbors.clear();
         tensorObject.reset();
     }
-}
+} // namespace xerus

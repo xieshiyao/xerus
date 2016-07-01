@@ -140,4 +140,4 @@ namespace xerus {
 	}
 
 	PerformanceData NoPerfData(false, false);
-}
+} // namespace xerus

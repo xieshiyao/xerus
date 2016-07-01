@@ -101,5 +101,6 @@ namespace xerus { namespace misc {
 		out.close();
 	}
 
-}}
+} // namespace misc
+} // namespace xerus
 

@@ -263,4 +263,4 @@ namespace xerus {
 		C = (*C.tensorObjectReadOnly)(lhsPreliminaryIndices);
 		Q = (*Q.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
-}
+} // namespace xerus

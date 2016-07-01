@@ -47,5 +47,5 @@ namespace xerus {
 			fputs(_stdin.c_str(), pipe);
 			pclose(pipe);
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

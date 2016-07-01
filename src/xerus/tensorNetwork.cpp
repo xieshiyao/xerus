@@ -1547,5 +1547,5 @@ namespace xerus {
 			
 			_obj.require_valid_network();
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

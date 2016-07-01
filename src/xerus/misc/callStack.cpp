@@ -190,7 +190,8 @@ namespace xerus { namespace misc { namespace internal {
 		return internal::bfdResolver::get_range_of_section(_addr, _name);
 	}
 	
-} } // namespaces
+} // namespace misc
+ } // namespace xerus
 
 #else // No fancy callstack
 	#include <execinfo.h>

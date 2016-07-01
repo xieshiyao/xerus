@@ -124,4 +124,4 @@ namespace xerus {
 	}
 	
 	const GeometricCGVariant GeometricCG(0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport);
-}
+} // namespace xerus

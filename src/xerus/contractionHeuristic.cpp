@@ -379,6 +379,6 @@ namespace xerus {
 // 			,&greedy_best_of_three_heuristic
 			,&exchange_heuristic
 		};
-    }
+    } // namespace internal
 
-}
+} // namespace xerus

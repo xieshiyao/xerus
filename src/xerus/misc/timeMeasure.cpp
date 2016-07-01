@@ -55,5 +55,5 @@ namespace xerus {
 
         size_t TimeMeasure::getTotal() const { return (uTime() - timeStart); }
 
-    }
-}
+    } // namespace misc
+} // namespace xerus

@@ -57,4 +57,4 @@ namespace xerus {
 	
 	template size_t find_largest_entry(const TTNetwork<true> &, double, value_t);
 	template size_t find_largest_entry(const TTNetwork<false> &, double, value_t);
-}
+} // namespace xerus

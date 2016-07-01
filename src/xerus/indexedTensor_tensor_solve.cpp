@@ -174,4 +174,4 @@ namespace xerus {
 		solve(std::move(tmpX), std::move(_A), std::move(_b));
 		return tmpX;
 	}
-}
+} // namespace xerus

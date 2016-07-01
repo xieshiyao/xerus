@@ -63,4 +63,4 @@ namespace xerus {
 			lastResidual = residual;
 		}
 	}
-}
+} // namespace xerus

@@ -62,5 +62,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensorMoveable<Tensor>;
 		template class IndexedTensorMoveable<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

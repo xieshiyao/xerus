@@ -48,5 +48,5 @@ namespace xerus {
 			_first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
 			return std::move(_first);
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

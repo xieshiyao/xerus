@@ -384,5 +384,5 @@ namespace xerus {
         template class RichardsonExtrapolation<float>;
         template class RichardsonExtrapolation<double>;
     
-    }
-}
+    } // namespace misc
+} // namespace xerus

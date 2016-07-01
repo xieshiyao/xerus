@@ -221,4 +221,4 @@ namespace xerus {
         matrix_matrix_product(CT, _rightDim, _leftDim, _alpha, _B, !_transposeB, _midDim, _A, !_transposeA);
         transpose(_C, CT, _rightDim, _leftDim);
     }
-}
+} // namespace xerus

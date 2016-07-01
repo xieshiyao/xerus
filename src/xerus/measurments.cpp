@@ -200,4 +200,4 @@ namespace xerus {
 			return false; // equality
 		});
 	}
-}
+} // namespace xerus

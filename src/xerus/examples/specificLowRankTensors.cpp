@@ -47,5 +47,6 @@ namespace xerus { namespace examples {
 		return result;
 	}
 	
-}}
+} // namespace examples
+} // namespace xerus
 

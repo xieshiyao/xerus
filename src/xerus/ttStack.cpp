@@ -339,5 +339,5 @@ namespace xerus {
 		// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 		template class TTStack<false>;
 		template class TTStack<true>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

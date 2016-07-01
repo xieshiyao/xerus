@@ -29,4 +29,4 @@ namespace xerus {
     template<>template<>
     IndexedTensorMoveable<Tensor>::IndexedTensorMoveable(      IndexedTensorReadOnly<Tensor> && _other) : 
         IndexedTensorWritable<Tensor>(_other.tensorObjectReadOnly->get_copy(), std::move(_other.indices), true) { }*/
-}
+} // namespace xerus

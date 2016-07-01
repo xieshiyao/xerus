@@ -71,5 +71,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensor<Tensor>;
 		template class IndexedTensor<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus
