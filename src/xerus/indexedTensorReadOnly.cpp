@@ -63,8 +63,8 @@ namespace xerus {
 		}
 		
 		template<class tensor_type>
-		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
-			return otherTensor == tensorObjectReadOnly;
+		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *_otherTensor) const {
+			return _otherTensor == tensorObjectReadOnly;
 		}
 		
 		template<class tensor_type>

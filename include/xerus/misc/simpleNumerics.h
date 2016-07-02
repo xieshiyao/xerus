@@ -57,7 +57,7 @@ namespace xerus { namespace misc {
 	
 	
 	
-	std::vector<boost::math::tools::polynomial<double>> build_orthogonal_polynom_base(const size_t _degree, const std::function<double (double)>& _weight, const double _minX, const double _maxX);
+	std::vector<boost::math::tools::polynomial<double>> build_orthogonal_polynom_base(const size_t _n, const std::function<double (double)>& _weight, const double _minX, const double _maxX);
 	
 	
 	template<class T>

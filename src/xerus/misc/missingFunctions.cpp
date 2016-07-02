@@ -33,9 +33,10 @@ namespace xerus {
 			REQUIRE(pipe, "could not start " << _cmd);
 			char buffer[128];
 			std::string result = "";
-			while(!feof(pipe)) {
-				if(fgets(buffer, 128, pipe))
+			while(feof(pipe) == 0) {
+				if(fgets(buffer, 128, pipe) != nullptr) {
 					result += buffer;
+				}
 			}
 			pclose(pipe);
 			return result;

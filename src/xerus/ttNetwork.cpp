@@ -211,9 +211,8 @@ namespace xerus {
 			result.set_component(i, Tensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
-				} else {
-					return 0.0;
 				}
+				return 0.0;
 			}));
 		}
 		
@@ -343,7 +342,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	size_t TTNetwork<isOperator>::degrees_of_freedom(const std::vector<size_t> &_dimensions, const std::vector<size_t> &_ranks) {
-		if (_dimensions.size() == 0) return 1;
+		if (_dimensions.empty()) { return 1; }
 		const size_t numComponents = _dimensions.size()/N;
 		REQUIRE(_dimensions.size()%N == 0, "invalid number of dimensions for TTOperator");
 		REQUIRE(numComponents == _ranks.size()+1, "Invalid number of ranks ("<<_ranks.size()<<") or dimensions ("<<_dimensions.size()<<") given.");
@@ -351,8 +350,8 @@ namespace xerus {
 		for (size_t i=0; i<numComponents; ++i) {
 			size_t component = i==0? 1 : _ranks[i-1];
 			component *= _dimensions[i];
-			if (isOperator) component *= _dimensions[i+numComponents];
-			if (i<_ranks.size()) component *= _ranks[i];
+			if (isOperator) { component *= _dimensions[i+numComponents]; }
+			if (i<_ranks.size()) { component *= _ranks[i]; }
 			result += component;
 		}
 		for (const auto r : _ranks) {
@@ -715,10 +714,9 @@ namespace xerus {
 		require_correct_format();
 		if (cannonicalized) {
 			return get_component(corePosition).frob_norm();
-		} else {
-			const Index i;
-			return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));
 		}
+		const Index i;
+		return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));
 	}
 	
 	
@@ -790,7 +788,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::operator*=(const value_t _factor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		
 		if(cannonicalized) {
 			component(corePosition) *= _factor;
@@ -812,7 +810,7 @@ namespace xerus {
 	
 	
 	template<>
-	bool TTNetwork<false>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&, internal::IndexedTensorReadOnly<TensorNetwork>&&, internal::IndexedTensorReadOnly<TensorNetwork>&&) {
+	bool TTNetwork<false>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& /*unused*/, internal::IndexedTensorReadOnly<TensorNetwork>&& /*unused*/, internal::IndexedTensorReadOnly<TensorNetwork>&& /*unused*/) {
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		return false;
 	}
@@ -831,13 +829,13 @@ namespace xerus {
 		const TTOperator* const otherTTO = dynamic_cast<const TTOperator*>(_other.tensorObjectReadOnly);
 		const internal::TTStack<true>* const otherTTOStack = dynamic_cast<const internal::TTStack<true>*>(_other.tensorObjectReadOnly);
 		
-		if (!otherTT && !otherTTStack && !otherTTO && !otherTTOStack) {
+		if ((otherTT == nullptr) && (otherTTStack == nullptr) && (otherTTO == nullptr) && (otherTTOStack == nullptr)) {
 			return false;
 		}
 		
 		bool cannoAtTheEnd = false;
 		size_t coreAtTheEnd = 0;
-		if (meTT) {
+		if (meTT != nullptr) {
 			cannoAtTheEnd = meTT->cannonicalized;
 			coreAtTheEnd = meTT->corePosition;
 		} else {
@@ -860,16 +858,16 @@ namespace xerus {
 			return false; // an index spanned some links of the left and some of the right side
 		}
 		
-		if (otherTT || otherTTStack) {
+		if ((otherTT != nullptr) || (otherTTStack != nullptr)) {
 			// ensure fitting indices
 			if (std::equal(_me.indices.begin(), midIndexItr, _other.indices.begin()) || std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) {
 				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd), _me.indices));
 				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
-			} else {
+			} 
 				return false;
-			}
+			
 		} else { // other is operator or operator stack
 			// determine other middle index
 			auto otherMidIndexItr = _other.indices.begin();
@@ -892,9 +890,9 @@ namespace xerus {
 				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
-			} else {
+			} 
 				return false;
-			}
+			
 		}
 	}
 	
@@ -958,7 +956,7 @@ namespace xerus {
 		if(moveMe && (stackMe = dynamic_cast<internal::TTStack<isOperator>*>(moveMe->tensorObject))) {
 			meStorage.reset(new TTNetwork());
 			usedMe = meStorage.get();
-			*meStorage.get() = TTNetwork(*stackMe);
+			*meStorage = TTNetwork(*stackMe);
 			INTERNAL_CHECK(usedMe->dimensions == stackMe->dimensions, "Ie " << stackMe->dimensions << " vs "  << usedMe->dimensions);
 		} else { // I am normal
 			INTERNAL_CHECK(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");

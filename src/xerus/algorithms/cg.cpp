@@ -46,7 +46,7 @@ namespace xerus {
 		value_t currResidual=1e100;
 		value_t normB = frob_norm(_b);
 		
-		if (_Ap) {
+		if (_Ap != nullptr) {
 			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _A.ranks() << '\n';
 			if (assumeSymmetricPositiveDefiniteOperator) {
@@ -62,7 +62,7 @@ namespace xerus {
 		_perfData.start();
 		
 		auto calculateResidual = [&]()->value_t {
-			if (_Ap) {
+			if (_Ap != nullptr) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
@@ -70,7 +70,7 @@ namespace xerus {
 			return frob_norm(residual);//normB;
 		};
 		auto updateGradient = [&]() {
-			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
+			if (assumeSymmetricPositiveDefiniteOperator || (_Ap == nullptr)) {
 				gradient = TTTangentVector(_x, residual);
 			} else {
 				TTTensor grad;

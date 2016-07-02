@@ -92,7 +92,7 @@ namespace xerus {
 		cpy.dimensions = dimensions;
 		cpy.externalLinks = externalLinks;
 		for (size_t id = 0; id < nodes.size(); ++id) {
-			if (!_idF(id)) continue;
+			if (!_idF(id)) { continue; }
 			cpy.nodes[id] = nodes[id].strippped_copy();
 			for (size_t i = 0; i < cpy.nodes[id].neighbors.size(); ++i) {
 				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
@@ -184,7 +184,7 @@ namespace xerus {
 				nodes[remaining].erased = true;
 				for(size_t i = 0; i < nodes.size(); ++i) {
 					if(!nodes[i].erased) {
-						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject.get())[0];
+						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject)[0];
 						break;
 					}
 					INTERNAL_CHECK(i < nodes.size()-1, "Internal Error.");
@@ -194,7 +194,7 @@ namespace xerus {
 		
 		sanitize();
 		
-		INTERNAL_CHECK(nodes.size() > 0, "Internal error");
+		INTERNAL_CHECK(!nodes.empty(), "Internal error");
 	}
 	
 	
@@ -272,7 +272,7 @@ namespace xerus {
 		nodes.resize(newId);
 		for (TensorNode &n : nodes) {
 			for (TensorNetwork::Link &l : n.neighbors) {
-				if (!l.external) l.other = idMap[l.other];
+				if (!l.external) { l.other = idMap[l.other]; }
 			}
 		}
 		
@@ -405,14 +405,14 @@ namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 	void TensorNetwork::operator*=(const value_t _factor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		REQUIRE(!nodes[0].erased, "There must not be an erased node.");
 		*nodes[0].tensorObject *= _factor;
 	}
 	
 	
 	void TensorNetwork::operator/=(const value_t _divisor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		REQUIRE(!nodes[0].erased, "There must not be an erased node.");
 		*nodes[0].tensorObject /= _divisor;
 	}
@@ -523,7 +523,7 @@ namespace xerus {
 #ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	void TensorNetwork::require_valid_network(const bool _check_erased) const {
 		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
-		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
+		REQUIRE(!nodes.empty(), "There must always be at least one node!");
 		
 		// Per external link
 		for (size_t n = 0; n < externalLinks.size(); ++n) {
@@ -714,14 +714,14 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::round_edge(const size_t _from, const size_t _to, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
 		require_valid_network();
 		
 		size_t fromPos, toPos;
-		std::tie(fromPos, toPos) = find_common_edge(_from, _to);
+		std::tie(fromPos, toPos) = find_common_edge(_nodeA, _nodeB);
 		
-		Tensor& fromTensor = *nodes[_from].tensorObject;
-		Tensor& toTensor = *nodes[_to].tensorObject;
+		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
+		Tensor& toTensor = *nodes[_nodeB].tensorObject;
 		
 		const size_t fromDegree = fromTensor.degree();
 		const size_t toDegree = toTensor.degree();
@@ -852,21 +852,21 @@ namespace xerus {
 		}
 		
 		// Set the new dimension in the nodes
-		nodes[_from].neighbors[fromPos].dimension = nodes[_from].tensorObject->dimensions[fromPos];
-		nodes[_to].neighbors[toPos].dimension = nodes[_to].tensorObject->dimensions[toPos];
+		nodes[_nodeA].neighbors[fromPos].dimension = nodes[_nodeA].tensorObject->dimensions[fromPos];
+		nodes[_nodeB].neighbors[toPos].dimension = nodes[_nodeB].tensorObject->dimensions[toPos];
 	}
 	
 	
-	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
-		REQUIRE(_nodeA < nodes.size() && _nodeB < nodes.size(), " Illegal node IDs " << _nodeA << "/" << _nodeB << " as there are only " << nodes.size() << " nodes");
+	void TensorNetwork::transfer_core(const size_t _from, const size_t _to, const bool _allowRankReduction) {
+		REQUIRE(_from < nodes.size() && _to < nodes.size(), " Illegal node IDs " << _from << "/" << _to << " as there are only " << nodes.size() << " nodes");
 		require_valid_network();
 		
 		Tensor Q, R;
 		size_t posA, posB;
-		std::tie(posA, posB) = find_common_edge(_nodeA, _nodeB);
+		std::tie(posA, posB) = find_common_edge(_from, _to);
 		
-		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
-		Tensor& toTensor = *nodes[_nodeB].tensorObject;
+		Tensor& fromTensor = *nodes[_from].tensorObject;
+		Tensor& toTensor = *nodes[_to].tensorObject;
 		
 		bool transR = false;
 		if(posA == 0) {
@@ -877,36 +877,36 @@ namespace xerus {
 			}
 			fromTensor = Q;
 			transR = true;
-		} else if(posA == nodes[_nodeA].degree()-1) {
+		} else if(posA == nodes[_from].degree()-1) {
 			if(_allowRankReduction) {
-				calculate_qc(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qc(Q, R, fromTensor, nodes[_from].degree()-1);
 			} else {
-				calculate_qr(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qr(Q, R, fromTensor, nodes[_from].degree()-1);
 			}
 			fromTensor = Q;
 		} else {
-			std::vector<size_t> forwardShuffle(nodes[_nodeA].degree());
-			std::vector<size_t> backwardShuffle(nodes[_nodeA].degree());
+			std::vector<size_t> forwardShuffle(nodes[_from].degree());
+			std::vector<size_t> backwardShuffle(nodes[_from].degree());
 			
 			for(size_t i = 0; i < posA; ++i) { 
 				forwardShuffle[i] = i;
 				backwardShuffle[i] = i;
 			}
 			
-			for(size_t i = posA; i+1 < nodes[_nodeA].degree(); ++i) {
+			for(size_t i = posA; i+1 < nodes[_from].degree(); ++i) {
 				forwardShuffle[i+1] = i;
 				backwardShuffle[i] = i+1;
 			}
 			
-			forwardShuffle[posA] = nodes[_nodeA].degree()-1;
-			backwardShuffle[nodes[_nodeA].degree()-1] = posA;
+			forwardShuffle[posA] = nodes[_from].degree()-1;
+			backwardShuffle[nodes[_from].degree()-1] = posA;
 			
 			reshuffle(fromTensor, fromTensor, forwardShuffle);
 			
 			if(_allowRankReduction) {
-				calculate_qc(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qc(Q, R, fromTensor, nodes[_from].degree()-1);
 			} else {
-				calculate_qr(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qr(Q, R, fromTensor, nodes[_from].degree()-1);
 			}
 			
 			reshuffle(fromTensor, Q, backwardShuffle);
@@ -915,19 +915,19 @@ namespace xerus {
 		if( posB == 0 ) {
 			xerus::contract(toTensor, R, transR, toTensor, false, 1);
 			
-		} else if( posB == nodes[_nodeB].degree()-1 ) {
+		} else if( posB == nodes[_to].degree()-1 ) {
 			xerus::contract(toTensor, toTensor, false, R, !transR, 1);
 			
 		} else {
-			std::vector<size_t> forwardShuffle(nodes[_nodeB].degree());
-			std::vector<size_t> backwardShuffle(nodes[_nodeB].degree());
+			std::vector<size_t> forwardShuffle(nodes[_to].degree());
+			std::vector<size_t> backwardShuffle(nodes[_to].degree());
 			
 			for(size_t i = 0; i < posB; ++i) {
 				forwardShuffle[i] = i+1;
 				backwardShuffle[i+1] = i;
 			}
 			
-			for(size_t i = posB+1; i < nodes[_nodeB].degree(); ++i) {
+			for(size_t i = posB+1; i < nodes[_to].degree(); ++i) {
 				forwardShuffle[i] = i;
 				backwardShuffle[i] = i;
 			}
@@ -943,8 +943,8 @@ namespace xerus {
 		}
 		
 		// Set the new dimension in the nodes
-		nodes[_nodeA].neighbors[posA].dimension = fromTensor.dimensions[posA];
-		nodes[_nodeB].neighbors[posB].dimension = toTensor.dimensions[posB];
+		nodes[_from].neighbors[posA].dimension = fromTensor.dimensions[posA];
+		nodes[_to].neighbors[posB].dimension = toTensor.dimensions[posB];
 	}
 	
 	
@@ -1037,7 +1037,7 @@ namespace xerus {
 				continue;
 			}
 			for (Link &l : currNode.neighbors) {
-				if (l.external) continue;
+				if (l.external) { continue; }
 				size_t r=1;
 				for (Link &l2 : currNode.neighbors) {
 					if (l2.other == l.other) {
@@ -1295,7 +1295,7 @@ namespace xerus {
 			perform_traces(id);
 		}
 		
-		if (_ids.size() == 0) { return ~0ul; }
+		if (_ids.empty()) { return ~0ul; }
 		
 		if (_ids.size() == 1) { return *_ids.begin(); }
 

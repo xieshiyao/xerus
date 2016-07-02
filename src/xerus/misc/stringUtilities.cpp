@@ -36,16 +36,15 @@ namespace xerus {
 
             if (realname) { 
                 return std::string(realname.get()); 
-            } else { 
-                return ""; 
-            }
+            } 
+            return ""; 
         }
 
         __attribute__((const, pure)) std::string normalize_pathname(const std::string &_name) {
             std::vector<std::string> oldpath = explode(_name,'/');
             std::vector<std::string *> newpath;
             for (std::string &f : oldpath) {
-                if (f.empty()) continue;
+                if (f.empty()) { continue; }
                 if (f==".." && !newpath.empty() && *newpath.back() != "..") {
                     newpath.pop_back();
                 } else {
@@ -57,16 +56,16 @@ namespace xerus {
                 ret += *f;
                 ret += '/';
             }
-            if (!ret.empty()) ret.pop_back();
+            if (!ret.empty()) { ret.pop_back(); }
             return ret;
         }
 
-        std::vector<std::string> explode(const std::string& _string, const char delim) {
+        std::vector<std::string> explode(const std::string& _string, const char _delim) {
             std::vector<std::string> result;
             std::istringstream iss(_string);
 
             std::string token;
-            while(std::getline(iss, token, delim)) {
+            while(std::getline(iss, token, _delim)) {
                 result.push_back(std::move(token));
             }
 
@@ -96,10 +95,9 @@ namespace xerus {
 			const size_t strBegin = _string.find_first_not_of(whitespace);
 			if (strBegin == std::string::npos) {
 				return "";
-			} else {
-				const size_t strEnd = _string.find_last_not_of(whitespace);
-				return _string.substr(strBegin, strEnd - strBegin + 1);
-			}
+			} 
+			const size_t strEnd = _string.find_last_not_of(whitespace);
+			return _string.substr(strBegin, strEnd - strBegin + 1);
 		}
 
         void reduce(std::string& _string, const std::string& whitespace, const std::string& fill) {

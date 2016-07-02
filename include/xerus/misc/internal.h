@@ -27,6 +27,7 @@
 #pragma once
 #include "containerOutput.h"
 #include <type_traits>
+#include <memory>
 
 // macro shorthands
 #define REQUIRE 		XERUS_REQUIRE
