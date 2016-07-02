@@ -52,7 +52,7 @@ namespace xerus {
         return *this;
     }
     
-    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(      TensorNetwork::TensorNode&& _other) {
+    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=( TensorNetwork::TensorNode&& _other) noexcept {
         tensorObject = std::move(_other.tensorObject);
         neighbors = std::move(_other.neighbors);
         erased = _other.erased;

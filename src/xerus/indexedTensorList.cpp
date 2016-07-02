@@ -27,7 +27,7 @@
 
 namespace xerus {
 	namespace internal {
-		IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) { } 
+		IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) noexcept : tensors(std::move(_old.tensors)) { } 
 		
 		IndexedTensorList::IndexedTensorList(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
 			tensors.emplace_back(&_first);

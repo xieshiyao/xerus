@@ -1548,10 +1548,6 @@ namespace xerus {
 	}
 	
 	
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const size_t _splitPos, const Tensor& _b) {
-		LOG(fatal, "Not yet Implemented."); // TODO
-	}
-	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
 		if(_A.is_dense() && _B.is_dense()) {

@@ -440,12 +440,12 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me , internal::IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
+	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&  /*_out*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_me*/ , internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/ ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const {
+	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&  /*_out*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_me*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
@@ -714,7 +714,7 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold) {
 		require_valid_network();
 		
 		size_t fromPos, toPos;

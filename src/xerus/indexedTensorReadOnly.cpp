@@ -38,7 +38,7 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) :
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) noexcept :
 			tensorObjectReadOnly(_other.tensorObjectReadOnly),
 			indices(std::move(_other.indices))
 			{ }

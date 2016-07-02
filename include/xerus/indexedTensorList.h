@@ -49,7 +49,7 @@ namespace xerus {
 			IndexedTensorList(const IndexedTensorList& _old) = delete;
 			
 			///@brief Move constructor.
-			IndexedTensorList(IndexedTensorList&& _old);
+			IndexedTensorList(IndexedTensorList&& _old) noexcept;
 			
 			/**
 			* @brief constructor initializing an IndexedTensorList with two initial Tensor refrences.

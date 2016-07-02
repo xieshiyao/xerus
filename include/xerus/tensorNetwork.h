@@ -106,7 +106,7 @@ namespace xerus {
 			~TensorNode();
 			
 			TensorNode& operator=(const TensorNode&  _other);
-			TensorNode& operator=(      TensorNode&& _other);
+			TensorNode& operator=(      TensorNode&& _other) noexcept;
 
 			TensorNode strippped_copy() const;
 			
@@ -449,9 +449,8 @@ namespace xerus {
 		* @param _maxRank Maximal allowed rank.
 		* @param _eps Epsilion to be used in the SVD to determine zero singular values.
 		* @param _softThreshold Softthreshold that is to be applied.
-		* @param _preventZero Flag set to prevent the result to become the zero tensor.
 		*/
-		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
+		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold);
 		
 		
 		/**

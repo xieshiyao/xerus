@@ -585,7 +585,7 @@ namespace xerus {
 		cannonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0, false);
+			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0);
 		}
 		
 		assume_core_position(0);
@@ -616,7 +616,7 @@ namespace xerus {
 
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool _preventZero) {
+	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool  /*_preventZero*/) {
 		const size_t numComponents = degree()/N;
 		REQUIRE(_taus.size()+1 == numComponents || (_taus.empty() && numComponents == 0), "There must be exactly degree/N-1 taus. Here " << _taus.size() << " instead of " << numComponents-1 << " are given.");
 		require_correct_format();
@@ -627,7 +627,7 @@ namespace xerus {
 		cannonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			round_edge(numComponents-i, numComponents-i-1, std::numeric_limits<size_t>::max(), 0.0, _taus[i], true);
+			round_edge(numComponents-i, numComponents-i-1, std::numeric_limits<size_t>::max(), 0.0, _taus[i]);
 		}
 		
 		assume_core_position(0);
@@ -901,7 +901,7 @@ namespace xerus {
 	void transpose_if_operator(TTNetwork<isOperator>& _ttNetwork);
 	
 	template<>
-	void transpose_if_operator<false>(TTNetwork<false>& _ttNetwork) {}
+	void transpose_if_operator<false>(TTNetwork<false>&  /*_ttNetwork*/) {}
 	
 	template<>
 	void transpose_if_operator<true>(TTNetwork<true>& _ttNetwork) {

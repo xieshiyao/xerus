@@ -66,7 +66,7 @@ namespace xerus {
 			IndexedTensorReadOnly(const IndexedTensorReadOnly& _other ) = delete;
 			
 			/// @brief Move-constructor
-			IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
+			IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) noexcept;
 			
 			/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
 			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices);

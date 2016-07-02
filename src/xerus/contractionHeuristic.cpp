@@ -99,33 +99,33 @@ namespace xerus {
 		
 		
 		
-		double contraction_cost(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double contraction_cost(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _m*_n*_r; // TODO sparse
 		}
 		
 		
 		
 		
-		double score_size(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_size(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _n*_m-(_n+_m)*_r;
 		}
-		double score_mn(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_mn(double _m, double _n, double  /*_r*/, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _m*_n;
 		}
-		double score_speed(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_speed(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return (_n*_m-(_n+_m)*_r)/(_n*_m*_r);
 		}
-		double score_r(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_r(double  /*_m*/, double  /*_n*/, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return -_r;
 		}
-		double score_big_tensor(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_big_tensor(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			if (_n*_m<(_n+_m)*_r) {
 				return -1e10 + _n*_m*_r;
 			} 
 				return _n*_m-(_n+_m)*_r;
 			
 		}
-		double score_littlestep(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_littlestep(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			if (_n*_m<(_n+_m)*_r) {
 				return -std::max(_n,_m)*_r;
 			} 

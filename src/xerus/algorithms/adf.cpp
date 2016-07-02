@@ -475,7 +475,7 @@ namespace xerus {
 	}
 	
 	template<>
-	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet& _measurments, const size_t _meas, const size_t _corePosition) {
+	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet&  /*_measurments*/, const size_t  /*_meas*/, const size_t  /*_corePosition*/) {
 		return 0;
 	}
 	
