@@ -115,16 +115,7 @@ namespace xerus {
 		 * @param _representation (optional) the initial representation of the tensor.
 		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
-		
-		
-		/** 
-		 * @brief: Creates a new tensor with the given dimensions.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _representation (optional) the initial representation of the tensor.
-		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
-		 */
-		explicit Tensor(      DimensionTuple&& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
+		explicit Tensor(DimensionTuple _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
 		
 		
 		/** 

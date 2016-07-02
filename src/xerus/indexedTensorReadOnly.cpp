@@ -45,17 +45,13 @@ namespace xerus {
 		
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
-			
-		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices)
+			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(std::move(_indices)) { }
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
+		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() = default;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

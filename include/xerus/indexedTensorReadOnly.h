@@ -69,10 +69,7 @@ namespace xerus {
 			IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
 			
 			/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
-			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices);
-			
-			/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
-			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
+			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices);
 			
 			/// @brief Destructor must be virtual
 			virtual ~IndexedTensorReadOnly();

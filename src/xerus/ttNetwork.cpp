@@ -23,6 +23,7 @@
 */
 
 #include <algorithm>
+#include <memory>
 
 #include <xerus/ttNetwork.h>
 
@@ -62,7 +63,7 @@ namespace xerus {
 		const size_t numComponents = dimensions.size()/N;
 		
 		if (numComponents == 0) {
-			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
+			nodes.emplace_back(std::make_unique<Tensor>());
 			return;
 		}
 		
@@ -82,7 +83,7 @@ namespace xerus {
 		
 		neighbors.emplace_back(1, 0, 1, false);
 		
-		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
+		nodes.emplace_back(std::make_unique<Tensor>(Tensor::ones({1})), std::move(neighbors));
 		
 		for (size_t i = 0; i < numComponents; ++i) {
 			neighbors.clear();
@@ -92,15 +93,15 @@ namespace xerus {
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
 			if(!isOperator) {
-				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], 1}, 0))), std::move(neighbors) );
+				nodes.emplace_back( std::make_unique<Tensor>(Tensor::dirac({1, dimensions[i], 1}, 0)), std::move(neighbors) );
 			} else {
-				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], dimensions[numComponents+i], 1}, 0))), std::move(neighbors) );
+				nodes.emplace_back( std::make_unique<Tensor>(Tensor::dirac({1, dimensions[i], dimensions[numComponents+i], 1}, 0)), std::move(neighbors) );
 			}
 		}
 		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
-		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
+		nodes.emplace_back( std::make_unique<Tensor>(Tensor::ones({1})), std::move(neighbors));
 		
 		// Make a Zero Tensor (at core)
 		(*nodes[1].tensorObject)[0] = 0;
@@ -354,8 +355,8 @@ namespace xerus {
 			if (i<_ranks.size()) component *= _ranks[i];
 			result += component;
 		}
-		for (size_t i=0; i<_ranks.size(); ++i) {
-			result -= misc::sqr(_ranks[i]);
+		for (const auto r : _ranks) {
+			result -= misc::sqr(r);
 		}
 		return result;
 	}
@@ -848,7 +849,7 @@ namespace xerus {
 		// TODO profiler should warn if other->corePosition is not identical to coreAtTheEnd
 		
 		// Determine my first half and second half of indices
-		std::vector<Index>::iterator midIndexItr = _me.indices.begin();
+		auto midIndexItr = _me.indices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
 			INTERNAL_CHECK(midIndexItr != _me.indices.end(), "Internal Error.");

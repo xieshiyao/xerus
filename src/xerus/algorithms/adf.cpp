@@ -50,8 +50,8 @@ namespace xerus {
 			const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
 			const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
 			
-			std::map<size_t, double>::const_iterator itrA = dataA.begin();
-			std::map<size_t, double>::const_iterator itrB = dataB.begin();
+			auto itrA = dataA.begin();
+			auto itrB = dataB.begin();
 			
 			while(itrA != dataA.end() && itrB != dataB.end()) {
 				if(itrA->first == itrB->first) {

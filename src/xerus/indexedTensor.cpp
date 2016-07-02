@@ -27,6 +27,7 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 	namespace internal {

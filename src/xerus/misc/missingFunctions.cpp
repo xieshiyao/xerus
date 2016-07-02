@@ -34,7 +34,7 @@ namespace xerus {
 			char buffer[128];
 			std::string result = "";
 			while(!feof(pipe)) {
-				if(fgets(buffer, 128, pipe) != NULL)
+				if(fgets(buffer, 128, pipe))
 					result += buffer;
 			}
 			pclose(pipe);

@@ -36,10 +36,10 @@ namespace xerus {
 			// estimated cost to calculate this heuristic is
 			// numNodes * numNodes * 2*avgEdgesPerNode = 2 * numNodes * numEdges
 			double numNodes = 0, numEdges = 0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
 					numNodes += 1;
-					numEdges += static_cast<double>(_network.nodes[i].degree());
+					numEdges += static_cast<double>(node.degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
@@ -181,10 +181,10 @@ namespace xerus {
 			// estimated cost to calculate this heuristic is
 			// numNodes * numNodes * 3*avgEdgesPerNode = 3 * numNodes * numEdges
 			size_t numNodes=0, numEdges=0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
 					numNodes += 1;
-					numEdges += _network.nodes[i].degree();
+					numEdges += node.degree();
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
@@ -280,9 +280,9 @@ namespace xerus {
 			// numContractions * 3*avgEdgesPerNode ~= 3 * numEdges
 			TensorNetwork copyNet(_network);
 			double numEdges=0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
-					numEdges += static_cast<double>(_network.nodes[i].degree());
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
+					numEdges += static_cast<double>(node.degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother

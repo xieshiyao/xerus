@@ -101,8 +101,7 @@ namespace xerus {
 			
 			explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
 			
-			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors);
-			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors);
+			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, std::vector<Link> _neighbors);
 			
 			~TensorNode();
 			
@@ -160,13 +159,7 @@ namespace xerus {
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
-		TensorNetwork(const Tensor& _other);
-		
-		
-		/** 
-		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
-		*/
-		TensorNetwork(Tensor&& _other);
+		TensorNetwork(Tensor _other);
 		
 		
 		/** 

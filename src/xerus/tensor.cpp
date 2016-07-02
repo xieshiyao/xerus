@@ -33,7 +33,7 @@
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cholmod_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
-
+#include <xerus/index.h>
 #include <xerus/tensorNetwork.h>
 
 #include <xerus/cholmod_wrapper.h>
@@ -49,24 +49,8 @@ namespace xerus {
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
 	
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const Representation _representation, const Initialisation _init) 
-		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
-	{
-		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-		
-		if(representation == Representation::Dense) {
-			denseData.reset(new value_t[size], internal::array_deleter_vt);
-			if(_init == Initialisation::Zero) {
-				misc::set_zero(denseData.get(), size);
-			}
-		} else {
-			sparseData.reset(new std::map<size_t, value_t>());
-		}
-	}
-	
-	
-	Tensor::Tensor(DimensionTuple&& _dimensions, const Representation _representation, const Initialisation _init) 
-	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
+	Tensor::Tensor(DimensionTuple _dimensions, const Representation _representation, const Initialisation _init) 
+		: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
 	{
 		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
 		

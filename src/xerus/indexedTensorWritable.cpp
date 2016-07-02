@@ -73,7 +73,7 @@ namespace xerus {
 			} else {
 				// If the tensors in fact coincide we have to use a tmp object
 				IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
-				this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
+				this->tensorObject->reset(tmpTensor.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
 				evaluate(std::move(*this), std::move(tmpTensor));
 			}
 		}

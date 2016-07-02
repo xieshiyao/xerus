@@ -44,17 +44,12 @@
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	TensorNetwork::TensorNetwork() {
-		nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
+		nodes.emplace_back(TensorNode(std::make_unique<Tensor>()));
 	}
 	
 	
-	TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
-		nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
-	}
-	
-	
-	TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(std::move(_other))), init_from_dimension_array());
+	TensorNetwork::TensorNetwork(Tensor _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
+		nodes.emplace_back(std::make_unique<Tensor>(std::move(_other)), init_from_dimension_array());
 	}
 	
 	
@@ -64,13 +59,13 @@ namespace xerus {
 	
 	
 	TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree, 1)) {
-		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor( std::vector<size_t>(_degree, 1))), init_from_dimension_array());
+		nodes.emplace_back(std::make_unique<Tensor>(std::vector<size_t>(_degree, 1)), init_from_dimension_array());
 	}
 	
 	
 	TensorNetwork::TensorNetwork(const ZeroNode _nodeStatus) {
 		if(_nodeStatus == ZeroNode::Add) {
-			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
+			nodes.emplace_back(TensorNode(std::make_unique<Tensor>()));
 		}
 	}
 	
@@ -520,8 +515,8 @@ namespace xerus {
 		nodes = newNodes;
 		nodes.resize(newSize);
 		
-		for (size_t i = 0; i < externalLinks.size(); ++i) {
-			externalLinks[i].other = _f(externalLinks[i].other);
+		for (auto &link : externalLinks) {
+			link.other = _f(link.other);
 		}
 	}
 	

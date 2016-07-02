@@ -146,8 +146,8 @@ namespace xerus {
 	}
 	
 	TTTangentVector& TTTangentVector::operator*=(value_t _alpha) {
-		for (size_t i=0; i<components.size(); ++i) {
-			components[i] *= _alpha;
+		for (auto &c : components) {
+			c *= _alpha;
 		}
 		return *this;
 	}
