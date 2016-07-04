@@ -34,10 +34,7 @@
 namespace xerus {
     namespace misc {
 
-        double integrate(const std::function<double(double)> &_f, double _a, double _b, double _eps, 
-                        uint _minIter, uint _maxIter, uint _branchFactor, 
-                        uint _maxRecursion, bool _relativeError) {
-            
+        double integrate(const std::function<double(double)>& _f, const double _a, const double _b, double _eps, const uint _minIter, const uint _maxIter, const uint _branchFactor, const uint _maxRecursion, const bool _relativeError) {
             REQUIRE(_minIter > 1, "");
             REQUIRE(_branchFactor > 1, "");
             double min = std::min(_a,_b);
@@ -98,21 +95,19 @@ namespace xerus {
         }
 
 
-        double integrate_segmented(const std::function<double(double)> &_f, double _a, double _b, double _segmentation, 
-                                double _eps, uint _minIter, uint _maxIter, uint _branchFactor,
-                                uint _maxRecursion) {
-            double min = std::min(_a,_b);
-            double max = std::max(_a,_b);
+        double integrate_segmented(const std::function<double(double)> &_f, const double _a, const double _b, const double _segmentation, const double _eps, const uint _minIter, const uint _maxIter, const uint _branchFactor, const uint _maxRecursion) {
+            const double min = std::min(_a, _b);
+            const double max = std::max(_a, _b);
             double res = 0;
-            for (double x=min; x<max; x+=_segmentation) {
+            for (double x = min; x < max; x += _segmentation) {
                 res += integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
             }
             return (_a>_b?-1:1)*res;
         }
 
         
-        double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon) {
-			double nm = std::max(_min, _max);
+        double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, const double _epsilon) {
+			const double nm = std::max(_min, _max);
 			_min = std::min(_min, _max);
 			_max = nm;
 			
@@ -147,51 +142,7 @@ namespace xerus {
 			
 			return (_max + _min) / 2.0;
 		}
-		
-		
-		double at(const boost::math::tools::polynomial<double>& _poly, const double _x) {
-			double value = _poly[0];
-			for(size_t i = 1; i < _poly.degree(); ++i) {
-				value += _poly[i]*std::pow(_x, i);
-			}
-			
-			return value;
-		}
-		
-		double scalar_product(const boost::math::tools::polynomial<double> &_lhs, const boost::math::tools::polynomial<double> &_rhs, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
-            return xerus::misc::integrate([&](double x){
-                return at(_lhs, x) * at(_rhs, x) * _weight(x);
-            }, _minX, _maxX, 1e-10);
-        }
-        
-        double norm(const boost::math::tools::polynomial<double> &_poly, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
-            return std::sqrt(xerus::misc::integrate([&](double x){
-                return std::pow(at(_poly, x), 2) * _weight(x);
-            }, _minX, _maxX, 1e-10));
-        }
-		
-		void orthogonolize(boost::math::tools::polynomial<double>& _poly, const std::vector<boost::math::tools::polynomial<double>> &_orthoBase, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
-			for(size_t i = 0; i < _orthoBase.size(); ++i) {
-                _poly -= _orthoBase[i]*scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX);
-                REQUIRE(std::abs(scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX)) < 1e-12, i << " " << std::abs(scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX)));
-            }
-            _poly *= 1.0/norm(_poly, _weight, _minX, _maxX);
-		}
-		
-		std::vector<boost::math::tools::polynomial<double>> build_orthogonal_polynom_base(const size_t _n, const std::function<double (double)>& _weight, const double _minX, const double _maxX) {
-			std::vector<boost::math::tools::polynomial<double>> base;
-			if(_n > 0) { base.emplace_back(1.0); }
-			if(_n > 1) { base.emplace_back(std::vector<double>({0.0, 1.0}).data(), 2); }
-			
-            while (base.size() < _n) {
-                boost::math::tools::polynomial<double> next = base[1]*base.back();
-                orthogonolize(next, base, _weight, _minX, _maxX);
-                base.push_back(next);
-                LOG(debug, "next basis polynomial " << next);
-            }
-            return base;
-		}
-        
+	
         // - - - - - - - - - - - - - - - Polynomial - - - - - - - - - - - - - - -
         
         Polynomial::Polynomial() {}
@@ -202,26 +153,26 @@ namespace xerus {
             return coefficients.size();
         }
         
-        Polynomial& Polynomial::operator-=(const Polynomial &_rhs) {
-            if (terms() < _rhs.terms()) {
-                coefficients.resize(_rhs.terms());
-            }
-            for (size_t i=0; i<std::min(terms(), _rhs.terms()); ++i) {
-                coefficients[i] -= _rhs.coefficients[i];
-            }
+        Polynomial& Polynomial::operator+=(const Polynomial &_rhs) {
+			coefficients.resize(std::max(terms(), _rhs.terms()));
+			
+			for(size_t i = 0; i < _rhs.terms(); ++i) {
+				coefficients[i] += _rhs.coefficients[i];
+			}
+
             return *this;
         }
         
-        Polynomial Polynomial::operator*(const Polynomial &_rhs) const {
-            Polynomial result;
-            result.coefficients.resize(_rhs.terms()+terms()-1);
-            for (size_t i=0; i<terms(); ++i) {
-                for (size_t j=0; j<_rhs.terms(); ++j) {
-                    result.coefficients[i+j] += coefficients[i]*_rhs.coefficients[j];
-                }
-            }
-            return result;
+        Polynomial& Polynomial::operator-=(const Polynomial &_rhs) {
+			coefficients.resize(std::max(terms(), _rhs.terms()));
+			
+			for(size_t i = 0; i < _rhs.terms(); ++i) {
+				coefficients[i] -= _rhs.coefficients[i];
+			}
+
+            return *this;
         }
+        
         
         Polynomial& Polynomial::operator/=(double _rhs) {
             for (size_t i=0; i<terms(); ++i) {
@@ -235,6 +186,17 @@ namespace xerus {
                 coefficients[i] *= _rhs;
             }
             return *this;
+        }
+        
+        Polynomial Polynomial::operator*(const Polynomial &_rhs) const {
+            Polynomial result;
+            result.coefficients.resize(_rhs.terms()+terms()-1);
+            for (size_t i=0; i<terms(); ++i) {
+                for (size_t j=0; j<_rhs.terms(); ++j) {
+                    result.coefficients[i+j] += coefficients[i]*_rhs.coefficients[j];
+                }
+            }
+            return result;
         }
         
         Polynomial Polynomial::operator*(double _rhs) const {
@@ -288,9 +250,6 @@ namespace xerus {
             }
             return base;
         }
-        
-        
-        
         
         
         // - - - - - - - - - - - - - - - ShanksTransformation - - - - - - - - - - - - - - -
