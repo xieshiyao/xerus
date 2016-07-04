@@ -4,7 +4,9 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
 
 * 2016-??-?? v3.0.0
  * ! REQUIRE macro now logs as error instead of fatal error.
- * ! Most macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
+ * ! All macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
+ * ! TT::find_largest_entry and TT::dyadic_product left the TT scope.
+ 
 
 * 2016-06-23 v2.4.0
  * Introduced nomeclature 'mode'. Marked all functions that will be renamed / removed in v3.0.0 as deprecated.
