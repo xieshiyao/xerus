@@ -539,7 +539,7 @@ namespace xerus {
 	* @return the resulting scaled TTNetwork.
 	*/
 	template<bool isOperator>
-	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _div);
+	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _divisor);
 	
 	
 	/**

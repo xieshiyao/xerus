@@ -27,6 +27,7 @@
 #pragma once
 #include "containerOutput.h"
 #include <type_traits>
+#include <memory>
 
 // macro shorthands
 #define REQUIRE 		XERUS_REQUIRE
@@ -42,6 +43,14 @@
 
 
 namespace std {
+#if !defined(__cplusplus) || __cplusplus < 201402L
+	template<typename T, typename... Args>
+	std::unique_ptr<T> make_unique(Args&&... args) {
+	    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+	}
+#endif
+	
+	
 	using ::xerus::misc::operator<<; // for std::ostream << std::vector etc.
 	
 	

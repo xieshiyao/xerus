@@ -78,12 +78,12 @@ namespace xerus {
 	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos) {
 		misc::simultaneous_sort(_set.positions, _set.measuredValues, [_splitPos](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
 			for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
-				if (_lhs[i] < _rhs[i]) return true;
-				if (_lhs[i] > _rhs[i]) return false;
+				if (_lhs[i] < _rhs[i]) { return true; }
+				if (_lhs[i] > _rhs[i]) { return false; }
 			}
 			for (size_t i = _lhs.size(); i > _splitPos; --i) {
-				if (_lhs[i-1] < _rhs[i-1]) return true;
-				if (_lhs[i-1] > _rhs[i-1]) return false;
+				if (_lhs[i-1] < _rhs[i-1]) { return true; }
+				if (_lhs[i-1] > _rhs[i-1]) { return false; }
 			}
 	// 		LOG(fatal, "Measurments must not appear twice. ");
 			return false; // equality
@@ -186,18 +186,18 @@ namespace xerus {
 			for (size_t i = 0; i < _splitPos && i < _lhs.size(); ++i) {
 				REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
 				for(size_t j = 0; j < _lhs[i].size; ++j) {
-					if (_lhs[i][j] < _rhs[i][j]) return true;
-					if (_lhs[i][j] > _rhs[i][j]) return false;
+					if (_lhs[i][j] < _rhs[i][j]) { return true; }
+					if (_lhs[i][j] > _rhs[i][j]) { return false; }
 				}
 			}
 			for (size_t i = _lhs.size(); i > _splitPos; --i) {
 				REQUIRE(_lhs[i].size == _rhs[i].size && _lhs[i].degree() == 1 && _rhs[i].degree() == 1, "");
 				for(size_t j = 0; j < _lhs[i].size; ++j) {
-					if (_lhs[i-1][j] < _rhs[i-1][j]) return true;
-					if (_lhs[i-1][j] > _rhs[i-1][j]) return false;
+					if (_lhs[i-1][j] < _rhs[i-1][j]) { return true; }
+					if (_lhs[i-1][j] > _rhs[i-1][j]) { return false; }
 				}
 			}
 			return false; // equality
 		});
 	}
-}
+} // namespace xerus

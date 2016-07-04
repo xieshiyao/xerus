@@ -30,8 +30,8 @@ namespace xerus { namespace examples { namespace completion {
 	void inverse_index_norm(SinglePointMeasurementSet& _measurements, const value_t _additiveConst) {
 		for (size_t i = 0; i < _measurements.size(); ++i) {
 			value_t normSqr = 0;
-			for (size_t j = 0; j < _measurements.positions[i].size(); ++j) {
-				normSqr += misc::sqr(static_cast<value_t>(_measurements.positions[i][j]) + _additiveConst);
+			for (const auto idx : _measurements.positions[i]) {
+				normSqr += misc::sqr(static_cast<value_t>(idx) + _additiveConst);
 			}
 			_measurements.measuredValues[i] = 1/std::sqrt(normSqr);
 		}
@@ -47,5 +47,7 @@ namespace xerus { namespace examples { namespace completion {
 			_measurements.measuredValues[i] = 1/(_additiveConst + sum);
 		}
 	}
-}}}
+} // namespace completion
+} // namespace examples
+} // namespace xerus
 

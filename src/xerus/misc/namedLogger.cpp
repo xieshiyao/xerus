@@ -123,5 +123,7 @@ namespace xerus { namespace misc { namespace internal {
 				<< old.str() << current.str() << "horst" << std::endl; 
 			out.close();
 		}
-	}
-}}} // namespace xerus::misc::internal
+	} // namespace buffer
+} // namespace internal
+} // namespace misc
+} // namespace xerus

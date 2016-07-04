@@ -174,7 +174,7 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void TTStack<isOperator>::operator*=(const value_t _factor) {
-			INTERNAL_CHECK(nodes.size() > 0, "There must not be a TTNetwork without any node");
+			INTERNAL_CHECK(!nodes.empty(), "There must not be a TTNetwork without any node");
 			
 			if(cannonicalization_required) {
 				*nodes[futureCorePosition+1].tensorObject *= _factor;
@@ -310,7 +310,7 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		template<bool isOperator>
-		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&&  , IndexedTensorReadOnly<TensorNetwork>&& ) {
+		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&&   /*_me*/, IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/) {
 			LOG(fatal, "TTStack not supported as a storing type");
 		}
 		
@@ -339,5 +339,5 @@ namespace xerus {
 		// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 		template class TTStack<false>;
 		template class TTStack<true>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

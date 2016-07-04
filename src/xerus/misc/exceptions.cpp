@@ -35,5 +35,5 @@ namespace xerus {
             return error_info.c_str();
         }
         
-    }
-}
+    } // namespace misc
+} // namespace xerus

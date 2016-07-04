@@ -38,24 +38,20 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) :
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) noexcept :
 			tensorObjectReadOnly(_other.tensorObjectReadOnly),
 			indices(std::move(_other.indices))
 			{ }
 		
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
-			
-		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices)
+			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(std::move(_indices)) { }
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
+		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() = default;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -67,8 +63,8 @@ namespace xerus {
 		}
 		
 		template<class tensor_type>
-		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
-			return otherTensor == tensorObjectReadOnly;
+		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *_otherTensor) const {
+			return _otherTensor == tensorObjectReadOnly;
 		}
 		
 		template<class tensor_type>
@@ -346,5 +342,5 @@ namespace xerus {
 			}
 			return degree;
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

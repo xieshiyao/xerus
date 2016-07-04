@@ -27,6 +27,7 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 	namespace internal {
@@ -71,5 +72,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensor<Tensor>;
 		template class IndexedTensor<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

@@ -52,7 +52,7 @@ namespace xerus {
 			IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
 			
 			///@brief Move constructor.
-			IndexedTensorWritable(IndexedTensorWritable &&_other );
+			IndexedTensorWritable(IndexedTensorWritable &&_other ) noexcept;
 			
 			///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
 			IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);

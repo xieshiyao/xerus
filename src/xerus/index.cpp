@@ -82,14 +82,14 @@ namespace xerus {
 			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have inverse span."); 
 			REQUIRE(span <= _degree, "Index with inverse span would have negative actual span. Tensor degree: " << _degree << ", inverse span " << span);
 			return _degree-span;
-		} else if( flags[Flag::FRACTIONAL_SPAN] ) {
+		} 
+		if( flags[Flag::FRACTIONAL_SPAN] ) {
 			REQUIRE(!flags[Flag::FIXED], "Fixed indices must not have fractional span.");
 			REQUIRE(_degree%span == 0, "Fractional span must divide the tensor degree. Here tensor degree = " << _degree << ", span = " << span);
 			return _degree/span;
-		} else {
-			REQUIRE(!flags[Flag::FIXED] || span == 1, "Fixed indices must have span one.");
-			return span;
 		}
+		REQUIRE(!flags[Flag::FIXED] || span == 1, "Fixed indices must have span one.");
+		return span;
 	}
 	
 	
@@ -100,9 +100,8 @@ namespace xerus {
 				REQUIRE(!flags[Flag::FRACTIONAL_SPAN], "Fixed indices must not have fractional span.");
 				REQUIRE(span == 1, "Fixed indices must have span one.");
 				return true;
-			} else {
-				return false;
-			}
+			} 
+			return false;
 		#else
 			return flags[Index::Flag::FIXED];
 		#endif
@@ -177,4 +176,4 @@ namespace xerus {
 		_out << "index#" << _idx.valueId << (_idx.flags[Index::Flag::INVERSE_SPAN] ? "&" : (_idx.flags[Index::Flag::FRACTIONAL_SPAN] ? "/" : "^")) << _idx.span;
 		return _out;
 	}
-}
+} // namespace xerus

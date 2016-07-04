@@ -153,4 +153,4 @@ namespace xerus {
 		
 		return residual;
 	}
-}
+} // namespace xerus

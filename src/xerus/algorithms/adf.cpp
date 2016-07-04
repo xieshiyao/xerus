@@ -43,66 +43,65 @@ namespace xerus {
 				if (_a.cat(k) > _b.cat(k)) { return -1; }
 			}
 			return 0;
-		} else {
-			INTERNAL_CHECK(!_a.has_factor(), "IE");
-			INTERNAL_CHECK(!_b.has_factor(), "IE");
-			
-			const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
-			const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
-			
-			std::map<size_t, double>::const_iterator itrA = dataA.begin();
-			std::map<size_t, double>::const_iterator itrB = dataB.begin();
-			
-			while(itrA != dataA.end() && itrB != dataB.end()) {
-				if(itrA->first == itrB->first) {
-					if(itrA->second < itrB->second) {
-						return 1;
-					} else if(itrA->second > itrB->second) {
-						return -1;
-					} else {
-						++itrA; ++itrB;
-					}
-				} else if(itrA->first < itrB->first) {
-					if(itrA->second < 0.0) {
-						return 1;
-					} else if(itrA->second > 0.0) {
-						return -1;
-					} else {
-						++itrA;
-					}
-				} else { // itrA->first > itrB->first
-					if(0.0 < itrB->second) {
-						return 1;
-					} else if(0.0 > itrB->second) {
-						return -1;
-					} else {
-						++itrB;
-					}
+		} 
+		INTERNAL_CHECK(!_a.has_factor(), "IE");
+		INTERNAL_CHECK(!_b.has_factor(), "IE");
+		
+		const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
+		const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
+		
+		auto itrA = dataA.begin();
+		auto itrB = dataB.begin();
+		
+		while(itrA != dataA.end() && itrB != dataB.end()) {
+			if(itrA->first == itrB->first) {
+				if(itrA->second < itrB->second) {
+					return 1;
+				} 
+				if(itrA->second > itrB->second) {
+					return -1;
 				}
-			}
-			
-			while(itrA != dataA.end()) {
+				++itrA; ++itrB;
+			} else if(itrA->first < itrB->first) {
 				if(itrA->second < 0.0) {
 					return 1;
-				} else if(itrA->second > 0.0) {
+				} 
+				if(itrA->second > 0.0) {
 					return -1;
-				} else {
-					++itrA;
 				}
-			}
-			
-			while(itrB != dataB.end()) {
+				++itrA;
+			} else { // itrA->first > itrB->first
 				if(0.0 < itrB->second) {
 					return 1;
-				} else if(0.0 > itrB->second) {
+				} 
+				if(0.0 > itrB->second) {
 					return -1;
-				} else {
-					++itrB;
 				}
+				++itrB;
 			}
-			
-			return 0;
 		}
+		
+		while(itrA != dataA.end()) {
+			if(itrA->second < 0.0) {
+				return 1;
+			} 
+			if(itrA->second > 0.0) {
+				return -1;
+			}
+			++itrA;
+		}
+		
+		while(itrB != dataB.end()) {
+			if(0.0 < itrB->second) {
+				return 1;
+			} 
+			if(0.0 > itrB->second) {
+				return -1;
+			}
+			++itrB;
+		}
+		
+		return 0;
 	}
 	
 	template<class MeasurmentSet>
@@ -133,13 +132,13 @@ namespace xerus {
 	bool MeasurmentComparator<SinglePointMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
-				if (measurments.positions[_a][j] < measurments.positions[_b][j]) return true;
-				if (measurments.positions[_a][j] > measurments.positions[_b][j]) return false;
+				if (measurments.positions[_a][j] < measurments.positions[_b][j]) { return true; }
+				if (measurments.positions[_a][j] > measurments.positions[_b][j]) { return false; }
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
-				if (measurments.positions[_a][j-1] < measurments.positions[_b][j-1]) return true;
-				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) return false;
+				if (measurments.positions[_a][j-1] < measurments.positions[_b][j-1]) { return true; }
+				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) { return false; }
 			}
 		}
 // 		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
@@ -156,13 +155,13 @@ namespace xerus {
 			for (size_t j = 0; j < degree; ++j) {
 				const int res = comp(measurments.positions[_a][j], measurments.positions[_b][j]);
 				if(res == -1) { return true; }
-				else if(res == 1) { return false; }
+				if(res == 1) { return false; }
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
 				const int res = comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
 				if(res == -1) { return true; }
-				else if(res == 1) { return false; }
+				if(res == 1) { return false; }
 			}
 		}
 		
@@ -392,7 +391,7 @@ namespace xerus {
 																					const value_t _residual,
 																					const size_t& _position,
 																					value_t* const
-																				) {
+																				 /*unused*/) {
 		value_t* const shiftedDeltaPtr = _deltaPtr + _position*_localLeftRank*_localRightRank;
 		
 		for(size_t k = 0; k < _localLeftRank; ++k) {
@@ -476,7 +475,7 @@ namespace xerus {
 	}
 	
 	template<>
-	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet& _measurments, const size_t _meas, const size_t _corePosition) {
+	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet&  /*_measurments*/, const size_t  /*_meas*/, const size_t  /*_corePosition*/) {
 		return 0;
 	}
 	
@@ -651,4 +650,4 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<RankOneMeasurementSet>;
 	
 	const ADFVariant ADF(0, 1e-8, 1e-3);
-}
+} // namespace xerus

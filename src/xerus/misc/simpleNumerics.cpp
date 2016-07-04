@@ -42,7 +42,7 @@ namespace xerus {
             REQUIRE(_branchFactor > 1, "");
             double min = std::min(_a,_b);
             double max = std::max(_a,_b);
-            if (_relativeError) _eps = std::max(_eps, std::numeric_limits<double>::epsilon());
+            if (_relativeError) { _eps = std::max(_eps, std::numeric_limits<double>::epsilon()); }
             std::vector<double> iterants;
             iterants.push_back((max - min)*(_f(min) + _f(max))/2);
             double h = (max-min);
@@ -68,7 +68,7 @@ namespace xerus {
                 }
                 if (_relativeError) {
                     error = std::abs((iterants[0]-oldIt0)/oldIt0);
-                    if (std::isnan(error)) error = std::abs(iterants[0]-oldIt0);
+                    if (std::isnan(error)) { error = std::abs(iterants[0]-oldIt0); }
                 } else {
                     error = std::abs(iterants[0]-oldIt0);
                 }
@@ -137,7 +137,7 @@ namespace xerus {
 				}
 				REQUIRE(std::isfinite(fmid), "invalid function value f("<<mid<<") = " << fmid << " reached in bisection");
 				if (fmin * fmid < 0) {
-					fmax = fmid;
+// 					fmax = fmid; // never needed again
 					_max = mid;
 				} else {
 					fmin = fmid;
@@ -146,6 +146,50 @@ namespace xerus {
 			}
 			
 			return (_max + _min) / 2.0;
+		}
+		
+		
+		double at(const boost::math::tools::polynomial<double>& _poly, const double _x) {
+			double value = _poly[0];
+			for(size_t i = 1; i < _poly.degree(); ++i) {
+				value += _poly[i]*std::pow(_x, i);
+			}
+			
+			return value;
+		}
+		
+		double scalar_product(const boost::math::tools::polynomial<double> &_lhs, const boost::math::tools::polynomial<double> &_rhs, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
+            return xerus::misc::integrate([&](double x){
+                return at(_lhs, x) * at(_rhs, x) * _weight(x);
+            }, _minX, _maxX, 1e-10);
+        }
+        
+        double norm(const boost::math::tools::polynomial<double> &_poly, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
+            return std::sqrt(xerus::misc::integrate([&](double x){
+                return std::pow(at(_poly, x), 2) * _weight(x);
+            }, _minX, _maxX, 1e-10));
+        }
+		
+		void orthogonolize(boost::math::tools::polynomial<double>& _poly, const std::vector<boost::math::tools::polynomial<double>> &_orthoBase, const std::function<double (double)> &_weight, const double _minX, const double _maxX) {
+			for(size_t i = 0; i < _orthoBase.size(); ++i) {
+                _poly -= _orthoBase[i]*scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX);
+                REQUIRE(std::abs(scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX)) < 1e-12, i << " " << std::abs(scalar_product(_poly, _orthoBase[i], _weight, _minX, _maxX)));
+            }
+            _poly *= 1.0/norm(_poly, _weight, _minX, _maxX);
+		}
+		
+		std::vector<boost::math::tools::polynomial<double>> build_orthogonal_polynom_base(const size_t _n, const std::function<double (double)>& _weight, const double _minX, const double _maxX) {
+			std::vector<boost::math::tools::polynomial<double>> base;
+			if(_n > 0) { base.emplace_back(1.0); }
+			if(_n > 1) { base.emplace_back(std::vector<double>({0.0, 1.0}).data(), 2); }
+			
+            while (base.size() < _n) {
+                boost::math::tools::polynomial<double> next = base[1]*base.back();
+                orthogonolize(next, base, _weight, _minX, _maxX);
+                base.push_back(next);
+                LOG(debug, "next basis polynomial " << next);
+            }
+            return base;
 		}
         
         // - - - - - - - - - - - - - - - Polynomial - - - - - - - - - - - - - - -
@@ -270,7 +314,7 @@ namespace xerus {
         
         template<class ft_type>
         ft_type ShanksTransformation<ft_type>::best_estimate() const {
-            if (values.size() == 0) {
+            if (values.empty()) {
                 XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values[(values.size()-1) % 2];
@@ -282,9 +326,8 @@ namespace xerus {
             size_t i = (values.size()-1) % 2;
             if (i+1 >= values.size()) {
                 return 1;
-            } else {
-                return std::abs(values[i] - values[i+1]);
             }
+            return std::abs(values[i] - values[i+1]);
         }
         
         template<class ft_type>
@@ -315,7 +358,7 @@ namespace xerus {
         
         template<class ft_type>
         ft_type RichardsonExtrapolation<ft_type>::best_estimate() const {
-            if (values.size() == 0) {
+            if (values.empty()) {
                 XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values.front();
@@ -326,9 +369,8 @@ namespace xerus {
         ft_type RichardsonExtrapolation<ft_type>::error_approximate() const {
             if (values.size() < 2) {
                 return 1;
-            } else {
-                return std::abs(values[0] - values[1]);
             }
+            return std::abs(values[0] - values[1]);
         }
         
         template<class ft_type>
@@ -340,5 +382,5 @@ namespace xerus {
         template class RichardsonExtrapolation<float>;
         template class RichardsonExtrapolation<double>;
     
-    }
-}
+    } // namespace misc
+} // namespace xerus

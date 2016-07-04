@@ -130,7 +130,7 @@ namespace xerus {
     // - - - - - - - - - - - - - - - - - - - - - - - - - Mix to Sparse - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     
     void matrix_matrix_product( std::map<size_t, double>& _C,
-                                const size_t _leftDim,
+                                const size_t  /*_leftDim*/,
                                 const size_t _rightDim,
                                 const double _alpha,
                                 const std::map<size_t, double>& _A,
@@ -221,4 +221,4 @@ namespace xerus {
         matrix_matrix_product(CT, _rightDim, _leftDim, _alpha, _B, !_transposeB, _midDim, _A, !_transposeA);
         transpose(_C, CT, _rightDim, _leftDim);
     }
-}
+} // namespace xerus

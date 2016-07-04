@@ -83,6 +83,6 @@ namespace xerus {
 			#else 
 				std::string get_analysis() { return "XERUS_PERFORMANCE_ANALYSIS must be set to obtain an analysis."; }
 			#endif
-		}
-	}
-}
+		} // namespace performanceAnalysis
+	} // namespace misc
+} // namespace xerus

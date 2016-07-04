@@ -36,7 +36,7 @@
 namespace xerus {
 	namespace internal {
 		template<class tensor_type>
-		IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
+		IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) noexcept : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
 			// Take ownership
 			_other.deleteTensorObject = false;
 		}
@@ -73,7 +73,7 @@ namespace xerus {
 			} else {
 				// If the tensors in fact coincide we have to use a tmp object
 				IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
-				this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
+				this->tensorObject->reset(tmpTensor.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
 				evaluate(std::move(*this), std::move(tmpTensor));
 			}
 		}
@@ -177,5 +177,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensorWritable<Tensor>;
 		template class IndexedTensorWritable<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

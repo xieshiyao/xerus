@@ -33,7 +33,7 @@
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cholmod_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
-
+#include <xerus/index.h>
 #include <xerus/tensorNetwork.h>
 
 #include <xerus/cholmod_wrapper.h>
@@ -49,24 +49,8 @@ namespace xerus {
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
 	
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const Representation _representation, const Initialisation _init) 
-		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
-	{
-		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-		
-		if(representation == Representation::Dense) {
-			denseData.reset(new value_t[size], internal::array_deleter_vt);
-			if(_init == Initialisation::Zero) {
-				misc::set_zero(denseData.get(), size);
-			}
-		} else {
-			sparseData.reset(new std::map<size_t, value_t>());
-		}
-	}
-	
-	
-	Tensor::Tensor(DimensionTuple&& _dimensions, const Representation _representation, const Initialisation _init) 
-	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
+	Tensor::Tensor(DimensionTuple _dimensions, const Representation _representation, const Initialisation _init) 
+		: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
 	{
 		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
 		
@@ -248,9 +232,8 @@ namespace xerus {
 	size_t Tensor::sparsity() const {
 		if(is_sparse()) {
 			return sparseData->size();
-		} else {
-			return size;
 		}
+		return size;
 	}
 	
 	
@@ -261,13 +244,12 @@ namespace xerus {
 				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
 			}
 			return count;
-		} else {
-			size_t count = 0;
-			for(const auto& entry : *sparseData) {
-				if(std::abs(entry.second) > _eps) { count++; } 
-			}
-			return count;
 		}
+		size_t count = 0;
+		for(const auto& entry : *sparseData) {
+			if(std::abs(entry.second) > _eps) { count++; } 
+		}
+		return count;
 	}
 	
 	
@@ -293,13 +275,13 @@ namespace xerus {
 	value_t Tensor::frob_norm() const {
 		if(is_dense()) {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
-		} else {
+		} 
 			value_t norm = 0;
 			for(const auto& entry : *sparseData) {
 				norm += misc::sqr(entry.second);
 			}
 			return std::abs(factor)*sqrt(norm);
-		}
+		
 	}
 	
 	
@@ -336,15 +318,13 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
-			value_t& result = (*sparseData)[_position];
-			use_dense_representation_if_desirable();
-			if (is_dense()) {
-				return denseData.get()[_position];
-			} else {
-				return result;
-			}
 		}
+		value_t& result = (*sparseData)[_position];
+		use_dense_representation_if_desirable();
+		if (is_dense()) {
+			return denseData.get()[_position];
+		}
+		return result;
 	}
 	
 
@@ -353,14 +333,12 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return factor*denseData.get()[_position];
-		} else {
-			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
-			if(entry == sparseData->end()) {
-				return 0.0;
-			} else {
-				return factor*entry->second;
-			}
+		} 
+		const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+		if(entry == sparseData->end()) {
+			return 0.0;
 		}
+		return factor*entry->second;
 	}
 	
 	
@@ -381,15 +359,15 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
+		} 
 			value_t& result = (*sparseData)[_position];
 			use_dense_representation_if_desirable();
 			if (is_dense()) {
 				return denseData.get()[_position];
-			} else {
+			} 
 				return result;
-			}
-		}
+			
+		
 	}
 	
 	
@@ -399,14 +377,14 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
+		} 
 			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
 			if(entry == sparseData->end()) {
 				return 0.0;
-			} else {
+			} 
 				return entry->second;
-			}
-		}
+			
+		
 	}
 	
 	
@@ -1077,7 +1055,7 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	std::string Tensor::to_string() const {
-		if (degree() == 0) return xerus::misc::to_string(operator[](0));
+		if (degree() == 0) { return xerus::misc::to_string(operator[](0)); }
 		
 		std::string result;
 		for (size_t i = 0; i < size; ++i) {
@@ -1570,10 +1548,6 @@ namespace xerus {
 	}
 	
 	
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const size_t _splitPos, const Tensor& _b) {
-		LOG(fatal, "Not yet Implemented."); // TODO
-	}
-	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
 		if(_A.is_dense() && _B.is_dense()) {
@@ -1586,21 +1560,22 @@ namespace xerus {
 				dataPtrA[i] *= dataPtrB[i];
 			}
 			return result;
-		} else if(_A.is_sparse()) {
+		}
+		if(_A.is_sparse()) {
 			Tensor result(_A);
 			
 			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
 				entry.second *= _B[entry.first];
 			}
 			return result;
-		} else { // _B.is_sparse()
-			Tensor result(_B);
-			
-			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
-				entry.second *= _A[entry.first];
-			}
-			return result;
+		} 
+		// _B.is_sparse()
+		Tensor result(_B);
+		
+		for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
+			entry.second *= _A[entry.first];
 		}
+		return result;
 	}
 	
 	bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps) {
@@ -1706,5 +1681,5 @@ namespace xerus {
 				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
 			}
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

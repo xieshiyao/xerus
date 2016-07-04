@@ -44,7 +44,7 @@ namespace xerus {
 			IndexedTensorMoveable(const IndexedTensorMoveable &_other ) = delete;
 			
 			///@brief Move constructor
-			IndexedTensorMoveable(      IndexedTensorMoveable &&_other );
+			IndexedTensorMoveable(      IndexedTensorMoveable &&_other ) noexcept;
 			
 			///@brief Constructs an IndexedTensorMoveable with the given tensor and indices and if ordered to do so takes ownership of the tensorObject.
 			IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices);

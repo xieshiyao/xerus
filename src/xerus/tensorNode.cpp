@@ -33,11 +33,9 @@ namespace xerus {
     
     TensorNetwork::TensorNode::TensorNode(      std::unique_ptr<Tensor>&& _tensorObject) : tensorObject(std::move(_tensorObject)), neighbors(), erased(false) {}
     
-    TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(_neighbors), erased(false) {}
+    TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject, std::vector<Link> _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(std::move(_neighbors)), erased(false) {}
     
-    TensorNetwork::TensorNode::TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors) : tensorObject(std::move(_tensorObject)), neighbors(std::move(_neighbors)), erased(false) {}
-    
-    TensorNetwork::TensorNode::~TensorNode() {}
+    TensorNetwork::TensorNode::~TensorNode() = default;
     
     TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(const TensorNetwork::TensorNode&  _other) {
         if(_other.tensorObject) {
@@ -54,7 +52,7 @@ namespace xerus {
         return *this;
     }
     
-    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=(      TensorNetwork::TensorNode&& _other) {
+    TensorNetwork::TensorNode& TensorNetwork::TensorNode::operator=( TensorNetwork::TensorNode&& _other) noexcept {
         tensorObject = std::move(_other.tensorObject);
         neighbors = std::move(_other.neighbors);
         erased = _other.erased;
@@ -82,4 +80,4 @@ namespace xerus {
         neighbors.clear();
         tensorObject.reset();
     }
-}
+} // namespace xerus

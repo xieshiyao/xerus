@@ -74,10 +74,10 @@ namespace xerus {
 
 		// Work through the indices of lhs
 		IF_CHECK(bool foundCommon = false;)
-		for(size_t i = 0; i < _lhs.indices.size(); ++i) {
+		for (const auto &idx : _lhs.indices) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < _base.indices.size() && _lhs.indices[i] != _base.indices[j]; ++j) {
+			for(j = 0; j < _base.indices.size() && idx != _base.indices[j]; ++j) {
 				dimOffset += _base.indices[j].span;
 			}
 			
@@ -92,17 +92,17 @@ namespace xerus {
 			} else {
 				REQUIRE(!foundCommon, "Left part of factorization must have exactly one index that is not contained in base. Here it is more than one.");
 				IF_CHECK(foundCommon = true;)
-				auxiliaryIndex = _lhs.indices[i];
+				auxiliaryIndex = idx;
 			}
 		}
 		_lhsPreliminaryIndices.push_back(auxiliaryIndex);
 
 		// Work through the indices of rhs
 		IF_CHECK(foundCommon = false;)
-		for(size_t i = 0; i < _rhs.indices.size(); ++i) {
+		for (const auto &idx : _rhs.indices) {
 			// Find index in A and get dimension offset
 			size_t j, dimOffset = 0;
-			for(j = 0; j < _base.indices.size() && _rhs.indices[i] != _base.indices[j]; ++j) {
+			for(j = 0; j < _base.indices.size() && idx != _base.indices[j]; ++j) {
 				dimOffset += _base.indices[j].span;
 			}
 			
@@ -117,7 +117,7 @@ namespace xerus {
 			} else {
 				REQUIRE(!foundCommon, "Right part of factorization must have exactly one index that is not contained in base. Here it is more than one.");
 				IF_CHECK(foundCommon = true;)
-				auxiliaryIndex = _rhs.indices[i];
+				auxiliaryIndex = idx;
 			}
 		}
 		_rhsPreliminaryIndices.insert(_rhsPreliminaryIndices.begin(), auxiliaryIndex);
@@ -263,4 +263,4 @@ namespace xerus {
 		C = (*C.tensorObjectReadOnly)(lhsPreliminaryIndices);
 		Q = (*Q.tensorObjectReadOnly)(rhsPreliminaryIndices);
 	}
-}
+} // namespace xerus

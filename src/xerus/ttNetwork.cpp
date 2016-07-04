@@ -23,6 +23,7 @@
 */
 
 #include <algorithm>
+#include <memory>
 
 #include <xerus/ttNetwork.h>
 
@@ -62,7 +63,7 @@ namespace xerus {
 		const size_t numComponents = dimensions.size()/N;
 		
 		if (numComponents == 0) {
-			nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor()));
+			nodes.emplace_back(std::make_unique<Tensor>());
 			return;
 		}
 		
@@ -82,7 +83,7 @@ namespace xerus {
 		
 		neighbors.emplace_back(1, 0, 1, false);
 		
-		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
+		nodes.emplace_back(std::make_unique<Tensor>(Tensor::ones({1})), std::move(neighbors));
 		
 		for (size_t i = 0; i < numComponents; ++i) {
 			neighbors.clear();
@@ -92,15 +93,15 @@ namespace xerus {
 			neighbors.emplace_back(i+2, 0, 1, false);
 			
 			if(!isOperator) {
-				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], 1}, 0))), std::move(neighbors) );
+				nodes.emplace_back( std::make_unique<Tensor>(Tensor::dirac({1, dimensions[i], 1}, 0)), std::move(neighbors) );
 			} else {
-				nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::dirac({1, dimensions[i], dimensions[numComponents+i], 1}, 0))), std::move(neighbors) );
+				nodes.emplace_back( std::make_unique<Tensor>(Tensor::dirac({1, dimensions[i], dimensions[numComponents+i], 1}, 0)), std::move(neighbors) );
 			}
 		}
 		
 		neighbors.clear();
 		neighbors.emplace_back(numComponents, N+1, 1, false);
-		nodes.emplace_back( std::unique_ptr<Tensor>(new Tensor(Tensor::ones({1}))), std::move(neighbors));
+		nodes.emplace_back( std::make_unique<Tensor>(Tensor::ones({1})), std::move(neighbors));
 		
 		// Make a Zero Tensor (at core)
 		(*nodes[1].tensorObject)[0] = 0;
@@ -210,9 +211,8 @@ namespace xerus {
 			result.set_component(i, Tensor(constructionVector, [](const std::vector<size_t> &_idx){
 				if (_idx[1] == _idx[2]) {
 					return 1.0;
-				} else {
-					return 0.0;
 				}
+				return 0.0;
 			}));
 		}
 		
@@ -342,7 +342,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	size_t TTNetwork<isOperator>::degrees_of_freedom(const std::vector<size_t> &_dimensions, const std::vector<size_t> &_ranks) {
-		if (_dimensions.size() == 0) return 1;
+		if (_dimensions.empty()) { return 1; }
 		const size_t numComponents = _dimensions.size()/N;
 		REQUIRE(_dimensions.size()%N == 0, "invalid number of dimensions for TTOperator");
 		REQUIRE(numComponents == _ranks.size()+1, "Invalid number of ranks ("<<_ranks.size()<<") or dimensions ("<<_dimensions.size()<<") given.");
@@ -350,12 +350,12 @@ namespace xerus {
 		for (size_t i=0; i<numComponents; ++i) {
 			size_t component = i==0? 1 : _ranks[i-1];
 			component *= _dimensions[i];
-			if (isOperator) component *= _dimensions[i+numComponents];
-			if (i<_ranks.size()) component *= _ranks[i];
+			if (isOperator) { component *= _dimensions[i+numComponents]; }
+			if (i<_ranks.size()) { component *= _ranks[i]; }
 			result += component;
 		}
-		for (size_t i=0; i<_ranks.size(); ++i) {
-			result -= misc::sqr(_ranks[i]);
+		for (const auto r : _ranks) {
+			result -= misc::sqr(r);
 		}
 		return result;
 	}
@@ -585,7 +585,7 @@ namespace xerus {
 		cannonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0, false);
+			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0);
 		}
 		
 		assume_core_position(0);
@@ -616,7 +616,7 @@ namespace xerus {
 
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool _preventZero) {
+	void TTNetwork<isOperator>::soft_threshold(const std::vector<double> &_taus, const bool  /*_preventZero*/) {
 		const size_t numComponents = degree()/N;
 		REQUIRE(_taus.size()+1 == numComponents || (_taus.empty() && numComponents == 0), "There must be exactly degree/N-1 taus. Here " << _taus.size() << " instead of " << numComponents-1 << " are given.");
 		require_correct_format();
@@ -627,7 +627,7 @@ namespace xerus {
 		cannonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
-			round_edge(numComponents-i, numComponents-i-1, std::numeric_limits<size_t>::max(), 0.0, _taus[i], true);
+			round_edge(numComponents-i, numComponents-i-1, std::numeric_limits<size_t>::max(), 0.0, _taus[i]);
 		}
 		
 		assume_core_position(0);
@@ -714,10 +714,9 @@ namespace xerus {
 		require_correct_format();
 		if (cannonicalized) {
 			return get_component(corePosition).frob_norm();
-		} else {
-			const Index i;
-			return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));
 		}
+		const Index i;
+		return std::sqrt(value_t((*this)(i&0)*(*this)(i&0)));
 	}
 	
 	
@@ -789,7 +788,7 @@ namespace xerus {
 	
 	template<bool isOperator>
 	void TTNetwork<isOperator>::operator*=(const value_t _factor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		
 		if(cannonicalized) {
 			component(corePosition) *= _factor;
@@ -811,7 +810,7 @@ namespace xerus {
 	
 	
 	template<>
-	bool TTNetwork<false>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&, internal::IndexedTensorReadOnly<TensorNetwork>&&, internal::IndexedTensorReadOnly<TensorNetwork>&&) {
+	bool TTNetwork<false>::specialized_contraction_f(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& /*unused*/, internal::IndexedTensorReadOnly<TensorNetwork>&& /*unused*/, internal::IndexedTensorReadOnly<TensorNetwork>&& /*unused*/) {
 		// Only TTOperators construct stacks, so no specialized contractions for TTTensors
 		return false;
 	}
@@ -830,13 +829,13 @@ namespace xerus {
 		const TTOperator* const otherTTO = dynamic_cast<const TTOperator*>(_other.tensorObjectReadOnly);
 		const internal::TTStack<true>* const otherTTOStack = dynamic_cast<const internal::TTStack<true>*>(_other.tensorObjectReadOnly);
 		
-		if (!otherTT && !otherTTStack && !otherTTO && !otherTTOStack) {
+		if ((otherTT == nullptr) && (otherTTStack == nullptr) && (otherTTO == nullptr) && (otherTTOStack == nullptr)) {
 			return false;
 		}
 		
 		bool cannoAtTheEnd = false;
 		size_t coreAtTheEnd = 0;
-		if (meTT) {
+		if (meTT != nullptr) {
 			cannoAtTheEnd = meTT->cannonicalized;
 			coreAtTheEnd = meTT->corePosition;
 		} else {
@@ -848,7 +847,7 @@ namespace xerus {
 		// TODO profiler should warn if other->corePosition is not identical to coreAtTheEnd
 		
 		// Determine my first half and second half of indices
-		std::vector<Index>::iterator midIndexItr = _me.indices.begin();
+		auto midIndexItr = _me.indices.begin();
 		size_t spanSum = 0;
 		while (spanSum < _me.degree() / 2) {
 			INTERNAL_CHECK(midIndexItr != _me.indices.end(), "Internal Error.");
@@ -859,16 +858,16 @@ namespace xerus {
 			return false; // an index spanned some links of the left and some of the right side
 		}
 		
-		if (otherTT || otherTTStack) {
+		if ((otherTT != nullptr) || (otherTTStack != nullptr)) {
 			// ensure fitting indices
 			if (std::equal(_me.indices.begin(), midIndexItr, _other.indices.begin()) || std::equal(midIndexItr, _me.indices.end(), _other.indices.begin())) {
 				_out.reset(new internal::IndexedTensorMoveable<TensorNetwork>(new internal::TTStack<false>(cannoAtTheEnd, coreAtTheEnd), _me.indices));
 				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
-			} else {
+			} 
 				return false;
-			}
+			
 		} else { // other is operator or operator stack
 			// determine other middle index
 			auto otherMidIndexItr = _other.indices.begin();
@@ -891,9 +890,9 @@ namespace xerus {
 				*_out->tensorObject = *_me.tensorObjectReadOnly;
 				TensorNetwork::add_network_to_network(std::move(*_out), std::move(_other));
 				return true;
-			} else {
+			} 
 				return false;
-			}
+			
 		}
 	}
 	
@@ -902,7 +901,7 @@ namespace xerus {
 	void transpose_if_operator(TTNetwork<isOperator>& _ttNetwork);
 	
 	template<>
-	void transpose_if_operator<false>(TTNetwork<false>& _ttNetwork) {}
+	void transpose_if_operator<false>(TTNetwork<false>&  /*_ttNetwork*/) {}
 	
 	template<>
 	void transpose_if_operator<true>(TTNetwork<true>& _ttNetwork) {
@@ -957,7 +956,7 @@ namespace xerus {
 		if(moveMe && (stackMe = dynamic_cast<internal::TTStack<isOperator>*>(moveMe->tensorObject))) {
 			meStorage.reset(new TTNetwork());
 			usedMe = meStorage.get();
-			*meStorage.get() = TTNetwork(*stackMe);
+			*meStorage = TTNetwork(*stackMe);
 			INTERNAL_CHECK(usedMe->dimensions == stackMe->dimensions, "Ie " << stackMe->dimensions << " vs "  << usedMe->dimensions);
 		} else { // I am normal
 			INTERNAL_CHECK(dynamic_cast<const TTNetwork<isOperator>*>(_me.tensorObjectReadOnly),"Non-moveable TTStack (or other error) detected.");
@@ -1415,6 +1414,6 @@ namespace xerus {
 		}
 		template void stream_reader(std::istream& _stream, TTNetwork<true> &_obj, const misc::FileFormat _format);
 		template void stream_reader(std::istream& _stream, TTNetwork<false> &_obj, const misc::FileFormat _format);
-	}
+	} // namespace misc
 	
-}
+} // namespace xerus

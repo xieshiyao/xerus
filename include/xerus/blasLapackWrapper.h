@@ -135,10 +135,10 @@ namespace xerus {
 		
 		
 		///@brief: Solves min ||Ax - b||_2 for x
-		void solve_least_squares( double* const _x, const double* const A, const size_t _m, const size_t _n, const double* const _b);
+		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b);
 		
 		///@brief: Solves min ||Ax - b||_2 for x
-		void solve_least_squares_destructive( double* const _x, double* const A, const size_t _m, const size_t _n, double* const _b);
+		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b);
 		
 		
 		

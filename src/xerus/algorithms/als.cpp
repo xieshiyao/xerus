@@ -122,9 +122,8 @@ namespace xerus {
 				[&](const std::vector<size_t> &_idx){
 					if (_idx[0]*localDim + _idx[1] == _idx[2]) {
 						return 1.0;
-					} else {
-						return 0.0;
-					}
+					} 
+					return 0.0;
 				})
 			);
 			
@@ -154,9 +153,8 @@ namespace xerus {
 				[&](const std::vector<size_t> &_idx){
 					if (_idx[0] == _idx[1]*dimensionProd + _idx[2]) {
 						return 1.0;
-					} else {
-						return 0.0;
-					}
+					} 
+					return 0.0;
 				})
 			);
 
@@ -201,7 +199,7 @@ namespace xerus {
 		//TODO optimization: create these networks without indices
 		Index cr1, cr2, cr3, r1, r2, r3, n1, n2;
 		TensorNetwork res;
-		if (ALS.assumeSPD || !A) {
+		if (ALS.assumeSPD || (A == nullptr)) {
 			res(r1,r2, cr1,cr2) = b.get_component(_pos)(r1, n1, cr1) 
 									* x.get_component(_pos)(r2, n1, cr2);
 		} else {
@@ -218,7 +216,7 @@ namespace xerus {
 		
 		Tensor tmpA;
 		Tensor tmpB;
-		if (ALS.assumeSPD || !A) {
+		if (ALS.assumeSPD || (A == nullptr)) {
 			tmpA = Tensor::ones({1,1,1});
 			tmpB = Tensor::ones({1,1});
 		} else {
@@ -233,7 +231,7 @@ namespace xerus {
 		rhsCache.right.emplace_back(tmpB);
 		
 		for (size_t i = d-1; i > optimizedRange.first + ALS.sites - 1; --i) {
-			if (A) {
+			if (A != nullptr) {
 				tmpA(r1&0) = localOperatorCache.right.back()(r2&0) * localOperatorSlice(i)(r1/2, r2/2);
 				localOperatorCache.right.emplace_back(tmpA);
 			}
@@ -241,7 +239,7 @@ namespace xerus {
 			rhsCache.right.emplace_back(tmpB);
 		}
 		for (size_t i = 0; i < optimizedRange.first; ++i) {
-			if (A) {
+			if (A != nullptr) {
 				tmpA(r2&0) = localOperatorCache.left.back()(r1&0) * localOperatorSlice(i)(r1/2, r2/2);
 				localOperatorCache.left.emplace_back((tmpA));
 			}
@@ -251,7 +249,7 @@ namespace xerus {
 	}
 	
 	void ALSVariant::ALSAlgorithmicData::choose_energy_functional() {
-		if (A) {
+		if (A != nullptr) {
 			if (ALS.assumeSPD) {
 				residual_f = [&](){
 					Index n1, n2;
@@ -346,7 +344,7 @@ namespace xerus {
 			}
 			
 			// Move one site to the right
-			if (A) {
+			if (A != nullptr) {
 				localOperatorCache.right.pop_back();
 				tmpA(r2&0) = localOperatorCache.left.back()(r1&0) * localOperatorSlice(currIndex)(r1/2, r2/2);
 				localOperatorCache.left.emplace_back(std::move(tmpA));
@@ -364,7 +362,7 @@ namespace xerus {
 			}
 			
 			// move one site to the left
-			if (A) {
+			if (A != nullptr) {
 				localOperatorCache.left.pop_back();
 				tmpA(r1&0) = localOperatorCache.right.back()(r2&0) * localOperatorSlice(currIndex)(r1/2, r2/2);
 				localOperatorCache.right.emplace_back(std::move(tmpA));
@@ -401,7 +399,7 @@ namespace xerus {
 	TensorNetwork ALSVariant::construct_local_RHS(ALSVariant::ALSAlgorithmicData& _data) const {
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork BTilde;
-		if (assumeSPD || !_data.A) {
+		if (assumeSPD || (_data.A == nullptr)) {
 			BTilde(n1,r1) = _data.rhsCache.left.back()(r1,n1);
 			for (size_t p=0; p<sites; ++p) {
 				BTilde(n1^(p+1), n2, cr1) = BTilde(n1^(p+1), r1) * _data.b.get_component(_data.currIndex+p)(r1, n2, cr1);
@@ -486,7 +484,7 @@ namespace xerus {
 			REQUIRE(_x.degree() > 0, "");
 			REQUIRE(_x.dimensions == _b.dimensions, "");
 			
-			if (_Ap) {
+			if (_Ap != nullptr) {
 				_Ap->require_correct_format();
 				REQUIRE(_Ap->dimensions.size() == _b.dimensions.size()*2, "");
 				for (size_t i=0; i<_x.dimensions.size(); ++i) {
@@ -496,7 +494,7 @@ namespace xerus {
 			}
 		#endif
 		
-		if (_Ap) {
+		if (_Ap != nullptr) {
 			_perfData << "ALS for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _Ap->ranks() << '\n'
 					<< "x.ranks: " << _x.ranks() << '\n'
@@ -527,7 +525,7 @@ namespace xerus {
 			LOG(ALS, "Starting to optimize index " << data.currIndex);
 			
 			// update current component tensor
-			if (_Ap) {
+			if (_Ap != nullptr) {
 				std::vector<Tensor> tmpX;
 				for (size_t p=0; p<sites; ++p) {
 					tmpX.emplace_back(_x.get_component(data.currIndex+p));
@@ -559,4 +557,4 @@ namespace xerus {
 	
 	const ALSVariant ASD(1, 0, ALSVariant::ASD_solver, false);
 	const ALSVariant ASD_SPD(1, 0, ALSVariant::ASD_solver, true);
-}
+} // namespace xerus

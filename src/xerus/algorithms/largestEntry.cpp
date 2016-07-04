@@ -33,28 +33,26 @@ namespace xerus {
 				tau = (1-alpha)*alpha*Xn*Xn/(2.0*double(_T.degree()-1));
 			}
 			return find_largest_entry(X, 0.0, 0.0);
-			
+		} 
 		// We are already rank one
-		} else {
-			const size_t numComponents = _T.degree()/(isOperator?2:1);
-			size_t position = 0;
-			size_t factor = misc::product(_T.dimensions);
-			for(size_t c = 0; c < numComponents; ++c) {
-				const size_t localSize = isOperator ? _T.dimensions[c]*_T.dimensions[numComponents+c] : _T.dimensions[c];
-				factor /= localSize;
-				
-				size_t maxPos = 0;
-				for(size_t i = 1; i < localSize; ++i) {
-					if(std::abs(_T.get_component(c)[i]) > std::abs(_T.get_component(c)[maxPos])) {
-						maxPos = i;
-					}
+		const size_t numComponents = _T.degree()/(isOperator?2:1);
+		size_t position = 0;
+		size_t factor = misc::product(_T.dimensions);
+		for(size_t c = 0; c < numComponents; ++c) {
+			const size_t localSize = isOperator ? _T.dimensions[c]*_T.dimensions[numComponents+c] : _T.dimensions[c];
+			factor /= localSize;
+			
+			size_t maxPos = 0;
+			for(size_t i = 1; i < localSize; ++i) {
+				if(std::abs(_T.get_component(c)[i]) > std::abs(_T.get_component(c)[maxPos])) {
+					maxPos = i;
 				}
-				position += maxPos*factor;
 			}
-			return position;
+			position += maxPos*factor;
 		}
+		return position;
 	}
 	
 	template size_t find_largest_entry(const TTNetwork<true> &, double, value_t);
 	template size_t find_largest_entry(const TTNetwork<false> &, double, value_t);
-}
+} // namespace xerus
