@@ -34,29 +34,5 @@ namespace xerus {
 
         ///@brief: Returns the time since epoche in milliseconds.
         size_t mTime();
-
-		///@brief Basic time measurment class.
-        class TimeMeasure
-        {
-            protected:
-                ///@brief Creation time.
-                const size_t timeStart;
-                
-                ///@brief Time of last step.
-                size_t timeStep;
-                
-			public:
-                ///@brief Basic constructor.
-                TimeMeasure();
-                
-                ///@brief Sets new step & returns time since last Step in microseconds.
-                size_t step();
-                
-                ///@brief Returns time since last step in microseconds.
-                size_t get() const;
-                
-                ///@brief Returns the total time since creation of the TimeMeasure in microseconds.
-                size_t getTotal() const;
-        }; 
     }
 }

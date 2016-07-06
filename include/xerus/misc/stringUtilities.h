@@ -118,10 +118,10 @@ namespace xerus {
             return obj;
         }
 
-        static XERUS_force_inline std::string to_string(const char * obj) {
+        static XERUS_force_inline std::string to_string(const char * const obj) {
             return std::string(obj);
         }
-
+        
         ///@brief: Converts an arbitary Object to string with fixed precision
         template<typename T>
         std::string to_string(const T& obj, const size_t _precision){

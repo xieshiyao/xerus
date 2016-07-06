@@ -31,7 +31,7 @@
 	#include <map>
 	#include <utility>
 	#include "timeMeasure.h"
-	#define XERUS_PA_START size_t pa_startTime = misc::uTime()
+	#define XERUS_PA_START const size_t pa_startTime = misc::uTime()
 	#define XERUS_PA_END(group, name, parameter) { std::pair<size_t, size_t>& pa_call = xerus::misc::performanceAnalysis::calls[group][name][parameter]; pa_call.first++; pa_call.second += misc::uTime() - pa_startTime; }
 #else 
 	#define XERUS_PA_START 

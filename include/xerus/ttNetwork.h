@@ -194,7 +194,7 @@ namespace xerus {
 			}
 			
 			result.require_correct_format();
-			INTERNAL_CHECK(!result.exceeds_maximal_ranks(), "Internal Error");
+			XERUS_INTERNAL_CHECK(!result.exceeds_maximal_ranks(), "Internal Error");
 			result.cannonicalize_left();
 			return result;
 		}
