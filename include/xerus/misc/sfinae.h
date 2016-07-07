@@ -32,6 +32,16 @@
  */
 #define XERUS_ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>::value, int>::type = 0
 
+// TODO Gives a false positive if a function can be called by implicit casting!
+#define XERUS_GENERATE_EXISTS_FUNCTION(function)\
+namespace sfinae {\
+    template<class, class = void>\
+    struct exists_##function : std::false_type {};\
+    \
+    template<class arg>\
+    struct exists_##function<arg, void_t<decltype(function(std::declval<arg>()))>> : std::true_type {};\
+}\
+\
 
 /**
  * @def XERUS_GENERATE_HAS_MEMBER(member)
@@ -53,16 +63,7 @@
 	\
 	
 	
-	// TODO Gives a false positive if a function can be called by implicit casting!
-	#define XERUS_GENERATE_EXISTS_FUNCTION(function)\
-	namespace sfinae {\
-        template<class, class = void>\
-        struct exists_##function : std::false_type {};\
-        \
-        template<class arg>\
-        struct exists_##function<arg, void_t<decltype(function(std::declval<arg>()))>> : std::true_type {};\
-	}\
-	\
+	
 
 #else
 	#define XERUS_GENERATE_HAS_MEMBER(member)											   \
