@@ -32,15 +32,13 @@
 namespace xerus { namespace misc {
 		// Internal Helper function to print tuples.
 	namespace internal {
-		template<size_t n = 0, typename... Tp>
-		inline typename std::enable_if<n+1 == sizeof...(Tp), void>::type
-		print(std::ostream& _out, const std::tuple<Tp...>& t) {
+		template<size_t n = 0, typename... Tp, typename std::enable_if<n+1 == sizeof...(Tp), int>::type = 0>
+		inline void print(std::ostream& _out, const std::tuple<Tp...>& t) {
 			_out << std::get<n>(t);
 		}
 
-		template<size_t n = 0, typename... Tp>
-		inline typename std::enable_if<n+1 < sizeof...(Tp), void>::type
-		print(std::ostream& _out, const std::tuple<Tp...>& t) {
+		template<size_t n = 0, typename... Tp, typename std::enable_if<n+1 < sizeof...(Tp), int>::type = 0>
+		inline void print(std::ostream& _out, const std::tuple<Tp...>& t) {
 			_out << std::get<n>(t) << ", ";
 			print<n + 1, Tp...>(_out, t);
 		}
