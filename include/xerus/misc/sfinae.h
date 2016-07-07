@@ -43,21 +43,34 @@
 
 
 	#define XERUS_GENERATE_HAS_FUNCTION(function)\
+	namespace sfinae {\
+		template<class, class, class = void>\
+		struct has_##function : std::false_type {};\
+		\
+		template<class clas, class arg>\
+		struct has_##function<clas, arg, void_t<decltype(std::declval<clas>().function(std::declval<arg>()))>> : std::true_type {};\
+	}\
 	\
-	template<class, class, class = void>\
-	struct has_##function : std::false_type {};\
-	\
-	template<class clas, class arg>\
-	struct has_##function<clas, arg, void_t<decltype(std::declval<clas>().function(std::declval<arg>()))>> : std::true_type {};\
+	
+	
+	// TODO Gives a false positive if a function can be called by implicit casting!
+	#define XERUS_GENERATE_EXISTS_FUNCTION(function)\
+	namespace sfinae {\
+        template<class, class = void>\
+        struct exists_##function : std::false_type {};\
+        \
+        template<class arg>\
+        struct exists_##function<arg, void_t<decltype(function(std::declval<arg>()))>> : std::true_type {};\
+	}\
 	\
 
 #else
-	#define XERUS_GENERATE_HAS_MEMBER(member)                                               \
+	#define XERUS_GENERATE_HAS_MEMBER(member)											   \
 	\
-	template < class T >                                                              \
-	class HasMember_##member                                                          \
-	{                                                                                 \
-	public:                                                                          \
+	template < class T >															  \
+	class HasMember_##member														  \
+	{																				 \
+	public:																		  \
 		typedef char (& yes)[1];							\
 		typedef char (& no)[2];							\
 		\
@@ -65,11 +78,11 @@
 		template <typename> static no check(...);					\
 		\
 		static constexpr bool RESULT = sizeof(check<T>(0)) == sizeof(yes);		\
-		};                                                                                \
+		};																				\
 		\
-		template < class T >                                                              \
-		struct has_member_##member                                                        \
-		: public std::integral_constant<bool, HasMember_##member<T>::RESULT>              \
-		{ };                                                                              \
+		template < class T >															  \
+		struct has_member_##member														\
+		: public std::integral_constant<bool, HasMember_##member<T>::RESULT>			  \
+		{ };																			  \
 
 #endif

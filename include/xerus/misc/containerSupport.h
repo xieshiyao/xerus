@@ -46,7 +46,7 @@ namespace xerus { namespace misc {
 		
 		///@brief: Counts how often an element is contained in an arbitary container
 		template<template<class, class...> class container_t, class item_t, class... rest_t,
-			typename std::enable_if<has_count<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
+			typename std::enable_if<sfinae::has_count<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
 		inline size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) noexcept(noexcept(_container.count(_item))) { 
 			return _container.count(_item);
 		}
@@ -54,7 +54,7 @@ namespace xerus { namespace misc {
 		
 		///@brief: Counts how often an element is contained in an arbitary container
 		template<template<class, class...> class container_t, class item_t, class... rest_t, 
-		typename std::enable_if<!has_count<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
+		typename std::enable_if<!sfinae::has_count<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
 		inline size_t count(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
 			size_t count = 0;
 			for(const item_t& otherItem : _container) {
@@ -66,7 +66,7 @@ namespace xerus { namespace misc {
 		
 		///@brief: Checks whether an arbitary container contains a certain element.
 		template<template<class, class...> class container_t, class item_t, class... rest_t,
-			typename std::enable_if<has_find<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
+			typename std::enable_if<sfinae::has_find<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
 		inline bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
 			return _container.find(_item) != _container.end();
 		}
@@ -74,7 +74,7 @@ namespace xerus { namespace misc {
 		
 		///@brief: Checks whether an arbitary container contains a certain element.
 		template<template<class, class...> class container_t, class item_t, class... rest_t,
-			typename std::enable_if<!has_find<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
+			typename std::enable_if<!sfinae::has_find<container_t<item_t, rest_t...>, item_t>::value, int>::type = 0>
 		inline bool contains(const container_t<item_t, rest_t...> &_container, const item_t &_item) {
 			return std::find(_container.begin(), _container.end(), _item) != _container.end();
 		}

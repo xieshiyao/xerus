@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "standard.h"
+#include "sfinae.h"
 #include "containerOutput.h"
 
 namespace xerus {
@@ -58,63 +59,14 @@ namespace xerus {
         void reduce(std::string& _string, const std::string& whitespace = " \t\n\r\v", const std::string& fill = " ");
 
 
-        ///@brief: Converts an arbitary Object to string
-        template<typename T>
-        static std::string to_string(const T& obj) {
-            std::stringstream stream;
-            stream << obj;
-            return stream.str();
+        // Enable all standard to string functions also in xerus misc namespace
+        using std::to_string;
+        
+        static XERUS_force_inline std::string to_string(const bool obj) {
+            return obj ? std::string("TRUE") : std::string("FALSE");
         }
-
-        // Avoid stringstream if possible
-        //TODO following with SFINAE (if std::to_string exists...)
-        template<>
-        XERUS_force_inline std::string to_string<int>(const int& obj) {
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<unsigned>(const unsigned& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<long>(const long& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<unsigned long>(const unsigned long& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<long long>(const long long& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<unsigned long long>(const unsigned long long& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<float>(const float& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<double>(const double& obj) {
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<long double>(const long double& obj){
-            return std::to_string(obj);
-        }
-
-        template<>
-        XERUS_force_inline std::string to_string<std::string>(const std::string& obj){
+        
+        static XERUS_force_inline std::string to_string(const std::string& obj) {
             return obj;
         }
 
@@ -122,11 +74,36 @@ namespace xerus {
             return std::string(obj);
         }
         
+//         #if __GNUC__ > 4 || defined(__clang__)
+        
+            XERUS_GENERATE_EXISTS_FUNCTION(to_string)
+            
+            ///@brief: Converts any object (which has no specialized function for it) to string.
+            template<typename T, typename std::enable_if<!sfinae::exists_to_string<T>::value, int>::type = 0>
+            std::string to_string(const T& obj) {
+                std::ostringstream stream;
+                stream << obj;
+                return stream.str();
+            }
+            
+//         #else
+//             
+//             ///@brief: Converts any object (which has no specialized function for it) to string.
+//             template<typename T>
+//             std::string to_string(const T& obj) {
+//                 std::ostringstream stream;
+//                 stream << obj;
+//                 return stream.str();
+//             }
+//             
+//         #endif
+        
+        
         ///@brief: Converts an arbitary Object to string with fixed precision
         template<typename T>
-        std::string to_string(const T& obj, const size_t _precision){
-            std::stringstream stream;
-            stream.precision(static_cast<long>(_precision));
+        std::string to_string(const T& obj, const long _precision) {
+            std::ostringstream stream;
+            stream.precision(_precision);
             stream << std::fixed << obj;
             return stream.str();
         }
