@@ -216,6 +216,29 @@ namespace xerus {
 		static TTNetwork XERUS_warn_unused identity(const std::vector<size_t>& _dimensions);
 		
 		
+		/** 
+		 * @brief: Returns a TTNetwork representation of the kronecker delta.
+		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
+		static TTNetwork XERUS_warn_unused kronecker(const std::vector<size_t>& _dimensions);
+		
+		
+		/** 
+		 * @brief: Returns a TTNetwork with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static TTNetwork XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const std::vector<size_t>& _position);
+		
+		
+		/** 
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static Tensor XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const size_t _position);
+		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		///@brief TTNetworks are default assignable.
 		TTNetwork& operator=(const TTNetwork&  _other) = default;

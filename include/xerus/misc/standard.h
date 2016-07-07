@@ -68,6 +68,10 @@ namespace xerus {
  * @def XERUS_force_inline 
  * @brief Collection of attributes to force gcc to inline a specific function.
  */
-#define XERUS_force_inline  		__attribute__((always_inline, gnu_inline)) inline
+#if defined(__clang__)
+	#define XERUS_force_inline  inline
+#else
+	#define XERUS_force_inline  inline __attribute__((always_inline, gnu_inline))
+#endif
 
 #define XERUS_warn_unused	__attribute__((warn_unused_result))

@@ -83,7 +83,6 @@ namespace xerus {
 			stream << std::fixed << obj;
 			return stream.str();
 		}
-
 		
 		
 		
@@ -139,4 +138,3 @@ namespace xerus {
 		}
 	}
 }
-

@@ -220,6 +220,41 @@ namespace xerus {
 		return result;
 	}
 	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::kronecker(const std::vector<size_t>& _dimensions) {
+		REQUIRE(_dimensions.size()%N == 0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTNetwork with dimension 0 is not possible.");
+		
+		if(_dimensions.empty()) {
+			return TTNetwork(Tensor::kronecker({}));
+		}
+		
+		TTNetwork result(_dimensions.size());
+		const size_t numNodes = _dimensions.size()/N;
+		
+		const auto minN = misc::min(_dimensions);
+		
+		// All nodes are simply kronecker tensors themself
+		std::vector<size_t> dimensions;
+		for(size_t i = 0; i < numNodes; ++i) {
+			dimensions.reserve(4);
+			if(i > 0) { dimensions.push_back(minN); }
+			dimensions.push_back(_dimensions[i]);
+			if (isOperator) { dimensions.push_back(_dimensions[i+numNodes]); }
+			if(i+1 < numNodes) { dimensions.push_back(minN); }
+			auto newComp = Tensor::kronecker(dimensions);
+			if(i == 0) { dimensions.insert(dimensions.begin(), 1); }
+			if(i+1 == numNodes) { dimensions.insert(dimensions.end(), 1); }
+			if(i == 0 || i+1 == numNodes) { newComp.reinterpret_dimensions(std::move(dimensions)); }
+			result.set_component(i, std::move(newComp));
+			dimensions.clear();
+		}
+		result.cannonicalize_left();
+		return result;
+	}
+	
+	
+	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	

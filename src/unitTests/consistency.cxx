@@ -162,7 +162,7 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 });
 
 
-static misc::UnitTest con_fixI("Consistency", "fixed_indices", []() {
+static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 	UNIT_TEST_RND;
 	std::uniform_int_distribution<size_t> dimDist(2, 4);
 	
@@ -849,5 +849,45 @@ static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []
 		dimsY = dims1;
 		dimsA = dims1 | dims1;
 		dimsB = dims1 | dims1;
+	}
+});
+
+
+
+static misc::UnitTest cons_named_constructors("Consistency", "named_constructors", []() {
+	UNIT_TEST_RND;
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	
+	std::vector<size_t> dims1, dims2, dimsX, dimsA;
+	
+	for(size_t d = 1; d <= 8; ++d) {
+		Tensor A = Tensor::ones(dimsA);
+		Tensor X = Tensor::ones(dimsX);
+		
+		TTOperator ttA = TTOperator::ones(dimsA);
+		TTTensor ttX = TTTensor::ones(dimsX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		
+		A = Tensor::identity(dimsA);
+		ttA = TTOperator::identity(dimsA);
+		
+		TEST(approx_equal(A, ttA));
+		
+		
+		A = Tensor::kronecker(dimsA);
+		X = Tensor::kronecker(dimsX);
+		ttA = TTOperator::kronecker(dimsA);
+		ttX = TTTensor::kronecker(dimsX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsA = dims1 | dims1;
 	}
 });
