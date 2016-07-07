@@ -26,7 +26,7 @@
 
 #include <exception>
 #include <sstream>
-#include "stringUtilities.h"
+#include "stringFromTo.h"
 
 namespace xerus {
     namespace misc {

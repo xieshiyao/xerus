@@ -34,6 +34,7 @@
     #include <memory>
     #include <map>
     #include <vector>
+    #include <xerus/misc/stringFromTo.h>
     #include <xerus/misc/stringUtilities.h>
 
 namespace xerus { namespace misc { namespace internal {

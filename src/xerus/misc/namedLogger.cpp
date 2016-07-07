@@ -32,6 +32,7 @@
 #endif
 
 #include <xerus/misc/namedLogger.h>
+#include <xerus/misc/stringUtilities.h>
 
 namespace xerus { namespace misc { namespace internal {
 	std::mutex namedLoggerMutex;

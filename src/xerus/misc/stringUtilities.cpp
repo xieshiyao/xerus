@@ -24,6 +24,7 @@
 
 #include <xerus/misc/stringUtilities.h>
 #include <memory>
+#include <sstream>
 #include <cxxabi.h>
 
 namespace xerus {
