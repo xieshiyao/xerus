@@ -253,7 +253,34 @@ namespace xerus {
 		return result;
 	}
 	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::dirac(std::vector<size_t> _dimensions, const std::vector<size_t>& _position) {
+		REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for ttOperator");
+		REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
+		REQUIRE(_dimensions.size() == _position.size(), "Inconsitend number of entries in _dimensions and _position.");
+		
+		const size_t numComponents = _dimensions.size()/N;
+		
+		if(numComponents <= 1) {
+			return TTNetwork(Tensor::dirac(_dimensions, _position));
+		}
+		
+		TTNetwork result(_dimensions);
+		
+		for (size_t i = 0; i < numComponents; ++i) {
+			if(isOperator) {
+				result.set_component(i, Tensor::dirac({1, result.dimensions[i], result.dimensions[numComponents+i], 1}, _position[i]*result.dimensions[numComponents+i] + _position[numComponents+i]));
+			} else {
+				result.set_component(i, Tensor::dirac({1, result.dimensions[i], 1}, _position[i]));
+			}
+		}
+		return result;
+	}
 	
+	template<bool isOperator>
+	TTNetwork<isOperator> TTNetwork<isOperator>::dirac(std::vector<size_t> _dimensions, const size_t _position) {
+		return dirac(_dimensions, Tensor::position_to_multiIndex(_position, _dimensions));
+	}
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Internal helper functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

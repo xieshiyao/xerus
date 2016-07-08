@@ -885,6 +885,27 @@ static misc::UnitTest cons_named_constructors("Consistency", "named_constructors
 		TEST(approx_equal(A, ttA));
 		TEST(approx_equal(X, ttX));
 		
+		std::uniform_int_distribution<size_t> posADist(0, misc::product(dimsA)-1);
+		std::uniform_int_distribution<size_t> posXDist(0, misc::product(dimsX)-1);
+		const auto posA = posADist(rnd);
+		const auto posX = posXDist(rnd);
+		
+		A = Tensor::dirac(dimsA, posA);
+		X = Tensor::dirac(dimsX, posX);
+		ttA = TTOperator::dirac(dimsA, posA);
+		ttX = TTTensor::dirac(dimsX, posX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		A = Tensor::dirac(dimsA, Tensor::position_to_multiIndex(posA, dimsA));
+		X = Tensor::dirac(dimsX, Tensor::position_to_multiIndex(posX, dimsX));
+		ttA = TTOperator::dirac(dimsA, Tensor::position_to_multiIndex(posA, dimsA));
+		ttX = TTTensor::dirac(dimsX, Tensor::position_to_multiIndex(posX, dimsX));
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
 		dimsX = dims1;

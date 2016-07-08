@@ -237,7 +237,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const size_t _position);
+		static TTNetwork XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const size_t _position);
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		///@brief TTNetworks are default assignable.
