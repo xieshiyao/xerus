@@ -18,30 +18,19 @@
 // or contact us at contact@libXerus.org.
 
 /**
- * @file
- * @brief Default include file for the misc (ie. non-tensor) functionality.
- */
+* @file
+* @brief Header file for some additional math functions.
+*/
 
 #pragma once
 
-#include "misc/check.h"
-#include "misc/standard.h"
-#include "misc/namedLogger.h"
- 
-#include "misc/basicArraySupport.h"
-#include "misc/containerSupport.h"
-#include "misc/stringUtilities.h"
-#include "misc/sfinae.h"
-#include "misc/callStack.h"
-#include "misc/simpleNumerics.h"
-#include "misc/timeMeasure.h"
-#include "misc/performanceAnalysis.h"
-#include "misc/exceptions.h"
-#include "misc/allocator.h"
-#include "misc/histogram.h"
-#include "misc/sort.h"
-#include "misc/math.h"
-#include "misc/missingFunctions.h"
-#include "misc/fileIO.h"
-#include "misc/stringFromTo.h"
-#include "misc/random.h"
+#include <random>
+
+#include "standard.h"
+
+namespace xerus {
+	namespace misc {
+		extern thread_local std::mt19937_64 randomEngine;
+	}
+}
+

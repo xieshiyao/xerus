@@ -61,7 +61,7 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 	examples::completion::inverse_index_ratios(measurements);
 
 	
-	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd);
+	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N));
 	examples::completion::inverse_index_ratios(ctrSet);
 	value_t ctrNorm = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
@@ -117,7 +117,7 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
 
-	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd));
+	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N)));
 	trueSolution.measure(measurements);
 	
 	bool test = true;

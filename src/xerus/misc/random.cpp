@@ -19,29 +19,14 @@
 
 /**
  * @file
- * @brief Default include file for the misc (ie. non-tensor) functionality.
+ * @brief Implementation of the non-template basic string functionality defined in stringUtilities.h.
  */
 
-#pragma once
+#include <xerus/misc/random.h>
 
-#include "misc/check.h"
-#include "misc/standard.h"
-#include "misc/namedLogger.h"
- 
-#include "misc/basicArraySupport.h"
-#include "misc/containerSupport.h"
-#include "misc/stringUtilities.h"
-#include "misc/sfinae.h"
-#include "misc/callStack.h"
-#include "misc/simpleNumerics.h"
-#include "misc/timeMeasure.h"
-#include "misc/performanceAnalysis.h"
-#include "misc/exceptions.h"
-#include "misc/allocator.h"
-#include "misc/histogram.h"
-#include "misc/sort.h"
-#include "misc/math.h"
-#include "misc/missingFunctions.h"
-#include "misc/fileIO.h"
-#include "misc/stringFromTo.h"
-#include "misc/random.h"
+namespace xerus {
+	namespace misc {
+		thread_local std::mt19937_64 randomEngine(std::random_device{}());
+	} // namespace misc
+} // namespace xerus
+

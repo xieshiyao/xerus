@@ -26,6 +26,7 @@
 #include <xerus/measurments.h>
  
 #include <xerus/misc/sort.h>
+#include <xerus/misc/random.h>
 
 #include <xerus/index.h>
 #include <xerus/tensor.h> 
@@ -38,41 +39,126 @@
 namespace xerus {
 	// --------------------- SinglePointMeasurementSet -----------------
 	
+	SinglePointMeasurementSet SinglePointMeasurementSet::random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions) {
+		SinglePointMeasurementSet result;
+		result.create_random_positions(_numMeasurements, _dimensions);
+		result.measuredValues.resize(_numMeasurements, 0);
+		return result;
+	}
+	
+	SinglePointMeasurementSet SinglePointMeasurementSet::random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions, std::function<value_t(const std::vector<size_t>&)> _callback) {
+		SinglePointMeasurementSet result;
+		result.create_random_positions(_numMeasurements, _dimensions);
+		result.measure(_callback);
+		return result;
+	}
+	
+	
 	size_t SinglePointMeasurementSet::size() const {
-		INTERNAL_CHECK(positions.size() == measuredValues.size(), "I.E.");
+		REQUIRE(positions.size() == measuredValues.size(), "Inconsitend SinglePointMeasurementSet encountered.");
 		return positions.size();
 	}
 	
+	
 	size_t SinglePointMeasurementSet::degree() const {
-		IF_CHECK(
-			for(size_t i = 0; i+1 < positions.size(); ++i) {
-				REQUIRE(positions[i].size() == positions[i+1].size(), "Inconsistent degrees in measurment set.");
-			}
-		)
 		return positions.empty() ? 0 : positions[0].size();
 	}
 	
-	void SinglePointMeasurementSet::add(const std::vector<size_t>& _position, const value_t _measuredValue) {
+	
+	void SinglePointMeasurementSet::add(std::vector<size_t> _position, const value_t _measuredValue) {
+		REQUIRE(positions.empty() || _position.size() == positions.back().size(), "Given _position has incorrect degree " << _position.size() << ". Expected " << positions.back().size() << ".");
 		positions.emplace_back(_position);
 		measuredValues.emplace_back(_measuredValue);
 	}
 	
 	
-	value_t SinglePointMeasurementSet::test_solution(const TensorNetwork& _solution) const {
-		value_t residualNorm = 0.0;
-		value_t measurementNorm = 0.0;
-		
-		SinglePointMeasurementSet test(*this);
-		
-		_solution.measure(test);
-		
-		for(size_t i = 0; i < size(); ++i) {
-			residualNorm += misc::sqr(measuredValues[i] - test.measuredValues[i]);
-			measurementNorm += misc::sqr(measuredValues[i]);
+	value_t SinglePointMeasurementSet::frob_norm() const {
+		const auto cSize = size();
+		double norm = 0.0;
+		for(size_t i = 0; i < cSize; ++i) {
+			norm += misc::sqr(measuredValues[i]);
 		}
-		
-		return std::sqrt(residualNorm)/std::sqrt(measurementNorm);
+		return std::sqrt(norm);
 	}
+	
+	
+	void SinglePointMeasurementSet::measure(const Tensor& _solution) {
+		const auto cSize = size();
+		for(size_t i = 0; i < cSize; ++i) {
+			measuredValues[i] = _solution[positions[i]];
+		}
+	}
+	
+	
+	void SinglePointMeasurementSet::measure(const TensorNetwork& _solution) {
+		const auto cSize = size();
+		for(size_t i = 0; i < cSize; ++i) {
+			measuredValues[i] = _solution[positions[i]];
+		}
+	}
+	
+	
+	template<bool isOperator>
+	void SinglePointMeasurementSet::measure(const TTNetwork<isOperator>& _solution) {
+		const auto cSize = size();
+		for(size_t i = 0; i < cSize; ++i) {
+			measuredValues[i] = _solution(positions[i]);
+		}
+	}
+	
+	
+	void SinglePointMeasurementSet::measure(std::function<value_t(const std::vector<size_t>&)> _callback) {
+		const auto cSize = size();
+		for(size_t i = 0; i < cSize; ++i) {
+			measuredValues[i] = _callback(positions[i]);
+		}
+	}
+	
+	
+	double SinglePointMeasurementSet::test(const Tensor& _solution) const {
+		const auto cSize = size();
+		double error = 0.0, norm = 0.0;
+		for(size_t i = 0; i < cSize; ++i) {
+			error += misc::sqr(measuredValues[i] - _solution[positions[i]]);
+			norm += misc::sqr(measuredValues[i]);
+		}
+		return std::sqrt(error/norm);
+	}
+	
+	
+	double SinglePointMeasurementSet::test(const TensorNetwork& _solution) const {
+		const auto cSize = size();
+		double error = 0.0, norm = 0.0;
+		for(size_t i = 0; i < cSize; ++i) {
+			error += misc::sqr(measuredValues[i] - _solution[positions[i]]);
+			norm += misc::sqr(measuredValues[i]);
+		}
+		return std::sqrt(error/norm);
+	}
+	
+	
+	template<bool isOperator>
+	double SinglePointMeasurementSet::test(const TTNetwork<isOperator>& _solution) const {
+		const auto cSize = size();
+		double error = 0.0, norm = 0.0;
+		for(size_t i = 0; i < cSize; ++i) {
+			error += misc::sqr(measuredValues[i] - _solution[positions[i]]);
+			norm += misc::sqr(measuredValues[i]);
+		}
+		return std::sqrt(error/norm);
+	}
+	
+	
+	double SinglePointMeasurementSet::test(std::function<value_t(const std::vector<size_t>&)> _callback) const {
+		const auto cSize = size();
+		double error = 0.0, norm = 0.0;
+		for(size_t i = 0; i < cSize; ++i) {
+			error += misc::sqr(measuredValues[i] - _callback(positions[i]));
+			norm += misc::sqr(measuredValues[i]);
+		}
+		return std::sqrt(error/norm);
+	}
+	
 	
 	
 	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos) {
@@ -81,14 +167,43 @@ namespace xerus {
 				if (_lhs[i] < _rhs[i]) { return true; }
 				if (_lhs[i] > _rhs[i]) { return false; }
 			}
+			
 			for (size_t i = _lhs.size(); i > _splitPos; --i) {
 				if (_lhs[i-1] < _rhs[i-1]) { return true; }
 				if (_lhs[i-1] > _rhs[i-1]) { return false; }
 			}
-	// 		LOG(fatal, "Measurments must not appear twice. ");
 			return false; // equality
 		});
 	}
+	
+	
+	void SinglePointMeasurementSet::create_random_positions(const size_t _numMeasurements, const std::vector<size_t>& _dimensions) {
+		using ::xerus::misc::operator<<;
+		XERUS_REQUIRE(misc::product(_dimensions) >= _numMeasurements, "It's impossible to perform as many measurements as requested. " << _numMeasurements << " > " << _dimensions);
+		
+		// Create distributions
+		std::vector<std::uniform_int_distribution<size_t>> indexDist;
+		for (size_t i = 0; i < _dimensions.size(); ++i) {
+			indexDist.emplace_back(0, _dimensions[i]-1);
+		}
+		
+		std::set<size_t> measuredPositions;
+		std::vector<size_t> multIdx(_dimensions.size());
+		while (positions.size() < _numMeasurements) {
+			size_t pos = 0;
+			for (size_t i = 0; i < _dimensions.size(); ++i) {
+				multIdx[i] = indexDist[i](misc::randomEngine);
+				pos *= _dimensions[i]; pos += multIdx[i];
+			}
+			if (!misc::contains(measuredPositions, pos)) {
+				measuredPositions.insert(pos);
+				positions.push_back(multIdx);
+			}
+		}
+	}
+	
+	
+	
 	
 	// --------------------- RankOneMeasurementSet -----------------
 	

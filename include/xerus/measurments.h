@@ -52,35 +52,50 @@ namespace xerus {
 		SinglePointMeasurementSet& operator=(const SinglePointMeasurementSet&  _other) = default;
 		SinglePointMeasurementSet& operator=(      SinglePointMeasurementSet&& _other) = default;
 		
-		template<class random_engine>
-		static SinglePointMeasurementSet random(const std::vector<size_t> &_dim, const size_t _numMeasurements, random_engine _rnd) {
-			using ::xerus::misc::operator<<;
-			XERUS_REQUIRE(misc::product(_dim) >= _numMeasurements, "It's impossible to perform as many measurements as requested. " << _numMeasurements << " > " << _dim);
-			std::vector<std::uniform_int_distribution<size_t>> indexDist;
-			for (size_t i=0; i<_dim.size(); ++i) {
-				indexDist.emplace_back(0, _dim[i]-1);
-			}
-			std::set<std::vector<size_t>> measuredPositions;
+		static SinglePointMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
+		
+		template<class TensorClass>
+		static SinglePointMeasurementSet random(const size_t _numMeasurements, const TensorClass& _solution) {
 			SinglePointMeasurementSet result;
-			while (result.size() < _numMeasurements) {
-				std::vector<size_t> pos;
-				for (size_t i = 0; i < _dim.size(); ++i) {
-					pos.emplace_back(indexDist[i](_rnd));
-				}
-				if (measuredPositions.count(pos) > 0) continue;
-				measuredPositions.insert(pos);
-				result.add(pos, 0.0);
-			}
+			result.create_random_positions(_numMeasurements, _solution.dimensions);
+			result.measure(_solution);
 			return result;
 		}
 		
-		void add(const std::vector<size_t>& _position, const value_t _measuredValue);
+		static SinglePointMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions, std::function<value_t(const std::vector<size_t>&)> _callback);
+		
 		
 		size_t size() const;
 		
 		size_t degree() const;
 		
-		value_t test_solution(const TensorNetwork& _solution) const;
+		value_t frob_norm() const;
+		
+		void add(std::vector<size_t> _position, const value_t _measuredValue);
+		
+		
+		void measure(const Tensor& _solution);
+		
+		void measure(const TensorNetwork& _solution);
+		
+		template<bool isOperator>
+		void measure(const TTNetwork<isOperator>& _solution);
+		
+		void measure(std::function<value_t(const std::vector<size_t>&)> _callback);
+		
+		
+		double test(const Tensor& _solution) const;
+		
+		double test(const TensorNetwork& _solution) const;
+		
+		template<bool isOperator>
+		double test(const TTNetwork<isOperator>& _solution) const;
+		
+		double test(std::function<value_t(const std::vector<size_t>&)> _callback) const;
+		
+		
+	private:
+		void create_random_positions(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
 	};
 	
 	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos = ~0ul);
