@@ -32,6 +32,7 @@
 #include "basic.h"
 #include "misc/containerSupport.h"
 #include "misc/fileIO.h"
+#include "misc/random.h"
 
 #include "indexedTensor.h"
 
@@ -182,9 +183,9 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-		template<XERUS_ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor XERUS_warn_unused random(Dim_T&& _dimensions, generator& _rnd, distribution& _dist) {
-			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Dense, Initialisation::None);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random(DimensionTuple _dimensions, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			Tensor result(std::move(_dimensions), Representation::Dense, Initialisation::None);
 			value_t* const dataPtr = result.denseData.get();
 			for(size_t i = 0; i < result.size; ++i) {
 				dataPtr[i] = _dist(_rnd);
@@ -197,9 +198,9 @@ namespace xerus {
 		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
 		 * @details See the std::vector variant for details.
 		 */
-		template<class generator, class distribution>
-		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
-			return Tensor::random(DimensionTuple(std::move(_dimensions)), _rnd, _dist);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			return Tensor::random(DimensionTuple(std::move(_dimensions)), _dist, _rnd);
 		}
 		
 		
@@ -211,9 +212,9 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-		template<XERUS_ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor XERUS_warn_unused random(Dim_T&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
-			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Sparse, Initialisation::Zero);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random(DimensionTuple _dimensions, const size_t _N, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			Tensor result(std::move(_dimensions), Representation::Sparse, Initialisation::Zero);
 			XERUS_REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
 			
 			std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
@@ -228,8 +229,8 @@ namespace xerus {
 		 * @brief Constructs a random sparse Tensor with the given dimensions.
 		 * @details See the std::vector variant for details.
 		 */
-		template<class generator, class distribution>
-		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, const size_t _N, distribution& _dist, generator& _rnd) {
 			return Tensor::random(DimensionTuple(_dimensions), _N, _rnd, _dist);
 		}
 		

@@ -39,7 +39,7 @@ int main() {
 	// construct a random initial guess of rank 3 for the ALS algorithm using the c++11 random distributions
 	std::mt19937_64 rnd(0x5EED);
 	std::normal_distribution<double> dist (0.0, 1.0);
-	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), rnd, dist);
+	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), dist);
 	
 	// and solve the system with the default ALS algorithm for symmetric positive operators
 	xerus::ALS_SPD(ttA, ttx, ttb);

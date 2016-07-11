@@ -9,8 +9,8 @@ static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
 
     Index i,j,k;
     
-	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
-	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
 	
 	Tensor Af(A);
 	Tensor Bf(B);
@@ -42,8 +42,8 @@ static misc::UnitTest tt_soft("TT", "soft_thresholding", [](){
 
     Index i,j,k;
     
-	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
-	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), rnd, dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
 	
 	
 	Tensor Af(A);

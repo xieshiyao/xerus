@@ -38,8 +38,8 @@ UNIT_TEST(Strassen, TTRanks,
 				}
 			}
 		}
-		Tensor A = Tensor::random({n,n}, rnd, dist);
-		Tensor B = Tensor::random({n,n}, rnd, dist);
+		Tensor A = Tensor::random({n,n}, dist);
+		Tensor B = Tensor::random({n,n}, dist);
 		Tensor C1(2);
 		Tensor C2(2);
 		C1(i1,i3) = A(i1,i2) * B(i2,i3);
@@ -145,7 +145,7 @@ UNIT_TEST(Strassen, CP,
 		for (size_t i=0; i<n; ++i) {
 			for (size_t j=0; j<n; ++j) {
 				for (size_t k=0; k<n; ++k) {
-					decomp.push_back(Tensor::random({n*n,n*n,n*n}, rnd, dist));
+					decomp.push_back(Tensor::random({n*n,n*n,n*n}, dist));
 					T[{i*n+j,j*n+k,i*n+k}] = 1;
 // 					(*decomp.back())[{i*n+j,j*n+k,i*n+k}] = 1;
 				}

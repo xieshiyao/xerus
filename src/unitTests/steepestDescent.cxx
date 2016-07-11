@@ -62,11 +62,11 @@ using namespace xerus;
 // 	
 // 	
 // 	while (true) {
-// 		TTOperator A = TTOperator::random(operatorDims, std::vector<size_t>(d-1, 2), rnd, dist);
+// 		TTOperator A = TTOperator::random(operatorDims, std::vector<size_t>(d-1, 2), dist);
 // 		A(i/2, j/2) = A(i/2, k/2) * A(j/2, k/2);
-// 		TTTensor b = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+// 		TTTensor b = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), dist);
 // 		b(i&0) = A(i/2,j/2)*b(j&0);
-// 		TTTensor initX = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+// 		TTTensor initX = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), dist);
 // 		TTTensor x(initX);
 // 		
 // 		try {

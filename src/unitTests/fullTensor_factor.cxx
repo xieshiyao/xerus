@@ -27,8 +27,8 @@ static misc::UnitTest tensor_factors("Tensor", "Factors", [](){
     std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({2,7,5,5,2,7}, rnd, dist);
-    Tensor B = Tensor::random({2,7,5,5,2,7}, rnd, dist);
+    Tensor A = Tensor::random({2,7,5,5,2,7}, dist);
+    Tensor B = Tensor::random({2,7,5,5,2,7}, dist);
     Tensor A3 = 3*A;
     Tensor B7 = 7*B;
 	TEST(!A.has_factor());

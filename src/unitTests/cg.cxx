@@ -29,9 +29,9 @@ using namespace xerus;
 //     
 //     Index i,j,k;
 //     
-//     TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, rnd, dist);
-// 	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, rnd, dist);
-// 	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, rnd, dist);
+//     TTTensor X = TTTensor::random({10,10,10,10}, {4,4,4}, dist);
+// 	TTTensor B = TTTensor::random({10,10,10,10}, {2,2,2}, dist);
+// 	TTOperator A = TTOperator::random({10,10,10,10,10,10,10,10}, {2,2,2}, dist);
 // 	
 // // 	A(i/2,j/2) = A(k/2,i/2) * A(k/2,j/2);
 // // 	B(i&0) = A(i/2,j/2) * B(j&0);

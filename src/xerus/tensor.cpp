@@ -720,7 +720,7 @@ namespace xerus {
 	
 	
 	void Tensor::fix_mode(const size_t _mode, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_mode], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_mode]);
+		REQUIRE(_slatePosition < dimensions[_mode], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_mode] << ", dim = " << dimensions << "=" << size << " mode " << _mode);
 		
 		const size_t stepCount = misc::product(dimensions, 0, _mode);
 		const size_t blockSize = misc::product(dimensions, _mode+1, degree());

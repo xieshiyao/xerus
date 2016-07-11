@@ -125,13 +125,14 @@ namespace xerus {
 		 * @param _rnd the random engine to be passed to the constructor of the component tensors.
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
-		template<class generator, class distribution>
-		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(std::vector<size_t> _dimensions, const std::vector<size_t> &_ranks, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
 			const size_t numComponents = _dimensions.size()/N;
 			XERUS_REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
 			XERUS_REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
 			XERUS_REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
 			XERUS_REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
+			
 			
 			
 			TTNetwork result(_dimensions.size());
@@ -142,9 +143,9 @@ namespace xerus {
 				const size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
 
 				if(isOperator) {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
+					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _dist, _rnd));
 				} else {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
+					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd));
 				}
 			}
 			result.cannonicalize_left();
@@ -160,9 +161,9 @@ namespace xerus {
 		 * @param _rnd the random engine to be passed to the constructor of the component tensors.
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
-		template<class generator, class distribution>
-		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const size_t _rank, generator& _rnd, distribution& _dist) {
-			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const size_t _rank, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _dist, _rnd);
 		}
 		
 		
@@ -172,12 +173,12 @@ namespace xerus {
 		 *  the singular values of all matricisations M(1..n,n+1..N) are fixed according to the given function a posteriori
 		 *  The callback function is assumed to take a reference to a diagonal tensor and modify it to represent the desired singular values.
 		 */
-		template<class generator, class distribution, class aloc = std::allocator<size_t>>
-		static TTNetwork XERUS_warn_unused random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, 
-								generator& _rnd, distribution& _dist,
-								const std::function<void(Tensor&)> &_modifySingularValues) 
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, 
+								const std::function<void(Tensor&)> &_modifySingularValues,
+								distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) 
 		{
-			TTNetwork result = random(_dimensions, _ranks, _rnd, _dist);
+			TTNetwork result = random(_dimensions, _ranks, _dist, _rnd);
 			
 			const Index i,j,k,l,m;
 			

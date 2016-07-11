@@ -47,16 +47,16 @@ static misc::UnitTest tensor_contained("Tensor", "SelfContained", [](){
 			}
 		}
 		
-		Tensor A1 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], rnd, dist);
-		Tensor A2 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/13, rnd, dist);
-		Tensor A3 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/20, rnd, dist);
-		Tensor B1 = Tensor::random(indexDim[1] | indexDim[4] | indexDim[5] | indexDim[6], rnd, dist);
-		Tensor C1 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
-		Tensor C2 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], rnd, dist);
-		Tensor D1 = Tensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], rnd, dist);
-		Tensor D2 = Tensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], misc::product(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6])/27, rnd, dist);
-		Tensor E1 = Tensor::random(indexDim[7] | indexDim[9], rnd, dist);
-		Tensor F1 = Tensor::random(indexDim[4], rnd, dist);
+		Tensor A1 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], dist);
+		Tensor A2 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/13, dist);
+		Tensor A3 = Tensor::random(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3], misc::product(indexDim[0] | indexDim[1] | indexDim[2] | indexDim[3])/20, dist);
+		Tensor B1 = Tensor::random(indexDim[1] | indexDim[4] | indexDim[5] | indexDim[6], dist);
+		Tensor C1 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], dist);
+		Tensor C2 = Tensor::random(indexDim[5] | indexDim[0] | indexDim[7] | indexDim[8], dist);
+		Tensor D1 = Tensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], dist);
+		Tensor D2 = Tensor::random(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6], misc::product(indexDim[2] | indexDim[8] | indexDim[3] | indexDim[6])/27, dist);
+		Tensor E1 = Tensor::random(indexDim[7] | indexDim[9], dist);
+		Tensor F1 = Tensor::random(indexDim[4], dist);
 		Tensor res;
 
 		res(indices[4]^indexSpan[4], indices[9]^indexSpan[9]) = 

@@ -81,14 +81,6 @@
 #define MTEST(cond, ...) if (!(cond)) {XERUS_PRINTFAIL; XERUS_LOG(error, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
 
 
-#define UNIT_TEST_RND \
-	std::mt19937_64 rnd;\
-	rnd.seed(0xC0CAC01A);\
-	std::normal_distribution<value_t> normalDist (0.0, 1.0);\
-	std::uniform_real_distribution<value_t> uniformDist (-1.0, 1.0)
-		
-
-
 
 namespace xerus { namespace misc {
 	struct UnitTest final {

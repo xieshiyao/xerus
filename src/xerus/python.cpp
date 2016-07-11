@@ -364,7 +364,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 					static std::random_device rd;
 					std::mt19937_64 rnd(rd());
 					std::normal_distribution<double> dist(0.0, 1.0);
-					return xerus::Tensor::random(_dim, rnd, dist);
+					return xerus::Tensor::random(_dim, dist);
 				}).staticmethod("random")
 			.def("ones", &Tensor::ones, args("dimensions"), 
 				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere."
@@ -553,7 +553,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				static std::random_device rd;
 				std::mt19937_64 rnd(rd());
 				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::TTTensor::random(_dim, _rank, rnd, dist);
+				return xerus::TTTensor::random(_dim, _rank, dist);
 			}).staticmethod("random")
 		.def("ones", &TTTensor::ones).staticmethod("ones")
 // 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
@@ -615,7 +615,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 				static std::random_device rd;
 				std::mt19937_64 rnd(rd());
 				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::TTOperator::random(_dim, _rank, rnd, dist);
+				return xerus::TTOperator::random(_dim, _rank, dist);
 			}).staticmethod("random")
 		.def("ones", &TTOperator::ones).staticmethod("ones")
 // 		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker") //TODO

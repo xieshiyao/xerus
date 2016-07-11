@@ -28,10 +28,10 @@ static misc::UnitTest tn_contr40("TensorNetwork", "contractions_of_4_to_degree_0
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({100,1}, rnd, dist);
-	Tensor B = Tensor::random({100,1}, rnd, dist);
-	Tensor C = Tensor::random({100,1}, rnd, dist);
-	Tensor D = Tensor::random({100,1}, rnd, dist);
+    Tensor A = Tensor::random({100,1}, dist);
+	Tensor B = Tensor::random({100,1}, dist);
+	Tensor C = Tensor::random({100,1}, dist);
+	Tensor D = Tensor::random({100,1}, dist);
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
@@ -52,12 +52,13 @@ static misc::UnitTest tn_contr30("TensorNetwork", "contractions_of_3_to_degree_0
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({10,100}, rnd, dist);
-	Tensor C = Tensor::random({100,1}, rnd, dist);
+    Tensor A = Tensor::random({1,10}, dist);
+	Tensor B = Tensor::random({10,100}, dist);
+	Tensor C = Tensor::random({100,1}, dist);
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
+	TEST(B.is_dense());
 	
 	E() = A(i1,i2) * B(i2,i3) * C(i3,i1);
 	double a1 = E[{}];
@@ -66,12 +67,11 @@ static misc::UnitTest tn_contr30("TensorNetwork", "contractions_of_3_to_degree_0
 	E() = C(i3,i1) * B(i2,i3) * A(i1,i2);
 	double a3 = E[{}];
 	LOG(unit_test, a1 << " " << a2 << " " << a3 << " " << a1-a2 << " " << a2-a3);
-	TEST(misc::approx_equal(a1, a2, 1e-20*a1)); // effectively ==
-	TEST(misc::approx_equal(a2, a3, 1e-20*a2));
+	TEST(misc::approx_equal(a1, a2));
+	TEST(misc::approx_equal(a2, a3));
 });
 
 static misc::UnitTest tn_traces("TensorNetwork", "traces", [](){
-	UNIT_TEST_RND;
 	Tensor A({2,2});
     Tensor B({2,2,2});
     Tensor C({2,2,2,2});
@@ -159,8 +159,8 @@ static misc::UnitTest tn_contrsingle("TensorNetwork", "contraction_single_node_t
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({1,10,10}, rnd, dist);
-	Tensor B = Tensor::random({1}, rnd, dist);
+    Tensor A = Tensor::random({1,10,10}, dist);
+	Tensor B = Tensor::random({1}, dist);
 	Tensor E;
 	Index i1,i2,i3;
 	
@@ -172,7 +172,7 @@ static misc::UnitTest tn_contr_trace("TensorNetwork", "contraction_single_networ
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({2,2,2,2}, rnd, dist);
+    Tensor A = Tensor::random({2,2,2,2}, dist);
 	TensorNetwork ATN(A);
 	Tensor E;
 	TensorNetwork ETN(0);
@@ -236,8 +236,8 @@ static misc::UnitTest tn_contr_multinode("TensorNetwork", "contraction_multi_nod
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({1,10}, rnd, dist);
+    Tensor A = Tensor::random({1,10}, dist);
+	Tensor B = Tensor::random({1,10}, dist);
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
@@ -251,8 +251,8 @@ static misc::UnitTest tn_idx_shuffle("TensorNetwork", "index_reshuffle", [](){
 	std::mt19937_64 rnd;
     std::normal_distribution<value_t> dist (0.0, 10.0);
 
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({1,10}, rnd, dist);
+    Tensor A = Tensor::random({1,10}, dist);
+	Tensor B = Tensor::random({1,10}, dist);
 	Tensor E;
 	Index i1,i2,i3,i4;
 	

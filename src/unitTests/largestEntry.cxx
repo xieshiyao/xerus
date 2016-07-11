@@ -46,7 +46,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 			ranks.push_back(rankDist(rnd));
 			INTERNAL_CHECK(d == stateDims.size() && d == ranks.size()+1, "IE");
 			
-			TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
+			TTTensor X = TTTensor::random(stateDims, ranks, dist);
 			X /= X.frob_norm();
 			
 			Tensor fullX(X);
@@ -98,7 +98,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 // 		interationCounts[0]++;
 // 		for(size_t r = 1; r <= R; ++r) {
 // 			LOG(bla, r);
-// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, r), rnd, dist);
+// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, r), dist);
 // 			size_t maxRank = 0, interationCount = 0;
 // 			clock.step();
 // 			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
@@ -132,7 +132,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 // 		maxRanks[0]++;
 // 		interationCounts[0]++;
 // 		for(size_t d = 2; d <= D; ++d) {
-// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, 2), rnd, dist);
+// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, 2), dist);
 // 			size_t maxRank = 0, interationCount = 0;
 // 			clock.step();
 // 			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
@@ -169,7 +169,7 @@ UNIT_TEST(Algorithm, largestEntryData,
 		std::vector<size_t> stateDims(d,2);
 		std::vector<size_t> ranks(d-1,4);
 		
-		TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
+		TTTensor X = TTTensor::random(stateDims, ranks, dist);
 // 		TTTensor X = examples::peaking_diagonals(d, 2);
 		X /= X.frob_norm();
 		

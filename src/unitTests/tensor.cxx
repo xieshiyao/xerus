@@ -32,7 +32,7 @@ static Tensor::DimensionTuple random_dimensions(const size_t _degree, const size
 }
 
 static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::vector<Tensor> tensors;
 	tensors.emplace_back();
 	tensors.push_back(tensors.back());
@@ -60,14 +60,14 @@ static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
 	tensors.emplace_back(random_dimensions(10, 4, rnd), Tensor::Representation::Sparse, Tensor::Initialisation::None);
 	tensors.push_back(tensors.back());
 	
-	tensors.emplace_back(Tensor::random(fixedDimensions, rnd, normalDist));
+	tensors.emplace_back(Tensor::random(fixedDimensions));
 	tensors.push_back(tensors.back());
-	tensors.emplace_back(Tensor::random(fixedDimensions, 7, rnd, normalDist));
+	tensors.emplace_back(Tensor::random(fixedDimensions, 7));
 	tensors.push_back(tensors.back());
 	
-	tensors.emplace_back(Tensor::random(random_dimensions(10, 4, rnd), rnd, normalDist));
+	tensors.emplace_back(Tensor::random(random_dimensions(10, 4, rnd)));
 	tensors.push_back(tensors.back());
-	tensors.emplace_back(Tensor::random(random_dimensions(10, 4, rnd), 7, rnd, normalDist));
+	tensors.emplace_back(Tensor::random(random_dimensions(10, 4, rnd), 7));
 	tensors.push_back(tensors.back());
 	
 	tensors.emplace_back(fixedDimensions, []()->value_t{ return 0.0; });
@@ -131,10 +131,10 @@ static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
 	
 	FAILTEST(Tensor(fixedDimensions, Tensor::Representation::Dense, Tensor::Initialisation::Zero));
 	FAILTEST(Tensor(fixedDimensions, Tensor::Representation::Sparse, Tensor::Initialisation::Zero));
-	FAILTEST(auto x = Tensor::random(fixedDimensions, rnd, normalDist));
-	FAILTEST(auto x = Tensor::random(fixedDimensions, 7, rnd, normalDist));
-	FAILTEST(auto x = Tensor::random(fixedDimensions, rnd, normalDist));
-	FAILTEST(auto x = Tensor::random(fixedDimensions, 7, rnd, normalDist));
+	FAILTEST(auto x = Tensor::random(fixedDimensions));
+	FAILTEST(auto x = Tensor::random(fixedDimensions, 7));
+	FAILTEST(auto x = Tensor::random(fixedDimensions));
+	FAILTEST(auto x = Tensor::random(fixedDimensions, 7));
 	FAILTEST(Tensor(fixedDimensions, []()->value_t{ return 0.0; }));
 	FAILTEST(Tensor(fixedDimensions, misc::product(fixedDimensions), [](const size_t _n, const size_t _N)->std::pair<size_t, value_t>{ return std::pair<size_t, value_t>(_n, value_t(_n)); }));
 	FAILTEST(Tensor(fixedDimensions, [](const size_t _i)->value_t{ return value_t(_i); }));
@@ -144,7 +144,6 @@ static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
 
 
 static misc::UnitTest tensor_sparse_dense("Tensor", "Sparse_Dense_Conversions", [](){
-	UNIT_TEST_RND;
 	Tensor n({3,3,3,3});
 	const size_t dim = 100;
 	MTEST(frob_norm(n) < 1e-20, "This should be a sparse tensor with no entries, so frob norm exactly = 0!");
@@ -176,21 +175,21 @@ static misc::UnitTest tensor_sparse_dense("Tensor", "Sparse_Dense_Conversions", 
 	MTEST(res.representation == Tensor::Representation::Dense, "tensor with every entry == 1 should be stored as dense tensor");
 	
 	res = Tensor({dim,dim}, Tensor::Representation::Dense);
-	Tensor d = Tensor::random({1}, rnd, normalDist);
+	Tensor d = Tensor::random({1});
 	Tensor e = columns[0];
 	e.reinterpret_dimensions({dim,dim,1});
 	res({i1,i2}) = e(i1,i2,i3) * d(i3);
 	MTEST(res.representation == Tensor::Representation::Sparse, "Sparse * full == sparse contractions?");
 	
 	// assigning sparse to dense tensors and vice versa
-	d = Tensor::random({dim,dim}, rnd, normalDist);
+	d = Tensor::random({dim,dim});
 	TEST(d.representation == Tensor::Representation::Dense);
 	d(i1,i2) = columns[2](i2,i1);
 	MTEST(d.representation == Tensor::Representation::Sparse, "sparse tensor assignment");
 	d = columns[2];
 	MTEST(d.representation == Tensor::Representation::Sparse, "sparse tensor assignment 2");
 	
-	e = Tensor::random({dim,dim}, rnd, normalDist);
+	e = Tensor::random({dim,dim});
 	MTEST(e.representation == Tensor::Representation::Dense, "dense tensor assignment");
 	d(i1,i2) = e(i2,i1);
 	MTEST(d.representation == Tensor::Representation::Dense, "dense tensor assignment 2");

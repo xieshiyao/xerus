@@ -115,7 +115,7 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
 	
-	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), distF);
 
 	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N)));
 	trueSolution.measure(measurements);

@@ -28,7 +28,7 @@ using namespace xerus;
 static misc::UnitTest tensor_rw("Tensor", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
-	Tensor A = Tensor::random({12,13,14}, rnd, dist);
+	Tensor A = Tensor::random({12,13,14}, dist);
 	
 	misc::save_to_file(A, "test.dat", misc::FileFormat::TSV);
 	Tensor Ab = misc::load_from_file<Tensor>("test.dat");
@@ -55,10 +55,10 @@ static misc::UnitTest tensor_rw("Tensor", "read_write_file", [](){
 static misc::UnitTest tn_rw("TensorNetwork", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
-	Tensor A = Tensor::random({12,13,14}, rnd, dist);
+	Tensor A = Tensor::random({12,13,14}, dist);
 	Tensor B = Tensor({12,13,14}, Tensor::Representation::Sparse);
 	B[{1,1,1}] = 1; B[{2,3,4}] = 2; B[{7,10,3}] = 3; B[{5,12,13}] = 4; B[{8,7,6}] = 5;
-	Tensor C = Tensor::random({12,13,14}, rnd, dist);
+	Tensor C = Tensor::random({12,13,14}, dist);
 	Index i,j,k,l,m,n;
 	TensorNetwork T;
 	T(k,l,n) = A(i,j,k) * B(i,l,m) * C(n,j,m);
@@ -79,7 +79,7 @@ static misc::UnitTest tn_rw("TensorNetwork", "read_write_file", [](){
 static misc::UnitTest tt_rw("TT", "read_write_file", [](){
 	std::mt19937_64 rnd(0x77778888);
 	std::normal_distribution<double> dist(0.0,1.0);
-	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
+	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, dist);
 	
 	misc::save_to_file(A, "test.dat");
 	

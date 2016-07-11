@@ -27,6 +27,7 @@
 namespace xerus {
 	namespace misc {
 		thread_local std::mt19937_64 randomEngine(std::random_device{}());
+		thread_local std::normal_distribution<double> defaultNormalDistribution;
 	} // namespace misc
 } // namespace xerus
 

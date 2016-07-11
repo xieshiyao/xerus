@@ -23,12 +23,30 @@
 #include "../../include/xerus/misc/test.h"
 using namespace xerus;
 
+
+static misc::UnitTest sparse_contraction0("SparseTensor", "Contraction_with_0", [](){
+	Tensor A = Tensor::random({10,10});
+	Tensor B = Tensor({10,10}, Tensor::Representation::Sparse);
+	B[{1,1}] = 15;
+	Tensor Z = Tensor({10,10}, Tensor::Representation::Sparse);
+	Index i,j,k;
+	Tensor tmp;
+	tmp(i,j) =  A(i,k) * Z(k,j);
+	MTEST(approx_equal(tmp, Z), frob_norm(tmp));
+	tmp(i,j) =  B(i,k) * Z(k,j);
+	MTEST(approx_equal(tmp, Z), frob_norm(tmp));
+	tmp(i,j) =  Z(i,k) * Z(k,j);
+	MTEST(approx_equal(tmp, Z), frob_norm(tmp));
+	tmp(i,j) =  Z(i,k) * A(k,j);
+	MTEST(approx_equal(tmp, Z), frob_norm(tmp));
+	tmp(i,j) =  Z(i,k) * B(k,j);
+	MTEST(approx_equal(tmp, Z), frob_norm(tmp));
+});
+
+
 static misc::UnitTest sparse_creation("SparseTensor", "Creation", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0); 
-    
-    Tensor fullA = Tensor::random({7,13,2,9,3}, rnd, dist);
-    Tensor fullB = Tensor::random({7,13,2,9,3}, rnd, dist);
+    Tensor fullA = 10*Tensor::random({7,13,2,9,3});
+    Tensor fullB = 10*Tensor::random({7,13,2,9,3});
     Tensor fullX({7,13,2,9,3});
     
     Tensor sparseA = fullA.sparse_copy();

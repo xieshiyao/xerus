@@ -38,8 +38,8 @@ static misc::UnitTest tt_sum("TT", "sum", [](){
 	dimensions.push_back(intDist(rnd));
 	dimensions.push_back(intDist(rnd));
 	dimensions.push_back(intDist(rnd));
-	Tensor A = Tensor::random(dimensions, rnd, dist);
-	Tensor B = Tensor::random(dimensions, rnd, dist);
+	Tensor A = Tensor::random(dimensions, dist);
+	Tensor B = Tensor::random(dimensions, dist);
 	Tensor C;
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
@@ -61,8 +61,8 @@ static misc::UnitTest tt_diff("TT", "difference", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	Tensor A = Tensor::random({10,10,10,10}, rnd, dist);
-	Tensor B = Tensor::random({10,10,10,10}, rnd, dist);
+	Tensor A = Tensor::random({10,10,10,10}, dist);
+	Tensor B = Tensor::random({10,10,10,10}, dist);
 	Tensor C;
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
@@ -84,8 +84,8 @@ static misc::UnitTest tt_real_diff("TT", "real_difference", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, dist);
+	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, dist); 
 	TTTensor ttC(5); 
 	
 	Index i;
@@ -108,7 +108,7 @@ static misc::UnitTest tt_real_diff("TT", "real_difference", [](){
 	ttC(i&0) = (73*ttA(i&0) + ttB(i&0)) - (ttB(i&0) + 73*ttA(i&0));
 	MTEST(frob_norm(ttC(i&0)) < 1e-9, "5 " << frob_norm(ttC(i&0)));
 	
-	ttA = TTTensor::random({10,10,10,10,10}, {2,5,7,2}, rnd, dist);
+	ttA = TTTensor::random({10,10,10,10,10}, {2,5,7,2}, dist);
 	ttC(i&0) = ttA(i&0) - ttA(i&0);
 	MTEST(frob_norm(ttC(i&0)) < 1e-11, "6 " << frob_norm(ttC(i&0)));
 	
@@ -131,9 +131,9 @@ static misc::UnitTest tt_diff_stacks("TT", "difference_of_TTStacks", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 
-	TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist);
-	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, rnd, dist); 
+	TTOperator ttO = TTOperator::random({10,10,10,10,10,10,10,10,10,10}, {4,4,4,4}, dist);
+	TTTensor ttA = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, dist);
+	TTTensor ttB = TTTensor::random({10,10,10,10,10}, {4,4,4,4}, dist); 
 	TTTensor ttC;
 
 	Index i,j,k;
@@ -169,7 +169,7 @@ static misc::UnitTest tt_spec_sumdiff("TT", "special_sum_diff", [](){
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
 	Tensor A({10,10,10,10}); // NOTE that this is the 0 tensor
-	Tensor B = Tensor::random({10,10,10,10}, rnd, dist);
+	Tensor B = Tensor::random({10,10,10,10}, dist);
 	Tensor C;
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
@@ -199,7 +199,7 @@ static misc::UnitTest tt_spec_sumdiff("TT", "special_sum_diff", [](){
 	MTEST(frob_norm(Tensor(ttC)(i&0) - Tensor(ttB)(i&0)) < 3.1*1e-13, frob_norm(Tensor(ttC)(i&0) - Tensor(ttB)(i&0)));
 	
 	Tensor X({10});
-	Tensor Y = Tensor::random({10}, rnd, dist);
+	Tensor Y = Tensor::random({10}, dist);
 	Tensor Z;
 	TTTensor ttX(X);
 	TTTensor ttY(Y);
@@ -232,9 +232,9 @@ static misc::UnitTest tt_prod("TT", "product", [](){
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	Index i,j,k,l;
 	
-	TTOperator ttA = TTOperator::random({10,10,10,10}, 1, rnd, dist);
-	TTOperator ttB = TTOperator::random({10,10,10,10}, 1, rnd, dist);
-	TTTensor ttD = TTTensor::random({10,10}, 2, rnd, dist);
+	TTOperator ttA = TTOperator::random({10,10,10,10}, 1, dist);
+	TTOperator ttB = TTOperator::random({10,10,10,10}, 1, dist);
+	TTTensor ttD = TTTensor::random({10,10}, 2, dist);
 	Tensor A(ttA);
 	Tensor B(ttB);
 	Tensor D(ttD);
@@ -322,7 +322,7 @@ static misc::UnitTest tt_trans("TT", "transpose", [](){
 	std::mt19937_64 rnd;
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	Tensor A = Tensor::random({10,10,10,10}, rnd, dist);
+	Tensor A = Tensor::random({10,10,10,10}, dist);
 	Tensor B;
 	TTOperator ttA(A); 
 	Index i,j;
@@ -337,8 +337,8 @@ static misc::UnitTest tt_axb("TT", "ax_b", [](){
 	std::mt19937_64 rnd;
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
-	TTTensor X = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
-	TTTensor B = TTTensor::random({10,10,10}, {2,2}, rnd, dist);
+	TTTensor X = TTTensor::random({10,10,10}, {2,2}, dist);
+	TTTensor B = TTTensor::random({10,10,10}, {2,2}, dist);
 	
 	Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
@@ -402,9 +402,9 @@ static misc::UnitTest tt_opt("TT", "operator_times_tensor", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	Tensor A = Tensor::random({10,10,10,10}, rnd, dist);
-	Tensor B = Tensor::random({10,10,10,10}, rnd, dist);
-	Tensor C = Tensor::random({10,10}, rnd, dist);
+	Tensor A = Tensor::random({10,10,10,10}, dist);
+	Tensor B = Tensor::random({10,10,10,10}, dist);
+	Tensor C = Tensor::random({10,10}, dist);
 	Tensor D;
 	Tensor Do;
 	TTOperator ttA(A); 
@@ -450,8 +450,8 @@ static misc::UnitTest tt_fullcontr("TT", "full_contraction", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	Tensor A = Tensor::random({10,10,10,10}, rnd, dist);
-	Tensor B = Tensor::random({10,10,10,10}, rnd, dist);
+	Tensor A = Tensor::random({10,10,10,10}, dist);
+	Tensor B = Tensor::random({10,10,10,10}, dist);
 	TTTensor ttA(A); 
 	TTTensor ttB(B); 
 	TTOperator toA(A); 
@@ -490,8 +490,8 @@ static misc::UnitTest tt_disjoint("TT", "disjoint_product", [](){
 	Index i,j;
 	
 	for(size_t d = 0; d <= D; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, dist);
-		Tensor B = Tensor::random(dimsB, rnd, dist);
+		Tensor A = Tensor::random(dimsA, dist);
+		Tensor B = Tensor::random(dimsB, dist);
 		Tensor C;
 		TTTensor ttA(A); 
 		TTTensor ttB(B);

@@ -30,7 +30,7 @@ static misc::UnitTest tut_quick("Tutorials", "quick_start", [](){
 	
 	std::mt19937_64 rnd(0x5EED);
 	std::normal_distribution<double> dist (0.0, 1.0);
-	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), rnd, dist);
+	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), dist);
 	
 	xerus::ALS_SPD(ttA, ttx, ttb);
 	

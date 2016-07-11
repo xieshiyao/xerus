@@ -30,31 +30,31 @@ static misc::UnitTest tt_crea("TT", "TTTensor_Creation", [](){
 
     Index i,j,k;
     
-    Tensor A1 = Tensor::random({2}, rnd, dist);
+    Tensor A1 = Tensor::random({2}, dist);
     TTTensor TTA1(A1, 1e-14);
     Tensor B1;
     B1(i) = TTA1(i);
     TEST(approx_equal(B1,A1, 1e-14));
     
-    Tensor A2 = Tensor::random({2,2}, rnd, dist);
+    Tensor A2 = Tensor::random({2,2}, dist);
     TTTensor TTA2(A2, 1e-14);
     Tensor B2;
     B2(j,i) = TTA2(j,i);
     TEST(approx_equal(B2,A2, 1e-14));
     
-    Tensor A3 = Tensor::random({2,7}, rnd, dist);
+    Tensor A3 = Tensor::random({2,7}, dist);
     TTTensor TTA3(A3, 1e-14);
     Tensor B3;
     B3(j,i) = TTA3(j,i);
     TEST(approx_equal(B3,A3, 1e-14));
     
-    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
+    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, dist);
     TTTensor TTA4(A4, 1e-14);
     Tensor B4;
     B4(j,i^7) = TTA4(j,i^7);
     TEST(approx_equal(B4,A4, 1e-14));
     
-    Tensor A5 = Tensor::random({7,5,3,1,4,2,8,1}, rnd, dist);
+    Tensor A5 = Tensor::random({7,5,3,1,4,2,8,1}, dist);
     TTTensor TTA5(A5, 1e-14);
     Tensor B5;
     B5(j,i^7) = TTA5(j,i&1);
@@ -68,31 +68,31 @@ static misc::UnitTest tt_opcrea("TT", "TTOperator_Creation", [](){
 
     Index i,j,k;
     
-    Tensor A1 = Tensor::random({2,2}, rnd, dist);
+    Tensor A1 = Tensor::random({2,2}, dist);
     TTOperator TTA1(A1, 1e-14);
     Tensor B1;
     B1(i^2) = TTA1(i^2);
     TEST(approx_equal(B1,A1, 1e-14));
     
-    Tensor A2 = Tensor::random({2,7}, rnd, dist);
+    Tensor A2 = Tensor::random({2,7}, dist);
     TTOperator TTA2(A2, 1e-14);
     Tensor B2;
     B2(j,i) = TTA2(j,i);
     TEST(approx_equal(B2,A2, 1e-14));
     
-    Tensor A3 = Tensor::random({2,7,3,1}, rnd, dist);
+    Tensor A3 = Tensor::random({2,7,3,1}, dist);
     TTOperator TTA3(A3, 1e-14);
     Tensor B3;
     B3(j,i^3) = TTA3(j,i^3);
     TEST(approx_equal(B3,A3, 1e-14));
     
-    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, rnd, dist);
+    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, dist);
     TTOperator TTA4(A4, 1e-14);
     Tensor B4;
     B4(j,i^7) = TTA4(j,i&1);
     TEST(approx_equal(B4, A4, 1e-14));
     
-    Tensor A5 = Tensor::random({7,5,6,3,1,4,2,1}, rnd, dist); 
+    Tensor A5 = Tensor::random({7,5,6,3,1,4,2,1}, dist); 
     TTOperator TTA5(A5, 1e-14);
     Tensor B5;
     B5(j,i^7) = TTA5(j,i^7);
@@ -107,7 +107,7 @@ static misc::UnitTest tt_crea_eps("TT", "creation_with_epsilon", [](){
 	rnd.seed(0X5EED);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	Tensor A = Tensor::random({5,5,5,5}, rnd, dist);
+	Tensor A = Tensor::random({5,5,5,5}, dist);
 	TTTensor ttA(A, EPS); 
 	TTTensor ttB(A, 0);
 	ttB.round(EPS);
@@ -126,7 +126,7 @@ static misc::UnitTest tt_crea_full5("TT", "creation_from_fullTensor_5x5x5x5", []
 	rnd.seed(73);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	Tensor A = Tensor::random({5,5,5,5}, rnd, dist);
+	Tensor A = Tensor::random({5,5,5,5}, dist);
 	TTTensor ttA(A);
 	Tensor B(ttA);
 	
@@ -147,7 +147,7 @@ static misc::UnitTest tt_namedconstr("TT", "named_constructors", [](){
 	std::vector<size_t> ranks(9, 4);
 	ranks[4] = 1;
 	
-	TTTensor X = TTTensor::random(dimensions, ranks, rnd, dist);
+	TTTensor X = TTTensor::random(dimensions, ranks, dist);
 	std::vector<size_t> found_ranks = X.ranks();
 	X.round(1e-16);
 	MTEST(X.ranks() == found_ranks, X.ranks() << " vs " << found_ranks);
@@ -161,7 +161,7 @@ static misc::UnitTest tt_namedconstr("TT", "named_constructors", [](){
 // 		MTEST(std::abs(mean) < 0.5, "X mean " << mean);
 // 	}
 	
-	TTOperator Xop = TTOperator::random(operatorDimensions, ranks, rnd, dist);
+	TTOperator Xop = TTOperator::random(operatorDimensions, ranks, dist);
 	found_ranks = Xop.ranks();
 	Xop.round(1e-15);
 	MTEST(Xop.ranks() == found_ranks, Xop.ranks() << " vs " << found_ranks);
@@ -202,12 +202,12 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	std::mt19937_64 rnd(0xDEADBEEF);
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	
-	TTOperator o1 = TTOperator::random({10,10}, {}, rnd, dist);
-	TTOperator o2 = TTOperator::random({10,10}, {}, rnd, dist);
-	TTOperator o3 = TTOperator::random({10,10}, {}, rnd, dist);
-	TTTensor s1 = TTTensor::random({10},{},rnd, dist);
-	TTTensor s2 = TTTensor::random({10},{},rnd, dist);
-	TTTensor s3 = TTTensor::random({10},{},rnd, dist);
+	TTOperator o1 = TTOperator::random({10,10}, {}, dist);
+	TTOperator o2 = TTOperator::random({10,10}, {}, dist);
+	TTOperator o3 = TTOperator::random({10,10}, {}, dist);
+	TTTensor s1 = TTTensor::random({10},{},dist);
+	TTTensor s2 = TTTensor::random({10},{},dist);
+	TTTensor s3 = TTTensor::random({10},{},dist);
 	
 	TTOperator O = dyadic_product<true>({o1,o2,o3});
 	TTTensor S = dyadic_product<false>({s1,s2,s3});

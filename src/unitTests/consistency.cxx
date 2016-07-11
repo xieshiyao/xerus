@@ -26,7 +26,7 @@ using namespace xerus;
 
 
 static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -34,10 +34,10 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 	const Index i, j, k;
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.2);
@@ -163,7 +163,7 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 
 
 static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(2, 4);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -181,10 +181,10 @@ static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 	dimsB = dims2 | dims1;
 	
 	for(size_t d = 2; d <= 6; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -284,7 +284,7 @@ static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 
 
 static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 4);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -292,10 +292,10 @@ static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
 	const Index i, j, k;
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -409,7 +409,7 @@ static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
 });
 
 static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -425,10 +425,10 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 		
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -459,6 +459,10 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		const size_t slate = slateSelect(rnd);
 		std::uniform_int_distribution<size_t> posSelect(0, dimsX[slate]-1);
 		const size_t position = posSelect(rnd);
+		LOG(laskdj, slate << ' ' << position << ' ' << dimsX[slate]);
+		LOG(asd, X.dimensions << ' ' << dimsX);
+		LOG(wtf, X.size << " vs " << xerus::misc::product(X.dimensions));
+		MTEST(X.dimensions == dimsX, X.dimensions << " vs " << dimsX);
 		
 		A.fix_mode(slate+d, position);
 		A.fix_mode(slate, position);
@@ -570,7 +574,7 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 
 
 static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -586,10 +590,10 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 		
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -733,7 +737,7 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 
 
 static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
@@ -741,10 +745,10 @@ static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []
 	const Index i, j, k;
 	
 	for(size_t d = 1; d <= 7; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.33);
@@ -855,7 +859,7 @@ static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []
 
 
 static misc::UnitTest cons_named_constructors("Consistency", "named_constructors", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;

@@ -31,6 +31,7 @@
 namespace xerus {
 	namespace misc {
 		extern thread_local std::mt19937_64 randomEngine;
+		extern thread_local std::normal_distribution<double> defaultNormalDistribution;
 	}
 }
 

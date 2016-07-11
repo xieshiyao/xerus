@@ -106,7 +106,7 @@ namespace xerus {
 					largeX.set_component(d, newComp);
 				}
 				// one ALS sweep to 2r
-				TTTensor newX = _x;//TTTensor::random(_x.dimensions, twoR, rnd, dist);
+				TTTensor newX = _x;//TTTensor::random(_x.dimensions, twoR, dist);
 				for (size_t o=0; o<1; ++o) {
 					newX.move_core(0, true);
 					// build stack from right to left

@@ -61,12 +61,12 @@ struct LeastSquaresProblem {
 		return TTOperator::identity(dim);
 	}
 	virtual TTTensor get_x() const {
-		TTTensor x = TTTensor::random(dimensions, x_ranks, rnd, normalDist);
+		TTTensor x = TTTensor::random(dimensions, x_ranks, normalDist);
 		x /= frob_norm(x);
 		return x;
 	};
 	virtual TTTensor get_b() const {
-		TTTensor b = TTTensor::random(dimensions, b_ranks, rnd, normalDist);
+		TTTensor b = TTTensor::random(dimensions, b_ranks, normalDist);
 		b /= frob_norm(b);
 		return b;
 	};
@@ -98,7 +98,7 @@ namespace ls {
 		TTOperator get_a() const override {
 			std::vector<size_t> dim(dimensions);
 			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
-			TTOperator A = TTOperator::random(dim, a_ranks, rnd, normalDist);
+			TTOperator A = TTOperator::random(dim, a_ranks, normalDist);
 			A /= frob_norm(A);
 			return A;
 		}
@@ -119,7 +119,7 @@ namespace ls {
 		TTOperator get_a() const override {
 			std::vector<size_t> dim(dimensions);
 			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
-			TTOperator A = TTOperator::random(dim, a_ranks, rnd, normalDist);
+			TTOperator A = TTOperator::random(dim, a_ranks, normalDist);
 			Index i,j,k;
 			A(i,j) = A(i,k) * A(j,k);
 			A /= frob_norm(A);

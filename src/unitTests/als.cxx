@@ -25,15 +25,10 @@
 using namespace xerus;
 
 static misc::UnitTest als_id("ALS", "identity", [](){
-    //Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(73);
-	std::normal_distribution<value_t> dist (0.0, 1.0);
-    
     Index k,l,m,n,o,p;
 	
     Tensor X({10, 10, 10});
-    Tensor B = Tensor::random({10, 10, 10}, rnd, dist);
+    Tensor B = Tensor::random({10, 10, 10});
     
     Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
@@ -61,7 +56,7 @@ static misc::UnitTest als_id("ALS", "identity", [](){
 	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
     perfdata.reset();
 	
-    ttX = TTTensor::random(ttX.dimensions, ttX.ranks(), rnd, dist);
+    ttX = TTTensor::random(ttX.dimensions, ttX.ranks());
 	result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
     MTEST(result < 0.01, "2 " << result);
 	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
@@ -76,7 +71,7 @@ static misc::UnitTest als_proj("ALS", "projectionALS", [](){
     
     Index k,l,m,n,o,p;
     
-	TTTensor B = TTTensor::random({4,4,4,4,4}, {4,8,8,4}, rnd, dist);
+	TTTensor B = TTTensor::random({4,4,4,4,4}, {4,8,8,4}, dist);
 	value_t normB = frob_norm(B);
 	TTTensor X = B;
 	for (size_t r = 7; r > 0; --r) {
@@ -103,8 +98,8 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	const std::vector<size_t> stateDims(d, 2);
 	const std::vector<size_t> operatorDims(2*d, 2);
 	
-    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2, rnd, dist);
-	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
+    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2, dist);
 	
 	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
 	
@@ -114,7 +109,7 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	
 	TEST(frob_norm(X-B) < 1e-12);
 	
-	A = xerus::TTOperator::random(operatorDims, 2, rnd, dist);
+	A = xerus::TTOperator::random(operatorDims, 2, dist);
 	
 	A(i^d, j^d) = A(i^d, k^d) * A(j^d, k^d);
 	
@@ -126,7 +121,7 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	
 	TTTensor C;
 	C(i&0) = A(i/2, j/2) * B(j&0);
-	X = xerus::TTTensor::random(stateDims, 2, rnd, dist);
+	X = xerus::TTTensor::random(stateDims, 2, dist);
 	
 	PerformanceData pd(false);
 // 	ALSb.printProgress = true;
