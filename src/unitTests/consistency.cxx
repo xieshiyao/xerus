@@ -458,40 +458,38 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		std::uniform_int_distribution<size_t> slateSelect(0, d-1);
 		const size_t slate = slateSelect(rnd);
 		std::uniform_int_distribution<size_t> posSelect(0, dimsX[slate]-1);
-		const size_t position = posSelect(rnd);
-		LOG(laskdj, slate << ' ' << position << ' ' << dimsX[slate]);
-		LOG(asd, X.dimensions << ' ' << dimsX);
-		LOG(wtf, X.size << " vs " << xerus::misc::product(X.dimensions));
-		MTEST(X.dimensions == dimsX, X.dimensions << " vs " << dimsX);
+		const size_t positionX = posSelect(rnd);
+		std::uniform_int_distribution<size_t> posSelectY(0, dimsY[slate]-1);
+		const size_t positionY = posSelectY(rnd);
 		
-		A.fix_mode(slate+d, position);
-		A.fix_mode(slate, position);
-		B.fix_mode(slate+d, position);
-		B.fix_mode(slate, position);
-		X.fix_mode(slate, position);
-		Y.fix_mode(slate, position);
+		A.fix_mode(slate+d, positionX);
+		A.fix_mode(slate, positionX);
+		B.fix_mode(slate+d, positionX);
+		B.fix_mode(slate, positionY);
+		X.fix_mode(slate, positionX);
+		Y.fix_mode(slate, positionY);
 		
-		sA.fix_mode(slate+d, position);
-		sA.fix_mode(slate, position);
-		sB.fix_mode(slate+d, position);
-		sB.fix_mode(slate, position);
-		sX.fix_mode(slate, position);
-		sY.fix_mode(slate, position);
+		sA.fix_mode(slate+d, positionX);
+		sA.fix_mode(slate, positionX);
+		sB.fix_mode(slate+d, positionX);
+		sB.fix_mode(slate, positionY);
+		sX.fix_mode(slate, positionX);
+		sY.fix_mode(slate, positionY);
 		
 		ttA = TTOperator(A); // Can't use fix_mode
 		ttB = TTOperator(B); // Can't use fix_mode
-		ttX.fix_mode(slate, position);
-		ttY.fix_mode(slate, position);
+		ttX.fix_mode(slate, positionX);
+		ttY.fix_mode(slate, positionY);
 		
 		ttX.require_correct_format();
 		ttY.require_correct_format();
 		
-		tnA.fix_mode(slate+d, position);
-		tnA.fix_mode(slate, position);
-		tnB.fix_mode(slate+d, position);
-		tnB.fix_mode(slate, position);
-		tnX.fix_mode(slate, position);
-		tnY.fix_mode(slate, position);
+		tnA.fix_mode(slate+d, positionX);
+		tnA.fix_mode(slate, positionX);
+		tnB.fix_mode(slate+d, positionX);
+		tnB.fix_mode(slate, positionY);
+		tnX.fix_mode(slate, positionX);
+		tnY.fix_mode(slate, positionY);
 		
 		TEST(approx_equal(A, sA));
 		TEST(approx_equal(A, tnA, 1e-14));
