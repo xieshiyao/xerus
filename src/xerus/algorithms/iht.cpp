@@ -43,7 +43,6 @@ namespace xerus {
 		
 		Index i1, i2, i3, i4, i5;
 		
-// 		std::random_device rd;
 // 		std::mt19937_64 rnd(rd());
 // 		std::uniform_real_distribution<value_t> dist(0, 1);
 		

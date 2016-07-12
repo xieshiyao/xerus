@@ -33,7 +33,6 @@ namespace xerus {
 // 	std::vector<std::vector<size_t>> create_random_tuples(const std::vector<size_t>& _dimensions, const size_t _position, const size_t _num) {
 // 		const size_t N = _dimensions.size()-_position;
 // 		
-// 		std::random_device rd;
 // 		std::mt19937_64 rnd(rd());
 // 		std::vector<std::uniform_int_distribution<size_t>> dists;
 // 		for(size_t d = 0; d < N; ++d) {
@@ -58,7 +57,6 @@ namespace xerus {
 // 	}
 // 	
 // 	TTTensor cross_approximation(const Tensor& _input, const std::vector<size_t> &_ranks) {
-// 		std::random_device rd;
 // 		std::mt19937_64 rnd(rd());
 // 		
 // 		TTTensor reconstruction(_input.dimensions.size());

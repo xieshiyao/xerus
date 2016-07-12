@@ -24,8 +24,7 @@
 using namespace xerus;
 /*
 UNIT_TEST(Strassen, TTRanks,
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
+// 	std::mt19937_64 rnd;
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	Index i1,i2,i3,i4,i5,i6,i7,i8;
 	
@@ -55,8 +54,7 @@ UNIT_TEST(Strassen, TTRanks,
 
 
 UNIT_TEST(Strassen, CP,
-	std::random_device rd;
-	std::mt19937_64 rnd;
+// 	std::mt19937_64 rnd;
 	rnd.seed(rd());
 	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
 	Index i1,i2,i3,i4,i5,i6,i7,i8;

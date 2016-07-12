@@ -45,9 +45,6 @@ static misc::UnitTest sparse_arith_neg("SparseTensor", "Arithmetic_Negatives", [
 });
 
 static misc::UnitTest sparse_tripleIdx("SparseTensor", "triple_indices", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
 	Tensor A({1,1,1}, Tensor::Representation::Sparse);
 	Tensor B({1,1}, Tensor::Representation::Sparse);
 	Tensor C({1,1}, Tensor::Representation::Sparse);

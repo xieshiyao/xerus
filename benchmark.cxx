@@ -28,8 +28,7 @@
 
 #include "include/xerus.h"
 
-std::random_device rd;
-std::mt19937_64 rnd(rd());
+std::mt19937_64 rnd = xerus::misc::randomEngine;
 std::normal_distribution<double> normalDist(0,1);
 
 using namespace xerus;

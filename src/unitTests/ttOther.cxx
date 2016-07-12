@@ -4,13 +4,10 @@
 using namespace xerus;
 
 static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
     Index i,j,k;
     
-	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
-	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2));
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2));
 	
 	Tensor Af(A);
 	Tensor Bf(B);
@@ -37,13 +34,10 @@ static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
 });
 
 static misc::UnitTest tt_soft("TT", "soft_thresholding", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
     Index i,j,k;
     
-	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
-	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2), dist);
+	TTTensor A = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2));
+	TTTensor B = TTTensor::random(std::vector<size_t>(10,2), std::vector<size_t>(9,2));
 	
 	
 	Tensor Af(A);

@@ -25,8 +25,6 @@
 using namespace xerus;
 
 static misc::UnitTest decomp_als("ALS", "decomposition_als", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
 	const size_t d = 14;
@@ -34,10 +32,10 @@ static misc::UnitTest decomp_als("ALS", "decomposition_als", [](){
 
 	const std::vector<size_t> stateDims(d, n);
 	
-    xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4, dist);
+    xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4);
 	Tensor B(TTB);
 	
-	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4);
 	
 	xerus::decomposition_als(X, B);
 	

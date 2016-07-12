@@ -71,7 +71,7 @@ static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
 });
 
 static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
-	std::mt19937_64 rnd(0x5EED);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
 	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
@@ -113,7 +113,7 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 });
 
 static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
-	std::mt19937_64 rnd(0x5EED);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
 	std::uniform_int_distribution<size_t> eDist(1,N*N-1);

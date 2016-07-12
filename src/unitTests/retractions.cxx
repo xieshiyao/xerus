@@ -25,14 +25,11 @@ using namespace xerus;
 
 
 static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims(8,4);
 	std::vector<size_t> stateRank(7,2);
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, dist);
-	TTTensor zero = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor zero = TTTensor::random(stateDims, stateRank);
 	zero *= 1e-16;
 	
 	TTTangentVector tangentZero(X, zero);
@@ -72,7 +69,7 @@ static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
 		MTEST(frob_norm(X-Y) < 1e-8, "hosvdII " << frob_norm(X-Y));
 	}
 	
-	TTTensor change = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	const value_t EPS = 1e-3;
 	change *= EPS / frob_norm(change);
 	
@@ -152,15 +149,12 @@ static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
 
 
 static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
-	std::mt19937_64 rnd(0xDEADBEEF);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
 	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, dist);
-	TTTensor delta = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor delta = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange(X, delta);
 	TTTensor Pdelta = TTTensor(tangentChange);
 	TTTensor deltaPdelta = delta - Pdelta;
@@ -187,15 +181,12 @@ static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
 
 
 static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
-	std::mt19937_64 rnd(0xDEADBEEF);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
 	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, dist);
-	TTTensor change = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange1(X, change);
 	// projection should decrease norm
 	MTEST(frob_norm(change) > frob_norm(TTTensor(tangentChange1)), frob_norm(change) << " " << frob_norm(TTTensor(tangentChange1)));
@@ -210,7 +201,7 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
 		  "norm2 " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
 	
-	TTTensor change2 = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor change2 = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange2(X, change2);
 	
 	scalarProdInTangentSpace = tangentChange1.scalar_product(tangentChange2);
@@ -237,15 +228,12 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 
 
 static misc::UnitTest alg_vecTrans("Algorithm", "vectorTransport", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims(8,4);
 	std::vector<size_t> stateRank(7,2);
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, dist);
-	TTTensor change = TTTensor::random(stateDims, stateRank, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange1(X, change);
 	TTTangentVector tangentChange2(tangentChange1);
 	

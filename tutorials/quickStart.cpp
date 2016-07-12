@@ -26,6 +26,7 @@ int main() {
 	xerus::TTOperator ttA(A);
 	
 	// and verify its rank
+	using xerus::misc::operator<<;
 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
 	
 	// the right hand side of the equation both as Tensor and in (Q)TT format
@@ -36,10 +37,8 @@ int main() {
 	b.reinterpret_dimensions(std::vector<size_t>(9, 2));
 	xerus::TTTensor ttb(b);
 	
-	// construct a random initial guess of rank 3 for the ALS algorithm using the c++11 random distributions
-	std::mt19937_64 rnd(0x5EED);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), dist);
+	// construct a random initial guess of rank 3 for the ALS algorithm
+	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3));
 	
 	// and solve the system with the default ALS algorithm for symmetric positive operators
 	xerus::ALS_SPD(ttA, ttx, ttb);

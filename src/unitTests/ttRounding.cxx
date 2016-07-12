@@ -25,12 +25,9 @@
 using namespace xerus;
 
 static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
     Index i,j,k;
     
-    Tensor A1 = Tensor::random({2}, dist);
+    Tensor A1 = Tensor::random({2});
     Tensor B1;
     TTTensor TTA1(A1, 1e-14);
     B1(i) = TTA1(i);
@@ -45,7 +42,7 @@ static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
     TEST(approx_equal(B1,A1, 1e-14));
     
     
-    Tensor A2 = Tensor::random({2,2}, dist);
+    Tensor A2 = Tensor::random({2,2});
     Tensor B2;
     TTTensor TTA2(A2, 1e-14);
     B2(j,i) = TTA2(j,i);
@@ -60,7 +57,7 @@ static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
     TEST(approx_equal(B2,A2, 1e-14));
     
     
-    Tensor A3 = Tensor::random({2,7}, dist);
+    Tensor A3 = Tensor::random({2,7});
     Tensor B3;
     TTTensor TTA3(A3, 1e-14);
     B3(j,i) = TTA3(j,i);
@@ -75,7 +72,7 @@ static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
     TEST(approx_equal(B3,A3, 1e-14));
     
     
-    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2}, dist);
+    Tensor A4 = Tensor::random({2,2,2,2,2,2,2,2});
     Tensor B4;
     TTTensor TTA4(A4, 1e-14);
     B4(j,i^7) = TTA4(j,i^7);
@@ -90,7 +87,7 @@ static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
     TEST(approx_equal(B4,A4, 1e-14));
     
     
-    Tensor A5 = Tensor::random({5,6,3,1,4,2,8,1}, dist);
+    Tensor A5 = Tensor::random({5,6,3,1,4,2,8,1});
     Tensor B5;
     TTTensor TTA5(A5, 1e-14);
     B5(j,i^7) = TTA5(j,i^7);
@@ -107,15 +104,12 @@ static misc::UnitTest tt_round("TT", "TTTensor_Rounding", [](){
 
 
 static misc::UnitTest tt_noround("TT", "no_rounding", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
     Index i,j,k;
-	TTTensor a = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, dist);
+	TTTensor a = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2});
 	TTTensor b(a);
 	a.round(2);
 	TEST(approx_equal(Tensor(a),Tensor(b)));
-	TTTensor c = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2}, dist);
+	TTTensor c = TTTensor::random({2,2,2,2,2,2,2}, {2,2,2,2,2,2});
 	a(i&0) = a(i&0) + 0.0*c(i&0);
 	LOG(unit_test, a.ranks());
 	a.round(2);

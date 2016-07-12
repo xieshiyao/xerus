@@ -44,9 +44,6 @@ static misc::UnitTest tensor_arith_neg("Tensor", "Arithmetic_Negatives", [](){
 });
 
 static misc::UnitTest tensor_triple_idx("Tensor", "triple_indices", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
 	Tensor A;
 	Tensor B;
 	Tensor C;

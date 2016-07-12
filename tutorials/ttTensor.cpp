@@ -6,8 +6,6 @@
 #include <xerus.h>
 
 int main() {
-	std::mt19937_64 rnd;
-	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
 	// the order of the tensors in the following calculation
@@ -18,8 +16,8 @@ int main() {
 	const std::vector<size_t> operatorDims(2*d, 4);
 	
 	// create random ttTensors of rank 2
-    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2, dist);
-	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2, dist);
+    xerus::TTTensor B = xerus::TTTensor::random(stateDims, 2);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 2);
 	
 	// and set the TTOperator A to be the identity
 	xerus::TTOperator A = xerus::TTOperator::identity(operatorDims);
@@ -31,7 +29,7 @@ int main() {
 	std::cout << "Frobenius norm of X-B is: " << frob_norm(X-B) << " this should be almost 0..." << std::endl;
 	
 	// replace the operator by a random rank-2 operator
-	A = xerus::TTOperator::random(operatorDims, 2, dist);
+	A = xerus::TTOperator::random(operatorDims, 2);
 	
 	// ensure that A is symmetric by calculating @f$ A\cdot A^T @f$
 	// here i^d signifies, that i should represent a multi-index of dimension d
@@ -39,6 +37,7 @@ int main() {
 	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
 	
 	// the rank of A increased in the last operation:
+	using xerus::misc::operator<<;
 	std::cout << "The rank of A*A^T is " << A.ranks() << std::endl;
 	
 	// create a performance data object to keep track of the current algorithm progress (and print it to cout)

@@ -26,7 +26,6 @@ using namespace xerus;
 
 
 // UNIT_TEST(SteepestDescent, random_operator,
-// 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());
 // 	std::normal_distribution<value_t> dist (0.0, 1.0);
 // 	

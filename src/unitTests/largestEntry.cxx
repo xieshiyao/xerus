@@ -27,9 +27,7 @@ using namespace xerus;
 
 static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
     //Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(73);
-	std::normal_distribution<value_t> dist (0.0, 1.0);
+    std::mt19937_64 rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1,3);
 	std::uniform_int_distribution<size_t> rankDist(1,4);
     
@@ -46,7 +44,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 			ranks.push_back(rankDist(rnd));
 			INTERNAL_CHECK(d == stateDims.size() && d == ranks.size()+1, "IE");
 			
-			TTTensor X = TTTensor::random(stateDims, ranks, dist);
+			TTTensor X = TTTensor::random(stateDims, ranks);
 			X /= X.frob_norm();
 			
 			Tensor fullX(X);
@@ -152,8 +150,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 /*
 UNIT_TEST(Algorithm, largestEntryData,
     //Random numbers
-	std::random_device rd;
-    std::mt19937_64 rnd(rd());
+//     std::mt19937_64 rnd(rd());
 // 	std::uniform_real_distribution<value_t> dist(0.0, 1.0);
 	std::normal_distribution<value_t> dist(0.0, 1.0);
     

@@ -24,9 +24,6 @@
 using namespace xerus;
 
 static misc::UnitTest sparse_remove_slate("SparseTensor", "remove_slate", [](){
-    std::mt19937_64 rnd;
-    rnd.seed(0X5EED);
-    
     double n = 0;
     Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1; return n; } );
 	A.use_sparse_representation();
@@ -47,9 +44,6 @@ static misc::UnitTest sparse_remove_slate("SparseTensor", "remove_slate", [](){
 });
 
 static misc::UnitTest sparse_fix_mode("SparseTensor", "fix_mode", [](){
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
-
 	double n = 0.0;
 	Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
 	A.use_sparse_representation();

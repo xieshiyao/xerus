@@ -67,10 +67,7 @@ static misc::UnitTest tensor_svd_zero("Tensor", "SVD_zero", [](){
 });
 
 static misc::UnitTest tensor_svd_rnd512("Tensor", "SVD_Random_512x512", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({8,8,8,8,8,8}, dist);
+    Tensor A = Tensor::random({8,8,8,8,8,8});
     Tensor res1;
     Tensor res2;
     Tensor res3;
@@ -112,10 +109,7 @@ static misc::UnitTest tensor_svd_rnd512("Tensor", "SVD_Random_512x512", [](){
 });
 
 static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({3,5,2,7,3,12}, dist);
+    Tensor A = 10*Tensor::random({3,5,2,7,3,12});
     Tensor Ax, U, V, Us, Vs;
     Tensor S(Tensor::Tensor::Representation::Sparse);
 	Tensor Ss(Tensor::Tensor::Representation::Sparse);
@@ -146,10 +140,7 @@ static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
 });
 
 static misc::UnitTest tensor_svd_order_6("Tensor", "SVD_Random_Order_Six", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({9,7,5,5,9,7}, dist);
+    Tensor A = Tensor::random({9,7,5,5,9,7});
     Tensor res1;
     Tensor res2;
     Tensor res3;
@@ -172,10 +163,7 @@ static misc::UnitTest tensor_svd_order_6("Tensor", "SVD_Random_Order_Six", [](){
 });
 
 static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({7,5,9,7,5,9}, dist);
+    Tensor A = Tensor::random({7,5,9,7,5,9});
     Tensor Q;
     Tensor R;
     Tensor Q2;
@@ -248,10 +236,7 @@ static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", 
 
 
 static misc::UnitTest tensor_qc("Tensor", "QC", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A = Tensor::random({2,2,2,2,2,2}, dist);
+    Tensor A = Tensor::random({2,2,2,2,2,2});
 	Tensor B({2,3}, [](size_t i){return double(i);});
     Tensor Q;
     Tensor R;
@@ -291,13 +276,7 @@ static misc::UnitTest tensor_qc("Tensor", "QC", [](){
 });
 
 static misc::UnitTest tensor_sqr("Tensor", "Sparse_QR", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A({2,2,2,2,2,2});
-	for (size_t i=0; i<16; ++i) {
-		A[i] = dist(rnd);
-	}
+    Tensor A =  Tensor::random({2,2,2,2,2,2}, 16);
 	A.use_sparse_representation();
 	Tensor B({2,3}, [](size_t i){return double(i);});
     Tensor Q;
@@ -337,13 +316,7 @@ static misc::UnitTest tensor_sqr("Tensor", "Sparse_QR", [](){
 
 
 static misc::UnitTest tensor_scq("Tensor", "Sparse_CQ", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A({3,3,3,3,3,3});
-	for (size_t i=0; i<16; ++i) {
-		A[i] = dist(rnd);
-	}
+    Tensor A = Tensor::random({3,3,3,3,3,3}, 16);
 	A.use_sparse_representation();
 	Tensor Af(A);
 	Af.use_dense_representation();

@@ -32,7 +32,7 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 	const size_t R = 3;
 	const size_t CS = 3;
 	
-	std::mt19937_64 rnd;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
 	SinglePointMeasurementSet measurements;
@@ -111,11 +111,7 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	const size_t R = 3;
 	const size_t CS = 8;
 
-	std::mt19937_64 rnd;
-	std::uniform_int_distribution<size_t> dist(0, N-1);
-	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
-	
-	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), distF);
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R));
 
 	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N)));
 	trueSolution.measure(measurements);

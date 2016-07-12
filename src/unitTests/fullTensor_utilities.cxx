@@ -24,9 +24,6 @@
 using namespace xerus;
 
 static misc::UnitTest tensor_remove_slate("Tensor", "remove_slate", [](){
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
-
 	double n = 0.0;
 	Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
 
@@ -46,9 +43,6 @@ static misc::UnitTest tensor_remove_slate("Tensor", "remove_slate", [](){
 });
 
 static misc::UnitTest tensor_fix_mode("Tensor", "fix_mode", [](){
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
-
 	double n = 0.0;
 	Tensor A({3,3,3}, [&](const std::vector<size_t> &){ n += 1.0; return n; } );
 

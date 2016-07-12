@@ -28,9 +28,7 @@ static misc::UnitTest tut_quick("Tutorials", "quick_start", [](){
 	b.reinterpret_dimensions(std::vector<size_t>(9, 2));
 	xerus::TTTensor ttb(b);
 	
-	std::mt19937_64 rnd(0x5EED);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3), dist);
+	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3));
 	
 	xerus::ALS_SPD(ttA, ttx, ttb);
 	

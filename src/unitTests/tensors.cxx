@@ -25,7 +25,7 @@
 using namespace xerus;
 
 static misc::UnitTest tensor_contained("Tensor", "SelfContained", [](){
-    std::mt19937_64 rnd;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> spanDist(0, 3);
 	std::uniform_int_distribution<size_t> dimDist(1, 4);
     std::uniform_real_distribution<value_t> dist (-1.0, 1.0); 

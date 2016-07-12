@@ -361,10 +361,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 			.def("frob_norm", &Tensor::frob_norm)
 			.def("random", 
 				+[](std::vector<size_t> _dim) {
-					static std::random_device rd;
-					std::mt19937_64 rnd(rd());
-					std::normal_distribution<double> dist(0.0, 1.0);
-					return xerus::Tensor::random(_dim, dist);
+					return xerus::Tensor::random(_dim);
 				}).staticmethod("random")
 			.def("ones", &Tensor::ones, args("dimensions"), 
 				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere."
@@ -550,10 +547,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		.def("frob_norm", &TTTensor::frob_norm) // NOTE unneccessary because correct call is inherited
 		.def("random", 
 			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
-				static std::random_device rd;
-				std::mt19937_64 rnd(rd());
-				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::TTTensor::random(_dim, _rank, dist);
+				return xerus::TTTensor::random(_dim, _rank);
 			}).staticmethod("random")
 		.def("ones", &TTTensor::ones).staticmethod("ones")
 // 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
@@ -612,10 +606,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		.def("frob_norm", &TTOperator::frob_norm) // NOTE unneccessary because correct call is inherited
 		.def("random", 
 			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
-				static std::random_device rd;
-				std::mt19937_64 rnd(rd());
-				std::normal_distribution<double> dist(0.0, 1.0);
-				return xerus::TTOperator::random(_dim, _rank, dist);
+				return xerus::TTOperator::random(_dim, _rank);
 			}).staticmethod("random")
 		.def("ones", &TTOperator::ones).staticmethod("ones")
 // 		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker") //TODO
@@ -877,9 +868,7 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("test_solution", &SinglePointMeasurementSet::test_solution)
 		
 		.def("random", +[](const std::vector<size_t> &_dim, size_t _numMeas){
-			static std::random_device rd;
-			std::mt19937_64 rnd(rd());
-			return SinglePointMeasurementSet::random(_dim, _numMeas, rnd);
+			return SinglePointMeasurementSet::random(_dim, _numMeas);
 		}).staticmethod("random")
 	;
 	def("sort", static_cast<void (*)(SinglePointMeasurementSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );

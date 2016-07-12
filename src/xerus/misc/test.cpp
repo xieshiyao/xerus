@@ -38,10 +38,9 @@
     #include <xerus/misc/standard.h>
     #include <xerus/misc/exceptions.h>
     #include <xerus/misc/stringUtilities.h>
+	#include <xerus/misc/random.h>
 	#include <xerus/misc/internal.h>
     
-    // TODO put all this into xerus::misc::unitTesting (or something similar)
-
     namespace xerus { namespace misc {
 				
 		std::map<std::string, std::map<std::string, std::function<void()>>> *xerus::misc::UnitTest::tests;
@@ -95,12 +94,18 @@
 			}
 		#endif
 			
-		bool test(const std::pair<std::string, std::function<void()>> &_t) {
+		bool test(const std::pair<std::string, std::function<void()>> &_t, uint64 _seed=0) {
 			std::cout << "| " << _t.first << " starting: "  << std::flush;
+			
+			// initialize passed variable and reseed randomness
+			::xerus::misc::UnitTest::passed = true;
+			if (_seed == 0) {
+				_seed = ::xerus::misc::randomEngine();
+			}
+			::xerus::misc::randomEngine.seed(_seed);
 			
 			std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 			try {
-				::xerus::misc::UnitTest::passed = true;
 				_t.second(); // executes the test
 			} catch (const xerus::misc::generic_error &e) {
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
@@ -120,9 +125,9 @@
 			std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 			
 			if (::xerus::misc::UnitTest::passed) { 
-				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
+				std::cout << std::endl << "| " << _t.first << ":\033[1;32m passed!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)\n| " << std::endl;
 			} else {
-				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms)" << std::endl << "| " << std::endl;
+				std::cout << std::endl << "| " << _t.first << ":\033[1;31m FAILED!\033[0m (" << std::fixed << std::setprecision(3) << static_cast<double>(time)/1000.0 << " ms, seed = " << std::hex << _seed << ")\n| " << std::endl;
 			}
 			
 			return ::xerus::misc::UnitTest::passed;
@@ -176,7 +181,7 @@
 			try {
 				(*p)();
 			} catch (...) {
-				std::cout << "required test initialization failed. required test listing might will be wrong." << std::endl;
+				std::cout << "required test initialization failed. required test listing will be wrong." << std::endl;
 				break;
 			}
 		}
@@ -184,22 +189,22 @@
         //Calculate complete time
         std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         
-        std::cout << "###############################################################################" << std::endl;
-        std::cout << "#                                unit-testing                                 #" << std::endl;
+        std::cout << "###############################################################################\n";
+        std::cout << "#                                unit-testing                                 #\n";
         std::cout << "###############################################################################" << std::endl;
 		// no unittests defined (ie. the map tests does not exist!)
 		if (!xerus::misc::UnitTest::tests) {
-			std::cout << "no unittests defined." << std::endl;
+			std::cout << "no unittests defined.\n";
 			std::cout << "use the macro UNIT_TEST(group, testname, ...) to define unittests inside the sourcecode." << std::endl;
 			return 0;
 		}
 		
         if (argc < 2) {
-            std::cout << "usage:" << std::endl;
-            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname] ..." << std::endl;
-            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ..." << std::endl;
-            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all" << std::endl << std::endl;
-            std::cout << "available groups:" << std::endl;
+            std::cout << "usage:\n";
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname] ...\n";
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ...\n";
+            std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all\n\n";
+            std::cout << "available groups:\n";
             for (const auto &p : *xerus::misc::UnitTest::tests) {
                 std::cout << "# " <<  p.first << std::endl;
             }
@@ -228,10 +233,11 @@
                 }
                 break;
             }
-            // explicit test inside a group?
+            
             std::vector<std::string> cmd = xerus::misc::explode(grp,':');
             if (cmd.size()>1) {
-				if (cmd.size()>2) {
+				// explicit test inside a group?
+				if (cmd.size()>3) {
                     std::cout << "########## \033[1;31munknown syntax '" << grp << "'\033[0m" << std::endl;
                     continue;
                 }
@@ -239,8 +245,13 @@
                     std::cout << "########## \033[1;31munknown unittest '" << cmd[0] << ":" << cmd[1] << "'\033[0m" << std::endl;
                     continue;
                 }
+                xerus::uint64 seed = 0;
+				if (cmd.size()>2) {
+					// explicit seed given
+					seed = std::stoul(cmd[2], nullptr, 16);
+				}
                 totalCount += 1;
-                if (xerus::misc::internal::test({grp, (*xerus::misc::UnitTest::tests)[cmd[0]][cmd[1]]}) ) {
+                if (xerus::misc::internal::test({grp, (*xerus::misc::UnitTest::tests)[cmd[0]][cmd[1]]}, seed) ) {
                     totalPassCount += 1;
                 }
             } else {

@@ -24,7 +24,6 @@
 using namespace xerus;
 
 // UNIT_TEST(algorithms, cg,
-// 	std::mt19937_64 rnd(0xDEADBEEF);
 // 	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
 //     
 //     Index i,j,k;
