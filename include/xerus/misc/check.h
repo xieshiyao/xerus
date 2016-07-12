@@ -46,7 +46,7 @@
  */
 
 #ifdef XERUS_TEST_COVERAGE
-	#include "test.h"
+	#include "../test/test.h"
 #else
 	#define XERUS_REQUIRE_TEST (void)0
 #endif

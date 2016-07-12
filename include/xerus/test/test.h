@@ -37,59 +37,54 @@
 
 #include "../misc/namedLogger.h"
 
-#ifdef XERUS_UNITTEST
-	#ifdef XERUS_TEST_COVERAGE
-		#define XERUS_REQUIRE_TEST \
-			do { \
-				static const char * xerus_test_fname = __PRETTY_FUNCTION__;\
-				struct xerus_test_a{ static void rt() {\
-					xerus::misc::internal::RequiredTest::register_test(xerus_test_fname, __FILE__, __LINE__);\
-				} };\
-				typedef void (*xerus_test_t)();\
-				static xerus_test_t xerus_test_rtp __attribute__((section(".init_array"))) = &xerus_test_a::rt; \
-				(void)xerus_test_rtp; \
-				xerus::misc::internal::RequiredTest::increase_counter(xerus_test_fname, __FILE__, __LINE__); \
-			} while(false)
-	#else
-		#define XERUS_REQUIRE_TEST (void)0
-	#endif
-	
-	#ifndef XERUS_DISABLE_RUNTIME_CHECKS
-		#define FAILTEST(test) \
-			{\
-				bool failtestFailed = false; \
-				xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
-				try { test; } catch (...) {failtestFailed = true; XERUS_PRINTCHECK;} \
-				xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
-				if(!failtestFailed) { XERUS_PRINTFAIL; XERUS_LOG(warning, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
-			}\
-			void(0)
-	#else
-		#define FAILTEST(test) XERUS_LOG(warning, "Failtest is not useful with flag XERUS_DISABLE_RUNTIME_CHECKS")
-	#endif
-	
-	#define main(...) original_main_function_that_was_disabled_by_xerus_unit_test_enviroment_horst( __VA_ARGS__ )
+#ifdef XERUS_TEST_COVERAGE
+	#define XERUS_REQUIRE_TEST \
+		do { \
+			static const char * xerus_test_fname = __PRETTY_FUNCTION__;\
+			struct xerus_test_a{ static void rt() {\
+				xerus::misc::internal::RequiredTest::register_test(xerus_test_fname, __FILE__, __LINE__);\
+			} };\
+			typedef void (*xerus_test_t)();\
+			static xerus_test_t xerus_test_rtp __attribute__((section(".init_array"))) = &xerus_test_a::rt; \
+			(void)xerus_test_rtp; \
+			xerus::misc::internal::RequiredTest::increase_counter(xerus_test_fname, __FILE__, __LINE__); \
+		} while(false)
 #else
 	#define XERUS_REQUIRE_TEST (void)0
 #endif
 
+#ifndef XERUS_DISABLE_RUNTIME_CHECKS
+	#define FAILTEST(test) \
+		{\
+			bool failtestFailed = false; \
+			xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
+			try { test; } catch (...) {failtestFailed = true; XERUS_PRINTCHECK;} \
+			xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
+			if(!failtestFailed) { XERUS_PRINTFAIL; XERUS_LOG(warning, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
+		}\
+		void(0)
+#else
+	#define FAILTEST(test) XERUS_LOG(warning, "Failtest is not useful with flag XERUS_DISABLE_RUNTIME_CHECKS")
+#endif
 
 #define XERUS_PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
 #define XERUS_PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
 
 #define TEST(...) if (!(__VA_ARGS__)) {XERUS_PRINTFAIL; XERUS_LOG(warning, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
+
 #define MTEST(cond, ...) if (!(cond)) {XERUS_PRINTFAIL; XERUS_LOG(warning, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
 
 
-
 namespace xerus { namespace misc {
-	struct UnitTest final {
-		// order of contruction of global objects is random so the first one has to create the map
-		static std::map<std::string, std::map<std::string, std::function<void()>>> *tests;
-		static bool passed;
-		
-		UnitTest(std::string _group, std::string _name, std::function<void()> _f);
-	};
+	#ifdef XERUS_UNITTEST
+		struct UnitTest final {
+			// order of contruction of global objects is random so the first one has to create the map
+			static std::map<std::string, std::map<std::string, std::function<void()>>> *tests;
+			static bool passed;
+			
+			UnitTest(std::string _group, std::string _name, std::function<void()> _f);
+		};
+	#endif
 
 	namespace internal {
 	#ifdef XERUS_TEST_COVERAGE
