@@ -107,7 +107,7 @@
 				std::cerr << "| Test has thrown an uncaught xerus::generic_error():" << std::endl;
 				std::cerr << e.what() << std::endl;
 				::xerus::misc::UnitTest::passed = false;
-			} catch (const std::exception &e) {
+			}/* catch (const std::exception &e) {
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
 				std::cerr << "| Test has thrown an uncaught std::exception:" << std::endl;
 				std::cerr << e.what() << std::endl;
@@ -116,7 +116,7 @@
 				std::cout << u8"\033[1;31m\u2717 \033[0m" << std::endl;
 				std::cerr << "| Test has thrown an uncaught unknown exception..." << std::endl;
 				::xerus::misc::UnitTest::passed = false;
-			}
+			}*/
 			std::chrono::microseconds::rep time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 			
 			if (::xerus::misc::UnitTest::passed) { 

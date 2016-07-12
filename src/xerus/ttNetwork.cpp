@@ -1131,7 +1131,9 @@ namespace xerus {
 		}
 		
 		// Use Tensor fallback
-		CHECK(_other.tensorObjectReadOnly->nodes.size() <= 1, warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
+		if (_other.tensorObjectReadOnly->nodes.size() > 1) {
+			LOG_ONCE(warning, "Assigning a general tensor network to TTOperator not yet implemented. casting to fullTensor first");
+		}
 		Tensor otherFull(*_other.tensorObjectReadOnly);
 		Tensor otherReordered;
 		otherReordered(_me.indices) = otherFull(_other.indices);

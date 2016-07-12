@@ -24,6 +24,7 @@
 #include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
+static const size_t MAX_RAM_REQUIREMENT = 1*1024*1024*1024;
 
 static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
@@ -33,7 +34,10 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 0; d <= 6; ++d) {
+		if (xerus::misc::product(dimsA) * 15 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
 		Tensor X = Tensor::random(dimsX);
@@ -164,7 +168,7 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 
 static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
-	std::uniform_int_distribution<size_t> dimDist(2, 4);
+	std::uniform_int_distribution<size_t> dimDist(2, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
@@ -181,6 +185,9 @@ static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 	dimsB = dims2 | dims1;
 	
 	for(size_t d = 2; d <= 6; ++d) {
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
 		Tensor X = Tensor::random(dimsX);
@@ -285,13 +292,16 @@ static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
 
 static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
-	std::uniform_int_distribution<size_t> dimDist(1, 4);
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 0; d <= 6; ++d) {
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
 		Tensor X = Tensor::random(dimsX);
@@ -416,7 +426,7 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
 		dims2.push_back(dimDist(rnd));
@@ -424,6 +434,10 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		dimsY = dims2;
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
+		
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
 		
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
@@ -561,11 +575,11 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		ttC(k&0) = ttB(k/2,i/2)*ttA(i/2,j/2)*ttX(j&0);
 		tnC(k&0) = tnB(k/2,i/2)*tnA(i/2,j/2)*tnX(j&0);
 		
-		TEST(approx_equal(C, sC, 1e-14));
-		TEST(approx_equal(C, tnC, 1e-14));
-		TEST(approx_equal(C, ttC, 1e-14));
-		TEST(approx_equal(sC, tnC, 1e-14));
-		TEST(approx_equal(sC, ttC, 1e-14));
+		MTEST(approx_equal(C, sC, 1e-14), frob_norm(C-sC));
+		MTEST(approx_equal(C, tnC, 1e-14), frob_norm(C-Tensor(tnC)));
+		MTEST(approx_equal(C, ttC, 1e-14), frob_norm(C-Tensor(ttC)));
+		MTEST(approx_equal(sC, tnC, 1e-14), frob_norm(sC- Tensor(tnC)));
+		MTEST(approx_equal(sC, ttC, 1e-14), frob_norm(sC-Tensor(ttC)));
 		
 	}
 });
@@ -579,7 +593,7 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
 		dims2.push_back(dimDist(rnd));
@@ -587,6 +601,10 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 		dimsY = dims2;
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
+		
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
 		
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
@@ -742,7 +760,11 @@ static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 7; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 9 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		
 		Tensor A = Tensor::random(dimsA);
 		Tensor B = Tensor::random(dimsB);
 		Tensor X = Tensor::random(dimsX);
@@ -862,7 +884,7 @@ static misc::UnitTest cons_named_constructors("Consistency", "named_constructors
 	
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
 		Tensor A = Tensor::ones(dimsA);
 		Tensor X = Tensor::ones(dimsX);
 		
