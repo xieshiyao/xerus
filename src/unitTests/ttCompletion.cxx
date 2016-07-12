@@ -107,29 +107,29 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 
 static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	const size_t D = 6;
-	const size_t N = 4;
+	const size_t N = 5;
 	const size_t R = 3;
-	const size_t CS = 8;
+	const size_t CS = 10;
 
 	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R));
 
-	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N)));
-	trueSolution.measure(measurements);
+	SinglePointMeasurementSet measurements = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N));
+	measurements.measure(trueSolution);
 	
 	bool test = true;
 	for(size_t m = 0; m < measurements.size(); ++m) {
-		test = test && misc::approx_equal(measurements.measuredValues[m], trueSolution[measurements.positions[m]], 1e-10);
+		test = test && misc::approx_equal(measurements.measuredValues[m], trueSolution[measurements.positions[m]], 1e-12);
 	}
 	TEST(test);
 	
-	ADFVariant ourADF(2500, 1e-6, 1e-6);
+	ADFVariant ourADF(500, 1e-6, 1e-6);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	PerformanceData perfData([&](const TTTensor& _x) {return frob_norm(_x - trueSolution)/frob_norm(trueSolution);}, true, false);
 	
 	ourADF(X, measurements, std::vector<size_t>(D-1, R), perfData);
 	
-	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-3, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 	
 	
 	
@@ -138,5 +138,5 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	
 	ourADF(X, RankOneMeasurementSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
-	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-3, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 });

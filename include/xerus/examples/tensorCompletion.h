@@ -24,6 +24,7 @@
 
 #pragma once
 #include "../ttNetwork.h"
+#include "../measurments.h"
 
 namespace xerus { namespace examples { namespace completion {
 	
