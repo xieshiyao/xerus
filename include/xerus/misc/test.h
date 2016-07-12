@@ -61,7 +61,7 @@
 				xerus::misc::internal::logFilePrefix = "failtest/"; xerus::misc::internal::silenced = true; \
 				try { test; } catch (...) {failtestFailed = true; XERUS_PRINTCHECK;} \
 				xerus::misc::internal::logFilePrefix.clear();  xerus::misc::internal::silenced = false;  \
-				if(!failtestFailed) { XERUS_PRINTFAIL; XERUS_LOG(error, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
+				if(!failtestFailed) { XERUS_PRINTFAIL; XERUS_LOG(warning, #test << " returned without error"); ::xerus::misc::UnitTest::passed = false; } \
 			}\
 			void(0)
 	#else
@@ -77,8 +77,8 @@
 #define XERUS_PRINTCHECK std::cout << u8"\033[1;32m\u2713 \033[0m" << std::flush
 #define XERUS_PRINTFAIL  std::cout << u8"\033[1;31m\u2717 \033[0m" << std::flush
 
-#define TEST(...) if (!(__VA_ARGS__)) {XERUS_PRINTFAIL; XERUS_LOG(error, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
-#define MTEST(cond, ...) if (!(cond)) {XERUS_PRINTFAIL; XERUS_LOG(error, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
+#define TEST(...) if (!(__VA_ARGS__)) {XERUS_PRINTFAIL; XERUS_LOG(warning, #__VA_ARGS__ << " failed"); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
+#define MTEST(cond, ...) if (!(cond)) {XERUS_PRINTFAIL; XERUS_LOG(warning, #cond << " failed, msg: " << __VA_ARGS__); ::xerus::misc::UnitTest::passed = false;} else {XERUS_PRINTCHECK;} void(0)
 
 
 

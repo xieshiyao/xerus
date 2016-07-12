@@ -109,7 +109,7 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	
 	fx(i) = r(j) / fid(j,i);
 	x(i) = r(j) / id(j,i);
-	MTEST(frob_norm(fx-x)/frob_norm(x)<3e-14, frob_norm(fx-x)/frob_norm(x));
+	MTEST(frob_norm(fx-x)/frob_norm(x)<1e-13, frob_norm(fx-x)/frob_norm(x));
 });
 
 static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){

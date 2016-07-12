@@ -168,11 +168,11 @@ static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
 			b.move_core(0);
 			// check Pb = b
 			TTTensor pb = TTTensor(TTTangentVector(X, b));
-			MTEST(frob_norm(b-pb)/frob_norm(b) < 2e-14, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
+			MTEST(frob_norm(b-pb)/frob_norm(b) < 1e-13, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
 			
 			// check orthogonality
 			value_t scalarProd = value_t(deltaPdelta(j&0) * b(j&0));
-			MTEST(std::abs(scalarProd) < 3e-10, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
+			MTEST(std::abs(scalarProd) < 1e-9, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
 			
 			MTEST(misc::approx_equal(value_t(delta(j&0) * b(j&0)), value_t(Pdelta(j&0) * b(j&0)), 2e-10),  n << " " << i << " " << value_t(delta(j&0) * b(j&0)) << " " << value_t(Pdelta(j&0) * b(j&0)));
 		}
@@ -218,12 +218,12 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	
 	// projection P*P = P
 	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
-	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 3e-15, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
-	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 4e-15, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
+	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 1e-14, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
+	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 1e-14, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
 	
 	// tangent space of 10*X should be equal to tangent space of X
 	tangentChange2 = TTTangentVector(10 * X, change);
-	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 5e-15, "10X " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
+	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 1e-14, "10X " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
 });
 
 

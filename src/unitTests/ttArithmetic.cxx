@@ -67,8 +67,7 @@ static misc::UnitTest tt_diff("TT", "difference", [](){
 	ttC(i&0) = ttA(i&0) - ttB(i&0);
 	
 	double fnorm = frob_norm(Tensor(ttC)(i&0) - C(i&0));
-	LOG(unit_tests, "frob_norm " << fnorm);
-	TEST(fnorm < 6*1e-13);
+	MTEST(fnorm < 1e-12, fnorm);
 });
 
 

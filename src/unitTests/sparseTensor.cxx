@@ -45,8 +45,8 @@ static misc::UnitTest sparse_contraction0("SparseTensor", "Contraction_with_0", 
 
 
 static misc::UnitTest sparse_creation("SparseTensor", "Creation", [](){
-    Tensor fullA = 10*Tensor::random({7,13,2,9,3});
-    Tensor fullB = 10*Tensor::random({7,13,2,9,3});
+    Tensor fullA = Tensor::random({7,13,2,9,3});
+    Tensor fullB = Tensor::random({7,13,2,9,3});
     Tensor fullX({7,13,2,9,3});
     
     Tensor sparseA = fullA.sparse_copy();
@@ -54,6 +54,7 @@ static misc::UnitTest sparse_creation("SparseTensor", "Creation", [](){
     Tensor sparseX({7,13,2,9,3}, Tensor::Representation::Sparse);
     
     
+	
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
     TEST(approx_entrywise_equal(fullB, sparseB, 1e-16));
     TEST(approx_entrywise_equal(fullA, sparseA, 1e-16));
@@ -81,15 +82,15 @@ static misc::UnitTest sparse_creation("SparseTensor", "Creation", [](){
     
     fullX = 10.0*fullA*2;
     sparseX = 10.0*sparseA*2;
-    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
+    MTEST(approx_entrywise_equal(fullX, sparseX, 1e-16), std::scientific << frob_norm(fullX-sparseX));
      
     fullX = fullA/10.0;
     sparseX = sparseA/10.0;
-    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
+	MTEST(approx_entrywise_equal(fullX, sparseX, 1e-16), std::scientific << frob_norm(fullX-sparseX));
 
     fullX = 0*fullA + fullB;
     sparseX = 0*sparseA + sparseB;
-    TEST(approx_entrywise_equal(fullX, sparseX, 1e-16));
+	MTEST(approx_entrywise_equal(fullX, sparseX, 1e-16), std::scientific << frob_norm(fullX-sparseX));
     
     fullX = 7.3*fullA + fullB*5;
     sparseX = 7.3*sparseA + sparseB*5;

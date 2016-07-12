@@ -95,7 +95,7 @@ static misc::UnitTest tt_opcrea("TT", "TTOperator_Creation", [](){
 
 
 static misc::UnitTest tt_crea_eps("TT", "creation_with_epsilon", [](){
-	const value_t EPS = 0.1;
+	const value_t EPS = 0.02;
 	Tensor A = Tensor::random({5,5,5,5});
 	TTTensor ttA(A, EPS); 
 	TTTensor ttB(A, 0);

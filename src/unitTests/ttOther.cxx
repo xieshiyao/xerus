@@ -19,8 +19,8 @@ static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
 	TTOperator Co = entrywise_product(Ao, Bo);
 	Tensor Cf = entrywise_product(Af, Bf);
 	
-	TEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-14);
-	TEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-14);
+	MTEST(frob_norm(Cf - Tensor(Co))/frob_norm(Cf) < 1e-13, frob_norm(Cf - Tensor(Co))/frob_norm(Cf));
+	MTEST(frob_norm(Cf - Tensor(C))/frob_norm(Cf) < 1e-13, frob_norm(Cf - Tensor(C))/frob_norm(Cf));
 	
 	
 	TTTensor D1 = entrywise_product(A, A);
@@ -29,8 +29,8 @@ static misc::UnitTest tt_entryprod("TT", "entrywise_product", [](){
 	
 	Tensor Df = entrywise_product(Af, Af);
 
-	TEST(approx_equal(Df, Tensor(D1), 1e-14));
-	TEST(approx_equal(Df, Tensor(Do1), 1e-14));
+	MTEST(approx_equal(Df, Tensor(D1), 1e-13), frob_norm(Df-Tensor(D1)));
+	MTEST(approx_equal(Df, Tensor(Do1), 1e-13), frob_norm(Df- Tensor(Do1)));
 });
 
 static misc::UnitTest tt_soft("TT", "soft_thresholding", [](){
