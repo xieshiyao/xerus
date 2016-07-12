@@ -87,24 +87,20 @@ namespace xerus {
 	}
 	
 	void SinglePointMeasurementSet::sort(const bool _positionsOnly) {
+		const auto comperator = [](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
+			REQUIRE(_lhs.size() == _rhs.size(), "Inconsistent degrees in measurment positions."); 
+			for (size_t i = 0; i < _lhs.size(); ++i) {
+				if (_lhs[i] < _rhs[i]) { return true; }
+				if (_lhs[i] > _rhs[i]) { return false; }
+			}
+			return false; // equality
+		};
+		
 		if(_positionsOnly) {
-			std::sort(positions.begin(), positions.end(), [](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
-				REQUIRE(_lhs.size() == _rhs.size(), "Inconsistent degrees in measurment positions."); 
-				for (size_t i = 0; i < _lhs.size(); ++i) {
-					if (_lhs[i] < _rhs[i]) { return true; }
-					if (_lhs[i] > _rhs[i]) { return false; }
-				}
-				return false; // equality
-			});
+			std::sort(positions.begin(), positions.end(), comperator);
 		} else {
-			misc::simultaneous_sort(positions, measuredValues, [](const std::vector<size_t>& _lhs, const std::vector<size_t>& _rhs) {
-				REQUIRE(_lhs.size() == _rhs.size(), "Inconsistent degrees in measurment positions."); 
-				for (size_t i = 0; i < _lhs.size(); ++i) {
-					if (_lhs[i] < _rhs[i]) { return true; }
-					if (_lhs[i] > _rhs[i]) { return false; }
-				}
-				return false; // equality
-			});
+			REQUIRE(positions.size() == measuredValues.size(), "Inconsitend SinglePointMeasurementSet encountered.");
+			misc::simultaneous_sort(positions, measuredValues, comperator);
 		}
 	}
 	
@@ -247,6 +243,7 @@ namespace xerus {
 		}
 		
 		sort(true);
+		measuredValues.resize(_numMeasurements);
 	}
 	
 	
@@ -343,6 +340,7 @@ namespace xerus {
 		if(_positionsOnly) {
 			std::sort(positions.begin(), positions.end(), comperator);
 		} else {
+			REQUIRE(positions.size() == measuredValues.size(), "Inconsitend SinglePointMeasurementSet encountered.");
 			misc::simultaneous_sort(positions, measuredValues, comperator);
 		}
 	}
@@ -527,6 +525,7 @@ namespace xerus {
 		}
 		
 		sort(true);
+		measuredValues.resize(_numMeasurements);
 	}
 	
 	

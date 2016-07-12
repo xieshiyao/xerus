@@ -58,11 +58,10 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 		}
 	}
 	
-	examples::completion::inverse_index_ratios(measurements);
+	measurements.measure([](const std::vector<size_t>& _x){ return examples::completion::inverse_index_ratio(_x);});
 
 	
-	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N));
-	examples::completion::inverse_index_ratios(ctrSet);
+	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N), [](const std::vector<size_t>& _x){ return examples::completion::inverse_index_ratio(_x);});
 	value_t ctrNorm = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
 		ctrNorm += misc::sqr(ctrSet.measuredValues[i]);
