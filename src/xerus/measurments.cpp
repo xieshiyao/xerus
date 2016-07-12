@@ -46,6 +46,21 @@ namespace xerus {
 		return result;
 	}
 	
+	
+	SinglePointMeasurementSet SinglePointMeasurementSet::random(const size_t _numMeasurements, const Tensor& _solution) {
+		SinglePointMeasurementSet result;
+		result.create_random_positions(_numMeasurements, _solution.dimensions);
+		result.measure(_solution);
+		return result;
+	}
+		
+	SinglePointMeasurementSet SinglePointMeasurementSet::random(const size_t _numMeasurements, const TensorNetwork& _solution) {
+		SinglePointMeasurementSet result;
+		result.create_random_positions(_numMeasurements, _solution.dimensions);
+		result.measure(_solution);
+		return result;
+	}
+	
 	SinglePointMeasurementSet SinglePointMeasurementSet::random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions, std::function<value_t(const std::vector<size_t>&)> _callback) {
 		SinglePointMeasurementSet result;
 		result.create_random_positions(_numMeasurements, _dimensions);
@@ -89,20 +104,42 @@ namespace xerus {
 		}
 	}
 	
-	
+	// TODO not tested! --> Move sort to creation
 	void SinglePointMeasurementSet::measure(const TensorNetwork& _solution) {
-		const auto cSize = size();
-		for(size_t i = 0; i < cSize; ++i) {
-			measuredValues[i] = _solution[positions[i]];
+		REQUIRE(_solution.degree() == degree(), "Degrees of solution and measurements must match!");
+		std::vector<TensorNetwork> stack(degree()+1);
+		stack[0] = _solution;
+		stack[0].reduce_representation();
+		
+		
+		// Handle first measurment
+		for(size_t i = 0; i < degree(); ++i) {
+			stack[i+1] = stack[i];
+			stack[i+1].fix_mode(0, positions[0][i]);
+			stack[i+1].reduce_representation();
 		}
-	}
-	
-	
-	template<bool isOperator>
-	void SinglePointMeasurementSet::measure(const TTNetwork<isOperator>& _solution) {
+		measuredValues[0] = stack.back()[0];
+		
 		const auto cSize = size();
-		for(size_t i = 0; i < cSize; ++i) {
-			measuredValues[i] = _solution(positions[i]);
+		for(size_t j = 1; j < cSize; ++j) {
+			REQUIRE(positions[j-1] != positions[j], "There were two identical measurements?");
+			
+			// Find the maximal recyclable stack position
+			size_t rebuildIndex = 0;
+			for(; rebuildIndex < degree(); ++rebuildIndex) {
+				if(positions[j-1][rebuildIndex] != positions[j][rebuildIndex]) {
+					break;
+				}
+			}
+			
+			// Rebuild stack
+			for(size_t i = rebuildIndex; i < degree(); ++i) {
+				stack[i+1] = stack[i];
+				stack[i+1].fix_mode(0, positions[j][i]);
+				stack[i+1].reduce_representation();
+			}
+			
+			measuredValues[j] = stack.back()[0];
 		}
 	}
 	
@@ -127,18 +164,6 @@ namespace xerus {
 	
 	
 	double SinglePointMeasurementSet::test(const TensorNetwork& _solution) const {
-		const auto cSize = size();
-		double error = 0.0, norm = 0.0;
-		for(size_t i = 0; i < cSize; ++i) {
-			error += misc::sqr(measuredValues[i] - _solution[positions[i]]);
-			norm += misc::sqr(measuredValues[i]);
-		}
-		return std::sqrt(error/norm);
-	}
-	
-	
-	template<bool isOperator>
-	double SinglePointMeasurementSet::test(const TTNetwork<isOperator>& _solution) const {
 		const auto cSize = size();
 		double error = 0.0, norm = 0.0;
 		for(size_t i = 0; i < cSize; ++i) {

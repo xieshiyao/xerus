@@ -54,13 +54,9 @@ namespace xerus {
 		
 		static SinglePointMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
 		
-		template<class TensorClass>
-		static SinglePointMeasurementSet random(const size_t _numMeasurements, const TensorClass& _solution) {
-			SinglePointMeasurementSet result;
-			result.create_random_positions(_numMeasurements, _solution.dimensions);
-			result.measure(_solution);
-			return result;
-		}
+		static SinglePointMeasurementSet random(const size_t _numMeasurements, const Tensor& _solution);
+		
+		static SinglePointMeasurementSet random(const size_t _numMeasurements, const TensorNetwork& _solution);
 		
 		static SinglePointMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions, std::function<value_t(const std::vector<size_t>&)> _callback);
 		
@@ -78,18 +74,12 @@ namespace xerus {
 		
 		void measure(const TensorNetwork& _solution);
 		
-		template<bool isOperator>
-		void measure(const TTNetwork<isOperator>& _solution);
-		
 		void measure(std::function<value_t(const std::vector<size_t>&)> _callback);
 		
 		
 		double test(const Tensor& _solution) const;
 		
 		double test(const TensorNetwork& _solution) const;
-		
-		template<bool isOperator>
-		double test(const TTNetwork<isOperator>& _solution) const;
 		
 		double test(std::function<value_t(const std::vector<size_t>&)> _callback) const;
 		
