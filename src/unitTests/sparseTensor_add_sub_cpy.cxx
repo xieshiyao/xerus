@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest sparse_sum2("SparseTensor", "sum_matrix_2x2", [](){

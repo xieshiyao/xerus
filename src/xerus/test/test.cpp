@@ -22,7 +22,7 @@
  * @brief Implementation of code coverage functions and the main routine for the unit-test executable.
  */
 
-#include <xerus/misc/test.h>
+#include <xerus/test/test.h>
 
 #ifdef XERUS_UNITTEST
     #include <iostream>

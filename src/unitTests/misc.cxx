@@ -20,7 +20,7 @@
 
 #include<xerus.h> // NOTE xerus.h header file is necessary for below check of internal header export
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 

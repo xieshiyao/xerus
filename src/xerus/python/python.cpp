@@ -22,8 +22,6 @@
  * @brief Definition of the python bindings.
  */
 
-#ifdef XERUS_EXPERIMENTAL_PYTHON_WRAPPER
-
 #include <boost/function.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
@@ -1005,5 +1003,3 @@ BOOST_PYTHON_MODULE(libxerus) {
 // 		PyErr_SetString(PyExc_UserWarning, _e.what());
 // 	});
 }
-
-#endif // XERUS_EXPERIMENTAL_PYTHON_WRAPPER

@@ -31,11 +31,11 @@
  * XERUS_REQUIRE_TEST is implied by any XERUS_REQUIRE(...) macro if test coverage is enabled.
  */
 
-#include "namedLogger.h"
-
 #include <map>
 #include <string>
 #include <functional>
+
+#include "../misc/namedLogger.h"
 
 #ifdef XERUS_UNITTEST
 	#ifdef XERUS_TEST_COVERAGE
