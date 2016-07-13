@@ -5,7 +5,7 @@ help:
 	@printf "Possible make targets are:\n \
 	\t\tshared \t\t -- Build xerus as a shared library.\n \
 	\t\tstatic \t\t -- Build xerus as a static library.\n \
-	\t\tpyhton \t\t -- Build the xerus python wrappers.\n \
+	\t\tpython \t\t -- Build the xerus python wrappers.\n \
 	\t\tinstall \t -- Install the shared library and header files (may require root).\n \
 	\t\ttest \t\t -- Build and run the xerus unit tests.\n \
 	\t\tclean \t\t -- Remove all object, library and executable files.\n"
@@ -137,7 +137,7 @@ warn:
 # Fake rule to create arbitary headers, to prevent errors if files are moved/renamed
 %.h: 
 
-ifdef BUILD_PYHTON_BINDINGS
+ifdef BUILD_PYTHON_BINDINGS
 shared: build/libxerus_misc.so build/libxerus.so build/xerus.so
 else
 shared: build/libxerus_misc.so build/libxerus.so 
@@ -147,14 +147,14 @@ build/libxerus_misc.so: $(MINIMAL_DEPS) $(MISC_SOURCES)
 	mkdir -p $(dir $@)
 	$(CXX) -shared -fPIC -Wl,-soname,libxerus_misc.so $(FLAGS) -I include $(MISC_SOURCES) -Wl,--as-needed $(CALLSTACK_LIBS) -o build/libxerus_misc.so
 
-build/libxerus.so: $(MINIMAL_DEPS) $(XERUS_SOURCES) libxerus_misc.so
+build/libxerus.so: $(MINIMAL_DEPS) $(XERUS_SOURCES) build/libxerus_misc.so
 	mkdir -p $(dir $@)
 	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(XERUS_SOURCES) -L ./build/ -Wl,--as-needed -lxerus_misc $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o build/libxerus.so
 
 
 python: build/xerus.so
 
-build/xerus.so: $(MINIMAL_DEPS) $(PYTHON_SOURCES) libxerus.so
+build/xerus.so: $(MINIMAL_DEPS) $(PYTHON_SOURCES) build/libxerus.so
 	mkdir -p $(dir $@)
 	$(CXX) -shared -fPIC -Wl,-soname,xerus.so $(FLAGS) -I include $(PYTHON_SOURCES) -L ./build/ -Wl,--as-needed -lxerus $(BOOST_PYTHON) -o build/xerus.so
 
@@ -179,8 +179,9 @@ endif
 
 
 ifdef DESTDIR
-	INSTALL_LIB_PATH = $(DESTDIR)
-	INSTALL_HEADER_PATH = $(DESTDIR)/include
+	INSTALL_LIB_PATH = $(DESTDIR)/lib/
+	INSTALL_HEADER_PATH = $(DESTDIR)/include/
+	INSTALL_PYTHON_PATH = $(DESTDIR)/lib/python/site-packages/
 endif
 
 
@@ -193,10 +194,10 @@ install: shared
 	mkdir -p $(INSTALL_HEADER_PATH)
 	cp include/xerus.h $(INSTALL_HEADER_PATH)
 	cp -r include/xerus $(INSTALL_HEADER_PATH)
-	cp build/libxerus_misc.a $(INSTALL_LIB_PATH)
-	cp build/libxerus.a $(INSTALL_LIB_PATH)
-ifdef BUILD_PYHTON_BINDINGS
-	cp build/xerus.a $(INSTALL_LIB_PATH)
+	cp build/libxerus_misc.so $(INSTALL_LIB_PATH)
+	cp build/libxerus.so $(INSTALL_LIB_PATH)
+ifdef BUILD_PYTHON_BINDINGS
+	cp build/xerus.so $(INSTALL_PYTHON_PATH)
 endif
 else
 install:
