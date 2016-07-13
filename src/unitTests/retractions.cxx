@@ -252,7 +252,7 @@ static misc::UnitTest alg_vecTrans("Algorithm", "vectorTransport", [](){
 		ProjectiveVectorTransport(newX, tangentChange2);
 		value_t normNew = tangentChange2.frob_norm();
 		value_t changeAngle = (value_t(TTTensor(tangentChange1)(j&0) * TTTensor(tangentChange2)(j&0)) / normOld / normNew);
-		MTEST(1 - std::abs(changeAngle) < std::max(eps*eps, 5e-16), eps << " 1-angle: " << (1-changeAngle));
+		MTEST(1 - std::abs(changeAngle) < std::max(eps*eps, 1e-15), eps << " 1-angle: " << (1-changeAngle));
 		MTEST(normNew <= normOld + 1e-13, eps << " norm: " << normNew << " vs " << normOld << " diff " << normNew-normOld);
 	}
 });

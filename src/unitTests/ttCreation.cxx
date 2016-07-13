@@ -95,17 +95,20 @@ static misc::UnitTest tt_opcrea("TT", "TTOperator_Creation", [](){
 
 
 static misc::UnitTest tt_crea_eps("TT", "creation_with_epsilon", [](){
-	const value_t EPS = 0.02;
+	const value_t EPS = 0.03;
 	Tensor A = Tensor::random({5,5,5,5});
 	TTTensor ttA(A, EPS); 
 	TTTensor ttB(A, 0);
 	ttB.round(EPS);
 	
+	size_t numDecrease = 5-ttA.rank(0) + 25 - ttA.rank(1) + 5 - ttA.rank(2);
+	LOG(askdj, numDecrease);
 	Index i;
 	
-	TEST(frob_norm(A(i&0)-Tensor(ttA)(i&0)) < 0.1);
+	LOG(laskdj, frob_norm(A(i&0)-Tensor(ttA)(i&0))/frob_norm(A) << " vs " << numDecrease*EPS);
+	TEST(frob_norm(A(i&0)-Tensor(ttA)(i&0))/frob_norm(A) < numDecrease*EPS);
 	TEST(ttA.ranks()[1] < 25);
-	TEST(frob_norm(A(i&0)-Tensor(ttB)(i&0)) < 0.1);
+	TEST(frob_norm(A(i&0)-Tensor(ttB)(i&0))/frob_norm(A) < numDecrease*EPS);
 	TEST(ttB.ranks()[1] < 25);
 });
 
