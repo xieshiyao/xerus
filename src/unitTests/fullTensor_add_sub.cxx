@@ -23,7 +23,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_sum_mat2("Tensor", "sum_matrix_2x2", [](){

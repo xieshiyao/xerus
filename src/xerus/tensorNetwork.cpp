@@ -28,6 +28,7 @@
 
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/misc/containerSupport.h>
+#include <xerus/misc/math.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/fileIO.h>
 #include <xerus/misc/internal.h>
@@ -38,7 +39,6 @@
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/measurments.h>
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {
@@ -360,45 +360,6 @@ namespace xerus {
 		INTERNAL_CHECK(partialCopy.nodes.size() == 1, "Internal Error.");
 		
 		return (*partialCopy.nodes[0].tensorObject)[0];
-	}
-	
-	
-	void TensorNetwork::measure(SinglePointMeasurementSet& _measurments) const {
-		std::vector<TensorNetwork> stack(degree()+1);
-		stack[0] = *this;
-		stack[0].reduce_representation();
-		
-		// Sort measurements
-		sort(_measurments, degree()-1);
-		
-		// Handle first measurment
-		for(size_t i = 0; i < degree(); ++i) {
-			stack[i+1] = stack[i];
-			stack[i+1].fix_mode(0, _measurments.positions[0][i]);
-			stack[i+1].reduce_representation();
-		}
-		_measurments.measuredValues[0] = stack.back()[0];
-		
-		for(size_t j = 1; j < _measurments.size(); ++j) {
-			REQUIRE(_measurments.positions[j-1] != _measurments.positions[j], "There were two identical measurements?");
-			
-			// Find the maximal recyclable stack position
-			size_t rebuildIndex = 0;
-			for(; rebuildIndex < degree(); ++rebuildIndex) {
-				if(_measurments.positions[j-1][rebuildIndex] != _measurments.positions[j][rebuildIndex]) {
-					break;
-				}
-			}
-			
-			// Rebuild stack
-			for(size_t i = rebuildIndex; i < degree(); ++i) {
-				stack[i+1] = stack[i];
-				stack[i+1].fix_mode(0, _measurments.positions[j][i]);
-				stack[i+1].reduce_representation();
-			}
-			
-			_measurments.measuredValues[j] = stack.back()[0];
-		}
 	}
 	
 

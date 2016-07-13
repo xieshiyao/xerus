@@ -8,6 +8,14 @@ CXX = g++
 
 
 #=================================================================================================
+# Library Options
+#=================================================================================================
+# Xerus offers python bindings through boost python, which can be build in a seperate library object
+# xerus.so (different from the normal file libxerus.so)
+# BUILD_PYHTON_BINDINGS = TRUE
+
+
+#=================================================================================================
 # Optimization
 #=================================================================================================
 # We suggest the use of one of the following optimization levels. The first uses basically no 
@@ -91,8 +99,8 @@ LOGGING += -D XERUS_LOG_INFO                     # Information that is not linke
 #=================================================================================================
 # Set the directories to install libxerus.
 
-INSTALL_LIB_PATH = /usr/local/lib64/		# Path where to install the libxerus.so shared library.
-INSTALL_HEADER_PATH = /usr/local/include/	# Path where to install the xerus header files.
+#INSTALL_LIB_PATH = /usr/local/lib64/		# Path where to install the libxerus.so shared library.
+#INSTALL_HEADER_PATH = /usr/local/include/	# Path where to install the xerus header files.
 
 
 #=================================================================================================
@@ -117,6 +125,8 @@ LAPACK_LIBRARIES = -llapacke -llapack							# Standard Lapack + Lapacke librarie
 # Uncomment or add the appropriate CXSparse library
 SUITESPARSE = -lcholmod -lspqr
 
+# Uncomment or add the appropriate boost python library
+BOOST_PYTHON = -lboost_python
 
 # Custom include paths
 # OTHER += -I /path/to/include

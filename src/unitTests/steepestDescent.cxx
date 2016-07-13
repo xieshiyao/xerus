@@ -21,7 +21,7 @@
 #include<xerus.h>
 #include<fstream>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 

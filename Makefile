@@ -1,10 +1,19 @@
 # ------------------------------------------------------------------------------------------------------
+#				Default rule should be the help message
+# ------------------------------------------------------------------------------------------------------
+help:
+	@printf "Possible make targets are:\n \
+	\t\tshared \t\t -- Build xerus as a shared library.\n \
+	\t\tstatic \t\t -- Build xerus as a static library.\n \
+	\t\tpyhton \t\t -- Build the xerus python wrappers.\n \
+	\t\tinstall \t -- Install the shared library and header files (may require root).\n \
+	\t\ttest \t\t -- Build and run the xerus unit tests.\n \
+	\t\tclean \t\t -- Remove all object, library and executable files.\n"
+
+	
+# ------------------------------------------------------------------------------------------------------
 #				Set the names of the resulting binary codes
 # ------------------------------------------------------------------------------------------------------
-
-# Names of the Library
-LIB_NAME_SHARED = build/lib/libxerus.so
-LIB_NAME_STATIC = build/lib/libxerus.a
 
 # Name of the test executable
 TEST_NAME = XerusTest
@@ -35,22 +44,33 @@ DEBUG += -DXERUS_VERSION_COMMIT=$(XERUS_COMMIT_V)
 #				Register source files for the xerus library      
 # ------------------------------------------------------------------------------------------------------
 
-# Register all library source files 
-LIB_SOURCES = $(wildcard src/xerus/*.cpp)
-LIB_SOURCES += $(wildcard src/xerus/*/*.cpp)
+# Register the source files
+XERUS_SOURCES = $(wildcard src/xerus/*.cpp)
+XERUS_SOURCES += $(wildcard src/xerus/algorithms/*.cpp)
+XERUS_SOURCES += $(wildcard src/xerus/examples/*.cpp)
 
-# Register all unit test source files 
+MISC_SOURCES = $(wildcard src/xerus/misc/*.cpp)
+
+PYTHON_SOURCES = $(wildcard src/xerus/python/*.cpp)
+
+TEST_SOURCES = $(wildcard src/xerus/test/*.cpp)
+
 UNIT_TEST_SOURCES = $(wildcard src/unitTests/*.cxx)
 
-# Register all tutorial source files 
 TUTORIAL_SOURCES = $(wildcard tutorials/*.cpp)
 
 # Create lists of the corresponding objects and dependency files
-LIB_OBJECTS = $(LIB_SOURCES:%.cpp=build/.libObjects/%.o)
-LIB_DEPS    = $(LIB_SOURCES:%.cpp=build/.libObjects/%.d)
+XERUS_OBJECTS = $(XERUS_SOURCES:%.cpp=build/.libObjects/%.o)
+XERUS_DEPS    = $(XERUS_SOURCES:%.cpp=build/.libObjects/%.d)
 
-TEST_OBJECTS = $(LIB_SOURCES:%.cpp=build/.testObjects/%.o)
-TEST_DEPS    = $(LIB_SOURCES:%.cpp=build/.testObjects/%.d)
+MISC_OBJECTS = $(MISC_SOURCES:%.cpp=build/.miscObjects/%.o)
+MISC_DEPS    = $(MISC_SOURCES:%.cpp=build/.miscObjects/%.d)
+
+PYTHON_OBJECTS = $(PYTHON_SOURCES:%.cpp=build/.pythonObjects/%.o)
+PYTHON_DEPS    = $(PYTHON_SOURCES:%.cpp=build/.pyhtonObjects/%.d)
+
+TEST_OBJECTS = $(TEST_SOURCES:%.cpp=build/.testObjects/%.o)
+TEST_DEPS    = $(TEST_SOURCES:%.cpp=build/.testObjects/%.d)
 
 UNIT_TEST_OBJECTS = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.o)
 UNIT_TEST_DEPS    = $(UNIT_TEST_SOURCES:%.cxx=build/.unitTestObjects/%.d)
@@ -70,22 +90,32 @@ include makeIncludes/optimization.mk
 
 
 # ------------------------------------------------------------------------------------------------------
-#		  			Set additional compiler options                
+#		  			Set additional compiler options 
 # ------------------------------------------------------------------------------------------------------
 
-# SUGGEST_ATTRIBUTES = TRUE 		# Tell the compiler to suggest attributes
-
-# OPTIMIZE += -fprofile-generate	# Generate Profile output for optimization 
-# OPTIMIZE += -fprofile-use		# Use a previously generated profile output
-
 OTHER += -std=c++11			# Use the C++11 standard
+
+
+# ------------------------------------------------------------------------------------------------------
+#		  			Convinience variables
+# ------------------------------------------------------------------------------------------------------
+
+# Small hack to get newlines...
+define \n
+
+
+endef
+
+FLAGS = $(strip $(WARNINGS) $(OPTIMIZE) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER))
+MINIMAL_DEPS = Makefile config.mk makeIncludes/general.mk makeIncludes/warnings.mk makeIncludes/optimization.mk
 
 
 # ------------------------------------------------------------------------------------------------------
 #					Load dependency files
 # ------------------------------------------------------------------------------------------------------
 
--include $(LIB_DEPS)
+-include $(XERUS_DEPS)
+-include $(MISC_DEPS)
 -include $(TEST_DEPS)
 -include $(UNIT_TEST_DEPS)
 -include $(TUTORIAL_DEPS)
@@ -95,29 +125,6 @@ OTHER += -std=c++11			# Use the C++11 standard
 # ------------------------------------------------------------------------------------------------------
 #					Make Rules      
 # ------------------------------------------------------------------------------------------------------
-
-# Small hack to get newlines...
-define \n
-
-
-endef
-
-# Convinience variables
-FLAGS = $(strip $(WARNINGS) $(OPTIMIZE) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER))
-MINIMAL_DEPS = Makefile config.mk makeIncludes/general.mk makeIncludes/warnings.mk makeIncludes/optimization.mk
-
-
-
-help:
-	@printf "Possible make targets are:\n \
-	\t\tall \t\t -- Build xerus both as a shared and a static library.\n \
-	\t\tshared \t\t -- Build xerus as a shared library.\n \
-	\t\tstatic \t\t -- Build xerus as a static library.\n \
-	\t\ttest \t\t -- Build and run the xerus unit tests.\n \
-	\t\tinstall \t -- Install the shared library and header files (may require root).\n \
-	\t\t$(TEST_NAME) \t -- Only build the xerus unit tests.\n \
-	\t\tclean \t\t -- Remove all object, library and executable files.\n"
-
 
 opt:
 	$(CXX) $(FLAGS) -Q --help=optimizers
@@ -129,34 +136,45 @@ warn:
 
 # Fake rule to create arbitary headers, to prevent errors if files are moved/renamed
 %.h: 
-	
 
-all: test $(LIB_NAME_SHARED) $(LIB_NAME_STATIC)
-	mkdir -p build/include/ 
-	cp include/xerus.h build/include/
-	cp -r include/xerus build/include/
+ifdef BUILD_PYHTON_BINDINGS
+shared: build/libxerus_misc.so build/libxerus.so build/xerus.so
+else
+shared: build/libxerus_misc.so build/libxerus.so 
+endif
 
-
-shared: $(LIB_NAME_SHARED)
-
-
-$(LIB_NAME_SHARED): $(MINIMAL_DEPS) $(LIB_SOURCES)
+build/libxerus_misc.so: $(MINIMAL_DEPS) $(MISC_SOURCES)
 	mkdir -p $(dir $@)
-	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(LIB_SOURCES) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(LIB_NAME_SHARED) 
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus_misc.so $(FLAGS) -I include $(MISC_SOURCES) -Wl,--as-needed $(CALLSTACK_LIBS) -o build/libxerus_misc.so
+
+build/libxerus.so: $(MINIMAL_DEPS) $(XERUS_SOURCES) libxerus_misc.so
+	mkdir -p $(dir $@)
+	$(CXX) -shared -fPIC -Wl,-soname,libxerus.so $(FLAGS) -I include $(XERUS_SOURCES) -L ./build/ -Wl,--as-needed -lxerus_misc $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) -o build/libxerus.so
 
 
-static: $(LIB_NAME_STATIC)
+python: build/xerus.so
+
+build/xerus.so: $(MINIMAL_DEPS) $(PYTHON_SOURCES) libxerus.so
+	mkdir -p $(dir $@)
+	$(CXX) -shared -fPIC -Wl,-soname,xerus.so $(FLAGS) -I include $(PYTHON_SOURCES) -L ./build/ -Wl,--as-needed -lxerus $(BOOST_PYTHON) -o build/xerus.so
 
 
-# Support non lto build for outdated systems
+static: build/libxerus_misc.a build/libxerus.a
+
+build/libxerus_misc.a: $(MINIMAL_DEPS) $(MISC_OBJECTS)
+	mkdir -p $(dir $@)
 ifdef USE_LTO
-$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LIB_OBJECTS)
+	gcc-ar rcs ./build/libxerus_misc.a $(MISC_OBJECTS)
+else
+	ar rcs ./build/libxerus_misc.a $(MISC_OBJECTS)
+endif
+
+build/libxerus.a: $(MINIMAL_DEPS) $(XERUS_OBJECTS)
 	mkdir -p $(dir $@)
-	gcc-ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
-else 
-$(LIB_NAME_STATIC): $(MINIMAL_DEPS) $(LIB_OBJECTS)
-	mkdir -p $(dir $@)
-	ar rcs $(LIB_NAME_STATIC) $(LIB_OBJECTS)
+ifdef USE_LTO
+	gcc-ar rcs ./build/libxerus.a $(XERUS_OBJECTS)
+else
+	ar rcs ./build/libxerus.a $(XERUS_OBJECTS)
 endif
 
 
@@ -165,27 +183,33 @@ ifdef DESTDIR
 	INSTALL_HEADER_PATH = $(DESTDIR)/include
 endif
 
+
+
 ifdef INSTALL_LIB_PATH
 ifdef INSTALL_HEADER_PATH
-install: $(LIB_NAME_SHARED)
+install: shared
 	@printf "Installing libxerus.so to $(strip $(INSTALL_LIB_PATH)) and storing the header files in $(strip $(INSTALL_HEADER_PATH)).\n"
 	mkdir -p $(INSTALL_LIB_PATH)
 	mkdir -p $(INSTALL_HEADER_PATH)
-	cp $(LIB_NAME_SHARED) $(INSTALL_LIB_PATH)
 	cp include/xerus.h $(INSTALL_HEADER_PATH)
 	cp -r include/xerus $(INSTALL_HEADER_PATH)
-else
-install:
-	@printf "INSTALL_HEADER_PATH not set correctly. Cannot install xerus.\n"
+	cp build/libxerus_misc.a $(INSTALL_LIB_PATH)
+	cp build/libxerus.a $(INSTALL_LIB_PATH)
+ifdef BUILD_PYHTON_BINDINGS
+	cp build/xerus.a $(INSTALL_LIB_PATH)
 endif
 else
 install:
-	@printf "INSTALL_LIB_PATH not set correctly. Cannot install xerus.\n"
+	@printf "Cannot install xerus: INSTALL_HEADER_PATH not set. Please set the path in config file.\n"
+endif
+else
+install:
+	@printf "Cannot install xerus: INSTALL_LIB_PATH not set.  Please set the path in config file.\n"
 endif
 
 
-$(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS)
-	$(CXX) -D XERUS_UNITTEST $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
+$(TEST_NAME): $(MINIMAL_DEPS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) build/libxerus.a build/libxerus_misc.a
+	$(CXX) -D XERUS_UNITTEST $(FLAGS) $(UNIT_TEST_OBJECTS) $(TEST_OBJECTS) build/libxerus.a build/libxerus_misc.a $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -o $(TEST_NAME)
 
 
 test:  $(TEST_NAME)
@@ -206,6 +230,12 @@ clean:
 
 benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)
 	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -lboost_filesystem -lboost_system -o Benchmark
+
+
+# Build rule for normal misc objects
+build/.miscObjects/%.o: %.cpp $(MINIMAL_DEPS)
+	mkdir -p $(dir $@) 
+	$(CXX) -I include $< -c $(FLAGS) -MMD -o $@
 
 
 # Build rule for normal lib objects

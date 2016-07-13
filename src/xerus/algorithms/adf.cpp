@@ -33,77 +33,6 @@
 #endif
 
 namespace xerus {
-	
-	static int comp(const Tensor& _a, const Tensor& _b) {
-		REQUIRE(_a.dimensions == _b.dimensions, "Compared Tensors must have the same dimensions.");
-		
-		if(_a.is_dense() || _b.is_dense()) {
-			for(size_t k = 0; k < _a.size; ++k) {
-				if (_a.cat(k) < _b.cat(k)) { return 1; }
-				if (_a.cat(k) > _b.cat(k)) { return -1; }
-			}
-			return 0;
-		} 
-		INTERNAL_CHECK(!_a.has_factor(), "IE");
-		INTERNAL_CHECK(!_b.has_factor(), "IE");
-		
-		const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
-		const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
-		
-		auto itrA = dataA.begin();
-		auto itrB = dataB.begin();
-		
-		while(itrA != dataA.end() && itrB != dataB.end()) {
-			if(itrA->first == itrB->first) {
-				if(itrA->second < itrB->second) {
-					return 1;
-				} 
-				if(itrA->second > itrB->second) {
-					return -1;
-				}
-				++itrA; ++itrB;
-			} else if(itrA->first < itrB->first) {
-				if(itrA->second < 0.0) {
-					return 1;
-				} 
-				if(itrA->second > 0.0) {
-					return -1;
-				}
-				++itrA;
-			} else { // itrA->first > itrB->first
-				if(0.0 < itrB->second) {
-					return 1;
-				} 
-				if(0.0 > itrB->second) {
-					return -1;
-				}
-				++itrB;
-			}
-		}
-		
-		while(itrA != dataA.end()) {
-			if(itrA->second < 0.0) {
-				return 1;
-			} 
-			if(itrA->second > 0.0) {
-				return -1;
-			}
-			++itrA;
-		}
-		
-		while(itrB != dataB.end()) {
-			if(0.0 < itrB->second) {
-				return 1;
-			} 
-			if(0.0 > itrB->second) {
-				return -1;
-			}
-			++itrB;
-		}
-		
-		return 0;
-	}
-	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
@@ -153,13 +82,13 @@ namespace xerus {
 	bool MeasurmentComparator<RankOneMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
-				const int res = comp(measurments.positions[_a][j], measurments.positions[_b][j]);
+				const int res = internal::comp(measurments.positions[_a][j], measurments.positions[_b][j]);
 				if(res == -1) { return true; }
 				if(res == 1) { return false; }
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
-				const int res = comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
+				const int res = internal::comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
 				if(res == -1) { return true; }
 				if(res == 1) { return false; }
 			}

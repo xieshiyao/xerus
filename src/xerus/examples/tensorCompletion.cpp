@@ -25,29 +25,28 @@
 #include <xerus/examples/tensorCompletion.h>
 #include <xerus/measurments.h>
 
-namespace xerus { namespace examples { namespace completion {
+namespace xerus { 
+	namespace examples { 
+		namespace completion {
 	
-	void inverse_index_norm(SinglePointMeasurementSet& _measurements, const value_t _additiveConst) {
-		for (size_t i = 0; i < _measurements.size(); ++i) {
-			value_t normSqr = 0;
-			for (const auto idx : _measurements.positions[i]) {
-				normSqr += misc::sqr(static_cast<value_t>(idx) + _additiveConst);
+			value_t inverse_index_norm(const std::vector<size_t>& _position, const value_t _additiveConst) {
+				value_t normSqr = 0;
+				for (const auto idx : _position) {
+					normSqr += misc::sqr(static_cast<value_t>(idx) + _additiveConst);
+				}
+				return 1/std::sqrt(normSqr);
 			}
-			_measurements.measuredValues[i] = 1/std::sqrt(normSqr);
-		}
-	}
-	
-	
-	void inverse_index_ratios(SinglePointMeasurementSet& _measurements, const value_t _additiveConst) {
-		for (size_t i = 0; i < _measurements.size(); ++i) {
-			value_t sum = 0;
-			for (size_t j = 0; j+1 < _measurements.positions[i].size(); ++j) {
-				sum += (static_cast<value_t>(_measurements.positions[i][j]) + 1.0) / (static_cast<value_t>(_measurements.positions[i][j+1]) + _additiveConst);
+			
+			
+			value_t inverse_index_ratio(const std::vector<size_t>& _position, const value_t _additiveConst) {
+				value_t sum = 0;
+				for (size_t j = 0; j+1 < _position.size(); ++j) {
+					sum += (static_cast<value_t>(_position[j]) + 1.0) / (static_cast<value_t>(_position[j+1]) + _additiveConst);
+				}
+				return 1.0/(_additiveConst + sum);
 			}
-			_measurements.measuredValues[i] = 1/(_additiveConst + sum);
-		}
-	}
-} // namespace completion
-} // namespace examples
+			
+		} // namespace completion
+	} // namespace examples
 } // namespace xerus
 

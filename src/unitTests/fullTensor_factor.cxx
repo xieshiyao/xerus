@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_factors("Tensor", "Factors", [](){

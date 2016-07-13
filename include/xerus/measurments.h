@@ -35,7 +35,6 @@
 namespace xerus {
 	class Tensor;
 	class TensorNetwork;
-	template<bool isOperator> class TTNetwork;
 	
 	/** 
 	* @brief Class used to represent a single point measurments.
@@ -69,6 +68,8 @@ namespace xerus {
 		
 		void add(std::vector<size_t> _position, const value_t _measuredValue);
 		
+		void sort(const bool _positionsOnly);
+		
 		
 		void measure(const Tensor& _solution);
 		
@@ -88,8 +89,6 @@ namespace xerus {
 		void create_random_positions(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
 	};
 	
-	void sort(SinglePointMeasurementSet& _set, const size_t _splitPos = ~0ul);
-	
 	
 	class RankOneMeasurementSet {
 	public:
@@ -105,15 +104,45 @@ namespace xerus {
 		RankOneMeasurementSet& operator=(const RankOneMeasurementSet&  _other) = default;
 		RankOneMeasurementSet& operator=(      RankOneMeasurementSet&& _other) = default;
 		
-		void add(const std::vector<Tensor>& _position, const value_t _measuredValue);
+		static RankOneMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
+		
+		static RankOneMeasurementSet random(const size_t _numMeasurements, const Tensor& _solution);
+		
+		static RankOneMeasurementSet random(const size_t _numMeasurements, const TensorNetwork& _solution);
+		
+		static RankOneMeasurementSet random(const size_t _numMeasurements, const std::vector<size_t>& _dimensions, std::function<value_t(const std::vector<Tensor>&)> _callback);
+		
 		
 		size_t size() const;
 		
 		size_t degree() const;
 		
-		value_t test_solution(const TTNetwork<false>& _solution) const;
+		value_t frob_norm() const;
+		
+		void add(const std::vector<Tensor>& _position, const value_t _measuredValue);
+		
+		void sort(const bool _positionsOnly);
+		
+		
+		void measure(const Tensor& _solution);
+		
+		void measure(const TensorNetwork& _solution);
+		
+		void measure(std::function<value_t(const std::vector<Tensor>&)>& _callback);
+		
+		
+		double test(const Tensor& _solution) const;
+		
+		double test(const TensorNetwork& _solution) const;
+		
+		double test(std::function<value_t(const std::vector<Tensor>&)>& _callback) const;
+		
+		
+	private:
+		void create_random_positions(const size_t _numMeasurements, const std::vector<size_t>& _dimensions);
 	};
 	
-	void sort(RankOneMeasurementSet& _set, const size_t _splitPos = ~0ul);
-	
+	namespace internal {
+		int comp(const Tensor& _a, const Tensor& _b);
+	}
 }

@@ -24,6 +24,7 @@
 
 #pragma once
 #include "../ttNetwork.h"
+#include "../measurments.h"
 
 namespace xerus { namespace examples { namespace completion {
 	
@@ -32,7 +33,7 @@ namespace xerus { namespace examples { namespace completion {
 	 * @details the corresponding tensor is only approximately low-rank, cf. Hackbusch, 2012 "Tensor spaces and numerical tensor calculus" and http://www.mis.mpg.de/scicomp/EXP_SUM
 	 * @note that index (0,0,0,0...) is singular for @a _additiveConst = 0
 	 */
-	void inverse_index_norm(SinglePointMeasurementSet& _measurements, const value_t _additiveConst = 1.0);
+	value_t inverse_index_norm(const std::vector<size_t>& _position, const value_t _additiveConst = 1.0);
 	
 	
 	
@@ -40,7 +41,6 @@ namespace xerus { namespace examples { namespace completion {
 	 * @brief fills in the values of the @a _measurements as @$ (\alpha + \sum i_\mu/(i_{\mu+1} + \alpha - 1))^{-1} @$
 	 * @details the corresponding tensor is only approximately low-rank, cf. Grasedyck, Kluge, Kraemer 2015
 	 */
-	void inverse_index_ratios(SinglePointMeasurementSet& _measurements, const value_t _additiveConst = 1.0);
-	
+	value_t inverse_index_ratio(const std::vector<size_t>& _position, const value_t _additiveConst = 1.0);
 }}}
 
