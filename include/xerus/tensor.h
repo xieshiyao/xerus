@@ -40,6 +40,27 @@ namespace xerus {
 	//Forwad declarations
 	class TensorNetwork;
 	
+	class Tensor;
+	/** 
+	 * @brief Low-level contraction between Tensors.
+	 * @param _result Output for the result of the contraction.
+	 * @param _lhs left hand side of the contraction.
+	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
+	 * @param _rhs right hand side of the contraction.
+	 * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
+	 * @param _numIndices number of indices that shall be contracted.
+	 */
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+	
+	/**
+	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
+	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
+	 */
+	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
+	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle);
+	
+	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor final {
 	public:
@@ -201,6 +222,58 @@ namespace xerus {
 		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
 		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
 			return Tensor::random(DimensionTuple(std::move(_dimensions)), _dist, _rnd);
+		}
+		
+		
+		/** 
+		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
+		 * @details The entries are assigned in the order they are stored (i.e. row-major order). Each assigned is a seperate call to the random distribution.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _rnd the random generator to be used.
+		 * @param _dist the random distribution to be used.
+		 */
+		template<class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random_orthogonal(DimensionTuple _dimensions1, DimensionTuple _dimensions2, generator& _rnd=xerus::misc::randomEngine) {
+			std::vector<size_t> dimensions = _dimensions1;
+			dimensions.insert(dimensions.end(), _dimensions2.begin(), _dimensions2.end());
+			const size_t m = misc::product(_dimensions1);
+			const size_t n = misc::product(_dimensions2);
+			const size_t max = std::max(m,n);
+			const size_t min = std::min(m,n);
+			Tensor result({max,min}, Representation::Sparse, Initialisation::Zero);
+			
+			typename generator::result_type randomness = 0;
+			const size_t restart = size_t(std::log2(generator::max()));
+			for (size_t i=0; i<min; ++i) {
+				auto idx = i%restart;
+				if (idx == 0) {
+					randomness = _rnd();
+				}
+				if (randomness & (1<<idx)) {
+					result[{i,i}] = 1;
+				} else {
+					result[{i,i}] = -1;
+				}
+			}
+			
+			for (size_t i=0; i<min-1; ++i) { // do k = n-1 to 1 by -1; 
+				Tensor u = Tensor::random({max-i}, misc::defaultNormalDistribution, _rnd);
+				u[0] -= u.frob_norm();
+				u /= u.frob_norm();
+				u.apply_factor();
+				contract(u, u, false, u, false, 0);
+				u *= -2.0;
+				Tensor p = Tensor::identity({max,max});
+				p.offset_add(u, {i,i});
+				contract(result, p, false, result, false, 1);
+			}
+			
+			if (m != max) {
+				reshuffle(result, result, {1,0});
+			}
+			result.reinterpret_dimensions(std::move(dimensions));
+			
+			return result;
 		}
 		
 		
@@ -841,25 +914,6 @@ namespace xerus {
 	* @return the frobenius norm .
 	*/
 	static XERUS_force_inline value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
-	
-	/**
-	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
-	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
-	 */
-	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
-	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle);
-	
-	/** 
-	 * @brief Low-level contraction between Tensors.
-	 * @param _result Output for the result of the contraction.
-	 * @param _lhs left hand side of the contraction.
-	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
-	 * @param _rhs right hand side of the contraction.
-	 * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
-	 * @param _numIndices number of indices that shall be contracted.
-	 */
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
 	
 	/** 
 	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.

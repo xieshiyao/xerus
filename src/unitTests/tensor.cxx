@@ -31,6 +31,21 @@ static Tensor::DimensionTuple random_dimensions(const size_t _degree, const size
 	return dims;
 }
 
+
+static misc::UnitTest tensor_rand_ortho("Tensor", "random_orthogonal", [](){
+	Index i,j,k;
+	Tensor Q = Tensor::random_orthogonal({3,15}, {6,7});
+// 	Tensor A = Tensor::random({3,15,6,7});
+// 	Tensor Q,R;
+// 	(Q(i^2,j), R(j, k^2)) = QR(A(i^2,k^2));
+// 	Q.reinterpret_dimensions({3,15,6,7});
+	using misc::operator<<;
+	MTEST(Q.dimensions == std::vector<size_t>({3,15,6,7}), Q.dimensions);
+	Tensor T;
+	T(i/2,j/2) = Q(k/2,i/2) * Q(k/2,j/2) - Tensor::identity({6,7,6,7})(i/2,j/2);
+	MTEST(frob_norm(T)<1e-13, frob_norm(T));
+});
+
 static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::vector<Tensor> tensors;
