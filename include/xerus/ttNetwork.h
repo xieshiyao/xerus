@@ -148,7 +148,7 @@ namespace xerus {
 					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd));
 				}
 			}
-			result.cannonicalize_left();
+			result.move_core(0);
 			return result;
 		}
 		
@@ -270,7 +270,7 @@ namespace xerus {
 	public:
 		/** 
 		 * @brief Reduces the given ranks to the maximal possible.
-		 * @details If a given rank is allready smaller or equal it is left unchanged.
+		 * @details If a given rank is already smaller or equal it is left unchanged.
 		 * @param _ranks the inital ranks to be reduced.
 		 * @param _dimensions the dimensions used to calculate the maximal ranks.
 		 * @return the reduced ranks.

@@ -19,6 +19,30 @@
 
 
 #include <xerus.h>
+#include <complex.h>
+// fix for non standard-conform complex implementation
+#undef I
+
+// workaround for broken Lapack
+#define lapack_complex_float    float _Complex
+#define lapack_complex_double   double _Complex
+extern "C"
+{
+	#include <cblas.h> 
+}
+
+#ifdef __has_include
+	#if __has_include(<lapacke.h>)
+		#include <lapacke.h>
+	#elif __has_include(<lapacke/lapacke.h>)
+		#include <lapacke/lapacke.h>
+	#else
+		#pragma error no lapacke found
+	#endif
+#else
+	#include <lapacke.h>
+#endif
+
 
 #include "../../include/xerus/test/test.h"
 
@@ -35,15 +59,38 @@ static Tensor::DimensionTuple random_dimensions(const size_t _degree, const size
 static misc::UnitTest tensor_rand_ortho("Tensor", "random_orthogonal", [](){
 	Index i,j,k;
 	Tensor Q = Tensor::random_orthogonal({3,15}, {6,7});
-// 	Tensor A = Tensor::random({3,15,6,7});
-// 	Tensor Q,R;
-// 	(Q(i^2,j), R(j, k^2)) = QR(A(i^2,k^2));
-// 	Q.reinterpret_dimensions({3,15,6,7});
 	using misc::operator<<;
 	MTEST(Q.dimensions == std::vector<size_t>({3,15,6,7}), Q.dimensions);
 	Tensor T;
 	T(i/2,j/2) = Q(k/2,i/2) * Q(k/2,j/2) - Tensor::identity({6,7,6,7})(i/2,j/2);
 	MTEST(frob_norm(T)<1e-13, frob_norm(T));
+	
+	const size_t N = 100;
+	size_t count = 0;
+	for (size_t rep=0; rep<10; ++rep) {
+		Q = Tensor::random_orthogonal({N}, {N});
+// 		Tensor A = Tensor::random({N,N}); // this test fails with random orthogonal matrices created as shown in this comment
+// 		Tensor R;
+// 		(Q(i,j), R(j, k)) = QR(A(i,k));
+		auto a = std::unique_ptr<std::complex<double>[]>(new std::complex<double>[N*N]);
+		auto ev = std::unique_ptr<std::complex<double>[]>(new std::complex<double>[N]);
+		for (size_t n=0; n<N*N; ++n) {
+			a[n] = Q[n];
+		}
+		MTEST(0 == LAPACKE_zgeev(LAPACK_ROW_MAJOR, 'N', 'N', N, reinterpret_cast<_Complex double *>(a.get()), N, reinterpret_cast<_Complex double *>(ev.get()), nullptr, N, nullptr, N), "could not determine eigenvalues: zgeev failed");
+		
+// 		std::ofstream out("test.dat");
+		for (size_t n=0; n<N; ++n) {
+			if (std::abs(std::atan2(ev[n].imag(), ev[n].real())) < M_PI/10) {
+				count += 1;
+			}
+// 			out << ev[n].real() << '\t' << ev[n].imag() << '\n';
+		}
+// 		out.close();
+	}
+	// this is a statistical test should should be fulfilled with high probability. assuming even distribution there should be 100+-10 counts. due to eigenvalue repulsion the error bound
+	// should in fact be much better. It is thus highly unlikely that this test fails with properly created random orthogonal matrices!
+	MTEST(count >= 90, count);
 });
 
 static misc::UnitTest tensor_constructors("Tensor", "Constructors", [](){
