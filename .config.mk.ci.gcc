@@ -7,8 +7,6 @@ STRICT_WARNINGS = TRUE
 
  DEBUG += -g                # Adds debug symbols
 
-LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
-
 #=================================================================================================
 # External libraries
 #=================================================================================================
@@ -16,7 +14,4 @@ BLAS_LIBRARIES = -lopenblas -lgfortran                    # Openblas, serial
 LAPACK_LIBRARIES = -llapacke -llapack                     # Standard Lapack + Lapacke libraries
 SUITESPARSE = -lcholmod  -lspqr
 
-
-# custom include paths
-# OTHER += -I /path/to/include
-
+OTHER += -I /usr/include/python2.7/ -lboost_python -I/usr/lib64/python2.7/site-packages/numpy/core/include/ -lpython2.7 -fno-var-tracking-assignments
