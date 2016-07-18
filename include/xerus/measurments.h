@@ -68,7 +68,7 @@ namespace xerus {
 		
 		void add(std::vector<size_t> _position, const value_t _measuredValue);
 		
-		void sort(const bool _positionsOnly);
+		void sort(const bool _positionsOnly = false);
 		
 		
 		void measure(const Tensor& _solution);
@@ -128,14 +128,14 @@ namespace xerus {
 		
 		void measure(const TensorNetwork& _solution);
 		
-		void measure(std::function<value_t(const std::vector<Tensor>&)>& _callback);
+		void measure(std::function<value_t(const std::vector<Tensor>&)> _callback);
 		
 		
 		double test(const Tensor& _solution) const;
 		
 		double test(const TensorNetwork& _solution) const;
 		
-		double test(std::function<value_t(const std::vector<Tensor>&)>& _callback) const;
+		double test(std::function<value_t(const std::vector<Tensor>&)> _callback) const;
 		
 		
 	private:

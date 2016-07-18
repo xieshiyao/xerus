@@ -414,7 +414,7 @@ namespace xerus {
 	}
 	
 	
-	void RankOneMeasurementSet::measure(std::function<value_t(const std::vector<Tensor>&)>& _callback) {
+	void RankOneMeasurementSet::measure(std::function<value_t(const std::vector<Tensor>&)> _callback) {
 		const auto cSize = size();
 		for(size_t i = 0; i < cSize; ++i) {
 			measuredValues[i] = _callback(positions[i]);
@@ -492,7 +492,7 @@ namespace xerus {
 	}
 	
 	
-	double RankOneMeasurementSet::test(std::function<value_t(const std::vector<Tensor>&)>& _callback) const {
+	double RankOneMeasurementSet::test(std::function<value_t(const std::vector<Tensor>&)> _callback) const {
 		const auto cSize = size();
 		double error = 0.0, norm = 0.0;
 		for(size_t i = 0; i < cSize; ++i) {

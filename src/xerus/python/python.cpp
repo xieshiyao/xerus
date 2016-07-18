@@ -481,7 +481,6 @@ BOOST_PYTHON_MODULE(libxerus) {
 				_this.require_valid_network();
 			})
 			.def("require_correct_format", &TensorNetwork::require_correct_format)
-			.def("measure", &TensorNetwork::measure)
 			.def("swap_external_links", &TensorNetwork::swap_external_links)
 			.def("round_edge", &TensorNetwork::round_edge)
 			.def("transfer_core", &TensorNetwork::transfer_core,
@@ -863,13 +862,37 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("add", &SinglePointMeasurementSet::add)
 		.def("size", &SinglePointMeasurementSet::size)
 		.def("degree", &SinglePointMeasurementSet::degree)
-		.def("test_solution", &SinglePointMeasurementSet::test_solution)
+		.def("frob_norm", &SinglePointMeasurementSet::frob_norm)
+		.def("sort", &SinglePointMeasurementSet::sort, arg("positionsOnly")=false)
+		.def("measure", static_cast<void (SinglePointMeasurementSet::*)(const Tensor &)>(&SinglePointMeasurementSet::measure), arg("solution"))
+		.def("measure", static_cast<void (SinglePointMeasurementSet::*)(const TensorNetwork &)>(&SinglePointMeasurementSet::measure), arg("solution"))
+		.def("measure", +[](SinglePointMeasurementSet &_this, PyObject *_f) { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							_this.measure([&_f](const std::vector<size_t> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
+		.def("test", static_cast<double (SinglePointMeasurementSet::*)(const Tensor &) const>(&SinglePointMeasurementSet::test), arg("solution"))
+		.def("test", static_cast<double (SinglePointMeasurementSet::*)(const TensorNetwork &) const>(&SinglePointMeasurementSet::test), arg("solution"))
+		.def("test", +[](SinglePointMeasurementSet &_this, PyObject *_f)->double { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							return _this.test([&_f](const std::vector<size_t> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
 		
-		.def("random", +[](const std::vector<size_t> &_dim, size_t _numMeas){
-			return SinglePointMeasurementSet::random(_dim, _numMeas);
-		}).staticmethod("random")
+		
+		.def("random",static_cast<SinglePointMeasurementSet (*)(size_t, const std::vector<size_t>&)>(&SinglePointMeasurementSet::random))
+		.def("random",static_cast<SinglePointMeasurementSet (*)(size_t, const Tensor&)>(&SinglePointMeasurementSet::random))
+		.def("random",static_cast<SinglePointMeasurementSet (*)(size_t, const TensorNetwork&)>(&SinglePointMeasurementSet::random))
+		.def("random",+[](size_t n, const std::vector<size_t> &dim, PyObject *_f) { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							return SinglePointMeasurementSet::random(n, dim, [&_f](const std::vector<size_t> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
+			 .staticmethod("random")
 	;
-	def("sort", static_cast<void (*)(SinglePointMeasurementSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
 	def("IHT", &IHT, (arg("x"), arg("measurements"), arg("perfData")=NoPerfData) );
 	
 	
@@ -892,9 +915,37 @@ BOOST_PYTHON_MODULE(libxerus) {
 		.def("add", &RankOneMeasurementSet::add)
 		.def("size", &RankOneMeasurementSet::size)
 		.def("degree", &RankOneMeasurementSet::degree)
-		.def("test_solution", &RankOneMeasurementSet::test_solution)
+		.def("frob_norm", &RankOneMeasurementSet::frob_norm)
+		.def("sort", &RankOneMeasurementSet::sort, arg("positionsOnly")=false)
+		.def("measure", static_cast<void (RankOneMeasurementSet::*)(const Tensor &)>(&RankOneMeasurementSet::measure), arg("solution"))
+		.def("measure", static_cast<void (RankOneMeasurementSet::*)(const TensorNetwork &)>(&RankOneMeasurementSet::measure), arg("solution"))
+		.def("measure", +[](RankOneMeasurementSet &_this, PyObject *_f) { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							_this.measure([&_f](const std::vector<Tensor> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
+		.def("test", static_cast<double (RankOneMeasurementSet::*)(const Tensor &) const>(&RankOneMeasurementSet::test), arg("solution"))
+		.def("test", static_cast<double (RankOneMeasurementSet::*)(const TensorNetwork &) const>(&RankOneMeasurementSet::test), arg("solution"))
+		.def("test", +[](RankOneMeasurementSet &_this, PyObject *_f)->double { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							return _this.test([&_f](const std::vector<Tensor> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
+		
+		
+		.def("random",static_cast<RankOneMeasurementSet (*)(size_t, const std::vector<size_t>&)>(&RankOneMeasurementSet::random))
+		.def("random",static_cast<RankOneMeasurementSet (*)(size_t, const Tensor&)>(&RankOneMeasurementSet::random))
+		.def("random",static_cast<RankOneMeasurementSet (*)(size_t, const TensorNetwork&)>(&RankOneMeasurementSet::random))
+		.def("random",+[](size_t n, const std::vector<size_t> &dim, PyObject *_f) { 
+							// TODO increase ref count for _f? also decrease it on overwrite?!
+							return RankOneMeasurementSet::random(n, dim, [&_f](const std::vector<Tensor> &pos)->double {
+								return call<double>(_f, pos);
+							}); 
+						})
+			 .staticmethod("random")
 	;
-	def("sort", static_cast<void (*)(RankOneMeasurementSet&, size_t)>(&xerus::sort), (arg("measurements"), arg("splitPosition")=~0ul) );
 	
 	
 	class_<ADFVariant>("ADFVariant", init<size_t, double, double>())
