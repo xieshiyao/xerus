@@ -3,6 +3,7 @@ stages:
 - test_gcc
 - build_gcc_nocheck
 - test_gcc_nocheck
+- build_python
 - build_clang
 - test_clang
 
@@ -22,6 +23,10 @@ job_make_gcc_nocheck:
 job_test_gcc_nocheck:
   stage: test_gcc_nocheck
   script: "cp ../XerusTest .; ./XerusTest all"
+
+job_build_python:
+  stage: build_python
+  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make python"
 
 job_make_clang:
   stage: build_clang
