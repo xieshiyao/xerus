@@ -184,7 +184,7 @@ namespace xerus {
 
 #ifdef XERUS_LOG_BUFFER
     #define XERUS_NAMED_LOGGER_LOGBUFFER(lvl) \
-		if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
+		if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING && !xerus::misc::internal::silenced) { \
 			::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__, XERUS_STRINGIFY(lvl)); \
 			xerus::misc::internal::buffer::current << tmpStream.str(); \
 			xerus::misc::internal::buffer::checkSwitch(); \
@@ -197,7 +197,7 @@ namespace xerus {
 			if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) { \
 				xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); \
 			} \
-		} 
+		}
 #else // no log buffer
     #define XERUS_NAMED_LOGGER_LOGBUFFER(lvl)
 #endif
