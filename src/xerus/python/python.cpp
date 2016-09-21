@@ -85,7 +85,7 @@ struct custom_vector_from_seq{
 
 
 // TODO get_copy() wrapper in python correct manner
-BOOST_PYTHON_MODULE(libxerus) {
+BOOST_PYTHON_MODULE(xerus) {
 	using namespace xerus;
 	
 	import_array(); // for numpy
@@ -547,9 +547,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return xerus::TTTensor::random(_dim, _rank);
 			}).staticmethod("random")
 		.def("ones", &TTTensor::ones).staticmethod("ones")
-// 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
-// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
-// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
+		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker")
+		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac))
+		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac")
 		
 		.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
 // 		.def("degrees_of_freedom", static_cast<size_t (TTTensor::*)()>(&TTTensor::degrees_of_freedom))
@@ -606,9 +606,9 @@ BOOST_PYTHON_MODULE(libxerus) {
 				return xerus::TTOperator::random(_dim, _rank);
 			}).staticmethod("random")
 		.def("ones", &TTOperator::ones).staticmethod("ones")
-// 		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker") //TODO
-// 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTOperator::dirac)) //TODO
-// 		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const size_t)>(&TTOperator::dirac)).staticmethod("dirac") //TODO
+		.def("kronecker", &TTOperator::kronecker).staticmethod("kronecker")
+		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTOperator::dirac))
+		.def("dirac", static_cast<TTOperator (*)(Tensor::DimensionTuple, const size_t)>(&TTOperator::dirac)).staticmethod("dirac")
 		
 		.def("reduce_to_maximal_ranks", &TTOperator::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
 // 		.def("degrees_of_freedom", static_cast<size_t (TTOperator::*)()>(&TTOperator::degrees_of_freedom))
