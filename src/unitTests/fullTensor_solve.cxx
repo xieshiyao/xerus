@@ -21,6 +21,7 @@
 #include<xerus.h>
 
 #include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
@@ -128,7 +129,7 @@ static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	Tensor At;
 	At(i,j) = A(j,i);
 	At.use_sparse_representation();
-		
+	
 	Tensor r = Tensor({N}, [](size_t _i)->value_t{return double(_i);});
 	Tensor x1, x2;
 	x1(i) = r(j) / A(i,j);
@@ -138,9 +139,58 @@ static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	A.use_dense_representation();
 	At.use_dense_representation();
 	
-	Tensor x3, x4;
+	Tensor x3, x4, residual;
 	x3(i) = r(j) / A(i,j);
 	x4(i) = r(j) / At(j,i);
-	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4));
-	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
+	
+	residual(i) = A(i,j) * (x3(j) - x4(j));
+	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4) << " residual: " << frob_norm(residual));
+	
+	residual(i) = A(i,j) * (x1(j) - x3(j));
+	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1) << " residual: " << frob_norm(residual));
+});
+
+
+static misc::UnitTest tensor_solve_matrix("Tensor", "solve_matrix", [](){
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
+	std::uniform_int_distribution<size_t> nDist(1, 100);
+	std::uniform_int_distribution<size_t> n2Dist(1, 10);
+	std::uniform_int_distribution<size_t> dDist(1, 3);
+	std::uniform_int_distribution<size_t> d2Dist(0, 3);
+	std::normal_distribution<double> realDist(0, 1);
+	
+	Index i,j,k;
+	
+	for(size_t run = 0; run < 10; ++run) {
+		std::vector<size_t> mDims, nDims, pDims;
+		const size_t degM = dDist(rnd);
+		const size_t degN = dDist(rnd);
+		const size_t degP = d2Dist(rnd);
+		for(size_t xi = 0; xi < degM; ++xi) { mDims.push_back(n2Dist(rnd)); }
+		for(size_t xi = 0; xi < degN; ++xi) { nDims.push_back(n2Dist(rnd)); }
+		for(size_t xi = 0; xi < degP; ++xi) { pDims.push_back(n2Dist(rnd)); }
+		
+		XERUS_LOG(bla, "Set " << mDims << "x" << nDims << " * " << pDims);
+		
+		auto A = Tensor::random(mDims | nDims);
+		A *= realDist(rnd);
+		Tensor B;
+		Tensor realX = Tensor::random(nDims | pDims);
+		
+		B(i^degM, k^degP) = A(i^degM, j^degN)*realX(j^degN, k^degP);
+		
+		auto factor = realDist(rnd);
+		B *= factor;
+		realX *= factor;
+		
+		Tensor X;
+		
+		solve_least_squares(X, A, B, degP);
+		
+		Tensor residual;
+		
+		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
+		
+		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
+	}
 });

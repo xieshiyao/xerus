@@ -976,13 +976,13 @@ namespace xerus {
 	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos);
 	
 	/** 
-	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.
-	 * @details The matrification of @a _A is completely defined by the order of @a _b.
-	 * @param _x Output Tensor for the resulting x.
+	 * @brief Solves the least squares problem ||@a _A @a _X - @a _B||_F.
+	 * @param _X Output Tensor for the resulting X.
 	 * @param _A input Tensor A.
-	 * @param _b input Tensor b.
+	 * @param _B input Tensor b.
+	 * @param _extraDegree number of dimensions that @a _X and @a _B share and for which the least squares problem is independently solved.
 	 */
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const Tensor& _b);
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree);
 	
 	
 	/**

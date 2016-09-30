@@ -223,7 +223,7 @@ namespace xerus {
         XERUS_NAMED_LOGGER_LOGBUFFER(lvl) \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
         if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
-            XERUS_THROW(xerus::misc::generic_error() << XERUS_STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
+			XERUS_THROW(xerus::misc::generic_error() << __FILE__ << ":" << __LINE__ << ": " XERUS_STRINGIFY(lvl) " invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
         } \
     } else \
         (void)0
