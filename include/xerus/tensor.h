@@ -40,6 +40,7 @@ namespace xerus {
 	//Forwad declarations
 	class TensorNetwork;
 	
+	// TODO ugly, move it back to the end of the file.
 	class Tensor;
 	/** 
 	 * @brief Low-level contraction between Tensors.

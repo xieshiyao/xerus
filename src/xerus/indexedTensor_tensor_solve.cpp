@@ -150,6 +150,7 @@ namespace xerus {
 		
 		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
 	}
+	
 	internal::IndexedTensorMoveable<Tensor> operator/ (internal::IndexedTensorReadOnly<Tensor>&& _b, internal::IndexedTensorReadOnly<Tensor>&& _A) {
 		_A.assign_indices();
 		_b.assign_indices();

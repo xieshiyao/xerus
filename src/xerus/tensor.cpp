@@ -1549,6 +1549,7 @@ namespace xerus {
 	
 	
 	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
 		const size_t degM = _B.degree() - _extraDegree;
 		const size_t degN = _A.degree() - degM;
 		
