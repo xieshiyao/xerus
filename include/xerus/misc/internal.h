@@ -62,7 +62,7 @@ namespace std {
 			&& std::is_class<IteratorType>::value
 		, bool>::type = true>
 	IteratorType operator+(const IteratorType& _iterator, const size_t _add) {
-		return _iterator + typename std::iterator_traits<IteratorType>::difference_type(_add);
+		return _iterator + long(_add);
 	}
 	
 	

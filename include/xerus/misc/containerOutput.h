@@ -55,6 +55,14 @@ namespace xerus { namespace misc {
 	}
 	
 	
+	///@brief Allow to pipe std::pairs to ostreams.
+	template<class first_t, class second_t>
+	std::ostream& operator<<(std::ostream& _out, const std::pair<first_t, second_t>& _pair) {
+		_out << "[ " << _pair.first << " | " << _pair.second << " ]";
+		return _out;
+	}
+	
+	
 	///@brief Allow to pipe normal containers to ostreams.
 	template<class item_t, class... rest_t>
 	std::ostream& operator<<(std::ostream& _out, const std::vector<item_t, rest_t...>& _container) {
@@ -65,6 +73,8 @@ namespace xerus { namespace misc {
 		return _out;
 	}
 	
+	
+	///@brief Allow to pipe std::sets to ostreams.
 	template<class item_t, class... rest_t>
 	std::ostream& operator<<(std::ostream& _out, const std::set<item_t, rest_t...>& _container) {
 		if(_container.size() == 0) { _out << "{ }"; return _out; }

@@ -67,6 +67,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 
 # You can add all kind of debuging options. In the following are some examples
  DEBUG += -g							# Adds debug symbols
+# DEBUG += -D _GLIBCXX_ASSERTIONS			# Activate GLIBCXX assertions
  
 # Sanitization 
 # DEBUG += -fsanitize=undefined			# GCC only

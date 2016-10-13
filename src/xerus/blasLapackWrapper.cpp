@@ -519,54 +519,73 @@ namespace xerus {
 		}*/
 		
 	
-		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b){
+		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _p){
 			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
 			misc::copy(tmpA.get(), _A, _m*_n);
 			
-			const std::unique_ptr<double[]> tmpB(new double[_n]);
-			misc::copy(tmpB.get(), _b, _n);
+			const std::unique_ptr<double[]> tmpB(new double[_m*_p]);
+			misc::copy(tmpB.get(), _b, _m*_p);
 			
-			solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get());
+			solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get(), _p);
 		}
 		
 		
-		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b){
+		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b, const size_t _p){
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_p <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
 			XERUS_PA_START;
 			
 			std::unique_ptr<int[]> pivot(new int[_n]);
 			misc::set_zero(pivot.get(), _n);
+			
+// 			std::unique_ptr<double[]> signulars(new double[std::min(_n, _m)]);
+			
 			int rank;
 			
 			double* bOrX;
 			if(_m >= _n) {
-				bOrX = _x;
-				misc::copy(bOrX, _b, _n);
-			} else {
 				bOrX = _b;
+			} else {
+				bOrX = _x;
+				misc::copy(bOrX, _b, _m*_p);
+				misc::set_zero(bOrX+_m*_p, (_n-_m)*_p); // Lapacke is unhappy if the array contains NANs...
 			}
 			
 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
 				LAPACK_ROW_MAJOR, 
 				static_cast<int>(_m),   // Left dimension of A
 				static_cast<int>(_n),   // Right dimension of A
-				1,          // Number of b's, here always one
-				_A,         // Matrix A
+				static_cast<int>(_p),	// Number of rhss
+				_A,         			// Matrix A
 				static_cast<int>(_n),   // LDA
-				bOrX,       // On input b, on output x
-				1,          // LDB, here always one
-				pivot.get(),// Pivot, entries must be zero to allow pivoting
-				xerus::EPSILON,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
-				&rank);     // Outputs the rank of A
-			CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer);
+				bOrX,       			// On input b, on output x
+				static_cast<int>(_p),          			// LDB
+				pivot.get(),			// Pivot, entries must be zero to allow pivoting
+				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+				&rank);     			// Outputs the rank of A
 			
-			if(_m < _n) {
-				misc::copy(_x, bOrX, _m);
+// 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsd(
+// 				LAPACK_ROW_MAJOR, 
+// 				static_cast<int>(_m),   // Left dimension of A
+// 				static_cast<int>(_n),   // Right dimension of A
+// 				static_cast<int>(_p),	// Number of rhss
+// 				_A,         			// Matrix A
+// 				static_cast<int>(_n),   // LDA
+// 				bOrX,       			// On input b, on output x
+// 				static_cast<int>(_p),	// LDB
+// 				signulars.get(),		// Pivot, entries must be zero to allow pivoting
+// 				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+// 				&rank);     			// Outputs the rank of A
+			
+			CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer << " sizes are " << _m << " x " << _n << " * " << _p);
+			
+			if(_m >= _n) { // I.e. bOrX is _b
+				misc::copy(_x, bOrX, _n*_p);
 			}
 			
-			XERUS_PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_p));
 		}
 		
 	} // namespace blasWrapper

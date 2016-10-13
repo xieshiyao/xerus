@@ -183,16 +183,23 @@ namespace xerus {
 //   in the LOG_NO_BUFFER version could be disabled completely (the streams are thread"safe" (only the output will be jumbled a bit)
 
 #ifdef XERUS_LOG_BUFFER
-    #define XERUS_NAMED_LOGGER_LOGBUFFER \
-		if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_FULL && !xerus::misc::internal::silenced) { \
-		::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__,XERUS_STRINGIFY(lvl)); \
-        xerus::misc::internal::buffer::current << tmpStream.str(); \
-        xerus::misc::internal::buffer::checkSwitch(); \
-        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) {xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); }; \
-        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical"))) {xerus::misc::internal::buffer::dump_log(std::string("critical error invoked:\n")+tmpStream.str()); }; \
-        if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) {xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); }; 
+    #define XERUS_NAMED_LOGGER_LOGBUFFER(lvl) \
+		if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING && !xerus::misc::internal::silenced) { \
+			::xerus::misc::internal::log_timestamp(xerus::misc::internal::buffer::current, __FILE__, __LINE__, XERUS_STRINGIFY(lvl)); \
+			xerus::misc::internal::buffer::current << tmpStream.str(); \
+			xerus::misc::internal::buffer::checkSwitch(); \
+			if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("error"))) { \
+				xerus::misc::internal::buffer::dump_log(std::string("error invoked:\n")+tmpStream.str()); \
+			} \
+			if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("critical")))  { \
+				xerus::misc::internal::buffer::dump_log(std::string("critical error invoked:\n")+tmpStream.str()); \
+			} \
+			if (XERUS_COMPILE_TIME_EVAL(xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))==xerus::misc::internal::log_namehash("fatal"))) { \
+				xerus::misc::internal::buffer::dump_log(std::string("fatal error invoked:\n")+tmpStream.str()); \
+			} \
+		}
 #else // no log buffer
-    #define XERUS_NAMED_LOGGER_LOGBUFFER
+    #define XERUS_NAMED_LOGGER_LOGBUFFER(lvl)
 #endif
 		
 
@@ -213,10 +220,10 @@ namespace xerus {
             ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, __FILE__, __LINE__, XERUS_STRINGIFY(lvl)); \
 			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
-        XERUS_NAMED_LOGGER_LOGBUFFER \
+        XERUS_NAMED_LOGGER_LOGBUFFER(lvl) \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
         if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
-            XERUS_THROW(xerus::misc::generic_error() << XERUS_STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
+			XERUS_THROW(xerus::misc::generic_error() << __FILE__ << ":" << __LINE__ << ": " XERUS_STRINGIFY(lvl) " invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \
         } \
     } else \
         (void)0
@@ -236,7 +243,7 @@ namespace xerus {
             ::xerus::misc::internal::log_timestamp(XERUS_LOGSTREAM, XERUS_STRINGIFY(lvl)); \
 			XERUS_LOGSTREAM << tmpStream.str() << std::flush; \
         } \
-        XERUS_NAMED_LOGGER_LOGBUFFER \
+        XERUS_NAMED_LOGGER_LOGBUFFER(lvl) \
         xerus::misc::internal::namedLoggerMutex.unlock(); \
         if (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag == xerus::misc::internal::LOGGING_EXCEPTION ) { \
             XERUS_THROW(xerus::misc::generic_error() << XERUS_STRINGIFY(lvl) " error invoked:\n" << tmpStream.str() << "callstack:\n" << xerus::misc::get_call_stack()); \

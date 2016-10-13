@@ -1537,8 +1537,8 @@ namespace xerus {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
 		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
-		contract(_inverse, U, false, S, false, 1);
-		contract(_inverse, _inverse, false, Vt, false, 1);
+		contract(_inverse, Vt, true, S, false, 1);
+		contract(_inverse, _inverse, false, U, true, 1);
 	}
 	
 	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos) {
@@ -1546,6 +1546,61 @@ namespace xerus {
 		pseudo_inverse(result, _input, _splitPos);
 		return result;
 	}
+	
+	
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
+		const size_t degM = _B.degree() - _extraDegree;
+		const size_t degN = _A.degree() - degM;
+		
+		REQUIRE(_A.degree() == degM+degN, "Inconsitent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsitent dimensions.");
+		
+		// Make sure X has right dimensions
+		if(	_X.degree() != degN + _extraDegree
+			|| !std::equal(_X.dimensions.begin(), _X.dimensions.begin() + degN, _A.dimensions.begin() + degM)
+			|| !std::equal(_X.dimensions.begin()+ degN, _X.dimensions.end(), _B.dimensions.begin() + degM))
+		{
+			Tensor::DimensionTuple newDimX;
+			newDimX.insert(newDimX.end(), _A.dimensions.begin()+degM, _A.dimensions.end());
+			newDimX.insert(newDimX.end(), _B.dimensions.begin()+degM, _B.dimensions.end());
+			_X.reset(std::move(newDimX), Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		
+		// Calculate multDimensions
+		const size_t m = misc::product(_A.dimensions, 0, degM);
+		const size_t n = misc::product(_A.dimensions, degM, degM+degN);
+		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
+		
+		if (_A.is_sparse()) {
+			LOG(fatal, "Sparse not yet impl");
+// 			if (usedB->tensorObjectReadOnly->is_sparse()) {
+// 				internal::CholmodSparse::solve_sparse_rhs(
+// 					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
+// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
+// 															usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
+// 			} else {
+// 				internal::CholmodSparse::solve_dense_rhs(
+// 					usedX->tensorObject->get_unsanitized_dense_data(), N, 
+// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
+// 															usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
+// 			}
+// 			
+// 			// Propagate the constant factor
+// 			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
+			
+		} else { // Dense A
+			blasWrapper::solve_least_squares(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				_B.get_unsanitized_dense_data(), p);
+			
+			// Propagate the constant factor
+			_X.factor = _B.factor / _A.factor;
+		}
+	}
+	
 	
 	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {

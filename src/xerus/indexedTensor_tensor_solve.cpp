@@ -142,7 +142,7 @@ namespace xerus {
 			blasWrapper::solve_least_squares_destructive(
 				usedX->tensorObject->override_dense_data(), 
 				tmpA.tensorObject->get_unsanitized_dense_data(), M, N, 
-				saveSlotB->tensorObject->get_unsanitized_dense_data());
+				saveSlotB->tensorObject->get_unsanitized_dense_data(), 1);
 			
 			// Propagate the constant factor
 			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
@@ -150,7 +150,7 @@ namespace xerus {
 		
 		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
 	}
-
+	
 	internal::IndexedTensorMoveable<Tensor> operator/ (internal::IndexedTensorReadOnly<Tensor>&& _b, internal::IndexedTensorReadOnly<Tensor>&& _A) {
 		_A.assign_indices();
 		_b.assign_indices();
