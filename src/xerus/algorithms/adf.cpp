@@ -565,7 +565,8 @@ namespace xerus {
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
 			
 			// Increase the ranks
-			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1)));
+            auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
+            x = x+(1e-10*frob_norm(x)/frob_norm(rndTensor))*rndTensor;
 			
 			x.round(maxRanks);
 			
