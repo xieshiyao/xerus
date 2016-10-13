@@ -1553,8 +1553,8 @@ namespace xerus {
 		const size_t degM = _B.degree() - _extraDegree;
 		const size_t degN = _A.degree() - degM;
 		
-		REQUIRE(_A.degree() == degM+degN, "Inconsitent dimensions.");
-		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsitent dimensions.");
+		REQUIRE(_A.degree() == degM+degN, "Inconsistent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsistent dimensions.");
 		
 		// Make sure X has right dimensions
 		if(	_X.degree() != degN + _extraDegree
