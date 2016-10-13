@@ -70,7 +70,7 @@ namespace xerus {
 				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) { return false; }
 			}
 		}
-// 		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
+		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
@@ -94,7 +94,7 @@ namespace xerus {
 			}
 		}
 		
-// 		LOG(fatal, "Measurments must not appear twice. "); // NOTE that the algorithm works fine even if measurements appear twice.
+		LOG(fatal, "Measurments must not appear twice. "); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
@@ -488,7 +488,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
-		double resDec1 = 1.0, resDec2 = 1.0;
+		double resDec1 = 0.0, resDec2 = 0.0;
 			
 		for(; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 			
@@ -515,8 +515,10 @@ namespace xerus {
 			
 			// Check for termination criteria
 			double resDec3 = resDec2; resDec2 = resDec1;
-			resDec1 = (lastResidualNorm-residualNorm)/lastResidualNorm;
-			if(residualNorm < targetResidualNorm || resDec1+resDec2+resDec3 < 3*minimalResidualNormDecrease) { break; }
+            resDec1 = residualNorm/lastResidualNorm;
+            LOG(wup, resDec1*resDec2*resDec3);
+			if(residualNorm < targetResidualNorm || resDec1*resDec2*resDec3 > misc::pow(minimalResidualNormDecrease, 3)) { break; }
+			
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -563,7 +565,7 @@ namespace xerus {
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
 			
 			// Increase the ranks
-			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
+			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1)));
 			
 			x.round(maxRanks);
 			
@@ -578,5 +580,5 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<SinglePointMeasurementSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurementSet>;
 	
-	const ADFVariant ADF(0, 1e-8, 1e-3);
+	const ADFVariant ADF(0, 1e-8, 0.999);
 } // namespace xerus
