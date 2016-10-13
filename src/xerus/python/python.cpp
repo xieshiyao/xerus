@@ -85,7 +85,7 @@ struct custom_vector_from_seq{
 
 
 // TODO get_copy() wrapper in python correct manner
-BOOST_PYTHON_MODULE(libxerus) {
+BOOST_PYTHON_MODULE(xerus) {
 	using namespace xerus;
 	
 	import_array(); // for numpy
@@ -529,61 +529,73 @@ BOOST_PYTHON_MODULE(libxerus) {
 	variable_argument_member_to_tuple_wrapper("TensorNetwork.__call__", "TensorNetworkCallOperator");
 	
 	// ------------------------------------------------------------- TTNetwork	
-	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
-		.def(init<const Tensor&, optional<value_t, size_t>>())
-		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
-		.def(init<Tensor::DimensionTuple>())
-		.def(init<size_t>())
-		.def(init<const TTTensor &>())
-		.def("get_component", &TTTensor::get_component, return_value_policy<copy_const_reference>())
-		.def("set_component", &TTTensor::set_component)
-		.def_readonly("cannonicalized", &TTTensor::cannonicalized)
-		.def_readonly("corePosition", &TTTensor::corePosition)
-		.def("ranks", &TTTensor::ranks)
-		.def("rank", &TTTensor::rank)
-// 		.def("frob_norm", &TTTensor::frob_norm) // NOTE unneccessary because correct call is inherited
-		.def("random", 
-			+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
-				return xerus::TTTensor::random(_dim, _rank);
-			}).staticmethod("random")
-		.def("ones", &TTTensor::ones).staticmethod("ones")
-// 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
-// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
-// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
-		
-		.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
-// 		.def("degrees_of_freedom", static_cast<size_t (TTTensor::*)()>(&TTTensor::degrees_of_freedom))
-		.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTTensor::degrees_of_freedom)).staticmethod("degrees_of_freedom")
-		// TODO chop wrapper
-		
-		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
-			(arg("ranks"), arg("epsilon")=EPSILON)
-		)
-		.def("round", static_cast<void (TTTensor::*)(double)>(&TTTensor::round))
-		.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
-		
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold),
-			(arg("tau"), arg("preventZero")=false)
-		)
-		.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold),
-			(arg("tau"), arg("preventZero")=false)
-		)
-		
-		.def("move_core", &TTTensor::move_core,
-			(arg("position"), arg("keepRank")=false)
-		)
-		
-		.def("assume_core_position", &TTTensor::assume_core_position)
-		.def("cannonicalize_left", &TTTensor::cannonicalize_left)
-		.def("cannonicalize_right", &TTTensor::cannonicalize_right)
-		.def(self + self)
-		.def(self - self)
-		.def(self * other<value_t>())
-		.def(other<value_t>() * self)
-		.def(self / other<value_t>())
-		.def(self += self)
-		.def(self -= self)
-	;
+	{ scope TTTensorScope = 
+		class_<TTTensor, bases<TensorNetwork>>("TTTensor")
+			.def(init<const Tensor&, optional<value_t, size_t>>())
+			.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
+			.def(init<Tensor::DimensionTuple>())
+			.def(init<size_t>())
+			.def(init<const TTTensor &>())
+			.def("get_component", &TTTensor::get_component, return_value_policy<copy_const_reference>())
+			.def("set_component", &TTTensor::set_component)
+			.def_readonly("cannonicalized", &TTTensor::cannonicalized)
+			.def_readonly("corePosition", &TTTensor::corePosition)
+			.def("ranks", &TTTensor::ranks)
+			.def("rank", &TTTensor::rank)
+	// 		.def("frob_norm", &TTTensor::frob_norm) // NOTE unneccessary because correct call is inherited
+			.def("random", 
+				+[](std::vector<size_t> _dim, std::vector<size_t> _rank) {
+					return xerus::TTTensor::random(_dim, _rank);
+				}).staticmethod("random")
+			.def("ones", &TTTensor::ones).staticmethod("ones")
+	// 		.def("kronecker", &TTTensor::kronecker).staticmethod("kronecker") //TODO
+	// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&TTTensor::dirac)) //TODO
+	// 		.def("dirac", static_cast<TTTensor (*)(Tensor::DimensionTuple, const size_t)>(&TTTensor::dirac)).staticmethod("dirac") //TODO
+			
+			.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
+	// 		.def("degrees_of_freedom", static_cast<size_t (TTTensor::*)()>(&TTTensor::degrees_of_freedom))
+			.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTTensor::degrees_of_freedom)).staticmethod("degrees_of_freedom")
+			// TODO chop wrapper
+			
+			.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
+				(arg("ranks"), arg("epsilon")=EPSILON)
+			)
+			.def("round", static_cast<void (TTTensor::*)(double)>(&TTTensor::round))
+			.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
+			
+			.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold),
+				(arg("tau"), arg("preventZero")=false)
+			)
+			.def("soft_threshold", static_cast<void (TTTensor::*)(const std::vector<double>&, const bool)>(&TTTensor::soft_threshold),
+				(arg("tau"), arg("preventZero")=false)
+			)
+			
+			.def("move_core", &TTTensor::move_core,
+				(arg("position"), arg("keepRank")=false)
+			)
+			
+			.def("assume_core_position", &TTTensor::assume_core_position)
+			.def("cannonicalize_left", &TTTensor::cannonicalize_left)
+			.def("cannonicalize_right", &TTTensor::cannonicalize_right)
+			.def(self + self)
+			.def(self - self)
+			.def(self * other<value_t>())
+			.def(other<value_t>() * self)
+			.def(self / other<value_t>())
+			.def(self += self)
+			.def(self -= self)
+		;
+// 		exec(
+// 			"def to_list():\n"
+// 			"  \"\"\"Return the current TTTensor as a list of ndarrays.\"\"\"\n"
+// 			"  i = 0\n"
+// 			"  result = []\n"
+// 			"  while i<degree():\n"
+// 			"    result += [get_component(i).to_ndarray()]\n"
+// 			"    i += 1\n"
+// 			"  return result\n"
+// 		, scope().attr("__dict__"));
+	}
 	def("entrywise_product", static_cast<TTTensor (*)(const TTTensor&, const TTTensor&)>(&entrywise_product));
 	def("find_largest_entry", static_cast<size_t (*)(const TTTensor&, value_t, value_t)>(&find_largest_entry));
 	def("dyadic_product", static_cast<TTTensor (*)(const std::vector<TTTensor> &)>(&dyadic_product));
