@@ -1537,8 +1537,8 @@ namespace xerus {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
 		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
-		contract(_inverse, U, false, S, false, 1);
-		contract(_inverse, _inverse, false, Vt, false, 1);
+		contract(_inverse, Vt, true, S, false, 1);
+		contract(_inverse, _inverse, false, U, true, 1);
 	}
 	
 	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos) {

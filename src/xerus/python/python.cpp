@@ -584,6 +584,7 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def(self += self)
 		.def(self -= self)
 	;
+	
 	def("entrywise_product", static_cast<TTTensor (*)(const TTTensor&, const TTTensor&)>(&entrywise_product));
 	def("find_largest_entry", static_cast<size_t (*)(const TTTensor&, value_t, value_t)>(&find_largest_entry));
 	def("dyadic_product", static_cast<TTTensor (*)(const std::vector<TTTensor> &)>(&dyadic_product));
