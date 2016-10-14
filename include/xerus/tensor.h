@@ -40,8 +40,9 @@ namespace xerus {
 	//Forwad declarations
 	class TensorNetwork;
 	
-	// TODO ugly, move it back to the end of the file.
+	// NOTE these two functions are used in the template functions of Tensor so they have to be declared before the class..
 	class Tensor;
+	
 	/** 
 	 * @brief Low-level contraction between Tensors.
 	 * @param _result Output for the result of the contraction.
@@ -716,11 +717,6 @@ namespace xerus {
 		 */
 		void resize_mode(const size_t _mode, const size_t _newDim, size_t _cutPos=~0ul);
 		
-		__attribute__((deprecated("function has been renamed. please use 'resize_mode'"))) 
-		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul) {
-			resize_mode(_dimPos, _newDim, _cutPos);
-		}
-		
 		
 		/** 
 		 * @brief Fixes a specific mode to a specific value, effectively reducing the order by one.
@@ -728,11 +724,6 @@ namespace xerus {
 		 * @param _slatePosition the position in the corresponding mode that shall be used. 0 <= _slatePosition < dimension[_mode]
 		 */
 		void fix_mode(const size_t _mode, const size_t _slatePosition);
-		
-		__attribute__((deprecated("function has been renamed. please use 'fix_mode'"))) 
-		void fix_slate(const size_t _dimPos, const size_t _slatePosition) {
-			fix_mode(_dimPos, _slatePosition);
-		}
 		
 		
 		/** 
@@ -756,7 +747,7 @@ namespace xerus {
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_diag_elements(const std::function<void(value_t&)>& _f);
+		void modify_diagonal_entries(const std::function<void(value_t&)>& _f);
 		
 		
 		/** 
@@ -764,7 +755,7 @@ namespace xerus {
 		 * @details In this overload the current diagonal entries are passed to @a _f, one at a time, together with their position on the diagonal. At the moment this is only defined for matricies.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f);
+		void modify_diagonal_entries(const std::function<void(value_t&, const size_t)>& _f);
 		
 		
 		/** 
@@ -772,7 +763,7 @@ namespace xerus {
 		 * @details In this overload only the current entry is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&)>& _f);
+		void modify_entries(const std::function<void(value_t&)>& _f);
 		
 		
 		/** 
@@ -780,7 +771,7 @@ namespace xerus {
 		 * @details In this overload the current entry together with its position, assuming row-major ordering is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&, const size_t)>& _f);
+		void modify_entries(const std::function<void(value_t&, const size_t)>& _f);
 		
 		
 		/** 
@@ -788,7 +779,7 @@ namespace xerus {
 		 * @details In this overload the current entry together with its complete position is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
+		void modify_entries(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
 		/** 
 		 * @brief Adds the given Tensor with the given offsets to this one.

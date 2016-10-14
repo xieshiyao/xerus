@@ -828,7 +828,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -849,7 +849,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -870,7 +870,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i)); }
@@ -890,7 +890,7 @@ namespace xerus {
 	}
 	
 
-	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
@@ -910,7 +910,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const MultiIndex&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		MultiIndex multIdx(degree(), 0);
@@ -1536,7 +1536,7 @@ namespace xerus {
 	void pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
-		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
+		S.modify_diagonal_entries([](value_t& _a){ _a = 1/_a;});
 		contract(_inverse, Vt, true, S, false, 1);
 		contract(_inverse, _inverse, false, U, true, 1);
 	}

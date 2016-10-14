@@ -763,7 +763,7 @@ namespace xerus {
 			// ... calculate svd ...
 			calculate_svd(coreA, S, coreB, X, 1, _maxRank, _eps);
 			
-			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			S.modify_diagonal_entries([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
 			
 			// ... contract S to the right ...
 			xerus::contract(coreB, S, false, coreB, false, 1);
@@ -785,7 +785,7 @@ namespace xerus {
 			
 			calculate_svd(fromTensor, S, toTensor, X, fromDegree-1, _maxRank, _eps);
 			
-			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			S.modify_diagonal_entries([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
 			
 			if(transTo) {
 				xerus::contract(toTensor, toTensor, true, S, true, 1);

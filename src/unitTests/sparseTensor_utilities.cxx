@@ -121,7 +121,7 @@ static misc::UnitTest sparse_dim_exp("SparseTensor", "dimension_expansion", []()
     TEST(C.size == 12);
 });
 
-static misc::UnitTest sparse_mod("SparseTensor", "modify_elements", [](){
+static misc::UnitTest sparse_mod("SparseTensor", "modify_entries", [](){
 	Tensor A({4,4}, Tensor::Representation::Sparse);
 	Tensor B({4,4,7}, Tensor::Representation::Sparse);
 	Tensor C({2,8}, Tensor::Representation::Sparse);
@@ -144,18 +144,18 @@ static misc::UnitTest sparse_mod("SparseTensor", "modify_elements", [](){
     A[{3,3}] = 16;
 	A.use_sparse_representation();
     
-    A.modify_diag_elements([](value_t& _entry){});
+    A.modify_diagonal_entries([](value_t& _entry){});
     TEST(approx_entrywise_equal(A, {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}));
     
-    A.modify_diag_elements([](value_t& _entry){_entry = 73.5*_entry;});
+    A.modify_diagonal_entries([](value_t& _entry){_entry = 73.5*_entry;});
     TEST(approx_entrywise_equal(A, {73.5*1,2,3,4,5,73.5*6,7,8,9,10,73.5*11,12,13,14,15,73.5*16}));
     
-    A.modify_diag_elements([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - static_cast<value_t>(_position);});
+    A.modify_diagonal_entries([](value_t& _entry, const size_t _position){_entry = 73.5*_entry - static_cast<value_t>(_position);});
     TEST(approx_entrywise_equal(A, {73.5*73.5*1,2,3,4,5,73.5*73.5*6-1.0,7,8,9,10,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
     
     A.reinterpret_dimensions({2,8});
     
-    A.modify_diag_elements([](value_t& _entry){_entry = 0;});
+    A.modify_diagonal_entries([](value_t& _entry){_entry = 0;});
     TEST(approx_entrywise_equal(A, {0,2,3,4,5,73.5*73.5*6-1.0,7,8,9,0,73.5*73.5*11-2.0,12,13,14,15,73.5*73.5*16-3.0}));
 });
 
