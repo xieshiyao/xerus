@@ -1012,6 +1012,13 @@ namespace xerus {
 	 */
 	bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON);
 	
+	/** 
+	 * @brief Prints the Tensor to the given outStream
+	 * @param _out the outstream to be printed to.
+	 * @param _tensor the tensor.
+	 * @return @a _out.
+	 */
+	std::ostream& operator<<(std::ostream& _out, const Tensor& _tensor);
 	
 	namespace misc {
 		/**

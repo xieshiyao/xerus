@@ -1668,6 +1668,11 @@ namespace xerus {
 		return true;
 	}
 	
+	std::ostream& operator<<(std::ostream& _out, const Tensor& _tensor) {
+		_out << _tensor.to_string();
+		return _out;
+	}
+	
 	namespace misc {
 		
 		

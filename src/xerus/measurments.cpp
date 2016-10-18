@@ -104,6 +104,7 @@ namespace xerus {
 		}
 	}
 	
+	
 	value_t SinglePointMeasurementSet::frob_norm() const {
 		const auto cSize = size();
 		double norm = 0.0;
@@ -342,6 +343,17 @@ namespace xerus {
 		} else {
 			REQUIRE(positions.size() == measuredValues.size(), "Inconsitend SinglePointMeasurementSet encountered.");
 			misc::simultaneous_sort(positions, measuredValues, comperator);
+		}
+	}
+	
+	void RankOneMeasurementSet::normalize() {
+		for(size_t i = 0; i < size(); ++i) {
+			for(size_t j = 0; j < degree(); ++j) {
+				const auto norm = positions[i][j].frob_norm();
+				positions[i][j] /= norm;
+				positions[i][j].apply_factor();
+				measuredValues[i] /= norm;
+			}
 		}
 	}
 	

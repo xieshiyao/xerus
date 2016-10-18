@@ -918,6 +918,7 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def("degree", &RankOneMeasurementSet::degree)
 		.def("frob_norm", &RankOneMeasurementSet::frob_norm)
 		.def("sort", &RankOneMeasurementSet::sort, arg("positionsOnly")=false)
+		.def("normalize", &RankOneMeasurementSet::normalize)
 		.def("measure", static_cast<void (RankOneMeasurementSet::*)(const Tensor &)>(&RankOneMeasurementSet::measure), arg("solution"))
 		.def("measure", static_cast<void (RankOneMeasurementSet::*)(const TensorNetwork &)>(&RankOneMeasurementSet::measure), arg("solution"))
 		.def("measure", +[](RankOneMeasurementSet &_this, PyObject *_f) { 
