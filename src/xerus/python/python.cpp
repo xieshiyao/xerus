@@ -487,7 +487,12 @@ BOOST_PYTHON_MODULE(xerus) {
 				(arg("from"), arg("to"), arg("allowRankReduction")=true)
 			)
 			.def("reduce_representation", &TensorNetwork::reduce_representation)
-			//TODO find_common_edge (wrapper that returns python::tuple
+			.def("find_common_edge", 
+				+[](TensorNetwork &_this, size_t _nodeA, size_t _nodeB){
+					const auto result = _this.find_common_edge(_nodeA, _nodeB);
+					return boost::python::make_tuple(result.first, result.second);
+				}
+			)
 			.def("sanitize", &TensorNetwork::sanitize)
 			.def("fix_mode", &TensorNetwork::fix_mode)
 			.def("remove_slate", &TensorNetwork::remove_slate)
@@ -554,7 +559,11 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def("reduce_to_maximal_ranks", &TTTensor::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
 // 		.def("degrees_of_freedom", static_cast<size_t (TTTensor::*)()>(&TTTensor::degrees_of_freedom))
 		.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTTensor::degrees_of_freedom)).staticmethod("degrees_of_freedom")
-		// TODO chop wrapper
+		.def("chop", 
+			+[](TTTensor &_this, size_t _pos) {
+				const auto result = _this.chop(_pos);
+				return boost::python::make_tuple(result.first, result.second);
+			}, arg("position"))
 		
 		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
 			(arg("ranks"), arg("epsilon")=EPSILON)
@@ -614,7 +623,11 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def("reduce_to_maximal_ranks", &TTOperator::reduce_to_maximal_ranks).staticmethod("reduce_to_maximal_ranks")
 // 		.def("degrees_of_freedom", static_cast<size_t (TTOperator::*)()>(&TTOperator::degrees_of_freedom))
 		.def("degrees_of_freedom", static_cast<size_t (*)(const std::vector<size_t>&, const std::vector<size_t>&)>(&TTOperator::degrees_of_freedom)).staticmethod("degrees_of_freedom")
-		// TODO chop wrapper
+		.def("chop", 
+			+[](TTOperator &_this, size_t _pos) {
+				const auto result = _this.chop(_pos);
+				return boost::python::make_tuple(result.first, result.second);
+			}, arg("position"))
 		
 		.def("round", static_cast<void (TTOperator::*)(const std::vector<size_t>&, double)>(&TTOperator::round),
 			(arg("ranks"), arg("epsilon")=EPSILON)

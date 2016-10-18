@@ -3,9 +3,11 @@
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
 * 2016-??-?? v3.0.0
+ * Python wrapper now stable.
  * ! REQUIRE macro now logs as error instead of fatal error.
  * ! All macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
  * ! TT::find_largest_entry and TT::dyadic_product left the TT scope.
+ * ! Tensor::modify_diag_elements renamed to Tensor::modify_diagonal_entries for naming consistency.
  * UnitTests now with randomly seeded random engines.
  * Some minor bugfixes.
 

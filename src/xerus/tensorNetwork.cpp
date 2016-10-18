@@ -198,7 +198,7 @@ namespace xerus {
 	}
 	
 	
-	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
+	std::pair< size_t, size_t > TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
 		size_t posA=~0ul, posB=~0ul;
 		
 		// Find common edge in nodeA
@@ -215,7 +215,7 @@ namespace xerus {
 		
 		posB = nodes[_nodeA].neighbors[posA].indexPosition;
 		
-		return std::tuple<size_t, size_t>(posA, posB);
+		return std::pair<size_t, size_t>(posA, posB);
 	}
 	
 	
