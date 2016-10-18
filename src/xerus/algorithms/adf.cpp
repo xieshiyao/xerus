@@ -511,6 +511,8 @@ namespace xerus {
 			}
 			residualNorm = std::sqrt(residualNormSqr)/normMeasuredValues;
 			
+			LOG(residual, residualNorm << " vs " << measurments.test(x));
+			
 			perfData.add(iteration, residualNorm, x, 0);
 			
 			// Check for termination criteria
@@ -542,8 +544,28 @@ namespace xerus {
 	}
 	
 	template<class MeasurmentSet>
+	void normalize_measurments(MeasurmentSet& _measurments);
+	
+	template<>
+	void normalize_measurments<SinglePointMeasurementSet>(SinglePointMeasurementSet& _measurments) { }
+	
+	template<>
+	void normalize_measurments<RankOneMeasurementSet>(RankOneMeasurementSet& _measurments) {
+		for(size_t i = 0; i < _measurments.size(); ++i) {
+			for(size_t j = 0; j < _measurments.size(); ++j) {
+				const auto norm = _measurments.positions[i][j].frob_norm();
+				_measurments.positions[i][j] /= norm;
+				_measurments.positions[i][j].apply_factor();
+				_measurments.measuredValues[i] /= norm;
+			}
+		}
+	}
+	
+	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
+		
+		// Normalize measurements
 		
 		#pragma omp parallel sections
 		{
@@ -564,9 +586,22 @@ namespace xerus {
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
 			
+			LOG(xRanKRes, measurments.test(x));
 			// Increase the ranks
-            auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
-            x = x+(1e-10*frob_norm(x)/frob_norm(rndTensor))*rndTensor;
+			x.move_core(0, true);
+			LOG(xRanKResA, measurments.test(x));
+			const auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
+			LOG(bla, frob_norm((1e-10*normMeasuredValues/frob_norm(rndTensor))*rndTensor) << " x " << frob_norm(x) << " b " << normMeasuredValues);
+			const auto oldX = x;
+			auto diff = (1e-10*normMeasuredValues/frob_norm(rndTensor))*rndTensor;
+			for(size_t i = 0; i < diff.degree(); ++i) {
+				diff.component(i).apply_factor();
+			}
+			
+			x = x+diff;
+			LOG(diff, frob_norm(x -oldX) << " x " << frob_norm(x));
+			
+			LOG(xRanKRes2, measurments.test(x));
 			
 			x.round(maxRanks);
 			
