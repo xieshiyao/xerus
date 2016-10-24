@@ -515,8 +515,8 @@ namespace xerus {
 			
 			// Check for termination criteria
 			double resDec4 = resDec3; resDec3 = resDec2; resDec2 = resDec1;
-            resDec1 = residualNorm/lastResidualNorm;
-			LOG(wup, resDec1*resDec2*resDec3*resDec4);
+			resDec1 = residualNorm/lastResidualNorm;
+// 			LOG(wup, resDec1*resDec2*resDec3*resDec4);
 			if(residualNorm < targetResidualNorm || resDec1*resDec2*resDec3*resDec4 > misc::pow(minimalResidualNormDecrease, 4)) { break; }
 			
 			

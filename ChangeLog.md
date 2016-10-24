@@ -8,7 +8,6 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * ! All macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
  * ! TT::find_largest_entry and TT::dyadic_product left the TT scope.
  * ! Tensor::modify_diag_elements renamed to Tensor::modify_diagonal_entries for naming consistency.
- * UnitTests now with randomly seeded random engines.
  * Some minor bugfixes.
 
 * 2016-06-23 v2.4.0
