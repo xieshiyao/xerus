@@ -110,6 +110,8 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	
 	fx(i) = r(j) / fid(j,i);
 	x(i) = r(j) / id(j,i);
+	MTEST(frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x)<1e-13, frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x));
+	MTEST(frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x)<1e-13, frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x));
 	MTEST(frob_norm(fx-x)/frob_norm(x)<1e-13, frob_norm(fx-x)/frob_norm(x));
 });
 
@@ -190,7 +192,13 @@ static misc::UnitTest tensor_solve_matrix("Tensor", "solve_matrix", [](){
 		Tensor residual;
 		
 		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
+		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
 		
+		LOG(asd, degN << ' '<< degP);
+		
+		X(j^degN, k^degP) = B(i^degM, k^degP) / A(i^degM, j^degN);  //solve_least_squares(X, A, B, degP);
+		
+		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
 		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
 	}
 });
