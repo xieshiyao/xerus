@@ -37,9 +37,6 @@
 namespace xerus {
 
 	void solve(internal::IndexedTensorWritable<Tensor>&& _x, internal::IndexedTensorReadOnly<Tensor>&& _a, internal::IndexedTensorReadOnly<Tensor>&& _b) {
-		// x takes the dimensions of A -- also ensures that every index of x is contained in A
-		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::None);
-		
 		_a.assign_indices();
 		_b.assign_indices();
 		
@@ -89,6 +86,7 @@ namespace xerus {
 		(*_x.tensorObject)(_x.indices) = (*_x.tensorObject)(orderX);
 	}
 	
+	
 	internal::IndexedTensorMoveable<Tensor> operator/ (internal::IndexedTensorReadOnly<Tensor>&& _b, internal::IndexedTensorReadOnly<Tensor>&& _A) {
 		_A.assign_indices();
 		_b.assign_indices();
@@ -96,6 +94,11 @@ namespace xerus {
 		std::vector<Index> indicesX;
 		for(const Index& idx : _A.indices) {
 			if(!misc::contains(_b.indices, idx)) {
+				indicesX.push_back(idx);
+			}
+		}
+		for(const Index& idx : _b.indices) {
+			if(!misc::contains(_A.indices, idx)) {
 				indicesX.push_back(idx);
 			}
 		}

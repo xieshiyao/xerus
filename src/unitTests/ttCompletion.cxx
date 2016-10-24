@@ -121,7 +121,7 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	}
 	TEST(test);
 	
-	ADFVariant ourADF(500, 1e-6, 1e-6);
+	ADFVariant ourADF(500, 1e-6, 0.999);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	PerformanceData perfData([&](const TTTensor& _x) {return frob_norm(_x - trueSolution)/frob_norm(trueSolution);}, true, false);

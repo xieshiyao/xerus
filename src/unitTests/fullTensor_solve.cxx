@@ -100,7 +100,7 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	internal::CholmodSparse idt(id.get_unsanitized_sparse_data(), N, N, false);
 	Tensor id2({N,N});
 	id2.get_unsanitized_sparse_data() = idt.to_map();
-	MTEST(frob_norm(id-id2) < 1e-15, frob_norm(id-id2)); 
+	MTEST(frob_norm(id-id2) < 1e-12, frob_norm(id-id2)); 
 	
 	Tensor fid(id);
 	fid.use_dense_representation();
@@ -109,9 +109,9 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	
 	fx(i) = r(j) / fid(j,i);
 	x(i) = r(j) / id(j,i);
-	MTEST(frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x)<1e-13, frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x));
-	MTEST(frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x)<1e-13, frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x));
-	MTEST(frob_norm(fx-x)/frob_norm(x)<1e-13, frob_norm(fx-x)/frob_norm(x));
+	MTEST(frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x)<1e-12, frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x));
+	MTEST(frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x)<1e-12, frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x));
+	MTEST(frob_norm(fx-x)/frob_norm(x)<1e-12, frob_norm(fx-x)/frob_norm(x));
 });
 
 static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
@@ -135,7 +135,7 @@ static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	Tensor x1, x2;
 	x1(i) = r(j) / A(i,j);
 	x2(i) = r(j) / At(j,i);
-	MTEST(frob_norm(x1-x2) < 1e-14, "s " << frob_norm(x1-x2));
+	MTEST(frob_norm(x1-x2) < 1e-12, "s " << frob_norm(x1-x2));
 	
 	A.use_dense_representation();
 	At.use_dense_representation();
@@ -145,10 +145,10 @@ static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	x4(i) = r(j) / At(j,i);
 	
 	residual(i) = A(i,j) * (x3(j) - x4(j));
-	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4) << " residual: " << frob_norm(residual));
+	MTEST(frob_norm(x3-x4) < 1e-12, "d " << frob_norm(x3-x4) << " residual: " << frob_norm(residual));
 	
 	residual(i) = A(i,j) * (x1(j) - x3(j));
-	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1) << " residual: " << frob_norm(residual));
+	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 1e-12, "sd " << frob_norm(x1-x3)/frob_norm(x1) << " residual: " << frob_norm(residual));
 });
 
 
@@ -171,7 +171,6 @@ static misc::UnitTest tensor_solve_matrix("Tensor", "solve_matrix", [](){
 		for(size_t xi = 0; xi < degN; ++xi) { nDims.push_back(n2Dist(rnd)); }
 		for(size_t xi = 0; xi < degP; ++xi) { pDims.push_back(n2Dist(rnd)); }
 		
-		XERUS_LOG(bla, "Set " << mDims << "x" << nDims << " * " << pDims);
 		
 		auto A = Tensor::random(mDims | nDims);
 		A *= realDist(rnd);
@@ -193,7 +192,6 @@ static misc::UnitTest tensor_solve_matrix("Tensor", "solve_matrix", [](){
 		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
 		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
 		
-		LOG(asd, degN << ' '<< degP);
 		
 		X(j^degN, k^degP) = B(i^degM, k^degP) / A(i^degM, j^degN);  //solve_least_squares(X, A, B, degP);
 		

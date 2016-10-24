@@ -1594,6 +1594,7 @@ namespace xerus {
 			}
 			
 		} else { // Dense A
+			REQUIRE(_B.is_dense(), "Not yet implemented");
 			blasWrapper::solve_least_squares(
 				_X.override_dense_data(), 
 				_A.get_unsanitized_dense_data(), m, n, 
