@@ -75,7 +75,7 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
-	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
+	std::uniform_int_distribution<size_t> eDist(1, N*N-1);
 	
 	Index i,j,k;
 	
@@ -105,7 +105,6 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	Tensor fid(id);
 	fid.use_dense_representation();
 	Tensor fx;
-// 	id.use_sparse_representation();
 	TEST(id.is_sparse());
 	
 	fx(i) = r(j) / fid(j,i);

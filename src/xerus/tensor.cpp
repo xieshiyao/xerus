@@ -1574,21 +1574,24 @@ namespace xerus {
 		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
 		
 		if (_A.is_sparse()) {
-			LOG(fatal, "Sparse not yet impl");
-// 			if (usedB->tensorObjectReadOnly->is_sparse()) {
-// 				internal::CholmodSparse::solve_sparse_rhs(
-// 					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
-// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-// 															usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
-// 			} else {
-// 				internal::CholmodSparse::solve_dense_rhs(
-// 					usedX->tensorObject->get_unsanitized_dense_data(), N, 
-// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-// 															usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
-// 			}
-// 			
-// 			// Propagate the constant factor
-// 			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
+			REQUIRE( p == 1, "Matrix least squares not supported in sparse");
+			if (_B.is_sparse()) {
+				internal::CholmodSparse::solve_sparse_rhs(
+					_X.override_sparse_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false, 
+					_B.get_unsanitized_sparse_data(), 
+					m);
+			} else {
+				internal::CholmodSparse::solve_dense_rhs(
+					_X.override_dense_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false,
+					_B.get_unsanitized_dense_data(), 
+					m);
+			}
 			
 		} else { // Dense A
 			blasWrapper::solve_least_squares(
@@ -1596,9 +1599,10 @@ namespace xerus {
 				_A.get_unsanitized_dense_data(), m, n, 
 				_B.get_unsanitized_dense_data(), p);
 			
-			// Propagate the constant factor
-			_X.factor = _B.factor / _A.factor;
 		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
 	}
 	
 	
