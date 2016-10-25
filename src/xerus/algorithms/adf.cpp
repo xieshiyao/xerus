@@ -565,7 +565,7 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
-			LOG(xRanKResBefore, measurments.test(x));
+// 			LOG(xRanKResBefore, measurments.test(x));
 			// Increase the ranks
 			x.move_core(0, true);
 			const auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));

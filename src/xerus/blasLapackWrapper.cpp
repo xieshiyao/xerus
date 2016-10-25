@@ -540,7 +540,7 @@ namespace xerus {
 			std::unique_ptr<int[]> pivot(new int[_n]);
 			misc::set_zero(pivot.get(), _n);
 			
-// 			std::unique_ptr<double[]> signulars(new double[std::min(_n, _m)]);
+			std::unique_ptr<double[]> signulars(new double[std::min(_n, _m)]);
 			
 			int rank;
 			
@@ -553,20 +553,7 @@ namespace xerus {
 				misc::set_zero(bOrX+_m*_p, (_n-_m)*_p); // Lapacke is unhappy if the array contains NANs...
 			}
 			
-			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
-				LAPACK_ROW_MAJOR, 
-				static_cast<int>(_m),   // Left dimension of A
-				static_cast<int>(_n),   // Right dimension of A
-				static_cast<int>(_p),	// Number of rhss
-				_A,         			// Matrix A
-				static_cast<int>(_n),   // LDA
-				bOrX,       			// On input b, on output x
-				static_cast<int>(_p),          			// LDB
-				pivot.get(),			// Pivot, entries must be zero to allow pivoting
-				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
-				&rank);     			// Outputs the rank of A
-			
-// 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsd(
+// 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
 // 				LAPACK_ROW_MAJOR, 
 // 				static_cast<int>(_m),   // Left dimension of A
 // 				static_cast<int>(_n),   // Right dimension of A
@@ -574,10 +561,23 @@ namespace xerus {
 // 				_A,         			// Matrix A
 // 				static_cast<int>(_n),   // LDA
 // 				bOrX,       			// On input b, on output x
-// 				static_cast<int>(_p),	// LDB
-// 				signulars.get(),		// Pivot, entries must be zero to allow pivoting
+// 				static_cast<int>(_p),          			// LDB
+// 				pivot.get(),			// Pivot, entries must be zero to allow pivoting
 // 				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
 // 				&rank);     			// Outputs the rank of A
+			
+			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsd(
+				LAPACK_ROW_MAJOR, 
+				static_cast<int>(_m),   // Left dimension of A
+				static_cast<int>(_n),   // Right dimension of A
+				static_cast<int>(_p),	// Number of rhss
+				_A,         			// Matrix A
+				static_cast<int>(_n),   // LDA
+				bOrX,       			// On input b, on output x
+				static_cast<int>(_p),	// LDB
+				signulars.get(),		// Pivot, entries must be zero to allow pivoting
+				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+				&rank);     			// Outputs the rank of A
 			
 			CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer << " sizes are " << _m << " x " << _n << " * " << _p);
 			
