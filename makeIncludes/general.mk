@@ -21,7 +21,7 @@ ifneq (,$(findstring g++, $(CXX)))
 endif
 
 # include fancy_callstack specific libraries (binutils + dependencies)
-ifdef NO_FANCY_CALLSTACK
+ifdef XERUS_NO_FANCY_CALLSTACK
 	CALLSTACK_LIBS =
 	DEBUG += -D XERUS_NO_FANCY_CALLSTACK
 else
