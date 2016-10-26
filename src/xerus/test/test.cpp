@@ -99,7 +99,11 @@ namespace xerus { namespace misc {
 		// initialize passed variable and reseed randomness
 		::xerus::misc::UnitTest::passed = true;
 		if (_seed == 0) {
+#ifdef XERUS_TRULY_RANDOM_UNITTESTS
 			_seed = ::xerus::misc::randomEngine();
+#else
+			_seed = 0xBAADF00D;
+#endif
 		}
 		::xerus::misc::randomEngine.seed(_seed);
 		
@@ -202,6 +206,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "usage:\n";
 		std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname] ...\n";
 		std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname] ...\n";
+		std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " [groupname]:[testname]:[seed] ...\n";
 		std::cout << "  " << xerus::misc::explode(argv[0],'/').back() << " all\n\n";
 		std::cout << "available groups:\n";
 		for (const auto &p : *xerus::misc::UnitTest::tests) {

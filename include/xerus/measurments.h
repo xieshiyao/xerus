@@ -123,6 +123,8 @@ namespace xerus {
 		
 		void sort(const bool _positionsOnly);
 		
+		void normalize();
+		
 		
 		void measure(const Tensor& _solution);
 		

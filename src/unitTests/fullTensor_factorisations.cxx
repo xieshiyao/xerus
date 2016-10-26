@@ -182,7 +182,7 @@ static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", 
 	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
 	
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
-	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
+	res4.modify_diagonal_entries([](value_t &entry){entry -= 1;});
 	TEST(frob_norm(res4) < 1e-12);
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));

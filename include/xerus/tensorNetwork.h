@@ -230,7 +230,7 @@ namespace xerus {
 		 * @param _nodeB The second node.
 		 * @return Tuple containing the two positions in @a _nodeA and @a _nodeB.
 		 */
-		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
+		std::pair<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
 		
 		
 		

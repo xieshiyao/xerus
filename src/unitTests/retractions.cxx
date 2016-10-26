@@ -206,7 +206,7 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	
 	scalarProdInTangentSpace = tangentChange1.scalar_product(tangentChange2);
 	scalarProdInEmbeddingSpace = value_t(TTTensor(tangentChange1)(j&0) * TTTensor(tangentChange2)(j&0));
-	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
+	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-10), 
 		  "scalarProd " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
 	
 	// test whether copy assignment, += and * work as intended

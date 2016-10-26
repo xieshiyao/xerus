@@ -828,7 +828,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -849,7 +849,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -870,7 +870,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i)); }
@@ -890,7 +890,7 @@ namespace xerus {
 	}
 	
 
-	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
@@ -910,7 +910,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const MultiIndex&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		MultiIndex multIdx(degree(), 0);
@@ -1536,7 +1536,7 @@ namespace xerus {
 	void pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
-		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
+		S.modify_diagonal_entries([](value_t& _a){ _a = 1/_a;});
 		contract(_inverse, Vt, true, S, false, 1);
 		contract(_inverse, _inverse, false, U, true, 1);
 	}
@@ -1574,31 +1574,36 @@ namespace xerus {
 		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
 		
 		if (_A.is_sparse()) {
-			LOG(fatal, "Sparse not yet impl");
-// 			if (usedB->tensorObjectReadOnly->is_sparse()) {
-// 				internal::CholmodSparse::solve_sparse_rhs(
-// 					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
-// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-// 															usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
-// 			} else {
-// 				internal::CholmodSparse::solve_dense_rhs(
-// 					usedX->tensorObject->get_unsanitized_dense_data(), N, 
-// 															tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-// 															usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
-// 			}
-// 			
-// 			// Propagate the constant factor
-// 			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
+			REQUIRE( p == 1, "Matrix least squares not supported in sparse");
+			if (_B.is_sparse()) {
+				internal::CholmodSparse::solve_sparse_rhs(
+					_X.override_sparse_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false, 
+					_B.get_unsanitized_sparse_data(), 
+					m);
+			} else {
+				internal::CholmodSparse::solve_dense_rhs(
+					_X.override_dense_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false,
+					_B.get_unsanitized_dense_data(), 
+					m);
+			}
 			
 		} else { // Dense A
+			REQUIRE(_B.is_dense(), "Not yet implemented");
 			blasWrapper::solve_least_squares(
 				_X.override_dense_data(), 
 				_A.get_unsanitized_dense_data(), m, n, 
 				_B.get_unsanitized_dense_data(), p);
 			
-			// Propagate the constant factor
-			_X.factor = _B.factor / _A.factor;
 		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
 	}
 	
 	
@@ -1666,6 +1671,11 @@ namespace xerus {
 			if(!misc::approx_equal(_tensor[i], _values[i], _eps)) { return false; }
 		}
 		return true;
+	}
+	
+	std::ostream& operator<<(std::ostream& _out, const Tensor& _tensor) {
+		_out << _tensor.to_string();
+		return _out;
 	}
 	
 	namespace misc {

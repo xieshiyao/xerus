@@ -488,7 +488,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
-		double resDec1 = 0.0, resDec2 = 0.0;
+		double resDec1 = 0.0, resDec2 = 0.0, resDec3 = 0.0;
 			
 		for(; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 			
@@ -514,10 +514,10 @@ namespace xerus {
 			perfData.add(iteration, residualNorm, x, 0);
 			
 			// Check for termination criteria
-			double resDec3 = resDec2; resDec2 = resDec1;
-            resDec1 = residualNorm/lastResidualNorm;
-            LOG(wup, resDec1*resDec2*resDec3);
-			if(residualNorm < targetResidualNorm || resDec1*resDec2*resDec3 > misc::pow(minimalResidualNormDecrease, 3)) { break; }
+			double resDec4 = resDec3; resDec3 = resDec2; resDec2 = resDec1;
+			resDec1 = residualNorm/lastResidualNorm;
+// 			LOG(wup, resDec1*resDec2*resDec3*resDec4);
+			if(residualNorm < targetResidualNorm || resDec1*resDec2*resDec3*resDec4 > misc::pow(minimalResidualNormDecrease, 4)) { break; }
 			
 			
 			// Sweep from the first to the last component
@@ -541,6 +541,8 @@ namespace xerus {
 		}
 	}
 	
+	
+	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
@@ -563,10 +565,24 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
-			
+// 			LOG(xRanKResBefore, measurments.test(x));
 			// Increase the ranks
-            auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
-            x = x+(1e-10*frob_norm(x)/frob_norm(rndTensor))*rndTensor;
+			x.move_core(0, true);
+			const auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
+			const auto oldX = x;
+			auto diff = (1.0/frob_norm(rndTensor))*rndTensor;
+// 			LOG(bla, frob_norm(diff) << " x " << frob_norm(x) << " b " << normMeasuredValues);
+			for(size_t i = 0; i < diff.degree(); ++i) {
+				diff.component(i).apply_factor();
+			}
+			
+// 			LOG(diff1, measurments.test(diff));
+			diff *= normMeasuredValues*1e-5;
+// 			LOG(diff2, measurments.test(diff));
+			x = x+diff;
+// 			LOG(realDifference, frob_norm(x -oldX) << " x " << frob_norm(x));
+			
+// 			LOG(xRanKResAfter, measurments.test(x));
 			
 			x.round(maxRanks);
 			

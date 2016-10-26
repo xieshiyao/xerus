@@ -251,7 +251,6 @@ namespace xerus {
 			_out.assign_indices();
 			
 			
-			
 			// Assign the dimensions
 			_base.assign_index_dimensions();
 			_out.assign_index_dimensions();
