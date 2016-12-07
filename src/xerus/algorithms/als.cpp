@@ -40,15 +40,18 @@ namespace xerus {
 	//                                       local solvers
 	// -------------------------------------------------------------------------------------------------------------------------
 	
-	void ALSVariant::lapack_solver(const TensorNetwork &_A, std::vector<Tensor> &_x, const TensorNetwork &_b, const ALSAlgorithmicData &_data) {
+	void ALSVariant::lapack_solver(const TensorNetwork& _A, std::vector<Tensor>& _x, const TensorNetwork& _b, const ALSAlgorithmicData& _data) {
 		Tensor A(_A);
 		Tensor b(_b);
 		Tensor x;
+		
+		solve_least_squares(x, A, b, 0);
+		
 		Index i,j,k,l;
-		x(i&0) = b(j&0) / A(j/2, i/2);
 		if (_data.direction == Increasing) {
-			Tensor U, S;
-			for (size_t p=0; p+1<_data.ALS.sites; ++p) {
+			for (size_t p = 0; p+1 < _data.ALS.sites; ++p) {
+				Tensor U, S;
+// 				calculate_svd(U, S, x, x, 2, _data.targetRank[_data.currIndex+p], EPSILON); TODO
 				(U(i^2,j), S(j,k), x(k,l&1)) = SVD(x(i^2,l&2), _data.targetRank[_data.currIndex+p]);
 				_x[p] = std::move(U);
 				x(j,l&1) = S(j,k) * x(k,l&1);
@@ -56,8 +59,9 @@ namespace xerus {
 			_x.back() = std::move(x);
 		} else {
 			// direction: decreasing index
-			Tensor S, Vt;
-			for (size_t p=_data.ALS.sites-1; p>0; --p) {
+			for (size_t p = _data.ALS.sites-1; p>0; --p) {
+				Tensor S, Vt;
+// 				calculate_svd(x, S, Vt, x, x.degree()-1, _data.targetRank[_data.currIndex+p-1], EPSILON); TODO
 				(x(i&1,j), S(j,k), Vt(k,l&1)) = SVD(x(i&2,l^2), _data.targetRank[_data.currIndex+p-1]);
 				_x[p] = std::move(Vt);
 				x(i&1,k) = x(i&1,j) * S(j,k);
@@ -211,7 +215,7 @@ namespace xerus {
 	}
 	
 	void ALSVariant::ALSAlgorithmicData::prepare_stacks() {
-		const size_t d=x.degree();
+		const size_t d = x.degree();
 		Index r1,r2;
 		
 		Tensor tmpA;
@@ -381,7 +385,7 @@ namespace xerus {
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
 		TensorNetwork ATilde = _data.localOperatorCache.left.back();
 		if (assumeSPD) {
-			for (size_t p=0;  p<sites; ++p) {
+			for (size_t p=0; p<sites; ++p) {
 				ATilde(n1^(p+1), n2, r2, n3^(p+1), n4) = ATilde(n1^(p+1), r1, n3^(p+1)) * _data.A->get_component(_data.currIndex+p)(r1, n2, n4, r2);
 			}
 			ATilde(n1^(sites+1), n2, n3^(sites+1), n4) = ATilde(n1^(sites+1), r1, n3^(sites+1)) * _data.localOperatorCache.right.back()(n2, r1, n4);
@@ -395,6 +399,7 @@ namespace xerus {
 		}
 		return ATilde;
 	}
+	
 	
 	TensorNetwork ALSVariant::construct_local_RHS(ALSVariant::ALSAlgorithmicData& _data) const {
 		Index cr1, cr2, cr3, cr4, r1, r2, r3, r4, n1, n2, n3, n4, x;
@@ -448,8 +453,7 @@ namespace xerus {
 				|| (_data.optimizedRange.second - _data.optimizedRange.first<=sites)) 
 			{
 				// we are done! yay
-				LOG(ALS, "ALS done, " << _data.energy << " " << _data.lastEnergy << " " 
-					<< std::abs(_data.lastEnergy2-_data.energy) << " " << std::abs(_data.lastEnergy-_data.energy) << " < " << _convergenceEpsilon);
+				LOG(ALS, "ALS done, " << _data.energy << " " << _data.lastEnergy << " " << std::abs(_data.lastEnergy2-_data.energy) << " " << std::abs(_data.lastEnergy-_data.energy) << " < " << _convergenceEpsilon);
 				if (_data.cannonicalizeAtTheEnd && preserveCorePosition) {
 					_data.x.move_core(_data.corePosAtTheEnd, true);
 				}

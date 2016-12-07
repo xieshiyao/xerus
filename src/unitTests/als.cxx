@@ -25,41 +25,59 @@
 using namespace xerus;
 
 static misc::UnitTest als_id("ALS", "identity", [](){
-    Index k,l,m,n,o,p;
+	Index k,l,m,n,o,p;
 	
-    Tensor X({10, 10, 10});
-    Tensor B = Tensor::random({10, 10, 10});
-    
-    Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
+	Tensor X({10, 10, 10});
+	Tensor B = Tensor::random({10, 10, 10});
+	
+	Tensor I({10,10,10,10,10,10}, [](const std::vector<size_t> &_idx) {
 		if (_idx[0]==_idx[3] && _idx[1] == _idx[4] && _idx[2] == _idx[5]) {
 			return 1.0;
 		} else {
 			return 0.0;
 		}
 	});
-    
-    X(k^3) = I(k^3,l^3)*B(l^3);
-    TEST(frob_norm(X(k^3) - B(k^3)) < 1e-13);
-    
-    TTTensor ttB(B, 0.001);
-    TTTensor ttX(X, 0.001);
-    TTOperator ttI(I, 0.001);
+	
+	X(k^3) = I(k^3,l^3)*B(l^3);
+	TEST(frob_norm(X(k^3) - B(k^3)) < 1e-13);
+	
+	TTTensor ttB(B, 0.001);
+	TTTensor ttX(X, 0.001);
+	TTOperator ttI(I, 0.001);
 	
 	ttX(k^3) = ttI(k^3,l^3)*ttB(l^3);
-    TEST(frob_norm(ttI(k^3,l^3)*ttB(l^3) - ttB(k^3)) < 1e-13);
+	TEST(frob_norm(ttI(k^3,l^3)*ttB(l^3) - ttB(k^3)) < 1e-13);
 	TEST(frob_norm(ttI(k^3,l^3)*ttX(l^3) - ttX(k^3)) < 1e-13);
-    
-    PerformanceData perfdata;
-    
-	value_t result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
-    MTEST(result < 0.01,  "1 " << result);
-	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
-    perfdata.reset();
 	
-    ttX = TTTensor::random(ttX.dimensions, ttX.ranks());
+	PerformanceData perfdata;
+	
+	value_t result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
+	MTEST(result < 0.01,  "1 " << result);
+	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
+	perfdata.reset();
+	
+	ttX = TTTensor::random(ttX.dimensions, ttX.ranks());
 	result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
-    MTEST(result < 0.01, "2 " << result);
+	MTEST(result < 0.01, "2 " << result);
 	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
+});
+
+
+static misc::UnitTest als_real("ALS", "real", []() {
+	std::normal_distribution<double> dist(0, 1);
+	
+	Index k,l;
+	
+	TTTensor x = TTTensor::random({10, 10, 10, 10, 10}, {3,3,3,3});
+	TTTensor realX = TTTensor::random({10, 10, 10, 10, 10}, {3,3,3,3});
+	TTOperator A = TTOperator::random({10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, {5,5,5,5});
+	TTTensor b;
+	
+	b(k&0) = A(k/2,l/2)*realX(l&0);
+
+	const value_t result = ALS(A, x, b, 1e-6);
+	MTEST(result < 0.001, result);
+	MTEST(frob_norm(x - realX) < 1e-4, frob_norm(x - realX));
 });
 
 
