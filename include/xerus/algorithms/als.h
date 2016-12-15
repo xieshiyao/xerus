@@ -37,6 +37,7 @@ namespace xerus {
 	class ALSVariant {
 	public:
 		enum Direction { Increasing, Decreasing };
+		
 	protected:
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
