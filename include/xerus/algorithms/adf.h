@@ -129,6 +129,8 @@ namespace xerus {
 			/// @brief Vector containing for each corePosition a vector of the smallest ids of each group of unique backwardStack entries.
 			std::vector<std::vector<size_t>> backwardUpdates;
 			
+            /// @brief: Norm of each rank one measurment operator
+            std::unique_ptr<double[]> measurmentNorms;
 			
 			///@brief: Reference to the performanceData object (external ownership)
 			PerformanceData& perfData;
@@ -215,6 +217,8 @@ namespace xerus {
 				backwardStackMem(new Tensor*[numMeasurments*(degree+2)]),
 				backwardStack(backwardStackMem.get()+numMeasurments),
 				backwardUpdates(degree),
+				
+				measurmentNorms(new double[numMeasurments]),
 				
 				perfData(_perfData) 
 				{

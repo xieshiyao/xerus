@@ -785,6 +785,7 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	
+    // TODO why sparse?
 	template<bool isOperator>
 	TTNetwork<isOperator>& TTNetwork<isOperator>::operator+=(const TTNetwork<isOperator>& _other) {
 		REQUIRE(dimensions == _other.dimensions, "The dimensions in TT sum must coincide. Given " << dimensions << " vs " << _other.dimensions);
@@ -817,7 +818,7 @@ namespace xerus {
 			if (isOperator) { nxtDimensions.emplace_back(myComponent.dimensions[2]); }
 			nxtDimensions.emplace_back(position == numComponents-1 ? 1 : myComponent.dimensions.back()+otherComponent.dimensions.back());
 			
-			const Tensor::Representation newRep = myComponent.is_sparse() || otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
+			const Tensor::Representation newRep = myComponent.is_sparse() && otherComponent.is_sparse() ? Tensor::Representation::Sparse : Tensor::Representation::Dense;
 			std::unique_ptr<Tensor> newComponent(new Tensor(std::move(nxtDimensions), newRep));
 			
 			newComponent->offset_add(myComponent, isOperator ? std::vector<size_t>({0,0,0,0}) : std::vector<size_t>({0,0,0}));

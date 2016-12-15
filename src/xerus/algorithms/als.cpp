@@ -270,7 +270,7 @@ namespace xerus {
 						}
 						res() = 0.5*xAx(r1&0) * localOperatorCache.right.back()(r1&0)
 								- bx(r1&0) * rhsCache.right.back()(r1&0);
-						return res[0];
+						return res.frob_norm();
 					};
 				}
 			} else {
@@ -541,7 +541,7 @@ namespace xerus {
 			}
 			
 			if(check_for_end_of_sweep(data, _numHalfSweeps, _convergenceEpsilon, _perfData)) {
-				return data.energy;
+				return data.energy; // TODO residual?
 			}
 			
 			data.move_to_next_index();

@@ -470,34 +470,37 @@ namespace xerus {
 	double RankOneMeasurementSet::test(const TensorNetwork& _solution) const {
 		REQUIRE(_solution.degree() == degree(), "Degrees of solution and measurements must match!");
 		const auto cSize = size();
-		double error = 0.0, norm = 0.0;
-		
-		std::vector<TensorNetwork> stack(degree()+1);
-		stack[0] = _solution;
-		stack[0].reduce_representation();
-		
-		Index l, k;
-		
-		for(size_t j = 0; j < cSize; ++j) {
-			size_t rebuildIndex = 0;
-			
-			if(j > 0) {
-				// Find the maximal recyclable stack position
-				for(; rebuildIndex < degree(); ++rebuildIndex) {
-					if(!approx_equal(positions[j-1][rebuildIndex], positions[j][rebuildIndex])) {
-						break;
-					}
-				}
-			}
-			
-			// Rebuild stack
-			for(size_t i = rebuildIndex; i < degree(); ++i) {
-				stack[i+1](k&0) = positions[j][i](l) * stack[i](l, k&1);
-				stack[i+1].reduce_representation();
-			}
-			
-			error += misc::sqr(measuredValues[j] - stack.back()[0]);
-			norm += misc::sqr(measuredValues[j]);
+        const Index l, k;
+        
+        double error = 0.0, norm = 0.0;
+        
+        #pragma omp parallel reduction(+:error, norm)
+        {
+            std::vector<TensorNetwork> stack(degree()+1);
+            stack[degree()] = _solution;
+            stack[degree()].reduce_representation();
+            
+            bool init = true;
+            #pragma omp for
+            for(size_t j = 0; j < cSize; ++j) {
+                size_t unchangedModes = 0;
+                
+                if(!init) {
+                    // Find the maximal recyclable stack position
+                    for(; unchangedModes < degree(); ++unchangedModes) {
+                        if(!approx_equal(positions[j-1][degree()-1-unchangedModes], positions[j][degree()-1-unchangedModes])) { break; }
+                    }
+                } else { init = false; }
+                
+                // Rebuild stack
+                for(long i = degree()-1-unchangedModes; i >= 0; --i) {
+                    stack[i](k&0) = stack[i+1](k&1, l) * positions[j][i](l);
+                    stack[i].reduce_representation();
+                }
+                
+                error += misc::sqr(measuredValues[j] - stack.front()[0]);
+                norm += misc::sqr(measuredValues[j]);
+            }
 		}
 		
 		return std::sqrt(error/norm);

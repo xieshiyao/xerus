@@ -427,7 +427,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]*measurmentNorms[i]); // TODO measurmentNorms
 				}
 				
 				// Accumulate the partical components
@@ -448,7 +448,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
-					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]*measurmentNorms[i]); // TODO measurmentNorms
 				}
 			
 				// Accumulate the partical components
@@ -542,6 +542,26 @@ namespace xerus {
 	}
 	
 	
+	template<class MeasurmentSet>
+	inline void calc_measurment_norm(double* _norms, const MeasurmentSet& _measurments);
+    
+    template<>
+    inline void calc_measurment_norm<SinglePointMeasurementSet>(double* _norms, const SinglePointMeasurementSet& _measurments) {
+        for(size_t i = 0; i < _measurments.size(); ++i) {
+            _norms[i] = 1.0;
+        }
+    }
+    
+    template<>
+    inline void calc_measurment_norm<RankOneMeasurementSet>(double* _norms, const RankOneMeasurementSet& _measurments) {
+        for(size_t i = 0; i < _measurments.size(); ++i) {
+            _norms[i] = 1.0;
+            for(size_t j = 0; j < _measurments.degree(); ++j) {
+                _norms[i] *= _measurments.positions[i][j].frob_norm();
+            }
+        }
+    }
+	
 	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
@@ -555,6 +575,9 @@ namespace xerus {
 			#pragma omp section
 				construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
 		}
+		
+		calc_measurment_norm(measurmentNorms.get(), measurments);
+		
 		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack resize).
 		x.cannonicalize_left();
 		
@@ -565,24 +588,11 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
-// 			LOG(xRanKResBefore, measurments.test(x));
 			// Increase the ranks
 			x.move_core(0, true);
 			const auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
-			const auto oldX = x;
-			auto diff = (1.0/frob_norm(rndTensor))*rndTensor;
-// 			LOG(bla, frob_norm(diff) << " x " << frob_norm(x) << " b " << normMeasuredValues);
-			for(size_t i = 0; i < diff.degree(); ++i) {
-				diff.component(i).apply_factor();
-			}
-			
-// 			LOG(diff1, measurments.test(diff));
-			diff *= normMeasuredValues*1e-5;
-// 			LOG(diff2, measurments.test(diff));
+            const auto diff = (1e-6*frob_norm(x))*rndTensor/frob_norm(rndTensor);
 			x = x+diff;
-// 			LOG(realDifference, frob_norm(x -oldX) << " x " << frob_norm(x));
-			
-// 			LOG(xRanKResAfter, measurments.test(x));
 			
 			x.round(maxRanks);
 			

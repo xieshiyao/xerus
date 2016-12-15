@@ -1594,12 +1594,23 @@ namespace xerus {
 			}
 			
 		} else { // Dense A
-			REQUIRE(_B.is_dense(), "Not yet implemented");
-			blasWrapper::solve_least_squares(
-				_X.override_dense_data(), 
-				_A.get_unsanitized_dense_data(), m, n, 
-				_B.get_unsanitized_dense_data(), p);
-			
+            if(_B.is_dense()) {
+                blasWrapper::solve_least_squares(
+                    _X.override_dense_data(), 
+                    _A.get_unsanitized_dense_data(), m, n, 
+                    _B.get_unsanitized_dense_data(), p);
+            } else {
+                LOG(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+                
+                Tensor Bcpy(_B);
+                Bcpy.factor = 1.0;
+                Bcpy.use_dense_representation();
+                
+                blasWrapper::solve_least_squares(
+                    _X.override_dense_data(), 
+                    _A.get_unsanitized_dense_data(), m, n, 
+                    Bcpy.get_unsanitized_dense_data(), p);
+            }
 		}
 		
 		// Propagate the constant factor
