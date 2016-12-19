@@ -59,7 +59,7 @@ namespace xerus { namespace misc {
 	
 	template<class T>
 	void stream_writer(std::ostream& _stream, const std::vector<T> &_value, FileFormat _format) {
-		write_to_stream<uint64>(_stream, _value.size(), _format);
+		write_to_stream<size_t>(_stream, _value.size(), _format);
 		for (size_t i = 0; i < _value.size(); ++i) {
 			write_to_stream<T>(_stream, _value[i], _format);
 		}
@@ -90,7 +90,7 @@ namespace xerus { namespace misc {
 	
 	template<class T>
 	void stream_reader(std::istream& _stream, std::vector<T> &_obj, const FileFormat _format) {
-		_obj.resize(read_from_stream<uint64>(_stream, _format));
+		_obj.resize(read_from_stream<size_t>(_stream, _format));
 		for (size_t i = 0; i < _obj.size(); ++i) {
 			read_from_stream<T>(_stream, _obj[i], _format);
 		}

@@ -1450,11 +1450,11 @@ namespace xerus {
 				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 			}
 			// storage version number
-			write_to_stream<uint64>(_stream, 1, _format);
+			write_to_stream<size_t>(_stream, 1, _format);
 			
 			// store TN specific data
 			write_to_stream<bool>(_stream, _obj.cannonicalized, _format);
-			write_to_stream<uint64>(_stream, _obj.corePosition, _format);
+			write_to_stream<size_t>(_stream, _obj.corePosition, _format);
 			
 			// save rest of TN
 			write_to_stream<TensorNetwork>(_stream, _obj, _format);
@@ -1465,12 +1465,12 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void stream_reader(std::istream& _stream, TTNetwork<isOperator> &_obj, const misc::FileFormat _format) {
-			IF_CHECK( uint64 ver = ) read_from_stream<uint64>(_stream, _format);
+			IF_CHECK( size_t ver = ) read_from_stream<size_t>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// load TN specific data
 			read_from_stream<bool>(_stream, _obj.cannonicalized, _format);
-			read_from_stream<uint64>(_stream, _obj.corePosition, _format);
+			read_from_stream<size_t>(_stream, _obj.corePosition, _format);
 			
 			// load rest of TN
 			read_from_stream<TensorNetwork>(_stream, _obj, _format);

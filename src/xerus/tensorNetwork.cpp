@@ -1431,7 +1431,7 @@ namespace xerus {
 				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 			}
 			// storage version number
-			write_to_stream<uint64>(_stream, 1, _format);
+			write_to_stream<size_t>(_stream, 1, _format);
 			
 			// Save dimensions
 			write_to_stream(_stream, _obj.dimensions, _format);
@@ -1439,22 +1439,22 @@ namespace xerus {
 			
 			// save external links
 			for(const TensorNetwork::Link& el : _obj.externalLinks) {
-				write_to_stream<uint64>(_stream, el.other, _format);
-				write_to_stream<uint64>(_stream, el.indexPosition, _format);
-				write_to_stream<uint64>(_stream, el.dimension, _format);
+				write_to_stream<size_t>(_stream, el.other, _format);
+				write_to_stream<size_t>(_stream, el.indexPosition, _format);
+				write_to_stream<size_t>(_stream, el.dimension, _format);
 			}
 			if(_format == FileFormat::TSV) { _stream << "\n\n"; }
 			
 			// Save nodes with their links
-			write_to_stream<uint64>(_stream, _obj.nodes.size(), _format);
+			write_to_stream<size_t>(_stream, _obj.nodes.size(), _format);
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
 			for(const TensorNetwork::TensorNode& node : _obj.nodes) {
-				write_to_stream<uint64>(_stream, node.neighbors.size(), _format);
+				write_to_stream<size_t>(_stream, node.neighbors.size(), _format);
 				for(const TensorNetwork::Link& link : node.neighbors) {
 					write_to_stream<bool>(_stream, link.external, _format);
-					write_to_stream<uint64>(_stream, link.other, _format);
-					write_to_stream<uint64>(_stream, link.indexPosition, _format);
-					write_to_stream<uint64>(_stream, link.dimension, _format);
+					write_to_stream<size_t>(_stream, link.other, _format);
+					write_to_stream<size_t>(_stream, link.indexPosition, _format);
+					write_to_stream<size_t>(_stream, link.dimension, _format);
 				}
 			}
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
@@ -1467,7 +1467,7 @@ namespace xerus {
 		}
 			
 		void stream_reader(std::istream& _stream, TensorNetwork &_obj, const FileFormat _format) {
-			IF_CHECK( uint64 ver = ) read_from_stream<uint64>(_stream, _format);
+			IF_CHECK( size_t ver = ) read_from_stream<size_t>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
@@ -1477,21 +1477,21 @@ namespace xerus {
 			_obj.externalLinks.resize(_obj.dimensions.size());
 			for(TensorNetwork::Link& el : _obj.externalLinks) {
 				el.external = false;
-				el.other = read_from_stream<uint64>(_stream, _format);
-				el.indexPosition = read_from_stream<uint64>(_stream, _format);
-				el.dimension = read_from_stream<uint64>(_stream, _format);
+				el.other = read_from_stream<size_t>(_stream, _format);
+				el.indexPosition = read_from_stream<size_t>(_stream, _format);
+				el.dimension = read_from_stream<size_t>(_stream, _format);
 			}
 			
 			// Load nodes with their links
-			_obj.nodes.resize(read_from_stream<uint64>(_stream, _format));
+			_obj.nodes.resize(read_from_stream<size_t>(_stream, _format));
 			for(TensorNetwork::TensorNode& node : _obj.nodes) {
-				node.neighbors.resize(read_from_stream<uint64>(_stream, _format));
+				node.neighbors.resize(read_from_stream<size_t>(_stream, _format));
 				node.erased = false;
 				for(TensorNetwork::Link& link : node.neighbors) {
 					link.external = read_from_stream<bool>(_stream, _format);
-					link.other = read_from_stream<uint64>(_stream, _format);
-					link.indexPosition = read_from_stream<uint64>(_stream, _format);
-					link.dimension = read_from_stream<uint64>(_stream, _format);
+					link.other = read_from_stream<size_t>(_stream, _format);
+					link.indexPosition = read_from_stream<size_t>(_stream, _format);
+					link.dimension = read_from_stream<size_t>(_stream, _format);
 				}
 			}
 			

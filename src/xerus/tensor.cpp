@@ -1698,20 +1698,20 @@ namespace xerus {
 			}
 			
 			// storage version number
-			write_to_stream<uint64>(_stream, 1, _format);
+			write_to_stream<size_t>(_stream, 1, _format);
 			
 			write_to_stream(_stream, _obj.dimensions, _format);
 			
 			if (_obj.representation == Tensor::Representation::Dense) {
-				write_to_stream<uint64>(_stream, 1, _format);
+				write_to_stream<size_t>(_stream, 1, _format);
 				for (size_t i = 0; i < _obj.size; ++i) {
 					write_to_stream<value_t>(_stream, _obj[i], _format);
 				}
 			} else {
-				write_to_stream<uint64>(_stream, 2, _format);
-				write_to_stream<uint64>(_stream, _obj.get_unsanitized_sparse_data().size(), _format);
+				write_to_stream<size_t>(_stream, 2, _format);
+				write_to_stream<size_t>(_stream, _obj.get_unsanitized_sparse_data().size(), _format);
 				for (const auto &d : _obj.get_unsanitized_sparse_data()) {
-					write_to_stream<uint64>(_stream, d.first, _format);
+					write_to_stream<size_t>(_stream, d.first, _format);
 					write_to_stream<value_t>(_stream, _obj.factor*d.second, _format);
 				}
 			}
@@ -1719,7 +1719,7 @@ namespace xerus {
 		
 		
 		void stream_reader(std::istream& _stream, Tensor &_obj, const FileFormat _format) {
-			IF_CHECK(uint64 ver = )read_from_stream<uint64>(_stream, _format);
+			IF_CHECK(size_t ver = )read_from_stream<size_t>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
@@ -1727,7 +1727,7 @@ namespace xerus {
 			read_from_stream(_stream, dims, _format);
 			
 			// Load representation
-			const uint64 rep = read_from_stream<uint64>(_stream, _format);
+			const size_t rep = read_from_stream<size_t>(_stream, _format);
 			
 			// Load data
 			if (rep == 1) { // Dense
@@ -1744,13 +1744,13 @@ namespace xerus {
 				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
 				_obj.reset(std::move(dims), Tensor::Representation::Sparse);
 				
-				const uint64 num = read_from_stream<uint64>(_stream, _format);
+				const uint64 num = read_from_stream<size_t>(_stream, _format);
 				REQUIRE(num < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
 				
 				for (size_t i = 0; i < num; ++i) {
 					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
 					// NOTE inline function calls can be called in any order by the compiler, so we have to cache the results to ensure correct order
-					uint64 pos = read_from_stream<uint64>(_stream, _format);
+					uint64 pos = read_from_stream<size_t>(_stream, _format);
 					value_t val = read_from_stream<value_t>(_stream, _format);
 					_obj.get_unsanitized_sparse_data().emplace(pos, val);
 				}
