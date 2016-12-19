@@ -41,24 +41,27 @@ static misc::UnitTest als_id("ALS", "identity", [](){
 	X(k^3) = I(k^3,l^3)*B(l^3);
 	TEST(frob_norm(X(k^3) - B(k^3)) < 1e-13);
 	
-	TTTensor ttB(B, 0.001);
-	TTTensor ttX(X, 0.001);
-	TTOperator ttI(I, 0.001);
+	TTTensor ttB(B, 1e-8);
+	TTTensor ttX(X, 1e-8);
+	TTOperator ttI(I, 1e-8);
 	
 	ttX(k^3) = ttI(k^3,l^3)*ttB(l^3);
-	TEST(frob_norm(ttI(k^3,l^3)*ttB(l^3) - ttB(k^3)) < 1e-13);
-	TEST(frob_norm(ttI(k^3,l^3)*ttX(l^3) - ttX(k^3)) < 1e-13);
+	TEST(frob_norm(ttI(k^3,l^3)*ttB(l^3) - ttB(k^3)) < 1e-8);
+	TEST(frob_norm(ttI(k^3,l^3)*ttX(l^3) - ttX(k^3)) < 1e-8);
 	
 	PerformanceData perfdata;
 	
-	value_t result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
-	MTEST(result < 0.01,  "1 " << result);
+	auto ourALS = ALS_SPD;
+	ourALS.useResidualForEndCriterion = true;
+	
+	value_t result = ourALS(ttI, ttX, ttB, 0.0001, perfdata);
+	MTEST(result/frob_norm(ttB) < 0.01,  "1 " << result/frob_norm(ttB));
 	MTEST(frob_norm(ttX - ttB) < 1e-13 * 1000,  "1 " << frob_norm(ttX - ttB));
 	perfdata.reset();
 	
 	ttX = TTTensor::random(ttX.dimensions, ttX.ranks());
-	result = ALS_SPD(ttI, ttX, ttB, 0.001, perfdata);
-	MTEST(result < 0.01, "2 " << result);
+	result = ourALS(ttI, ttX, ttB, 0.0001, perfdata);
+	MTEST(result/frob_norm(ttB) < 0.01, "2 " << result/frob_norm(ttB));
 	MTEST(frob_norm(ttX - ttB) < 1e-9, "2 " << frob_norm(ttX - ttB)); // approx 1e-16 * dim * max_entry
 });
 
