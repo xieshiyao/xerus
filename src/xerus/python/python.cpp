@@ -542,7 +542,7 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def(init<const TTTensor &>())
 		.def("get_component", &TTTensor::get_component, return_value_policy<copy_const_reference>())
 		.def("set_component", &TTTensor::set_component)
-		.def_readonly("cannonicalized", &TTTensor::cannonicalized)
+		.def_readonly("canonicalized", &TTTensor::canonicalized)
 		.def_readonly("corePosition", &TTTensor::corePosition)
 		.def("ranks", &TTTensor::ranks)
 		.def("rank", &TTTensor::rank)
@@ -565,11 +565,11 @@ BOOST_PYTHON_MODULE(xerus) {
 				return boost::python::make_tuple(result.first, result.second);
 			}, arg("position"))
 		
-		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
-			(arg("ranks"), arg("epsilon")=EPSILON)
-		)
+// 		.def("round", static_cast<void (TTTensor::*)(const std::vector<size_t>&, double)>(&TTTensor::round),
+// 			(arg("ranks"), arg("epsilon")=EPSILON)
+// 		)
 		.def("round", static_cast<void (TTTensor::*)(double)>(&TTTensor::round))
-		.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
+// 		.def("round", static_cast<void (TTTensor::*)(size_t)>(&TTTensor::round))
 		
 		.def("soft_threshold", static_cast<void (TTTensor::*)(const double, const bool)>(&TTTensor::soft_threshold),
 			(arg("tau"), arg("preventZero")=false)
@@ -583,8 +583,8 @@ BOOST_PYTHON_MODULE(xerus) {
 		)
 		
 		.def("assume_core_position", &TTTensor::assume_core_position)
-		.def("cannonicalize_left", &TTTensor::cannonicalize_left)
-		.def("cannonicalize_right", &TTTensor::cannonicalize_right)
+		.def("canonicalize_left", &TTTensor::canonicalize_left)
+		.def("canonicalize_right", &TTTensor::canonicalize_right)
 		.def(self + self)
 		.def(self - self)
 		.def(self * other<value_t>())
@@ -606,7 +606,7 @@ BOOST_PYTHON_MODULE(xerus) {
 		.def(init<const TTOperator &>())
 		.def("get_component", &TTOperator::get_component, return_value_policy<copy_const_reference>())
 		.def("set_component", &TTOperator::set_component)
-		.def_readonly("cannonicalized", &TTOperator::cannonicalized)
+		.def_readonly("canonicalized", &TTOperator::canonicalized)
 		.def_readonly("corePosition", &TTOperator::corePosition)
 		.def("ranks", &TTOperator::ranks)
 		.def("rank", &TTOperator::rank)
@@ -647,8 +647,8 @@ BOOST_PYTHON_MODULE(xerus) {
 		)
 		
 		.def("assume_core_position", &TTOperator::assume_core_position)
-		.def("cannonicalize_left", &TTOperator::cannonicalize_left)
-		.def("cannonicalize_right", &TTOperator::cannonicalize_right)
+		.def("canonicalize_left", &TTOperator::canonicalize_left)
+		.def("canonicalize_right", &TTOperator::canonicalize_right)
 		.def(self + self)
 		.def(self - self)
 		.def(self += self)

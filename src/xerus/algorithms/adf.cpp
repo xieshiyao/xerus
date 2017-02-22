@@ -427,7 +427,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]*measurmentNorms[i]); // TODO measurmentNorms
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]/**measurmentNorms[i]*/); // TODO measurmentNorms
 				}
 				
 				// Accumulate the partical components
@@ -448,7 +448,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
-                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]*measurmentNorms[i]); // TODO measurmentNorms
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]/**measurmentNorms[i]*/); // TODO measurmentNorms
 				}
 			
 				// Accumulate the partical components
@@ -579,7 +579,7 @@ namespace xerus {
 		calc_measurment_norm(measurmentNorms.get(), measurments);
 		
 		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack resize).
-		x.cannonicalize_left();
+		x.canonicalize_left();
 		
 		resize_stack_tensors();
 		

@@ -43,7 +43,7 @@
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork() : TensorNetwork(), cannonicalized(false) {}
+	TTNetwork<isOperator>::TTNetwork() : TensorNetwork(), canonicalized(false) {}
 	
 	
 	template<bool isOperator>
@@ -55,7 +55,7 @@ namespace xerus {
 	TTNetwork<isOperator>::TTNetwork(const size_t _degree) : TTNetwork(std::vector<size_t>(_degree, 1)) { }
 	
 	template<bool isOperator>
-	TTNetwork<isOperator>::TTNetwork(Tensor::DimensionTuple _dimensions) : TensorNetwork(ZeroNode::None), cannonicalized(true), corePosition(0) {
+	TTNetwork<isOperator>::TTNetwork(Tensor::DimensionTuple _dimensions) : TensorNetwork(ZeroNode::None), canonicalized(true), corePosition(0) {
 		dimensions = std::move(_dimensions);
 		
 		REQUIRE(dimensions.size()%N==0, "Illegal degree for TTOperator.");
@@ -186,7 +186,7 @@ namespace xerus {
 			}
 			result.set_component(i, Tensor::ones(dimensions));
 		}
-		result.cannonicalize_left();
+		result.canonicalize_left();
 		return result;
 	}
 	
@@ -216,7 +216,7 @@ namespace xerus {
 			}));
 		}
 		
-		result.cannonicalize_left();
+		result.canonicalize_left();
 		return result;
 	}
 	
@@ -249,7 +249,7 @@ namespace xerus {
 			result.set_component(i, std::move(newComp));
 			dimensions.clear();
 		}
-		result.cannonicalize_left();
+		result.canonicalize_left();
 		return result;
 	}
 	
@@ -293,7 +293,7 @@ namespace xerus {
 			const size_t numComponents = degree()/N;
 			const size_t numNodes = degree() == 0 ? 1 : degree()/N + 2;
 			REQUIRE(nodes.size() == numNodes, "Wrong number of nodes: " << nodes.size() << " expected " << numNodes << ".");
-			REQUIRE(!cannonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, "Invalid corePosition: " << corePosition << " there are only " << numComponents << " components.");
+			REQUIRE(!canonicalized || (degree() == 0 && corePosition == 0) || corePosition < numComponents, "Invalid corePosition: " << corePosition << " there are only " << numComponents << " components.");
 			
 			// Per external link
 			for (size_t n = 0; n < externalLinks.size(); ++n) {
@@ -322,7 +322,7 @@ namespace xerus {
 			for (size_t n = 0; n < numComponents; ++n) {
 				const TensorNode& node = nodes[n+1];
 				
-				REQUIRE(!cannonicalized || n == corePosition || !node.tensorObject->has_factor(), "In cannonicalized TTNetworks only the core may carry a non-trivial factor. Violated by component " << n << " factor: " << node.tensorObject->factor << " corepos: " << corePosition);
+				REQUIRE(!canonicalized || n == corePosition || !node.tensorObject->has_factor(), "In canonicalized TTNetworks only the core may carry a non-trivial factor. Violated by component " << n << " factor: " << node.tensorObject->factor << " corepos: " << corePosition);
 				
 				REQUIRE(node.degree() == N+2, "Every TT-Component must have degree " << N+2 << ", but component " << n << " has degree " << node.degree());
 				REQUIRE(!node.neighbors[0].external, "The first link of each TT-Component must not be external. Violated by component " << n);
@@ -437,7 +437,7 @@ namespace xerus {
 	template<bool isOperator>
 	void TTNetwork<isOperator>::resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos) {
 		TensorNetwork::resize_mode(_mode, _newDim, _cutPos);
-		if(cannonicalized && _newDim != corePosition) {
+		if(canonicalized && _newDim != corePosition) {
 			const size_t oldCorePosition = corePosition;
 			const size_t numComponents = degree()/N;
 			move_core(_mode%numComponents);
@@ -468,7 +468,7 @@ namespace xerus {
 			*nodes[0].tensorObject = std::move(_T);
 		} else {
 			REQUIRE(_idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::set_component");
-			REQUIRE(_T.degree() == N+2, "Component must have degree 3 (TTTensor) or 4 (TTOperator). Given: " << _T.degree());
+            REQUIRE(_T.degree() == N+2, "Component " << _idx << " must have degree " << N+2 << ". Given: " << _T.degree());
 			
 			TensorNode& currNode = nodes[_idx+1];
 			*currNode.tensorObject = std::move(_T);
@@ -481,7 +481,7 @@ namespace xerus {
 			}
 		}
 		
-		cannonicalized = cannonicalized && (corePosition == _idx);
+		canonicalized = canonicalized && (corePosition == _idx);
 	}
 	
 	
@@ -577,7 +577,7 @@ namespace xerus {
 		REQUIRE(_position < numComponents || (_position == 0 && degree() == 0), "Illegal core-position " << _position << " chosen for TTNetwork with " << numComponents << " components");
 		require_correct_format();
 		
-		if(cannonicalized) {
+		if(canonicalized) {
 			// Move right?
 			for (size_t n = corePosition; n < _position; ++n) {
 				transfer_core(n+1, n+2, !_keepRank);
@@ -616,19 +616,19 @@ namespace xerus {
 			}
 		}
 		
-		cannonicalized = true;
+		canonicalized = true;
 		corePosition = _position;
 	}
 	
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::cannonicalize_left() {
+	void TTNetwork<isOperator>::canonicalize_left() {
 		move_core(0);
 	}
 	
 	
 	template<bool isOperator>
-	void TTNetwork<isOperator>::cannonicalize_right() {
+	void TTNetwork<isOperator>::canonicalize_right() {
 		move_core(degree() == 0 ? 0 : degree()/N-1);
 	}
 	
@@ -641,10 +641,10 @@ namespace xerus {
 		REQUIRE(_maxRanks.size()+1 == numComponents || (_maxRanks.empty() && numComponents == 0), "There must be exactly degree/N-1 maxRanks. Here " << _maxRanks.size() << " instead of " << numComponents-1 << " are given.");
 		REQUIRE(!misc::contains(_maxRanks, size_t(0)), "Trying to round a TTTensor to rank 0 is not possible.");
 		
-		const bool initialCanonicalization = cannonicalized;
+		const bool initialCanonicalization = canonicalized;
 		const size_t initialCorePosition = corePosition;
 		
-		cannonicalize_right();
+		canonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
 			round_edge(numComponents-i, numComponents-i-1, _maxRanks[numComponents-i-2], _eps, 0.0);
@@ -683,10 +683,10 @@ namespace xerus {
 		REQUIRE(_taus.size()+1 == numComponents || (_taus.empty() && numComponents == 0), "There must be exactly degree/N-1 taus. Here " << _taus.size() << " instead of " << numComponents-1 << " are given.");
 		require_correct_format();
 		
-		const bool initialCanonicalization = cannonicalized;
+		const bool initialCanonicalization = canonicalized;
 		const size_t initialCorePosition = corePosition;
 		
-		cannonicalize_right();
+		canonicalize_right();
 		
 		for(size_t i = 0; i+1 < numComponents; ++i) {
 			round_edge(numComponents-i, numComponents-i-1, std::numeric_limits<size_t>::max(), 0.0, _taus[i]);
@@ -728,7 +728,7 @@ namespace xerus {
 	void TTNetwork<isOperator>::assume_core_position(const size_t _pos) {
 		REQUIRE(_pos < degree()/N || (degree() == 0 && _pos == 0), "Invalid core position.");
 		corePosition = _pos;
-		cannonicalized = true;
+		canonicalized = true;
 	}
 	
 	
@@ -743,7 +743,7 @@ namespace xerus {
 			std::set<size_t> all;
 			for(size_t i = 0; i < nodes.size(); ++i) { all.emplace_hint(all.end(), i); }
 			contract(all);
-			cannonicalized = false;
+			canonicalized = false;
 		} else {
 			REQUIRE(nodes.size() > 2, "Invalid TTNetwork");
 			const size_t numComponents = nodes.size()-2;
@@ -752,7 +752,7 @@ namespace xerus {
 				if(nodes[i+1].degree() == 2) {
 						// If we are the core, everything is fine, we contract ourself to the next node, then get removed and the corePositions stays. If the next Node is the core, we have to change the corePosition to ours, because we will be removed. In all other cases cannonicalization is destroyed.
 						if(corePosition == i+1) { corePosition = i; }
-						else if(corePosition != i) { cannonicalized = false; }
+						else if(corePosition != i) { canonicalized = false; }
 						contract(i+1, i+2);
 				}
 			}
@@ -760,12 +760,12 @@ namespace xerus {
 			// Extra treatment for last component to avoid contraction to the pseudo-node.
 			if(nodes[numComponents].degree() == 2) {
 				if(corePosition == numComponents-1) { corePosition = numComponents-2; }
-				else if(corePosition != numComponents-2) { cannonicalized = false; }
+				else if(corePosition != numComponents-2) { canonicalized = false; }
 				contract(numComponents-1, numComponents);
 			}
 		}
 		
-		INTERNAL_CHECK(corePosition < degree() || !cannonicalized, "Woot");
+		INTERNAL_CHECK(corePosition < degree() || !canonicalized, "Woot");
 		
 		sanitize();
 	}
@@ -774,7 +774,7 @@ namespace xerus {
 	template<bool isOperator>
 	value_t TTNetwork<isOperator>::frob_norm() const {
 		require_correct_format();
-		if (cannonicalized) {
+		if (canonicalized) {
 			return get_component(corePosition).frob_norm();
 		}
 		const Index i;
@@ -793,7 +793,7 @@ namespace xerus {
 		
 		const size_t numComponents = degree()/N;
 		
-		const bool initialCanonicalization = cannonicalized;
+		const bool initialCanonicalization = canonicalized;
 		const size_t initialCorePosition = corePosition;
 		
 		if (numComponents <= 1) {
@@ -853,7 +853,7 @@ namespace xerus {
 	void TTNetwork<isOperator>::operator*=(const value_t _factor) {
 		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		
-		if(cannonicalized) {
+		if(canonicalized) {
 			component(corePosition) *= _factor;
 		} else {
 			component(0) *= _factor;
@@ -899,7 +899,7 @@ namespace xerus {
 		bool cannoAtTheEnd = false;
 		size_t coreAtTheEnd = 0;
 		if (meTT != nullptr) {
-			cannoAtTheEnd = meTT->cannonicalized;
+			cannoAtTheEnd = meTT->canonicalized;
 			coreAtTheEnd = meTT->corePosition;
 		} else {
 			cannoAtTheEnd = meTTStack->cannonicalization_required;
@@ -1079,7 +1079,7 @@ namespace xerus {
 					meTTN = *otherTTN;
 				} else {
 					_me.tensorObject->operator=(*_other.tensorObjectReadOnly);
-					meTTN.cannonicalized = false;
+					meTTN.canonicalized = false;
 					if (otherTTStack->cannonicalization_required) {
 						meTTN.move_core(otherTTStack->futureCorePosition);
 					}
@@ -1119,7 +1119,7 @@ namespace xerus {
 						meTTN = *otherTTN;
 					} else {
 						_me.tensorObject->operator=(*_other.tensorObjectReadOnly);
-						meTTN.cannonicalized = false;
+						meTTN.canonicalized = false;
 						if (otherTTStack->cannonicalization_required) {
 							meTTN.move_core(otherTTStack->futureCorePosition);
 						}
@@ -1295,7 +1295,7 @@ namespace xerus {
 			}
 		}
 		
-		if (_A.cannonicalized && _B.cannonicalized) {
+		if (_A.canonicalized && _B.canonicalized) {
 			result.move_core(_A.corePosition);
 		}
 		return result;
@@ -1392,9 +1392,9 @@ namespace xerus {
 			}
 		}
 		
-		if (_lhs.cannonicalized && _rhs.cannonicalized) {
+		if (_lhs.canonicalized && _rhs.canonicalized) {
 			if (_lhs.corePosition == 0 && _rhs.corePosition == 0) {
-				result.cannonicalized = true;
+				result.canonicalized = true;
 				result.corePosition = lhsNumComponents;
 				// the other core might have carried a factor
 				if (result.nodes[1].tensorObject->has_factor()) {
@@ -1403,7 +1403,7 @@ namespace xerus {
 				}
 				result.move_core(0);
 			} else if (_lhs.corePosition == lhsNumComponents-1 && _rhs.corePosition == rhsNumComponents-1) {
-				result.cannonicalized = true;
+				result.canonicalized = true;
 				result.corePosition = lhsNumComponents-1;
 				const size_t lastIdx = lhsNumComponents + rhsNumComponents -1;
 				// the other core might have carried a factor
@@ -1414,7 +1414,7 @@ namespace xerus {
 				result.move_core(lastIdx);
 			}
 		} else {
-			result.cannonicalized = false;
+			result.canonicalized = false;
 		}
 		
 		result.require_correct_format();
@@ -1453,7 +1453,7 @@ namespace xerus {
 			write_to_stream<uint64>(_stream, 1, _format);
 			
 			// store TN specific data
-			write_to_stream<bool>(_stream, _obj.cannonicalized, _format);
+			write_to_stream<bool>(_stream, _obj.canonicalized, _format);
 			write_to_stream<uint64>(_stream, _obj.corePosition, _format);
 			
 			// save rest of TN
@@ -1469,7 +1469,7 @@ namespace xerus {
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// load TN specific data
-			read_from_stream<bool>(_stream, _obj.cannonicalized, _format);
+			read_from_stream<bool>(_stream, _obj.canonicalized, _format);
 			read_from_stream<uint64>(_stream, _obj.corePosition, _format);
 			
 			// load rest of TN

@@ -47,12 +47,12 @@ namespace xerus {
 		///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
 		static constexpr const size_t N = isOperator?2:1;
 		
-		/// @brief Flag indicating whether the TTNetwork is cannonicalized.
-		bool cannonicalized;
+		/// @brief Flag indicating whether the TTNetwork is canonicalized.
+		bool canonicalized;
 		
 		/**
 		* @brief The position of the core.
-		* @details If cannonicalized is TRUE, corePosition gives the position of the core tensor. All components
+		* @details If canonicalized is TRUE, corePosition gives the position of the core tensor. All components
 		* with smaller index are then left-orthogonalized and all components with larger index right-orthogonalized.
 		*/
 		size_t corePosition;		
@@ -196,7 +196,7 @@ namespace xerus {
 			
 			result.require_correct_format();
 			XERUS_INTERNAL_CHECK(!result.exceeds_maximal_ranks(), "Internal Error");
-			result.cannonicalize_left();
+			result.canonicalize_left();
 			return result;
 		}
 		
@@ -396,7 +396,7 @@ namespace xerus {
 		/** 
 		* @brief Move the core to a new position.
 		* @details The core is moved to @a _position and the nodes between the old and the new position are orthogonalized
-		* accordingly. If the TTNetwork is not yet cannonicalized it will be with @a _position as new corePosition.
+		* accordingly. If the TTNetwork is not yet canonicalized it will be with @a _position as new corePosition.
 		* @param _position the new core position.
 		* @param _keepRank by default a rank revealing QR decomposition is used to move the core and the ranks are reduced
 		* accordingly. If @a _keepRank is set the rank is not reduced, this is need e.g. in the ALS.
@@ -416,14 +416,14 @@ namespace xerus {
 		* @brief Move the core to the left.
 		* @details Basically calls move_core() with _position = 0
 		*/
-		void cannonicalize_left();
+		void canonicalize_left();
 		
 		
 		/** 
 		* @brief Move the core to the left.
 		* @details Basically calls move_core() with _position = degree()-1
 		*/
-		void cannonicalize_right();
+		void canonicalize_right();
 		
 		
 		/** 
@@ -450,7 +450,7 @@ namespace xerus {
 		
 		/** 
 		 * @brief Tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects.
-		 * @details Note that this will NOT check for orthogonality of cannonicalized TTNetworks.
+		 * @details Note that this will NOT check for orthogonality of canonicalized TTNetworks.
 		 */
 		virtual void require_correct_format() const override;
 		

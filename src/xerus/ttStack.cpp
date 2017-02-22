@@ -161,10 +161,10 @@ namespace xerus {
 			TTNetwork<isOperator> result;
 			static_cast<TensorNetwork&>(result) = static_cast<TensorNetwork&>(*this);
 			if(cannonicalization_required) {
-				result.cannonicalized = false;
+				result.canonicalized = false;
 				result.move_core(futureCorePosition);
 			} else {
-				result.cannonicalized = true;
+				result.canonicalized = true;
 				result.corePosition = futureCorePosition;
 			}
 			result.require_correct_format();

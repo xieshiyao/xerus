@@ -106,7 +106,7 @@ UNIT_TEST(Strassen, CP,
 // 				LOG(test, "\t\t\t\t" << newMicroRes);
 				while (std::abs(1-microItrRes/newMicroRes) > 1e-4) {
 					microItrRes = newMicroRes;
-					ttDiff.cannonicalize_left();
+					ttDiff.canonicalize_left();
 					tn0(i,r1) = diff(i,j,k) * tn1(r1,j,r2) * tn2(r2,k);
 					tn0 /= tn0.frob_norm();
 					tn1(r1,j,r2) = diff(i,j,k) * tn0(i,r1) * tn2(r2,k);

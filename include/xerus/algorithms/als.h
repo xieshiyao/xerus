@@ -54,7 +54,7 @@ namespace xerus {
 			ContractedTNCache rhsCache; ///< stacks for the right-hand-side (either xb or xAtb)
 			value_t normB; ///< norm of the (global) right hand side
 			std::pair<size_t, size_t> optimizedRange; ///< range of indices for the nodes of _x that need to be optimized
-			bool cannonicalizeAtTheEnd; ///< whether _x should be cannonicalized at the end
+			bool canonicalizeAtTheEnd; ///< whether _x should be canonicalized at the end
 			size_t corePosAtTheEnd; ///< core position that should be restored at the end of the algorithm
 			std::function<value_t()> energy_f; ///< the energy functional used for this calculation
 			std::function<value_t()> residual_f; ///< the functional to calculate the current residual
@@ -69,7 +69,7 @@ namespace xerus {
 			/**
 			* @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
 			* @details finds full-rank nodes (these can wlog be set to identity and need not be optimized)
-			* requires cannonicalizeAtTheEnd and corePosAtTheEnd to be set
+			* requires canonicalizeAtTheEnd and corePosAtTheEnd to be set
 			* sets optimizedRange
 			* modifies x
 			*/

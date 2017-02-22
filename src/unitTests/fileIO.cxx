@@ -81,7 +81,7 @@ static misc::UnitTest tt_rw("TT", "read_write_file", [](){
 	TTTensor Ab = misc::load_from_file<TTTensor>("test.dat");
 	Index i;
 	Ab.require_correct_format();
-	MTEST(Ab.cannonicalized && Ab.corePosition == 0, Ab.cannonicalized << " " << Ab.corePosition);
+	MTEST(Ab.canonicalized && Ab.corePosition == 0, Ab.canonicalized << " " << Ab.corePosition);
 	MTEST(A.dimensions == Ab.dimensions, A.dimensions << " vs " << Ab.dimensions);
 	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
 });

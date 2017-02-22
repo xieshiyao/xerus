@@ -64,7 +64,7 @@ make install
 
 ## Compiling your own Applications Using Xerus
 
-If `xerus` is propperly installed on your system, compiling your own applications using `xerus` is as simple as using any other library. Just include `-lxerus` in your linker call and make sure to use
+If `xerus` is properly installed on your system, compiling your own applications using `xerus` is as simple as using any other library. Just include `-lxerus` in your linker call and make sure to use
 `-std=c++11` or `-std=c++14` in all compilation units that include `xerus.h` and everything should work.
 
 If you want to use the static version of `xerus` you also have to include all libraries `xerus` depends on in your linker call. In particular these are lapacke (`-llapacke`), 

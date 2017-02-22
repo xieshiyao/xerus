@@ -191,9 +191,9 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	TTOperator O = dyadic_product<true>({o1,o2,o3});
 	TTTensor S = dyadic_product<false>({s1,s2,s3});
 	
-	TEST(O.cannonicalized);
+	TEST(O.canonicalized);
 	MTEST(O.corePosition == 0, O.corePosition);
-	TEST(S.cannonicalized);
+	TEST(S.canonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
 	
 	Index i,j;
@@ -205,7 +205,7 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	TEST(std::abs(R - r1*r2*r3) < 1e-12);
 	
 	S = dyadic_product(S,TTTensor::ones({10})) + dyadic_product(TTTensor::ones({10}), S);
-	TEST(S.cannonicalized);
+	TEST(S.canonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
 	
 	Tensor e0({10}, [&](const std::vector<size_t> &_idx){
@@ -216,7 +216,7 @@ static misc::UnitTest tt_dyadic("TT", "dyadic_product", [](){
 	});
 	S *= 1/std::sqrt(2);
 	S = dyadic_product(S,TTTensor(e0)) + dyadic_product(TTTensor(e1), S);
-	TEST(S.cannonicalized);
+	TEST(S.canonicalized);
 	MTEST(S.corePosition == 0, S.corePosition);
 });
 

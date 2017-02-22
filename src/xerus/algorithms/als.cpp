@@ -98,7 +98,7 @@ namespace xerus {
 	/**
 	 * @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
 	 * @details finds full-rank nodes (these can wlog be set to identity and need not be optimized)
-	 * requires cannonicalizeAtTheEnd and corePosAtTheEnd to be set
+	 * requires canonicalizeAtTheEnd and corePosAtTheEnd to be set
 	 * sets optimizedRange
 	 * modifies x
 	 */
@@ -168,10 +168,10 @@ namespace xerus {
 			dimensionProd = newDimensionProd;
 		}
 		
-		if (cannonicalizeAtTheEnd && corePosAtTheEnd < firstOptimizedIndex) {
+		if (canonicalizeAtTheEnd && corePosAtTheEnd < firstOptimizedIndex) {
 			x.assume_core_position(firstOptimizedIndex);
 		} else {
-			if (cannonicalizeAtTheEnd && corePosAtTheEnd >= firstNotOptimizedIndex) {
+			if (canonicalizeAtTheEnd && corePosAtTheEnd >= firstNotOptimizedIndex) {
 				x.assume_core_position(firstNotOptimizedIndex-1);
 			}
 			
@@ -323,7 +323,7 @@ namespace xerus {
 		: ALS(_ALS), A(_A), x(_x), b(_b)
 		, targetRank(_x.ranks())
 		, normB(frob_norm(_b))
-		, cannonicalizeAtTheEnd(_x.cannonicalized)
+		, canonicalizeAtTheEnd(_x.canonicalized)
 		, corePosAtTheEnd(_x.corePosition)
 		, lastEnergy2(1e102)
 		, lastEnergy(1e101)
@@ -454,7 +454,7 @@ namespace xerus {
 			{
 				// we are done! yay
 				LOG(ALS, "ALS done, " << _data.energy << " " << _data.lastEnergy << " " << std::abs(_data.lastEnergy2-_data.energy) << " " << std::abs(_data.lastEnergy-_data.energy) << " < " << _convergenceEpsilon);
-				if (_data.cannonicalizeAtTheEnd && preserveCorePosition) {
+				if (_data.canonicalizeAtTheEnd && preserveCorePosition) {
 					_data.x.move_core(_data.corePosAtTheEnd, true);
 				}
 				return true;

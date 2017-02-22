@@ -80,7 +80,7 @@ namespace xerus {
 	}
 		
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
-		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
+		REQUIRE(_base.canonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
 		
 		baseL = _base;
@@ -281,7 +281,7 @@ namespace xerus {
 	
 	// TODO do this without creating the change_direction tensor?
 	void ProjectiveVectorTransport(const TTTensor &_newBase, TTTangentVector &_tangentVector) {
-		REQUIRE(_newBase.cannonicalized && _newBase.corePosition == 0, "Tangent vectors only implemented for core position 0 atm");
+		REQUIRE(_newBase.canonicalized && _newBase.corePosition == 0, "Tangent vectors only implemented for core position 0 atm");
 		
 		_tangentVector = TTTangentVector(_newBase, TTTensor(_tangentVector));
 	}
