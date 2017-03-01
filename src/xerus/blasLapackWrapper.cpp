@@ -208,12 +208,12 @@ namespace xerus {
 			CHECK(lapackAnswer == 0, warning, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << static_cast<int>(_m) << ", " << static_cast<int>(_n) << ", " << _A << ", " << static_cast<int>(_n) <<", " 
 			<< _S <<", " << _U << ", " << static_cast<int>(std::min(_m, _n)) << ", " << _Vt << ", " << static_cast<int>(_n) << ");");
 			if(lapackAnswer != 0) {
-				LOG(warning, "A was: ");
-				for(size_t i=0; i < _m; ++i) {
-					for(size_t j=0; j < _n; ++j) {
-						LOG(warning, tmpA[i*_n+j]);
-					}
-				}
+				LOG(warning, "SVD failed ");
+// 				for(size_t i=0; i < _m; ++i) {
+// 					for(size_t j=0; j < _n; ++j) {
+// 						LOG(warning, tmpA[i*_n+j]);
+// 					}
+// 				}
 			}
 			
 			XERUS_PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));

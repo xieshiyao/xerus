@@ -140,12 +140,14 @@ namespace xerus {
 			
 			for(size_t i = 0; i < numComponents; ++i) {
 				const size_t leftRank = i==0 ? 1 : targetRank[i-1];
-				const size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
+				const size_t rightRank = (i==numComponents-1) ? 1 : targetRank[i];
 
 				if(isOperator) {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _dist, _rnd));
+					const auto rndComp = Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _dist, _rnd);
+					result.set_component(i, rndComp/rndComp.frob_norm());
 				} else {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd));
+					const auto rndComp = Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd);
+					result.set_component(i, rndComp/rndComp.frob_norm());
 				}
 			}
 			result.move_core(0);
@@ -178,11 +180,13 @@ namespace xerus {
 								const std::function<void(Tensor&)> &_modifySingularValues,
 								distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) 
 		{
+			const size_t numComponents = _dimensions.size()/N;
+			
 			TTNetwork result = random(_dimensions, _ranks, _dist, _rnd);
 			
 			const Index i,j,k,l,m;
 			
-			for (size_t pos = 0; pos+1 < result.degree(); ++pos) {
+			for (size_t pos = 0; pos+1 < numComponents; ++pos) {
 				Tensor A;
 				A(i,j^N,k^N,l) = result.component(pos)(i,j^N,m) * result.component(pos+1)(m,k^N,l);
 				Tensor U,S,Vt;
