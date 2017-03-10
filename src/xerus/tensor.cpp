@@ -1346,6 +1346,7 @@ namespace xerus {
 		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numIndices);
 		return result;
 	}
+
 	
 	XERUS_force_inline std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
 		REQUIRE(_splitPos <= _input.degree(), "Split position must be in range.");

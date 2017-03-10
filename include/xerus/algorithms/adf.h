@@ -235,7 +235,7 @@ namespace xerus {
         double minimalResidualNormDecrease; // The minimal relative decrease of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrease) 
+        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrease)
                 : maxIterations(_maxIteration), targetResidualNorm(_targetResidual), minimalResidualNormDecrease(_minimalResidualDecrease) { }
         
         /**

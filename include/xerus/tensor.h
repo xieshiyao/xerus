@@ -43,17 +43,19 @@ namespace xerus {
 	// NOTE these two functions are used in the template functions of Tensor so they have to be declared before the class..
 	class Tensor;
 	
-	/** 
-	 * @brief Low-level contraction between Tensors.
-	 * @param _result Output for the result of the contraction.
-	 * @param _lhs left hand side of the contraction.
-	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
-	 * @param _rhs right hand side of the contraction.
-	 * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
-	 * @param _numIndices number of indices that shall be contracted.
-	 */
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+    /** 
+     * @brief Low-level contraction between Tensors.
+     * @param _result Output for the result of the contraction.
+     * @param _lhs left hand side of the contraction.
+     * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
+     * @param _rhs right hand side of the contraction.
+     * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
+     * @param _numIndices number of indices that shall be contracted.
+     */
+    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+    
+    
 	
 	/**
 	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
@@ -850,6 +852,20 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
+    /** 
+     * @brief Low-level contraction between Tensors.
+     * @param _result Output for the result of the contraction.
+     * @param _lhs left hand side of the contraction.
+     * @param _rhs right hand side of the contraction.
+     * @param _numIndices number of indices that shall be contracted.
+     */
+    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numIndices) {
+        contract(_result, _lhs, false, _rhs, false, _numIndices);
+    }
+    
+    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numIndices) {
+        return contract(_lhs, false, _rhs, false, _numIndices);
+    }
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
