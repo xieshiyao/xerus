@@ -31,6 +31,6 @@
 
 namespace xerus {
     
-    void uq_adf(TTTensor& _x, const std::vector<std::vector<double>>& _randomVariables, const std::vector<Tensor>& _solutions, const size_t _polyDegree);
+    void uq_adf(TTTensor& _x, const std::vector<std::vector<double>>& _randomVariables, const std::vector<Tensor>& _solutions);
 }
 
