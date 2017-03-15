@@ -45,8 +45,13 @@ namespace xerus {
         TTTensor& x;
         
         
-        std::vector<std::vector<Tensor>> leftStack; // From corePosition 1 to d-2
-        std::vector<std::vector<Tensor>> rightStack;  // From corePosition 1 to d-1
+		std::vector<std::vector<Tensor>> leftStack; // From corePosition 1 to d-2
+		std::vector<std::vector<Tensor>> rightStack;  // From corePosition 1 to d-1
+		
+		std::vector<std::vector<Tensor>> leftIsStack;
+		std::vector<std::vector<Tensor>> leftOughtStack;
+		
+        
         
     public:
         
@@ -82,7 +87,9 @@ namespace xerus {
             solutions(_solutions),
             x(_x),
             leftStack(d, std::vector<Tensor>(N)), 
-            rightStack(d, std::vector<Tensor>(N)) 
+            rightStack(d, std::vector<Tensor>(N)),
+            leftIsStack(d, std::vector<Tensor>(N)), 
+            leftOughtStack(d, std::vector<Tensor>(N))
             {
                 REQUIRE(_randomVariables.size() == _solutions.size(), "ERROR");
                 LOG(bug, "N=" << N << ", d=" << d);
@@ -90,25 +97,44 @@ namespace xerus {
         
         
         void calc_left_stack(const size_t _corePosition) {
-            LOG(bug, "Calc left stack @ " << _corePosition);
-            REQUIRE(_corePosition > 0 && _corePosition+1 < d, "Invalid corePosition");
+//             LOG(bug, "Calc left stack @ " << _corePosition);
+            REQUIRE(_corePosition+1 < d, "Invalid corePosition");
             
-            const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
-            
-            Tensor tmp;
-            for(size_t j = 0; j < N; ++j) {
-                contract(tmp, positions[_corePosition][j], shuffledX, 1);
-                if(_corePosition > 1) {
-                    contract(leftStack[_corePosition][j], leftStack[_corePosition-1][j], tmp, 1);
-                } else { // _corePosition == 1
-                    leftStack[_corePosition][j] = tmp;
-                }
-            }
-        }
-        
+			if(_corePosition == 0) {
+				Tensor shuffledX = x.get_component(0);
+				shuffledX.reinterpret_dimensions({x.dimensions[0], x.rank(0)});
+				
+				for(size_t j = 0; j < N; ++j) {
+					contract(leftIsStack[_corePosition][j], shuffledX, true, shuffledX, false, 1); // TODO simple Identity!
+					contract(leftOughtStack[_corePosition][j], solutions[j], shuffledX, 1);
+				}
+				
+			} else { // _corePosition > 0
+				const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
+				
+				Tensor measCmp, tmp;
+				for(size_t j = 0; j < N; ++j) {
+					contract(measCmp, positions[_corePosition][j], shuffledX, 1);
+					
+					
+					contract(tmp, measCmp, true, leftIsStack[_corePosition-1][j], false,  1);
+					contract(leftIsStack[_corePosition][j], tmp, false, measCmp, false, 1);
+					contract(leftOughtStack[_corePosition][j], leftOughtStack[_corePosition-1][j], measCmp, 1);
+					
+					
+					
+					if(_corePosition > 1) {
+						contract(leftStack[_corePosition][j], leftStack[_corePosition-1][j], measCmp, 1);
+					} else { // _corePosition == 1
+						leftStack[_corePosition][j] = measCmp;
+					}
+				}
+			}
+		}
+		
         
         void calc_right_stack(const size_t _corePosition) {
-            LOG(bug, "Calc right stack @ " << _corePosition);
+//             LOG(bug, "Calc right stack @ " << _corePosition);
             REQUIRE(_corePosition > 0 && _corePosition < d, "Invalid corePosition");
             const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
             
@@ -125,7 +151,7 @@ namespace xerus {
         }
         
         std::vector<Tensor> calc_residual(const size_t _corePosition) {
-            LOG(bug, "Calculate residual @ " << _corePosition);
+//             LOG(bug, "Calculate residual @ " << _corePosition);
             std::vector<Tensor> residual;
             
             Tensor tmp;
@@ -170,45 +196,99 @@ namespace xerus {
         
         
         Tensor calculate_delta(const std::vector<Tensor>& _residual, const size_t _corePosition) {
-            LOG(bug, "Calculate delta @ " << _corePosition);
+//             LOG(bug, "Calculate delta @ " << _corePosition);
             //calculate_projected_gradient
-            Tensor delta(x.get_component(_corePosition).dimensions);
+			Tensor delta(x.get_component(_corePosition).dimensions);
+			Tensor delta2(x.get_component(_corePosition).dimensions);
             Tensor dyadComp;
             
-            if(_corePosition > 0) {
-                for(size_t j = 0; j < N; ++j) {
-                    // Calculate "direction" 
-                    if(_corePosition < d-1) {
-                        contract(dyadComp, positions[_corePosition][j], rightStack[_corePosition+1][j], 0);
-                    } else {
-                        dyadComp = positions[_corePosition][j];
-                        dyadComp.reinterpret_dimensions({dyadComp.dimensions[0], 1});
-                    }
-                    
-                    if(_corePosition > 1) {
-                        contract(dyadComp, leftStack[_corePosition-1][j], dyadComp, 0);
-                        contract(dyadComp, x.get_component(0), dyadComp, 1);
-                    } else {
-                        contract(dyadComp, x.get_component(0), dyadComp, 0);
-                    }
-                    
-                    contract(dyadComp, one, dyadComp, 1); // TODO weg
-                    
-                    // Scale with residual
-                    contract(dyadComp, _residual[j], dyadComp, 1);
-                    
-                    delta += dyadComp;
-                }
-            } else { // _corePosition == 0
-                for(size_t j = 0; j < N; ++j) {
-                    contract(dyadComp, _residual[j], rightStack[_corePosition+1][j], 0);
-                    
-                    dyadComp.reinterpret_dimensions(delta.dimensions);
-                    delta += dyadComp;
-                }
-            }
+// 			if(_corePosition > 0) {
+// 				for(size_t j = 0; j < N; ++j) {
+// 					// Calculate "direction" 
+// 					if(_corePosition < d-1) {
+// 						contract(dyadComp, positions[_corePosition][j], rightStack[_corePosition+1][j], 0);
+// 					} else {
+// 						dyadComp = positions[_corePosition][j];
+// 						dyadComp.reinterpret_dimensions({dyadComp.dimensions[0], 1});
+// 					}
+// 					
+// 					if(_corePosition > 1) {
+// 						contract(dyadComp, leftStack[_corePosition-1][j], dyadComp, 0);
+// 						contract(dyadComp, x.get_component(0), dyadComp, 1);
+// 					} else {
+// 						contract(dyadComp, x.get_component(0), dyadComp, 0);
+// 					}
+// 					
+// 					contract(dyadComp, one, dyadComp, 1); // TODO weg
+// 					
+// 					// Scale with residual
+// 					contract(dyadComp, _residual[j], dyadComp, 1);
+// 					
+// 					delta += dyadComp;
+// 				}
+// 			} else { // _corePosition == 0
+// 				for(size_t j = 0; j < N; ++j) {
+// 					contract(dyadComp, _residual[j], rightStack[_corePosition+1][j], 0);
+// 					
+// 					dyadComp.reinterpret_dimensions(delta.dimensions);
+// 					delta += dyadComp;
+// 				}
+// 			}
             
-            return delta;
+//             LOG(bug, "Calculate alternative delta @ " << _corePosition);
+			
+			Tensor tmp;
+			if(_corePosition > 0) {
+				const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
+				for(size_t j = 0; j < N; ++j) {
+					// Calculate "is"
+					contract(tmp, positions[_corePosition][j], shuffledX, 1);
+					contract(tmp, tmp, true, leftIsStack[_corePosition-1][j], false, 1);
+					if(_corePosition < d-1) {
+						contract(tmp, rightStack[_corePosition+1][j], true, tmp, false, 1);
+					} else {
+						contract(tmp, one, true, tmp, false, 1);
+					}
+					contract(tmp, tmp, positions[_corePosition][j], 0);
+					
+					if(_corePosition < d-1) {
+						contract(dyadComp, tmp, rightStack[_corePosition+1][j], 0);
+					} else {
+						dyadComp = tmp;
+						dyadComp.reinterpret_dimensions({dyadComp.dimensions[0], dyadComp.dimensions[1], 1});
+					}
+					
+					delta2 += dyadComp;
+					
+					// Calculate "Ought"
+					contract(tmp, leftOughtStack[_corePosition-1][j], positions[_corePosition][j], 0);
+					
+					if(_corePosition < d-1) {
+						contract(dyadComp, tmp, rightStack[_corePosition+1][j], 0);
+					} else {
+						dyadComp = tmp;
+						dyadComp.reinterpret_dimensions({dyadComp.dimensions[0], dyadComp.dimensions[1], 1});
+					}
+					
+					delta2 -= dyadComp;
+					
+				}
+			} else { // _corePosition == 0
+				for(size_t j = 0; j < N; ++j) {
+					contract(dyadComp, x.get_component(0), rightStack[_corePosition+1][j], 1);
+					dyadComp.reinterpret_dimensions({x.dimensions[0]});
+					dyadComp -= solutions[j];
+					
+					dyadComp.reinterpret_dimensions({1, x.dimensions[0]});
+					contract(dyadComp, dyadComp, rightStack[_corePosition+1][j], 0);
+					delta2 += dyadComp;
+				}
+			}
+            
+//             LOG(bug, "Difference: " << frob_norm(delta - delta2));
+            
+//             LOG(norm, "Norm @ " << _corePosition << ": " << frob_norm(delta2));
+            return delta2;
         }
         
         
@@ -259,7 +339,6 @@ namespace xerus {
         void update_x(const Tensor& _delta, const double _normAProjGrad, const size_t _corePosition) {
             const value_t PyR = misc::sqr(frob_norm(_delta));
             
-            // Update
             x.component(_corePosition) -= (PyR/misc::sqr(_normAProjGrad))*_delta;
         }
         
@@ -283,34 +362,44 @@ namespace xerus {
         }
         
         void solve() {
-            x.move_core(0);
-            
-            // Rebuild right stack
-            for(size_t corePosition = d-1; corePosition > 0; --corePosition) {
-                calc_right_stack(corePosition);
-            }
-            
-            
-            for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
-                
-                const auto residual = calc_residual(corePosition);
-                
-                LOG(bla, "Residual norm: " << residual_norm(residual)/calc_solutions_norm());
-                
-                const auto delta = calculate_delta(residual, corePosition);
-                
-                const auto normAProjGrad = calculate_norm_A_projGrad(delta, corePosition);
-                
-                update_x(delta, normAProjGrad, corePosition);
-                
-                // If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
-                if(corePosition+1 < d) {
-                    x.move_core(corePosition+1, true);
-                    if(corePosition > 0) {
-                        calc_left_stack(corePosition);
-                    }
-                }
-            }
+			
+			const size_t maxIterations = 10;
+			
+			for(size_t iteration = 0; maxIterations == 0 || iteration < maxIterations; ++iteration) {
+				x.require_correct_format();
+				LOG(start, x.dimensions << " and " << x.ranks());
+				for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
+					REQUIRE(x.get_component(corePosition).all_entries_valid(), "Invalid entries at " << corePosition);
+				}
+				x.move_core(0, true);
+				
+				// Rebuild right stack
+				for(size_t corePosition = d-1; corePosition > 0; --corePosition) {
+					calc_right_stack(corePosition);
+				}
+				
+				
+				for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
+					
+					const auto residual = calc_residual(corePosition);
+					
+					if(corePosition == 0) {
+						LOG(bla, "Residual norm: " << residual_norm(residual)/calc_solutions_norm());
+					}
+					
+					const auto delta = calculate_delta(residual, corePosition);
+					
+					const auto normAProjGrad = calculate_norm_A_projGrad(delta, corePosition);
+					
+					update_x(delta, normAProjGrad, corePosition);
+					
+					// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
+					if(corePosition+1 < d) {
+						x.move_core(corePosition+1, true);
+						calc_left_stack(corePosition);
+					}
+				}
+			}
         }
     };
     
