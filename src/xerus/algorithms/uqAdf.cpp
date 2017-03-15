@@ -28,12 +28,12 @@
 #include <xerus/misc/simpleNumerics.h>
 #include <xerus/misc/internal.h>
 
+#include <boost/math/special_functions/hermite.hpp>
+#include <boost/math/special_functions/legendre.hpp>
 
 namespace xerus {
     
     class InternalSolver {
-        const Tensor one = Tensor::ones({1});
-        
         const size_t N;
         const size_t d;
 		
@@ -45,7 +45,6 @@ namespace xerus {
         TTTensor& x;
         
 		std::vector<std::vector<Tensor>> rightStack;  // From corePosition 1 to d-1
-		
 		std::vector<std::vector<Tensor>> leftIsStack;
 		std::vector<std::vector<Tensor>> leftOughtStack;
 		
@@ -53,11 +52,14 @@ namespace xerus {
         
     public:
         static Tensor randVar_to_position(const double _v, const size_t _polyDegree) {
-            const std::vector<xerus::misc::Polynomial> stochasticBasis = xerus::misc::Polynomial::build_orthogonal_base(_polyDegree, [](const double){return 1.0;}, -1., 1.);
+//             const std::vector<xerus::misc::Polynomial> stochasticBasis = xerus::misc::Polynomial::build_orthogonal_base(_polyDegree, [](const double){return 1.0;}, -1., 1.);
             
-            Tensor p({stochasticBasis.size()});
-            for (size_t i = 0; i < stochasticBasis.size(); ++i) {
-                p[i] = stochasticBasis[i](_v);
+			Tensor p({_polyDegree});
+			for (unsigned i = 0; i < _polyDegree; ++i) {
+				// 				p[i] = stochasticBasis[i](_v);
+				// 				p[i] = boost::math::hermite(i, _v/std::sqrt(2))/std::pow(2.0, i/2.0);
+// 				p[i] = boost::math::legendre_p(i, _v);
+				p[i] = boost::math::legendre_q(i, _v);
             }
             
             return p;
@@ -155,7 +157,7 @@ namespace xerus {
         }
         
         
-        Tensor calculate_delta(const size_t _corePosition) {
+        Tensor calculate_delta(const size_t _corePosition) const {
 			Tensor delta(x.get_component(_corePosition).dimensions);
 			Tensor dyadComp, tmp;
 			
@@ -207,7 +209,7 @@ namespace xerus {
         }
         
         
-        double calculate_norm_A_projGrad(const Tensor& _delta, const size_t _corePosition) {
+        double calculate_norm_A_projGrad(const Tensor& _delta, const size_t _corePosition) const {
             double norm = 0.0;
 			Tensor tmp;
 			
@@ -249,13 +251,7 @@ namespace xerus {
         }
         
         
-        void update_x(const Tensor& _delta, const double _normAProjGrad, const size_t _corePosition) {
-            const value_t PyR = misc::sqr(frob_norm(_delta));
-            x.component(_corePosition) -= (PyR/misc::sqr(_normAProjGrad))*_delta;
-        }
-
-        
-        double calc_residual_norm(const size_t _corePosition) {
+        double calc_residual_norm(const size_t _corePosition) const {
 			REQUIRE(_corePosition == 0, "Invalid corePosition");
 
 			double norm = 0.0;
@@ -276,10 +272,6 @@ namespace xerus {
 			const size_t maxIterations = 10;
 			
 			for(size_t iteration = 0; maxIterations == 0 || iteration < maxIterations; ++iteration) {
-// 				x.require_correct_format();
-// 				for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
-// 					REQUIRE(x.get_component(corePosition).all_entries_valid(), "Invalid entries at " << corePosition);
-// 				}
 				x.move_core(0, true);
 				
 				// Rebuild right stack
@@ -295,7 +287,10 @@ namespace xerus {
 					
 					const auto delta = calculate_delta(corePosition);
 					const auto normAProjGrad = calculate_norm_A_projGrad(delta, corePosition);
-					update_x(delta, normAProjGrad, corePosition);
+					const value_t PyR = misc::sqr(frob_norm(delta));
+					
+					// Actual update
+					x.component(corePosition) -= (PyR/misc::sqr(normAProjGrad))*delta;
 					
 					// If we have not yet reached the end of the sweep we need to take care of the core and update our stacks
 					if(corePosition+1 < d) {
