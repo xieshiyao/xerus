@@ -33,6 +33,20 @@
 
 namespace xerus {
     
+	Tensor randVar_to_position(const double _v, const size_t _polyDegree) {
+// 		const std::vector<xerus::misc::Polynomial> stochasticBasis = xerus::misc::Polynomial::build_orthogonal_base(_polyDegree, [](const double){return 1.0;}, -1., 1.);
+		
+		Tensor p({_polyDegree});
+		for (unsigned i = 0; i < _polyDegree; ++i) {
+// 			p[i] = stochasticBasis[i](_v);
+			p[i] = boost::math::hermite(i, _v/std::sqrt(2))/std::pow(2.0, i/2.0);
+// 			p[i] = boost::math::legendre_p(i, _v);
+// 			p[i] = boost::math::legendre_q(i, _v);
+		}
+		
+		return p;
+	}
+	
     class InternalSolver {
         const size_t N;
         const size_t d;
@@ -51,21 +65,6 @@ namespace xerus {
         
         
     public:
-        static Tensor randVar_to_position(const double _v, const size_t _polyDegree) {
-//             const std::vector<xerus::misc::Polynomial> stochasticBasis = xerus::misc::Polynomial::build_orthogonal_base(_polyDegree, [](const double){return 1.0;}, -1., 1.);
-            
-			Tensor p({_polyDegree});
-			for (unsigned i = 0; i < _polyDegree; ++i) {
-				// 				p[i] = stochasticBasis[i](_v);
-				// 				p[i] = boost::math::hermite(i, _v/std::sqrt(2))/std::pow(2.0, i/2.0);
-// 				p[i] = boost::math::legendre_p(i, _v);
-				p[i] = boost::math::legendre_q(i, _v);
-            }
-            
-            return p;
-        }
-        
-        
         static std::vector<std::vector<Tensor>> create_positions(const TTTensor& _x, const std::vector<std::vector<double>>& _randomVariables) {
             std::vector<std::vector<Tensor>> positions(_x.degree());
             
@@ -269,7 +268,7 @@ namespace xerus {
 		
         
         void solve() {
-			const size_t maxIterations = 10;
+			const size_t maxIterations = 250;
 			
 			for(size_t iteration = 0; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 				x.move_core(0, true);
@@ -305,8 +304,114 @@ namespace xerus {
     
     
     void uq_adf(TTTensor& _x, const std::vector<std::vector<double>>& _randomVariables, const std::vector<Tensor>& _solutions) {
+		LOG(ADF, "Start UQ ADF");
         InternalSolver solver(_x, _randomVariables, _solutions);
         return solver.solve();
     }
+    
+    
+    void uq_adf(TTTensor& _x, const UQMeasurementSet& _measurments) {
+		REQUIRE(_measurments.randomVectors.size() == _measurments.solutions.size(), "Invalid measurments");
+		REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialSolutions.size(), "Invalid initial measurments");
+		
+		if(_measurments.initialRandomVectors.size() > 0) {
+			LOG(bla, "Init 1");
+			std::vector<std::vector<double>> randomVectors = _measurments.randomVectors;
+			std::vector<Tensor> solutions = _measurments.solutions;
+			
+			TTTensor newX(_x.dimensions);
+			
+			// Calc mean
+			Tensor mean({newX.dimensions[0]});
+			for(const auto& sol : solutions) {
+				mean += sol;
+			}
+			mean /= double(solutions.size());
+			
+			TTTensor baseTerm(_x.dimensions);
+			mean.reinterpret_dimensions({1, _x.dimensions[0], 1});
+			baseTerm.set_component(0, mean);
+			for(size_t k = 0; k < _measurments.initialRandomVectors.size(); ++k) {
+				baseTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 0));
+			}
+			baseTerm.assume_core_position(0);
+			newX += baseTerm;
+			
+			mean.reinterpret_dimensions({_x.dimensions[0]});
+			
+			// Calc linear terms
+			REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialRandomVectors[0].size(), "Sizes don't match.");
+			REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialSolutions.size(), "Sizes don't match.");
+			REQUIRE(_measurments.initialRandomVectors.size()+1 == _x.degree(), "Sizes don't match.");
+			LOG(bla, "Init 2");
+			for(size_t m = 0; m < _measurments.initialRandomVectors.size(); ++m) {
+				REQUIRE(_measurments.initialRandomVectors[m][m] > 0.0, "Invalid initial randVec");
+				TTTensor linearTerm(_x.dimensions);
+				Tensor tmp = (_measurments.initialSolutions[m] - mean);
+				tmp.reinterpret_dimensions({1, _x.dimensions[0], 1});
+				linearTerm.set_component(0, tmp);
+				for(size_t k = 0; k < _measurments.initialRandomVectors.size(); ++k) {
+					if(k == m) {
+						linearTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 0));
+					} else {
+						REQUIRE(misc::hard_equal(_measurments.initialRandomVectors[m][k], 0.0), "Invalid initial randVec");
+						REQUIRE(_x.dimensions[k+1] >= 1, "WTF");
+						linearTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 1));
+					}
+				}
+				linearTerm.assume_core_position(0);
+				newX += linearTerm;
+			}
+			
+			// Add some noise
+			auto noise = TTTensor::random(newX.dimensions, std::vector<size_t>(newX.degree()-1, 2));
+			noise *= 1e-6*frob_norm(newX)/frob_norm(noise);
+			LOG(check, frob_norm(newX) << " vs " << frob_norm(noise));
+			newX += noise;
+			newX.round(0.001);
+			
+			
+			// Add initial measurments. NOTE: should happen after mean is calculated
+			randomVectors.insert(randomVectors.end(), _measurments.initialRandomVectors.begin(), _measurments.initialRandomVectors.end());
+			solutions.insert(solutions.end(), _measurments.initialSolutions.begin(), _measurments.initialSolutions.end());
+			
+			_x = newX;
+			uq_adf(_x, _measurments.randomVectors, _measurments.solutions);
+		} else {
+			uq_adf(_x, _measurments.randomVectors, _measurments.solutions);
+		}
+	}
+	
+	
+	void UQMeasurementSet::add(const std::vector<double>& _rndvec, const Tensor& _solution) {
+		randomVectors.push_back(_rndvec);
+		solutions.push_back(_solution);
+	}
+	
+	void UQMeasurementSet::add_initial(const std::vector<double>& _rndvec, const Tensor& _solution) {
+		initialRandomVectors.push_back(_rndvec);
+		initialSolutions.push_back(_solution);
+	}
+	
+	void UQAvgSet::add(const std::vector<double>& _rndvec) {
+		randomVectors.push_back(_rndvec);
+	}
+	
+	Tensor UQAvgSet::avg(const TTTensor& _x) const {
+		Tensor avg({_x.dimensions[0]});
+		
+		for(const auto& rndVars : randomVectors) {
+			Tensor p = Tensor::ones({1});
+			for(size_t i = rndVars.size(); i > 0; --i) {
+				contract(p, _x.get_component(i), p, 1);
+				contract(p, p, randVar_to_position(rndVars[i-1], _x.dimensions[i]), 1);
+			}
+			contract(p, _x.get_component(0), p, 1);
+			p.reinterpret_dimensions({_x.dimensions[0]});
+			avg += p;
+		}
+		
+		return avg/double(randomVectors.size());
+	}
 	
 } // namespace xerus

@@ -962,6 +962,7 @@ BOOST_PYTHON_MODULE(xerus) {
 			 .staticmethod("random")
 	;
 	
+	// ------------------------------------------------------------- ADF
 	
 	class_<ADFVariant>("ADFVariant", init<size_t, double, double>())
 		.def(init<ADFVariant>())
@@ -984,6 +985,27 @@ BOOST_PYTHON_MODULE(xerus) {
 		}, (arg("x"), arg("measurements"), arg("maxRanks"), arg("perfData")=NoPerfData) )
 	;
 	scope().attr("ADF") = object(ptr(&ADF));
+	
+	
+	
+	
+	class_<UQMeasurementSet>("UQMeasurementSet")
+	.def(init<const UQMeasurementSet&>())
+	.def("add", &UQMeasurementSet::add)
+	.def("add_initial", &UQMeasurementSet::add_initial)
+	;
+	
+	class_<UQAvgSet>("UQAvgSet")
+	.def(init<const UQAvgSet&>())
+	.def("add", &UQAvgSet::add)
+	.def("avg", &UQAvgSet::avg)
+	;
+	
+	
+	def("uq_adf", +[](TTTensor& _x, const UQMeasurementSet& _measurments) {
+		uq_adf(_x, _measurments);
+	}, (arg("x"), arg("measurments")) );
+	
 	
 	
 	// ------------------------------------------------------------- misc
