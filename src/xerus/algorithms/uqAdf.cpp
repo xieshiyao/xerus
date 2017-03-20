@@ -31,6 +31,10 @@
 #include <boost/math/special_functions/hermite.hpp>
 #include <boost/math/special_functions/legendre.hpp>
 
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
+
 namespace xerus {
     
 	Tensor randVar_to_position(const double _v, const size_t _polyDegree) {
@@ -111,6 +115,7 @@ namespace xerus {
 				Tensor shuffledX = x.get_component(0);
 				shuffledX.reinterpret_dimensions({x.dimensions[0], x.rank(0)});
 				
+				#pragma omp parallel for 
 				for(size_t j = 0; j < N; ++j) {
                     // NOTE: leftIsStack[0] is always an identity
 					contract(leftOughtStack[_corePosition][j], solutions[j], shuffledX, 1);
@@ -118,8 +123,8 @@ namespace xerus {
 				
 			} else { // _corePosition > 0
 				const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
-				
 				Tensor measCmp, tmp;
+				#pragma omp parallel for  firstprivate(measCmp, tmp)
 				for(size_t j = 0; j < N; ++j) {
 					contract(measCmp, positions[_corePosition][j], shuffledX, 1);
 					
@@ -138,17 +143,18 @@ namespace xerus {
         
         void calc_right_stack(const size_t _corePosition) {
             REQUIRE(_corePosition > 0 && _corePosition < d, "Invalid corePosition");
-            
             Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
             
             if(_corePosition < d-1) {
                 Tensor tmp;
+				#pragma omp parallel for  firstprivate(tmp)
                 for(size_t j = 0; j < N; ++j) {
                     contract(tmp, positions[_corePosition][j], shuffledX, 1);
                     contract(rightStack[_corePosition][j], tmp, rightStack[_corePosition+1][j], 1);
                 }
             } else { // _corePosition == d-1
                 shuffledX.reinterpret_dimensions({shuffledX.dimensions[0], shuffledX.dimensions[1]}); // Remove dangling 1-mode
+				#pragma omp parallel for 
                 for(size_t j = 0; j < N; ++j) {
                     contract(rightStack[_corePosition][j], positions[_corePosition][j], shuffledX, 1);
                 }
@@ -162,6 +168,8 @@ namespace xerus {
 			
 			if(_corePosition > 0) {
 				const Tensor shuffledX = reshuffle(x.get_component(_corePosition), {1, 0, 2});
+				
+				#pragma omp parallel for  firstprivate(dyadComp, tmp)
 				for(size_t j = 0; j < N; ++j) {
 					// Calculate common "dyadic part"
 					Tensor dyadicPart;
@@ -191,16 +199,21 @@ namespace xerus {
 					// Combine with ought part
 					contract(dyadComp, isPart - leftOughtStack[_corePosition-1][j], dyadicPart, 0);
 					
-					delta += dyadComp;
+					#pragma omp critical
+					{ delta += dyadComp; }
 				}
 			} else { // _corePosition == 0
 				Tensor shuffledX = x.get_component(0);
 				shuffledX.reinterpret_dimensions({shuffledX.dimensions[1], shuffledX.dimensions[2]});
+				
+				#pragma omp parallel for  firstprivate(dyadComp, tmp)
 				for(size_t j = 0; j < N; ++j) {
 					contract(dyadComp, shuffledX, rightStack[_corePosition+1][j], 1);
 					contract(dyadComp, dyadComp - solutions[j], rightStack[_corePosition+1][j], 0);
 					dyadComp.reinterpret_dimensions({1, dyadComp.dimensions[0], dyadComp.dimensions[1]});
-                    delta += dyadComp;
+					
+					#pragma omp critical
+					{ delta += dyadComp; }
 				}
 			}
             
@@ -213,9 +226,11 @@ namespace xerus {
 			Tensor tmp;
 			
             if(_corePosition == 0) {
+				#pragma omp parallel for firstprivate(tmp) reduction(+:norm)
                 for(size_t j = 0; j < N; ++j) {
                     contract(tmp, _delta, rightStack[1][j], 1);
-                    norm += misc::sqr(frob_norm(tmp));
+					const double normPart = misc::sqr(frob_norm(tmp));
+					norm += normPart;
                 }
             } else { // _corePosition > 0
                 Tensor shuffledX = reshuffle(_delta, {1, 0, 2});
@@ -224,6 +239,7 @@ namespace xerus {
 				}
                 
 				Tensor rightPart;
+				#pragma omp parallel for  firstprivate(tmp, rightPart) reduction(+:norm)
 				for(size_t j = 0; j < N; ++j) {
 					// Current node
 					contract(tmp, positions[_corePosition][j], shuffledX, 1);
@@ -268,7 +284,8 @@ namespace xerus {
 		
         
         void solve() {
-			const size_t maxIterations = 250;
+			std::vector<double> residuals(10, 1000.0);
+			const size_t maxIterations = 1000;
 			
 			for(size_t iteration = 0; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 				x.move_core(0, true);
@@ -281,7 +298,11 @@ namespace xerus {
 				
 				for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
 					if(corePosition == 0) {
-						LOG(bla, "Residual norm: " << std::scientific << calc_residual_norm(0)/solutionsNorm);
+						residuals.push_back(calc_residual_norm(0)/solutionsNorm);
+						LOG(bla, "Residual norm: " << std::scientific << residuals.back());
+						if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
+							return; // We are done!
+						}
 					}
 					
 					const auto delta = calculate_delta(corePosition);
@@ -398,20 +419,32 @@ namespace xerus {
 	}
 	
 	Tensor UQAvgSet::avg(const TTTensor& _x) const {
-		Tensor avg({_x.dimensions[0]});
+		const size_t N = 10000;
+		Tensor realAvg({_x.dimensions[0]});
 		
-		for(const auto& rndVars : randomVectors) {
-			Tensor p = Tensor::ones({1});
-			for(size_t i = rndVars.size(); i > 0; --i) {
-				contract(p, _x.get_component(i), p, 1);
-				contract(p, p, randVar_to_position(rndVars[i-1], _x.dimensions[i]), 1);
+		#pragma omp parallel
+		{
+			std::mt19937_64 rnd;
+			std::normal_distribution<double> dist(0.0, 1.0);
+			Tensor avg({_x.dimensions[0]});
+			
+			#pragma omp parallel for 
+			for(size_t i = 0; i < N; ++i) {
+				Tensor p = Tensor::ones({1});
+				for(size_t k = _x.degree()-1; k > 0; --k) {
+					contract(p, _x.get_component(k), p, 1);
+					contract(p, p, randVar_to_position((k==1?0.3:1.0)*dist(rnd), _x.dimensions[k]), 1);
+				}
+				contract(p, _x.get_component(0), p, 1);
+				p.reinterpret_dimensions({_x.dimensions[0]});
+				avg += p;
 			}
-			contract(p, _x.get_component(0), p, 1);
-			p.reinterpret_dimensions({_x.dimensions[0]});
-			avg += p;
+			
+			#pragma omp critical
+			{ realAvg += avg; }
 		}
 		
-		return avg/double(randomVectors.size());
+		return realAvg/double(N);
 	}
 	
 } // namespace xerus
