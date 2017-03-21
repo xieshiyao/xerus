@@ -536,6 +536,7 @@ BOOST_PYTHON_MODULE(xerus) {
 	// ------------------------------------------------------------- TTNetwork
 	VECTOR_TO_PY(TTTensor, "TTTensorVector");
 	VECTOR_TO_PY(TTOperator, "TTOperatorVector");
+	
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
 		.def(init<const Tensor&, optional<value_t, size_t>>())
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
@@ -749,27 +750,27 @@ BOOST_PYTHON_MODULE(xerus) {
 						  +[](ALSVariant &_this){ return _this.localSolver; },
 						  +[](ALSVariant &_this, ALSVariant::LocalSolver _s){ _this.localSolver = _s; })
 			
-			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 				_this(_A, _x, _b, _pd);
 			}, (arg("A"), arg("x"), arg("b"), arg("perfData")=NoPerfData) )
 			
-			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 				_this(_A, _x, _b, _eps, _pd);
 			}, (arg("A"), arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
 			
-			.def("__call__", +[](GeometricCGVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, const TTOperator &_A, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
 				_this(_A, _x, _b, _numHalfSweeps, _pd);
 			}, (arg("A"), arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
 			
-			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, PerformanceData &_pd) {
 				_this(_x, _b, _pd);
 			}, (arg("x"), arg("b"), arg("perfData")=NoPerfData) )
 			
-			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, value_t _eps, PerformanceData &_pd) {
 				_this(_x, _b, _eps, _pd);
 			}, (arg("x"), arg("b"), arg("epsilon"), arg("perfData")=NoPerfData) )
 			
-			.def("__call__", +[](GeometricCGVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
+			.def("__call__", +[](ALSVariant &_this, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, PerformanceData &_pd) {
 				_this(_x, _b, _numHalfSweeps, _pd);
 			}, (arg("x"), arg("b"), arg("numHalfSweeps"), arg("perfData")=NoPerfData) )
 		;
