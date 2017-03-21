@@ -49,24 +49,12 @@ namespace xerus {
 		void add_initial(const std::vector<double>& _rndvec, const Tensor& _solution);
 	};
 	
-	class UQAvgSet {
-	public:
-		std::vector<std::vector<double>> randomVectors;
-		
-		UQAvgSet() = default;
-		UQAvgSet(const UQAvgSet&  _other) = default;
-		UQAvgSet(      UQAvgSet&& _other) = default;
-		
-		void add(const std::vector<double>& _rndvec);
-		
-		Tensor avg(const TTTensor& _x) const;
-	};
 	
 	
 	void uq_adf(TTTensor& _x, const std::vector<std::vector<double>>& _randomVariables, const std::vector<Tensor>& _solutions);
 	
 	void uq_adf(TTTensor& _x, const UQMeasurementSet& _measurments);
 	
-	
+	Tensor uq_avg(const TTTensor& _x, const size_t _N);
 }
 

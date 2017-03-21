@@ -533,7 +533,8 @@ BOOST_PYTHON_MODULE(xerus) {
 	} // closes TN_scope
 	variable_argument_member_to_tuple_wrapper("TensorNetwork.__call__", "TensorNetworkCallOperator");
 	
-	// ------------------------------------------------------------- TTNetwork	
+	// ------------------------------------------------------------- TTNetwork
+	VECTOR_TO_PY(TTTensor, "TTTensorVector");
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
 		.def(init<const Tensor&, optional<value_t, size_t>>())
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
@@ -995,11 +996,8 @@ BOOST_PYTHON_MODULE(xerus) {
 	.def("add_initial", &UQMeasurementSet::add_initial)
 	;
 	
-	class_<UQAvgSet>("UQAvgSet")
-	.def(init<const UQAvgSet&>())
-	.def("add", &UQAvgSet::add)
-	.def("avg", &UQAvgSet::avg)
-	;
+	
+	def("uq_avg", &uq_avg);
 	
 	
 	def("uq_adf", +[](TTTensor& _x, const UQMeasurementSet& _measurments) {

@@ -414,12 +414,9 @@ namespace xerus {
 		initialSolutions.push_back(_solution);
 	}
 	
-	void UQAvgSet::add(const std::vector<double>& _rndvec) {
-		randomVectors.push_back(_rndvec);
-	}
+
 	
-	Tensor UQAvgSet::avg(const TTTensor& _x) const {
-		const size_t N = 10000;
+	Tensor uq_avg(const TTTensor& _x, const size_t _N) {
 		Tensor realAvg({_x.dimensions[0]});
 		
 		#pragma omp parallel
@@ -429,7 +426,7 @@ namespace xerus {
 			Tensor avg({_x.dimensions[0]});
 			
 			#pragma omp parallel for 
-			for(size_t i = 0; i < N; ++i) {
+			for(size_t i = 0; i < _N; ++i) {
 				Tensor p = Tensor::ones({1});
 				for(size_t k = _x.degree()-1; k > 0; --k) {
 					contract(p, _x.get_component(k), p, 1);
@@ -444,7 +441,7 @@ namespace xerus {
 			{ realAvg += avg; }
 		}
 		
-		return realAvg/double(N);
+		return realAvg/double(_N);
 	}
 	
 } // namespace xerus
