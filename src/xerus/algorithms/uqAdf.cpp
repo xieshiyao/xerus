@@ -233,16 +233,16 @@ namespace xerus {
 					norm += normPart;
                 }
             } else { // _corePosition > 0
-                Tensor shuffledX = reshuffle(_delta, {1, 0, 2});
+                Tensor shuffledDelta = reshuffle(_delta, {1, 0, 2});
 				if(_corePosition == d-1) {
-					shuffledX.reinterpret_dimensions({shuffledX.dimensions[0], shuffledX.dimensions[1]}); // Remove dangling 1-mode
+					shuffledDelta.reinterpret_dimensions({shuffledDelta.dimensions[0], shuffledDelta.dimensions[1]}); // Remove dangling 1-mode
 				}
                 
 				Tensor rightPart;
 				#pragma omp parallel for  firstprivate(tmp, rightPart) reduction(+:norm)
 				for(size_t j = 0; j < N; ++j) {
 					// Current node
-					contract(tmp, positions[_corePosition][j], shuffledX, 1);
+					contract(tmp, positions[_corePosition][j], shuffledDelta, 1);
 					
 					if(_corePosition < d-1) {
 						contract(rightPart, tmp, rightStack[_corePosition+1][j], 1);
@@ -392,7 +392,7 @@ namespace xerus {
 			newX.round(0.001);
 			
 			
-			// Add initial measurments. NOTE: should happen after mean is calculated
+			// Add initial measurments. NOTE: must happen after mean is calculated
 			randomVectors.insert(randomVectors.end(), _measurments.initialRandomVectors.begin(), _measurments.initialRandomVectors.end());
 			solutions.insert(solutions.end(), _measurments.initialSolutions.begin(), _measurments.initialSolutions.end());
 			

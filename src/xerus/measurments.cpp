@@ -493,9 +493,9 @@ namespace xerus {
                 } else { init = false; }
                 
                 // Rebuild stack
-                for(long i = degree()-1-unchangedModes; i >= 0; --i) {
-                    stack[i](k&0) = stack[i+1](k&1, l) * positions[j][i](l);
-                    stack[i].reduce_representation();
+                for(long i = degree()-1-long(unchangedModes); i >= 0; --i) {
+					stack[size_t(i)](k&0) = stack[size_t(i+1)](k&1, l) * positions[j][size_t(i)](l);
+					stack[size_t(i)].reduce_representation();
                 }
                 
                 error += misc::sqr(measuredValues[j] - stack.front()[0]);
