@@ -535,6 +535,7 @@ BOOST_PYTHON_MODULE(xerus) {
 	
 	// ------------------------------------------------------------- TTNetwork
 	VECTOR_TO_PY(TTTensor, "TTTensorVector");
+	VECTOR_TO_PY(TTOperator, "TTOperatorVector");
 	class_<TTTensor, bases<TensorNetwork>>("TTTensor")
 		.def(init<const Tensor&, optional<value_t, size_t>>())
 		.def(init<const Tensor&, value_t, TensorNetwork::RankTuple>())
@@ -999,10 +1000,9 @@ BOOST_PYTHON_MODULE(xerus) {
 	
 	def("uq_avg", &uq_avg);
 	
-	
-	def("uq_adf", +[](TTTensor& _x, const UQMeasurementSet& _measurments) {
-		uq_adf(_x, _measurments);
-	}, (arg("x"), arg("measurments")) );
+	def("uq_adf", +[](const UQMeasurementSet& _measurments, const TTTensor& _guess) {
+		return uq_adf(_measurments, _guess);
+	}, ( arg("measurments"), arg("guess")) );
 	
 	
 	

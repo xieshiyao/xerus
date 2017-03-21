@@ -104,7 +104,6 @@ namespace xerus {
             leftOughtStack(d, std::vector<Tensor>(N))
             {
                 REQUIRE(_randomVariables.size() == _solutions.size(), "ERROR");
-                LOG(bug, "N=" << N << ", d=" << d);
         }
         
         
@@ -299,8 +298,9 @@ namespace xerus {
 				for(size_t corePosition = 0; corePosition < x.degree(); ++corePosition) {
 					if(corePosition == 0) {
 						residuals.push_back(calc_residual_norm(0)/solutionsNorm);
-						LOG(bla, "Residual norm: " << std::scientific << residuals.back());
+						
 						if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
+							LOG(ADF, "Residual decrease from " << std::scientific << residuals.front() << " to " << std::scientific << residuals.back());
 							return; // We are done!
 						}
 					}
@@ -331,53 +331,54 @@ namespace xerus {
     }
     
     
-    void uq_adf(TTTensor& _x, const UQMeasurementSet& _measurments) {
+    TTTensor uq_adf(const UQMeasurementSet& _measurments, const TTTensor& _guess) {
 		REQUIRE(_measurments.randomVectors.size() == _measurments.solutions.size(), "Invalid measurments");
 		REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialSolutions.size(), "Invalid initial measurments");
 		
 		if(_measurments.initialRandomVectors.size() > 0) {
-			LOG(bla, "Init 1");
+			LOG(UQ_ADF, "Init");
+			TTTensor x(_guess.dimensions);
+			TTTensor newX(x.dimensions);
+			
 			std::vector<std::vector<double>> randomVectors = _measurments.randomVectors;
 			std::vector<Tensor> solutions = _measurments.solutions;
 			
-			TTTensor newX(_x.dimensions);
-			
 			// Calc mean
-			Tensor mean({newX.dimensions[0]});
+			Tensor mean({x.dimensions[0]});
 			for(const auto& sol : solutions) {
 				mean += sol;
 			}
 			mean /= double(solutions.size());
 			
-			TTTensor baseTerm(_x.dimensions);
-			mean.reinterpret_dimensions({1, _x.dimensions[0], 1});
+			TTTensor baseTerm(x.dimensions);
+			mean.reinterpret_dimensions({1, x.dimensions[0], 1});
 			baseTerm.set_component(0, mean);
 			for(size_t k = 0; k < _measurments.initialRandomVectors.size(); ++k) {
-				baseTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 0));
+				baseTerm.set_component(k+1, Tensor::dirac({1, x.dimensions[k+1], 1}, 0));
 			}
 			baseTerm.assume_core_position(0);
 			newX += baseTerm;
 			
-			mean.reinterpret_dimensions({_x.dimensions[0]});
+			mean.reinterpret_dimensions({x.dimensions[0]});
 			
 			// Calc linear terms
 			REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialRandomVectors[0].size(), "Sizes don't match.");
 			REQUIRE(_measurments.initialRandomVectors.size() == _measurments.initialSolutions.size(), "Sizes don't match.");
-			REQUIRE(_measurments.initialRandomVectors.size()+1 == _x.degree(), "Sizes don't match.");
-			LOG(bla, "Init 2");
+			REQUIRE(_measurments.initialRandomVectors.size()+1 == x.degree(), "Sizes don't match.");
+
 			for(size_t m = 0; m < _measurments.initialRandomVectors.size(); ++m) {
 				REQUIRE(_measurments.initialRandomVectors[m][m] > 0.0, "Invalid initial randVec");
-				TTTensor linearTerm(_x.dimensions);
+				TTTensor linearTerm(x.dimensions);
 				Tensor tmp = (_measurments.initialSolutions[m] - mean);
-				tmp.reinterpret_dimensions({1, _x.dimensions[0], 1});
+				tmp.reinterpret_dimensions({1, x.dimensions[0], 1});
 				linearTerm.set_component(0, tmp);
 				for(size_t k = 0; k < _measurments.initialRandomVectors.size(); ++k) {
 					if(k == m) {
-						linearTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 0));
+						linearTerm.set_component(k+1, Tensor::dirac({1, x.dimensions[k+1], 1}, 0));
 					} else {
 						REQUIRE(misc::hard_equal(_measurments.initialRandomVectors[m][k], 0.0), "Invalid initial randVec");
-						REQUIRE(_x.dimensions[k+1] >= 1, "WTF");
-						linearTerm.set_component(k+1, Tensor::dirac({1, _x.dimensions[k+1], 1}, 1));
+						REQUIRE(x.dimensions[k+1] >= 1, "WTF");
+						linearTerm.set_component(k+1, Tensor::dirac({1, x.dimensions[k+1], 1}, 1));
 					}
 				}
 				linearTerm.assume_core_position(0);
@@ -385,21 +386,27 @@ namespace xerus {
 			}
 			
 			// Add some noise
-			auto noise = TTTensor::random(newX.dimensions, std::vector<size_t>(newX.degree()-1, 2));
-			noise *= 1e-6*frob_norm(newX)/frob_norm(noise);
-			LOG(check, frob_norm(newX) << " vs " << frob_norm(noise));
-			newX += noise;
-			newX.round(0.001);
+// 			auto noise = TTTensor::random(newX.dimensions, std::vector<size_t>(newX.degree()-1, 2));
+// 			noise *= 1e-6*frob_norm(newX)/frob_norm(noise);
+// 			LOG(check, frob_norm(newX) << " vs " << frob_norm(noise));
+// 			newX += noise;
+// 			newX.round(0.001);
 			
 			
 			// Add initial measurments. NOTE: must happen after mean is calculated
 			randomVectors.insert(randomVectors.end(), _measurments.initialRandomVectors.begin(), _measurments.initialRandomVectors.end());
 			solutions.insert(solutions.end(), _measurments.initialSolutions.begin(), _measurments.initialSolutions.end());
 			
-			_x = newX;
-			uq_adf(_x, _measurments.randomVectors, _measurments.solutions);
+			x = 0.1*newX+0.9*_guess;
+			LOG(UQ_ADF, "Pre roundign ranks: " << x.ranks());
+			x.round(0.005);
+			LOG(UQ_ADF, "Post roundign ranks: " << x.ranks());
+			uq_adf(x, _measurments.randomVectors, _measurments.solutions);
+			return x;
 		} else {
-			uq_adf(_x, _measurments.randomVectors, _measurments.solutions);
+			auto x = _guess;
+			uq_adf(x, _measurments.randomVectors, _measurments.solutions);
+			return x;
 		}
 	}
 	
