@@ -300,7 +300,7 @@ namespace xerus {
 						residuals.push_back(calc_residual_norm(0)/solutionsNorm);
 						
 						if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
-							LOG(ADF, "Residual decrease from " << std::scientific << residuals.front() << " to " << std::scientific << residuals.back());
+							LOG(ADF, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back());
 							return; // We are done!
 						}
 					}
