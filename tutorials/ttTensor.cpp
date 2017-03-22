@@ -34,7 +34,7 @@ int main() {
 	// ensure that A is symmetric by calculating @f$ A\cdot A^T @f$
 	// here i^d signifies, that i should represent a multi-index of dimension d
 	// the TTOperator of order 2d is thus fully indexed by two indices of the form i^d, j^d
-	A(i^d, k^d) = A(i^d, j^d) * A(k^d, j^d);
+	A(i/2, k/2) = A(i/2, j/2) * A(k/2, j/2);
 	
 	// the rank of A increased in the last operation:
 	using xerus::misc::operator<<;
@@ -49,7 +49,7 @@ int main() {
 	// as the ALS will not modify the rank of X, the residual will most likely not be zero in the end
 	// here i&n denotes that i should be a multiindex spanning all but n indices of the given tensor
 	// in this case j&0 simply denotes that j should span all indices of X and B
-	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)) << " this is likely not equal to 0..." << std::endl;
+	std::cout << "Residual ||A*X-B|| = " << frob_norm(A(i^d, j^d)*X(j&0) - B(i&0))/frob_norm(B) << " this is likely not equal to 0..." << std::endl;
 }
 
 /**

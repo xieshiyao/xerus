@@ -61,11 +61,13 @@ static misc::UnitTest tt_pseudo_inv("TT", "Non-operator Pseudo Inverse", [](){
 	const size_t d = 2;
 	
 	const TTTensor op = TTTensor::random(std::vector<size_t>(2*d, 10), std::vector<size_t>(2*d-1, 4));
+	
 	TTTensor tmp = op;
 	tmp.move_core(d);
-	auto parts = tmp.chop(d);
+	std::pair<TensorNetwork, TensorNetwork> parts = tmp.chop(d);
+	Tensor core = tmp.get_component(d);
 	Tensor U,S,V;
-	(U(i,r1), S(r1,r2), V(r2,j^2)) = SVD(tmp.get_component(d)(i,j^2));
+	(U(i,r1), S(r1,r2), V(r2,j^2)) = SVD(core(i,j^2));
 	S.modify_diagonal_entries([](double &_v){
 		if (_v>1e-10) {
 			_v = 1/_v;
