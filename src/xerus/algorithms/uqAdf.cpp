@@ -300,7 +300,7 @@ namespace xerus {
 						residuals.push_back(calc_residual_norm(0)/solutionsNorm);
 						
 						if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
-							LOG(ADF, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back());
+							LOG(ADF, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back() << " in " << residuals.size()-10 << " iterations.");
 							return; // We are done!
 						}
 					}
@@ -387,19 +387,19 @@ namespace xerus {
 			
 			// Add some noise
 // 			auto noise = TTTensor::random(newX.dimensions, std::vector<size_t>(newX.degree()-1, 2));
-// 			noise *= 1e-6*frob_norm(newX)/frob_norm(noise);
+// 			noise *= 1e-4*frob_norm(newX)/frob_norm(noise);
 // 			LOG(check, frob_norm(newX) << " vs " << frob_norm(noise));
 // 			newX += noise;
-// 			newX.round(0.001);
+
 			
 			
 			// Add initial measurments. NOTE: must happen after mean is calculated
 			randomVectors.insert(randomVectors.end(), _measurments.initialRandomVectors.begin(), _measurments.initialRandomVectors.end());
 			solutions.insert(solutions.end(), _measurments.initialSolutions.begin(), _measurments.initialSolutions.end());
 			
-			x = 0.1*newX+0.9*_guess;
+			x = newX;
 			LOG(UQ_ADF, "Pre roundign ranks: " << x.ranks());
-			x.round(0.005);
+			x.round(0.00025);
 			LOG(UQ_ADF, "Post roundign ranks: " << x.ranks());
 			uq_adf(x, _measurments.randomVectors, _measurments.solutions);
 			return x;
@@ -421,9 +421,34 @@ namespace xerus {
 		initialSolutions.push_back(_solution);
 	}
 	
-
 	
-	Tensor uq_avg(const TTTensor& _x, const size_t _N) {
+	std::pair<std::vector<std::vector<double>>, std::vector<Tensor>> uq_mc(const TTTensor& _x, const size_t _N, const size_t _numSpecial) {
+		std::mt19937_64 rnd;
+		std::normal_distribution<double> dist(0.0, 1.0);
+		
+		std::vector<std::vector<double>> randomVariables;
+		std::vector<Tensor> solutions;
+		
+		randomVariables.reserve(_N);
+		solutions.reserve(_N);
+		for(size_t i = 0; i < _N; ++i) {
+			randomVariables.push_back(std::vector<double>(_x.degree()-1));
+			Tensor p = Tensor::ones({1});
+			for(size_t k = _x.degree()-1; k > 0; --k) {
+				randomVariables[i][k-1] = (k <= _numSpecial?0.3:1.0)*dist(rnd);
+				contract(p, _x.get_component(k), p, 1);
+				contract(p, p, randVar_to_position(randomVariables[i][k-1], _x.dimensions[k]), 1);
+			}
+			contract(p, _x.get_component(0), p, 1);
+			p.reinterpret_dimensions({_x.dimensions[0]});
+			solutions.push_back(p);
+		}
+		
+		return std::make_pair(randomVariables, solutions);
+	}
+	
+	
+	Tensor uq_avg(const TTTensor& _x, const size_t _N, const size_t _numSpecial) {
 		Tensor realAvg({_x.dimensions[0]});
 		
 		#pragma omp parallel
@@ -437,7 +462,7 @@ namespace xerus {
 				Tensor p = Tensor::ones({1});
 				for(size_t k = _x.degree()-1; k > 0; --k) {
 					contract(p, _x.get_component(k), p, 1);
-					contract(p, p, randVar_to_position((k==1?0.3:1.0)*dist(rnd), _x.dimensions[k]), 1);
+					contract(p, p, randVar_to_position((k <= _numSpecial?0.3:1.0)*dist(rnd), _x.dimensions[k]), 1);
 				}
 				contract(p, _x.get_component(0), p, 1);
 				p.reinterpret_dimensions({_x.dimensions[0]});

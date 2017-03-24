@@ -38,6 +38,57 @@
 #include "xerus.h"
 #include "xerus/misc/internal.h"
 
+
+
+/* Expose pairs */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
+namespace py = boost::python;
+
+template<typename T1, typename T2>
+struct PairToPythonConverter {
+	static PyObject* convert(const std::pair<T1, T2>& pair)
+	{
+		return py::incref(py::make_tuple(pair.first, pair.second).ptr());
+	}
+};
+
+template<typename T1, typename T2>
+struct PythonToPairConverter {
+	PythonToPairConverter()
+	{
+		py::converter::registry::push_back(&convertible, &construct, py::type_id<std::pair<T1, T2> >());
+	}
+	static void* convertible(PyObject* obj)
+	{
+		if (!PyTuple_CheckExact(obj)) return 0;
+		if (PyTuple_Size(obj) != 2) return 0;
+		return obj;
+	}
+	static void construct(PyObject* obj, py::converter::rvalue_from_python_stage1_data* data)
+	{
+		py::tuple tuple(py::borrowed(obj));
+		void* storage = ((py::converter::rvalue_from_python_storage<std::pair<T1, T2> >*) data)->storage.bytes;
+		new (storage) std::pair<T1, T2>(py::extract<T1>(tuple[0]), py::extract<T2>(tuple[1]));
+		data->convertible = storage;
+	}
+	
+};
+
+template<typename T1, typename T2>
+struct py_pair {
+	py::to_python_converter<std::pair<T1, T2>, PairToPythonConverter<T1, T2> > toPy;
+	PythonToPairConverter<T1, T2> fromPy;
+};
+
+
+#pragma GCC diagnostic pop
+/* End expose pair */
+
+
+
+
 using namespace boost::python;
 
 
@@ -1000,6 +1051,10 @@ BOOST_PYTHON_MODULE(xerus) {
 	
 	
 	def("uq_avg", &uq_avg);
+	
+	VECTOR_TO_PY(std::vector<double>, "DoubleVectorVector");
+	py_pair<std::vector<std::vector<double>>, std::vector<Tensor>>();
+	def("uq_mc", &uq_mc);
 	
 	def("uq_adf", +[](const UQMeasurementSet& _measurments, const TTTensor& _guess) {
 		return uq_adf(_measurments, _guess);
