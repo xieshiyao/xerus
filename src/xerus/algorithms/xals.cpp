@@ -38,11 +38,14 @@ namespace xerus {
      class InternalSolver {
         const size_t d;
         
+//         const std::vector<Tensor> opComponents;
+        
          std::vector<Tensor> leftStack;
          std::vector<Tensor> rightStack;
          
          std::vector<Tensor> leftBStack;
          std::vector<Tensor> rightBStack;
+         
          
          
         TTTensor& x;
@@ -53,22 +56,37 @@ namespace xerus {
         Tensor leftBStackB,rightBStackB;
          
      public:
+         static const std::vector<Tensor> get_op_comps(const TTOperator& _A) {
+             std::vector<Tensor> comps;
+             for(size_t i = 0; i < _A.degree()/2; ++i) {
+                 comps.push_back(_A.get_component(i));
+//                  comps.back()
+             }
+         }
+         
          InternalSolver(TTTensor& _x, const TTOperator& _A, const TTTensor& _b) : d(_x.degree()),leftStack(d), rightStack(d), x(_x), A(_A), b(_b) {
              
          }
          
          void calc_left_stack(const size_t _position) {
-             const Tensor& xi = x.get_component(_position);
-             
-             if(_position == 0) {
-                 Tensor tmp;
-                 Tensor A0 = A.get_component(_position);
-                 A0.reinterpret_dimensions({A0.dimensions[1], A0.dimensions[2], A0.dimensions[3]});
-                 contract(tmp, A0, true, xi, false, 1);
-                 contract(leftStack[_position], A0, true, xi, false, 1);
-             } else {
-                 contract(leftStack[_position], leftStack[_position-1], x.component(_position), 1);
-             }
+//              Tensor& xi = x.get_component(_position);
+//              Tensor& Ai = A.get_component(_position);
+//              Tensor& bi = b.get_component(_position);
+//               
+//                  Tensor A0 = A.get_component(_position);
+//              
+//              if(_position == 0) {
+//                  Tensor tmp;
+//                  xi.reinterpret_dimensions({xi.dimensions[1], xi.dimensions[2]});
+//                   Ai.reinterpret_dimensions({A0.dimensions[1], A0.dimensions[2], A0.dimensions[3]});
+//                    bi.reinterpret_dimensions({bi.dimensions[1], bi.dimensions[2]});
+//                  contract(tmp, Ai, true, xi, false, 1);
+//                  contract(leftStack[_position], tmp, true, xi, false, 1);
+//                  
+//                  contract(leftBStack[_position], bi, xi, 1);
+//              } else {
+//                  contract(leftStack[_position], leftStack[_position-1], x.component(_position), 1);
+//              }
          }
          
          
