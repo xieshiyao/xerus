@@ -110,7 +110,7 @@ namespace xerus {
                         leftStackA =  A.get_component(corePosition);
                         leftStackA.reinterpret_dimensions({leftStackA.dimensions[1], leftStackA.dimensions[2], leftStackA.dimensions[3]});
                         
-                        leftBStackB =  B.get_component(corePosition);
+                        leftBStackB =  b.get_component(corePosition);
                         leftBStackB.reinterpret_dimensions({leftBStackB.dimensions[1], leftBStackB.dimensions[2]});
                     } else {
                         contract(leftStackA, leftStack[corePosition-1],  A.get_component(corePosition), 1);
