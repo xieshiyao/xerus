@@ -119,7 +119,6 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	
 	xerus::ALS_SPD(A, X, B);
 	
-// 	LOG(asd, frob_norm(X-B));
 	
 	TEST(frob_norm(X-B) < 1e-12);
 	
@@ -142,9 +141,19 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 // 	ALSb.useResidualForEndCriterion = true;
 // 	std::vector<value_t> perfdata;
 	
-	ALS_SPD(A, X, C, 1e-12, pd);
-	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
 	
+	LOG(woopR, frob_norm(A(i/2, j/2)*X(j&0) - C(i&0))/frob_norm(C));
+	xerus::xals(X, A, C);
+	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
+	LOG(woop, frob_norm(A(i/2, j/2)*X(j&0) - C(i&0))/frob_norm(C));
+	
+	X = xerus::TTTensor::random(stateDims, 2);
+	
+	
+	LOG(woopR, frob_norm(A(i/2, j/2)*X(j&0) - C(i&0))/frob_norm(C));
+	xerus::ALS_SPD(A, X, C, 1e-12, pd);
+	TEST(frob_norm(A(i/2, j/2)*X(j&0) - C(i&0)) < 1e-4);
+	LOG(woop, frob_norm(A(i/2, j/2)*X(j&0) - C(i&0))/frob_norm(C));
 	
 // 	perfdata.clear();
 // 	ALSb(A, X, B, 1e-4, &perfdata);

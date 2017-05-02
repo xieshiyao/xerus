@@ -54,6 +54,7 @@
 	#include "xerus/performanceData.h"
 	#include "xerus/measurments.h"
     #include "xerus/algorithms/als.h"
+    #include "xerus/algorithms/xals.h"
     #include "xerus/algorithms/steepestDescent.h"
     #include "xerus/algorithms/cg.h"
     #include "xerus/algorithms/decompositionAls.h"
