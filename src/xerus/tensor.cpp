@@ -1239,25 +1239,25 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
-			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numIndices);
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
+		REQUIRE(_numModes <= _lhs.degree() && _numModes <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
+			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numModes);
 		
-		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
-		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;
+		const size_t lhsRemainOrder = _lhs.degree() - _numModes;
+		const size_t lhsRemainStart = _lhsTrans ? _numModes : 0;
 		const size_t lhsContractStart = _lhsTrans ? 0 : lhsRemainOrder;
 		const size_t lhsRemainEnd = lhsRemainStart + lhsRemainOrder;
 		
-		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
-		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
+		const size_t rhsRemainOrder = _rhs.degree() - _numModes;
+		const size_t rhsRemainStart = _rhsTrans ? 0 : _numModes;
 		IF_CHECK(const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;)
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
-		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), 
-				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numIndices);
+		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numModes, _rhs.dimensions.begin() + rhsContractStart), 
+				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numModes);
 		
 		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
-		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
+		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numModes);
 		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
 		
 		
@@ -1341,9 +1341,9 @@ namespace xerus {
 		}
 	}
 	
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
 		Tensor result;
-		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numIndices);
+		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numModes);
 		return result;
 	}
 

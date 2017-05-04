@@ -23,7 +23,7 @@ using the `xerus` library though, it might be worthwile to go even further.
 The most significant change in runtime speed gains due to compiler settings at this point will come from link-time optimizations
 (for `c++`projects using `xerus`).
 To make use of them you will need a sufficiently recent versions of the `g++` compiler and `ar` archiver. After compiling the
-`libxerus.so` object with the `USE_LTO = TRUE` flag you can then enable `flto` in your own compilation process. The optimizations
+`libxerus.so` object with the `USE_LTO = TRUE` flag you can then enable `-flto` in your own compilation process. The optimizations
 that will be used then extending more than a single compilation unit and might thus use significant system resources during 
 compilation.
 

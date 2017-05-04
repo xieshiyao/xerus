@@ -50,10 +50,10 @@ namespace xerus {
      * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
      * @param _rhs right hand side of the contraction.
      * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
-     * @param _numIndices number of indices that shall be contracted.
+     * @param _numModes number of modes that shall be contracted.
      */
-    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
-    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
+    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
     
     
 	
@@ -151,7 +151,7 @@ namespace xerus {
 		 */
 		template<XERUS_ADD_MOVE(Vec, DimensionTuple), XERUS_ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
-		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Sparse), denseData(std::forward<SPtr>(_data)) { }
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
 		
 		
 		/** 
@@ -198,7 +198,7 @@ namespace xerus {
 		 * @param _N the number of non-zero entries to be created.
 		 * @param _f the function to be used to create each non zero entry. 
 		 */
-		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
+		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f);
 		
 		
 		/** 
@@ -857,14 +857,14 @@ namespace xerus {
      * @param _result Output for the result of the contraction.
      * @param _lhs left hand side of the contraction.
      * @param _rhs right hand side of the contraction.
-     * @param _numIndices number of indices that shall be contracted.
+     * @param _numModes number of indices that shall be contracted.
      */
-    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numIndices) {
-        contract(_result, _lhs, false, _rhs, false, _numIndices);
+    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numModes) {
+        contract(_result, _lhs, false, _rhs, false, _numModes);
     }
     
-    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numIndices) {
-        return contract(_lhs, false, _rhs, false, _numIndices);
+    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numModes) {
+        return contract(_lhs, false, _rhs, false, _numModes);
     }
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
