@@ -10,7 +10,7 @@ and to use typical piping syntax for the messages.
 XERUS_LOG(als_warning, "The ALS encountered a mishap " << variable_1 << " <= " << variable_2);
 ~~~
 The following warning levels are predefined: `fatal`, `critical`, `error`, `warning`, `info`, `debug`. The default config file `config.mk.default` defines the preprocessor
-variable `XERUS_INFO` which causes all but the `debug` level to be printed. Per default any other log-level is printed. This can be turned off by including 
+variable `XERUS_LOG_INFO` which causes all but the `debug` level to be printed. Per default any other log-level is printed. This can be turned off by including 
 `XERUS_SET_LOGGING(level, xerus::err::NO_LOGGING)` inside a commonly included header.
 
 The `fatal` loglevel is special in that it will not just print the message but also throw an exception including the message itself and a callstack in the `.what()` string.
