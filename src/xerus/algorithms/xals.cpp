@@ -123,7 +123,7 @@ namespace xerus {
 				}
 				
 				
-				// Sweep Right -> Left
+				// Sweep Left -> Right
 				for(size_t corePosition = 0; corePosition < d; ++corePosition) {
 					Tensor op, rhs;
 					

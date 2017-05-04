@@ -44,7 +44,7 @@ The output of this executable should then list a number of passed tests and end 
 -------------------------------------------------------------------------------
 ~~~
 Note in particular, that all tests were passed. Should this not be the case please file a bug report with as many details as you 
-can in our [issuetracker](https://git.hemio.de/xerus/xerus/issues).
+can in our [issuetracker](https://git.hemio.de/xerus/xerus/issues) or write us an [email](mailto:contact@libxerus.org).
 
 
 ## Building the Library
