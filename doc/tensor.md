@@ -99,7 +99,7 @@ This behaviour can be modified by changing the global setting
 // tell xerus to convert sparse tensors to dense if 1 in 4 entries are non-zero
 xerus::Tensor::sparsityFactor = 4;
 ~~~
-in particular, setting the `sparsityFactor` to 0 will disable this feature.
+in particular, setting the [`sparsityFactor`](\ref xerus::Tensor::sparsityFactor) to 0 will disable this feature.
 ~~~.cpp
 // stop xerus from automatically converting sparse tensors to dense
 xerus::Tensor::sparsityFactor = 0;
@@ -109,12 +109,12 @@ in dense representation. You should thus manually convert overly full sparse Ten
 
 To do this there are a number of ways to interact with the representation of `xerus::Tensor` objects. Above we already saw, that
 the constructors can be used to explicitely construct sparse (default behaviour) or dense tensors. For already existing objects
-you can use the member functions `.is_sparse()` and `.is_dense()` to query their representation. To change representations call the 
-member functions `.use_dense_representation()` or `.use_sparse_representation()` to change it inplace or `.dense_copy()` or 
-`.sparse_copy()` to obtain new tensor objects with the desired representation.
+you can use the member functions [`.is_sparse()`](\ref xerus::Tensor::is_sparse()) and [`.is_dense()`](\ref xerus::Tensor::is_dense()) to query their representation. To change representations call the 
+member functions [`.use_dense_representation()`](\ref xerus::Tensor::use_dense_representation()) or [`.use_sparse_representation()`](\ref xerus::Tensor::use_sparse_representation()) to change it inplace or [`.dense_copy()`](\ref xerus::Tensor::dense_copy()) or 
+[`.sparse_copy()`](\ref xerus::Tensor::sparse_copy()) to obtain new tensor objects with the desired representation.
 
 To make more informed decisions about whether a conversion might be useful the tensor objects can be queried for the number of
-defined entries with `.sparsity()` or for the number of non-zero entries with `.count_non_zero_entries()`.
+defined entries with [`.sparsity()`](\ref xerus::Tensor::sparsity()) or for the number of non-zero entries with [`.count_non_zero_entries()`](\ref xerus::Tensor::count_non_zero_entries()).
 ~~~.cpp
 // create a sparse tensor with 100 random entries
 W = xerus::Tensor::random({100,100}, 100);
