@@ -1010,7 +1010,7 @@ namespace xerus {
 	
 	/** 
 	* @brief Checks whether two Tensors are approximately entrywise equal.
-	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < _eps is fullfilled for all i.
+	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < @a _eps is fullfilled for all i.
 	* @param _a the first test candidate.
 	* @param _b the second test candidate
 	* @param _eps the maximal relative difference between the entries of @a _a and @a _b.

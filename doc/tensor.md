@@ -27,7 +27,7 @@ D = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense);
 E = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense, xerus::Tensor::Initialisation::None);
 ~~~
 
-Other common tensors (apart from the 0 tensor) are available through named constructors:
+Other commonly used tensors (apart from the 0 tensor) are available through named constructors:
 ~~~.cpp
 // a 2x3x4 tensor with all entries = 1
 xerus::Tensor::ones({2,3,4});
@@ -46,8 +46,9 @@ xerus::Tensor::random_orthogonal({4,4},{4,4});
 xerus::Tensor::random({4,4,4}, 10);
 ~~~
 
-If the entries of the tensor should be calculated externally, it is possible to either pass the raw data directly (as
-`std::unique_ptr<double>` or `std::shared_ptr<double>`) or use a callback / lambda function to populate the entries:
+If the entries of the tensor should be calculated externally, it is possible in c++ to either pass the raw data directly (as
+`std::unique_ptr<double>` or `std::shared_ptr<double>`, check section 'Advanced Use and Ownership of Data' for the latter!) 
+or use a callback / lambda function to populate the entries:
 ~~~.cpp
 std::unique_ptr<double> ptr = foo();
 // transfer ownership of the data to the Tensor object of size 2x2x2
@@ -61,15 +62,76 @@ G = xerus::Tensor({2,2,2}, [](const std::vector<size_t> &_idx) -> double {
 	return result;
 });
 
-// create a sparse 10x10x10 tensor with 5 entries determined by a callback (lambda) function
-H = xerus::Tensor({10,10,10}, 5, [](size_t num, size_t max) -> std::pair<size_t, double> {
+// create a sparse 16x16x16 tensor with 5 entries determined by a callback (lambda) function
+H = xerus::Tensor({16,16,16}, 16, [](size_t num, size_t max) -> std::pair<size_t, double> {
 	// insert number 1/5, 2/5, 3/5, 4/5, 5/5
-	// at positions 0 (= {0,0,0}), 17 (= {0,1,7}), 34 (= {0,3,4}) ... respectively
+	// at positions 0 (= {0,0,0}), 17 (= {0,1,1}), 34 (= {0,2,2}) ... respectively
 	return std::pair<size_t,double>(num*17, double(num)/double(max));
 });
 ~~~
+In python raw data structures are not directly compatible to those used in `xerus` internally. Tensors can be constructed from 
+`numpy.ndarray` objects though. This function will also implicitely accept pythons native array objects.
+~~~.py
+# convert a numpy tensor (identity matrix) to a xerus.Tensor object
+T = xerus.Tensor.from_ndarray(numpy.eye(2))
+# alternatively the function also accepts pythons native arrays
+U = xerus.Tensor.from_ndarray([[1,0], [0,1]])
+~~~
 
-## Used Representation
+Last but not least it is possible to populate the entries of a tensor by explicitely accessing them. During this process, an 
+initially sparse 0 tensor as it is created by the default constructors will automatically be converted to a dense object as soon
+as `xerus` deems this to be preferable.
+~~~.cpp
+// creating an identity matrix by explicitely setting non-zero entries
+V = xerus::Tensor({2,2});
+V[{0,0}] = 1.0; // equivalently: V[0] = 1.0;
+V[{1,1}] = 1.0; // equivalently: V[3] = 1.0;
+~~~
+
+
+## Sparse and Dense Representations
+The last example already mentioned, that `xerus` will dynamically convert sparse tensors do their dense counterpart when this
+seems to be preferable. For this it does not matter whether the number of entries increased due to explicit access, summation or
+contraction of tensors or as the result of decompositions.
+
+This behaviour can be modified by changing the global setting
+~~~.cpp
+// tell xerus to convert sparse tensors to dense if 1 in 4 entries are non-zero
+xerus::Tensor::sparsityFactor = 4;
+~~~
+in particular, setting the `sparsityFactor` to 0 will disable this feature.
+~~~.cpp
+// stop xerus from automatically converting sparse tensors to dense
+xerus::Tensor::sparsityFactor = 0;
+~~~
+Note though, that calculations with non-sparse Tensors that are stored in a sparse representation are typically much slower than
+in dense representation. You should thus manually convert overly full sparse Tensors to the dense representation.
+
+To do this there are a number of ways to interact with the representation of `xerus::Tensor` objects. Above we already saw, that
+the constructors can be used to explicitely construct sparse (default behaviour) or dense tensors. For already existing objects
+you can use the member functions `.is_sparse()` and `.is_dense()` to query their representation. To change representations call the 
+member functions `.use_dense_representation()` or `.use_sparse_representation()` to change it inplace or `.dense_copy()` or 
+`.sparse_copy()` to obtain new tensor objects with the desired representation.
+
+To make more informed decisions about whether a conversion might be useful the tensor objects can be queried for the number of
+defined entries with `.sparsity()` or for the number of non-zero entries with `.count_non_zero_entries()`.
+~~~.cpp
+// create a sparse tensor with 100 random entries
+W = xerus::Tensor::random({100,100}, 100);
+// query its sparsity. likely output: "100 100"
+std::cout << W.sparsity() << ' ' << W.count_non_zero_entries() << std:endl;
+
+// store an explicit 0 value in the sparse representation
+W[{0,0}] = 0.0;
+// query its sparsity. likely output: "101 100"
+std::cout << W.sparsity() << ' ' << W.count_non_zero_entries() << std:endl;
+
+// convert the tensor to dense representation
+W.use_dense_representation();
+// query its sparsity. likely output: "10000 100"
+std::cout << W.sparsity() << ' ' << W.count_non_zero_entries() << std:endl;
+~~~
+
 
 ## Operators and Modifications
 

@@ -24,7 +24,9 @@ The current development version is also available in the same git repository (br
 There are a number of tutorials to get you started using the `xerus` library.
 * [Building xerus](@ref md_building_xerus) - instruction on how to build the library iteself and your first own program using it.
 * [Quick-Start guide](_quick-_start-example.html) - a short introduction into the basic `xerus` functionality.
+* [Tensor Class](@ref md_tensor) - an introduction into the most important functions relating to the `xerus::Tensor` class.
 * [TT Tensors](_t_t-_tensors_01_07_m_p_s_08-example.html) - using the MPS or Tensor-Train decomposition.
+* [Optimization](@ref md_optimization) - some hints how to achieve the fastest possible numerical code using `xerus`.
 * [Debugging](@ref md_tut_debugging) - using `xerus`'s capabilities to debug your own application.
 
 ## Issues
