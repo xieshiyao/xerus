@@ -8,6 +8,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * ! All macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
  * ! TT::find_largest_entry and TT::dyadic_product left the TT scope.
  * ! Tensor::modify_diag_elements renamed to Tensor::modify_diagonal_entries for naming consistency.
+ * Much faster solve of matrix equations Ax=b by exploiting symmetry and definiteness where possible. This directly speeds up the ALS as well.
  * Added a highly optimized minimal version of the ALS algorithm as xALS.
  * Some minor bugfixes.
 

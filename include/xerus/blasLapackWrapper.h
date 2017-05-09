@@ -125,12 +125,8 @@ namespace xerus {
 		void rq_destructive( double* const _R, double* const _Q, double* const _A, const size_t _m, const size_t _n);
 
 		
-	/*  TODO we need test cases for these  
 		///@brief: Solves Ax = b for x
-		void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b);
-		
-		///@brief: Solves Ax = b for x, Destroys A and b
-		void solve_destructive( double* const _bToX, double* const _A, const size_t _n);*/
+		void solve(double* _x, const double* _A, size_t _m, size_t _n, const double* _b, size_t _p);
 		
 		
 		

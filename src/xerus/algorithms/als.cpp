@@ -45,7 +45,7 @@ namespace xerus {
 		Tensor b(_b);
 		Tensor x;
 		
-		solve_least_squares(x, A, b, 0);
+		xerus::solve(x, A, b);
 		
 		Index i,j,k,l;
 		if (_data.direction == Increasing) {
