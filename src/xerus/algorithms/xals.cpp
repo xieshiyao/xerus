@@ -94,7 +94,7 @@ namespace xerus {
 		
 		double calc_residual_norm() {
 			const Index i, j;
-			Tensor tmp;
+			TTTensor tmp;
 			tmp(i&0) = A(i/2, j/2)*x(j&0)-b(i&0);
 			return frob_norm(tmp);
 		}
