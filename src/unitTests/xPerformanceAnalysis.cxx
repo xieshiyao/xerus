@@ -19,6 +19,7 @@
 
 
 #include<xerus.h>
+#include "../../include/xerus/misc/internal.h"
 
 #include "../../include/xerus/test/test.h"
 using namespace xerus;

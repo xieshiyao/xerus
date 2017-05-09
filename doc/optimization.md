@@ -14,6 +14,7 @@ It is not advisable to do this while developing, as it will be much more difficu
 functions, but once you have established, that your code works as expected you might want to try replacing the `libxerus.so` object
 used by your project with one compiled with the `-D XERUS_DISABLE_RUNTIME_CHECKS` flag.
 
+## Use c++ instead of Python
 
 ## Compiling Xerus with High Optimizations
 Per default the library already compiles with high optimization settings (corresponding basically to `-O3`) as there is rarely

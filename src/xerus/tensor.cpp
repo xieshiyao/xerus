@@ -1601,7 +1601,7 @@ namespace xerus {
                     _A.get_unsanitized_dense_data(), m, n, 
                     _B.get_unsanitized_dense_data(), p);
             } else {
-                LOG(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+                LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
                 
                 Tensor Bcpy(_B);
                 Bcpy.factor = 1.0;
@@ -1612,6 +1612,60 @@ namespace xerus {
                     _A.get_unsanitized_dense_data(), m, n, 
                     Bcpy.get_unsanitized_dense_data(), p);
             }
+		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
+	}
+	
+	
+	
+	void solve(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		if (_A.is_sparse()) { // TODO
+			solve_least_squares(_X, _A, _B, _extraDegree);
+			return;
+		}
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
+		const size_t degM = _B.degree() - _extraDegree;
+		const size_t degN = _A.degree() - degM;
+		
+		REQUIRE(_A.degree() == degM+degN, "Inconsistent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsistent dimensions.");
+		
+		// Make sure X has right dimensions
+		if(	_X.degree() != degN + _extraDegree
+			|| !std::equal(_X.dimensions.begin(), _X.dimensions.begin() + degN, _A.dimensions.begin() + degM)
+			|| !std::equal(_X.dimensions.begin()+ degN, _X.dimensions.end(), _B.dimensions.begin() + degM))
+		{
+			Tensor::DimensionTuple newDimX;
+			newDimX.insert(newDimX.end(), _A.dimensions.begin()+degM, _A.dimensions.end());
+			newDimX.insert(newDimX.end(), _B.dimensions.begin()+degM, _B.dimensions.end());
+			_X.reset(std::move(newDimX), Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		// Calculate multDimensions
+		const size_t m = misc::product(_A.dimensions, 0, degM);
+		const size_t n = misc::product(_A.dimensions, degM, degM+degN);
+		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
+		
+		
+		// Note that A isdense here
+		if(_B.is_dense()) {
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				_B.get_unsanitized_dense_data(), p);
+		} else {
+			LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+			
+			Tensor Bcpy(_B);
+			Bcpy.factor = 1.0;
+			Bcpy.use_dense_representation();
+			
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				Bcpy.get_unsanitized_dense_data(), p);
 		}
 		
 		// Propagate the constant factor

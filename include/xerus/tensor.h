@@ -988,10 +988,18 @@ namespace xerus {
 	 * @param _X Output Tensor for the resulting X.
 	 * @param _A input Tensor A.
 	 * @param _B input Tensor b.
-	 * @param _extraDegree number of dimensions that @a _X and @a _B share and for which the least squares problem is independently solved.
+	 * @param _extraDegree number of modes that @a _X and @a _B share and for which the least squares problem is independently solved.
 	 */
-	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree);
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree = 0);
 	
+	/**
+	 * @brief Solves the equation Ax = b for x. If the solution is not unique, the output need not be the minimal norm solution.
+	 * @param _X Output Tensor for the result
+	 * @param _A input Operator A
+	 * @param _B input right-hand-side b
+	 * @param _extraDegree number of modes that @a _x and @a _B sharefor which the solution should be computed independently.
+	 */
+	void solve(Tensor &_X, const Tensor &_A, const Tensor &_B, size_t _extraDegree = 0);
 	
 	/**
 	 * @brief calculates the entrywise product of two Tensors
