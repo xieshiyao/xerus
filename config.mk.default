@@ -73,6 +73,7 @@ COMPILE_THREADS = 8						# Number of threads to use during link time optimizatio
 # DEBUG += -fsanitize=undefined			# GCC only
 # DEBUG += -fsanitize=memory			# Clang only
 # DEBUG += -fsanitize=address			# find out of bounds access
+# DEBUG += -pg							# adds profiling code for the 'gprof' analyzer
 
 
 # Xerus has a buildin logging system to provide runtime information. Here you can adjust the logging level used by the library.

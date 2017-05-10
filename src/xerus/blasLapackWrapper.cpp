@@ -526,6 +526,7 @@ namespace xerus {
 		}
 		
 		/// Solves Ax = b for x
+		/// order of checks and solvers inspired by matlabs mldivide https://de.mathworks.com/help/matlab/ref/mldivide.html
 		void solve(double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _nrhs) {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");

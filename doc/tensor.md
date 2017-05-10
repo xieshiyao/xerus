@@ -9,7 +9,12 @@ tensors.
 ## Creation of Tensors
 The most basic tensors can be created with the empty constructor
 ~~~.cpp
-A = xerus::Tensor()
+// creates a degree 0 tensor
+A = xerus::Tensor();
+~~~
+~~~.py
+# creates a degree 0 tensor
+A = xerus.Tensor()
 ~~~
 it is of degree 0 and represents the single number 0. Similarly the constructors that take either the degree or a vector of 
 dimensions as input create (sparse) tensors that are equal to 0 everywhere
@@ -19,12 +24,25 @@ B = xerus::Tensor(3);
 // creates a sparse 2x2x2 tensor without any entries
 C = xerus::Tensor({2,2,2});
 ~~~
+~~~.py
+# creates a 1x1x1 tensor with entry 0
+B = xerus.Tensor(3)
+# creates a sparse 2x2x2 tensor without any entries
+C = xerus.Tensor([2,2,2])
+# equivalently: xerus.Tensor(dim=[2,2,2])
+~~~
 The latter of these can be forced to create a dense tensor instead which can either be initialized to 0 or uninitialized
 ~~~.cpp
 // creates a dense 2x2x2 tensor with all entries set to 0
 D = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense);
 // creates a dense 2x2x2 tensor with uninitialized entries
 E = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense, xerus::Tensor::Initialisation::None);
+~~~
+~~~.py
+# creates a dense 2x2x2 tensor with all entries set to 0
+D = xerus.Tensor(dim=[2,2,2], repr=xerus.Tensor.Representation.Dense)
+# creates a dense 2x2x2 tensor with uninitialized entries
+E = xerus.Tensor(dim=[2,2,2], repr=xerus.Tensor.Representation.Dense, init=xerus.Tensor.Initialisation.None)
 ~~~
 
 Other commonly used tensors (apart from the 0 tensor) are available through named constructors:
@@ -44,6 +62,24 @@ xerus::Tensor::random({4,4,4});
 xerus::Tensor::random_orthogonal({4,4},{4,4});
 // a 4x4x4 sparse tensor with 10 random entries in uniformly distributed random positions
 xerus::Tensor::random({4,4,4}, 10);
+~~~
+~~~.py
+# a 2x3x4 tensor with all entries = 1
+xerus.Tensor.ones([2,3,4])
+# an (3x4) x (3x4) identity operator
+xerus.Tensor.identity([3,4,3,4])
+# a 3x4x3x4 tensor with superdiagonal = 1 (where all 4 indices coincide) and = 0 otherwise
+xerus.Tensor.kronecker([3,4,3,4])
+# a 2x2x2 tensor with a 1 in position {1,1,1} and 0 everywhere else
+xerus.Tensor.dirac([2,2,2], [1,1,1])
+# equivalently xerus.Tensor.dirac(dim=[2,2,2], pos=[1,1,1])
+
+# a 4x4x4 tensor with i.i.d. Gaussian random values
+xerus.Tensor.random([4,4,4])
+# a (4x4) x (4x4) random orthogonal operator drawn according to the Haar measure
+xerus.Tensor.random_orthogonal([4,4],[4,4])
+# a 4x4x4 sparse tensor with 10 random entries in uniformly distributed random positions
+xerus.Tensor.random([4,4,4], n=10)
 ~~~
 
 If the entries of the tensor should be calculated externally, it is possible in c++ to either pass the raw data directly (as
@@ -69,6 +105,11 @@ H = xerus::Tensor({16,16,16}, 16, [](size_t num, size_t max) -> std::pair<size_t
 	return std::pair<size_t,double>(num*17, double(num)/double(max));
 });
 ~~~
+~~~.py
+# create a dense 2x2x2 tensor with every entry populated by a callback (lambda) function
+G = xerus.Tensor.from_function([2,2,2], lambda idx: idx[0]*idx[1]*idx[2])
+~~~
+
 In python raw data structures are not directly compatible to those used in `xerus` internally. Tensors can be constructed from 
 `numpy.ndarray` objects though. This function will also implicitely accept pythons native array objects.
 ~~~.py
@@ -87,6 +128,12 @@ V = xerus::Tensor({2,2});
 V[{0,0}] = 1.0; // equivalently: V[0] = 1.0;
 V[{1,1}] = 1.0; // equivalently: V[3] = 1.0;
 ~~~
+~~~.py
+# creating an identity matrix by explicitely setting non-zero entries
+V = xerus.Tensor([2,2])
+V[[0,0]] = 1.0 # equivalently: V[0] = 1.0
+V[[1,1]] = 1.0 # equivalently: V[3] = 1.0
+~~~
 
 
 ## Sparse and Dense Representations
@@ -99,10 +146,18 @@ This behaviour can be modified by changing the global setting
 // tell xerus to convert sparse tensors to dense if 1 in 4 entries are non-zero
 xerus::Tensor::sparsityFactor = 4;
 ~~~
+~~~.py
+# tell xerus to convert sparse tensors to dense if 1 in 4 entries are non-zero
+xerus.Tensor.sparsityFactor = 4
+~~~
 in particular, setting the [`sparsityFactor`](\ref xerus::Tensor::sparsityFactor) to 0 will disable this feature.
 ~~~.cpp
 // stop xerus from automatically converting sparse tensors to dense
 xerus::Tensor::sparsityFactor = 0;
+~~~
+~~~.py
+# stop xerus from automatically converting sparse tensors to dense
+xerus.Tensor.sparsityFactor = 0
 ~~~
 Note though, that calculations with non-sparse Tensors that are stored in a sparse representation are typically much slower than
 in dense representation. You should thus manually convert overly full sparse Tensors to the dense representation.
@@ -130,6 +185,22 @@ std::cout << W.sparsity() << ' ' << W.count_non_zero_entries() << std:endl;
 W.use_dense_representation();
 // query its sparsity. likely output: "10000 100"
 std::cout << W.sparsity() << ' ' << W.count_non_zero_entries() << std:endl;
+~~~
+~~~.py
+# create a sparse tensor with 100 random entries
+W = xerus.Tensor.random(dim=[100,100], n=100)
+# query its sparsity. likely output: "100 100"
+print(W.sparsity(), W.count_non_zero_entries())
+
+# store an explicit 0 value in the sparse representation
+W[[0,0]] = 0.0
+# query its sparsity. likely output: "101 100"
+print(W.sparsity(), W.count_non_zero_entries())
+
+# convert the tensor to dense representation
+W.use_dense_representation()
+# query its sparsity. likely output: "10000 100"
+print(W.sparsity(), W.count_non_zero_entries())
 ~~~
 
 

@@ -336,7 +336,7 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
@@ -344,7 +344,7 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */

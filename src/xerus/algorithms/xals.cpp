@@ -103,7 +103,7 @@ namespace xerus {
 		void solve() {
 			const double solutionsNorm = frob_norm(b);
 			std::vector<double> residuals(10, 1000.0);
-			const size_t maxIterations = 10000;
+			const size_t maxIterations = 1;
 			
 			
 			// Rebuild right stack

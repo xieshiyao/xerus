@@ -330,7 +330,14 @@ BOOST_PYTHON_MODULE(xerus) {
 		class_<Tensor>("Tensor",
 			"a non-decomposed Tensor in either sparse or dense representation"
 		)
-			.def(init<const Tensor::DimensionTuple&>(args("dimensions"), "constructs a Tensor with the given dimensions"))
+			.def(init<Tensor::DimensionTuple, Tensor::Representation, Tensor::Initialisation>(
+				(
+					arg("dim"),
+					arg("repr")=Tensor::Representation::Sparse,
+					arg("init")=Tensor::Initialisation::Zero
+				),
+				"constructs a Tensor with the given dimensions")
+			)
 			.def(init<const TensorNetwork&>())
 			.def(init<const Tensor &>())
 			.def("from_function", +[](const Tensor::DimensionTuple& _dim, PyObject *_f){
@@ -411,14 +418,44 @@ BOOST_PYTHON_MODULE(xerus) {
 			.def("random", 
 				+[](std::vector<size_t> _dim) {
 					return xerus::Tensor::random(_dim);
-				}).staticmethod("random")
-			.def("ones", &Tensor::ones, args("dimensions"), 
-				 "Constructs a Tensor of given dimensions that is equal to 1 everywhere."
-				  parametersDocstr "dimensions : list or tuple of int"
+				},
+				arg("dim"),
+				"Construct a tensor with i.i.d. Gaussian random entries."
+				parametersDocstr 
+				"dim : list or tuple of int\n"
+				"n : list or tuple of int, optional\n"
+				"    number of non-zero entries"
+				)
+			.def("random", 
+				+[](std::vector<size_t> _dim, size_t _n) {
+					return xerus::Tensor::random(_dim, _n);
+				},
+				(arg("dim"), arg("n"))
+				).staticmethod("random")
+			.def("random_orthogonal", 
+				+[](std::vector<size_t> _dimLhs, std::vector<size_t> _dimRhs) {
+					return xerus::Tensor::random_orthogonal(_dimLhs, _dimRhs);
+				}).staticmethod("random_orthogonal")
+			.def("ones", &Tensor::ones, args("dim"), 
+				 "Constructs a tensor of given dimensions that is equal to 1 everywhere."
+				  parametersDocstr "dim : list or tuple of int"
 			).staticmethod("ones")
-			.def("identity", &Tensor::identity).staticmethod("identity")
-			.def("kronecker", &Tensor::kronecker).staticmethod("kronecker")
-			.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&Tensor::dirac))
+			.def("identity", &Tensor::identity, args("dim"),
+				"Constructs a Tensor representation of the identity operator with the given dimensions."
+				parametersDocstr "dim : list or tuple of int"
+			).staticmethod("identity")
+			.def("kronecker", &Tensor::kronecker, args("dim"),
+				"Constructs a Tensor representation of the kronecker delta (=1 where all indices are identical, =0 otherwise)."
+				parametersDocstr "dim : list or tuple of int"
+			).staticmethod("kronecker")
+			.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const Tensor::MultiIndex&)>(&Tensor::dirac),
+				(arg("dim"), arg("pos")),
+				"Construct a Tensor with a single entry equals one and all other zero."
+				parametersDocstr 
+				"dim : list or tuple of int\n"
+				"pos : list or tuple of int\n"
+				"    position of the 1 entry"
+			)
 			.def("dirac", static_cast<Tensor (*)(Tensor::DimensionTuple, const size_t)>(&Tensor::dirac)).staticmethod("dirac")
 			.def("has_factor", &Tensor::has_factor)
 			.def("is_dense", &Tensor::is_dense)
@@ -476,6 +513,10 @@ BOOST_PYTHON_MODULE(xerus) {
 			.value("Dense", Tensor::Representation::Dense)
 			.value("Sparse", Tensor::Representation::Sparse)
 // 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
+		;
+		enum_<Tensor::Initialisation>("Initialisation", "Possible initialisations of new Tensor objects.")
+			.value("Zero", Tensor::Initialisation::Zero)
+			.value("None", Tensor::Initialisation::None)
 		;
 	} // close Tensor_scope
 	variable_argument_member_to_tuple_wrapper("Tensor.__call__", "TensorCallOperator");
