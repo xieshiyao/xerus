@@ -768,18 +768,18 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::perform_trace(size_t _firstIndex, size_t _secondIndex) {
-		REQUIRE(_firstIndex != _secondIndex, "Given indices must not coincide");
-		REQUIRE(dimensions[_firstIndex] == dimensions[_secondIndex], "Dimensions of trace indices must coincide.");
+	void Tensor::perform_trace(size_t _firstMode, size_t _secondMode) {
+		REQUIRE(_firstMode != _secondMode, "Given indices must not coincide");
+		REQUIRE(dimensions[_firstMode] == dimensions[_secondMode], "Dimensions of trace indices must coincide.");
 		
-		if(_firstIndex > _secondIndex) { std::swap(_firstIndex, _secondIndex); }
+		if(_firstMode > _secondMode) { std::swap(_firstMode, _secondMode); }
 		
 		
 		
-		const size_t front = misc::product(dimensions, 0, _firstIndex);
-		const size_t mid = misc::product(dimensions, _firstIndex+1, _secondIndex);
-		const size_t back = misc::product(dimensions, _secondIndex+1, degree());
-		const size_t traceDim = dimensions[_firstIndex];
+		const size_t front = misc::product(dimensions, 0, _firstMode);
+		const size_t mid = misc::product(dimensions, _firstMode+1, _secondMode);
+		const size_t back = misc::product(dimensions, _secondMode+1, degree());
+		const size_t traceDim = dimensions[_firstMode];
 		const size_t frontStepSize = traceDim*mid*traceDim*back;
 		const size_t traceStepSize = mid*traceDim*back+back;
 		const size_t midStepSize = traceDim*back;
@@ -822,8 +822,8 @@ namespace xerus {
 			sparseData.reset(newData.release());
 		}
 		
-		dimensions.erase(dimensions.begin()+_secondIndex);
-		dimensions.erase(dimensions.begin()+_firstIndex);
+		dimensions.erase(dimensions.begin()+_secondMode);
+		dimensions.erase(dimensions.begin()+_firstMode);
 		factor = 1.0;
 	}
 	

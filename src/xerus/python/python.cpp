@@ -463,12 +463,35 @@ BOOST_PYTHON_MODULE(xerus) {
 			.def("sparsity", &Tensor::sparsity)
 			.def("all_entries_valid", &Tensor::all_entries_valid)
 			.def("reorder_cost", &Tensor::reorder_cost)
-			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions)
-			.def("resize_mode", &Tensor::resize_mode,
-				(arg("mode"), arg("newDimension"), arg("cutPosition")=~0ul)
+			.def("reinterpret_dimensions", &Tensor::reinterpret_dimensions,
+				arg("dim"),
+				"Reinterprets the dimensions of the tensor."
+				parametersDocstr
+				"dim : list or tuple of int"
 			)
-			.def("fix_mode", &Tensor::fix_mode)
-			.def("remove_slate", &Tensor::remove_slate)
+			.def("resize_mode", &Tensor::resize_mode,
+				(arg("mode"), arg("newDim"), arg("cutPos")=~0ul),
+				"Resizes a specific mode of the Tensor."
+				parametersDocstr
+				"mode : int\n"
+				"newDim : int\n"
+				"cutPos : int, optional (default: infinity)\n"
+				"    The position within the selected mode in front of which slates are inserted or removed."
+			)
+			.def("fix_mode", &Tensor::fix_mode,
+				(arg("mode"), arg("value")),
+				"Fixes a specific mode to a specific value, effectively reducing the order by one."
+				parametersDocstr
+				"mode : int\n"
+				"value : int"
+			)
+			.def("remove_slate", &Tensor::remove_slate,
+				((arg("mode"), arg("pos")),
+				"Removes a single slate from the Tensor, reducing dimension[mode] by one."
+				parametersDocstr
+				"mode : int\n"
+				"pos : int"
+			)
 			.def("perform_trace", &Tensor::perform_trace)
 			.def("offset_add", &Tensor::offset_add)
 			.def("use_dense_representation", &Tensor::use_dense_representation)

@@ -737,11 +737,11 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief Performs the trace over the given indices
-		 * @param _firstIndex the first index involved in the trace.
-		 * @param _secondIndex the second index involved in the trace.
+		 * @brief Performs the trace over the given modes
+		 * @param _firstMode the first mode involved in the trace.
+		 * @param _secondMode the second mode involved in the trace.
 		 */
-		void perform_trace(size_t _firstIndex, size_t _secondIndex);
+		void perform_trace(size_t _firstMode, size_t _secondMode);
 		
 		
 		/** 
