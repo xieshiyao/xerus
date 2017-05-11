@@ -487,7 +487,7 @@ BOOST_PYTHON_MODULE(xerus) {
 				"value : int"
 			)
 			.def("remove_slate", &Tensor::remove_slate,
-				((arg("mode"), arg("pos")),
+				(arg("mode"), arg("pos")),
 				"Removes a single slate from the Tensor, reducing dimension[mode] by one."
 				parametersDocstr
 				"mode : int\n"

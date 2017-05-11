@@ -15,6 +15,12 @@ functions, but once you have established, that your code works as expected you m
 used by your project with one compiled with the `-D XERUS_DISABLE_RUNTIME_CHECKS` flag.
 
 ## Use c++ instead of Python
+The interface between the languages python and c++ makes it necessary to perform operations for the sole purpose of compatibility
+between the otherwise incompatible languages. Often this includes copies of vectors of integers (whenever dimensions are specified
+or queried) and sometimes even deep copies of whole tensors (`.from_ndarray()` and `.to_ndarray()`). The only way to get rid of
+this overhead is to write your appliation in c++ instead of python. Most instructions that `xerus` offers for python look very
+similar in c++, so a transition might be simpler than you think. Simply check out the rest of the tutorials to compare the code
+snippets.
 
 ## Compiling Xerus with High Optimizations
 Per default the library already compiles with high optimization settings (corresponding basically to `-O3`) as there is rarely
