@@ -21,12 +21,14 @@ dimensions as input create (sparse) tensors that are equal to 0 everywhere
 ~~~.cpp
 // creates a 1x1x1 tensor with entry 0
 B = xerus::Tensor(3);
+
 // creates a sparse 2x2x2 tensor without any entries
 C = xerus::Tensor({2,2,2});
 ~~~
 ~~~.py
 # creates a 1x1x1 tensor with entry 0
 B = xerus.Tensor(3)
+
 # creates a sparse 2x2x2 tensor without any entries
 C = xerus.Tensor([2,2,2])
 # equivalently: xerus.Tensor(dim=[2,2,2])
@@ -35,12 +37,14 @@ The latter of these can be forced to create a dense tensor instead which can eit
 ~~~.cpp
 // creates a dense 2x2x2 tensor with all entries set to 0
 D = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense);
+
 // creates a dense 2x2x2 tensor with uninitialized entries
 E = xerus::Tensor({2,2,2}, xerus::Tensor::Representation::Dense, xerus::Tensor::Initialisation::None);
 ~~~
 ~~~.py
 # creates a dense 2x2x2 tensor with all entries set to 0
 D = xerus.Tensor(dim=[2,2,2], repr=xerus.Tensor.Representation.Dense)
+
 # creates a dense 2x2x2 tensor with uninitialized entries
 E = xerus.Tensor(dim=[2,2,2], repr=xerus.Tensor.Representation.Dense, init=xerus.Tensor.Initialisation.None)
 ~~~
@@ -49,35 +53,47 @@ Other commonly used tensors (apart from the 0 tensor) are available through name
 ~~~.cpp
 // a 2x3x4 tensor with all entries = 1
 xerus::Tensor::ones({2,3,4});
+
 // an (3x4) x (3x4) identity operator
 xerus::Tensor::identity({3,4,3,4});
+
 // a 3x4x3x4 tensor with superdiagonal = 1 (where all 4 indices coincide) and = 0 otherwise
 xerus::Tensor::kronecker({3,4,3,4});
+
 // a 2x2x2 tensor with a 1 in position {1,1,1} and 0 everywhere else
 xerus::Tensor::dirac({2,2,2}, {1,1,1});
 
+
 // a 4x4x4 tensor with i.i.d. Gaussian random values
 xerus::Tensor::random({4,4,4});
+
 // a 4x4x4 sparse tensor with 10 random entries in uniformly distributed random positions
 xerus::Tensor::random({4,4,4}, 10);
+
 // a (4x4) x (4x4) random orthogonal operator drawn according to the Haar measure
 xerus::Tensor::random_orthogonal({4,4},{4,4});
 ~~~
 ~~~.py
 # a 2x3x4 tensor with all entries = 1
 xerus.Tensor.ones([2,3,4])
+
 # an (3x4) x (3x4) identity operator
 xerus.Tensor.identity([3,4,3,4])
+
 # a 3x4x3x4 tensor with superdiagonal = 1 (where all 4 indices coincide) and = 0 otherwise
 xerus.Tensor.kronecker([3,4,3,4])
+
 # a 2x2x2 tensor with a 1 in position {1,1,1} and 0 everywhere else
 xerus.Tensor.dirac([2,2,2], [1,1,1])
 # equivalently xerus.Tensor.dirac(dim=[2,2,2], pos=[1,1,1])
 
+
 # a 4x4x4 tensor with i.i.d. Gaussian random values
 xerus.Tensor.random([4,4,4])
+
 # a 4x4x4 sparse tensor with 10 random entries in uniformly distributed random positions
 xerus.Tensor.random([4,4,4], n=10)
+
 # a (4x4) x (4x4) random orthogonal operator drawn according to the Haar measure
 xerus.Tensor.random_orthogonal([4,4],[4,4])
 ~~~
@@ -120,6 +136,7 @@ In python raw data structures are not directly compatible to those used in `xeru
 ~~~.py
 # convert a numpy tensor (identity matrix) to a xerus.Tensor object
 T = xerus.Tensor.from_ndarray(numpy.eye(2))
+
 # alternatively the function also accepts pythons native arrays
 U = xerus.Tensor.from_ndarray([[1,0], [0,1]])
 ~~~
@@ -175,7 +192,7 @@ member functions [.use_dense_representation()](\ref xerus::Tensor::use_dense_rep
 [.sparse_copy()](\ref xerus::Tensor::sparse_copy()) to obtain new tensor objects with the desired representation.
 
 To make more informed decisions about whether a conversion might be useful the tensor objects can be queried for the number of
-defined entries with [.sparsity()](\ref xerus::Tensor::sparsity()) or for the number of non-zero entries with [.count_non_zero_entries()](\ref xerus::Tensor::count_non_zero_entries()) ().
+defined entries with [.sparsity()](\ref xerus::Tensor::sparsity()) or for the number of non-zero entries with [.count_non_zero_entries()](\ref xerus::Tensor::count_non_zero_entries()).
 ~~~.cpp
 // create a sparse tensor with 100 random entries
 W = xerus::Tensor::random({100,100}, 100);
@@ -210,6 +227,90 @@ print(W.sparsity(), W.count_non_zero_entries())
 ~~~
 
 
+
+## Output and Storing
+Probably the most common queries to the Tensor class are its degree with [.degree()](\ref xerus::Tensor::degree())
+as well as its precise dimensions by accessing [.dimensions](\ref xerus::Tensor::dimensions).
+~~~.cpp
+// construct a random 3x4x5x6 tensor
+A = xerus::Tensor::random({3, 4, 5, 6});
+
+// use xerus' pipe operator to be able to print vectors to std::cout
+using xerus::misc::operator<<;
+// query its degree and dimensions
+std::cout << "degree: " << A.degree() << " dim: " << A.dimensions << std::endl;
+// expected output: "degree: 4 dim: {3, 4, 5, 6}"
+~~~
+~~~.py
+# construct a random 3x4x5x6 tensor
+A = xerus.Tensor.random([3, 4, 5, 6])
+
+# query its degree and dimensions
+print("degree:", A.degree(), "dim:", A.dimensions())
+# expected output: "degree: 4 dim: [3, 4, 5, 6]"
+~~~
+
+Another useful and commonly used query is for the norm of a tensor. At the moment `xerus` provides member functions for the
+two most commonly used norms: [.frob_norm()](\ref xerus::Tensor::frob_norm()) (or equivalently
+`frob_norm(const Tensor&)`) to obtain the Frobenius norm and [.one_norm()](\ref xerus::Tensor::one_norm()) (or equivalently
+`one_norm(const Tensor&)`) to obtain the p=1 norm of the tensor.
+~~~.cpp
+A = xerus::Tensor::identity({100,100});
+
+// query the tensor for its p=1 and p=2 norm
+std::cout << one_norm(A) << ' ' << frob_norm(A) << std::endl;
+// expected output: "10000 100"
+~~~
+~~~.py
+A = xerus.Tensor.identity([100,100])
+
+# query the tensor for its p=1 and p=2 norm
+print(xerus.one_norm(A), xerus.frob_norm(A))
+# expected output: "10000 100"
+~~~
+
+
+To obtain a human readable string representation of the tensor, [.to_string()](\ref xerus::Tensor::to_string()) can be used.
+Note that it is meant purely for debugging purposes, in particular of smaller objects, and it is not adequately possible to 
+reconstruct the original tensor from this output.
+
+Storing Tensors to files such that they can be reconstructed exactly from those is instead possible with [save_to_file()](\ref xerus::misc::save_to_file())
+and respectively [load_from_file()](\ref xerus::misc::load_from_file()).
+~~~.cpp
+// construct a random 3x3 tensor
+A = xerus::Tensor::random({3, 3});
+
+// store the Tensor to the file "tensor.dat"
+xerus::misc::save_to_file(A, "tensor.dat");
+
+// load the Tensor from the file
+xerus::Tensor B = xerus::misc::load_from_file<xerus::Tensor>("tensor.dat");
+
+// check for correct reconstruction
+std::cout << "original tensor: " << A.to_string() << std::endl
+          << "loaded tensor: " << B.to_string() << std::endl
+          << "error: " << frob_norm(B-A) << std::endl;
+~~~
+~~~.py
+# construct a random 3x3 tensor
+A = xerus.Tensor.random([3, 3])
+
+# store the Tensor to the file "tensor.dat"
+xerus.misc.save_to_file(A, "tensor.dat")
+
+# load the Tensor from the file
+B = xerus.misc.load_from_file("tensor.dat")
+
+# check for correct reconstruction
+print("original tensor:", A)
+print("loaded tensor:", B)
+print("error:", xerus.frob_norm(B-A))
+~~~
+
+
+
+
+
 ## Operators and Modifications
 We have already seen the most basic method of modifying a tensor via the [operator[]](\ref xerus::Tensor::operator[]()). With it
 and the index notation presented in the [indices and equations](\ref md_indices) tutorial, most desired manipulations can be 
@@ -222,29 +323,38 @@ isomorphism to operators that matrices have. As such the matrix multiplication c
 you will have to use indexed equations to express such contractions in xerus.
 ~~~.cpp
 xerus::Tensor A = xerus::Tensor::random({100});
+
 // normalizing the vector
 A = A / frob_norm(A);
+
 // adding a small pertubation
 xerus::Tensor B = A + 1e-5 * xerus::Tensor::random({100});
+
 // normalizing B
 B /= frob_norm(B);
+
 // determining the change from A to B
 B -= A;
+
 std::cout << "Distance on the unit sphere: " << B.frob_norm() << std::endl;
 ~~~
 ~~~.py
 A = xerus.Tensor.random([100])
+
 # normalizing the vector
 A = A / xerus.frob_norm(A)
+
 # adding a small pertubation
 B = A + 1e-5 * xerus.Tensor.random([100])
+
 # normalizing B
 B /= B.frob_norm()
+
 # determining the change from A to B
 B -= A
+
 print("Distance on the unit sphere: ", B.frob_norm())
 ~~~
-Where we have already used [.frob_norm()](\ref xerus::Tensor::frob_norm()) to calculate the Frobenius norm of a Tensor.
 
 Many theoretical results use flattenings or expansions (vectorizations or tensorizations) to reduce tensor problems to ones with
 vectors and matrices. While this is not as common in practical applications it can still be useful at times. Because the data
@@ -252,11 +362,13 @@ that the computer uses internally does not need not be reordered, such a reinter
 time.
 ~~~.cpp
 A = xerus::Tensor::identity({2,2});
+
 // flatten the identity matrix to the vector (1, 0, 0, 1)
 A.reinterpret_dimensions({4});
 ~~~
 ~~~.py
 A = xerus.Tensor.identity([2,2])
+
 # flatten the identity matrix to the vector (1, 0, 0, 1)
 A.reinterpret_dimensions([4])
 ~~~
@@ -271,20 +383,26 @@ from the tensor, reducing the dimension of the specified mode by one.
 ~~~.cpp
 // start with a 2x2 matrix filled with ones
 A = xerus::Tensor::ones({2,2});
+
 // insert another row (consisting of zeros) i.e. increase dimension of mode 0 to 3
 A.resize_mode(0, 3, 1);
+
 // select the first column i.e. reduce to fixed value 0 for mode 1
 A.fix_mode(1, 0);
+
 // expected output: "1.0 0.0 1.0"
 std::cout << A.to_string() << std::endl;
 ~~~
 ~~~.py
 # start with a 2x2 matrix filled with ones
 A = xerus.Tensor.ones([2,2])
+
 # insert another row (consisting of zeros) i.e. increase dimension of mode 0 to 3
 A.resize_mode(mode=0, newDim=3, cutPos=1)
+
 # select the first column i.e. reduce to fixed value 0 for mode 1
 A.fix_mode(mode=1, value=0)
+
 # expected output: "1.0 0.0 1.0"
 print(A)
 ~~~
@@ -307,20 +425,44 @@ A = xerus.entrywise_product(A, A)
 ~~~
 
 
-## Output and Storing
-In the above examples we have already seen two kind of queries to the `Tensor` objects: [.to_string()](\ref xerus::Tensor::to_string()) 
-to obtain a human readable string representation of the Tensor and [.frob_norm()](\ref xerus::Tensor::frob_norm()) or equivalently
-[frob_norm(Tensor))(\ref xerus::frob_norm(Tensor)) to obtain the Frobenius norm of a Tensor. Note for the former, that it is 
-meant purely for debugging purposes, in particular of smaller objects, and it is not adequately possible to reconstruct the original
-Tensor from this output.
-
-Storing Tensors to files such that they can be reconstructed exactly from those is instead possible with [save_to_file()](\ref xerus::misc::save_to_file())
-and respectively [load_from_file()](\ref xerus::misc::load_from_file()).
+## Ownership of Data and Advanced Usage
+To reduce the number of unnecessary copies of tensors, `xerus` can share the underlying data arrays among several tensors and
+even evaluate multiplication with scalars lazyly (or include them in the next contraction or other modfication).
 ~~~.cpp
+A = xerus::Tensor::random({100,100});
 
+// after the copy, the underlying data array is shared among A and B
+xerus::Tensor B(A);
+
+// the array is still shared, even after multiplication with scalars
+B *= 3.141;
+// as well as after dimension reinterpretation
+B.reinterpret_dimensions({10, 10, 10, 10});
+
+// any change in the stored data of A or B will then copy the data to ensure that the other is not changed
+B[{2,2,2,2}] = 0.0;
+// A remains unchanged and does not share the data with B anymore
+~~~
+~~~.py
+A = xerus.Tensor.random([100,100])
+
+# after the copy, the underlying data array is shared among A and B
+B = xerus.Tensor(A)
+
+# the array is still shared, even after multiplication with scalars
+B *= 3.141
+# as well as after dimension reinterpretation
+B.reinterpret_dimensions([10, 10, 10, 10])
+
+# any change in the stored data of A or B will then copy the data to ensure that the other is not changed
+B[[2,2,2,2]] = 0.0
+# A remains unchanged and does not share the data with B anymore
 ~~~
 
-
-
-## Advanced Use and Ownership of Data
-shared_ptr, factor, rest c++ only: accessing internal representations
+The average user of `xerus` does not need to worry about this internal mechanism. This changes though as soon as you need access
+to the underlying data structues e.g. to call `blas` or `lapack` routines not supported by `xerus` or to convert objects from
+other libraries to and from xerus::Tensor objects (only possible in c++). If you do, make sure to check out the documentation
+for the following functions:
+* [.has_factor()](\ref xerus::Tensor::has_factor()) and [.apply_factor()](\ref xerus::Tensor::apply_factor())
+* [.get_dense_data()](\ref xerus::Tensor::get_dense_data()); [.get_unsanitized_dense_data()](\ref xerus::Tensor::get_unsanitized_dense_data()); [.get_internal_dense_data()](\ref xerus::Tensor::get_internal_dense_data())
+* [.get_sparse_data()](\ref xerus::Tensor::get_sparse_data()); [.get_unsanitized_sparse_data()](\ref xerus::Tensor::get_unsanitized_sparse_data()); [.get_internal_sparse_data()](\ref xerus::Tensor::get_internal_sparse_data())
