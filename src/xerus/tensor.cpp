@@ -272,16 +272,26 @@ namespace xerus {
 	}
 	
 	
+	value_t Tensor::one_norm() const {
+		if(is_dense()) {
+			return std::abs(factor)*blasWrapper::one_norm(denseData.get(), size);
+		} 
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += std::abs(entry.second);
+		}
+		return std::abs(factor)*norm;
+	}
+	
 	value_t Tensor::frob_norm() const {
 		if(is_dense()) {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
 		} 
-			value_t norm = 0;
-			for(const auto& entry : *sparseData) {
-				norm += misc::sqr(entry.second);
-			}
-			return std::abs(factor)*sqrt(norm);
-		
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += misc::sqr(entry.second);
+		}
+		return std::abs(factor)*sqrt(norm);
 	}
 	
 	

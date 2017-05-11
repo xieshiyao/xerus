@@ -436,6 +436,12 @@ namespace xerus {
 		 */
 		value_t frob_norm() const;
 		
+		/** 
+		 * @brief Calculates the 1-norm of the tensor.
+		 * @return the 1-norm.
+		 */
+		value_t one_norm() const;
+		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		/** 
@@ -922,6 +928,13 @@ namespace xerus {
 	* @return the frobenius norm .
 	*/
 	static XERUS_force_inline value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
+	
+	/** 
+	* @brief Calculates the 1-norm of the given tensor
+	* @param _tensor the Tensor of which the norm shall be calculated.
+	* @return the 1-norm
+	*/
+	static XERUS_force_inline value_t one_norm(const Tensor& _tensor) { return _tensor.one_norm(); }
 	
 	/** 
 	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.

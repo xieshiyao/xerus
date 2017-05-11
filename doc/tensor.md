@@ -308,6 +308,18 @@ A = xerus.entrywise_product(A, A)
 
 
 ## Output and Storing
+In the above examples we have already seen two kind of queries to the `Tensor` objects: [.to_string()](\ref xerus::Tensor::to_string()) 
+to obtain a human readable string representation of the Tensor and [.frob_norm()](\ref xerus::Tensor::frob_norm()) or equivalently
+[frob_norm(Tensor))(\ref xerus::frob_norm(Tensor)) to obtain the Frobenius norm of a Tensor. Note for the former, that it is 
+meant purely for debugging purposes, in particular of smaller objects, and it is not adequately possible to reconstruct the original
+Tensor from this output.
+
+Storing Tensors to files such that they can be reconstructed exactly from those is instead possible with [save_to_file()](\ref xerus::misc::save_to_file())
+and respectively [load_from_file()](\ref xerus::misc::load_from_file()).
+~~~.cpp
+
+~~~
+
 
 
 ## Advanced Use and Ownership of Data

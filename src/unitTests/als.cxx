@@ -78,8 +78,8 @@ static misc::UnitTest als_real("ALS", "real", []() {
 	
 	b(k&0) = A(k/2,l/2)*realX(l&0);
 
-	const value_t result = ALS(A, x, b, 1e-6);
-	MTEST(result < 0.001, result);
+	const value_t result = ALS(A, x, b, 1e-7);
+	MTEST(result < 1e-7, result);
 	MTEST(frob_norm(x - realX) < 1e-4, frob_norm(x - realX));
 });
 
@@ -103,7 +103,7 @@ static misc::UnitTest als_proj("ALS", "projectionALS", [](){
 
 #include <iomanip>
 #include <fstream>
-
+/*
 static misc::UnitTest als_tut("ALS", "tutorial", [](){
 	xerus::Index i,j,k;
 	
@@ -159,4 +159,4 @@ static misc::UnitTest als_tut("ALS", "tutorial", [](){
 // 	ALSb(A, X, B, 1e-4, &perfdata);
 // 	TEST(!misc::approx_equal(frob_norm(A(i^d, j^d)*X(j&0) - B(i&0)), 0., 1.));
 // 	std::cout << perfdata << std::endl;
-});
+});*/

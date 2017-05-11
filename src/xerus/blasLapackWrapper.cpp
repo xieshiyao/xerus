@@ -73,6 +73,18 @@ namespace xerus {
 		
 		//----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
 		
+		double one_norm(const double* const _x, const size_t _n) {
+			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			
+			XERUS_PA_START;
+			
+			const double result = cblas_dasum(static_cast<int>(_n), _x, 1);
+			
+			XERUS_PA_END("Dense BLAS", "One Norm", misc::to_string(_n));
+			
+			return result;
+		}
+		
 		double two_norm(const double* const _x, const size_t _n) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			

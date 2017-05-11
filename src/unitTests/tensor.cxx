@@ -56,6 +56,19 @@ static Tensor::DimensionTuple random_dimensions(const size_t _degree, const size
 }
 
 
+static misc::UnitTest tensor_norms("Tensor", "one_norm", [](){
+	Index i;
+	Tensor A = Tensor::ones({100,100});
+	MTEST(misc::approx_equal(A.one_norm(), 100.0*100), A.one_norm());
+	MTEST(misc::approx_equal(one_norm(A), 100.0*100), A.one_norm());
+	MTEST(misc::approx_equal(one_norm(A(i&0)), 100.0*100), A.one_norm());
+	MTEST(misc::approx_equal(A.frob_norm(), 100.0), A.frob_norm());
+	A = Tensor::identity({100,100});
+	MTEST(misc::approx_equal(A.one_norm(), 100.0), A.one_norm());
+	MTEST(misc::approx_equal(A.frob_norm(), 10.0), A.frob_norm());
+});
+
+
 static misc::UnitTest tensor_rand_ortho("Tensor", "random_orthogonal", [](){
 	Index i,j,k;
 	Tensor Q = Tensor::random_orthogonal({3,15}, {6,7});

@@ -38,7 +38,10 @@ namespace xerus {
 		
 		//----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
 		
-		///@brief: Computes the two norm =||x||
+		///@brief: Computes the one norm =||x||_1
+		double one_norm(const double* const _x, const size_t _n);
+		
+		///@brief: Computes the two norm =||x||_2
 		double two_norm(const double* const _x, const size_t _n);
 		
 		///@brief: Computes the dot product = x^T*y

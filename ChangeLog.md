@@ -10,7 +10,8 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * ! Tensor::modify_diag_elements renamed to Tensor::modify_diagonal_entries for naming consistency.
  * Much faster solve of matrix equations Ax=b by exploiting symmetry and definiteness where possible. This directly speeds up the ALS as well.
  * Added a highly optimized minimal version of the ALS algorithm as xALS.
- * Some minor bugfixes.
+ * Added Tensor.one_norm() and one_norm(Tensor) to calculate the one norm of a Tensor.
+ * Some minor bugfixes and performance improvements.
 
 * 2016-06-23 v2.4.0
  * Introduced nomeclature 'mode'. Marked all functions that will be renamed / removed in v3.0.0 as deprecated.

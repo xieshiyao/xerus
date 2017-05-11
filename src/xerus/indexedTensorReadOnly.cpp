@@ -334,6 +334,10 @@ namespace xerus {
 		template value_t frob_norm<Tensor>(const IndexedTensorReadOnly<Tensor>& _idxTensor);
 		template value_t frob_norm<TensorNetwork>(const IndexedTensorReadOnly<TensorNetwork>& _idxTensor);
 		
+		value_t one_norm(const IndexedTensorReadOnly<Tensor>& _idxTensor) {
+			return _idxTensor.tensorObjectReadOnly->one_norm();
+		}
+		
 		size_t get_eval_degree(const std::vector<Index>& _indices) {
 			size_t degree = 0;
 			for(const Index& idx : _indices) {

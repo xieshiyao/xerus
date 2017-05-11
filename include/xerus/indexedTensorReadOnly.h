@@ -153,6 +153,8 @@ namespace xerus {
 		template<class tensor_type>
 		value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
 		
+		///@brief Returns the one-norm of the associated tensor Obejct.
+		value_t one_norm(const IndexedTensorReadOnly<Tensor>& _idxTensor);
 		
 		size_t get_eval_degree(const std::vector<Index>& _indices);
 	}

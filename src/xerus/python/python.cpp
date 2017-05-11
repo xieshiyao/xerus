@@ -414,6 +414,7 @@ BOOST_PYTHON_MODULE(xerus) {
 			.def("degree", &Tensor::degree)
 			.def_readonly("factor", &Tensor::factor)
 			.def_readonly("size", &Tensor::size)
+			.def("one_norm", &Tensor::one_norm)
 			.def("frob_norm", &Tensor::frob_norm)
 			.def("random", 
 				+[](std::vector<size_t> _dim) {
@@ -543,6 +544,8 @@ BOOST_PYTHON_MODULE(xerus) {
 		;
 	} // close Tensor_scope
 	variable_argument_member_to_tuple_wrapper("Tensor.__call__", "TensorCallOperator");
+	//def("frob_norm", +[](const Tensor& _x){ return _x.frob_norm(); }); // see below
+	def("one_norm", +[](const Tensor& _x){ return _x.one_norm(); });
 	def("reshuffle", static_cast<Tensor(*)(const Tensor&, const std::vector<size_t>&)>(&reshuffle));
 	def("contract", static_cast<Tensor(*)(const Tensor&, bool, const Tensor&, bool, size_t)>(&contract));
 	def("pseudo_inverse", static_cast<Tensor(*)(const Tensor&, size_t)>(&pseudo_inverse));
