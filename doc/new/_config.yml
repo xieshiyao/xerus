@@ -1,0 +1,20 @@
+# Jekyll configuration
+
+name: Xerus Documentation
+description: Documentation for the xerus library.
+
+# baseurl will often be '', but for a project page on gh-pages, it needs to
+# be the project name.
+# *** IMPORTANT: If your local "jekyll serve" throws errors change this to '' or
+#     run it like so: jekyll serve --baseurl=''
+baseurl: ''
+
+permalink: /:title
+# paginate: 3
+
+highlighter: rouge
+# highlighter: coderay
+markdown: kramdown
+# gems: ['jekyll-paginate']
+
+# exclude: ['README.md', 'LICENSE']
