@@ -59,6 +59,10 @@ input:checked + label {
     position: relative;
 }
 
+#content #content2 {
+	width: 100%;
+}
+
 input#tab1:checked ~ #tabs #content #content1,
 input#tab2:checked ~ #tabs #content #content2 {
     opacity: 1;
