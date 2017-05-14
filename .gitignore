@@ -16,9 +16,13 @@
 
 !*.sh
 
+!*.rb
+
 !*.md
 !*.xml
 !*.dox
+!*.css
+!*.js
 
 # ...even if they are in subdirectories
 !*/

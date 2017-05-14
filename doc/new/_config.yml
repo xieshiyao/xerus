@@ -15,6 +15,6 @@ permalink: /:title
 highlighter: rouge
 # highlighter: coderay
 markdown: kramdown
-# gems: ['jekyll-paginate']
+# gems: ['TabsConverter']
 
 # exclude: ['README.md', 'LICENSE']
