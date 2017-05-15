@@ -15,7 +15,7 @@ section: "Documentation"
 
 The library uses a macro of the form `XERUS_LOG(level, msg)` to print messages to `cout`. It allows to use arbitrary log levels without any need to declare them beforehand
 and to use typical piping syntax for the messages.
-~~~.cpp
+~~~ cpp
 XERUS_LOG(als_warning, "The ALS encountered a mishap " << variable_1 << " <= " << variable_2);
 ~~~
 The following warning levels are predefined: `fatal`, `critical`, `error`, `warning`, `info`, `debug`. The default config file `config.mk.default` defines the preprocessor
@@ -32,16 +32,16 @@ in the `errors/` subfolder (if it exists) on any `error`, `critical` or `fatal` 
 
 The `XERUS_REQUIRE(condition, additional_msg)` macro replaces assertions in the `xerus` library. It uses above `XERUS_LOG` functionality and can thus use piping style messages just as the `XERUS_LOG`
 macro. It is equivalent to the following definition
-~~~.cpp
+~~~ cpp
 XERUS_REQUIRE(condition, additional_msg) = if (!(condition)) { XERUS_LOG(fatal, additional_msg); }
 ~~~
 There is a large number of such checks in the library. All of them can be turned off by defining `DEBUG += -D XERUS_DISABLE_RUNTIME_CHECKS` in the `config.mk` file.
 
 
-## UNIT_TEST
+## Unit Tests
 
 Compiling with `make test` creates an executable that includes all functions defined within `xerus::UnitTest` objects.
-~~~.cpp
+~~~ cpp
 static xerus::misc::UnitTest objectName("Group", "Name", [](){
     // source code of the test
     // likely includes (several) tests of the form TEST(condition);
@@ -65,7 +65,7 @@ The information of this callstack is only available if the application was compi
 
 The exceptions used by `xerus` have the additional capability to accept piped information that will be included in the `.what()` string. To include a callstack it is thus possible to 
 simply write
-~~~.cpp
+~~~ cpp
 XERUS_THROW(xerus::misc::generic_error() << "callstack:\n" << xerus::misc::get_call_stack());
 ~~~
 The used macro will additionally include the source file and line as well as the function name in which the exception was thrown.

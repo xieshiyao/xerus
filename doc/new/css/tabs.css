@@ -78,3 +78,19 @@ input#tab2:checked ~ #tabs label[for=tab2] {
 	background: #f1f1f1;
 	color: #444;    
 }
+
+input#tab1:checked ~ div #tabs #content #content1,
+input#tab2:checked ~ div #tabs #content #content2 {
+    opacity: 1;
+    z-index: 100;
+}
+
+input#tab1:checked ~ div #tabs label[for=tab1] {
+	background: #f1f1f1;
+	color: #444;    
+}
+
+input#tab2:checked ~ div #tabs label[for=tab2] {
+	background: #f1f1f1;
+	color: #444;    
+}

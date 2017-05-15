@@ -57,14 +57,14 @@ but can become significant when very small tensors are being used and the time f
 
 In such cases it can be useful to replace such equations (especially ones that are as simple as above) with the explicit statement 
 of contractions and reshuffels. For above equation that would simply be
-~~~.cpp
+~~~ cpp
 contract(A, B, false, C, false, 1);
 ~~~
 i.e. read as: contract two tensors and store the result in A, left hand side B, not transposed, right hand side C, not transposed, contract a single mode.
 
 If it is necessary to reshuffle a tensor to be able to contract it in such a way, e.g. `A(i,j,k) = B(i,k,j)`, this can be done
 with the `reshuffle` function.
-~~~.cpp
+~~~ cpp
 reshuffle(A, B, {0,2,1});
 ~~~
 
