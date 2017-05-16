@@ -1,0 +1,37 @@
+.footer-menu {
+    /* position: relative; */
+    display: inline-block;
+}
+.footer-menu:focus {
+    /* clicking on label should toggle the menu */
+    pointer-events: none;
+}
+.footer-menu:focus + .footer-menu-content {
+    /*  opacity is 1 in opened state (see below) */
+    opacity: 1;
+    visibility: visible;
+
+    /* don't let pointer-events affect descendant elements */
+    pointer-events: auto;
+}
+.footer-menu-content {
+    position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+    z-index: -10000;
+	text-align: left;
+
+    /* use opacity to fake immediate toggle */
+    opacity: 0;
+    visibility: hidden;
+    transition: visibility 0.5s;
+}
+
+.navbar-header {
+	z-index: 10;
+}
+.navbar-footer {
+	z-index: 10;
+}

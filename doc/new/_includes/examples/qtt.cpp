@@ -1,8 +1,3 @@
-/**
-* @file 
-* @short the source code to the "Quick-Start" guide
-*/
-
 #include <xerus.h>
 
 int main() {
