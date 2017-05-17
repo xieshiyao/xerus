@@ -49,7 +49,7 @@ A = xerus.Tensor([512,512], A_fill)
 ~~~
 __tabsEnd
 
-To account for the @f$ h^2 @f$ factor that we have ignored so far we simply multipy the operator by @f$ N^2 @f$.
+To account for the $ h^2 $ factor that we have ignored so far we simply multipy the operator by $ N^2 $.
 
 __tabsStart
 ~~~ cpp
@@ -61,7 +61,7 @@ A *= 512*512
 ~~~
 __tabsEnd
 
-By reinterpreting the dimension and thus effectively treating the tensor as a @f$ 2^{18} @f$ instead of a @f$ 512^2 @f$ tensor,
+By reinterpreting the dimension and thus effectively treating the tensor as a $ 2^{18} $ instead of a $ 512^2 $ tensor,
 the decomposition into a `TTTensor` will give us the stiffness matrix in a QTT format.
 
 __tabsStart
@@ -90,7 +90,7 @@ print("ttA ranks:", ttA.ranks())
 ~~~
 __tabsEnd
 
-For the right-hand-side we perform similar operations to obtain a QTT decomposed vector @f$ b_i = 1 \forall i @f$.
+For the right-hand-side we perform similar operations to obtain a QTT decomposed vector $ b_i = 1 \forall i $.
 As the generating function needs no index information, we create a `[]()->double` lambda function:
 
 __tabsStart
