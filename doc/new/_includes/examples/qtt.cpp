@@ -25,9 +25,7 @@ int main() {
 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
 	
 	// the right hand side of the equation both as Tensor and in (Q)TT format
-	xerus::Tensor b({512}, []() {
-		return 1.0;
-	});
+	auto b = xerus::Tensor::ones({512});
 	
 	b.reinterpret_dimensions(std::vector<size_t>(9, 2));
 	xerus::TTTensor ttb(b);
@@ -51,8 +49,5 @@ int main() {
 	x(j^9) = b(i^9) / A(i^9, j^9);
 	
 	// and calculate the Frobenius norm of the difference
-	// here i&0 denotes a multiindex large enough to fully index the respective tensors
-	// the subtraction of different formats will default to Tensor subtraction such that
-	// the TTTensor ttx will be evaluated to a Tensor prior to subtraction.
-	std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
+	std::cout << "error: " << frob_norm(x - xerus::Tensor(ttx)) << std::endl;
 }

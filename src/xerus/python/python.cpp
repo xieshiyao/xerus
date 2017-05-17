@@ -324,6 +324,14 @@ BOOST_PYTHON_MODULE(xerus) {
 	}, return_value_policy<manage_new_object,  // result is treated as a new object
 	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
 	
+	enum_<Tensor::Representation>("Representation", "Possible representations of Tensor objects.")
+		.value("Dense", Tensor::Representation::Dense)
+		.value("Sparse", Tensor::Representation::Sparse)
+	;
+	enum_<Tensor::Initialisation>("Initialisation", "Possible initialisations of new Tensor objects.")
+		.value("Zero", Tensor::Initialisation::Zero)
+		.value("None", Tensor::Initialisation::None)
+	;
 	
 	// ----------------------------------------------------------- Tensor
 	{ scope Tensor_scope = 
@@ -533,15 +541,7 @@ BOOST_PYTHON_MODULE(xerus) {
 				_this[_i] = _val;
 			})
 		;
-		enum_<Tensor::Representation>("Representation", "Possible representations of Tensor objects.")
-			.value("Dense", Tensor::Representation::Dense)
-			.value("Sparse", Tensor::Representation::Sparse)
-// 			.export_values() // would define Tensor.Sparse = Tensor.Representation.Sparse etc.
-		;
-		enum_<Tensor::Initialisation>("Initialisation", "Possible initialisations of new Tensor objects.")
-			.value("Zero", Tensor::Initialisation::Zero)
-			.value("None", Tensor::Initialisation::None)
-		;
+		
 	} // close Tensor_scope
 	variable_argument_member_to_tuple_wrapper("Tensor.__call__", "TensorCallOperator");
 	//def("frob_norm", +[](const Tensor& _x){ return _x.frob_norm(); }); // see below

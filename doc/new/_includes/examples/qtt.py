@@ -3,13 +3,13 @@ import xerus as xe
 # construct the stiffness matrix A using a fill function
 def A_fill(idx):
 	if idx[0] == idx[1] :
-		return 2
+		return 2.0
 	elif idx[1] == idx[0]+1 or idx[1]+1 == idx[0] :
-		return -1
-	else
-		return 0
+		return -1.0
+	else:
+		return 0.0
 
-A = xe.Tensor([512,512], A_fill)
+A = xe.Tensor.from_function([512,512], A_fill)
 
 # and dividing it by h^2 = multiplying it with N^2
 A *= 512*512
@@ -17,13 +17,13 @@ A *= 512*512
 # reinterpret the 512x512 tensor as a 2^18 tensor
 # and create (Q)TT decomposition of it
 A.reinterpret_dimensions([2,]*18)
-ttA = xe.TTTensor(A)
+ttA = xe.TTOperator(A)
 
 # and verify its rank
 print("ttA ranks:", ttA.ranks())
 
 # the right hand side of the equation both as Tensor and in (Q)TT format
-b = xe.Tensor([512], lambda: 1)
+b = xe.Tensor.ones([512])
 b.reinterpret_dimensions([2,]*9)
 ttb = xe.TTTensor(b)
 
@@ -43,11 +43,8 @@ print("residual:", residual)
 
 # as an comparison solve the system exactly using the Tensor / operator
 x = xe.Tensor()
-x(j^9) = b(i^9) / A(i^9, j^9)
+x(j^9) << b(i^9) / A(i^9, j^9)
 
 # and calculate the Frobenius norm of the difference
-# here i&0 denotes a multiindex large enough to fully index the respective tensors
-# the subtraction of different formats will default to Tensor subtraction such that
-# the TTTensor ttx will be evaluated to a Tensor prior to subtraction.
-print("error:", xe.frob_norm(x(i&0) - ttx(i&0)))
+print("error:", xe.frob_norm(x - xe.Tensor(ttx)))
 

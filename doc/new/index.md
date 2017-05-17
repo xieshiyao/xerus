@@ -1,8 +1,10 @@
 ---
 layout: post
+title: "Xerus"
+subtitle: "a general purpose tensor library"
 ---
 
-# xerus - a general purpose tensor library    {#mainpage}
+# Xerus
 
 ## Introduction
 
@@ -10,7 +12,8 @@ The `xerus` library is a general purpose library for numerical calculations with
 The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
 
 The key features include:
-* Modern code and concepts incorporating many features of the new `C++11` standard.
+* Modern code and concepts incorporating many features of the `C++11` standard.
+* Full python bindings with very similar syntax for easy transitions from and to c++.
 * Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
 * Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS, ADF and CG).
 * Lazy evaluation of multiple tensor contractions featuring heuristics to find the most effective contraction order.
@@ -18,12 +21,10 @@ The key features include:
 * Fast sparse tensor calculation by usage of the `suiteSparse` sparse matrix capabilities.
 * Capabilites to handle arbitrary Tensor Networks.
 
-## Version History
-
-We released our first stable version 1.0 in May 2015 and are currently at version 2.2.1. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
-The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
 
 ## Getting Started
+
+
 
 There are a number of tutorials to get you started using the `xerus` library.
 * [Building xerus](@ref md_building_xerus) - instruction on how to build the library iteself and your first own program using it.

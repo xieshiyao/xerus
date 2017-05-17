@@ -42,7 +42,7 @@ def A_fill(idx):
 		return 2
 	elif idx[1] == idx[0]+1 or idx[1]+1 == idx[0] :
 		return -1
-	else
+	else :
 		return 0
 
 A = xerus.Tensor([512,512], A_fill)
@@ -72,7 +72,7 @@ xerus::TTOperator ttA(A);
 __tabsMid
 ~~~ python
 A.reinterpret_dimensions([2,]*18)
-ttA = xerus.TTTensor(A)
+ttA = xerus.TTOperator(A)
 ~~~
 __tabsEnd
 
@@ -95,16 +95,14 @@ As the generating function needs no index information, we create a `[]()->double
 
 __tabsStart
 ~~~ cpp
-xerus::Tensor b({512}, []() {
-	return 1.0;
-});
+auto b = xerus::Tensor::ones({512});
 
 b.reinterpret_dimensions(std::vector<size_t>(9, 2));
 xerus::TTTensor ttb(b);
 ~~~
 __tabsMid
 ~~~ python
-b = xerus.Tensor([512], lambda: 1)
+b = xerus.Tensor.ones([512])
 
 b.reinterpret_dimensions([2,]*9)
 ttb = xerus.TTTensor(b)
@@ -178,21 +176,20 @@ x(j^9) = b(i^9) / A(i^9, j^9);
 __tabsMid
 ~~~ python
 x = xerus.Tensor()
-x(j^9) = b(i^9) / A(i^9, j^9)
+x(j^9) << b(i^9) / A(i^9, j^9)
 ~~~
 __tabsEnd
 
-In the comparison of this exact solution `x` and the ALS solution `ttx` the TTTensor will automatically be
-cast to a Tensor object to allow the subtraction. Here we can use another index shorthand: `i&0` which denotes
-a multiindex of large enough dimension to fully index the respective tensor object.
+In the comparison of this exact solution `x` and the ALS solution `ttx`, we have to decide whether we want to cast
+the TTTensor to a Tensor or vice versa to be able to subtract them.
 
 __tabsStart
 ~~~ cpp
-std::cout << "error: " << frob_norm(x(i&0) - ttx(i&0)) << std::endl;
+std::cout << "error: " << frob_norm(x - xerus::Tensor(ttx)) << std::endl;
 ~~~
 __tabsMid
 ~~~ python
-print("error:", xerus.frob_norm(x(i&0) - ttx(i&0)))
+print("error:", xerus.frob_norm(x - xerus.Tensor(ttx)))
 ~~~
 __tabsEnd
 
