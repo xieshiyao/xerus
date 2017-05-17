@@ -14,7 +14,9 @@ names for the same concepts and at times even several concepts for the same name
 we want to explain most terms as they are used throughout this library.
 
 It is not strictly speaking necessary to read this chapter to successfully use the library, but it might very well help you find 
-the functions you were looking for if you are used to slightly different notation.
+the functions you were looking for if you are used to slightly different notation. In particular this chapter is not meant to be
+a complete introduction into the topic but is rather adressed at those that are already familiar with tensor arithmetic and
+tensor networks.
 
 ## Tensors
 
@@ -59,7 +61,7 @@ For every permutation $p:[d]\rightarrow[d]$ there is a **reshuffling** (or **reo
 $$ 
 \begin{align}
 R: \mathbb{R}^{n_1 \times n_2 \times \cdots \times n_d} &\rightarrow \mathbb{R}^{n_{p(1)} \times n_{p(2)} \times \cdots \times n_{p(d)}} \\
-T&\mapsto S\;:\;S[i_1, i_2, \dots, i_d] = T[i_{p(1)}, i_{p(2)}, \dots, i_{p(d)}]
+T&\mapsto S\;:\;S[i_1, i_2, \dots, i_d] = T[i_{p^{-1}(1)}, i_{p^{-1}(2)}, \dots, i_{p^{-1}(d)}]
 \end{align}
 $$
 
@@ -67,7 +69,7 @@ e.g. for matrices the transposition is a reordering or for tensors of degree $3$
 
 $$
 \begin{align}
-\mathbb{R}^{n_1 \times n_2 \times n_3} &\rightarrow \mathbb{R}^{n_1 \times n_3 \times n2} \\
+\mathbb{R}^{n_1 \times n_2 \times n_3} &\rightarrow \mathbb{R}^{n_1 \times n_3 \times n_2} \\
 T&\mapsto S\;:\;S[i,j,k] = T[i,k,j]
 \end{align}
 $$
