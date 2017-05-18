@@ -1426,16 +1426,37 @@ namespace xerus {
 		
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
+		// sparse SVD becomes inefficient when the matrix is not sparse enough
+		// sparse SVD is about equally fast to dense SVD when there are about N = 1.55*(min(m,n)+(max-min)/5) entries set
+		// will calculate with 2 instead of 1.55 to make sure that we will certainly be slower with sparse
+		// (note that the algorithm is quadratic in the sparsity)
+		size_t min = std::min(lhsSize, rhsSize);
+		size_t max = std::max(lhsSize, rhsSize);
+		if (_input.is_sparse() && _input.sparsity() > 2*(min+(max-min)/5)) {
+			_input.use_dense_representation();
+		}
+		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse SVD not yet implemented. falling back to the dense SVD");
-			_input.use_dense_representation();
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			// calculate QC in both directions
+			calculate_qc(_U, _input, _input, _splitPos);
+			calculate_cq(_input, _Vt, _input, 1);
+			_input.use_dense_representation(); // in the very unlikely case that is it not already dense
+			
+			// then calculate SVD only of remaining (hopefully small) core
+			Tensor UPrime, VPrime;
+			std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, 1);
+			prepare_factorization_output(UPrime, VPrime, _input, 1, rank, Tensor::Representation::Dense);
+			blasWrapper::svd(UPrime.override_dense_data(), tmpS.get(), VPrime.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			
+			// contract U*UPrime and VPrime*V to obtain SVD (UU', S, V'V) from orthogonal U and V as wel as the SVD (U', S, V')
+			contract(_U, _U, UPrime, 1);
+			contract(_Vt, VPrime, _Vt, 1);
 		} else {
+			prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		

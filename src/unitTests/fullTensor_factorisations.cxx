@@ -332,3 +332,31 @@ static misc::UnitTest tensor_scq("Tensor", "Sparse_CQ", [](){
 // 	TEST(approx_equal(Cs, Cf, 1e-15));// NOTE apparently not true when there are small singular values
 	MTEST(frob_norm(Qs(l,i,j,k)*Qs(m,i,j,k) - Tensor::identity({Qs.dimensions[0], Qs.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
 });
+
+static misc::UnitTest sparse_svd("Tensor", "SparseSVD", [](){
+	Index i,j,k,l;
+	size_t m1=400, m2=400;
+	for (size_t n=10; n<=1000; n+=100) {
+		Tensor A = Tensor::random({m1, m2}, 1*n);
+		
+		Tensor U, S, Vt;
+// 		uint64 start = xerus::misc::uTime();
+		(U(i,j), S(j,k), Vt(k,l)) = SVD(A(i,l));
+// 		uint64 tSparse = xerus::misc::uTime() - start;
+// 		XERUS_LOG(sparsity, U.is_sparse() << ' ' << S.is_sparse() << ' ' << Vt.is_sparse());
+		Tensor T;
+		T(i,l) = U(i,j)*S(j,k)*Vt(k,l);
+		MTEST(approx_equal(T, A, 1e-14), n << ' ' << frob_norm(T-A) << '/' << frob_norm(A));
+		U(i,j)=U(k,i)*U(k,j) - Tensor::identity(S.dimensions)(i,j);
+		MTEST(frob_norm(U)<1e-10, n << ' ' << frob_norm(U));
+		Vt(i,j)=Vt(i,k)*Vt(j,k) - Tensor::identity(S.dimensions)(i,j);
+		MTEST(frob_norm(Vt)<1e-10, n << ' ' << frob_norm(Vt));
+		
+// 		A.use_dense_representation();
+// 		start = xerus::misc::uTime();
+// 		(U(i,j), S(j,k), Vt(k,l)) = SVD(A(i,l));
+// 		uint64 tDense = xerus::misc::uTime() - start;
+// 		XERUS_LOG(times, n << ' ' << tSparse << ' ' << tDense);
+	}
+});
+

@@ -318,8 +318,8 @@ namespace xerus {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			REQUIRE(_m > 0, "Dimension n must be larger than zero");
-			REQUIRE(_n > 0, "Dimension m must be larger than zero");
+			REQUIRE(_m > 0, "Dimension m must be larger than zero");
+			REQUIRE(_n > 0, "Dimension n must be larger than zero");
 			
 			XERUS_PA_START;
 			
