@@ -352,7 +352,7 @@ BOOST_PYTHON_MODULE(xerus) {
 				return Tensor(_dim, [&](std::vector<size_t> _p) {
 					return boost::python::call<double>(_f, _p);
 				});
-			}).staticmethod("from_function") 
+			}).staticmethod("from_function")
 			.def("from_ndarray", +[](PyObject *_npObject){
 				//TODO check for dangling pointers!
 				#pragma GCC diagnostic push
@@ -513,9 +513,9 @@ BOOST_PYTHON_MODULE(xerus) {
 			.def("ensure_own_data_and_apply_factor", &Tensor::ensure_own_data_and_apply_factor)
 			.def("multiIndex_to_position", &Tensor::multiIndex_to_position).staticmethod("multiIndex_to_position")
 			.def("position_to_multiIndex", &Tensor::position_to_multiIndex).staticmethod("position_to_multiIndex")
-			.def("__call__", +[](Tensor &_this, const std::vector<Index> &_idx){
-				return  new xerus::internal::IndexedTensor<Tensor>(std::move(_this(_idx)));
-			}, return_value_policy<manage_new_object>())
+			.def("__call__", +[](Tensor *_this, const std::vector<Index> &_idx){
+				return  new xerus::internal::IndexedTensor<Tensor>(std::move((*_this)(_idx)));
+			}, return_value_policy<manage_new_object, with_custodian_and_ward_postcall<0, 1>>() )
 			.def("__str__", &Tensor::to_string)
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
@@ -578,7 +578,7 @@ BOOST_PYTHON_MODULE(xerus) {
 			})
 			.def("__call__", +[](TensorNetwork &_this, const std::vector<Index> &_idx){
 				return  new xerus::internal::IndexedTensor<TensorNetwork>(std::move(_this(_idx)));
-			}, return_value_policy<manage_new_object>())
+			}, return_value_policy<manage_new_object, with_custodian_and_ward_postcall<0, 1>>() )
 			.def(self * other<value_t>())
 			.def(other<value_t>() * self)
 			.def(self / other<value_t>())

@@ -107,7 +107,7 @@ define \n
 endef
 
 FLAGS = $(strip $(WARNINGS) $(OPTIMIZE) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER))
-PYTHON_FLAGS = $(strip $(WARNINGS) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER))
+PYTHON_FLAGS = $(strip $(WARNINGS) $(LOGGING) $(DEBUG) $(ADDITIONAL_INCLUDE) $(OTHER) -fno-var-tracking-assignments)
 MINIMAL_DEPS = Makefile config.mk makeIncludes/general.mk makeIncludes/warnings.mk makeIncludes/optimization.mk
 
 
