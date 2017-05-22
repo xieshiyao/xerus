@@ -2,7 +2,7 @@
 layout: post
 title: "QTT Decomposition"
 date: 1000-12-10
-topic: "Quickstart"
+topic: "Examples"
 section: "Examples"
 ---
 __tabsInit

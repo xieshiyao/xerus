@@ -3,54 +3,27 @@ layout: post
 section: "Documentation"
 ---
 
-# xerus - a general purpose tensor library    {#mainpage}
+# Documentation
 
-## Introduction
+This is the semi-complete documentation of the `xerus` library. It does not provide you with precise function declarations or
+class hierarchies (check out the [doxygen documentation](doxygen) for those) but instead focuses on small working code snippets
+to demonstrate `xerus`'s capabilities. 
 
-The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and general Tensor Networks.
-The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
+The documentation is categorized into chapters that each focus on individual features of the library. In particular the chapters in the "Basic
+Usage" section only build upon the knowledge of the previous chapters so that they can easily be read in order. They are still
+useful as lookup resources later on though.
 
-The key features include:
-* Modern code and concepts incorporating many features of the new `C++11` standard.
-* Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
-* Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS, ADF and CG).
-* Lazy evaluation of multiple tensor contractions featuring heuristics to find the most effective contraction order.
-* Direct integration of the `blas` and `lapack`, as high performance linear algebra backends.
-* Fast sparse tensor calculation by usage of the `suiteSparse` sparse matrix capabilities.
-* Capabilites to handle arbitrary Tensor Networks.
+If you have not already done so, you will most likely want to start by downloading and [building xerus](building_xerus). If
+you are uncertain or confused by our nomenclature at any point you can reference the [nomenclature](nomenclature) chapter which
+should hopefully allow you to deduce the meaning of all tensor specific terms we use.
 
-## Version History
+The "Basic Usage" section starts out with the creation and modification of (sparse or dense) tensors ([The Tensor Class](tensor)),
+how to use them in indexed equations to denote contractions, summations etc. ([Indices and Equations](indices)) and finally 
+how to denote generalizations of matrix decompositions ([Decompositions and Solve](decompositions)) before explainig any more
+elaborate tensor format. The focus of `xerus` so far clearly lies on the Tensor Train decomposition ([TT-Tensors](tttensors)) and
+algorithms for those to solve least squares problems ([Alternating Algorithms](als), [Riemannian Algorithms](riemannian)) or
+tensor recovery and completion problems ([Tensor Completion / Recovery](completion)). It is possible to use `xerus`'s capabilities
+to construct and contract arbitrary tensor networks though ([General Tensor Networks](tensornetworks)).
 
-We released our first stable version 1.0 in May 2015 and are currently at version 2.2.1. It can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link.
-The current development version is also available in the same git repository (branch 'development') and it might include more features than the latest stable release, but be adviced that these development versions are particularly bad documented and might change drastically from one day to the next.
-
-## Getting Started
-
-There are a number of tutorials to get you started using the `xerus` library.
-* [Building xerus](@ref md_building_xerus) - instruction on how to build the library iteself and your first own program using it.
-* [Quick-Start guide](_quick-_start-example.html) - a short introduction into the basic `xerus` functionality.
-* [Tensor Class](@ref md_tensor) - an introduction into the most important functions relating to the `xerus::Tensor` class.
-* [TT Tensors](_t_t-_tensors_01_07_m_p_s_08-example.html) - using the MPS or Tensor-Train decomposition.
-* [Optimization](@ref md_optimization) - some hints how to achieve the fastest possible numerical code using `xerus`.
-* [Debugging](@ref md_tut_debugging) - using `xerus`'s capabilities to debug your own application.
-
-## Issues
-
-Should you have any problems with the library do not hesitate to contact us at [contact[at]libxerus.org](mailto:contact[at]libxerus.org) or describe your problem in the [issuetracker](https://git.hemio.de/xerus/xerus/issues).
-
-
-## Licence and Attribution
-
-The `xerus` library is published under the AGPL v3.0. With proper attribution you are thus allowed to freely use and modify the source code but if you distribute your software including the `xerus`
-library (or you provide a service based on this library) you have to provide the full source code under a compatible licence. For more information see the [AGPL](http://www.gnu.org/licenses/agpl-3.0.html).
-
-If this library proved useful in your scientific research we would be grateful for any contributions to the source code and citations. As there is no related article yet, a corresponding bibtex 
-entry might look as follows
-~~~
-@Misc{xerus,
-	author = {Huber, Benjamin and Wolf, Sebastian},
-	title = {Xerus - A General Purpose Tensor Library},
-	howpublished = {\url{https://libxerus.org/}},
-	year = {2014--2017}
-}
-~~~
+In the "Advanced Usage" section you find instructions on how to optimize your usage of the `xerus` library to gain those last
+10-20% of speedup ([Optimization](optimization)) and explanations of the debugging tools that `xerus` gives you ([Debugging](debugging)).

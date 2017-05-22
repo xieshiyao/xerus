@@ -6,8 +6,6 @@ subtitle: "a general purpose tensor library"
 
 # Xerus
 
-## Introduction
-
 The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and general Tensor Networks.
 The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
 
@@ -24,15 +22,14 @@ The key features include:
 
 ## Getting Started
 
+`xerus` can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link. 
+To build and install the library you might want to check our the [Building xerus](building_xerus) guide.
 
-
-There are a number of tutorials to get you started using the `xerus` library.
-* [Building xerus](@ref md_building_xerus) - instruction on how to build the library iteself and your first own program using it.
-* [Quick-Start guide](_quick-_start-example.html) - a short introduction into the basic `xerus` functionality.
-* [Tensor Class](@ref md_tensor) - an introduction into the most important functions relating to the `xerus::Tensor` class.
-* [TT Tensors](_t_t-_tensors_01_07_m_p_s_08-example.html) - using the MPS or Tensor-Train decomposition.
-* [Optimization](@ref md_optimization) - some hints how to achieve the fastest possible numerical code using `xerus`.
-* [Debugging](@ref md_tut_debugging) - using `xerus`'s capabilities to debug your own application.
+Where to go from there depends on what you want to do with `xerus` and how you learn. You can quickly get a feeling for the library
+by checking out one of the simpler examples like [QTT](quickstart). For most people the more elaborate [documentation](documentation)
+will likely be the place to start though. Apart from the basic usage it also explains the mindset behind many design choices and
+so is adviced reading material regardless of how deep you want to delve into the library. Finally for the most hardcore developers
+out there, there is an elaborate [doxygen documentation](doxygen).
 
 ## Issues
 
