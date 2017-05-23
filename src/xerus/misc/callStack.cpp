@@ -119,7 +119,7 @@ namespace xerus { namespace misc { namespace internal {
 			}
 			
 			if (!ensure_bfd_loaded(info)) {
-				res.str()+" .?] <could not open object file>";
+				return res.str()+" .?] <could not open object file>";
 			}
 			storedBfd &currBfd = bfds.at(info.dli_fbase);
 			
