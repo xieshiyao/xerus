@@ -1206,9 +1206,15 @@ BOOST_PYTHON_MODULE(xerus) {
 	// identity returns the cpp name to a python object
 // 	def("identity", identity_);
 	
-	// the following is probably not necessary because generic_error inherits from std::exception
-// 	register_exception_translator<misc::generic_error>([](const misc::generic_error &_e){
-// 		LOG(pydebug, "custom exception handler called with " << _e.what());
-// 		PyErr_SetString(PyExc_UserWarning, _e.what());
-// 	});
+	def("xethrow", +[](){XERUS_THROW(misc::generic_error() << misc::get_call_stack());});
+	
+	// translate all exceptions thrown inside xerus to own python exception class
+	static char fully_qualified_gen_error_name[] = "xerus.generic_error";
+	static PyObject* py_gen_error = PyErr_NewException(fully_qualified_gen_error_name, PyExc_Exception, 0);
+    py::scope().attr("generic_error") = py::handle<>(py::borrowed(py_gen_error));
+
+	register_exception_translator<misc::generic_error>([](const misc::generic_error &_e){
+		LOG(pydebug, "custom exception handler called with " << _e.what());
+		PyErr_SetString(py_gen_error, _e.what());
+	});
 }
