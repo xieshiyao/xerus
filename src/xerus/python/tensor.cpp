@@ -26,6 +26,15 @@
 #include "misc.h"
 
 void expose_tensor() {
+	enum_<Tensor::Representation>("Representation", "Possible representations of Tensor objects.")
+		.value("Dense", Tensor::Representation::Dense)
+		.value("Sparse", Tensor::Representation::Sparse)
+	;
+	enum_<Tensor::Initialisation>("Initialisation", "Possible initialisations of new Tensor objects.")
+		.value("Zero", Tensor::Initialisation::Zero)
+		.value("None", Tensor::Initialisation::None)
+	;
+	
 	{ scope Tensor_scope = 
 		class_<Tensor>("Tensor",
 			"a non-decomposed Tensor in either sparse or dense representation"

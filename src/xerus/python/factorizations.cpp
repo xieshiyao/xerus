@@ -35,10 +35,13 @@ void expose_factorizations() {
 		})
 	;
 	class_<SVD, bases<TensorFactorisation>, boost::noncopyable>("SVD_temporary", boost::python::no_init);
-	def("SVD", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
-		return new SVD(std::move(_rhs));
+	def("SVD", +[](IndexedTensor<Tensor> &_rhs, size_t _maxRank, double _eps)->TensorFactorisation*{
+		return new SVD(std::move(_rhs), _maxRank, _eps);
 	}, return_value_policy<manage_new_object,  // result is treated as a new object
-	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
+			with_custodian_and_ward_postcall<0,1>>(), // but the argument will not be destroyed before the result is destroyed
+		(arg("source"), arg("maxRank")=std::numeric_limits<size_t>::max(), arg("eps")=EPSILON)
+	); 
+	
 	
 	class_<QR, bases<TensorFactorisation>, boost::noncopyable>("QR_temporary", boost::python::no_init);
 	def("QR", +[](IndexedTensor<Tensor> &_rhs)->TensorFactorisation*{
@@ -64,12 +67,4 @@ void expose_factorizations() {
 	}, return_value_policy<manage_new_object,  // result is treated as a new object
 	   with_custodian_and_ward_postcall<0,1>>()); // but the argument will not be destroyed before the result is destroyed
 	
-	enum_<Tensor::Representation>("Representation", "Possible representations of Tensor objects.")
-		.value("Dense", Tensor::Representation::Dense)
-		.value("Sparse", Tensor::Representation::Sparse)
-	;
-	enum_<Tensor::Initialisation>("Initialisation", "Possible initialisations of new Tensor objects.")
-		.value("Zero", Tensor::Initialisation::Zero)
-		.value("None", Tensor::Initialisation::None)
-	;
 }
