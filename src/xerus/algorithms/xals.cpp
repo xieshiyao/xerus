@@ -50,10 +50,10 @@ namespace xerus {
 	public:
 		
 		InternalSolver(TTTensor& _x, const TTOperator& _A, const TTTensor& _b) : d(_x.degree()), x(_x), A(_A), b(_b) { 
-			leftAStack.emplace_back(Tensor::ones(std::vector<size_t>(d, 1ul)));
-			rightAStack.emplace_back(Tensor::ones(std::vector<size_t>(d, 1ul)));
-			leftBStack.emplace_back(Tensor::ones(std::vector<size_t>(d, 1ul)));
-			rightBStack.emplace_back(Tensor::ones(std::vector<size_t>(d, 1ul)));
+			leftAStack.emplace_back(Tensor::ones({1,1,1}));
+			rightAStack.emplace_back(Tensor::ones({1,1,1}));
+			leftBStack.emplace_back(Tensor::ones({1,1}));
+			rightBStack.emplace_back(Tensor::ones({1,1}));
 		}
 		
 		
