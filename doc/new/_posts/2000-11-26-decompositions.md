@@ -63,9 +63,9 @@ and $r$ the rank of the input we have following resulting objects:
     <tr>
       <th style="border-top: none;">Decomposition</th>
       <th style="border-top: none; border-left: 2px solid #ddd;">Property</th>
-      <th style="border-top: none;">Dimension</th>
+      <th style="border-top: none;">Dimensions</th>
       <th style="border-top: none; border-left: 2px solid #ddd;">Property</th>
-      <th style="border-top: none;">Dimension</th>
+      <th style="border-top: none;">Dimensions</th>
     </tr>
   </thead>
   <tbody>

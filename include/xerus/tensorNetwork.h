@@ -189,8 +189,6 @@ namespace xerus {
 		
 		/** 
 		* @brief Returns a new copy of the network.
-		* @details All dimensions are set equals to one and the only entry 
-		* of the tensor is zero.
 		*/
 		virtual TensorNetwork* get_copy() const;
 			
@@ -273,7 +271,7 @@ namespace xerus {
 		* @brief Read the value at a specific position.
 		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
 		* and then completly contracting the network. Do NOT use this as a manual cast to Tensor (there is an explicit cast for that).
-		* @param _position the position of the entry to be read assuming a single node.
+		* @param _positions the position of the entry to be read assuming a single node.
 		* @returns the calculated value (NO reference)
 		*/
 		value_t operator[](const std::vector<size_t>& _positions) const;
@@ -285,7 +283,6 @@ namespace xerus {
 		* @brief Performs the entrywise multiplication with a constant @a _factor.
 		* @details Internally this only results in a change in the global factor.
 		* @param _factor the factor,
-		* @return a reference to this TensorNetwork.
 		*/
 		virtual void operator*=(const value_t _factor);
 		
@@ -294,7 +291,6 @@ namespace xerus {
 		* @brief Performs the entrywise divison by a constant @a _divisor.
 		* @details Internally this only results in a change in the global factor.
 		* @param _divisor the divisor,
-		* @return a reference to this TensorNetwork.
 		*/ 
 		virtual void operator/=(const value_t _divisor);
 		

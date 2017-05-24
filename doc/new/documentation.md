@@ -5,6 +5,12 @@ section: "Documentation"
 
 # Documentation
 
+__warnStart
+
+This Documentation is still **work in progress**. Several Sections are currently missing but will hopefully be added shortly.
+
+__warnEnd
+
 This is the semi-complete documentation of the `xerus` library. It does not provide you with precise function declarations or
 class hierarchies (check out the [doxygen documentation](doxygen) for those) but instead focuses on small working code snippets
 to demonstrate `xerus`'s capabilities. 

@@ -31,6 +31,9 @@ this overhead is to write your appliation in c++ instead of python. Most instruc
 similar in c++, so a transition might be simpler than you think. Simply check out the rest of the tutorials to compare the code
 snippets.
 
+This transition is particularly useful, if you wrote your own numerical algorithms in python. If most of the runtime is spend 
+inside one of `xerus`'x own algorithms like the `ALS`, it is likely not worth much.
+
 ## Compiling Xerus with High Optimizations
 Per default the library already compiles with high optimization settings (corresponding basically to `-O3`) as there is rarely
 any reason to use lower settings for numerical code. If you want to spend a significant amount of cpu hours in numerical code
@@ -58,14 +61,23 @@ but can become significant when very small tensors are being used and the time f
 In such cases it can be useful to replace such equations (especially ones that are as simple as above) with the explicit statement 
 of contractions and reshuffels. For above equation that would simply be
 ~~~ cpp
-contract(A, B, false, C, false, 1);
+// equivalent to A(i,k) = B(i,j^2)*C(j^2,k)
+contract(A, B, false, C, false, 2);
 ~~~
-i.e. read as: contract two tensors and store the result in A, left hand side B, not transposed, right hand side C, not transposed, contract a single mode.
+i.e. read as: contract two tensors and store the result in A, left hand side B, not transposed, right hand side C, not transposed, contract two modes.
 
-If it is necessary to reshuffle a tensor to be able to contract it in such a way, e.g. `A(i,j,k) = B(i,k,j)`, this can be done
+If it is necessary to reshuffle a tensor to be able to contract it in such a way. This can be done
 with the `reshuffle` function.
 ~~~ cpp
+// equivalent to: A(i,j,k) = B(i,k,j)
 reshuffle(A, B, {0,2,1});
+~~~
+
+Decompositions similarly have their low(er) level calls. They require properly reshuffled tensors and you have to provide a
+`splitPosition`, i.e. the number of modes that will be represented by the left-hand-side of the result.
+~~~ cpp
+// equivalent to: (Q(i,j,r), R(r, k)) = xerus.QR(A(i,j,k))
+calculate_qr(Q, R, A, 2);
 ~~~
 
 It is our opinion that code written with these functions instead of indexed espressions are often much harder to understand
