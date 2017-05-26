@@ -31,8 +31,9 @@ this overhead is to write your appliation in c++ instead of python. Most instruc
 similar in c++, so a transition might be simpler than you think. Simply check out the rest of the tutorials to compare the code
 snippets.
 
-This transition is particularly useful, if you wrote your own numerical algorithms in python. If most of the runtime is spend 
-inside one of `xerus`'x own algorithms like the `ALS`, it is likely not worth much.
+This transition is particularly useful, if you wrote your own numerical algorithms in python. As an example consider the simple
+ALS implementation in the example section ([ALS](minimal_als))), where the c++ implementation is faster by about a factor of two.
+If most of the runtime is spend inside one of `xerus`'s own algorithms like the `ALS`, it is likely not worth much though.
 
 ## Compiling Xerus with High Optimizations
 Per default the library already compiles with high optimization settings (corresponding basically to `-O3`) as there is rarely

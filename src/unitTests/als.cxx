@@ -24,6 +24,7 @@
 #include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
+
 static misc::UnitTest als_id("ALS", "identity", [](){
 	Index k,l,m,n,o,p;
 	
