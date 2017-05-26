@@ -73,6 +73,18 @@ namespace xerus {
 		
 		//----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
 		
+		double one_norm(const double* const _x, const size_t _n) {
+			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			
+			XERUS_PA_START;
+			
+			const double result = cblas_dasum(static_cast<int>(_n), _x, 1);
+			
+			XERUS_PA_END("Dense BLAS", "One Norm", misc::to_string(_n));
+			
+			return result;
+		}
+		
 		double two_norm(const double* const _x, const size_t _n) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
@@ -306,8 +318,8 @@ namespace xerus {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			REQUIRE(_m > 0, "Dimension n must be larger than zero");
-			REQUIRE(_n > 0, "Dimension m must be larger than zero");
+			REQUIRE(_m > 0, "Dimension m must be larger than zero");
+			REQUIRE(_n > 0, "Dimension n must be larger than zero");
 			
 			XERUS_PA_START;
 			
@@ -486,37 +498,157 @@ namespace xerus {
 		}
 		
 		
-	/*  TODO we need test cases for these  
-		/// Solves Ax = b for x
-		void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b) {
-			const std::unique_ptr<double[]> tmpA(new double[_n*_n]);
-			array_copy(tmpA.get(), _A, _n*_n);
-			array_copy(_x, _b, _n);
+		static bool is_symmetric(const double* const _A, const size_t _n) {
+			double max = 0;
+			for (size_t i=0; i<_n*_n; ++i) {
+				max = std::max(max, _A[i]);
+			}
 			
-			solve_destructive(_x, tmpA.get(), _n);
+			for (size_t i=0; i<_n; ++i) {
+				for (size_t j=i+1; j<_n; ++j) {
+					if (std::abs(_A[i*_n + j] - _A[i + j*_n]) >= 4 * max * std::numeric_limits<double>::epsilon()) {
+// 						LOG(aslkdjj, std::abs(_A[i*_n + j] - _A[i + j*_n]) << " / " << _A[i*_n + j] << " " << max);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		
+		/// @brief checks whether the diagonal of @a _A is all positive or all negative. returns false otherwise
+		static bool pos_neg_definite_diagonal(const double* const _A, const size_t _n) {
+			bool positive = (_A[0] > 0);
+			const size_t steps=_n+1;
+			if (positive) {
+				for (size_t i=1; i<_n; ++i) {
+					if (_A[i*steps] < std::numeric_limits<double>::epsilon()) {
+						return false;
+					}
+				}
+				return true;
+			} else {
+				for (size_t i=1; i<_n; ++i) {
+					if (_A[i*steps] > -std::numeric_limits<double>::epsilon()) {
+						return false;
+					}
+				}
+				return true;
+			}
+			
 		}
 		
 		/// Solves Ax = b for x
-		void solve_destructive( double* const _bToX, double* const _A, const size_t _n) {
+		/// order of checks and solvers inspired by matlabs mldivide https://de.mathworks.com/help/matlab/ref/mldivide.html
+		void solve(double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _nrhs) {
+			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_nrhs <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			START_TIME;
+			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+			misc::copy(tmpA.get(), _A, _m*_n);
 			
+			LOG(debug, "solving with...");
+			
+			// not rectangular -> fallback to least-squares (QR or SVD decomposition to solve)
+			if (_m != _n) {
+				LOG(debug, "SVD");
+				const std::unique_ptr<double[]> tmpB(new double[_m*_nrhs]);
+				misc::copy(tmpB.get(), _b, _m*_nrhs);
+				solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get(), _nrhs);
+				return;
+			}
+			
+			// not symmetric -> LU solver
+			if (!is_symmetric(_A, _n)) {
+				LOG(debug, "LU");
+				XERUS_PA_START;
+				
+				std::unique_ptr<int[]> pivot(new int[_n]);
+				
+				misc::copy(_x, _b, _n);
+				
+				IF_CHECK( int lapackAnswer = ) LAPACKE_dgesv(
+					LAPACK_ROW_MAJOR,
+					static_cast<int>(_n),		// Dimensions of A (nxn)
+					static_cast<int>(_nrhs), 	// Number of rhs b
+					tmpA.get(),					// input: A, output: L and U
+					static_cast<int>(_n),		// LDA
+					pivot.get(),				// output: permutation P
+					_x,							// input: rhs b, output: solution x
+					static_cast<int>(_nrhs)		// ldb
+				);
+				CHECK(lapackAnswer == 0, error, "Unable to solve Ax = b (PLU solver). Lapacke says: " << lapackAnswer);
+				
+				XERUS_PA_END("Dense LAPACK", "Solve (PLU)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+				return;
+			}
+			
+			// positive or negative diagonal -> try cholesky
+			if (pos_neg_definite_diagonal(_A, _n)) {
+				LOG(debug, "trying cholesky");
+				int lapackAnswer = 0;
+				{
+					XERUS_PA_START;
+					
+					lapackAnswer = LAPACKE_dpotrf2(
+						LAPACK_ROW_MAJOR,
+						'U', 					// Upper triangle of A is read
+						static_cast<int>(_n),	// dimensions of A
+						tmpA.get(),				// input: A, output: cholesky factorisation
+						static_cast<int>(_n)	// LDA
+					);
+					
+					XERUS_PA_END("Dense LAPACK", "Cholesky decomposition", misc::to_string(_n)+"x"+misc::to_string(_n));
+				}
+				
+				if (lapackAnswer == 0) {
+					LOG(debug, "cholesky");
+					XERUS_PA_START;
+					
+					misc::copy(_x, _b, _n);
+					
+					lapackAnswer = LAPACKE_dpotrs(
+						LAPACK_ROW_MAJOR,
+						'U',					// upper triangle of cholesky decomp is stored in tmpA
+						static_cast<int>(_n),	// dimensions of A
+						static_cast<int>(_nrhs),// number of rhs
+						tmpA.get(),				// input: cholesky decomp
+						static_cast<int>(_n), 	// lda
+						_x,						// input: rhs b, output: solution x
+						static_cast<int>(_nrhs)	// ldb
+					);
+					CHECK(lapackAnswer == 0, error, "Unable to solve Ax = b (cholesky solver). Lapacke says: " << lapackAnswer);
+					
+					XERUS_PA_END("Dense LAPACK", "Solve (Cholesky)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+					
+					return;
+				} else {
+					// restore tmpA
+					misc::copy(tmpA.get(), _A, _m*_n);
+				}
+			}
+			
+			LOG(debug, "LDL");
+			// non-definite diagonal or choleksy failed -> fallback to LDL^T decomposition
+			XERUS_PA_START;
+			
+			misc::copy(_x, _b, _n);
 			std::unique_ptr<int[]> pivot(new int[_n]);
 			
-			int lapackAnswer = LAPACKE_dgesv(
+			LAPACKE_dsysv(
 				LAPACK_ROW_MAJOR,
-				static_cast<int>(_n),       // Dimensions of A (nxn)
-				1,              // Number of b's, here always one
-				_A,             // The input matrix A, will be destroyed
-				static_cast<int>(_n),       // LDA
-				pivot.get(),    // Output of the pivot ordering
-				_bToX,          // Input the vector b, output the vector x
-				1 );
-			CHECK(lapackAnswer == 0, error, "Unable to solves Ax = b. Lapacke says: " << lapackAnswer);
+				'U',					// upper triangular part of _A is accessed
+				static_cast<int>(_n),	// dimension of A
+				static_cast<int>(_nrhs),// number of rhs
+				tmpA.get(), 			// input: A, output: part of the LDL decomposition
+				static_cast<int>(_n),	// lda
+				pivot.get(), 			// output: details of blockstructure of D
+				_x,						// input: rhs b, output: solution x
+				static_cast<int>(_nrhs)	// ldb
+			);
 			
-			ADD_CALL("Solve ", to_string(_n)+"x"+to_string(_n));
-		}*/
+			XERUS_PA_END("Dense LAPACK", "Solve (LDL)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+		}
 		
 	
 		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _p){
@@ -591,3 +723,4 @@ namespace xerus {
 	} // namespace blasWrapper
 
 } // namespace xerus
+

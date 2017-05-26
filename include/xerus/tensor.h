@@ -50,10 +50,10 @@ namespace xerus {
      * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
      * @param _rhs right hand side of the contraction.
      * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
-     * @param _numIndices number of indices that shall be contracted.
+     * @param _numModes number of modes that shall be contracted.
      */
-    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
-    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
+    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
     
     
 	
@@ -151,7 +151,7 @@ namespace xerus {
 		 */
 		template<XERUS_ADD_MOVE(Vec, DimensionTuple), XERUS_ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
-		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Sparse), denseData(std::forward<SPtr>(_data)) { }
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
 		
 		
 		/** 
@@ -198,7 +198,7 @@ namespace xerus {
 		 * @param _N the number of non-zero entries to be created.
 		 * @param _f the function to be used to create each non zero entry. 
 		 */
-		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
+		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f);
 		
 		
 		/** 
@@ -336,7 +336,7 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
@@ -344,7 +344,7 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
@@ -435,6 +435,12 @@ namespace xerus {
 		 * @return the frobenious norm.
 		 */
 		value_t frob_norm() const;
+		
+		/** 
+		 * @brief Calculates the 1-norm of the tensor.
+		 * @return the 1-norm.
+		 */
+		value_t one_norm() const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -737,11 +743,11 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief Performs the trace over the given indices
-		 * @param _firstIndex the first index involved in the trace.
-		 * @param _secondIndex the second index involved in the trace.
+		 * @brief Performs the trace over the given modes
+		 * @param _firstMode the first mode involved in the trace.
+		 * @param _secondMode the second mode involved in the trace.
 		 */
-		void perform_trace(size_t _firstIndex, size_t _secondIndex);
+		void perform_trace(size_t _firstMode, size_t _secondMode);
 		
 		
 		/** 
@@ -857,14 +863,14 @@ namespace xerus {
      * @param _result Output for the result of the contraction.
      * @param _lhs left hand side of the contraction.
      * @param _rhs right hand side of the contraction.
-     * @param _numIndices number of indices that shall be contracted.
+     * @param _numModes number of indices that shall be contracted.
      */
-    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numIndices) {
-        contract(_result, _lhs, false, _rhs, false, _numIndices);
+    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numModes) {
+        contract(_result, _lhs, false, _rhs, false, _numModes);
     }
     
-    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numIndices) {
-        return contract(_lhs, false, _rhs, false, _numIndices);
+    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numModes) {
+        return contract(_lhs, false, _rhs, false, _numModes);
     }
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -922,6 +928,13 @@ namespace xerus {
 	* @return the frobenius norm .
 	*/
 	static XERUS_force_inline value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
+	
+	/** 
+	* @brief Calculates the 1-norm of the given tensor
+	* @param _tensor the Tensor of which the norm shall be calculated.
+	* @return the 1-norm
+	*/
+	static XERUS_force_inline value_t one_norm(const Tensor& _tensor) { return _tensor.one_norm(); }
 	
 	/** 
 	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.
@@ -988,10 +1001,18 @@ namespace xerus {
 	 * @param _X Output Tensor for the resulting X.
 	 * @param _A input Tensor A.
 	 * @param _B input Tensor b.
-	 * @param _extraDegree number of dimensions that @a _X and @a _B share and for which the least squares problem is independently solved.
+	 * @param _extraDegree number of modes that @a _X and @a _B share and for which the least squares problem is independently solved.
 	 */
-	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree);
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree = 0);
 	
+	/**
+	 * @brief Solves the equation Ax = b for x. If the solution is not unique, the output need not be the minimal norm solution.
+	 * @param _X Output Tensor for the result
+	 * @param _A input Operator A
+	 * @param _B input right-hand-side b
+	 * @param _extraDegree number of modes that @a _x and @a _B sharefor which the solution should be computed independently.
+	 */
+	void solve(Tensor &_X, const Tensor &_A, const Tensor &_B, size_t _extraDegree = 0);
 	
 	/**
 	 * @brief calculates the entrywise product of two Tensors
@@ -1010,7 +1031,7 @@ namespace xerus {
 	
 	/** 
 	* @brief Checks whether two Tensors are approximately entrywise equal.
-	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < _eps is fullfilled for all i.
+	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < @a _eps is fullfilled for all i.
 	* @param _a the first test candidate.
 	* @param _b the second test candidate
 	* @param _eps the maximal relative difference between the entries of @a _a and @a _b.

@@ -272,16 +272,26 @@ namespace xerus {
 	}
 	
 	
+	value_t Tensor::one_norm() const {
+		if(is_dense()) {
+			return std::abs(factor)*blasWrapper::one_norm(denseData.get(), size);
+		} 
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += std::abs(entry.second);
+		}
+		return std::abs(factor)*norm;
+	}
+	
 	value_t Tensor::frob_norm() const {
 		if(is_dense()) {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
 		} 
-			value_t norm = 0;
-			for(const auto& entry : *sparseData) {
-				norm += misc::sqr(entry.second);
-			}
-			return std::abs(factor)*sqrt(norm);
-		
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += misc::sqr(entry.second);
+		}
+		return std::abs(factor)*sqrt(norm);
 	}
 	
 	
@@ -768,18 +778,18 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::perform_trace(size_t _firstIndex, size_t _secondIndex) {
-		REQUIRE(_firstIndex != _secondIndex, "Given indices must not coincide");
-		REQUIRE(dimensions[_firstIndex] == dimensions[_secondIndex], "Dimensions of trace indices must coincide.");
+	void Tensor::perform_trace(size_t _firstMode, size_t _secondMode) {
+		REQUIRE(_firstMode != _secondMode, "Given indices must not coincide");
+		REQUIRE(dimensions[_firstMode] == dimensions[_secondMode], "Dimensions of trace indices must coincide.");
 		
-		if(_firstIndex > _secondIndex) { std::swap(_firstIndex, _secondIndex); }
+		if(_firstMode > _secondMode) { std::swap(_firstMode, _secondMode); }
 		
 		
 		
-		const size_t front = misc::product(dimensions, 0, _firstIndex);
-		const size_t mid = misc::product(dimensions, _firstIndex+1, _secondIndex);
-		const size_t back = misc::product(dimensions, _secondIndex+1, degree());
-		const size_t traceDim = dimensions[_firstIndex];
+		const size_t front = misc::product(dimensions, 0, _firstMode);
+		const size_t mid = misc::product(dimensions, _firstMode+1, _secondMode);
+		const size_t back = misc::product(dimensions, _secondMode+1, degree());
+		const size_t traceDim = dimensions[_firstMode];
 		const size_t frontStepSize = traceDim*mid*traceDim*back;
 		const size_t traceStepSize = mid*traceDim*back+back;
 		const size_t midStepSize = traceDim*back;
@@ -822,8 +832,8 @@ namespace xerus {
 			sparseData.reset(newData.release());
 		}
 		
-		dimensions.erase(dimensions.begin()+_secondIndex);
-		dimensions.erase(dimensions.begin()+_firstIndex);
+		dimensions.erase(dimensions.begin()+_secondMode);
+		dimensions.erase(dimensions.begin()+_firstMode);
 		factor = 1.0;
 	}
 	
@@ -1239,25 +1249,25 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
-			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numIndices);
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
+		REQUIRE(_numModes <= _lhs.degree() && _numModes <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
+			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numModes);
 		
-		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
-		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;
+		const size_t lhsRemainOrder = _lhs.degree() - _numModes;
+		const size_t lhsRemainStart = _lhsTrans ? _numModes : 0;
 		const size_t lhsContractStart = _lhsTrans ? 0 : lhsRemainOrder;
 		const size_t lhsRemainEnd = lhsRemainStart + lhsRemainOrder;
 		
-		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
-		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
+		const size_t rhsRemainOrder = _rhs.degree() - _numModes;
+		const size_t rhsRemainStart = _rhsTrans ? 0 : _numModes;
 		IF_CHECK(const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;)
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
-		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), 
-				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numIndices);
+		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numModes, _rhs.dimensions.begin() + rhsContractStart), 
+				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numModes);
 		
 		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
-		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
+		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numModes);
 		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
 		
 		
@@ -1341,9 +1351,9 @@ namespace xerus {
 		}
 	}
 	
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
 		Tensor result;
-		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numIndices);
+		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numModes);
 		return result;
 	}
 
@@ -1416,16 +1426,37 @@ namespace xerus {
 		
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
+		// sparse SVD becomes inefficient when the matrix is not sparse enough
+		// sparse SVD is about equally fast to dense SVD when there are about N = 1.55*(min(m,n)+(max-min)/5) entries set
+		// will calculate with 2 instead of 1.55 to make sure that we will certainly be slower with sparse
+		// (note that the algorithm is quadratic in the sparsity)
+		size_t min = std::min(lhsSize, rhsSize);
+		size_t max = std::max(lhsSize, rhsSize);
+		if (_input.is_sparse() && _input.sparsity() > 2*(min+(max-min)/5)) {
+			_input.use_dense_representation();
+		}
+		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse SVD not yet implemented. falling back to the dense SVD");
-			_input.use_dense_representation();
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			// calculate QC in both directions
+			calculate_qc(_U, _input, _input, _splitPos);
+			calculate_cq(_input, _Vt, _input, 1);
+			_input.use_dense_representation(); // in the very unlikely case that is it not already dense
+			
+			// then calculate SVD only of remaining (hopefully small) core
+			Tensor UPrime, VPrime;
+			std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, 1);
+			prepare_factorization_output(UPrime, VPrime, _input, 1, rank, Tensor::Representation::Dense);
+			blasWrapper::svd(UPrime.override_dense_data(), tmpS.get(), VPrime.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			
+			// contract U*UPrime and VPrime*V to obtain SVD (UU', S, V'V) from orthogonal U and V as wel as the SVD (U', S, V')
+			contract(_U, _U, UPrime, 1);
+			contract(_Vt, VPrime, _Vt, 1);
 		} else {
+			prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
@@ -1601,7 +1632,7 @@ namespace xerus {
                     _A.get_unsanitized_dense_data(), m, n, 
                     _B.get_unsanitized_dense_data(), p);
             } else {
-                LOG(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+                LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
                 
                 Tensor Bcpy(_B);
                 Bcpy.factor = 1.0;
@@ -1612,6 +1643,60 @@ namespace xerus {
                     _A.get_unsanitized_dense_data(), m, n, 
                     Bcpy.get_unsanitized_dense_data(), p);
             }
+		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
+	}
+	
+	
+	
+	void solve(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		if (_A.is_sparse()) { // TODO
+			solve_least_squares(_X, _A, _B, _extraDegree);
+			return;
+		}
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
+		const size_t degM = _B.degree() - _extraDegree;
+		const size_t degN = _A.degree() - degM;
+		
+		REQUIRE(_A.degree() == degM+degN, "Inconsistent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsistent dimensions.");
+		
+		// Make sure X has right dimensions
+		if(	_X.degree() != degN + _extraDegree
+			|| !std::equal(_X.dimensions.begin(), _X.dimensions.begin() + degN, _A.dimensions.begin() + degM)
+			|| !std::equal(_X.dimensions.begin()+ degN, _X.dimensions.end(), _B.dimensions.begin() + degM))
+		{
+			Tensor::DimensionTuple newDimX;
+			newDimX.insert(newDimX.end(), _A.dimensions.begin()+degM, _A.dimensions.end());
+			newDimX.insert(newDimX.end(), _B.dimensions.begin()+degM, _B.dimensions.end());
+			_X.reset(std::move(newDimX), Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		// Calculate multDimensions
+		const size_t m = misc::product(_A.dimensions, 0, degM);
+		const size_t n = misc::product(_A.dimensions, degM, degM+degN);
+		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
+		
+		
+		// Note that A isdense here
+		if(_B.is_dense()) {
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				_B.get_unsanitized_dense_data(), p);
+		} else {
+			LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+			
+			Tensor Bcpy(_B);
+			Bcpy.factor = 1.0;
+			Bcpy.use_dense_representation();
+			
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				Bcpy.get_unsanitized_dense_data(), p);
 		}
 		
 		// Propagate the constant factor

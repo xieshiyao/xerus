@@ -71,6 +71,61 @@ static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
     TEST((x2[{1,1}]) < 1e-14);
 });
 
+
+static misc::UnitTest solve_vs_lsqr("Tensor", "solve vs least squares", [](){
+	const size_t N = 500;
+	Tensor A({N, N});
+	for (size_t i=0; i<N; ++i) {
+		if (i>0) A[{i, i-1}] = -1;
+		if (i<N-1) A[{i, i+1}] = -1;
+		A[{i,i}] = 2;
+	}
+	A[0] = 1;
+	
+	Tensor B = Tensor::random({N});
+
+	Index i,j,k;
+	
+	// sparse
+// 	LOG(blabla, "sparse start");
+	Tensor X;
+	solve(X, A, B);
+// 	LOG(blabla, "sparse end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "1 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	A.use_dense_representation();
+	// dense (cholesky)
+// 	LOG(blabla, "chol start");
+	Tensor X2;
+	solve(X2, A, B);
+// 	LOG(blabla, "chol end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "2 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	MTEST(approx_equal(X, X2, 1e-10), X.frob_norm() << " " << X2.frob_norm() << " diff: " << frob_norm(X-X2));
+	
+	// dense (LDL)
+	A[0] = -0.9;
+// 	LOG(blabla, "LDL start");
+	solve(X, A, B);
+// 	LOG(blabla, "LDL end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "3 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	// dense (LU)
+	A[1] = -0.9;
+// 	LOG(blabla, "LU start");
+	solve(X, A, B);
+// 	LOG(blabla, "LU end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "4 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	// dense (SVD)
+	A[1] = -0.9;
+// 	LOG(blabla, "SVD start");
+	solve_least_squares(X, A, B);
+// 	LOG(blabla, "SVD end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "5 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+});
+
 static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);

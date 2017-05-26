@@ -144,10 +144,10 @@ namespace xerus {
 
 				if(isOperator) {
 					const auto rndComp = Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _dist, _rnd);
-					result.set_component(i, rndComp/rndComp.frob_norm());
+					result.set_component(i, rndComp);
 				} else {
 					const auto rndComp = Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd);
-					result.set_component(i, rndComp/rndComp.frob_norm());
+					result.set_component(i, rndComp);
 				}
 			}
 			result.move_core(0);

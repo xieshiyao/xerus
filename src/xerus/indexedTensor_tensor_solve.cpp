@@ -73,7 +73,8 @@ namespace xerus {
 		
 		internal::IndexedTensorMoveable<Tensor> tmpX(new Tensor(), std::move(orderX));
 		
-		solve_least_squares(*tmpX.tensorObject, reorderedA, reorderedB, extraDims);
+		//solve_least_squares(*tmpX.tensorObject, reorderedA, reorderedB, extraDims);
+		solve(*tmpX.tensorObject, reorderedA, reorderedB, extraDims);
 		
 		return tmpX;
 	}

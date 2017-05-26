@@ -45,7 +45,7 @@ namespace xerus {
 		Tensor b(_b);
 		Tensor x;
 		
-		solve_least_squares(x, A, b, 0);
+		xerus::solve(x, A, b);
 		
 		Index i,j,k,l;
 		if (_data.direction == Increasing) {
@@ -257,7 +257,7 @@ namespace xerus {
 			if (ALS.assumeSPD) {
 				residual_f = [&](){
 					Index n1, n2;
-					return frob_norm((*A)(n1/2,n2/2)*x(n2&0) - b(n1&0));
+					return frob_norm((*A)(n1/2,n2/2)*x(n2&0) - b(n1&0))/normB;
 				};
 				if (ALS.useResidualForEndCriterion) {
 					energy_f = residual_f;
@@ -291,7 +291,7 @@ namespace xerus {
 					}
 					res() = xAtAx(r1&0) * localOperatorCache.right.back()(r1&0)
 							- 2 * bAx(r1&0) * rhsCache.right.back()(r1&0);
-					return res[0] + misc::sqr(normB);
+					return std::sqrt(res[0] + misc::sqr(normB))/normB;
 				};
 				energy_f = residual_f;
 			}

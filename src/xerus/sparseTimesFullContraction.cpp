@@ -177,7 +177,7 @@ namespace xerus {
             #pragma GCC diagnostic pop
         }
         
-		XERUS_PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Sparse", misc::to_string(_leftDim)+"x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
+		XERUS_PA_END("Mixed BLAS", "Matrix-Matrix-Multiplication ==> Sparse", "?x"+misc::to_string(_midDim)+" * "+misc::to_string(_midDim)+"x"+misc::to_string(_rightDim));
     }
     
     void matrix_matrix_product( std::map<size_t, double>& _C,

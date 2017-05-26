@@ -220,10 +220,12 @@ namespace xerus { namespace internal {
 		REQUIRE(_m < std::numeric_limits<long>::max() && _n < std::numeric_limits<long>::max() && _A.size() < std::numeric_limits<long>::max(),
 			"sparse matrix given to qc decomposition too large for suitesparse"
 		);
+		REQUIRE(_m>0 && _n>0, "invalid matrix of dimensions " << _m << 'x' << _n);
 		CholmodSparse A(_A, _m, _n, _transposeA);
 		cholmod_sparse *Q, *R;
 		SuiteSparse_long *E;
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		rank = std::max(rank, 1l);
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
 		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
@@ -247,6 +249,7 @@ namespace xerus { namespace internal {
 		SuiteSparse_long *E;
 		// decompose A^T = q^T*r^T
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		rank = std::max(rank, 1l);
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
 		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");

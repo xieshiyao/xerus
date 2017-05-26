@@ -92,81 +92,6 @@ namespace xerus {
 #define XERUS_STRINGIFY2( x) #x
 #define XERUS_STRINGIFY(x) XERUS_STRINGIFY2(x)
 
-/**
- * @def XERUS_SET_LOGGING(lvl, value)
- * @brief set the logging behaviour of severity level @a lvl to @a value (either NOT_LOGGING, LOGGING_ON_ERROR or LOGGING_FULL)
- * @details this definition must not be repeated and must be defined in a global header that is included before any msg is logged with that lvl
- */
-#define XERUS_SET_LOGGING(lvl, value) \
-	namespace xerus { namespace misc { namespace internal { \
-		template<> struct LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>{ static const int flag = value; }; \
-    }}}
-
-/**
- * @def XERUS_SET_LOGGING_DEFAULT(value)
- * @brief sets the logging behaviour of all levels that are not otherwise specified to @a value
- */
-#define XERUS_SET_LOGGING_DEFAULT(value) \
-	namespace xerus { namespace misc { namespace internal { \
-		template<uint64_t lvl> struct LogFlag { static const int flag = value; }; \
-	}}} \
-    SET_DEFAULT_LOG_LEVELS
-    
-
-// Default log levels  
-#define SET_DEFAULT_LOG_LEVELS \
-	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
-
-#ifdef XERUS_LOG_ERROR
-#undef SET_DEFAULT_LOG_LEVELS
-#define SET_DEFAULT_LOG_LEVELS \
-	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_ON_ERROR)\
-	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
-	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
-#endif
-    
-#ifdef XERUS_LOG_WARNING
-#undef SET_DEFAULT_LOG_LEVELS
-#define SET_DEFAULT_LOG_LEVELS \
-	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
-	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
-#endif
-    
-#ifdef XERUS_LOG_INFO
-#undef SET_DEFAULT_LOG_LEVELS
-#define SET_DEFAULT_LOG_LEVELS \
-	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
-#endif
-    
-#ifdef XERUS_LOG_DEBUG
-#undef SET_DEFAULT_LOG_LEVELS
-#define SET_DEFAULT_LOG_LEVELS \
-	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
-	XERUS_SET_LOGGING(warning, 	xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
-	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_FULL)
-#endif
-
-
 
 /**
  * @def XERUS_COMPILE_TIME_EVAL(e)
@@ -274,4 +199,73 @@ namespace xerus {
     (::xerus::misc::internal::LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>::flag != xerus::misc::internal::NOT_LOGGING)
 
 
-XERUS_SET_LOGGING_DEFAULT(xerus::misc::internal::LOGGING_FULL)
+namespace xerus { namespace misc { namespace internal {
+	template<uint64_t lvl> struct LogFlag { static const int flag = xerus::misc::internal::LOGGING_FULL; };
+}}}
+
+/**
+ * @def XERUS_SET_LOGGING(lvl, value)
+ * @brief set the logging behaviour of severity level @a lvl to @a value (either NOT_LOGGING, LOGGING_ON_ERROR or LOGGING_FULL)
+ * @details this definition must not be repeated and must be defined in a global header that is included before any msg is logged with that lvl
+ */
+#define XERUS_SET_LOGGING(lvl, value) \
+	namespace xerus { namespace misc { namespace internal { \
+		template<> struct LogFlag<xerus::misc::internal::log_namehash(XERUS_STRINGIFY(lvl))>{ static const int flag = value; }; \
+    }}}
+
+
+
+// Default log levels  
+#define XERUS_SET_DEFAULT_LOG_LEVELS \
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+
+#ifdef XERUS_LOG_ERROR
+#undef XERUS_SET_DEFAULT_LOG_LEVELS
+#define XERUS_SET_DEFAULT_LOG_LEVELS \
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 		xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+#endif
+    
+#ifdef XERUS_LOG_WARNING
+#undef XERUS_SET_DEFAULT_LOG_LEVELS
+#define XERUS_SET_DEFAULT_LOG_LEVELS \
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_ON_ERROR)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+#endif
+    
+#ifdef XERUS_LOG_INFO
+#undef XERUS_SET_DEFAULT_LOG_LEVELS
+#define XERUS_SET_DEFAULT_LOG_LEVELS \
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_ON_ERROR)
+#endif
+    
+#ifdef XERUS_LOG_DEBUG
+#undef XERUS_SET_DEFAULT_LOG_LEVELS
+#define XERUS_SET_DEFAULT_LOG_LEVELS \
+	XERUS_SET_LOGGING(fatal, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(critical, 	xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(error, 		xerus::misc::internal::LOGGING_EXCEPTION)\
+	XERUS_SET_LOGGING(warning, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(info, 		xerus::misc::internal::LOGGING_FULL)\
+	XERUS_SET_LOGGING(debug, 		xerus::misc::internal::LOGGING_FULL)
+#endif
+
+XERUS_SET_DEFAULT_LOG_LEVELS
