@@ -44,6 +44,6 @@ entry might look as follows
 	author = {Huber, Benjamin and Wolf, Sebastian},
 	title = {Xerus - A General Purpose Tensor Library},
 	howpublished = {\url{https://libxerus.org/}},
-	year = {2014--2016}
+	year = {2014--2017}
 }
 ~~~

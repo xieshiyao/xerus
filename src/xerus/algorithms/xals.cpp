@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -92,18 +92,18 @@ namespace xerus {
 			}
 		}
 		
-		double calc_residual_norm() {
-			const Index i, j;
-			Tensor tmp;
-			tmp(i&0) = A(i/2, j/2)*x(j&0)-b(i&0);
-			return frob_norm(tmp);
-		}
+// 		double calc_residual_norm() {
+// 			const Index i, j;
+// 			Tensor tmp;
+// 			tmp(i&0) = A(i/2, j/2)*x(j&0)-b(i&0);
+// 			return frob_norm(tmp);
+// 		}
 		
 		
 		void solve() {
 			const double solutionsNorm = frob_norm(b);
 			std::vector<double> residuals(10, 1000.0);
-			const size_t maxIterations = 10000;
+			const size_t maxIterations = 4;
 			
 			
 			// Rebuild right stack
@@ -114,13 +114,13 @@ namespace xerus {
 			
 			for(size_t iteration = 0; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 				// Calculate residual and check end condition
-				residuals.push_back(calc_residual_norm()/solutionsNorm);
-				if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
-					LOG(xALS, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back() << " in " << residuals.size()-10 << " iterations.");
-					return; // We are done!
-				} else {
+// 				residuals.push_back(calc_residual_norm()/solutionsNorm);
+// 				if(residuals.back()/residuals[residuals.size()-10] > 0.99) {
 // 					LOG(xALS, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back() << " in " << residuals.size()-10 << " iterations.");
-				}
+// 					return; // We are done!
+// 				} else {
+// // 					LOG(xALS, "Residual decrease from " << std::scientific << residuals[10] << " to " << std::scientific << residuals.back() << " in " << residuals.size()-10 << " iterations.");
+// 				}
 				
 				
 				// Sweep Right -> Left

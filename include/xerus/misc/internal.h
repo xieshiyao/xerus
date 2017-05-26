@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -54,7 +54,7 @@ namespace std {
 	
 	using ::xerus::misc::operator<<; // for std::ostream << std::vector etc.
 	
-	
+	//TODO No good solution, as this requires the use of std::advance, which may be less efficient than the +operator for random access iterators. (Need concepts)
 	///@brief Add a + operator for iterators and size_t to avoid signed/unsigned errors.
 	template<class IteratorType, 
 		typename std::enable_if<
@@ -62,7 +62,9 @@ namespace std {
 			&& std::is_class<IteratorType>::value
 		, bool>::type = true>
 	IteratorType operator+(const IteratorType& _iterator, const size_t _add) {
-		return _iterator + long(_add);
+		IteratorType itr = _iterator;
+		std::advance(itr, _add);
+		return itr;
 	}
 	
 	
