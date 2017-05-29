@@ -224,7 +224,7 @@ fullTest: $(TUTORIALS) $(TEST_NAME)
 
 
 .FORCE:
-doc: .FORCE
+doc: .FORCE doc/parseDoxytags doc/findDoxytag
 	make -C doc doc
 
 
@@ -238,7 +238,6 @@ clean:
 
 benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)
 	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -lboost_filesystem -lboost_system -o Benchmark
-
 
 # Build rule for normal misc objects
 build/.miscObjects/%.o: %.cpp $(MINIMAL_DEPS)

@@ -23,6 +23,7 @@ class TabsConverter < Converter
 			.gsub('__breakFix1</a></p>', "")
 			.gsub('<p>__breakFix2', "</a>")
 			.gsub('__version', %x( git describe --tags --always --abbrev=0 ) )
+			.gsub(/__doxyref\(([^\)]+)\)/){ |m| %x( ./findDoxytag #{$1} ) }
 	end
 end
 end
