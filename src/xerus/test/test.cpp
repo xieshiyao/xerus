@@ -304,14 +304,21 @@ int main(int argc, char* argv[]) {
 					}
 				}
 				
+				uint64_t totalPerformed=0;
+				uint64_t totalExisting=0;
+				
 				for (auto &f : perFile) {
 					std::pair<size_t, size_t> &fstats = f.second;
+					totalPerformed += fstats.first;
+					totalExisting += fstats.second;
 					if (fstats.first == fstats.second) {
 						std::cout << "file " << f.first << " :\033[1;32m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
 					} else {
 						std::cout << "file " << f.first << " :\033[1;31m " << fstats.first << " of " << fstats.second << " tests performed\033[0m" << std::endl;
 					}
 				}
+				
+				std::cout << "In total: " << totalPerformed << " of " << totalExisting << " = " << 100*double(totalPerformed)/double(totalExisting) << "% covered" << std::endl;
 			}
 	#endif
 	

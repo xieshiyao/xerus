@@ -4,6 +4,7 @@
 CXX = g++
 
 STRICT_WARNINGS = TRUE
+DEBUG += -D XERUS_TEST_COVERAGE                 # Enable coverage tests
 
  DEBUG += -g                # Adds debug symbols
 
