@@ -5,6 +5,15 @@ subtitle: "a general purpose tensor library"
 ---
 
 # Xerus
+**master:** <a href="https://git.hemio.de/xerus/xerus/commits/master"><img alt="build status" src="https://git.hemio.de/xerus/xerus/badges/master/build.svg" /></a> 
+<a href="https://git.hemio.de/xerus/xerus/commits/master"><img alt="coverage report" src="https://git.hemio.de/xerus/xerus/badges/master/coverage.svg" /></a> 
+<a href="https://git.hemio.de/xerus/xerus/commits/master">
+__breakFix1
+{% include version.svp %}
+__breakFix2
+**development:**  <a href="https://git.hemio.de/xerus/xerus/commits/development"><img alt="build status" src="https://git.hemio.de/xerus/xerus/badges/development/build.svg" /></a> 
+<a href="https://git.hemio.de/xerus/xerus/commits/development"><img alt="coverage report" src="https://git.hemio.de/xerus/xerus/badges/development/coverage.svg" /></a>
+
 
 The `xerus` library is a general purpose library for numerical calculations with higher order tensors, Tensor-Train Decompositions / Matrix Product States and general Tensor Networks.
 The focus of development was the simple usability and adaptibility to any setting that requires higher order tensors or decompositions thereof. 
