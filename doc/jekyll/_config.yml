@@ -18,3 +18,4 @@ markdown: kramdown
 # gems: ['TabsConverter']
 
 # exclude: ['README.md', 'LICENSE']
+keep_files: ['doxygen']

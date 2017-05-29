@@ -6,6 +6,7 @@ help:
 	\t\tshared \t\t -- Build xerus as a shared library.\n \
 	\t\tstatic \t\t -- Build xerus as a static library.\n \
 	\t\tpython \t\t -- Build the xerus python wrappers.\n \
+	\t\tdoc \t\t -- Build the html documentation for the xerus library.\n \
 	\t\tinstall \t -- Install the shared library and header files (may require root).\n \
 	\t\ttest \t\t -- Build and run the xerus unit tests.\n \
 	\t\tclean \t\t -- Remove all object, library and executable files.\n"
@@ -186,7 +187,6 @@ ifdef DESTDIR
 endif
 
 
-
 ifdef INSTALL_LIB_PATH
 ifdef INSTALL_HEADER_PATH
 install: shared
@@ -223,11 +223,17 @@ fullTest: $(TUTORIALS) $(TEST_NAME)
 	./$(TEST_NAME) all
 
 
+.FORCE:
+doc: .FORCE
+	make -C doc doc
+
+
 clean:
 	rm -fr build
 	-rm -f $(TEST_NAME)
 	-rm -f include/xerus.h.gch
-	
+	-rm -r doc/html
+
 
 
 benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)

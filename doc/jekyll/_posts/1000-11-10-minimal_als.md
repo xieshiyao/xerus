@@ -27,7 +27,7 @@ In practice, these projections can be obtained by simply contracting all fixed c
 fixed components are orthogonolized). The ALS algorithm will now simply iterate over the components of $x$ and solve these smaller subproblems.
 
 There are a few things we should note before we start implementing this algorithm
-* It is enough to restrict ourselves to the case of symmetric positive-semidefinite operators $A$. Any non-symmetric problem can be solved by setting $A'=A^TA$ and $b' = A^Tb$.
+* It is enough to restrict ourselves to the case of symmetric positive-semidefinite operators $A$. Any non-symmetric problem can be solved by setting $A'=A^TA$ and $b' = A^Tb$. We can thus use the identity $$\operatorname{argmin}_x \|Ax - b\|^2 = \operatorname{argmin}_x \left<x,Ax\right>-2\left<x,b\right>$$
 * We should always move our core of $x$ to the position currrently being optimized to make our lives easier (for several reasons...).
 * Calculating the local operators $\hat A$ for components $i$ and $i+1$ is highly redundant. All components of $x$ up to the $i-1$'st have to be contracted with $A$ in both cases. Effectively this means, that we will keep stacks of $x^TAx$ contracted up to the current index ("left" of the current index) as well as contracted at all indices above the currrent one ("right" of it) and similarly for $x^T b$.
 
