@@ -12,7 +12,7 @@ In matrix calculus the decomposition of a matrix into the matrix product of seve
 into an orthogonal and a triangular matrix (QR) or orthogonal matrices and diagonal of singular values (SVD)) are among the
 most powerful tools to devise numerical algorithms. In the case of tensors of higher degree it is necessary to indicate along
 which modes the decomposition is supposed to happen, so `xerus` uses the notation of indexed equations explained in the previous
-chapter ([Indices and Equations](indices)).
+chapter ([Indices and Equations](/indices)).
 
 ## QR Decompositions
 To provide an intuitive approach to decompositions, `xerus` uses the assignment of multiple tensors with a single operator to 

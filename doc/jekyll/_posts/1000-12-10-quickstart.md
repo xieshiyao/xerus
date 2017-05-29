@@ -13,7 +13,7 @@ demonstrate the general layout and is enough for very basic applications. It is 
 at the more detailed guides for all classes one wishes to use though - or even have a look at the doxygen class documentation for details on all functions.
 
 It is assumed that you have already obtained and compiled the library itself as well as know how to link against it.
-If this is not the case, please refer to the [building xerus](building_xerus) page.
+If this is not the case, please refer to the [building xerus](/building_xerus) page.
 
 In the following we will solve a FEM equation arising from the heat equation using a QTT decomposition and the ALS algorithm.
 
