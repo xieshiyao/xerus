@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,16 +24,17 @@
 
 #include <xerus/misc/callStack.h>
 
-#ifndef NO_FANCY_CALLSTACK
+#ifndef XERUS_NO_FANCY_CALLSTACK
     #include <execinfo.h>
     #include <bfd.h>
     #include <dlfcn.h>
     #include <unistd.h>
-#include <iostream>
+	#include <iostream>
     #include <sstream>
     #include <memory>
     #include <map>
     #include <vector>
+    #include <xerus/misc/stringFromTo.h>
     #include <xerus/misc/stringUtilities.h>
 
 namespace xerus { namespace misc { namespace internal {
@@ -71,7 +72,7 @@ namespace xerus { namespace misc { namespace internal {
 				
 				newBfd->offset = reinterpret_cast<intptr_t>(_info.dli_fbase);
 				
-				bfds.insert(std::pair<void *, storedBfd>(_info.dli_fbase, std::move(*newBfd.get())));
+				bfds.insert(std::pair<void *, storedBfd>(_info.dli_fbase, std::move(*newBfd)));
 			} 
 			return true;
 		}
@@ -97,9 +98,8 @@ namespace xerus { namespace misc { namespace internal {
 			asection *section = bfd_get_section_by_name(currBfd.abfd.get(), _name.c_str());
 			if (section == nullptr) {
 				return std::pair<uintptr_t, uintptr_t>(0,0);
-			} else {
-				return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
 			}
+			return std::pair<uintptr_t, uintptr_t>(section->vma, section->vma+section->size);
 		}
 		
 		static std::string resolve(void *address) {
@@ -119,7 +119,7 @@ namespace xerus { namespace misc { namespace internal {
 			}
 			
 			if (!ensure_bfd_loaded(info)) {
-				res.str()+" .?] <could not open object file>";
+				return res.str()+" .?] <could not open object file>";
 			}
 			storedBfd &currBfd = bfds.at(info.dli_fbase);
 			
@@ -136,7 +136,7 @@ namespace xerus { namespace misc { namespace internal {
 					continue;
 				}
 				res << ' ' << section->name;
-				if (!(section->flags | SEC_CODE)) {
+				if ((section->flags | SEC_CODE) == 0u) {
 					return res.str()+"] <non executable address>";
 				}
 				// get more info on legal addresses
@@ -144,18 +144,15 @@ namespace xerus { namespace misc { namespace internal {
 				const char *func;
 				unsigned line;
 				if (bfd_find_nearest_line(currBfd.abfd.get(), section, currBfd.symbols.get(), offset, &file, &func, &line)) {
-					if (file) {
+					if (file != nullptr) {
 						return res.str()+"] "+std::string(file)+":"+to_string(line)+" (inside "+demangle_cxa(func)+")";
-					} else {
-						if (info.dli_saddr) {
-							return res.str()+"] ??:? (inside "+demangle_cxa(func)+" +0x"+std::to_string(reinterpret_cast<uintptr_t>(address)-reinterpret_cast<uintptr_t>(info.dli_saddr))+")";
-						} else {
-							return res.str()+"] ??:? (inside "+demangle_cxa(func)+")";
-						}
 					}
-				} else {
-					return res.str()+"] <bfd_error> (inside "+demangle_cxa((info.dli_sname?info.dli_sname:""))+")";
+					if (info.dli_saddr != nullptr) {
+						return res.str()+"] ??:? (inside "+demangle_cxa(func)+" +0x"+std::to_string(reinterpret_cast<uintptr_t>(address)-reinterpret_cast<uintptr_t>(info.dli_saddr))+")";
+					}
+					return res.str()+"] ??:? (inside "+demangle_cxa(func)+")";
 				}
+				return res.str()+"] <bfd_error> (inside "+demangle_cxa((info.dli_sname != nullptr?info.dli_sname:""))+")";
 			}
 	// 		std::cout << " ---- sections end ------ " << std::endl;
 			return res.str()+" .none] <not sectioned address>";
@@ -190,7 +187,8 @@ namespace xerus { namespace misc { namespace internal {
 		return internal::bfdResolver::get_range_of_section(_addr, _name);
 	}
 	
-} } // namespaces
+} // namespace misc
+ } // namespace xerus
 
 #else // No fancy callstack
 	#include <execinfo.h>

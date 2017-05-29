@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,27 +27,27 @@
 #include "standard.h"
 #include <string>
 
-#ifdef PERFORMANCE_ANALYSIS
+#ifdef XERUS_PERFORMANCE_ANALYSIS
 	#include <map>
 	#include <utility>
 	#include "timeMeasure.h"
-	#define PA_START size_t pa_startTime = misc::uTime()
-	#define PA_END(group, name, parameter) { std::pair<size_t, size_t>& pa_call = xerus::misc::performanceAnalysis::calls[group][name][parameter]; pa_call.first++; pa_call.second += misc::uTime() - pa_startTime; }
+	#define XERUS_PA_START const size_t pa_startTime = misc::uTime()
+	#define XERUS_PA_END(group, name, parameter) { std::pair<size_t, size_t>& pa_call = xerus::misc::performanceAnalysis::calls[group][name][parameter]; pa_call.first++; pa_call.second += misc::uTime() - pa_startTime; }
 #else 
-	#define PA_START 
-	#define PA_END(group, name, parameter)
+	#define XERUS_PA_START 
+	#define XERUS_PA_END(group, name, parameter)
 #endif
 
 namespace xerus {
 	namespace misc {
 		/// @brief This namespace contains all functions only used for the performance analysis, as well as the respective global variables.
 		namespace performanceAnalysis {
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				extern const size_t startupTime;
 				extern std::map<std::string, std::map<std::string, std::map<std::string, std::pair<size_t, size_t>>>> calls;
 			#endif
 			
-			/// @brief Returns a detailed performance analysis if PERFORMANCE_ANALYSIS is set, an emtpy string otherwise.
+			/// @brief Returns a detailed performance analysis if XERUS_PERFORMANCE_ANALYSIS is set, an emtpy string otherwise.
 			std::string get_analysis();
 		}
 	}

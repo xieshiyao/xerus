@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <cstdint>
 #include <cstddef>
 
@@ -35,6 +36,14 @@ namespace xerus {
 		/// @brief Namespace for function and classes designated only for internal use.
 		namespace internal {}
 	}
+	
+	/**
+	 * The version of the compiled xerus library
+	 */
+	extern const int VERSION_MAJOR;
+	extern const int VERSION_MINOR;
+	extern const int VERSION_REVISION;
+	extern const int VERSION_COMMIT;
 
     // Shorter names for unsigned types
     typedef uint8_t byte; ///< unsigned int type of exactly 8 bit
@@ -55,29 +64,15 @@ namespace xerus {
 
 }
 
-//Make likely & unlikely paramters useable. (Probably totaly useless xD)
-#ifdef __GNUC__
-    #define likely(x)       __builtin_expect((x),1)
-    #define unlikely(x)     __builtin_expect((x),0)
-#else
-    #define likely(x)       (x)
-    #define unlikely(x)     (x)
-#endif
-
 // all of these can be writen like [[gnu::unused]] but kdevelop will not recognize them then
 /** 
- * @def _inline_ 
+ * @def XERUS_force_inline 
  * @brief Collection of attributes to force gcc to inline a specific function.
  */
-#define _inline_  		__attribute__((always_inline, gnu_inline)) inline
+#if defined(__clang__)
+	#define XERUS_force_inline  inline
+#else
+	#define XERUS_force_inline  inline __attribute__((always_inline, gnu_inline))
+#endif
 
-#define _noinline_ 		__attribute__((noinline))
-#define _flatten_ 		__attribute__((flatten))
-#define _const_ 		__attribute__((const, pure))
-#define _pure_ 			__attribute__((pure))
-#define _deprecated_ 	__attribute__((deprecated))
-#define _noreturn_ 		__attribute__((noreturn))
-#define _hot_ 			__attribute__((hot))
-#define _cold_ 			__attribute__((cold))
-#define _unused_ 		__attribute__((unused))
-#define _warn_unused_	__attribute__((warn_unused_result))
+#define XERUS_warn_unused	__attribute__((warn_unused_result))

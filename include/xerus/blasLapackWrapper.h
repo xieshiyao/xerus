@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -38,7 +38,10 @@ namespace xerus {
 		
 		//----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
 		
-		///@brief: Computes the two norm =||x||
+		///@brief: Computes the one norm =||x||_1
+		double one_norm(const double* const _x, const size_t _n);
+		
+		///@brief: Computes the two norm =||x||_2
 		double two_norm(const double* const _x, const size_t _n);
 		
 		///@brief: Computes the dot product = x^T*y
@@ -68,7 +71,7 @@ namespace xerus {
 									const bool _transposeB);
 		
 		///@brief: Performs the Matrix-Matrix product C = alpha*OP(A) * OP(B)
-		static _inline_ void matrix_matrix_product( double* const _C,
+		static XERUS_force_inline void matrix_matrix_product( double* const _C,
 									const size_t _leftDim,
 									const size_t _rightDim,
 									const double _alpha,
@@ -125,20 +128,16 @@ namespace xerus {
 		void rq_destructive( double* const _R, double* const _Q, double* const _A, const size_t _m, const size_t _n);
 
 		
-	/*  TODO we need test cases for these  
 		///@brief: Solves Ax = b for x
-		void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b);
-		
-		///@brief: Solves Ax = b for x, Destroys A and b
-		void solve_destructive( double* const _bToX, double* const _A, const size_t _n);*/
+		void solve(double* _x, const double* _A, size_t _m, size_t _n, const double* _b, size_t _p);
 		
 		
 		
 		///@brief: Solves min ||Ax - b||_2 for x
-		void solve_least_squares( double* const _x, const double* const A, const size_t _m, const size_t _n, const double* const _b);
+		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _p);
 		
 		///@brief: Solves min ||Ax - b||_2 for x
-		void solve_least_squares_destructive( double* const _x, double* const A, const size_t _m, const size_t _n, double* const _b);
+		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b, const size_t _p);
 		
 		
 		

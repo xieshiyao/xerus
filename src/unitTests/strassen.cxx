@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,12 +20,11 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 /*
 UNIT_TEST(Strassen, TTRanks,
-	std::mt19937_64 rnd;
-	rnd.seed(0X5EED);
+// 	std::mt19937_64 rnd;
 	std::normal_distribution<value_t> dist (0.0, 1.0);
 	Index i1,i2,i3,i4,i5,i6,i7,i8;
 	
@@ -38,8 +37,8 @@ UNIT_TEST(Strassen, TTRanks,
 				}
 			}
 		}
-		Tensor A = Tensor::random({n,n}, rnd, dist);
-		Tensor B = Tensor::random({n,n}, rnd, dist);
+		Tensor A = Tensor::random({n,n}, dist);
+		Tensor B = Tensor::random({n,n}, dist);
 		Tensor C1(2);
 		Tensor C2(2);
 		C1(i1,i3) = A(i1,i2) * B(i2,i3);
@@ -55,8 +54,7 @@ UNIT_TEST(Strassen, TTRanks,
 
 
 UNIT_TEST(Strassen, CP,
-	std::random_device rd;
-	std::mt19937_64 rnd;
+// 	std::mt19937_64 rnd;
 	rnd.seed(rd());
 	std::uniform_real_distribution<value_t> dist (0.0, 1.0);
 	Index i1,i2,i3,i4,i5,i6,i7,i8;
@@ -108,7 +106,7 @@ UNIT_TEST(Strassen, CP,
 // 				LOG(test, "\t\t\t\t" << newMicroRes);
 				while (std::abs(1-microItrRes/newMicroRes) > 1e-4) {
 					microItrRes = newMicroRes;
-					ttDiff.cannonicalize_left();
+					ttDiff.canonicalize_left();
 					tn0(i,r1) = diff(i,j,k) * tn1(r1,j,r2) * tn2(r2,k);
 					tn0 /= tn0.frob_norm();
 					tn1(r1,j,r2) = diff(i,j,k) * tn0(i,r1) * tn2(r2,k);
@@ -145,7 +143,7 @@ UNIT_TEST(Strassen, CP,
 		for (size_t i=0; i<n; ++i) {
 			for (size_t j=0; j<n; ++j) {
 				for (size_t k=0; k<n; ++k) {
-					decomp.push_back(Tensor::random({n*n,n*n,n*n}, rnd, dist));
+					decomp.push_back(Tensor::random({n*n,n*n,n*n}, dist));
 					T[{i*n+j,j*n+k,i*n+k}] = 1;
 // 					(*decomp.back())[{i*n+j,j*n+k,i*n+k}] = 1;
 				}

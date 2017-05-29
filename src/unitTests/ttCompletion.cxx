@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,8 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 #include "../../include/xerus/examples/tensorCompletion.h"
 using namespace xerus;
 
@@ -31,7 +32,7 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 	const size_t R = 3;
 	const size_t CS = 3;
 	
-	std::mt19937_64 rnd;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dist(0, N-1);
 	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
 	SinglePointMeasurementSet measurements;
@@ -57,11 +58,10 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 		}
 	}
 	
-	examples::completion::inverse_index_ratios(measurements);
+	measurements.measure([](const std::vector<size_t>& _x){ return examples::completion::inverse_index_ratio(_x);});
 
 	
-	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd);
-	examples::completion::inverse_index_ratios(ctrSet);
+	SinglePointMeasurementSet ctrSet = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N), [](const std::vector<size_t>& _x){ return examples::completion::inverse_index_ratio(_x);});
 	value_t ctrNorm = 0.0;
 	for(size_t i = 0; i < ctrSet.size(); ++i) {
 		ctrNorm += misc::sqr(ctrSet.measuredValues[i]);
@@ -106,33 +106,29 @@ static misc::UnitTest alg_adf_inverseidx("Algorithm", "adf_inverse_index_ratios"
 
 static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	const size_t D = 6;
-	const size_t N = 4;
+	const size_t N = 5;
 	const size_t R = 3;
-	const size_t CS = 8;
+	const size_t CS = 10;
 
-	std::mt19937_64 rnd;
-	std::uniform_int_distribution<size_t> dist(0, N-1);
-	std::uniform_real_distribution<value_t> distF(-1.0, 1.0);
-	
-	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R), rnd, distF);
+	TTTensor trueSolution = TTTensor::random(std::vector<size_t>(D, N), std::vector<size_t>(D-1, R));
 
-	SinglePointMeasurementSet measurements(SinglePointMeasurementSet::random(std::vector<size_t>(D, N), D*N*CS*R*R, rnd));
-	trueSolution.measure(measurements);
+	SinglePointMeasurementSet measurements = SinglePointMeasurementSet::random(D*N*CS*R*R, std::vector<size_t>(D, N));
+	measurements.measure(trueSolution);
 	
 	bool test = true;
 	for(size_t m = 0; m < measurements.size(); ++m) {
-		test = test && misc::approx_equal(measurements.measuredValues[m], trueSolution[measurements.positions[m]], 1e-10);
+		test = test && misc::approx_equal(measurements.measuredValues[m], trueSolution[measurements.positions[m]], 1e-12);
 	}
 	TEST(test);
 	
-	ADFVariant ourADF(2500, 1e-6, 1e-6);
+	ADFVariant ourADF(500, 1e-6, 0.999);
 	
 	TTTensor X = TTTensor::ones(std::vector<size_t>(D, N));
 	PerformanceData perfData([&](const TTTensor& _x) {return frob_norm(_x - trueSolution)/frob_norm(trueSolution);}, true, false);
 	
 	ourADF(X, measurements, std::vector<size_t>(D-1, R), perfData);
 	
-	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-3, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 	
 	
 	
@@ -141,5 +137,5 @@ static misc::UnitTest alg_adf_rnd("Algorithm", "adf_random_low_rank", [](){
 	
 	ourADF(X, RankOneMeasurementSet(measurements, X.dimensions), std::vector<size_t>(D-1, R), perfData);
 	
-	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-4, frob_norm(X - trueSolution)/frob_norm(trueSolution));
+	MTEST(frob_norm(X - trueSolution)/frob_norm(trueSolution) < 1e-3, frob_norm(X - trueSolution)/frob_norm(trueSolution));
 });

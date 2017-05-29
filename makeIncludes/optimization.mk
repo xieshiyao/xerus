@@ -61,7 +61,7 @@ else ifdef HIGH_OPTIMIZATION
 # 		OPTIMIZE += -floop-unroll-and-jam		# Enable unroll and jam for the ISL based loop nest optimizer. 
 		OPTIMIZE += -fmodulo-sched 			# Perform swing modulo scheduling immediately before the first scheduling pass. 
 		OPTIMIZE += -fmodulo-sched-allow-regmoves 	# Perform more aggressive SMS-based modulo scheduling with register moves allowed. 
-		OPTIMIZE += -fomit-frame-pointer		# Don't keep the frame pointer in a register for functions that don't need one.
+# 		OPTIMIZE += -fomit-frame-pointer		# Don't keep the frame pointer in a register for functions that don't need one.
 		OPTIMIZE += -fsched-pressure			# Enable register pressure sensitive insn scheduling before register allocation. 
 		OPTIMIZE += -fsched-spec-load			# Allow speculative motion of some load instructions. 
 		OPTIMIZE += -fsched2-use-superblocks		# When scheduling after register allocation, use superblock scheduling.

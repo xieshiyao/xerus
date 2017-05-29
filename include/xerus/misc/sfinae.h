@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,57 +27,50 @@
 #include <type_traits>
 
 /**
- * @def ALLOW_MOVE(newTypeName, oldTypeName)
- * @brief Adds a template argument to a function which can be of only one specified class, but allows & and && types.
- */
-#define ALLOW_MOVE(newTypeName, ...) template<ADD_MOVE(newTypeName, __VA_ARGS__)>
-
-// Adds two template arguments to a function which can each be of only one specified class, but allows & and && types.
-#define ALLOW_MOVE_TWO(newTypeName, allowedType1, allowedType2) \
-    template<class newTypeName, \
-        typename std::enable_if<\
-               std::is_base_of<allowedType1, typename std::decay<newTypeName>::type>::value \
-            || std::is_base_of<allowedType2, typename std::decay<newTypeName>::type>::value, \
-            int> \
-        ::type = 0 \
-    >
-
-/**
- * @def ADD_MOVE(newTypeName, oldTypeName)
+ * @def XERUS_ADD_MOVE(newTypeName, oldTypeName)
  * @brief Adds a template arguments whithin an existing template argument list, which can be of only one specified class, but allows & and && types.
  */
-#define ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>::value, int>::type = 0
+#define XERUS_ADD_MOVE(newTypeName, ...) class newTypeName, typename std::enable_if<std::is_base_of<__VA_ARGS__, typename std::decay<newTypeName>::type>::value, int>::type = 0
 
+
+/**
+ * @def XERUS_GENERATE_HAS_MEMBER(member)
+ * @brief Macro to create a template class that checks for the existence of member functions. To be used in other template definitions in a SFINAE fashion.
+ */
 #if __GNUC__ > 4 || defined(__clang__)
-
 	// template void
 	template<class...> using void_t = void;
 
-	/**
-	* @def GENERATE_HAS_MEMBER(member)
-	* @brief Macro to create a template class that checks for the existence of member functions. To be used in other template definitions in a SFINAE fashion.
-	*/
-	#define GENERATE_HAS_FUNCTION(function)\
+
+	#define XERUS_GENERATE_HAS_FUNCTION(function)\
+	namespace sfinae {\
+		template<class, class, class = void>\
+		struct has_##function : std::false_type {};\
+		\
+		template<class clas, class arg>\
+		struct has_##function<clas, arg, void_t<decltype(std::declval<clas>().function(std::declval<arg>()))>> : std::true_type {};\
+	}\
 	\
-	template<class, class, class = void>\
-	struct has_##function : std::false_type {};\
-	\
-	template<class clas, class arg>\
-	struct has_##function<clas, arg, void_t<decltype(std::declval<clas>().function(std::declval<arg>()))>> : std::true_type {};\
+	
+	
+	// TODO Gives a false positive if a function can be called by implicit casting!
+	#define XERUS_GENERATE_EXISTS_FUNCTION(function)\
+	namespace sfinae {\
+        template<class, class = void>\
+        struct exists_##function : std::false_type {};\
+        \
+        template<class arg>\
+        struct exists_##function<arg, void_t<decltype(function(std::declval<arg>()))>> : std::true_type {};\
+	}\
 	\
 
 #else
-
-	/**
-	* @def GENERATE_HAS_MEMBER(member)
-	* @brief Macro to create a template class that checks for the existence of member functions. To be used in other template definitions in a SFINAE fashion.
-	*/
-	#define GENERATE_HAS_MEMBER(member)                                               \
+	#define XERUS_GENERATE_HAS_MEMBER(member)											   \
 	\
-	template < class T >                                                              \
-	class HasMember_##member                                                          \
-	{                                                                                 \
-	public:                                                                          \
+	template < class T >															  \
+	class HasMember_##member														  \
+	{																				 \
+	public:																		  \
 		typedef char (& yes)[1];							\
 		typedef char (& no)[2];							\
 		\
@@ -85,11 +78,11 @@
 		template <typename> static no check(...);					\
 		\
 		static constexpr bool RESULT = sizeof(check<T>(0)) == sizeof(yes);		\
-		};                                                                                \
+		};																				\
 		\
-		template < class T >                                                              \
-		struct has_member_##member                                                        \
-		: public std::integral_constant<bool, HasMember_##member<T>::RESULT>              \
-		{ };                                                                              \
+		template < class T >															  \
+		struct has_member_##member														\
+		: public std::integral_constant<bool, HasMember_##member<T>::RESULT>			  \
+		{ };																			  \
 
 #endif

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -66,13 +66,10 @@ namespace xerus {
 			IndexedTensorReadOnly(const IndexedTensorReadOnly& _other ) = delete;
 			
 			/// @brief Move-constructor
-			IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other );
+			IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) noexcept;
 			
 			/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
-			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices);
-			
-			/// @brief Constructs an IndexedTensorReadOnly using the given pointer and indices.
-			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices);
+			IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices);
 			
 			/// @brief Destructor must be virtual
 			virtual ~IndexedTensorReadOnly();
@@ -156,6 +153,8 @@ namespace xerus {
 		template<class tensor_type>
 		value_t frob_norm(const IndexedTensorReadOnly<tensor_type>& _idxTensor);
 		
+		///@brief Returns the one-norm of the associated tensor Obejct.
+		value_t one_norm(const IndexedTensorReadOnly<Tensor>& _idxTensor);
 		
 		size_t get_eval_degree(const std::vector<Index>& _indices);
 	}

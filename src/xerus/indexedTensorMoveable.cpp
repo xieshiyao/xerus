@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -34,7 +34,7 @@ namespace xerus {
 		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable() : IndexedTensorWritable<tensor_type>(nullptr, std::vector<Index>(), false) { }
 		
 		template<class tensor_type>
-		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(IndexedTensorMoveable &&_other ) : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
+		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(IndexedTensorMoveable<tensor_type> &&_other ) noexcept : IndexedTensorWritable<tensor_type>(std::move(_other)) { }
 		
 		template<class tensor_type>
 		IndexedTensorMoveable<tensor_type>::IndexedTensorMoveable(tensor_type* const _tensorObject, const std::vector<Index>& _indices) : IndexedTensorWritable<tensor_type>(_tensorObject, _indices, true) {}
@@ -62,5 +62,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensorMoveable<Tensor>;
 		template class IndexedTensorMoveable<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

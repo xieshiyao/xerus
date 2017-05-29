@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -44,7 +44,7 @@ namespace xerus { namespace misc {
 	
 	// ---------------------------------------- write_to_stream -------------------------------------------------------------
 	template<class T>
-	_inline_ void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format) {
+	XERUS_force_inline void write_to_stream(std::ostream& _stream, const T &_value, FileFormat _format) {
 		stream_writer(_stream, _value, _format);
 	}
 	
@@ -59,7 +59,7 @@ namespace xerus { namespace misc {
 	
 	template<class T>
 	void stream_writer(std::ostream& _stream, const std::vector<T> &_value, FileFormat _format) {
-		write_to_stream<uint64>(_stream, _value.size(), _format);
+		write_to_stream<size_t>(_stream, _value.size(), _format);
 		for (size_t i = 0; i < _value.size(); ++i) {
 			write_to_stream<T>(_stream, _value[i], _format);
 		}
@@ -68,12 +68,12 @@ namespace xerus { namespace misc {
 	
 	// ---------------------------------------- read_from_stream -------------------------------------------------------------
 	template<class T>
-	_inline_ void read_from_stream(std::istream& _stream, T &_obj, const FileFormat _format) {
+	XERUS_force_inline void read_from_stream(std::istream& _stream, T &_obj, const FileFormat _format) {
 		stream_reader(_stream, _obj, _format);
 	}
 	
 	template<class T>
-	_inline_ T read_from_stream(std::istream& _stream, const FileFormat _format) {
+	XERUS_force_inline T read_from_stream(std::istream& _stream, const FileFormat _format) {
 		T obj;
 		stream_reader(_stream, obj, _format);
 		return obj;
@@ -90,7 +90,7 @@ namespace xerus { namespace misc {
 	
 	template<class T>
 	void stream_reader(std::istream& _stream, std::vector<T> &_obj, const FileFormat _format) {
-		_obj.resize(read_from_stream<uint64>(_stream, _format));
+		_obj.resize(read_from_stream<size_t>(_stream, _format));
 		for (size_t i = 0; i < _obj.size(); ++i) {
 			read_from_stream<T>(_stream, _obj[i], _format);
 		}
@@ -126,14 +126,14 @@ namespace xerus { namespace misc {
 			std::string firstLine;
 			std::getline(in, firstLine);
 			
-			REQUIRE(in, "Unexpected end of stream in load_from_file().");
+			XERUS_REQUIRE(in, "Unexpected end of stream in load_from_file().");
 			
-			REQUIRE(firstLine == std::string("Xerus ") + misc::demangle_cxa(typeid(T).name()) + " datafile.", "Invalid binary input file " << _filename << ". DBG: " << firstLine);
+			XERUS_REQUIRE(firstLine == std::string("Xerus ") + misc::demangle_cxa(typeid(T).name()) + " datafile.", "Invalid binary input file " << _filename << ". DBG: " << firstLine);
 			
 			std::string formatQual, formatValue;
 			in >> formatQual >> formatValue;
 			
-			REQUIRE(formatQual == std::string("Format:"), "Invalid Sytax detected in file " << _filename << ". DBG: " << formatQual);
+			XERUS_REQUIRE(formatQual == std::string("Format:"), "Invalid Sytax detected in file " << _filename << ". DBG: " << formatQual);
 			
 			FileFormat format;
 			if(formatValue == std::string("TSV")) {
@@ -147,7 +147,7 @@ namespace xerus { namespace misc {
 				in.open(_filename, std::ifstream::in | std::ifstream::binary);
 				in.seekg(currPos+1); // +1 because of the last \n
 			} else {
-				LOG(fatal, "Invalid value for format detected. " << formatValue);
+				XERUS_LOG(fatal, "Invalid value for format detected. " << formatValue);
 			}
 			
 			read_from_stream<T>(in, _obj, format);

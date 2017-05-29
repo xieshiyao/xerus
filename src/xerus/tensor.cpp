@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -28,11 +28,12 @@
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/basicArraySupport.h>
 #include <xerus/misc/math.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/cholmod_wrapper.h>
 #include <xerus/sparseTimesFullContraction.h>
-
+#include <xerus/index.h>
 #include <xerus/tensorNetwork.h>
 
 #include <xerus/cholmod_wrapper.h>
@@ -48,24 +49,8 @@ namespace xerus {
 	Tensor::Tensor(const Representation _representation) : Tensor(DimensionTuple({}), _representation) { } 
 	
 	
-	Tensor::Tensor(const DimensionTuple& _dimensions, const Representation _representation, const Initialisation _init) 
-		: dimensions(_dimensions), size(misc::product(dimensions)), representation(_representation)
-	{
-		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
-		
-		if(representation == Representation::Dense) {
-			denseData.reset(new value_t[size], internal::array_deleter_vt);
-			if(_init == Initialisation::Zero) {
-				misc::set_zero(denseData.get(), size);
-			}
-		} else {
-			sparseData.reset(new std::map<size_t, value_t>());
-		}
-	}
-	
-	
-	Tensor::Tensor(DimensionTuple&& _dimensions, const Representation _representation, const Initialisation _init) 
-	: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
+	Tensor::Tensor(DimensionTuple _dimensions, const Representation _representation, const Initialisation _init) 
+		: dimensions(std::move(_dimensions)), size(misc::product(dimensions)), representation(_representation)
 	{
 		REQUIRE(size != 0, "May not create tensors with an dimension == 0.");
 		
@@ -233,13 +218,13 @@ namespace xerus {
 	
 	
 	bool Tensor::is_dense() const {
-		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		INTERNAL_CHECK((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Dense;
 	}
 	
 	
 	bool Tensor::is_sparse() const {
-		REQUIRE((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
+		INTERNAL_CHECK((representation == Representation::Dense && denseData && !sparseData) || (representation == Representation::Sparse && sparseData && !denseData), "Internal Error: " << bool(representation) << bool(denseData) << bool(sparseData));
 		return representation == Representation::Sparse;
 	}
 	
@@ -247,9 +232,8 @@ namespace xerus {
 	size_t Tensor::sparsity() const {
 		if(is_sparse()) {
 			return sparseData->size();
-		} else {
-			return size;
 		}
+		return size;
 	}
 	
 	
@@ -260,13 +244,12 @@ namespace xerus {
 				if(std::abs(denseData.get()[i]) > _eps ) { count++; }
 			}
 			return count;
-		} else {
-			size_t count = 0;
-			for(const auto& entry : *sparseData) {
-				if(std::abs(entry.second) > _eps) { count++; } 
-			}
-			return count;
 		}
+		size_t count = 0;
+		for(const auto& entry : *sparseData) {
+			if(std::abs(entry.second) > _eps) { count++; } 
+		}
+		return count;
 	}
 	
 	
@@ -289,16 +272,26 @@ namespace xerus {
 	}
 	
 	
+	value_t Tensor::one_norm() const {
+		if(is_dense()) {
+			return std::abs(factor)*blasWrapper::one_norm(denseData.get(), size);
+		} 
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += std::abs(entry.second);
+		}
+		return std::abs(factor)*norm;
+	}
+	
 	value_t Tensor::frob_norm() const {
 		if(is_dense()) {
 			return std::abs(factor)*blasWrapper::two_norm(denseData.get(), size);
-		} else {
-			value_t norm = 0;
-			for(const auto& entry : *sparseData) {
-				norm += misc::sqr(entry.second);
-			}
-			return std::abs(factor)*sqrt(norm);
+		} 
+		value_t norm = 0;
+		for(const auto& entry : *sparseData) {
+			norm += misc::sqr(entry.second);
 		}
+		return std::abs(factor)*sqrt(norm);
 	}
 	
 	
@@ -335,15 +328,13 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
-			value_t& result = (*sparseData)[_position];
-			use_dense_representation_if_desirable();
-			if (is_dense()) {
-				return denseData.get()[_position];
-			} else {
-				return result;
-			}
 		}
+		value_t& result = (*sparseData)[_position];
+		use_dense_representation_if_desirable();
+		if (is_dense()) {
+			return denseData.get()[_position];
+		}
+		return result;
 	}
 	
 
@@ -352,14 +343,12 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return factor*denseData.get()[_position];
-		} else {
-			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
-			if(entry == sparseData->end()) {
-				return 0.0;
-			} else {
-				return factor*entry->second;
-			}
+		} 
+		const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
+		if(entry == sparseData->end()) {
+			return 0.0;
 		}
+		return factor*entry->second;
 	}
 	
 	
@@ -380,15 +369,15 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
+		} 
 			value_t& result = (*sparseData)[_position];
 			use_dense_representation_if_desirable();
 			if (is_dense()) {
 				return denseData.get()[_position];
-			} else {
+			} 
 				return result;
-			}
-		}
+			
+		
 	}
 	
 	
@@ -398,14 +387,14 @@ namespace xerus {
 		
 		if(is_dense()) {
 			return denseData.get()[_position];
-		} else {
+		} 
 			const std::map<size_t, value_t>::const_iterator entry = sparseData->find(_position);
 			if(entry == sparseData->end()) {
 				return 0.0;
-			} else {
+			} 
 				return entry->second;
-			}
-		}
+			
+		
 	}
 	
 	
@@ -468,7 +457,7 @@ namespace xerus {
 	std::map<size_t, value_t>& Tensor::override_sparse_data() {
 		factor = 1.0;
 		if(sparseData.unique()) {
-			REQUIRE(is_sparse(), "Internal Error");
+			INTERNAL_CHECK(is_sparse(), "Internal Error");
 			sparseData->clear();
 		} else {
 			denseData.reset();
@@ -685,7 +674,7 @@ namespace xerus {
 					const size_t preBlockSize = (_cutPos-removedSlates)*dimStepSize;
 					const size_t postBlockSize = (oldDim-_cutPos)*dimStepSize;
 					
-					REQUIRE(removedBlockSize+preBlockSize+postBlockSize == oldStepSize && preBlockSize+postBlockSize == newStepSize, "IE");
+					INTERNAL_CHECK(removedBlockSize+preBlockSize+postBlockSize == oldStepSize && preBlockSize+postBlockSize == newStepSize, "IE");
 					
 					for (size_t i = 0; i < blockCount; ++i) {
 						value_t* const currData = tmpData.get()+i*newStepSize;
@@ -741,7 +730,7 @@ namespace xerus {
 	
 	
 	void Tensor::fix_mode(const size_t _mode, const size_t _slatePosition) {
-		REQUIRE(_slatePosition < dimensions[_mode], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_mode]);
+		REQUIRE(_slatePosition < dimensions[_mode], "The given slatePosition must be smaller than the corresponding dimension. Here " << _slatePosition << " >= " << dimensions[_mode] << ", dim = " << dimensions << "=" << size << " mode " << _mode);
 		
 		const size_t stepCount = misc::product(dimensions, 0, _mode);
 		const size_t blockSize = misc::product(dimensions, _mode+1, degree());
@@ -789,18 +778,18 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::perform_trace(size_t _firstIndex, size_t _secondIndex) {
-		REQUIRE(_firstIndex != _secondIndex, "Given indices must not coincide");
-		REQUIRE(dimensions[_firstIndex] == dimensions[_secondIndex], "Dimensions of trace indices must coincide.");
+	void Tensor::perform_trace(size_t _firstMode, size_t _secondMode) {
+		REQUIRE(_firstMode != _secondMode, "Given indices must not coincide");
+		REQUIRE(dimensions[_firstMode] == dimensions[_secondMode], "Dimensions of trace indices must coincide.");
 		
-		if(_firstIndex > _secondIndex) { std::swap(_firstIndex, _secondIndex); }
+		if(_firstMode > _secondMode) { std::swap(_firstMode, _secondMode); }
 		
 		
 		
-		const size_t front = misc::product(dimensions, 0, _firstIndex);
-		const size_t mid = misc::product(dimensions, _firstIndex+1, _secondIndex);
-		const size_t back = misc::product(dimensions, _secondIndex+1, degree());
-		const size_t traceDim = dimensions[_firstIndex];
+		const size_t front = misc::product(dimensions, 0, _firstMode);
+		const size_t mid = misc::product(dimensions, _firstMode+1, _secondMode);
+		const size_t back = misc::product(dimensions, _secondMode+1, degree());
+		const size_t traceDim = dimensions[_firstMode];
 		const size_t frontStepSize = traceDim*mid*traceDim*back;
 		const size_t traceStepSize = mid*traceDim*back+back;
 		const size_t midStepSize = traceDim*back;
@@ -843,13 +832,13 @@ namespace xerus {
 			sparseData.reset(newData.release());
 		}
 		
-		dimensions.erase(dimensions.begin()+_secondIndex);
-		dimensions.erase(dimensions.begin()+_firstIndex);
+		dimensions.erase(dimensions.begin()+_secondMode);
+		dimensions.erase(dimensions.begin()+_firstMode);
 		factor = 1.0;
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -870,7 +859,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_diagonal_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		if(degree() == 0) {
@@ -891,7 +880,7 @@ namespace xerus {
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i)); }
@@ -904,14 +893,14 @@ namespace xerus {
 					at(i) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 		}
 	}
 	
 
-	void Tensor::modify_elements(const std::function<void(value_t&, const size_t)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const size_t)>& _f) {
 		ensure_own_data_and_apply_factor();
 		if(is_dense()) {
 			for(size_t i = 0; i < size; ++i) { _f(at(i), i); }
@@ -924,14 +913,14 @@ namespace xerus {
 					at(i) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(i);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 		}
 	}
 	
 	
-	void Tensor::modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f) {
+	void Tensor::modify_entries(const std::function<void(value_t&, const MultiIndex&)>& _f) {
 		ensure_own_data_and_apply_factor();
 		
 		MultiIndex multIdx(degree(), 0);
@@ -947,7 +936,7 @@ namespace xerus {
 					at(idx) = val;
 				} else if( misc::hard_not_equal(oldVal, 0.0)) {
 					IF_CHECK( size_t succ =) sparseData->erase(idx);
-					REQUIRE(succ == 1, "Internal Error");
+					INTERNAL_CHECK(succ == 1, "Internal Error");
 				}
 			}
 			
@@ -1076,7 +1065,7 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Miscellaneous - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	std::string Tensor::to_string() const {
-		if (degree() == 0) return xerus::misc::to_string(operator[](0));
+		if (degree() == 0) { return xerus::misc::to_string(operator[](0)); }
 		
 		std::string result;
 		for (size_t i = 0; i < size; ++i) {
@@ -1260,25 +1249,25 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
-		REQUIRE(_numIndices <= _lhs.degree() && _numIndices <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
-			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numIndices);
+	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
+		REQUIRE(_numModes <= _lhs.degree() && _numModes <= _rhs.degree(), "Cannot contract more indices than both tensors have. we have: " 
+			<< _lhs.degree() << " and " << _rhs.degree() << " but want to contract: " << _numModes);
 		
-		const size_t lhsRemainOrder = _lhs.degree() - _numIndices;
-		const size_t lhsRemainStart = _lhsTrans ? _numIndices : 0;
+		const size_t lhsRemainOrder = _lhs.degree() - _numModes;
+		const size_t lhsRemainStart = _lhsTrans ? _numModes : 0;
 		const size_t lhsContractStart = _lhsTrans ? 0 : lhsRemainOrder;
 		const size_t lhsRemainEnd = lhsRemainStart + lhsRemainOrder;
 		
-		const size_t rhsRemainOrder = _rhs.degree() - _numIndices;
-		const size_t rhsRemainStart = _rhsTrans ? 0 : _numIndices;
+		const size_t rhsRemainOrder = _rhs.degree() - _numModes;
+		const size_t rhsRemainStart = _rhsTrans ? 0 : _numModes;
 		IF_CHECK(const size_t rhsContractStart = _rhsTrans ? rhsRemainOrder : 0;)
 		const size_t rhsRemainEnd = rhsRemainStart + rhsRemainOrder;
 		
-		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numIndices, _rhs.dimensions.begin() + rhsContractStart), 
-				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numIndices);
+		REQUIRE(std::equal(_lhs.dimensions.begin() + lhsContractStart, _lhs.dimensions.begin() + lhsContractStart + _numModes, _rhs.dimensions.begin() + rhsContractStart), 
+				"Dimensions of the be contracted indices do not coincide. " <<_lhs.dimensions << " ("<<_lhsTrans<<") and " << _rhs.dimensions << " ("<<_rhsTrans<<") with " << _numModes);
 		
 		const size_t leftDim = misc::product(_lhs.dimensions, lhsRemainStart, lhsRemainEnd);
-		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numIndices);
+		const size_t midDim = misc::product(_lhs.dimensions, lhsContractStart, lhsContractStart+_numModes);
 		const size_t rightDim = misc::product(_rhs.dimensions, rhsRemainStart, rhsRemainEnd);
 		
 		
@@ -1362,13 +1351,14 @@ namespace xerus {
 		}
 	}
 	
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices) {
+	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes) {
 		Tensor result;
-		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numIndices);
+		contract(result, _lhs, _lhsTrans, _rhs, _rhsTrans, _numModes);
 		return result;
 	}
+
 	
-	_inline_ std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
+	XERUS_force_inline std::tuple<size_t, size_t, size_t> calculate_factorization_sizes(const Tensor& _input, const size_t _splitPos) {
 		REQUIRE(_splitPos <= _input.degree(), "Split position must be in range.");
 		
 		const size_t lhsSize = misc::product(_input.dimensions, 0, _splitPos);
@@ -1378,7 +1368,7 @@ namespace xerus {
 		return std::make_tuple(lhsSize, rhsSize, rank);
 	}
 	
-	_inline_ void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank, Tensor::Representation _rep) {
+	XERUS_force_inline void prepare_factorization_output(Tensor& _lhs, Tensor& _rhs, const Tensor& _input, const size_t _splitPos, const size_t _rank, Tensor::Representation _rep) {
 		_lhs.factor = 1.0;
 		_rhs.factor = 1.0;
 		
@@ -1405,7 +1395,7 @@ namespace xerus {
 		}
 	}
 	
-	_inline_ void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, 
+	XERUS_force_inline void set_factorization_output(Tensor& _lhs, std::unique_ptr<value_t[]>&& _lhsData, Tensor& _rhs, 
 										   std::unique_ptr<value_t[]>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
 		Tensor::DimensionTuple newDim;
 		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
@@ -1418,7 +1408,7 @@ namespace xerus {
 		_rhs.reset(std::move(newDim), std::move(_rhsData));
 	}
 	
-	_inline_ void set_factorization_output(Tensor& _lhs, std::map<size_t, value_t>&& _lhsData, Tensor& _rhs, 
+	XERUS_force_inline void set_factorization_output(Tensor& _lhs, std::map<size_t, value_t>&& _lhsData, Tensor& _rhs, 
 										   std::map<size_t, value_t>&& _rhsData, const Tensor& _input, const size_t _splitPos, const size_t _rank) {
 		Tensor::DimensionTuple newDim;
 		newDim.insert(newDim.end(), _input.dimensions.begin(), _input.dimensions.begin() + _splitPos);
@@ -1436,16 +1426,37 @@ namespace xerus {
 		
 		size_t lhsSize, rhsSize, rank;
 		std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, _splitPos);
-		prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 		
 		std::unique_ptr<value_t[]> tmpS(new value_t[rank]);
 		
+		// sparse SVD becomes inefficient when the matrix is not sparse enough
+		// sparse SVD is about equally fast to dense SVD when there are about N = 1.55*(min(m,n)+(max-min)/5) entries set
+		// will calculate with 2 instead of 1.55 to make sure that we will certainly be slower with sparse
+		// (note that the algorithm is quadratic in the sparsity)
+		size_t min = std::min(lhsSize, rhsSize);
+		size_t max = std::max(lhsSize, rhsSize);
+		if (_input.is_sparse() && _input.sparsity() > 2*(min+(max-min)/5)) {
+			_input.use_dense_representation();
+		}
+		
 		// Calculate the actual SVD
 		if(_input.is_sparse()) {
-			LOG_ONCE(warning, "Sparse SVD not yet implemented. falling back to the dense SVD");
-			_input.use_dense_representation();
-			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			// calculate QC in both directions
+			calculate_qc(_U, _input, _input, _splitPos);
+			calculate_cq(_input, _Vt, _input, 1);
+			_input.use_dense_representation(); // in the very unlikely case that is it not already dense
+			
+			// then calculate SVD only of remaining (hopefully small) core
+			Tensor UPrime, VPrime;
+			std::tie(lhsSize, rhsSize, rank) = calculate_factorization_sizes(_input, 1);
+			prepare_factorization_output(UPrime, VPrime, _input, 1, rank, Tensor::Representation::Dense);
+			blasWrapper::svd(UPrime.override_dense_data(), tmpS.get(), VPrime.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
+			
+			// contract U*UPrime and VPrime*V to obtain SVD (UU', S, V'V) from orthogonal U and V as wel as the SVD (U', S, V')
+			contract(_U, _U, UPrime, 1);
+			contract(_Vt, VPrime, _Vt, 1);
 		} else {
+			prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
 		
@@ -1484,7 +1495,7 @@ namespace xerus {
 		if (_input.is_sparse()) {
 			std::map<size_t, double> qdata, rdata;
 			std::tie(qdata, rdata, rank) = internal::CholmodSparse::qc(_input.get_unsanitized_sparse_data(), false, lhsSize, rhsSize, true);
-			REQUIRE(rank == std::min(lhsSize, rhsSize), "IE, sparse qr reduced rank");
+			INTERNAL_CHECK(rank == std::min(lhsSize, rhsSize), "IE, sparse qr reduced rank");
 			set_factorization_output(_Q, std::move(qdata), _R, std::move(rdata), _input, _splitPos, rank);
 			_Q.use_dense_representation_if_desirable();
 			_R.use_dense_representation_if_desirable();
@@ -1557,9 +1568,9 @@ namespace xerus {
 	void pseudo_inverse(Tensor& _inverse, const Tensor& _input, const size_t _splitPos) {
 		Tensor U, S, Vt;
 		calculate_svd(U, S, Vt, _input, _splitPos, 0, EPSILON);
-		S.modify_diag_elements([](value_t& _a){ _a = 1/_a;});
-		contract(_inverse, U, false, S, false, 1);
-		contract(_inverse, _inverse, false, Vt, false, 1);
+		S.modify_diagonal_entries([](value_t& _a){ _a = 1/_a;});
+		contract(_inverse, Vt, true, S, false, 1);
+		contract(_inverse, _inverse, false, U, true, 1);
 	}
 	
 	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos) {
@@ -1569,9 +1580,130 @@ namespace xerus {
 	}
 	
 	
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const size_t _splitPos, const Tensor& _b) {
-		LOG(fatal, "Not yet Implemented."); // TODO
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
+		const size_t degM = _B.degree() - _extraDegree;
+		const size_t degN = _A.degree() - degM;
+		
+		REQUIRE(_A.degree() == degM+degN, "Inconsistent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsistent dimensions.");
+		
+		// Make sure X has right dimensions
+		if(	_X.degree() != degN + _extraDegree
+			|| !std::equal(_X.dimensions.begin(), _X.dimensions.begin() + degN, _A.dimensions.begin() + degM)
+			|| !std::equal(_X.dimensions.begin()+ degN, _X.dimensions.end(), _B.dimensions.begin() + degM))
+		{
+			Tensor::DimensionTuple newDimX;
+			newDimX.insert(newDimX.end(), _A.dimensions.begin()+degM, _A.dimensions.end());
+			newDimX.insert(newDimX.end(), _B.dimensions.begin()+degM, _B.dimensions.end());
+			_X.reset(std::move(newDimX), Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		
+		// Calculate multDimensions
+		const size_t m = misc::product(_A.dimensions, 0, degM);
+		const size_t n = misc::product(_A.dimensions, degM, degM+degN);
+		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
+		
+		if (_A.is_sparse()) {
+			REQUIRE( p == 1, "Matrix least squares not supported in sparse");
+			if (_B.is_sparse()) {
+				internal::CholmodSparse::solve_sparse_rhs(
+					_X.override_sparse_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false, 
+					_B.get_unsanitized_sparse_data(), 
+					m);
+			} else {
+				internal::CholmodSparse::solve_dense_rhs(
+					_X.override_dense_data(), 
+					n, 
+					_A.get_unsanitized_sparse_data(), 
+					false,
+					_B.get_unsanitized_dense_data(), 
+					m);
+			}
+			
+		} else { // Dense A
+            if(_B.is_dense()) {
+                blasWrapper::solve_least_squares(
+                    _X.override_dense_data(), 
+                    _A.get_unsanitized_dense_data(), m, n, 
+                    _B.get_unsanitized_dense_data(), p);
+            } else {
+                LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+                
+                Tensor Bcpy(_B);
+                Bcpy.factor = 1.0;
+                Bcpy.use_dense_representation();
+                
+                blasWrapper::solve_least_squares(
+                    _X.override_dense_data(), 
+                    _A.get_unsanitized_dense_data(), m, n, 
+                    Bcpy.get_unsanitized_dense_data(), p);
+            }
+		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
 	}
+	
+	
+	
+	void solve(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree) {
+		if (_A.is_sparse()) { // TODO
+			solve_least_squares(_X, _A, _B, _extraDegree);
+			return;
+		}
+		REQUIRE(&_X != &_B && &_X != &_A, "Not supportet yet");
+		const size_t degM = _B.degree() - _extraDegree;
+		const size_t degN = _A.degree() - degM;
+		
+		REQUIRE(_A.degree() == degM+degN, "Inconsistent dimensions.");
+		REQUIRE(_B.degree() == degM+_extraDegree, "Inconsistent dimensions.");
+		
+		// Make sure X has right dimensions
+		if(	_X.degree() != degN + _extraDegree
+			|| !std::equal(_X.dimensions.begin(), _X.dimensions.begin() + degN, _A.dimensions.begin() + degM)
+			|| !std::equal(_X.dimensions.begin()+ degN, _X.dimensions.end(), _B.dimensions.begin() + degM))
+		{
+			Tensor::DimensionTuple newDimX;
+			newDimX.insert(newDimX.end(), _A.dimensions.begin()+degM, _A.dimensions.end());
+			newDimX.insert(newDimX.end(), _B.dimensions.begin()+degM, _B.dimensions.end());
+			_X.reset(std::move(newDimX), Tensor::Representation::Dense, Tensor::Initialisation::None);
+		}
+		
+		// Calculate multDimensions
+		const size_t m = misc::product(_A.dimensions, 0, degM);
+		const size_t n = misc::product(_A.dimensions, degM, degM+degN);
+		const size_t p = misc::product(_B.dimensions, degM, degM+_extraDegree);
+		
+		
+		// Note that A isdense here
+		if(_B.is_dense()) {
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				_B.get_unsanitized_dense_data(), p);
+		} else {
+			LOG_ONCE(warning, "Sparse RHS not yet implemented (casting to dense)"); //TODO
+			
+			Tensor Bcpy(_B);
+			Bcpy.factor = 1.0;
+			Bcpy.use_dense_representation();
+			
+			blasWrapper::solve(
+				_X.override_dense_data(), 
+				_A.get_unsanitized_dense_data(), m, n, 
+				Bcpy.get_unsanitized_dense_data(), p);
+		}
+		
+		// Propagate the constant factor
+		_X.factor = _B.factor / _A.factor;
+	}
+	
+	
 	
 	Tensor entrywise_product(const Tensor &_A, const Tensor &_B) {
 		REQUIRE(_A.dimensions == _B.dimensions, "Entrywise product ill-defined for non-equal dimensions.");
@@ -1585,21 +1717,22 @@ namespace xerus {
 				dataPtrA[i] *= dataPtrB[i];
 			}
 			return result;
-		} else if(_A.is_sparse()) {
+		}
+		if(_A.is_sparse()) {
 			Tensor result(_A);
 			
 			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
 				entry.second *= _B[entry.first];
 			}
 			return result;
-		} else { // _B.is_sparse()
-			Tensor result(_B);
-			
-			for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
-				entry.second *= _A[entry.first];
-			}
-			return result;
+		} 
+		// _B.is_sparse()
+		Tensor result(_B);
+		
+		for(std::pair<const size_t, value_t>& entry : result.get_sparse_data()) {
+			entry.second *= _A[entry.first];
 		}
+		return result;
 	}
 	
 	bool approx_equal(const xerus::Tensor& _a, const xerus::Tensor& _b, const xerus::value_t _eps) {
@@ -1637,6 +1770,11 @@ namespace xerus {
 		return true;
 	}
 	
+	std::ostream& operator<<(std::ostream& _out, const Tensor& _tensor) {
+		_out << _tensor.to_string();
+		return _out;
+	}
+	
 	namespace misc {
 		
 		
@@ -1646,20 +1784,20 @@ namespace xerus {
 			}
 			
 			// storage version number
-			write_to_stream<uint64>(_stream, 1, _format);
+			write_to_stream<size_t>(_stream, 1, _format);
 			
 			write_to_stream(_stream, _obj.dimensions, _format);
 			
 			if (_obj.representation == Tensor::Representation::Dense) {
-				write_to_stream<uint64>(_stream, 1, _format);
+				write_to_stream<size_t>(_stream, 1, _format);
 				for (size_t i = 0; i < _obj.size; ++i) {
 					write_to_stream<value_t>(_stream, _obj[i], _format);
 				}
 			} else {
-				write_to_stream<uint64>(_stream, 2, _format);
-				write_to_stream<uint64>(_stream, _obj.get_unsanitized_sparse_data().size(), _format);
+				write_to_stream<size_t>(_stream, 2, _format);
+				write_to_stream<size_t>(_stream, _obj.get_unsanitized_sparse_data().size(), _format);
 				for (const auto &d : _obj.get_unsanitized_sparse_data()) {
-					write_to_stream<uint64>(_stream, d.first, _format);
+					write_to_stream<size_t>(_stream, d.first, _format);
 					write_to_stream<value_t>(_stream, _obj.factor*d.second, _format);
 				}
 			}
@@ -1667,7 +1805,7 @@ namespace xerus {
 		
 		
 		void stream_reader(std::istream& _stream, Tensor &_obj, const FileFormat _format) {
-			IF_CHECK(uint64 ver = )read_from_stream<uint64>(_stream, _format);
+			IF_CHECK(size_t ver = )read_from_stream<size_t>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
@@ -1675,7 +1813,7 @@ namespace xerus {
 			read_from_stream(_stream, dims, _format);
 			
 			// Load representation
-			const uint64 rep = read_from_stream<uint64>(_stream, _format);
+			const size_t rep = read_from_stream<size_t>(_stream, _format);
 			
 			// Load data
 			if (rep == 1) { // Dense
@@ -1692,18 +1830,18 @@ namespace xerus {
 				REQUIRE(rep == 2, "Unknown tensor representation " << rep << " in stream");
 				_obj.reset(std::move(dims), Tensor::Representation::Sparse);
 				
-				const uint64 num = read_from_stream<uint64>(_stream, _format);
+				const uint64 num = read_from_stream<size_t>(_stream, _format);
 				REQUIRE(num < std::numeric_limits<size_t>::max(), "The stored Tensor is to large to be loaded using 32 Bit xerus.");
 				
 				for (size_t i = 0; i < num; ++i) {
 					REQUIRE(_stream, "Unexpected end of stream in reading sparse Tensor.");
 					// NOTE inline function calls can be called in any order by the compiler, so we have to cache the results to ensure correct order
-					uint64 pos = read_from_stream<uint64>(_stream, _format);
+					uint64 pos = read_from_stream<size_t>(_stream, _format);
 					value_t val = read_from_stream<value_t>(_stream, _format);
 					_obj.get_unsanitized_sparse_data().emplace(pos, val);
 				}
 				REQUIRE(_stream, "Unexpected end of stream in reading dense Tensor.");
 			}
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

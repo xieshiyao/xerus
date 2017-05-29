@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -42,7 +42,7 @@ namespace xerus {
 	*/
 	class Index {
 	public:
-		#ifndef DISABLE_RUNTIME_CHECKS_
+		#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 		/// Enum defining the possible flags an Index my possess.
 			enum Flag {FIXED, INVERSE_SPAN, FRACTIONAL_SPAN, ASSINGED, OPEN, NUM_FLAGS};
 		#else
@@ -76,10 +76,7 @@ namespace xerus {
 		Index();
 		
 		/// @brief Indices are default copy constructable.
-		Index(const Index&) noexcept = default;
-		
-		/// @brief Indices are default move constructable.
-		Index(Index&&) noexcept = default;
+		Index(const Index& _other) noexcept = default;
 		
 		/// @brief Integers are implicitly allowed to be casted to Index, to allow expression as A(i) = B(3,i), i.e. A is the third row of B.
 		Index(const int32 _i);
@@ -103,9 +100,6 @@ namespace xerus {
 		
 		/// @brief Indices are default assignable.
 		Index& operator=(const Index&) = default;
-		
-		/// @brief Indices are default moveable.
-		Index& operator=(Index&&) noexcept = default;
 		
 		/// @brief Returns the span this index actually represents in a tensor of given order.
 		void set_span(const size_t _degree);

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,19 +29,17 @@
 #include <xerus/misc/exceptions.h>
 #include <xerus/misc/namedLogger.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace misc {
 
-        double integrate(const std::function<double(double)> &_f, double _a, double _b, double _eps, 
-                        uint _minIter, uint _maxIter, uint _branchFactor, 
-                        uint _maxRecursion, bool _relativeError) {
-            
+        double integrate(const std::function<double(double)>& _f, const double _a, const double _b, double _eps, const uint _minIter, const uint _maxIter, const uint _branchFactor, const uint _maxRecursion, const bool _relativeError) {
             REQUIRE(_minIter > 1, "");
             REQUIRE(_branchFactor > 1, "");
             double min = std::min(_a,_b);
             double max = std::max(_a,_b);
-            if (_relativeError) _eps = std::max(_eps, std::numeric_limits<double>::epsilon());
+            if (_relativeError) { _eps = std::max(_eps, std::numeric_limits<double>::epsilon()); }
             std::vector<double> iterants;
             iterants.push_back((max - min)*(_f(min) + _f(max))/2);
             double h = (max-min);
@@ -67,7 +65,7 @@ namespace xerus {
                 }
                 if (_relativeError) {
                     error = std::abs((iterants[0]-oldIt0)/oldIt0);
-                    if (std::isnan(error)) error = std::abs(iterants[0]-oldIt0);
+                    if (std::isnan(error)) { error = std::abs(iterants[0]-oldIt0); }
                 } else {
                     error = std::abs(iterants[0]-oldIt0);
                 }
@@ -97,21 +95,19 @@ namespace xerus {
         }
 
 
-        double integrate_segmented(const std::function<double(double)> &_f, double _a, double _b, double _segmentation, 
-                                double _eps, uint _minIter, uint _maxIter, uint _branchFactor,
-                                uint _maxRecursion) {
-            double min = std::min(_a,_b);
-            double max = std::max(_a,_b);
+        double integrate_segmented(const std::function<double(double)> &_f, const double _a, const double _b, const double _segmentation, const double _eps, const uint _minIter, const uint _maxIter, const uint _branchFactor, const uint _maxRecursion) {
+            const double min = std::min(_a, _b);
+            const double max = std::max(_a, _b);
             double res = 0;
-            for (double x=min; x<max; x+=_segmentation) {
+            for (double x = min; x < max; x += _segmentation) {
                 res += integrate(_f, x, std::min(x+_segmentation, max), _eps, _minIter, _maxIter, _branchFactor, _maxRecursion);
             }
             return (_a>_b?-1:1)*res;
         }
 
         
-        double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon) {
-			double nm = std::max(_min, _max);
+        double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, const double _epsilon) {
+			const double nm = std::max(_min, _max);
 			_min = std::min(_min, _max);
 			_max = nm;
 			
@@ -136,7 +132,7 @@ namespace xerus {
 				}
 				REQUIRE(std::isfinite(fmid), "invalid function value f("<<mid<<") = " << fmid << " reached in bisection");
 				if (fmin * fmid < 0) {
-					fmax = fmid;
+// 					fmax = fmid; // never needed again
 					_max = mid;
 				} else {
 					fmin = fmid;
@@ -146,7 +142,7 @@ namespace xerus {
 			
 			return (_max + _min) / 2.0;
 		}
-        
+	
         // - - - - - - - - - - - - - - - Polynomial - - - - - - - - - - - - - - -
         
         Polynomial::Polynomial() {}
@@ -157,26 +153,26 @@ namespace xerus {
             return coefficients.size();
         }
         
-        Polynomial& Polynomial::operator-=(const Polynomial &_rhs) {
-            if (terms() < _rhs.terms()) {
-                coefficients.resize(_rhs.terms());
-            }
-            for (size_t i=0; i<std::min(terms(), _rhs.terms()); ++i) {
-                coefficients[i] -= _rhs.coefficients[i];
-            }
+        Polynomial& Polynomial::operator+=(const Polynomial &_rhs) {
+			coefficients.resize(std::max(terms(), _rhs.terms()));
+			
+			for(size_t i = 0; i < _rhs.terms(); ++i) {
+				coefficients[i] += _rhs.coefficients[i];
+			}
+
             return *this;
         }
         
-        Polynomial Polynomial::operator*(const Polynomial &_rhs) const {
-            Polynomial result;
-            result.coefficients.resize(_rhs.terms()+terms()-1);
-            for (size_t i=0; i<terms(); ++i) {
-                for (size_t j=0; j<_rhs.terms(); ++j) {
-                    result.coefficients[i+j] += coefficients[i]*_rhs.coefficients[j];
-                }
-            }
-            return result;
+        Polynomial& Polynomial::operator-=(const Polynomial &_rhs) {
+			coefficients.resize(std::max(terms(), _rhs.terms()));
+			
+			for(size_t i = 0; i < _rhs.terms(); ++i) {
+				coefficients[i] -= _rhs.coefficients[i];
+			}
+
+            return *this;
         }
+        
         
         Polynomial& Polynomial::operator/=(double _rhs) {
             for (size_t i=0; i<terms(); ++i) {
@@ -190,6 +186,17 @@ namespace xerus {
                 coefficients[i] *= _rhs;
             }
             return *this;
+        }
+        
+        Polynomial Polynomial::operator*(const Polynomial &_rhs) const {
+            Polynomial result;
+            result.coefficients.resize(_rhs.terms()+terms()-1);
+            for (size_t i=0; i<terms(); ++i) {
+                for (size_t j=0; j<_rhs.terms(); ++j) {
+                    result.coefficients[i+j] += coefficients[i]*_rhs.coefficients[j];
+                }
+            }
+            return result;
         }
         
         Polynomial Polynomial::operator*(double _rhs) const {
@@ -245,9 +252,6 @@ namespace xerus {
         }
         
         
-        
-        
-        
         // - - - - - - - - - - - - - - - ShanksTransformation - - - - - - - - - - - - - - -
         
         template<class ft_type>
@@ -269,7 +273,7 @@ namespace xerus {
         
         template<class ft_type>
         ft_type ShanksTransformation<ft_type>::best_estimate() const {
-            if (values.size() == 0) {
+            if (values.empty()) {
                 XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values[(values.size()-1) % 2];
@@ -281,9 +285,8 @@ namespace xerus {
             size_t i = (values.size()-1) % 2;
             if (i+1 >= values.size()) {
                 return 1;
-            } else {
-                return std::abs(values[i] - values[i+1]);
             }
+            return std::abs(values[i] - values[i+1]);
         }
         
         template<class ft_type>
@@ -314,7 +317,7 @@ namespace xerus {
         
         template<class ft_type>
         ft_type RichardsonExtrapolation<ft_type>::best_estimate() const {
-            if (values.size() == 0) {
+            if (values.empty()) {
                 XERUS_THROW(generic_error() << "tried to extract limit of empty sequence");
             } else {
                 return values.front();
@@ -325,9 +328,8 @@ namespace xerus {
         ft_type RichardsonExtrapolation<ft_type>::error_approximate() const {
             if (values.size() < 2) {
                 return 1;
-            } else {
-                return std::abs(values[0] - values[1]);
             }
+            return std::abs(values[0] - values[1]);
         }
         
         template<class ft_type>
@@ -339,5 +341,5 @@ namespace xerus {
         template class RichardsonExtrapolation<float>;
         template class RichardsonExtrapolation<double>;
     
-    }
-}
+    } // namespace misc
+} // namespace xerus

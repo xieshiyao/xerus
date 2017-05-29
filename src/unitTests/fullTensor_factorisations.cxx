@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_svd_id("Tensor", "SVD_Identity", [](){
@@ -67,10 +67,7 @@ static misc::UnitTest tensor_svd_zero("Tensor", "SVD_zero", [](){
 });
 
 static misc::UnitTest tensor_svd_rnd512("Tensor", "SVD_Random_512x512", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({8,8,8,8,8,8}, rnd, dist);
+    Tensor A = Tensor::random({8,8,8,8,8,8});
     Tensor res1;
     Tensor res2;
     Tensor res3;
@@ -112,10 +109,7 @@ static misc::UnitTest tensor_svd_rnd512("Tensor", "SVD_Random_512x512", [](){
 });
 
 static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({3,5,2,7,3,12}, rnd, dist);
+    Tensor A = 10*Tensor::random({3,5,2,7,3,12});
     Tensor Ax, U, V, Us, Vs;
     Tensor S(Tensor::Tensor::Representation::Sparse);
 	Tensor Ss(Tensor::Tensor::Representation::Sparse);
@@ -146,10 +140,7 @@ static misc::UnitTest tensor_svd_soft("Tensor", "SVD_soft_thresholding", [](){
 });
 
 static misc::UnitTest tensor_svd_order_6("Tensor", "SVD_Random_Order_Six", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({9,7,5,5,9,7}, rnd, dist);
+    Tensor A = Tensor::random({9,7,5,5,9,7});
     Tensor res1;
     Tensor res2;
     Tensor res3;
@@ -172,10 +163,7 @@ static misc::UnitTest tensor_svd_order_6("Tensor", "SVD_Random_Order_Six", [](){
 });
 
 static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({7,5,9,7,5,9}, rnd, dist);
+    Tensor A = Tensor::random({7,5,9,7,5,9});
     Tensor Q;
     Tensor R;
     Tensor Q2;
@@ -194,7 +182,7 @@ static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", 
 	MTEST(frob_norm(Q(i,j,k,l)*Q(i,j,k,m) - Tensor::identity({R.dimensions[0], R.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
 	
 	res4(l,m) = Q(i,j,k,l) * Q(i,j,k,m);
-	res4.modify_diag_elements([](value_t &entry){entry -= 1;});
+	res4.modify_diagonal_entries([](value_t &entry){entry -= 1;});
 	TEST(frob_norm(res4) < 1e-12);
     
     (Q(i,j,k,l), R(l,m,n,r)) = QR(A(i,n,k,m,j,r));
@@ -248,10 +236,7 @@ static misc::UnitTest tensor_qr_rq_rnd6("Tensor", "QR_AND_RQ_Random_Order_Six", 
 
 
 static misc::UnitTest tensor_qc("Tensor", "QC", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A = Tensor::random({2,2,2,2,2,2}, rnd, dist);
+    Tensor A = Tensor::random({2,2,2,2,2,2});
 	Tensor B({2,3}, [](size_t i){return double(i);});
     Tensor Q;
     Tensor R;
@@ -291,13 +276,7 @@ static misc::UnitTest tensor_qc("Tensor", "QC", [](){
 });
 
 static misc::UnitTest tensor_sqr("Tensor", "Sparse_QR", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A({2,2,2,2,2,2});
-	for (size_t i=0; i<16; ++i) {
-		A[i] = dist(rnd);
-	}
+    Tensor A =  Tensor::random({2,2,2,2,2,2}, 16);
 	A.use_sparse_representation();
 	Tensor B({2,3}, [](size_t i){return double(i);});
     Tensor Q;
@@ -337,13 +316,7 @@ static misc::UnitTest tensor_sqr("Tensor", "Sparse_QR", [](){
 
 
 static misc::UnitTest tensor_scq("Tensor", "Sparse_CQ", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 1.0);
-
-    Tensor A({3,3,3,3,3,3});
-	for (size_t i=0; i<16; ++i) {
-		A[i] = dist(rnd);
-	}
+    Tensor A = Tensor::random({3,3,3,3,3,3}, 16);
 	A.use_sparse_representation();
 	Tensor Af(A);
 	Af.use_dense_representation();
@@ -355,7 +328,35 @@ static misc::UnitTest tensor_scq("Tensor", "Sparse_CQ", [](){
 	(Cf(i,j,k,l), Qf(l,m,n,r)) = CQ(Af(i,j,k,m,n,r));
     res(i,j,k,m,n,r) = Cs(i,j,k,o)*Qs(o,m,n,r);
     TEST(approx_equal(res, A, 1e-15));
-	TEST(approx_equal(Qs, Qf, 1e-15));
-	TEST(approx_equal(Cs, Cf, 1e-15));
+// 	TEST(approx_equal(Qs, Qf, 1e-15)); // NOTE apparently not true when there are small singular values
+// 	TEST(approx_equal(Cs, Cf, 1e-15));// NOTE apparently not true when there are small singular values
 	MTEST(frob_norm(Qs(l,i,j,k)*Qs(m,i,j,k) - Tensor::identity({Qs.dimensions[0], Qs.dimensions[0]})(l, m)) < 1e-12, " Q not orthogonal");
 });
+
+static misc::UnitTest sparse_svd("Tensor", "SparseSVD", [](){
+	Index i,j,k,l;
+	size_t m1=400, m2=400;
+	for (size_t n=10; n<=1000; n+=100) {
+		Tensor A = Tensor::random({m1, m2}, 1*n);
+		
+		Tensor U, S, Vt;
+// 		uint64 start = xerus::misc::uTime();
+		(U(i,j), S(j,k), Vt(k,l)) = SVD(A(i,l));
+// 		uint64 tSparse = xerus::misc::uTime() - start;
+// 		XERUS_LOG(sparsity, U.is_sparse() << ' ' << S.is_sparse() << ' ' << Vt.is_sparse());
+		Tensor T;
+		T(i,l) = U(i,j)*S(j,k)*Vt(k,l);
+		MTEST(approx_equal(T, A, 1e-14), n << ' ' << frob_norm(T-A) << '/' << frob_norm(A));
+		U(i,j)=U(k,i)*U(k,j) - Tensor::identity(S.dimensions)(i,j);
+		MTEST(frob_norm(U)<1e-10, n << ' ' << frob_norm(U));
+		Vt(i,j)=Vt(i,k)*Vt(j,k) - Tensor::identity(S.dimensions)(i,j);
+		MTEST(frob_norm(Vt)<1e-10, n << ' ' << frob_norm(Vt));
+		
+// 		A.use_dense_representation();
+// 		start = xerus::misc::uTime();
+// 		(U(i,j), S(j,k), Vt(k,l)) = SVD(A(i,l));
+// 		uint64 tDense = xerus::misc::uTime() - start;
+// 		XERUS_LOG(times, n << ' ' << tSparse << ' ' << tDense);
+	}
+});
+

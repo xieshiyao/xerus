@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -23,6 +23,7 @@
  */
 
 #include <xerus.h>
+#include "../../../include/xerus/misc/internal.h"
 
 namespace xerus {
 	double IHT(TTTensor& _x, const SinglePointMeasurementSet& _measurments, PerformanceData& _perfData) {
@@ -42,7 +43,6 @@ namespace xerus {
 		
 		Index i1, i2, i3, i4, i5;
 		
-// 		std::random_device rd;
 // 		std::mt19937_64 rnd(rd());
 // 		std::uniform_real_distribution<value_t> dist(0, 1);
 		
@@ -105,7 +105,7 @@ namespace xerus {
 					largeX.set_component(d, newComp);
 				}
 				// one ALS sweep to 2r
-				TTTensor newX = _x;//TTTensor::random(_x.dimensions, twoR, rnd, dist);
+				TTTensor newX = _x;//TTTensor::random(_x.dimensions, twoR, dist);
 				for (size_t o=0; o<1; ++o) {
 					newX.move_core(0, true);
 					// build stack from right to left
@@ -152,4 +152,4 @@ namespace xerus {
 		
 		return residual;
 	}
-}
+} // namespace xerus

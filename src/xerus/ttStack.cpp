@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -25,6 +25,7 @@
 #include <xerus/ttStack.h>
 #include <xerus/basic.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/index.h>
 #include <xerus/tensor.h>
@@ -60,7 +61,7 @@ namespace xerus {
 			const size_t numNodes = degree()/N+2;
 			const size_t stackSize = nodes.size()/numNodes;
 			
-			REQUIRE(nodes.size()%numNodes == 0, "IE");
+			INTERNAL_CHECK(nodes.size()%numNodes == 0, "IE");
 			
 			// Contract the stack to a TTNetwork node structure.
 			std::set<size_t> toContract;
@@ -75,7 +76,7 @@ namespace xerus {
 			// Reshuffle the nodes to be in the correct order after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction) so modulus gives the correct wanted id.
 			reshuffle_nodes([numNodes](const size_t _i){return _i%(numNodes);});
 			
-			REQUIRE(nodes.size() == numNodes, "Internal Error.");
+			INTERNAL_CHECK(nodes.size() == numNodes, "Internal Error.");
 			
 			// Reset to new external links
 			for(size_t i = 0; i < numComponents; ++i) {
@@ -102,14 +103,14 @@ namespace xerus {
 				size_t leftDim = 1, rightDim = 1;
 				size_t fullDim = 1;
 				for(size_t k = 0; k < N+2*stackSize; ++k) {
-					REQUIRE(!nodes[i].erased, "IE");
+					INTERNAL_CHECK(!nodes[i].erased, "IE");
 					const TensorNetwork::Link& link = nodes[i].neighbors[k];
 					fullDim *= link.dimension;
 					if(link.external) {
 						if(link.indexPosition < numComponents) {
 							shuffle[k] = stackSize;
 						} else {
-							REQUIRE(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << degree());
+							INTERNAL_CHECK(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << degree());
 							shuffle[k] = stackSize+1;
 						}
 					} else {
@@ -133,8 +134,8 @@ namespace xerus {
 						}
 					}
 				}
-				REQUIRE(fullDim == nodes[i].tensorObject->size, "Uhh");
-				REQUIRE(leftCount == stackSize, "IE");
+				INTERNAL_CHECK(fullDim == nodes[i].tensorObject->size, "Uhh");
+				INTERNAL_CHECK(leftCount == stackSize, "IE");
 				
 				xerus::reshuffle(*nodes[i].tensorObject, *nodes[i].tensorObject, shuffle);
 				if(isOperator) {
@@ -160,10 +161,10 @@ namespace xerus {
 			TTNetwork<isOperator> result;
 			static_cast<TensorNetwork&>(result) = static_cast<TensorNetwork&>(*this);
 			if(cannonicalization_required) {
-				result.cannonicalized = false;
+				result.canonicalized = false;
 				result.move_core(futureCorePosition);
 			} else {
-				result.cannonicalized = true;
+				result.canonicalized = true;
 				result.corePosition = futureCorePosition;
 			}
 			result.require_correct_format();
@@ -173,7 +174,7 @@ namespace xerus {
 		
 		template<bool isOperator>
 		void TTStack<isOperator>::operator*=(const value_t _factor) {
-			REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+			INTERNAL_CHECK(!nodes.empty(), "There must not be a TTNetwork without any node");
 			
 			if(cannonicalization_required) {
 				*nodes[futureCorePosition+1].tensorObject *= _factor;
@@ -210,7 +211,7 @@ namespace xerus {
 			const size_t numNodes = _me.tensorObject->degree()/N+2;
 			const size_t stackSize = _me.tensorObject->nodes.size()/numNodes;
 			
-			REQUIRE(_me.tensorObject->nodes.size()%numNodes == 0, "IE");
+			INTERNAL_CHECK(_me.tensorObject->nodes.size()%numNodes == 0, "IE");
 			
 			// Contract the stack to a TTNetwork node structure.
 			std::set<size_t> toContract;
@@ -225,7 +226,7 @@ namespace xerus {
 			// Reshuffle the nodes to be in the correct order after contraction the nodes will have one of the ids: node, node+numNodes, node+2*numNodes,... (as those were part of the contraction) so modulus gives the correct wanted id.
 			_me.tensorObject->reshuffle_nodes([numNodes](const size_t _i){return _i%(numNodes);});
 			
-			REQUIRE(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
+			INTERNAL_CHECK(_me.tensorObject->nodes.size() == numNodes, "Internal Error.");
 			
 			// Reset to new external links
 			for(size_t i = 0; i < numComponents; ++i) {
@@ -252,14 +253,14 @@ namespace xerus {
 				size_t leftDim = 1, rightDim = 1;
 				size_t fullDim = 1;
 				for(size_t k = 0; k < N+2*stackSize; ++k) {
-					REQUIRE(!_me.tensorObject->nodes[i].erased, "IE");
+					INTERNAL_CHECK(!_me.tensorObject->nodes[i].erased, "IE");
 					const TensorNetwork::Link& link = _me.tensorObject->nodes[i].neighbors[k];
 					fullDim *= link.dimension;
 					if(link.external) {
 						if(link.indexPosition < numComponents) {
 							shuffle[k] = stackSize;
 						} else {
-							REQUIRE(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << _me.tensorObject->degree());
+							INTERNAL_CHECK(isOperator, "IE " << link.indexPosition << " vs " << numComponents << " vs " << _me.tensorObject->degree());
 							shuffle[k] = stackSize+1;
 						}
 					} else {
@@ -283,8 +284,8 @@ namespace xerus {
 						}
 					}
 				}
-				REQUIRE(fullDim == _me.tensorObject->nodes[i].tensorObject->size, "Uhh");
-				REQUIRE(leftCount == stackSize, "IE");
+				INTERNAL_CHECK(fullDim == _me.tensorObject->nodes[i].tensorObject->size, "Uhh");
+				INTERNAL_CHECK(leftCount == stackSize, "IE");
 				
 				xerus::reshuffle(*_me.tensorObject->nodes[i].tensorObject, *_me.tensorObject->nodes[i].tensorObject, shuffle);
 				if(isOperator) {
@@ -309,7 +310,7 @@ namespace xerus {
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		template<bool isOperator>
-		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&& _me _unused_ , IndexedTensorReadOnly<TensorNetwork>&& _other _unused_) {
+		void TTStack<isOperator>::specialized_evaluation(IndexedTensorWritable<TensorNetwork>&&   /*_me*/, IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/) {
 			LOG(fatal, "TTStack not supported as a storing type");
 		}
 		
@@ -338,5 +339,5 @@ namespace xerus {
 		// Explicit instantiation of the two template parameters that will be implemented in the xerus library
 		template class TTStack<false>;
 		template class TTStack<true>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

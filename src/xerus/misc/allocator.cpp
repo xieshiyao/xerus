@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -23,7 +23,7 @@
  */
 
 
-#ifdef REPLACE_ALLOCATOR
+#ifdef XERUS_REPLACE_ALLOCATOR
 
 	#include <xerus/misc/allocator.h>
 	// #include <dlfcn.h>
@@ -86,7 +86,7 @@
 				res = xm::astore.buckets[numBucket].back();
 				xm::astore.buckets[numBucket].pop_back();
 			}
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				xm::astore.allocCount[numBucket] += 1;
 				xm::astore.currAlloc[numBucket] += 1;
 				if (xm::astore.currAlloc[numBucket] > xm::astore.maxAlloc[numBucket]) {
@@ -97,7 +97,7 @@
 		}
 	}
 
-	#ifdef REPLACE_ALLOCATOR
+	#ifdef XERUS_REPLACE_ALLOCATOR
 		void* operator new(std::size_t n) {
 			return myalloc(n);
 		}
@@ -141,7 +141,7 @@
 	void mydelete(void *ptr) noexcept {
 		uint8_t n = *(static_cast<uint8_t*>(ptr)-1);
 		if (n<0xFF) {
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				xm::astore.currAlloc[n] -= 1;
 			#endif
 			if (programIsRunning) {

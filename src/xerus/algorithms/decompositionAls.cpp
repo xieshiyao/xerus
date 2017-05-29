@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -42,7 +42,7 @@ namespace xerus {
 		
 		for(size_t iteration = 0; iteration < _maxIterations; ++iteration) {
 			// Move right
-			for(size_t pos = 0; pos < _x.degree(); ++pos) { REQUIRE_TEST;
+			for(size_t pos = 0; pos < _x.degree(); ++pos) { XERUS_REQUIRE_TEST;
 //                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);
@@ -50,7 +50,7 @@ namespace xerus {
 			}
 			
 			// Move left
-			for(size_t pos = _x.degree()-2; pos > 0; --pos) { REQUIRE_TEST;
+			for(size_t pos = _x.degree()-2; pos > 0; --pos) { XERUS_REQUIRE_TEST;
 //                 LOG(bla, "Optimizing position " << pos);
 				_x.move_core(pos);
 				std::pair<TensorNetwork, TensorNetwork> split = _x.chop(pos);
@@ -63,4 +63,4 @@ namespace xerus {
 			lastResidual = residual;
 		}
 	}
-}
+} // namespace xerus

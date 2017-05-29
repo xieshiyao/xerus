@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,6 +29,7 @@
  
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
 
@@ -37,24 +38,20 @@ namespace xerus {
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) :
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(IndexedTensorReadOnly<tensor_type> && _other ) noexcept :
 			tensorObjectReadOnly(_other.tensorObjectReadOnly),
 			indices(std::move(_other.indices))
 			{ }
 		
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, const std::vector<Index>& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
-			
-		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index>&& _indices)
-			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(_indices) { }
+		IndexedTensorReadOnly<tensor_type>::IndexedTensorReadOnly(const tensor_type* const _tensorObjectReadOnly, std::vector<Index> _indices)
+			: tensorObjectReadOnly(_tensorObjectReadOnly), indices(std::move(_indices)) { }
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Destructor - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		
 		template<class tensor_type>
-		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() { }
+		IndexedTensorReadOnly<tensor_type>::~IndexedTensorReadOnly() = default;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Others - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -66,8 +63,8 @@ namespace xerus {
 		}
 		
 		template<class tensor_type>
-		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *otherTensor) const {
-			return otherTensor == tensorObjectReadOnly;
+		bool IndexedTensorReadOnly<tensor_type>::uses_tensor(const tensor_type *_otherTensor) const {
+			return _otherTensor == tensorObjectReadOnly;
 		}
 		
 		template<class tensor_type>
@@ -119,7 +116,7 @@ namespace xerus {
 		
 		template<class tensor_type>
 		void IndexedTensorReadOnly<tensor_type>::assign_index_dimensions() {
-			REQUIRE(indicesAssigned, "bla");
+			INTERNAL_CHECK(indicesAssigned, "bla");
 			
 			size_t dimensionCount = 0;
 			for(size_t i = 0; i < indices.size(); ++i) {
@@ -337,13 +334,17 @@ namespace xerus {
 		template value_t frob_norm<Tensor>(const IndexedTensorReadOnly<Tensor>& _idxTensor);
 		template value_t frob_norm<TensorNetwork>(const IndexedTensorReadOnly<TensorNetwork>& _idxTensor);
 		
+		value_t one_norm(const IndexedTensorReadOnly<Tensor>& _idxTensor) {
+			return _idxTensor.tensorObjectReadOnly->one_norm();
+		}
+		
 		size_t get_eval_degree(const std::vector<Index>& _indices) {
 			size_t degree = 0;
 			for(const Index& idx : _indices) {
-				REQUIRE(idx.flags[Index::Flag::ASSINGED], "Internal Error");
+				INTERNAL_CHECK(idx.flags[Index::Flag::ASSINGED], "Internal Error");
 				if(!idx.fixed() && misc::count(_indices, idx) != 2) { degree += idx.span; }
 			}
 			return degree;
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

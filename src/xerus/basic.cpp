@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -26,13 +26,9 @@
 
 // Provide an implementation of the internal deleter functions
 namespace xerus {
-	const int VERSION_MAJOR = XERUS_VERSION_MAJOR;
-	const int VERSION_MINOR = XERUS_VERSION_MINOR;
-	const int VERSION_REVISION = XERUS_VERSION_REVISION;
-	const int VERSION_COMMIT = XERUS_VERSION_COMMIT;
 	
     namespace internal {
         void array_deleter_vt(value_t* const _toDelete) { delete[] _toDelete; }
         void array_deleter_st( size_t* const _toDelete) { delete[] _toDelete; }
-    }
-}
+    } // namespace internal
+} // namespace xerus

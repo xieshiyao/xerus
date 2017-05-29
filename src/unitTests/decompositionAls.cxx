@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,13 +20,11 @@
 
 #include <xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 
 using namespace xerus;
 
 static misc::UnitTest decomp_als("ALS", "decomposition_als", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
 	xerus::Index i,j,k;
 	
 	const size_t d = 14;
@@ -34,10 +32,10 @@ static misc::UnitTest decomp_als("ALS", "decomposition_als", [](){
 
 	const std::vector<size_t> stateDims(d, n);
 	
-    xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4, rnd, dist);
+    xerus::TTTensor TTB = xerus::TTTensor::random(stateDims, 4);
 	Tensor B(TTB);
 	
-	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4, rnd, dist);
+	xerus::TTTensor X = xerus::TTTensor::random(stateDims, 4);
 	
 	xerus::decomposition_als(X, B);
 	

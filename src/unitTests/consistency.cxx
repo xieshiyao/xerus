@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,23 +20,28 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
+static const size_t MAX_RAM_REQUIREMENT = 1*1024*1024*1024;
 
 static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+	for(size_t d = 0; d <= 6; ++d) {
+		if (xerus::misc::product(dimsA) * 15 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.2);
@@ -161,9 +166,9 @@ static misc::UnitTest cons_sum_diff("Consistency", "sum_and_difference", [](){
 });
 
 
-static misc::UnitTest con_fixI("Consistency", "fixed_indices", []() {
-	UNIT_TEST_RND;
-	std::uniform_int_distribution<size_t> dimDist(2, 4);
+static misc::UnitTest cons_fixI("Consistency", "fixed_indices", []() {
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
+	std::uniform_int_distribution<size_t> dimDist(2, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
@@ -180,10 +185,13 @@ static misc::UnitTest con_fixI("Consistency", "fixed_indices", []() {
 	dimsB = dims2 | dims1;
 	
 	for(size_t d = 2; d <= 6; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -283,18 +291,21 @@ static misc::UnitTest con_fixI("Consistency", "fixed_indices", []() {
 
 
 static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
-	UNIT_TEST_RND;
-	std::uniform_int_distribution<size_t> dimDist(1, 4);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+	for(size_t d = 0; d <= 6; ++d) {
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -408,14 +419,14 @@ static misc::UnitTest cons_op_x_t("Consistency", "operator_times_tensor", []() {
 });
 
 static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
 		dims2.push_back(dimDist(rnd));
@@ -424,10 +435,14 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 		
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -457,36 +472,38 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		std::uniform_int_distribution<size_t> slateSelect(0, d-1);
 		const size_t slate = slateSelect(rnd);
 		std::uniform_int_distribution<size_t> posSelect(0, dimsX[slate]-1);
-		const size_t position = posSelect(rnd);
+		const size_t positionX = posSelect(rnd);
+		std::uniform_int_distribution<size_t> posSelectY(0, dimsY[slate]-1);
+		const size_t positionY = posSelectY(rnd);
 		
-		A.fix_mode(slate+d, position);
-		A.fix_mode(slate, position);
-		B.fix_mode(slate+d, position);
-		B.fix_mode(slate, position);
-		X.fix_mode(slate, position);
-		Y.fix_mode(slate, position);
+		A.fix_mode(slate+d, positionX);
+		A.fix_mode(slate, positionX);
+		B.fix_mode(slate+d, positionX);
+		B.fix_mode(slate, positionY);
+		X.fix_mode(slate, positionX);
+		Y.fix_mode(slate, positionY);
 		
-		sA.fix_mode(slate+d, position);
-		sA.fix_mode(slate, position);
-		sB.fix_mode(slate+d, position);
-		sB.fix_mode(slate, position);
-		sX.fix_mode(slate, position);
-		sY.fix_mode(slate, position);
+		sA.fix_mode(slate+d, positionX);
+		sA.fix_mode(slate, positionX);
+		sB.fix_mode(slate+d, positionX);
+		sB.fix_mode(slate, positionY);
+		sX.fix_mode(slate, positionX);
+		sY.fix_mode(slate, positionY);
 		
 		ttA = TTOperator(A); // Can't use fix_mode
 		ttB = TTOperator(B); // Can't use fix_mode
-		ttX.fix_mode(slate, position);
-		ttY.fix_mode(slate, position);
+		ttX.fix_mode(slate, positionX);
+		ttY.fix_mode(slate, positionY);
 		
 		ttX.require_correct_format();
 		ttY.require_correct_format();
 		
-		tnA.fix_mode(slate+d, position);
-		tnA.fix_mode(slate, position);
-		tnB.fix_mode(slate+d, position);
-		tnB.fix_mode(slate, position);
-		tnX.fix_mode(slate, position);
-		tnY.fix_mode(slate, position);
+		tnA.fix_mode(slate+d, positionX);
+		tnA.fix_mode(slate, positionX);
+		tnB.fix_mode(slate+d, positionX);
+		tnB.fix_mode(slate, positionY);
+		tnX.fix_mode(slate, positionX);
+		tnY.fix_mode(slate, positionY);
 		
 		TEST(approx_equal(A, sA));
 		TEST(approx_equal(A, tnA, 1e-14));
@@ -558,25 +575,25 @@ static misc::UnitTest cons_fix_mode("Consistency", "fix_mode", []() {
 		ttC(k&0) = ttB(k/2,i/2)*ttA(i/2,j/2)*ttX(j&0);
 		tnC(k&0) = tnB(k/2,i/2)*tnA(i/2,j/2)*tnX(j&0);
 		
-		TEST(approx_equal(C, sC, 1e-14));
-		TEST(approx_equal(C, tnC, 1e-14));
-		TEST(approx_equal(C, ttC, 1e-14));
-		TEST(approx_equal(sC, tnC, 1e-14));
-		TEST(approx_equal(sC, ttC, 1e-14));
+		MTEST(approx_equal(C, sC, 1e-14), frob_norm(C-sC));
+		MTEST(approx_equal(C, tnC, 1e-14), frob_norm(C-Tensor(tnC)));
+		MTEST(approx_equal(C, ttC, 1e-14), frob_norm(C-Tensor(ttC)));
+		MTEST(approx_equal(sC, tnC, 1e-14), frob_norm(sC- Tensor(tnC)));
+		MTEST(approx_equal(sC, ttC, 1e-14), frob_norm(sC-Tensor(ttC)));
 		
 	}
 });
 
 
 static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 8; ++d) {
+	for(size_t d = 1; d <= 6; ++d) {
 		// Add a new dimension
 		dims1.push_back(dimDist(rnd));
 		dims2.push_back(dimDist(rnd));
@@ -585,10 +602,14 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 		dimsA = dims1 | dims1;
 		dimsB = dims2 | dims1;
 		
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 7 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.75); 
@@ -732,18 +753,22 @@ static misc::UnitTest cons_resize_dim("Consistency", "resize_mode", []() {
 
 
 static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []() {
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	
 	std::vector<size_t> dims1, dims2, dims3, dimsX, dimsY, dimsA, dimsB;
 	
 	const Index i, j, k;
 	
-	for(size_t d = 1; d <= 7; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor B = Tensor::random(dimsB, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
-		Tensor Y = Tensor::random(dimsY, rnd, normalDist);
+	for(size_t d = 1; d <= 6; ++d) {
+		if ((xerus::misc::product(dimsA)+xerus::misc::product(dimsB)) * 9 > MAX_RAM_REQUIREMENT) {
+			break;
+		}
+		
+		Tensor A = Tensor::random(dimsA);
+		Tensor B = Tensor::random(dimsB);
+		Tensor X = Tensor::random(dimsX);
+		Tensor Y = Tensor::random(dimsY);
 		Tensor C;
 		
 		TTOperator ttA(A, 0.33);
@@ -848,5 +873,66 @@ static misc::UnitTest cons_entrywise_prod("Consistency", "entrywise_product", []
 		dimsY = dims1;
 		dimsA = dims1 | dims1;
 		dimsB = dims1 | dims1;
+	}
+});
+
+
+
+static misc::UnitTest cons_named_constructors("Consistency", "named_constructors", []() {
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
+	std::uniform_int_distribution<size_t> dimDist(1, 3);
+	
+	std::vector<size_t> dims1, dims2, dimsX, dimsA;
+	
+	for(size_t d = 1; d <= 6; ++d) {
+		Tensor A = Tensor::ones(dimsA);
+		Tensor X = Tensor::ones(dimsX);
+		
+		TTOperator ttA = TTOperator::ones(dimsA);
+		TTTensor ttX = TTTensor::ones(dimsX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		
+		A = Tensor::identity(dimsA);
+		ttA = TTOperator::identity(dimsA);
+		
+		TEST(approx_equal(A, ttA));
+		
+		
+		A = Tensor::kronecker(dimsA);
+		X = Tensor::kronecker(dimsX);
+		ttA = TTOperator::kronecker(dimsA);
+		ttX = TTTensor::kronecker(dimsX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		std::uniform_int_distribution<size_t> posADist(0, misc::product(dimsA)-1);
+		std::uniform_int_distribution<size_t> posXDist(0, misc::product(dimsX)-1);
+		const auto posA = posADist(rnd);
+		const auto posX = posXDist(rnd);
+		
+		A = Tensor::dirac(dimsA, posA);
+		X = Tensor::dirac(dimsX, posX);
+		ttA = TTOperator::dirac(dimsA, posA);
+		ttX = TTTensor::dirac(dimsX, posX);
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		A = Tensor::dirac(dimsA, Tensor::position_to_multiIndex(posA, dimsA));
+		X = Tensor::dirac(dimsX, Tensor::position_to_multiIndex(posX, dimsX));
+		ttA = TTOperator::dirac(dimsA, Tensor::position_to_multiIndex(posA, dimsA));
+		ttX = TTTensor::dirac(dimsX, Tensor::position_to_multiIndex(posX, dimsX));
+		
+		TEST(approx_equal(A, ttA));
+		TEST(approx_equal(X, ttX));
+		
+		// Add a new dimension
+		dims1.push_back(dimDist(rnd));
+		dimsX = dims1;
+		dimsA = dims1 | dims1;
 	}
 });

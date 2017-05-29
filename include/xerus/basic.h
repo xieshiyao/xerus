@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include "misc/allocator.h"
 #include "misc/standard.h"
 #include "misc/namedLogger.h"
@@ -48,14 +49,6 @@ namespace xerus {
 	 */
 	constexpr const value_t EPSILON = 8*std::numeric_limits<value_t>::epsilon();
     
-	/**
-	 * The version of the compiled xerus library
-	 */
-	extern const int VERSION_MAJOR;
-	extern const int VERSION_MINOR;
-	extern const int VERSION_REVISION;
-	extern const int VERSION_COMMIT;
-	
 	/**
 	* @brief Namespace for function and classes designated only for internal use.
 	* @details End users should never be required to know or explicitly use classes or functions from this

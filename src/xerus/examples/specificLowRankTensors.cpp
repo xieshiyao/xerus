@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -23,6 +23,7 @@
  */
 
 #include <xerus/examples/specificLowRankTensors.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace examples {
 	
@@ -37,14 +38,15 @@ namespace xerus { namespace examples {
 		TTTensor result(cross);
 		TTTensor buffer(e1);
 		while (result.degree() < _degree) {
-			result = TTTensor::dyadic_product(result, e1);
-			TTTensor tmp = TTTensor::dyadic_product(buffer, cross);
+			result = dyadic_product(result, e1);
+			TTTensor tmp = dyadic_product(buffer, cross);
 			result += tmp;
 			result.round(0.0);
-			buffer = TTTensor::dyadic_product(buffer, e1);
+			buffer = dyadic_product(buffer, e1);
 		}
 		return result;
 	}
 	
-}}
+} // namespace examples
+} // namespace xerus
 

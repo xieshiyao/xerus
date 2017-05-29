@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -18,10 +18,22 @@
 // or contact us at contact@libXerus.org.
 
 
-#include<xerus.h>
+#include<xerus.h> // NOTE xerus.h header file is necessary for below check of internal header export
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
+
+
+static misc::UnitTest misc_internal("Misc", "internal_header", [](){
+	#ifdef REQUIRE
+		MTEST(false, "internal header file xerus/misc/internal.h is being exported in the library!");
+	#else
+		TEST(true);
+	#endif
+});
+
+
+#include "../../include/xerus/misc/internal.h"
 
 static misc::UnitTest misc_romberg("Misc", "romberg_integration", [](){
 	double npi;

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,12 +29,6 @@
 #include <cstring>
 
 #include "standard.h"
-
-/**
-* @def VLA(T, name)
-* @brief Define a variable length array of type @a T and name @a name that can be used just as gnu++ VLAs but is created on the heap.
-*/
-#define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & name = name##_store.get();
 
 namespace xerus {
 	namespace misc {

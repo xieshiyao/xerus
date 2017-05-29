@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -25,48 +25,73 @@
 #pragma once
 
 /**
-* @def CHECK(condition, level, message)
-* @brief Checks whether @a condition is true and calls LOG(level, message) otherwise.
-* @details The check is omitted if level is not logged anyways.
-*/
+ * @def XERUS_CHECK(condition, level, message)
+ * @brief Checks whether @a condition is true and calls XERUS_LOG(level, message) otherwise.
+ * @details The check is omitted if level is not logged anyways.
+ */
 
 /**
-* @def REQUIRE(condition, message)
-* @brief Checks whether @a condition is true. logs a fatal error otherwise via LOG(fatal, message).
-*/
+ * @def XERUS_REQUIRE(condition, message)
+ * @brief Checks whether @a condition is true. logs an error otherwise via XERUS_LOG(error, message).
+ */
 
 /**
-* @def IF_CHECK(expression)
-* @brief Executes @a expression only if the compilation was without DISABLE_RUNTIME_CHECKS_ set.
-*/
+ * @def XERUS_INTERNAL_CHECK(condition, message)
+ * @brief Checks whether @a condition is true. logs a critical error otherwise via XERUS_LOG(fatal, message). and prints information on how to report a bug
+ */
 
-#ifdef TEST_COVERAGE_
-	#include "test.h"
+/**
+ * @def XERUS_IF_CHECK(expression)
+ * @brief Executes @a expression only if the compilation was without XERUS_DISABLE_RUNTIME_CHECKS set.
+ */
+
+#ifdef XERUS_TEST_COVERAGE
+	#include "../test/test.h"
 #else
-	#define REQUIRE_TEST (void)0
+	#define XERUS_REQUIRE_TEST (void)0
 #endif
 
-// Only do anything if the check macros if DISABLE_RUNTIME_CHECKS_ is inaktive
-#ifndef DISABLE_RUNTIME_CHECKS_
+#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	#include "namedLogger.h"
+	#include "callStack.h"
+	#include "containerOutput.h"
 
-	#ifdef TEST_COVERAGE_
-		#define CHECK(condition, level, message) REQUIRE_TEST; if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+	#ifdef XERUS_TEST_COVERAGE
+		#define XERUS_CHECK(condition, level, message) XERUS_REQUIRE_TEST; if(XERUS_IS_LOGGING(level) && !(condition)) { XERUS_LOG(level, #condition " failed msg: " << message); } else void(0)
 	#else
-		#define CHECK(condition, level, message) if(IS_LOGGING(level) && !(condition)) { LOG(level, #condition << " failed msg: " << message); } else void(0)
+		#define XERUS_CHECK(condition, level, message) if(XERUS_IS_LOGGING(level) && !(condition)) { XERUS_LOG(level, #condition " failed msg: " << message); } else void(0)
 	#endif
 
-	#define REQUIRE(condition, message) CHECK(condition, fatal, message)
+	#define XERUS_REQUIRE(condition, message) XERUS_CHECK(condition, error, message)
 	
-	#define IF_CHECK(expression) expression
+	#define XERUS_INTERNAL_CHECK(condition, message) \
+		if(!(condition)) { \
+			::std::cerr << "\n"\
+				"########################################################################\n"\
+				"###                    AN INTERNAL ERROR OCCURED!                    ###\n"\
+				"###  Please send the following information to contact@libxerus.org ! ###\n"\
+				"########################################################################\n"\
+				"xerus version: " << ::xerus::VERSION_MAJOR << '.' << ::xerus::VERSION_MINOR << '.' << ::xerus::VERSION_REVISION << '-' << ::xerus::VERSION_COMMIT << "\n" \
+				"at: " __FILE__ " : " XERUS_STRINGIFY(__LINE__) "\n" \
+				"message: " #condition " failed: " << message << '\n' \
+				<< "callstack: \n" << ::xerus::misc::get_call_stack() << "\n" \
+				"########################################################################\n"\
+				"###                           thank you :-)                          ###\n"\
+				"########################################################################" << std::endl; \
+			XERUS_LOG(critical, #condition " failed msg: " << message); \
+		} else void(0)
 	
-	#define IF_NO_CHECK(expression)
+	#define XERUS_IF_CHECK(expression) expression
+	
+	#define XERUS_IF_NO_CHECK(expression)
 #else
-	#define CHECK(condition, level, message) void(0)
+	#define XERUS_CHECK(condition, level, message) void(0)
 	
-	#define REQUIRE(condition, message) void(0)
+	#define XERUS_REQUIRE(condition, message) void(0)
 	
-	#define IF_CHECK(expression)
+	#define XERUS_INTERNAL_CHECK(condition, msg) void(0)
 	
-	#define IF_NO_CHECK(expression) expression
+	#define XERUS_IF_CHECK(expression)
+	
+	#define XERUS_IF_NO_CHECK(expression) expression
 #endif

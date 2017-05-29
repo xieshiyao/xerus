@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -47,12 +47,12 @@ namespace xerus {
 		///@brief The number of external links in each node, i.e. one for TTTensors and two for TTOperators.
 		static constexpr const size_t N = isOperator?2:1;
 		
-		/// @brief Flag indicating whether the TTNetwork is cannonicalized.
-		bool cannonicalized;
+		/// @brief Flag indicating whether the TTNetwork is canonicalized.
+		bool canonicalized;
 		
 		/**
 		* @brief The position of the core.
-		* @details If cannonicalized is TRUE, corePosition gives the position of the core tensor. All components
+		* @details If canonicalized is TRUE, corePosition gives the position of the core tensor. All components
 		* with smaller index are then left-orthogonalized and all components with larger index right-orthogonalized.
 		*/
 		size_t corePosition;		
@@ -125,13 +125,14 @@ namespace xerus {
 		 * @param _rnd the random engine to be passed to the constructor of the component tensors.
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
-		template<class generator, class distribution>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, generator& _rnd, distribution& _dist) {
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(std::vector<size_t> _dimensions, const std::vector<size_t> &_ranks, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
 			const size_t numComponents = _dimensions.size()/N;
-			REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
-			REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
-			REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
-			REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
+			XERUS_REQUIRE(_dimensions.size()%N==0, "Illegal number of dimensions for TTOperator.");
+			XERUS_REQUIRE(_ranks.size()+1 == numComponents,"Non-matching amount of ranks given to TTNetwork::random.");
+			XERUS_REQUIRE(!misc::contains(_dimensions, size_t(0)), "Trying to construct a TTTensor with dimension 0 is not possible.");
+			XERUS_REQUIRE(!misc::contains(_ranks, size_t(0)), "Trying to construct random TTTensor with rank 0 is illegal.");
+			
 			
 			
 			TTNetwork result(_dimensions.size());
@@ -139,15 +140,17 @@ namespace xerus {
 			
 			for(size_t i = 0; i < numComponents; ++i) {
 				const size_t leftRank = i==0 ? 1 : targetRank[i-1];
-				const size_t rightRank = i==numComponents-1 ? 1 : targetRank[i];
+				const size_t rightRank = (i==numComponents-1) ? 1 : targetRank[i];
 
 				if(isOperator) {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _rnd, _dist));
+					const auto rndComp = Tensor::random({leftRank, _dimensions[i], _dimensions[numComponents+i], rightRank}, _dist, _rnd);
+					result.set_component(i, rndComp);
 				} else {
-					result.set_component(i, Tensor::random({leftRank, _dimensions[i], rightRank}, _rnd, _dist));
+					const auto rndComp = Tensor::random({leftRank, _dimensions[i], rightRank}, _dist, _rnd);
+					result.set_component(i, rndComp);
 				}
 			}
-			result.cannonicalize_left();
+			result.move_core(0);
 			return result;
 		}
 		
@@ -160,9 +163,9 @@ namespace xerus {
 		 * @param _rnd the random engine to be passed to the constructor of the component tensors.
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */
-		template<class generator, class distribution>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t>& _dimensions, const size_t _rank, generator& _rnd, distribution& _dist) {
-			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _rnd, _dist);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const size_t _rank, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			return TTNetwork::random(_dimensions, std::vector<size_t>(_dimensions.size()/N-1, _rank), _dist, _rnd);
 		}
 		
 		
@@ -172,16 +175,18 @@ namespace xerus {
 		 *  the singular values of all matricisations M(1..n,n+1..N) are fixed according to the given function a posteriori
 		 *  The callback function is assumed to take a reference to a diagonal tensor and modify it to represent the desired singular values.
 		 */
-		template<class generator, class distribution, class aloc = std::allocator<size_t>>
-		static TTNetwork _warn_unused_ random(const std::vector<size_t, aloc>& _dimensions, const std::vector<size_t> &_ranks, 
-								generator& _rnd, distribution& _dist,
-								const std::function<void(Tensor&)> &_modifySingularValues) 
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static TTNetwork XERUS_warn_unused random(const std::vector<size_t>& _dimensions, const std::vector<size_t> &_ranks, 
+								const std::function<void(Tensor&)> &_modifySingularValues,
+								distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) 
 		{
-			TTNetwork result = random(_dimensions, _ranks, _rnd, _dist);
+			const size_t numComponents = _dimensions.size()/N;
+			
+			TTNetwork result = random(_dimensions, _ranks, _dist, _rnd);
 			
 			const Index i,j,k,l,m;
 			
-			for (size_t pos = 0; pos+1 < result.degree(); ++pos) {
+			for (size_t pos = 0; pos+1 < numComponents; ++pos) {
 				Tensor A;
 				A(i,j^N,k^N,l) = result.component(pos)(i,j^N,m) * result.component(pos+1)(m,k^N,l);
 				Tensor U,S,Vt;
@@ -194,8 +199,8 @@ namespace xerus {
 			}
 			
 			result.require_correct_format();
-			REQUIRE(!result.exceeds_maximal_ranks(), "Internal Error");
-			result.cannonicalize_left();
+			XERUS_INTERNAL_CHECK(!result.exceeds_maximal_ranks(), "Internal Error");
+			result.canonicalize_left();
 			return result;
 		}
 		
@@ -204,7 +209,7 @@ namespace xerus {
 		 * @brief: Returns a the (rank one) TT-Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static TTNetwork _warn_unused_ ones(const std::vector<size_t>& _dimensions);
+		static TTNetwork XERUS_warn_unused ones(const std::vector<size_t>& _dimensions);
 		
 		
 		/** 
@@ -213,8 +218,31 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new TTOperator.
 		 */
 		template<bool B = isOperator, typename std::enable_if<B, int>::type = 0>
-		static TTNetwork _warn_unused_ identity(const std::vector<size_t>& _dimensions);
+		static TTNetwork XERUS_warn_unused identity(const std::vector<size_t>& _dimensions);
 		
+		
+		/** 
+		 * @brief: Returns a TTNetwork representation of the kronecker delta.
+		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
+		 * @param _dimensions the dimensions of the new tensor.
+		 */
+		static TTNetwork XERUS_warn_unused kronecker(const std::vector<size_t>& _dimensions);
+		
+		
+		/** 
+		 * @brief: Returns a TTNetwork with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static TTNetwork XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const std::vector<size_t>& _position);
+		
+		
+		/** 
+		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @param _dimensions the dimensions of the new tensor.
+		 * @param _position The position of the one
+		 */
+		static TTNetwork XERUS_warn_unused dirac(std::vector<size_t> _dimensions, const size_t _position);
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Standard Operators - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 		///@brief TTNetworks are default assignable.
@@ -246,7 +274,7 @@ namespace xerus {
 	public:
 		/** 
 		 * @brief Reduces the given ranks to the maximal possible.
-		 * @details If a given rank is allready smaller or equal it is left unchanged.
+		 * @details If a given rank is already smaller or equal it is left unchanged.
 		 * @param _ranks the inital ranks to be reduced.
 		 * @param _dimensions the dimensions used to calculate the maximal ranks.
 		 * @return the reduced ranks.
@@ -266,30 +294,6 @@ namespace xerus {
 		virtual void fix_mode(const size_t _mode, const size_t _slatePosition) override;
 		
 		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) override;
-		
-		/** 
-		* @brief Computes the dyadic product of @a _lhs and @a _rhs. 
-		* @details This function is currently needed to keep the resulting network in the TTNetwork class.
-		* Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
-		* @returns the dyadic product as a TTNetwork.
-		*/
-		static TTNetwork dyadic_product(const TTNetwork &_lhs, const TTNetwork &_rhs);
-		
-		
-		/** 
-		* @brief Computes the dyadic product of all given TTNetworks. 
-		* @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
-		* @returns the dyadic product as a TTNetwork.
-		*/
-		static TTNetwork dyadic_product(const std::vector<TTNetwork> &_tensors);
-		
-		
-		
-		/**
-		* @brief Computes the entrywise square of the tensor.
-		* @details In general the resulting equals rank*(rank+1)/2. Retains the core position.
-		*/
-		void entrywise_square();
 		
 		
 		/** 
@@ -329,7 +333,7 @@ namespace xerus {
 		/** 
 		* @brief Splits the TTNetwork into two parts by removing the node.
 		* @param _position index of the component to be removed, thereby also defining the position 
-		*of the split.
+		*  of the split.
 		* @return a std::pair containing the two remaining parts as TensorNetworks.
 		*/
 		std::pair<TensorNetwork, TensorNetwork> chop(const size_t _position) const;
@@ -396,7 +400,7 @@ namespace xerus {
 		/** 
 		* @brief Move the core to a new position.
 		* @details The core is moved to @a _position and the nodes between the old and the new position are orthogonalized
-		* accordingly. If the TTNetwork is not yet cannonicalized it will be with @a _position as new corePosition.
+		* accordingly. If the TTNetwork is not yet canonicalized it will be with @a _position as new corePosition.
 		* @param _position the new core position.
 		* @param _keepRank by default a rank revealing QR decomposition is used to move the core and the ranks are reduced
 		* accordingly. If @a _keepRank is set the rank is not reduced, this is need e.g. in the ALS.
@@ -416,14 +420,14 @@ namespace xerus {
 		* @brief Move the core to the left.
 		* @details Basically calls move_core() with _position = 0
 		*/
-		void cannonicalize_left();
+		void canonicalize_left();
 		
 		
 		/** 
 		* @brief Move the core to the left.
 		* @details Basically calls move_core() with _position = degree()-1
 		*/
-		void cannonicalize_right();
+		void canonicalize_right();
 		
 		
 		/** 
@@ -449,21 +453,8 @@ namespace xerus {
 		
 		
 		/** 
-		* @brief Finds the position of the approximately largest entry.
-		* @details Uses an algorithms to find an entry that is at least of size @a _accuracy * X_max in absolute value,
-		* where X_max is the largest entry of the tensor. The smaller @a _accuracy, the faster the algorithm will work.
-		* @param _accuracy factor that determains the maximal deviation of the returned entry from the true largest entry.
-		* @param _lowerBound a lower bound for the largest entry, i.e. there must be an entry in the tensor which is at least of
-		* this size (in absolute value). The algorithm may fail completely if this is not fullfilled, but will work using its own 
-		* approximation if no value (i.e. 0.0) is given.
-		* @return the position of the entry found.
-		*/
-		size_t find_largest_entry(const double _accuracy, const value_t _lowerBound = 0.0) const;
-		
-		
-		/** 
 		 * @brief Tests whether the network resembles that of a TTTensor and checks consistency with the underlying tensor objects.
-		 * @details Note that this will NOT check for orthogonality of cannonicalized TTNetworks.
+		 * @details Note that this will NOT check for orthogonality of canonicalized TTNetworks.
 		 */
 		virtual void require_correct_format() const override;
 		
@@ -576,7 +567,7 @@ namespace xerus {
 	* @return the resulting scaled TTNetwork.
 	*/
 	template<bool isOperator>
-	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _div);
+	TTNetwork<isOperator> operator/(TTNetwork<isOperator> _network, const value_t _divisor);
 	
 	
 	/**
@@ -585,6 +576,25 @@ namespace xerus {
 	*/
 	template<bool isOperator>
 	TTNetwork<isOperator> entrywise_product(const TTNetwork<isOperator>& _A, const TTNetwork<isOperator>& _B);
+	
+	/** 
+	 * @brief Computes the dyadic product of @a _lhs and @a _rhs. 
+	 * @details This function is currently needed to keep the resulting network in the TTNetwork class.
+	 * Apart from that the result is the same as result(i^d1, j^d2) = _lhs(i^d1)*_rhs(j^d2).
+	 * @returns the dyadic product as a TTNetwork.
+	 */
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const TTNetwork<isOperator> &_lhs, const TTNetwork<isOperator> &_rhs);
+	
+	
+	/** 
+	 * @brief Computes the dyadic product of all given TTNetworks. 
+	 * @details This is nothing but the repeated application of dyadic_product() for the given TTNetworks.
+	 * @returns the dyadic product as a TTNetwork.
+	 */
+	template<bool isOperator>
+	TTNetwork<isOperator> dyadic_product(const std::vector<TTNetwork<isOperator>> &_tensors);
+	
 	
 	namespace misc {
 		

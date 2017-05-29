@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -90,7 +90,7 @@ namespace xerus {
 // 		value_t normB = frob_norm(_b);
 		
 		
-		if (_Ap) {
+		if (_Ap != nullptr) {
 			_perfData << "Steepest Descent for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _A.ranks() << '\n';
 			if (assumeSymmetricPositiveDefiniteOperator) {
@@ -106,7 +106,7 @@ namespace xerus {
 		_perfData.start();
 		
 		auto updateResidual = [&]() {
-			if (_Ap) {
+			if (_Ap != nullptr) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
@@ -129,21 +129,21 @@ namespace xerus {
 		{
 			stepCount += 1;
 			
-			if (_Ap) {
-				if (assumeSymmetricPositiveDefiniteOperator) { REQUIRE_TEST;
+			if (_Ap != nullptr) {
+				if (assumeSymmetricPositiveDefiniteOperator) { XERUS_REQUIRE_TEST;
 					// search direction: y = b-Ax
 					y = residual;
-					if (preconditioner) {
+					if (preconditioner != nullptr) {
 						y(j&0) = (*preconditioner)(j/2,i/2) * y(i&0);
 					}
 					// direction of change A*y
 // 					Ay(i&0) = _A(i/2,j/2) * y(j&0);
 					// "optimal" stepsize alpha = <y,y>/<y,Ay>
 // 					alpha = misc::sqr(frob_norm(y)) / value_t(y(i&0)*Ay(i&0));
-				} else { REQUIRE_TEST;
+				} else { XERUS_REQUIRE_TEST;
 					// search direction: y = A^T(b-Ax)
 					y(i&0) = _A(j/2,i/2) * residual(j&0);
-					if (preconditioner) {
+					if (preconditioner != nullptr) {
 						y(j&0) = (*preconditioner)(j/2,i/2) * y(i&0);
 					}
 					// direction of change A*y
@@ -176,4 +176,4 @@ namespace xerus {
 	}
 	
 	const SteepestDescentVariant SteepestDescent(0, 1e-8, false, SubmanifoldRetractionII);
-}
+} // namespace xerus

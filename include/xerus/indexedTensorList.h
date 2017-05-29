@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -49,7 +49,7 @@ namespace xerus {
 			IndexedTensorList(const IndexedTensorList& _old) = delete;
 			
 			///@brief Move constructor.
-			IndexedTensorList(IndexedTensorList&& _old);
+			IndexedTensorList(IndexedTensorList&& _old) noexcept;
 			
 			/**
 			* @brief constructor initializing an IndexedTensorList with two initial Tensor refrences.

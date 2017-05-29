@@ -2,6 +2,17 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2017-05-29 v3.0.0
+ * Python wrapper now stable.
+ * ! REQUIRE macro now logs as error instead of fatal error.
+ * ! All macros and preprocessor defines now use the XERUS_ prefix. The config.mk file changed accordingly.
+ * ! TT::find_largest_entry and TT::dyadic_product left the TT scope.
+ * ! Tensor::modify_diag_elements renamed to Tensor::modify_diagonal_entries for naming consistency.
+ * Much faster solve of matrix equations Ax=b by exploiting symmetry and definiteness where possible. This directly speeds up the ALS as well.
+ * Added Tensor.one_norm() and one_norm(Tensor) to calculate the one norm of a Tensor.
+ * New documentation ('make doc') and homepage.
+ * Some minor bugfixes and performance improvements.
+
 * 2016-06-23 v2.4.0
  * Introduced nomeclature 'mode'. Marked all functions that will be renamed / removed in v3.0.0 as deprecated.
  * Added an experimental python wrapper when 'OTHER += -DXERUS_EXPERIMENTAL_PYTHON_WRAPPER' is defined in the config file.
@@ -18,7 +29,7 @@ Potentially breaking changes are marked with an exclamation point '!' at the beg
  * Bug fix in the handling of fixed indices in TensorNetworks.
  * Several static member function now warn if their return type is not used.
  * Initial support for compilation with the intel ICC.
- 
+
 * 2016-03-11 v2.2.1
  * Added support for 32bit systems.
 

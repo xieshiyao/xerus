@@ -13,12 +13,19 @@
 
 !*.mk
 !Makefile
+!.gitignore
 
 !*.sh
+
+!*.rb
+!*.py
 
 !*.md
 !*.xml
 !*.dox
+!*.css
+!*.js
+!*.yml
 
 # ...even if they are in subdirectories
 !*/
@@ -26,6 +33,5 @@
 # However we really want to ignore
 lapacke/*
 build/*
-doc/latex/*
 doc/html/*
 config.mk

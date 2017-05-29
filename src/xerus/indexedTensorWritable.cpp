@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -31,11 +31,12 @@
 #include <xerus/index.h>
 #include <xerus/tensor.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 	namespace internal {
 		template<class tensor_type>
-		IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
+		IndexedTensorWritable<tensor_type>::IndexedTensorWritable(IndexedTensorWritable &&_other ) noexcept : IndexedTensorReadOnly<tensor_type>(std::move(_other)), tensorObject(_other.tensorObject), deleteTensorObject(_other.deleteTensorObject) {
 			// Take ownership
 			_other.deleteTensorObject = false;
 		}
@@ -72,7 +73,7 @@ namespace xerus {
 			} else {
 				// If the tensors in fact coincide we have to use a tmp object
 				IndexedTensorMoveable<Tensor> tmpTensor(std::move(_rhs));
-				this->tensorObject->reset(_rhs.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
+				this->tensorObject->reset(tmpTensor.get_evaluated_dimensions(indices), Tensor::Initialisation::None);
 				evaluate(std::move(*this), std::move(tmpTensor));
 			}
 		}
@@ -95,7 +96,7 @@ namespace xerus {
 			
 			std::vector<Index> internalOrder;
 			for(const TensorNetwork::Link& link: cpy.tensorObject->nodes[res].neighbors) {
-				REQUIRE(link.external, "Internal Error " << link.other << " " << link.indexPosition);
+				INTERNAL_CHECK(link.external, "Internal Error " << link.other << " " << link.indexPosition);
 				internalOrder.emplace_back(externalOrder[link.indexPosition]);
 			}
 			
@@ -105,7 +106,7 @@ namespace xerus {
 				REQUIRE(misc::contains(cpy.indices, idx), "Every index on the LHS must appear somewhere on the RHS, here: " << cpy.indices << ' ' << indices);
 				size_t spanSum = 0;
 				for (size_t j = 0; cpy.indices[j] != idx; ++j) {
-					REQUIRE(j < cpy.indices.size()-1, "ie");
+					INTERNAL_CHECK(j < cpy.indices.size()-1, "ie");
 					spanSum += cpy.indices[j].span;
 				}
 				
@@ -176,5 +177,5 @@ namespace xerus {
 		// IndexedTensorReadOnly may be instanciated as
 		template class IndexedTensorWritable<Tensor>;
 		template class IndexedTensorWritable<TensorNetwork>;
-	}
-}
+	} // namespace internal
+} // namespace xerus

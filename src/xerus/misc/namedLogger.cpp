@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,11 +27,12 @@
 #include <chrono>
 #include <fstream>
 
-#ifdef LOG_BUFFER_
+#ifdef XERUS_LOG_BUFFER
     #include <fstream>
 #endif
 
 #include <xerus/misc/namedLogger.h>
+#include <xerus/misc/stringUtilities.h>
 
 namespace xerus { namespace misc { namespace internal {
 	std::mutex namedLoggerMutex;
@@ -43,7 +44,7 @@ namespace xerus { namespace misc { namespace internal {
 	}
 	
 	void log_timestamp(std::ostream &_out) {
-		#ifdef LOG_ABSOLUTE_TIME
+		#ifdef XERUS_LOG_ABSOLUTE_TIME
 			//NOTE must not use std::put_time as it was not defined before GCC 5.0
 			std::time_t xerus_err_t=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm *xerus_err_ltm=std::localtime(&xerus_err_t);
@@ -123,5 +124,7 @@ namespace xerus { namespace misc { namespace internal {
 				<< old.str() << current.str() << "horst" << std::endl; 
 			out.close();
 		}
-	}
-}}} // namespace xerus::misc::internal
+	} // namespace buffer
+} // namespace internal
+} // namespace misc
+} // namespace xerus

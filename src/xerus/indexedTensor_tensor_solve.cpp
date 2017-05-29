@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -22,156 +22,60 @@
 * @brief Implementation of the indexed tensor / operator.
 */
 
+#include <xerus/misc/internal.h>
 #include <xerus/misc/containerSupport.h>
 
-#include <xerus/indexedTensor_tensor_factorisations.h>
 #include <xerus/index.h>
 #include <xerus/indexedTensor.h>
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/tensor.h>
 
-#include <xerus/blasLapackWrapper.h>
-#include <xerus/cholmod_wrapper.h>
-
 namespace xerus {
-
-	void solve(internal::IndexedTensorWritable<Tensor>&& _x, internal::IndexedTensorReadOnly<Tensor>&& _a, internal::IndexedTensorReadOnly<Tensor>&& _b) {
-		// x takes the dimensions of A -- also ensures that every index of x is contained in A
-		_x.tensorObject->reset(_a.get_evaluated_dimensions(_x.indices), Tensor::Initialisation::None);
-		
-		_a.assign_indices();
-		_b.assign_indices();
-		
-//         IF_CHECK( _x.check_indices(false); )
-		
-// 		for(size_t i = 0; i < bAssIndices.numIndices; ++i) {
-// 			REQUIRE(!bAssIndices.indexOpen[i] || contains(AAssIndices.indices, bAssIndices.indices[i]), "Every open index of b must be contained in A.");
-// 			REQUIRE(!contains(_x.indices, bAssIndices.indices[i]), "x and b must not have indices in common.");
-// 		}
-		
-		// If possible we don't want to reorder A
-		std::vector<Index> orderA;
-		std::vector<Index> orderB;
-		std::vector<Index> orderX;
-		std::vector<size_t> dimensionsA;
-		std::vector<size_t> dimensionsB;
-		std::vector<size_t> dimensionsX;
-		
-		size_t dimensionsCount = 0;
-		for(const Index& idx : _a.indices) {
-			if(misc::contains(_b.indices, idx)) {
-				orderA.push_back(idx);
-				orderB.push_back(idx);
-				for(size_t i = 0; i < idx.span; ++i) {
-					dimensionsA.push_back(_a.tensorObjectReadOnly->dimensions[dimensionsCount]);
-					dimensionsB.push_back(_a.tensorObjectReadOnly->dimensions[dimensionsCount]);
-					dimensionsCount++;
-				}
-			} else {
-				orderX.push_back(idx);
-				for(size_t i = 0; i < idx.span; ++i) {
-					dimensionsX.push_back(_a.tensorObjectReadOnly->dimensions[dimensionsCount++]);
-				}
-			}
-		}
-		orderA.insert(orderA.end(), orderX.begin(), orderX.end());
-		dimensionsA.insert(dimensionsA.end(), dimensionsX.begin(), dimensionsX.end());
-		
-		//Save slot for eventual tmpX and tmpB
-		std::unique_ptr<internal::IndexedTensor<Tensor>> saveSlotX;
-		internal::IndexedTensorWritable<Tensor>* usedX;
-		std::unique_ptr<internal::IndexedTensor<Tensor>> saveSlotB;
-		internal::IndexedTensorReadOnly<Tensor>* usedB;
-		
-		// We need tmp objects for A and b, because Lapacke wants to destroys the input
-		// and we need to cast b if it is sparse as we cannot handle that yet
-		if (!_a.tensorObjectReadOnly->is_sparse()) {
-			saveSlotB.reset(new internal::IndexedTensor<Tensor>(
-				new Tensor(std::move(dimensionsB), Tensor::Representation::Dense, Tensor::Initialisation::None), orderB, true
-			));
-			evaluate(std::move(*saveSlotB), std::move(_b));
-			saveSlotB->tensorObject->use_dense_representation();
-			usedB = saveSlotB.get();
-		} else {
-			usedB = &_b;
-		}
-		
-		bool sparseResult = (_a.tensorObjectReadOnly->is_sparse() && usedB->tensorObjectReadOnly->is_sparse());
-		
-		if (orderX != _x.indices || (_x.tensorObject->is_sparse() != sparseResult)) {
-			if (sparseResult) {
-				saveSlotX.reset(new internal::IndexedTensor<Tensor>(
-					new Tensor(std::move(dimensionsX), Tensor::Representation::Sparse, Tensor::Initialisation::None), orderX, true));
-			} else {
-				saveSlotX.reset(new internal::IndexedTensor<Tensor>(
-					new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), orderX, true));
-			}
-			
-			usedX = saveSlotX.get();
-		} else {
-			usedX = &_x;
-		}
-		
-		// Assume A is an MxN matrix
-		const size_t M = usedB->tensorObjectReadOnly->size;
-		const size_t N = usedX->tensorObjectReadOnly->size;
-		
-		internal::IndexedTensor<Tensor> tmpA(new Tensor(std::move(dimensionsA), _a.tensorObjectReadOnly->representation, Tensor::Initialisation::None), orderA, true);
-		evaluate(std::move(tmpA), std::move(_a));
-		
-		if (tmpA.tensorObjectReadOnly->is_sparse()) {
-			if (usedB->tensorObjectReadOnly->is_sparse()) {
-				internal::CholmodSparse::solve_sparse_rhs(
-					usedX->tensorObject->get_unsanitized_sparse_data(), N, 
-					tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-					usedB->tensorObjectReadOnly->get_unsanitized_sparse_data(), M);
-			} else {
-				internal::CholmodSparse::solve_dense_rhs(
-					usedX->tensorObject->get_unsanitized_dense_data(), N, 
-					tmpA.tensorObjectReadOnly->get_unsanitized_sparse_data(), false,
-					usedB->tensorObjectReadOnly->get_unsanitized_dense_data(), M);
-			}
-			
-			// Propagate the constant factor
-			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
-		} else {
-			// dense A
-			// We need tmp objects for A and b, because Lapacke wants to destroys the input
-			tmpA.tensorObject->ensure_own_data();
-			
-			blasWrapper::solve_least_squares_destructive(
-				usedX->tensorObject->override_dense_data(), 
-				tmpA.tensorObject->get_unsanitized_dense_data(), M, N, 
-				saveSlotB->tensorObject->get_unsanitized_dense_data());
-			
-			// Propagate the constant factor
-			usedX->tensorObject->factor = usedB->tensorObjectReadOnly->factor / tmpA.tensorObjectReadOnly->factor;
-		}
-		
-		if(saveSlotX) { evaluate(std::move(_x), std::move(*usedX)); }
-	}
-
 	internal::IndexedTensorMoveable<Tensor> operator/ (internal::IndexedTensorReadOnly<Tensor>&& _b, internal::IndexedTensorReadOnly<Tensor>&& _A) {
 		_A.assign_indices();
 		_b.assign_indices();
 		
-		std::vector<Index> indicesX;
-		std::vector<size_t> dimensionsX;
+		size_t extraDims = 0;
+		std::vector<Index> orderA;
+		std::vector<Index> orderB;
+		std::vector<Index> orderX;
 		
-		size_t dimensionsCount = 0;
+		// If possible we don't want to reorder A, so first divide A into those shared with b and x. 
 		for(const Index& idx : _A.indices) {
-			if(!misc::contains(_b.indices, idx)) {
-				indicesX.push_back(idx);
-				for(size_t i = 0; i < idx.span; ++i) {
-					dimensionsX.push_back(_A.tensorObjectReadOnly->dimensions[dimensionsCount++]);
-				}
+			if(misc::contains(_b.indices, idx)) {
+				orderA.push_back(idx);
 			} else {
-				dimensionsCount += idx.span;
+				orderX.push_back(idx);
 			}
 		}
-		internal::IndexedTensorMoveable<Tensor> tmpX(new Tensor(std::move(dimensionsX), Tensor::Representation::Dense, Tensor::Initialisation::None), std::move(indicesX));
 		
-		solve(std::move(tmpX), std::move(_A), std::move(_b));
+		// This far the dimensions of A and B coincide
+		orderB = orderA;
+		
+		// Add the second part of indices in the order obtained for X
+		orderA.insert(orderA.end(), orderX.begin(), orderX.end());
+		
+		// Now complete indices of b and x with those not shared with A ( in order of b as we don't want to reorder b if possible).
+		for(const Index& idx : _b.indices) {
+			if(!misc::contains(_A.indices, idx)) {
+				orderB.push_back(idx);
+				orderX.push_back(idx);
+				for(size_t i = 0; i < idx.span; ++i) {
+					extraDims++;
+				}
+			}
+		}
+		
+		// If indices coincide no reordering occours (only shared data pointer is set).
+		Tensor reorderedA, reorderedB;
+		reorderedA(orderA) = std::move(_A);
+		reorderedB(orderB) = std::move(_b);
+		
+		internal::IndexedTensorMoveable<Tensor> tmpX(new Tensor(), std::move(orderX));
+		
+		//solve_least_squares(*tmpX.tensorObject, reorderedA, reorderedB, extraDims);
+		solve(*tmpX.tensorObject, reorderedA, reorderedB, extraDims);
+		
 		return tmpX;
 	}
-}
+} // namespace xerus

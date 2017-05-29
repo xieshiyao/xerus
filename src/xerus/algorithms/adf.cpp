@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -26,84 +26,13 @@
  
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/misc/basicArraySupport.h>
+#include <xerus/misc/internal.h>
 
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
 
 namespace xerus {
-	
-	static int comp(const Tensor& _a, const Tensor& _b) {
-		REQUIRE(_a.dimensions == _b.dimensions, "Compared Tensors must have the same dimensions.");
-		
-		if(_a.is_dense() || _b.is_dense()) {
-			for(size_t k = 0; k < _a.size; ++k) {
-				if (_a.cat(k) < _b.cat(k)) { return 1; }
-				if (_a.cat(k) > _b.cat(k)) { return -1; }
-			}
-			return 0;
-		} else {
-			REQUIRE(!_a.has_factor(), "IE");
-			REQUIRE(!_b.has_factor(), "IE");
-			
-			const std::map<size_t, double>& dataA = _a.get_unsanitized_sparse_data();
-			const std::map<size_t, double>& dataB = _b.get_unsanitized_sparse_data();
-			
-			std::map<size_t, double>::const_iterator itrA = dataA.begin();
-			std::map<size_t, double>::const_iterator itrB = dataB.begin();
-			
-			while(itrA != dataA.end() && itrB != dataB.end()) {
-				if(itrA->first == itrB->first) {
-					if(itrA->second < itrB->second) {
-						return 1;
-					} else if(itrA->second > itrB->second) {
-						return -1;
-					} else {
-						++itrA; ++itrB;
-					}
-				} else if(itrA->first < itrB->first) {
-					if(itrA->second < 0.0) {
-						return 1;
-					} else if(itrA->second > 0.0) {
-						return -1;
-					} else {
-						++itrA;
-					}
-				} else { // itrA->first > itrB->first
-					if(0.0 < itrB->second) {
-						return 1;
-					} else if(0.0 > itrB->second) {
-						return -1;
-					} else {
-						++itrB;
-					}
-				}
-			}
-			
-			while(itrA != dataA.end()) {
-				if(itrA->second < 0.0) {
-					return 1;
-				} else if(itrA->second > 0.0) {
-					return -1;
-				} else {
-					++itrA;
-				}
-			}
-			
-			while(itrB != dataB.end()) {
-				if(0.0 < itrB->second) {
-					return 1;
-				} else if(0.0 > itrB->second) {
-					return -1;
-				} else {
-					++itrB;
-				}
-			}
-			
-			return 0;
-		}
-	}
-	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::calculate_norm_of_measured_values(const MeasurmentSet& _measurments) {
 		value_t normMeasuredValues = 0;
@@ -132,16 +61,16 @@ namespace xerus {
 	bool MeasurmentComparator<SinglePointMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
-				if (measurments.positions[_a][j] < measurments.positions[_b][j]) return true;
-				if (measurments.positions[_a][j] > measurments.positions[_b][j]) return false;
+				if (measurments.positions[_a][j] < measurments.positions[_b][j]) { return true; }
+				if (measurments.positions[_a][j] > measurments.positions[_b][j]) { return false; }
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
-				if (measurments.positions[_a][j-1] < measurments.positions[_b][j-1]) return true;
-				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) return false;
+				if (measurments.positions[_a][j-1] < measurments.positions[_b][j-1]) { return true; }
+				if (measurments.positions[_a][j-1] > measurments.positions[_b][j-1]) { return false; }
 			}
 		}
-// 		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
+		LOG(fatal, "Measurments must not appear twice."); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
@@ -153,19 +82,19 @@ namespace xerus {
 	bool MeasurmentComparator<RankOneMeasurementSet>::operator()(const size_t _a, const size_t _b) const {
 		if(forward) {
 			for (size_t j = 0; j < degree; ++j) {
-				const int res = comp(measurments.positions[_a][j], measurments.positions[_b][j]);
+				const int res = internal::comp(measurments.positions[_a][j], measurments.positions[_b][j]);
 				if(res == -1) { return true; }
-				else if(res == 1) { return false; }
+				if(res == 1) { return false; }
 			}
 		} else {
 			for (size_t j = degree; j > 0; --j) {
-				const int res = comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
+				const int res = internal::comp(measurments.positions[_a][j-1], measurments.positions[_b][j-1]);
 				if(res == -1) { return true; }
-				else if(res == 1) { return false; }
+				if(res == 1) { return false; }
 			}
 		}
 		
-// 		LOG(fatal, "Measurments must not appear twice. "); // NOTE that the algorithm works fine even if measurements appear twice.
+		LOG(fatal, "Measurments must not appear twice. "); // NOTE that the algorithm works fine even if measurements appear twice.
 		return false;
 	}
 	
@@ -216,7 +145,7 @@ namespace xerus {
 					calculationMap[realId + corePosition*numMeasurments] = realId;
 				} else if( realId < calculationMap[realPreviousId + corePosition*numMeasurments]) {
 					const size_t nextOther = calculationMap[realPreviousId + corePosition*numMeasurments];
-					REQUIRE(calculationMap[nextOther + corePosition*numMeasurments] == nextOther, "IE");
+					INTERNAL_CHECK(calculationMap[nextOther + corePosition*numMeasurments] == nextOther, "IE");
 					calculationMap[realPreviousId + corePosition*numMeasurments] = realId;
 					calculationMap[nextOther + corePosition*numMeasurments] = realId;
 					calculationMap[realId + corePosition*numMeasurments] = realId;
@@ -257,7 +186,7 @@ namespace xerus {
 			}
 		}
 		
-		REQUIRE(usedSlots == numUniqueStackEntries, "Internal Error.");
+		INTERNAL_CHECK(usedSlots == numUniqueStackEntries, "Internal Error.");
 		perfData << "We have " << numUniqueStackEntries << " unique stack entries. There are " << numMeasurments*degree+1 << " virtual stack entries.";
 	}
 	
@@ -287,7 +216,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
@@ -303,7 +232,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_backward_stack(const size_t _corePosition, const Tensor& _currentComponent) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = backwardUpdates[_corePosition].size();
 		
@@ -324,7 +253,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<SinglePointMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
@@ -340,7 +269,7 @@ namespace xerus {
 	
 	template<>
 	void ADFVariant::InternalSolver<RankOneMeasurementSet>::update_forward_stack( const size_t _corePosition, const Tensor& _currentComponent ) {
-		REQUIRE(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
+		INTERNAL_CHECK(_currentComponent.dimensions[1] == x.dimensions[_corePosition], "IE");
 		
 		const size_t numUpdates = forwardUpdates[_corePosition].size();
 		
@@ -391,7 +320,7 @@ namespace xerus {
 																					const value_t _residual,
 																					const size_t& _position,
 																					value_t* const
-																				) {
+																				 /*unused*/) {
 		value_t* const shiftedDeltaPtr = _deltaPtr + _position*_localLeftRank*_localRightRank;
 		
 		for(size_t k = 0; k < _localLeftRank; ++k) {
@@ -442,7 +371,7 @@ namespace xerus {
 			
 			#pragma omp for schedule(static)
 			for(size_t i = 0; i < numMeasurments; ++i) {
-				REQUIRE(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
+				INTERNAL_CHECK(!forwardStack[i + (_corePosition-1)*numMeasurments]->has_factor() && !backwardStack[i + (_corePosition+1)*numMeasurments]->has_factor(), "IE");
 				
 				// Interestingly writing a dyadic product on our own turns out to be faster than blas...
 				perform_dyadic_product(	localLeftRank, 
@@ -475,7 +404,7 @@ namespace xerus {
 	}
 	
 	template<>
-	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet& _measurments, const size_t _meas, const size_t _corePosition) {
+	inline size_t position_or_zero<RankOneMeasurementSet>(const RankOneMeasurementSet&  /*_measurments*/, const size_t  /*_meas*/, const size_t  /*_corePosition*/) {
 		return 0;
 	}
 	
@@ -498,7 +427,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + _corePosition*numMeasurments], false, *backwardStack[i + (_corePosition+1)*numMeasurments], false, 1);
-					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]/**measurmentNorms[i]*/); // TODO measurmentNorms
 				}
 				
 				// Accumulate the partical components
@@ -519,7 +448,7 @@ namespace xerus {
 				#pragma omp for schedule(static)
 				for(size_t i = 0; i < numMeasurments; ++i) {
 					contract(currentValue, *forwardStack[i + (_corePosition-1)*numMeasurments], false, *backwardStack[i + _corePosition*numMeasurments], false, 1);
-					partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]);
+                    partialNormAProjGrad[position_or_zero(measurments, i, _corePosition)] += misc::sqr(currentValue[0]/**measurmentNorms[i]*/); // TODO measurmentNorms
 				}
 			
 				// Accumulate the partical components
@@ -559,7 +488,7 @@ namespace xerus {
 	
 	template<class MeasurmentSet>
 	void ADFVariant::InternalSolver<MeasurmentSet>::solve_with_current_ranks() {
-		double resDec1 = 1.0, resDec2 = 1.0;
+		double resDec1 = 0.0, resDec2 = 0.0, resDec3 = 0.0;
 			
 		for(; maxIterations == 0 || iteration < maxIterations; ++iteration) {
 			
@@ -585,9 +514,11 @@ namespace xerus {
 			perfData.add(iteration, residualNorm, x, 0);
 			
 			// Check for termination criteria
-			double resDec3 = resDec2; resDec2 = resDec1;
-			resDec1 = (lastResidualNorm-residualNorm)/lastResidualNorm;
-			if(residualNorm < targetResidualNorm || resDec1+resDec2+resDec3 < 3*minimalResidualNormDecrease) { break; }
+			double resDec4 = resDec3; resDec3 = resDec2; resDec2 = resDec1;
+			resDec1 = residualNorm/lastResidualNorm;
+// 			LOG(wup, resDec1*resDec2*resDec3*resDec4);
+			if(residualNorm < targetResidualNorm || resDec1*resDec2*resDec3*resDec4 > misc::pow(minimalResidualNormDecrease, 4)) { break; }
+			
 			
 			// Sweep from the first to the last component
 			for(size_t corePosition = 0; corePosition < degree; ++corePosition) {
@@ -610,6 +541,28 @@ namespace xerus {
 		}
 	}
 	
+	
+	template<class MeasurmentSet>
+	inline void calc_measurment_norm(double* _norms, const MeasurmentSet& _measurments);
+    
+    template<>
+    inline void calc_measurment_norm<SinglePointMeasurementSet>(double* _norms, const SinglePointMeasurementSet& _measurments) {
+        for(size_t i = 0; i < _measurments.size(); ++i) {
+            _norms[i] = 1.0;
+        }
+    }
+    
+    template<>
+    inline void calc_measurment_norm<RankOneMeasurementSet>(double* _norms, const RankOneMeasurementSet& _measurments) {
+        for(size_t i = 0; i < _measurments.size(); ++i) {
+            _norms[i] = 1.0;
+            for(size_t j = 0; j < _measurments.degree(); ++j) {
+                _norms[i] *= _measurments.positions[i][j].frob_norm();
+            }
+        }
+    }
+	
+	
 	template<class MeasurmentSet>
 	double ADFVariant::InternalSolver<MeasurmentSet>::solve() {
 		perfData.start();
@@ -622,8 +575,11 @@ namespace xerus {
 			#pragma omp section
 				construct_stacks(backwardStackSaveSlots, backwardUpdates, backwardStackMem, false);
 		}
+		
+		calc_measurment_norm(measurmentNorms.get(), measurments);
+		
 		// We need x to be canonicalized in the sense that there is no edge with more than maximal rank (prior to stack resize).
-		x.cannonicalize_left();
+		x.canonicalize_left();
 		
 		resize_stack_tensors();
 		
@@ -632,9 +588,11 @@ namespace xerus {
 		
 		// If we follow a rank increasing strategie, increase the ransk until we reach the targetResidual, the maxRanks or the maxIterations.
 		while(residualNorm > targetResidualNorm && x.ranks() != maxRanks && (maxIterations == 0 || iteration < maxIterations)) {
-			
 			// Increase the ranks
-			x = x+((1e-6*frob_norm(x)/std::sqrt(misc::fp_product(x.dimensions)))*TTTensor::ones(x.dimensions));
+			x.move_core(0, true);
+			const auto rndTensor = TTTensor::random(x.dimensions, std::vector<size_t>(x.degree()-1, 1));
+            const auto diff = (1e-6*frob_norm(x))*rndTensor/frob_norm(rndTensor);
+			x = x+diff;
 			
 			x.round(maxRanks);
 			
@@ -649,5 +607,5 @@ namespace xerus {
 	template class ADFVariant::InternalSolver<SinglePointMeasurementSet>;
 	template class ADFVariant::InternalSolver<RankOneMeasurementSet>;
 	
-	const ADFVariant ADF(0, 1e-8, 1e-3);
-}
+	const ADFVariant ADF(0, 1e-8, 0.999);
+} // namespace xerus

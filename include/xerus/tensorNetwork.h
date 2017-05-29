@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -33,8 +33,6 @@
 namespace xerus {
 	// Necessary forward declaritons
 	class Tensor;
-	struct SinglePointMeasurment;
-	class SinglePointMeasurementSet;
 	
 	/** 
 	* @brief Very general class used to represent arbitary tensor networks. 
@@ -101,13 +99,12 @@ namespace xerus {
 			
 			explicit TensorNode(      std::unique_ptr<Tensor>&& _tensorObject);
 			
-			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, const std::vector<Link>& _neighbors);
-			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject,       std::vector<Link>&& _neighbors);
+			explicit TensorNode(std::unique_ptr<Tensor>&& _tensorObject, std::vector<Link> _neighbors);
 			
 			~TensorNode();
 			
 			TensorNode& operator=(const TensorNode&  _other);
-			TensorNode& operator=(      TensorNode&& _other);
+			TensorNode& operator=(      TensorNode&& _other) noexcept;
 
 			TensorNode strippped_copy() const;
 			
@@ -160,13 +157,7 @@ namespace xerus {
 		/** 
 		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
 		*/
-		TensorNetwork(const Tensor& _other);
-		
-		
-		/** 
-		* @brief Constructs the trivial TensorNetwork containing the given Tensor as single node.
-		*/
-		TensorNetwork(Tensor&& _other);
+		TensorNetwork(Tensor _other);
 		
 		
 		/** 
@@ -198,8 +189,6 @@ namespace xerus {
 		
 		/** 
 		* @brief Returns a new copy of the network.
-		* @details All dimensions are set equals to one and the only entry 
-		* of the tensor is zero.
 		*/
 		virtual TensorNetwork* get_copy() const;
 			
@@ -239,7 +228,7 @@ namespace xerus {
 		 * @param _nodeB The second node.
 		 * @return Tuple containing the two positions in @a _nodeA and @a _nodeB.
 		 */
-		std::tuple<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
+		std::pair<size_t, size_t> find_common_edge(const size_t _nodeA, const size_t _nodeB) const;
 		
 		
 		
@@ -282,18 +271,10 @@ namespace xerus {
 		* @brief Read the value at a specific position.
 		* @details This allows the efficent calculation of a single entry of the TensorNetwork, by first fixing the external dimensions
 		* and then completly contracting the network. Do NOT use this as a manual cast to Tensor (there is an explicit cast for that).
-		* @param _position the position of the entry to be read assuming a single node.
+		* @param _positions the position of the entry to be read assuming a single node.
 		* @returns the calculated value (NO reference)
 		*/
 		value_t operator[](const std::vector<size_t>& _positions) const;
-		
-		
-		/** 
-		* @brief Calculates the value of the tensor at the given positions.
-		* @param _measurments SinglePointMeasurementSet defining the positions. On output the values are those of the tensor. 
-		* Note that the order of the measurments may be changed.
-		*/
-		virtual void measure(SinglePointMeasurementSet& _measurments) const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -302,7 +283,6 @@ namespace xerus {
 		* @brief Performs the entrywise multiplication with a constant @a _factor.
 		* @details Internally this only results in a change in the global factor.
 		* @param _factor the factor,
-		* @return a reference to this TensorNetwork.
 		*/
 		virtual void operator*=(const value_t _factor);
 		
@@ -311,7 +291,6 @@ namespace xerus {
 		* @brief Performs the entrywise divison by a constant @a _divisor.
 		* @details Internally this only results in a change in the global factor.
 		* @param _divisor the divisor,
-		* @return a reference to this TensorNetwork.
 		*/ 
 		virtual void operator/=(const value_t _divisor);
 		
@@ -420,7 +399,6 @@ namespace xerus {
 		 * @details Checks whether all links in the network are set consistently and matching the 
 		 * underlying tensor objects. This also checks whether the additional constrains of the specific 
 		 * format (if any) are fullfilled.
-		 * @return TRUE if the sanity check passes. If not an exception is thrown.
 		 */
 		virtual void require_correct_format() const;
 		
@@ -456,9 +434,8 @@ namespace xerus {
 		* @param _maxRank Maximal allowed rank.
 		* @param _eps Epsilion to be used in the SVD to determine zero singular values.
 		* @param _softThreshold Softthreshold that is to be applied.
-		* @param _preventZero Flag set to prevent the result to become the zero tensor.
 		*/
-		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero);
+		virtual void round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold);
 		
 		
 		/**
@@ -485,11 +462,6 @@ namespace xerus {
 		*/
 		virtual void fix_mode(const size_t _mode, const size_t _slatePosition);
 		
-		__attribute__((deprecated("function has been renamed. please use 'fix_mode'"))) 
-		void fix_slate(const size_t _dimPos, const size_t _slatePosition) {
-			fix_mode(_dimPos, _slatePosition);
-		}
-		
 		/**
 		 * @brief removes the given @a _slatePosition from the @a _mode. this reduces the given dimension by one
 		 */
@@ -504,11 +476,6 @@ namespace xerus {
 		 * and removed starting from the last one.
 		 */
 		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul);
-		
-		__attribute__((deprecated("function has been renamed. please use 'resize_mode'"))) 
-		void resize_dimension(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) {
-			resize_mode(_mode, _newDim, _cutPos);
-		}
 		
 		/**
 		 * @brief Contracts the nodes with indices @a _nodeId1 and @a _nodeId2.
@@ -559,33 +526,33 @@ namespace xerus {
 	TensorNetwork operator/(TensorNetwork &_lhs, value_t _factor);
 	
 	/** 
-	* @brief Calculates the frobenious norm of the given TensorNetwork.
-	* @param _network the TensorNetwork of which the frobenious norm shall be calculated.
-	* @return the frobenious norm.
-	*/
-	static _inline_ value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
+	 * @brief Calculates the frobenious norm of the given TensorNetwork.
+	 * @param _network the TensorNetwork of which the frobenious norm shall be calculated.
+	 * @return the frobenious norm.
+	 */
+	static XERUS_force_inline value_t frob_norm(const TensorNetwork& _network) { return _network.frob_norm(); }
 	
 	
 	/** 
-	* @brief Checks whether two TensorNetworks are approximately equal.
-	* @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < @a _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
-	* @param _a the first test candidate.
-	* @param _b the second test candidate
-	* @param _eps the maximal relative difference between @a _a and @a _b.
-	* @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
-	*/
+	 * @brief Checks whether two TensorNetworks are approximately equal.
+	 * @details Check whether ||@a _a - @a _b ||/(||@a a ||/2 + ||@a _b ||/2) < @a _eps, i.e. whether the relative difference in the frobenius norm is sufficently small.
+	 * @param _a the first test candidate.
+	 * @param _b the second test candidate
+	 * @param _eps the maximal relative difference between @a _a and @a _b.
+	 * @return TRUE if @a _a and @a _b are determined to be approximately equal, FALSE otherwise.
+	 */
 	bool approx_equal(const TensorNetwork& _a, const TensorNetwork& _b, const value_t _eps = EPSILON);
 	
 	
 	/** 
-	* @brief Convinience wrapper, casts the the given TensorNetwork @a _a to Tensor and calls the Tensor function.
-	*/
+	 * @brief Convinience wrapper, casts the the given TensorNetwork @a _a to Tensor and calls the Tensor function.
+	 */
 	bool approx_equal(const TensorNetwork& _a, const Tensor& _b, const value_t _eps = EPSILON);
 	
 	
 	/** 
-	* @brief Convinience wrapper, casts the the given TensorNetwork @a _b to Tensor and calls the Tensor function.
-	*/
+	 * @brief Convinience wrapper, casts the the given TensorNetwork @a _b to Tensor and calls the Tensor function.
+	 */
 	bool approx_equal(const Tensor& _a, const TensorNetwork& _b, const value_t _eps = EPSILON);
 	
 	

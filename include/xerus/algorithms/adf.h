@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -129,6 +129,8 @@ namespace xerus {
 			/// @brief Vector containing for each corePosition a vector of the smallest ids of each group of unique backwardStack entries.
 			std::vector<std::vector<size_t>> backwardUpdates;
 			
+            /// @brief: Norm of each rank one measurment operator
+            std::unique_ptr<double[]> measurmentNorms;
 			
 			///@brief: Reference to the performanceData object (external ownership)
 			PerformanceData& perfData;
@@ -216,11 +218,13 @@ namespace xerus {
 				backwardStack(backwardStackMem.get()+numMeasurments),
 				backwardUpdates(degree),
 				
+				measurmentNorms(new double[numMeasurments]),
+				
 				perfData(_perfData) 
 				{
 					_x.require_correct_format();
-					REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
-					REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
+					XERUS_REQUIRE(numMeasurments > 0, "Need at very least one measurment.");
+					XERUS_REQUIRE(measurments.degree() == degree, "Measurment degree must coincide with x degree.");
 				}
 				
 		};
@@ -231,7 +235,7 @@ namespace xerus {
         double minimalResidualNormDecrease; // The minimal relative decrease of the residual per step  ( i.e. (lastResidual-residual)/lastResidual ). If the avg. of the last three steps is smaller than this value, the algorithm stops.
         
 		/// fully defining constructor. alternatively ALSVariants can be created by copying a predefined variant and modifying it
-        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrease) 
+        ADFVariant(const size_t _maxIteration, const double _targetResidual, const double _minimalResidualDecrease)
                 : maxIterations(_maxIteration), targetResidualNorm(_targetResidual), minimalResidualNormDecrease(_minimalResidualDecrease) { }
         
         /**

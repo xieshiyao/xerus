@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -46,7 +46,7 @@ namespace xerus {
 		value_t currResidual=1e100;
 		value_t normB = frob_norm(_b);
 		
-		if (_Ap) {
+		if (_Ap != nullptr) {
 			_perfData << "Conjugated Gradients for ||A*x - b||^2, x.dimensions: " << _x.dimensions << '\n'
 					<< "A.ranks: " << _A.ranks() << '\n';
 			if (assumeSymmetricPositiveDefiniteOperator) {
@@ -62,7 +62,7 @@ namespace xerus {
 		_perfData.start();
 		
 		auto calculateResidual = [&]()->value_t {
-			if (_Ap) {
+			if (_Ap != nullptr) {
 				residual(i&0) = _b(i&0) - _A(i/2,j/2)*_x(j&0);
 			} else {
 				residual = _b - _x;
@@ -70,11 +70,11 @@ namespace xerus {
 			return frob_norm(residual);//normB;
 		};
 		auto updateGradient = [&]() {
-			if (assumeSymmetricPositiveDefiniteOperator || !_Ap) {
+			if (assumeSymmetricPositiveDefiniteOperator || (_Ap == nullptr)) {
 				gradient = TTTangentVector(_x, residual);
 			} else {
 				TTTensor grad;
-				grad(i&0) = _A(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
+				grad(i&0) = (*_Ap)(j/2,i/2) * residual(j&0); // grad = A^T * (b - Ax)
 				gradient = TTTangentVector(_x, grad);
 			}
 			gradientNorm = gradient.frob_norm();
@@ -124,4 +124,4 @@ namespace xerus {
 	}
 	
 	const GeometricCGVariant GeometricCG(0, 1e-8, false, SubmanifoldRetractionI, ProjectiveVectorTransport);
-}
+} // namespace xerus

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,8 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
@@ -70,11 +71,66 @@ static misc::UnitTest tensor_solve("Tensor", "solve_Ax_equals_b", [](){
     TEST((x2[{1,1}]) < 1e-14);
 });
 
+
+static misc::UnitTest solve_vs_lsqr("Tensor", "solve vs least squares", [](){
+	const size_t N = 500;
+	Tensor A({N, N});
+	for (size_t i=0; i<N; ++i) {
+		if (i>0) A[{i, i-1}] = -1;
+		if (i<N-1) A[{i, i+1}] = -1;
+		A[{i,i}] = 2;
+	}
+	A[0] = 1;
+	
+	Tensor B = Tensor::random({N});
+
+	Index i,j,k;
+	
+	// sparse
+// 	LOG(blabla, "sparse start");
+	Tensor X;
+	solve(X, A, B);
+// 	LOG(blabla, "sparse end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "1 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	A.use_dense_representation();
+	// dense (cholesky)
+// 	LOG(blabla, "chol start");
+	Tensor X2;
+	solve(X2, A, B);
+// 	LOG(blabla, "chol end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "2 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	MTEST(approx_equal(X, X2, 1e-10), X.frob_norm() << " " << X2.frob_norm() << " diff: " << frob_norm(X-X2));
+	
+	// dense (LDL)
+	A[0] = -0.9;
+// 	LOG(blabla, "LDL start");
+	solve(X, A, B);
+// 	LOG(blabla, "LDL end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "3 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	// dense (LU)
+	A[1] = -0.9;
+// 	LOG(blabla, "LU start");
+	solve(X, A, B);
+// 	LOG(blabla, "LU end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "4 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+	// dense (SVD)
+	A[1] = -0.9;
+// 	LOG(blabla, "SVD start");
+	solve_least_squares(X, A, B);
+// 	LOG(blabla, "SVD end");
+	MTEST(frob_norm(A(i,j)*X(j)-B(i)) < 1e-10, "5 " << frob_norm(A(i,j)*X(j)-B(i)));
+	
+});
+
 static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
-	std::mt19937_64 rnd(0x5EED);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
-	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
+	std::uniform_int_distribution<size_t> eDist(1, N*N-1);
 	
 	Index i,j,k;
 	
@@ -99,21 +155,22 @@ static misc::UnitTest tensor_solve_sparse("Tensor", "solve_sparse", [](){
 	internal::CholmodSparse idt(id.get_unsanitized_sparse_data(), N, N, false);
 	Tensor id2({N,N});
 	id2.get_unsanitized_sparse_data() = idt.to_map();
-	MTEST(frob_norm(id-id2) < 1e-15, frob_norm(id-id2)); 
+	MTEST(frob_norm(id-id2) < 1e-12, frob_norm(id-id2)); 
 	
 	Tensor fid(id);
 	fid.use_dense_representation();
 	Tensor fx;
-// 	id.use_sparse_representation();
 	TEST(id.is_sparse());
 	
 	fx(i) = r(j) / fid(j,i);
 	x(i) = r(j) / id(j,i);
-	MTEST(frob_norm(fx-x)/frob_norm(x)<3e-14, frob_norm(fx-x)/frob_norm(x));
+	MTEST(frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x)<1e-12, frob_norm(id(j,i)*x(i) - r(j))/frob_norm(x));
+	MTEST(frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x)<1e-12, frob_norm(fid(j,i)*fx(i) - r(j))/frob_norm(x));
+	MTEST(frob_norm(fx-x)/frob_norm(x)<1e-12, frob_norm(fx-x)/frob_norm(x));
 });
 
 static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
-	std::mt19937_64 rnd(0x5EED);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::normal_distribution<double> dist(0.0, 1.0);
 	const size_t N = 100;
 	std::uniform_int_distribution<size_t> eDist(1,N*N-1);
@@ -128,19 +185,72 @@ static misc::UnitTest tensor_solve_trans("Tensor", "solve_transposed", [](){
 	Tensor At;
 	At(i,j) = A(j,i);
 	At.use_sparse_representation();
-		
+	
 	Tensor r = Tensor({N}, [](size_t _i)->value_t{return double(_i);});
 	Tensor x1, x2;
 	x1(i) = r(j) / A(i,j);
 	x2(i) = r(j) / At(j,i);
-	MTEST(frob_norm(x1-x2) < 1e-14, "s " << frob_norm(x1-x2));
+	MTEST(frob_norm(x1-x2) < 1e-12, "s " << frob_norm(x1-x2));
 	
 	A.use_dense_representation();
 	At.use_dense_representation();
 	
-	Tensor x3, x4;
+	Tensor x3, x4, residual;
 	x3(i) = r(j) / A(i,j);
 	x4(i) = r(j) / At(j,i);
-	MTEST(frob_norm(x3-x4) < 1e-14, "d " << frob_norm(x3-x4));
-	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 5e-14, "sd " << frob_norm(x1-x3)/frob_norm(x1));
+	
+	residual(i) = A(i,j) * (x3(j) - x4(j));
+	MTEST(frob_norm(x3-x4) < 1e-12, "d " << frob_norm(x3-x4) << " residual: " << frob_norm(residual));
+	
+	residual(i) = A(i,j) * (x1(j) - x3(j));
+	MTEST(frob_norm(x1-x3)/frob_norm(x1) < 1e-12, "sd " << frob_norm(x1-x3)/frob_norm(x1) << " residual: " << frob_norm(residual));
+});
+
+
+static misc::UnitTest tensor_solve_matrix("Tensor", "solve_matrix", [](){
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
+	std::uniform_int_distribution<size_t> nDist(1, 100);
+	std::uniform_int_distribution<size_t> n2Dist(1, 10);
+	std::uniform_int_distribution<size_t> dDist(1, 3);
+	std::uniform_int_distribution<size_t> d2Dist(0, 3);
+	std::normal_distribution<double> realDist(0, 1);
+	
+	Index i,j,k;
+	
+	for(size_t run = 0; run < 10; ++run) {
+		std::vector<size_t> mDims, nDims, pDims;
+		const size_t degM = dDist(rnd);
+		const size_t degN = dDist(rnd);
+		const size_t degP = d2Dist(rnd);
+		for(size_t xi = 0; xi < degM; ++xi) { mDims.push_back(n2Dist(rnd)); }
+		for(size_t xi = 0; xi < degN; ++xi) { nDims.push_back(n2Dist(rnd)); }
+		for(size_t xi = 0; xi < degP; ++xi) { pDims.push_back(n2Dist(rnd)); }
+		
+		
+		auto A = Tensor::random(mDims | nDims);
+		A *= realDist(rnd);
+		Tensor B;
+		Tensor realX = Tensor::random(nDims | pDims);
+		
+		B(i^degM, k^degP) = A(i^degM, j^degN)*realX(j^degN, k^degP);
+		
+		auto factor = realDist(rnd);
+		B *= factor;
+		realX *= factor;
+		
+		Tensor X;
+		
+		solve_least_squares(X, A, B, degP);
+		
+		Tensor residual;
+		
+		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
+		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
+		
+		
+		X(j^degN, k^degP) = B(i^degM, k^degP) / A(i^degM, j^degN);  //solve_least_squares(X, A, B, degP);
+		
+		residual(i^degM, k^degP) = A(i^degM, j^degN)*X(j^degN, k^degP) - B(i^degM, k^degP);
+		MTEST(frob_norm(residual) < 1e-10, frob_norm(residual));
+	}
 });

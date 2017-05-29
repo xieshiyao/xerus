@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,6 +29,7 @@
 #include <xerus/misc/basicArraySupport.h>
 
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace internal {
 	
@@ -112,7 +113,7 @@ namespace xerus { namespace internal {
 			entryPos++;
 		}
 		
-		REQUIRE(size_t(currRow) < _m && entryPos == _input.size(), "Internal Error " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
+		REQUIRE(currRow < long(_m) && entryPos == _input.size(), "cholmod error - invalid input? " << currRow << ", " << _m << " | " << entryPos << ", " <<  _input.size());
 		
 		while(currRow < static_cast<long>(_m)) {
 			p[++currRow] = long(entryPos);
@@ -133,7 +134,7 @@ namespace xerus { namespace internal {
 		for(size_t i = 0; i < matrix->ncol; ++i) {
 			for(long j = p[i]; j < p[i+1]; ++j) {
 				IF_CHECK( auto ret = ) result.emplace(size_t(mi[size_t(j)])*matrix->ncol+i, _alpha*x[j]);
-				REQUIRE(ret.second, "Internal Error");
+				INTERNAL_CHECK(ret.second, "Internal Error");
 			}
 		}
 		return result;
@@ -203,8 +204,8 @@ namespace xerus { namespace internal {
 				cholmod_l_free_dense(&_toDelete, cholmodObject.get());
 			}
 		);
-		REQUIRE(x->z == nullptr, "IE");
-		REQUIRE(x->nrow == _xDim, "IE");
+		INTERNAL_CHECK(x->z == nullptr, "IE");
+		INTERNAL_CHECK(x->nrow == _xDim, "IE");
 		misc::copy(_x, static_cast<double*>(x->x), _xDim);
 	}
 	
@@ -219,14 +220,17 @@ namespace xerus { namespace internal {
 		REQUIRE(_m < std::numeric_limits<long>::max() && _n < std::numeric_limits<long>::max() && _A.size() < std::numeric_limits<long>::max(),
 			"sparse matrix given to qc decomposition too large for suitesparse"
 		);
+		REQUIRE(_m>0 && _n>0, "invalid matrix of dimensions " << _m << 'x' << _n);
 		CholmodSparse A(_A, _m, _n, _transposeA);
 		cholmod_sparse *Q, *R;
 		SuiteSparse_long *E;
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		rank = std::max(rank, 1l);
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
-		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
+		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		INTERNAL_CHECK(rank>=0, "SuiteSparseQR returned negative value " << rank);
+		INTERNAL_CHECK((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
 		return std::make_tuple(Qs.to_map(), Rs.to_map(), _fullrank?std::min(_m,_n):size_t(rank));
 	}
 	
@@ -245,10 +249,12 @@ namespace xerus { namespace internal {
 		SuiteSparse_long *E;
 		// decompose A^T = q^T*r^T
 		long rank = SuiteSparseQR<double>(0, xerus::EPSILON, _fullrank?long(std::min(_m,_n)):1, A.matrix.get(), &Q, &R, &E, cholmodObject.get());
+		rank = std::max(rank, 1l);
 		CholmodSparse Qs(Q);
 		CholmodSparse Rs(R);
-		REQUIRE(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
-		REQUIRE((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
+		INTERNAL_CHECK(E == nullptr, "IE: sparse QR returned a permutation despite fixed ordering?!");
+		INTERNAL_CHECK(rank>=0, "SuiteSparseQR returned negative value " << rank);
+		INTERNAL_CHECK((_fullrank?std::min(_m,_n):size_t(rank)) == Qs.matrix->ncol, "IE: strange rank deficiency after sparse qr " << (_fullrank?long(std::min(_m,_n)):rank) << " vs " << Qs.matrix->ncol);
 		//transpose q and r to get r*q=A
 		Qs.transpose();
 		Rs.transpose();
@@ -256,4 +262,5 @@ namespace xerus { namespace internal {
 	}
 
 
-}}
+} // namespace internal
+} // namespace xerus

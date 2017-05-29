@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -23,6 +23,7 @@
  */
 
 #include <xerus.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 
@@ -79,7 +80,7 @@ namespace xerus {
 	}
 		
 	TTTangentVector::TTTangentVector(const TTTensor& _base, const TTTensor& _direction) {
-		REQUIRE(_base.cannonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
+		REQUIRE(_base.canonicalized && _base.corePosition == 0, "projection onto tangent plane is only implemented for core position 0 at the moment");
 		REQUIRE(_base.dimensions == _direction.dimensions, "");
 		
 		baseL = _base;
@@ -145,8 +146,8 @@ namespace xerus {
 	}
 	
 	TTTangentVector& TTTangentVector::operator*=(value_t _alpha) {
-		for (size_t i=0; i<components.size(); ++i) {
-			components[i] *= _alpha;
+		for (auto &c : components) {
+			c *= _alpha;
 		}
 		return *this;
 	}
@@ -267,7 +268,7 @@ namespace xerus {
 	
 	void SubmanifoldRetractionI(TTTensor &_U, const TTTangentVector &_change) {
 		static const Index i1,j1,r;
-		for (size_t i=0; i<_U.degree(); ++i) { REQUIRE_TEST;
+		for (size_t i=0; i<_U.degree(); ++i) { XERUS_REQUIRE_TEST;
 			std::unique_ptr<Tensor> newComponent(new Tensor);
 			(*newComponent)(i1,r,j1) = _U.get_component(i)(i1,r,j1) + _change.components[i](i1,r,j1);
 			_U.set_component(i, std::move(*newComponent));
@@ -280,8 +281,8 @@ namespace xerus {
 	
 	// TODO do this without creating the change_direction tensor?
 	void ProjectiveVectorTransport(const TTTensor &_newBase, TTTangentVector &_tangentVector) {
-		REQUIRE(_newBase.cannonicalized && _newBase.corePosition == 0, "Tangent vectors only implemented for core position 0 atm");
+		REQUIRE(_newBase.canonicalized && _newBase.corePosition == 0, "Tangent vectors only implemented for core position 0 atm");
 		
 		_tangentVector = TTTangentVector(_newBase, TTTensor(_tangentVector));
 	}
-}
+} // namespace xerus

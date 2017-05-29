@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -28,8 +28,7 @@
 
 #include "include/xerus.h"
 
-std::random_device rd;
-std::mt19937_64 rnd(rd());
+std::mt19937_64 rnd = xerus::misc::randomEngine;
 std::normal_distribution<double> normalDist(0,1);
 
 using namespace xerus;
@@ -61,12 +60,12 @@ struct LeastSquaresProblem {
 		return TTOperator::identity(dim);
 	}
 	virtual TTTensor get_x() const {
-		TTTensor x = TTTensor::random(dimensions, x_ranks, rnd, normalDist);
+		TTTensor x = TTTensor::random(dimensions, x_ranks, normalDist);
 		x /= frob_norm(x);
 		return x;
 	};
 	virtual TTTensor get_b() const {
-		TTTensor b = TTTensor::random(dimensions, b_ranks, rnd, normalDist);
+		TTTensor b = TTTensor::random(dimensions, b_ranks, normalDist);
 		b /= frob_norm(b);
 		return b;
 	};
@@ -98,7 +97,7 @@ namespace ls {
 		TTOperator get_a() const override {
 			std::vector<size_t> dim(dimensions);
 			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
-			TTOperator A = TTOperator::random(dim, a_ranks, rnd, normalDist);
+			TTOperator A = TTOperator::random(dim, a_ranks, normalDist);
 			A /= frob_norm(A);
 			return A;
 		}
@@ -119,7 +118,7 @@ namespace ls {
 		TTOperator get_a() const override {
 			std::vector<size_t> dim(dimensions);
 			dim.insert(dim.end(), dimensions.begin(), dimensions.end());
-			TTOperator A = TTOperator::random(dim, a_ranks, rnd, normalDist);
+			TTOperator A = TTOperator::random(dim, a_ranks, normalDist);
 			Index i,j,k;
 			A(i,j) = A(i,k) * A(j,k);
 			A /= frob_norm(A);
@@ -175,7 +174,7 @@ std::vector<LeastSquaresProblem> leastSquaresProblems{
 
 std::string generate_profile_name() {
 	std::string profileName;
-#ifdef TEST_COVERAGE_
+#ifdef XERUS_TEST_COVERAGE
 	static_assert(false, "test coverage checking nonsensical with benchmark run");
 #endif
 	
@@ -200,13 +199,13 @@ std::string generate_profile_name() {
 #ifdef USE_LTO
 	profileName += "_lto";
 #endif
-#ifdef DISABLE_RUNTIME_CHECKS_
+#ifdef XERUS_DISABLE_RUNTIME_CHECKS
 	profileName += "_noChecks";
 #endif
-#ifdef REPLACE_ALLOCATOR
+#ifdef XERUS_REPLACE_ALLOCATOR
 	profileName += "_replaceAlloc";
 #endif
-#ifdef PERFORMANCE_ANALYSIS
+#ifdef XERUS_PERFORMANCE_ANALYSIS
 	profileName += "_perfAnalysis";
 #endif
 	return profileName;

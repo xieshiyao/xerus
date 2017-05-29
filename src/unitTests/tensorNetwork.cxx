@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,17 +20,15 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
 static misc::UnitTest tn_contr40("TensorNetwork", "contractions_of_4_to_degree_0", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({100,1}, rnd, dist);
-	Tensor B = Tensor::random({100,1}, rnd, dist);
-	Tensor C = Tensor::random({100,1}, rnd, dist);
-	Tensor D = Tensor::random({100,1}, rnd, dist);
+    Tensor A = Tensor::random({100,1});
+	Tensor B = Tensor::random({100,1});
+	Tensor C = Tensor::random({100,1});
+	Tensor D = Tensor::random({100,1});
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
@@ -48,15 +46,13 @@ static misc::UnitTest tn_contr40("TensorNetwork", "contractions_of_4_to_degree_0
 });
 
 static misc::UnitTest tn_contr30("TensorNetwork", "contractions_of_3_to_degree_0", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({10,100}, rnd, dist);
-	Tensor C = Tensor::random({100,1}, rnd, dist);
+    Tensor A = Tensor::random({1,10});
+	Tensor B = Tensor::random({10,100});
+	Tensor C = Tensor::random({100,1});
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
+	TEST(B.is_dense());
 	
 	E() = A(i1,i2) * B(i2,i3) * C(i3,i1);
 	double a1 = E[{}];
@@ -65,12 +61,11 @@ static misc::UnitTest tn_contr30("TensorNetwork", "contractions_of_3_to_degree_0
 	E() = C(i3,i1) * B(i2,i3) * A(i1,i2);
 	double a3 = E[{}];
 	LOG(unit_test, a1 << " " << a2 << " " << a3 << " " << a1-a2 << " " << a2-a3);
-	TEST(misc::approx_equal(a1, a2, 1e-20*a1)); // effectively ==
-	TEST(misc::approx_equal(a2, a3, 1e-20*a2));
+	TEST(misc::approx_equal(a1, a2));
+	TEST(misc::approx_equal(a2, a3));
 });
 
 static misc::UnitTest tn_traces("TensorNetwork", "traces", [](){
-	UNIT_TEST_RND;
 	Tensor A({2,2});
     Tensor B({2,2,2});
     Tensor C({2,2,2,2});
@@ -155,11 +150,8 @@ static misc::UnitTest tn_traces("TensorNetwork", "traces", [](){
 });
 
 static misc::UnitTest tn_contrsingle("TensorNetwork", "contraction_single_node_trace", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({1,10,10}, rnd, dist);
-	Tensor B = Tensor::random({1}, rnd, dist);
+    Tensor A = Tensor::random({1,10,10});
+	Tensor B = Tensor::random({1});
 	Tensor E;
 	Index i1,i2,i3;
 	
@@ -168,10 +160,7 @@ static misc::UnitTest tn_contrsingle("TensorNetwork", "contraction_single_node_t
 });
 
 static misc::UnitTest tn_contr_trace("TensorNetwork", "contraction_single_network_trace", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({2,2,2,2}, rnd, dist);
+    Tensor A = Tensor::random({2,2,2,2});
 	TensorNetwork ATN(A);
 	Tensor E;
 	TensorNetwork ETN(0);
@@ -202,9 +191,6 @@ static misc::UnitTest tn_idxshuffle("TensorNetwork", "index_reshuffle2", [](){
 
 
 static misc::UnitTest tn_triple_idx("TensorNetwork", "triple_indices", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
 	TensorNetwork A(3);
 	TensorNetwork B(2);
 	TensorNetwork C(2);
@@ -232,11 +218,8 @@ static misc::UnitTest tn_triple_idx("TensorNetwork", "triple_indices", [](){
 });
 
 static misc::UnitTest tn_contr_multinode("TensorNetwork", "contraction_multi_node_trace", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({1,10}, rnd, dist);
+    Tensor A = Tensor::random({1,10});
+	Tensor B = Tensor::random({1,10});
 	Tensor E;
 	Index i1,i2,i3,i4;
 	
@@ -247,11 +230,8 @@ static misc::UnitTest tn_contr_multinode("TensorNetwork", "contraction_multi_nod
 });
 
 static misc::UnitTest tn_idx_shuffle("TensorNetwork", "index_reshuffle", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({1,10}, rnd, dist);
-	Tensor B = Tensor::random({1,10}, rnd, dist);
+    Tensor A = Tensor::random({1,10});
+	Tensor B = Tensor::random({1,10});
 	Tensor E;
 	Index i1,i2,i3,i4;
 	

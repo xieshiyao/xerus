@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -32,6 +32,7 @@
  
 #include <xerus/misc/containerSupport.h>
 #include <xerus/misc/performanceAnalysis.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
 
@@ -53,7 +54,7 @@ namespace xerus {
 	 */
 	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle) {
 		IF_CHECK(
-			REQUIRE(_shuffle.size() == _base.degree(), "IE");
+			INTERNAL_CHECK(_shuffle.size() == _base.degree(), "IE");
 			for(size_t x = 0; x < _base.degree(); ++x) {
 				REQUIRE(_shuffle[x] < _base.degree(), _shuffle[x] << " is no valid new position!");
 				REQUIRE(misc::count(_shuffle, x) == 1, x << " illegally appeared twice.");
@@ -250,13 +251,11 @@ namespace xerus {
 			_out.assign_indices();
 			
 			
-			
 			// Assign the dimensions
 			_base.assign_index_dimensions();
 			_out.assign_index_dimensions();
 			
-			
-			#ifndef DISABLE_RUNTIME_CHECKS_ // Performe complete check whether the input is valid
+			#ifndef XERUS_DISABLE_RUNTIME_CHECKS // Performe complete check whether the input is valid
 				// Check base indices
 				for(size_t i = 0; i < _base.indices.size(); ++i) {
 					// If the index is fixed we don't expect to find it anywhere
@@ -343,7 +342,7 @@ namespace xerus {
 				}
 				
 				// Start performance analysis for low level part
-				PA_START;
+				XERUS_PA_START;
 				
 				// Get pointers to the data and delay the deletion of the base data in case _out and _base coincide
 				const value_t* oldPosition = _base.tensorObjectReadOnly->get_unsanitized_dense_data()+fixedIndexOffset;
@@ -383,7 +382,7 @@ namespace xerus {
 						}
 					}
 				}
-				PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObject->dimensions));
+				XERUS_PA_END("Evaluation", "Full->Full", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObject->dimensions));
 				
 				
 				// Propagate the constant factor, since we don't apply it for dense Tensors
@@ -391,9 +390,11 @@ namespace xerus {
 			}
 			//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Sparse => Sparse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 			else if(_base.tensorObjectReadOnly->is_sparse()) {
+				#define VLA(T, name) auto name##_store = xerus::misc::make_unique_array(new T); const auto & (name) = name##_store.get();
 				VLA(bool[_base.indices.size()]  , fixedFlags); // Flag for each index indicating whether the index is fixed
 				VLA(bool[_base.indices.size()]  , traceFlags); // Flag for each index indicating whether the index is part of a trace
 				VLA(size_t[_base.indices.size()], attributes);  // Either the factor in _out, the value of an fixed index or the position of the other part of a trace
+				#undef VLA
 				bool peacefullIndices = true;
 				
 				const std::vector<size_t> outIndexStepSizes(get_step_sizes(_out.indices));
@@ -435,7 +436,7 @@ namespace xerus {
 				const value_t factor = _base.tensorObjectReadOnly->factor;
 				
 				// Start performance analysis for low level part
-				PA_START;
+				XERUS_PA_START;
 				
 				if(peacefullIndices) {
 					for(const auto& entry : baseEntries) {
@@ -449,8 +450,8 @@ namespace xerus {
 						}
 					}
 				}
-				PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
+				XERUS_PA_END("Evaluation", "Sparse->Sparse", misc::to_string(_base.tensorObjectReadOnly->dimensions)+" ==> " + misc::to_string(_out.tensorObjectReadOnly->dimensions));
 			}
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

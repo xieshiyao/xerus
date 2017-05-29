@@ -3,8 +3,10 @@ stages:
 - test_gcc
 - build_gcc_nocheck
 - test_gcc_nocheck
+- build_python
 - build_clang
 - test_clang
+- build_homepage
 
 job_make_gcc:
   stage: build_gcc
@@ -23,6 +25,11 @@ job_test_gcc_nocheck:
   stage: test_gcc_nocheck
   script: "cp ../XerusTest .; ./XerusTest all"
 
+job_build_python:
+  stage: build_python
+  script: "g++ --version; cp .config.mk.ci.gcc config.mk; make python"
+  when: always
+
 job_make_clang:
   stage: build_clang
   script: "clang++ --version; cp .config.mk.ci.clang config.mk; make XerusTest; cp XerusTest ../"
@@ -32,3 +39,10 @@ job_test_clang:
   stage: test_clang
   script: "cp ../XerusTest .; ./XerusTest all"
 
+job_build_homepage:
+  stage: build_homepage
+  script: "make doc; scp -rv doc/html xerusweb:libxerus.org-443/html"
+  when: always
+  only: 
+    - master
+  allow_failure: true

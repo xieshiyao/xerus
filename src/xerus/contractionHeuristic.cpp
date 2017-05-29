@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -26,6 +26,7 @@
 
 #include <xerus/contractionHeuristic.h>
 #include <xerus/tensorNetwork.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace internal {
@@ -35,14 +36,14 @@ namespace xerus {
 			// estimated cost to calculate this heuristic is
 			// numNodes * numNodes * 2*avgEdgesPerNode = 2 * numNodes * numEdges
 			double numNodes = 0, numEdges = 0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
 					numNodes += 1;
-					numEdges += static_cast<double>(_network.nodes[i].degree());
+					numEdges += static_cast<double>(node.degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
-			if (_bestCost < 2 * 2 * numNodes * numEdges) return;
+			if (_bestCost < 2 * 2 * numNodes * numEdges) { return; }
 			
 			double bestScore, ourCost=0;
 			double ourFinalCost=0;
@@ -51,10 +52,10 @@ namespace xerus {
 			do {
 				bestScore = std::numeric_limits<double>::max();
 				for (size_t i = 0; i < _network.nodes.size(); ++i) {
-					if (_network.nodes[i].erased) continue;
+					if (_network.nodes[i].erased) { continue; }
 					TensorNetwork::TensorNode &ni = _network.nodes[i];
 					for (size_t j = i+1; j < _network.nodes.size(); ++j) {
-						if (_network.nodes[j].erased) continue;
+						if (_network.nodes[j].erased) { continue; }
 						TensorNetwork::TensorNode &nj = _network.nodes[j];
 						/* possible candidate (i.e. link to a later node) */
 						/* calculate n,m,r */
@@ -98,38 +99,38 @@ namespace xerus {
 		
 		
 		
-		double contraction_cost(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double contraction_cost(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _m*_n*_r; // TODO sparse
 		}
 		
 		
 		
 		
-		double score_size(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_size(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _n*_m-(_n+_m)*_r;
 		}
-		double score_mn(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_mn(double _m, double _n, double  /*_r*/, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return _m*_n;
 		}
-		double score_speed(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_speed(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return (_n*_m-(_n+_m)*_r)/(_n*_m*_r);
 		}
-		double score_r(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_r(double  /*_m*/, double  /*_n*/, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			return -_r;
 		}
-		double score_big_tensor(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_big_tensor(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			if (_n*_m<(_n+_m)*_r) {
 				return -1e10 + _n*_m*_r;
-			} else {
+			} 
 				return _n*_m-(_n+_m)*_r;
-			}
+			
 		}
-		double score_littlestep(double _m, double _n, double _r, double _sparsity1, double _sparsity2) {
+		double score_littlestep(double _m, double _n, double _r, double  /*_sparsity1*/, double  /*_sparsity2*/) {
 			if (_n*_m<(_n+_m)*_r) {
 				return -std::max(_n,_m)*_r;
-			} else {
+			} 
 				return _n*_m-(_n+_m)*_r;
-			}
+			
 		}
 		
 		
@@ -168,11 +169,11 @@ namespace xerus {
 			double costBC = sb*sc*sab*sac*(sbc+sa);
 			if (costAB < costAC && costAB < costBC) {
 				return std::tuple<size_t, size_t, size_t, double>(_id1, _id2, _id3, sa*sb*sac*sbc*sab);
-			} else if (costAC < costBC) {
+			} 
+			if (costAC < costBC) {
 				return std::tuple<size_t, size_t, size_t, double>(_id1, _id3, _id2, sa*sc*sab*sbc*sac);
-			} else {
-				return std::tuple<size_t, size_t, size_t, double>(_id2, _id3, _id1, sb*sc*sab*sac*sbc);
 			}
+			return std::tuple<size_t, size_t, size_t, double>(_id2, _id3, _id1, sb*sc*sab*sac*sbc);
 		}
 		
 		
@@ -180,14 +181,14 @@ namespace xerus {
 			// estimated cost to calculate this heuristic is
 			// numNodes * numNodes * 3*avgEdgesPerNode = 3 * numNodes * numEdges
 			size_t numNodes=0, numEdges=0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
 					numNodes += 1;
-					numEdges += _network.nodes[i].degree();
+					numEdges += node.degree();
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
-			if (_bestCost < double(2 * 3 * numNodes * numEdges)) return;
+			if (_bestCost < double(2 * 3 * numNodes * numEdges)) { return; }
 			
 			double ourFinalCost=0;
 			std::vector<std::pair<size_t,size_t>> ourContractions;
@@ -229,7 +230,7 @@ namespace xerus {
 				}
 				// find the next most connected node
 				for (size_t i=id3+1; i<_network.nodes.size(); ++i) {
-					if (i == id1 || i == id2) continue;
+					if (i == id1 || i == id2) { continue; }
 					size_t newConnections=0;
 					for (const TensorNetwork::Link &l : _network.nodes[i].neighbors) {
 						if (l.links(id1) || l.links(id2)) {
@@ -279,15 +280,15 @@ namespace xerus {
 			// numContractions * 3*avgEdgesPerNode ~= 3 * numEdges
 			TensorNetwork copyNet(_network);
 			double numEdges=0;
-			for (size_t i=0; i<_network.nodes.size(); ++i) {
-				if (!_network.nodes[i].erased) {
-					numEdges += static_cast<double>(_network.nodes[i].degree());
+			for (const auto &node : _network.nodes) {
+				if (!node.erased) {
+					numEdges += static_cast<double>(node.degree());
 				}
 			}
 			// if the best solution is only about twice as costly as the calculation of this heuristic, then don't bother
 			double cost_of_heuristic = 3*numEdges;
 // 			LOG(vergleich, _bestCost << " vs " << cost_of_heuristic);
-			if (_bestCost < 2 * cost_of_heuristic) return;
+			if (_bestCost < 2 * cost_of_heuristic) { return; }
 			
 			
 			std::vector<std::pair<size_t, size_t>> openPairs;
@@ -302,15 +303,15 @@ namespace xerus {
 			
 			for (size_t i=1; i<_contractions.size(); ++i) {
 				std::pair<size_t, size_t> next = _contractions[i];
-				while (next.first != idMap[next.first]) next.first = idMap[next.first];
-				while (next.second != idMap[next.second]) next.second = idMap[next.second];
+				while (next.first != idMap[next.first]) { next.first = idMap[next.first]; }
+				while (next.second != idMap[next.second]) { next.second = idMap[next.second]; }
 				
 				std::vector<std::pair<size_t, size_t>> newOpenPairs;
 				for (const std::pair<size_t, size_t> &p : openPairs) {
 					size_t id1 = p.first;
-					while (id1 != idMap[id1]) id1 = idMap[id1];
+					while (id1 != idMap[id1]) { id1 = idMap[id1]; }
 					size_t id2 = p.second;
-					while (id2 != idMap[id2]) id2 = idMap[id2];
+					while (id2 != idMap[id2]) { id2 = idMap[id2]; }
 					if (next.first != id1 && next.first != id2) {
 						if (next.second == id1 || next.second == id2) {
 							auto contr = best_of_three(_network, id1, id2, next.first);
@@ -347,7 +348,7 @@ namespace xerus {
 				openPairs = std::move(newOpenPairs);
 			}
 			
-			REQUIRE(openPairs.size() == 1, "ie");
+			INTERNAL_CHECK(openPairs.size() == 1, "ie");
 			
 			ourFinalCost += _network.contraction_cost(openPairs.front().first, openPairs.front().second);
 			ourContractions.emplace_back(openPairs.front());
@@ -378,6 +379,6 @@ namespace xerus {
 // 			,&greedy_best_of_three_heuristic
 			,&exchange_heuristic
 		};
-    }
+    } // namespace internal
 
-}
+} // namespace xerus

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -21,12 +21,11 @@
 #include<xerus.h>
 #include<fstream>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 
 // UNIT_TEST(SteepestDescent, random_operator,
-// 	std::random_device rd;
 // 	std::mt19937_64 rnd(rd());
 // 	std::normal_distribution<value_t> dist (0.0, 1.0);
 // 	
@@ -62,11 +61,11 @@ using namespace xerus;
 // 	
 // 	
 // 	while (true) {
-// 		TTOperator A = TTOperator::random(operatorDims, std::vector<size_t>(d-1, 2), rnd, dist);
+// 		TTOperator A = TTOperator::random(operatorDims, std::vector<size_t>(d-1, 2), dist);
 // 		A(i/2, j/2) = A(i/2, k/2) * A(j/2, k/2);
-// 		TTTensor b = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+// 		TTTensor b = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), dist);
 // 		b(i&0) = A(i/2,j/2)*b(j&0);
-// 		TTTensor initX = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), rnd, dist);
+// 		TTTensor initX = TTTensor::random(stateDims, std::vector<size_t>(d-1,4), dist);
 // 		TTTensor x(initX);
 // 		
 // 		try {

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -28,8 +28,10 @@
 
 #include <xerus/misc/stringUtilities.h>
 #include <xerus/misc/containerSupport.h>
+#include <xerus/misc/math.h>
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/fileIO.h>
+#include <xerus/misc/internal.h>
 
 #include <xerus/basic.h>
 #include <xerus/index.h>
@@ -37,23 +39,17 @@
 #include <xerus/indexedTensorList.h>
 #include <xerus/indexedTensorMoveable.h>
 #include <xerus/indexedTensor_tensor_factorisations.h>
-#include <xerus/measurments.h>
 #include <xerus/contractionHeuristic.h>
 
 namespace xerus {
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Constructors - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	TensorNetwork::TensorNetwork() {
-		nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
+		nodes.emplace_back(TensorNode(std::make_unique<Tensor>()));
 	}
 	
 	
-	TensorNetwork::TensorNetwork(const Tensor& _other) : dimensions(_other.dimensions) {
-		nodes.emplace_back(std::unique_ptr<Tensor>( new Tensor(_other)), init_from_dimension_array());
-	}
-	
-	
-	TensorNetwork::TensorNetwork(Tensor&& _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
-		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor(std::move(_other))), init_from_dimension_array());
+	TensorNetwork::TensorNetwork(Tensor _other) : dimensions(_other.dimensions) { //NOTE don't use std::move here, because we need _other to be untouched to move it later
+		nodes.emplace_back(std::make_unique<Tensor>(std::move(_other)), init_from_dimension_array());
 	}
 	
 	
@@ -63,13 +59,13 @@ namespace xerus {
 	
 	
 	TensorNetwork::TensorNetwork(size_t _degree) : dimensions(std::vector<size_t>(_degree, 1)) {
-		nodes.emplace_back(std::unique_ptr<Tensor>(new Tensor( std::vector<size_t>(_degree, 1))), init_from_dimension_array());
+		nodes.emplace_back(std::make_unique<Tensor>(std::vector<size_t>(_degree, 1)), init_from_dimension_array());
 	}
 	
 	
 	TensorNetwork::TensorNetwork(const ZeroNode _nodeStatus) {
 		if(_nodeStatus == ZeroNode::Add) {
-			nodes.emplace_back(TensorNode(std::unique_ptr<Tensor>(new Tensor())));
+			nodes.emplace_back(TensorNode(std::make_unique<Tensor>()));
 		}
 	}
 	
@@ -96,7 +92,7 @@ namespace xerus {
 		cpy.dimensions = dimensions;
 		cpy.externalLinks = externalLinks;
 		for (size_t id = 0; id < nodes.size(); ++id) {
-			if (!_idF(id)) continue;
+			if (!_idF(id)) { continue; }
 			cpy.nodes[id] = nodes[id].strippped_copy();
 			for (size_t i = 0; i < cpy.nodes[id].neighbors.size(); ++i) {
 				TensorNetwork::Link &l = cpy.nodes[id].neighbors[i];
@@ -119,8 +115,8 @@ namespace xerus {
 				toErase.emplace_back(long(eid));
 				correction++;
 			} else {
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
-				REQUIRE(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
+				INTERNAL_CHECK(cpy.nodes[l.other].neighbors[l.indexPosition].external, "ie");
+				INTERNAL_CHECK(cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition == eid, "ie");
 				cpy.nodes[l.other].neighbors[l.indexPosition].indexPosition -= correction;
 			}
 		}
@@ -182,27 +178,27 @@ namespace xerus {
 			if (!toContract.empty()) {
 				const size_t remaining = contract(toContract);
 				
-				REQUIRE(nodes[remaining].degree() == 0, "Internal Error.");
+				INTERNAL_CHECK(nodes[remaining].degree() == 0, "Internal Error.");
 				
 				// Remove contracted degree-0 tensor
 				nodes[remaining].erased = true;
 				for(size_t i = 0; i < nodes.size(); ++i) {
 					if(!nodes[i].erased) {
-						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject.get())[0];
+						*nodes[i].tensorObject *= (*nodes[remaining].tensorObject)[0];
 						break;
 					}
-					REQUIRE(i < nodes.size()-1, "Internal Error.");
+					INTERNAL_CHECK(i < nodes.size()-1, "Internal Error.");
 				}
 			}
 		}
 		
 		sanitize();
 		
-		REQUIRE(nodes.size() > 0, "Internal error");
+		INTERNAL_CHECK(!nodes.empty(), "Internal error");
 	}
 	
 	
-	std::tuple<size_t, size_t> TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
+	std::pair< size_t, size_t > TensorNetwork::find_common_edge(const size_t _nodeA, const size_t _nodeB) const {
 		size_t posA=~0ul, posB=~0ul;
 		
 		// Find common edge in nodeA
@@ -219,7 +215,7 @@ namespace xerus {
 		
 		posB = nodes[_nodeA].neighbors[posA].indexPosition;
 		
-		return std::tuple<size_t, size_t>(posA, posB);
+		return std::pair<size_t, size_t>(posA, posB);
 	}
 	
 	
@@ -276,7 +272,7 @@ namespace xerus {
 		nodes.resize(newId);
 		for (TensorNode &n : nodes) {
 			for (TensorNetwork::Link &l : n.neighbors) {
-				if (!l.external) l.other = idMap[l.other];
+				if (!l.external) { l.other = idMap[l.other]; }
 			}
 		}
 		
@@ -299,7 +295,7 @@ namespace xerus {
 		
 		std::vector<size_t> shuffle(degree());
 		for(size_t i = 0; i < cpy.nodes[res].neighbors.size(); ++i) {
-			REQUIRE(cpy.nodes[res].neighbors[i].external, "Internal Error");
+			INTERNAL_CHECK(cpy.nodes[res].neighbors[i].external, "Internal Error");
 			shuffle[i] = cpy.nodes[res].neighbors[i].indexPosition;
 		}
 		Tensor result;
@@ -361,62 +357,23 @@ namespace xerus {
 		// Contract the complete network (there are not external Links)
 		partialCopy.contract_unconnected_subnetworks();
 		
-		REQUIRE(partialCopy.nodes.size() == 1, "Internal Error.");
+		INTERNAL_CHECK(partialCopy.nodes.size() == 1, "Internal Error.");
 		
 		return (*partialCopy.nodes[0].tensorObject)[0];
-	}
-	
-	
-	void TensorNetwork::measure(SinglePointMeasurementSet& _measurments) const {
-		std::vector<TensorNetwork> stack(degree()+1);
-		stack[0] = *this;
-		stack[0].reduce_representation();
-		
-		// Sort measurements
-		sort(_measurments, degree()-1);
-		
-		// Handle first measurment
-		for(size_t i = 0; i < degree(); ++i) {
-			stack[i+1] = stack[i];
-			stack[i+1].fix_mode(0, _measurments.positions[0][i]);
-			stack[i+1].reduce_representation();
-		}
-		_measurments.measuredValues[0] = stack.back()[0];
-		
-		for(size_t j = 1; j < _measurments.size(); ++j) {
-			REQUIRE(_measurments.positions[j-1] != _measurments.positions[j], "There were two identical measurements?");
-			
-			// Find the maximal recyclable stack position
-			size_t rebuildIndex = 0;
-			for(; rebuildIndex < degree(); ++rebuildIndex) {
-				if(_measurments.positions[j-1][rebuildIndex] != _measurments.positions[j][rebuildIndex]) {
-					break;
-				}
-			}
-			
-			// Rebuild stack
-			for(size_t i = rebuildIndex; i < degree(); ++i) {
-				stack[i+1] = stack[i];
-				stack[i+1].fix_mode(0, _measurments.positions[j][i]);
-				stack[i+1].reduce_representation();
-			}
-			
-			_measurments.measuredValues[j] = stack.back()[0];
-		}
 	}
 	
 
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 	void TensorNetwork::operator*=(const value_t _factor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		REQUIRE(!nodes[0].erased, "There must not be an erased node.");
 		*nodes[0].tensorObject *= _factor;
 	}
 	
 	
 	void TensorNetwork::operator/=(const value_t _divisor) {
-		REQUIRE(nodes.size() > 0, "There must not be a TTNetwork without any node");
+		REQUIRE(!nodes.empty(), "There must not be a TTNetwork without any node");
 		REQUIRE(!nodes[0].erased, "There must not be an erased node.");
 		*nodes[0].tensorObject /= _divisor;
 	}
@@ -444,12 +401,12 @@ namespace xerus {
 	
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Operator specializations - - - - - - - - - - - - - - - - - - - - - - - - - - */
-	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me , internal::IndexedTensorReadOnly<TensorNetwork>&& _other ) const {
+	bool TensorNetwork::specialized_contraction(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&  /*_out*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_me*/ , internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/ ) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
 	
-	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>& _out, internal::IndexedTensorReadOnly<TensorNetwork>&& _me, internal::IndexedTensorReadOnly<TensorNetwork>&& _other) const {
+	bool TensorNetwork::specialized_sum(std::unique_ptr<internal::IndexedTensorMoveable<TensorNetwork>>&  /*_out*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_me*/, internal::IndexedTensorReadOnly<TensorNetwork>&&  /*_other*/) const {
 		return false; // A general tensor Network can't do anything specialized
 	}
 	
@@ -519,15 +476,15 @@ namespace xerus {
 		nodes = newNodes;
 		nodes.resize(newSize);
 		
-		for (size_t i = 0; i < externalLinks.size(); ++i) {
-			externalLinks[i].other = _f(externalLinks[i].other);
+		for (auto &link : externalLinks) {
+			link.other = _f(link.other);
 		}
 	}
 	
-#ifndef DISABLE_RUNTIME_CHECKS_
+#ifndef XERUS_DISABLE_RUNTIME_CHECKS
 	void TensorNetwork::require_valid_network(const bool _check_erased) const {
 		REQUIRE(externalLinks.size() == dimensions.size(), "externalLinks.size() != dimensions.size()");
-		REQUIRE(nodes.size() > 0, "There must always be at least one node!");
+		REQUIRE(!nodes.empty(), "There must always be at least one node!");
 		
 		// Per external link
 		for (size_t n = 0; n < externalLinks.size(); ++n) {
@@ -718,14 +675,14 @@ namespace xerus {
 	}
 	
 	
-	void TensorNetwork::round_edge(const size_t _from, const size_t _to, const size_t _maxRank, const double _eps, const double _softThreshold, const bool _preventZero) {
+	void TensorNetwork::round_edge(const size_t _nodeA, const size_t _nodeB, const size_t _maxRank, const double _eps, const double _softThreshold) {
 		require_valid_network();
 		
 		size_t fromPos, toPos;
-		std::tie(fromPos, toPos) = find_common_edge(_from, _to);
+		std::tie(fromPos, toPos) = find_common_edge(_nodeA, _nodeB);
 		
-		Tensor& fromTensor = *nodes[_from].tensorObject;
-		Tensor& toTensor = *nodes[_to].tensorObject;
+		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
+		Tensor& toTensor = *nodes[_nodeB].tensorObject;
 		
 		const size_t fromDegree = fromTensor.degree();
 		const size_t toDegree = toTensor.degree();
@@ -806,7 +763,7 @@ namespace xerus {
 			// ... calculate svd ...
 			calculate_svd(coreA, S, coreB, X, 1, _maxRank, _eps);
 			
-			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			S.modify_diagonal_entries([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
 			
 			// ... contract S to the right ...
 			xerus::contract(coreB, S, false, coreB, false, 1);
@@ -828,7 +785,7 @@ namespace xerus {
 			
 			calculate_svd(fromTensor, S, toTensor, X, fromDegree-1, _maxRank, _eps);
 			
-			S.modify_diag_elements([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
+			S.modify_diagonal_entries([&](value_t& _d){ _d = std::max(0.0, _d - _softThreshold); });
 			
 			if(transTo) {
 				xerus::contract(toTensor, toTensor, true, S, true, 1);
@@ -856,21 +813,21 @@ namespace xerus {
 		}
 		
 		// Set the new dimension in the nodes
-		nodes[_from].neighbors[fromPos].dimension = nodes[_from].tensorObject->dimensions[fromPos];
-		nodes[_to].neighbors[toPos].dimension = nodes[_to].tensorObject->dimensions[toPos];
+		nodes[_nodeA].neighbors[fromPos].dimension = nodes[_nodeA].tensorObject->dimensions[fromPos];
+		nodes[_nodeB].neighbors[toPos].dimension = nodes[_nodeB].tensorObject->dimensions[toPos];
 	}
 	
 	
-	void TensorNetwork::transfer_core(const size_t _nodeA, const size_t _nodeB, const bool _allowRankReduction) {
-		REQUIRE(_nodeA < nodes.size() && _nodeB < nodes.size(), " Illegal node IDs " << _nodeA << "/" << _nodeB << " as there are only " << nodes.size() << " nodes");
+	void TensorNetwork::transfer_core(const size_t _from, const size_t _to, const bool _allowRankReduction) {
+		REQUIRE(_from < nodes.size() && _to < nodes.size(), " Illegal node IDs " << _from << "/" << _to << " as there are only " << nodes.size() << " nodes");
 		require_valid_network();
 		
 		Tensor Q, R;
 		size_t posA, posB;
-		std::tie(posA, posB) = find_common_edge(_nodeA, _nodeB);
+		std::tie(posA, posB) = find_common_edge(_from, _to);
 		
-		Tensor& fromTensor = *nodes[_nodeA].tensorObject;
-		Tensor& toTensor = *nodes[_nodeB].tensorObject;
+		Tensor& fromTensor = *nodes[_from].tensorObject;
+		Tensor& toTensor = *nodes[_to].tensorObject;
 		
 		bool transR = false;
 		if(posA == 0) {
@@ -881,36 +838,36 @@ namespace xerus {
 			}
 			fromTensor = Q;
 			transR = true;
-		} else if(posA == nodes[_nodeA].degree()-1) {
+		} else if(posA == nodes[_from].degree()-1) {
 			if(_allowRankReduction) {
-				calculate_qc(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qc(Q, R, fromTensor, nodes[_from].degree()-1);
 			} else {
-				calculate_qr(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qr(Q, R, fromTensor, nodes[_from].degree()-1);
 			}
 			fromTensor = Q;
 		} else {
-			std::vector<size_t> forwardShuffle(nodes[_nodeA].degree());
-			std::vector<size_t> backwardShuffle(nodes[_nodeA].degree());
+			std::vector<size_t> forwardShuffle(nodes[_from].degree());
+			std::vector<size_t> backwardShuffle(nodes[_from].degree());
 			
 			for(size_t i = 0; i < posA; ++i) { 
 				forwardShuffle[i] = i;
 				backwardShuffle[i] = i;
 			}
 			
-			for(size_t i = posA; i+1 < nodes[_nodeA].degree(); ++i) {
+			for(size_t i = posA; i+1 < nodes[_from].degree(); ++i) {
 				forwardShuffle[i+1] = i;
 				backwardShuffle[i] = i+1;
 			}
 			
-			forwardShuffle[posA] = nodes[_nodeA].degree()-1;
-			backwardShuffle[nodes[_nodeA].degree()-1] = posA;
+			forwardShuffle[posA] = nodes[_from].degree()-1;
+			backwardShuffle[nodes[_from].degree()-1] = posA;
 			
 			reshuffle(fromTensor, fromTensor, forwardShuffle);
 			
 			if(_allowRankReduction) {
-				calculate_qc(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qc(Q, R, fromTensor, nodes[_from].degree()-1);
 			} else {
-				calculate_qr(Q, R, fromTensor, nodes[_nodeA].degree()-1);
+				calculate_qr(Q, R, fromTensor, nodes[_from].degree()-1);
 			}
 			
 			reshuffle(fromTensor, Q, backwardShuffle);
@@ -919,19 +876,19 @@ namespace xerus {
 		if( posB == 0 ) {
 			xerus::contract(toTensor, R, transR, toTensor, false, 1);
 			
-		} else if( posB == nodes[_nodeB].degree()-1 ) {
+		} else if( posB == nodes[_to].degree()-1 ) {
 			xerus::contract(toTensor, toTensor, false, R, !transR, 1);
 			
 		} else {
-			std::vector<size_t> forwardShuffle(nodes[_nodeB].degree());
-			std::vector<size_t> backwardShuffle(nodes[_nodeB].degree());
+			std::vector<size_t> forwardShuffle(nodes[_to].degree());
+			std::vector<size_t> backwardShuffle(nodes[_to].degree());
 			
 			for(size_t i = 0; i < posB; ++i) {
 				forwardShuffle[i] = i+1;
 				backwardShuffle[i+1] = i;
 			}
 			
-			for(size_t i = posB+1; i < nodes[_nodeB].degree(); ++i) {
+			for(size_t i = posB+1; i < nodes[_to].degree(); ++i) {
 				forwardShuffle[i] = i;
 				backwardShuffle[i] = i;
 			}
@@ -947,8 +904,8 @@ namespace xerus {
 		}
 		
 		// Set the new dimension in the nodes
-		nodes[_nodeA].neighbors[posA].dimension = fromTensor.dimensions[posA];
-		nodes[_nodeB].neighbors[posB].dimension = toTensor.dimensions[posB];
+		nodes[_from].neighbors[posA].dimension = fromTensor.dimensions[posA];
+		nodes[_to].neighbors[posB].dimension = toTensor.dimensions[posB];
 	}
 	
 	
@@ -1041,7 +998,7 @@ namespace xerus {
 				continue;
 			}
 			for (Link &l : currNode.neighbors) {
-				if (l.external) continue;
+				if (l.external) { continue; }
 				size_t r=1;
 				for (Link &l2 : currNode.neighbors) {
 					if (l2.other == l.other) {
@@ -1083,13 +1040,13 @@ namespace xerus {
 		
 		REQUIRE(!node1.erased, "It appears node1 = " << _nodeId1 << "  was already contracted?");
 		REQUIRE(!node2.erased, "It appears node2 = " << _nodeId2 << "  was already contracted?");
-		REQUIRE(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
+		INTERNAL_CHECK(externalLinks.size() == degree(), "Internal Error: " << externalLinks.size() << " != " << degree());
 		
 		std::vector<TensorNetwork::Link> newLinks;
 		newLinks.reserve(node1.degree() + node2.degree());
 		
 		if (!node1.tensorObject) {
-			REQUIRE(!node2.tensorObject, "Internal Error.");
+			INTERNAL_CHECK(!node2.tensorObject, "Internal Error.");
 			
 			// Determine the links of the resulting tensor (first half)
 			for ( const Link& l : node1.neighbors ) {
@@ -1104,7 +1061,7 @@ namespace xerus {
 				}
 			}
 		} else {
-			REQUIRE(node2.tensorObject, "Internal Error.");
+			INTERNAL_CHECK(node2.tensorObject, "Internal Error.");
 			
 			size_t contractedDimCount = 0;
 			bool separated1;
@@ -1210,7 +1167,7 @@ namespace xerus {
 					}
 				}
 				
-				REQUIRE(pos == node1.degree(), "IE");
+				INTERNAL_CHECK(pos == node1.degree(), "IE");
 				reshuffle(*node1.tensorObject, *node1.tensorObject, shuffle);
 				
 				matchingOrder = true;
@@ -1242,7 +1199,7 @@ namespace xerus {
 					}
 				}
 				
-				REQUIRE(pos == node2.degree(), "IE");
+				INTERNAL_CHECK(pos == node2.degree(), "IE");
 				reshuffle(*node2.tensorObject, *node2.tensorObject, shuffle);
 			}
 			
@@ -1299,7 +1256,7 @@ namespace xerus {
 			perform_traces(id);
 		}
 		
-		if (_ids.size() == 0) { return ~0ul; }
+		if (_ids.empty()) { return ~0ul; }
 		
 		if (_ids.size() == 1) { return *_ids.begin(); }
 
@@ -1365,7 +1322,7 @@ namespace xerus {
 			c(bestCost, bestOrder, strippedNetwork);
 		}
 		
-		REQUIRE(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
+		INTERNAL_CHECK(bestCost < std::numeric_limits<double>::max() && !bestOrder.empty(), "Internal Error.");
 		
 		for (const std::pair<size_t,size_t> &c : bestOrder) {
 			contract(c.first, c.second);
@@ -1474,7 +1431,7 @@ namespace xerus {
 				_stream << std::setprecision(std::numeric_limits<value_t>::digits10 + 1);
 			}
 			// storage version number
-			write_to_stream<uint64>(_stream, 1, _format);
+			write_to_stream<size_t>(_stream, 1, _format);
 			
 			// Save dimensions
 			write_to_stream(_stream, _obj.dimensions, _format);
@@ -1482,22 +1439,22 @@ namespace xerus {
 			
 			// save external links
 			for(const TensorNetwork::Link& el : _obj.externalLinks) {
-				write_to_stream<uint64>(_stream, el.other, _format);
-				write_to_stream<uint64>(_stream, el.indexPosition, _format);
-				write_to_stream<uint64>(_stream, el.dimension, _format);
+				write_to_stream<size_t>(_stream, el.other, _format);
+				write_to_stream<size_t>(_stream, el.indexPosition, _format);
+				write_to_stream<size_t>(_stream, el.dimension, _format);
 			}
 			if(_format == FileFormat::TSV) { _stream << "\n\n"; }
 			
 			// Save nodes with their links
-			write_to_stream<uint64>(_stream, _obj.nodes.size(), _format);
+			write_to_stream<size_t>(_stream, _obj.nodes.size(), _format);
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
 			for(const TensorNetwork::TensorNode& node : _obj.nodes) {
-				write_to_stream<uint64>(_stream, node.neighbors.size(), _format);
+				write_to_stream<size_t>(_stream, node.neighbors.size(), _format);
 				for(const TensorNetwork::Link& link : node.neighbors) {
 					write_to_stream<bool>(_stream, link.external, _format);
-					write_to_stream<uint64>(_stream, link.other, _format);
-					write_to_stream<uint64>(_stream, link.indexPosition, _format);
-					write_to_stream<uint64>(_stream, link.dimension, _format);
+					write_to_stream<size_t>(_stream, link.other, _format);
+					write_to_stream<size_t>(_stream, link.indexPosition, _format);
+					write_to_stream<size_t>(_stream, link.dimension, _format);
 				}
 			}
 			if(_format == FileFormat::TSV) { _stream << '\n'; }
@@ -1510,7 +1467,7 @@ namespace xerus {
 		}
 			
 		void stream_reader(std::istream& _stream, TensorNetwork &_obj, const FileFormat _format) {
-			IF_CHECK( uint64 ver = ) read_from_stream<uint64>(_stream, _format);
+			IF_CHECK( size_t ver = ) read_from_stream<size_t>(_stream, _format);
 			REQUIRE(ver == 1, "Unknown stream version to open (" << ver << ")");
 			
 			// Load dimensions
@@ -1520,21 +1477,21 @@ namespace xerus {
 			_obj.externalLinks.resize(_obj.dimensions.size());
 			for(TensorNetwork::Link& el : _obj.externalLinks) {
 				el.external = false;
-				el.other = read_from_stream<uint64>(_stream, _format);
-				el.indexPosition = read_from_stream<uint64>(_stream, _format);
-				el.dimension = read_from_stream<uint64>(_stream, _format);
+				el.other = read_from_stream<size_t>(_stream, _format);
+				el.indexPosition = read_from_stream<size_t>(_stream, _format);
+				el.dimension = read_from_stream<size_t>(_stream, _format);
 			}
 			
 			// Load nodes with their links
-			_obj.nodes.resize(read_from_stream<uint64>(_stream, _format));
+			_obj.nodes.resize(read_from_stream<size_t>(_stream, _format));
 			for(TensorNetwork::TensorNode& node : _obj.nodes) {
-				node.neighbors.resize(read_from_stream<uint64>(_stream, _format));
+				node.neighbors.resize(read_from_stream<size_t>(_stream, _format));
 				node.erased = false;
 				for(TensorNetwork::Link& link : node.neighbors) {
 					link.external = read_from_stream<bool>(_stream, _format);
-					link.other = read_from_stream<uint64>(_stream, _format);
-					link.indexPosition = read_from_stream<uint64>(_stream, _format);
-					link.dimension = read_from_stream<uint64>(_stream, _format);
+					link.other = read_from_stream<size_t>(_stream, _format);
+					link.indexPosition = read_from_stream<size_t>(_stream, _format);
+					link.dimension = read_from_stream<size_t>(_stream, _format);
 				}
 			}
 			
@@ -1546,5 +1503,5 @@ namespace xerus {
 			
 			_obj.require_valid_network();
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

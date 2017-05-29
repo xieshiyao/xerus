@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_assign("Tensor", "Assignment",  [](){
@@ -68,13 +68,10 @@ static misc::UnitTest tensor_assign("Tensor", "Assignment",  [](){
 });
 
 static misc::UnitTest tensor_prod("Tensor", "Product", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
     Index i,j,k,l,m,n,o,p,q;
     
-    Tensor AS = Tensor::random({2,3,4,3,5}, 23, rnd, dist);
-    Tensor BS = Tensor::random({6,3,4,2,3}, 23, rnd, dist);
+    Tensor AS = Tensor::random({2,3,4,3,5}, 23);
+    Tensor BS = Tensor::random({6,3,4,2,3}, 23);
     
     Tensor AF(AS);
     Tensor BF(BS);
@@ -109,8 +106,7 @@ static misc::UnitTest tensor_prod("Tensor", "Product", [](){
 });
 
 static misc::UnitTest tensor_rnd_add_sub("Tensor", "Random_Add_Sub", [](){
-	std::mt19937_64 rnd(0x938429347);
-    std::normal_distribution<value_t> dist (0.0, 10.0);
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
     std::uniform_int_distribution<size_t> intDist (1, 5);
     std::uniform_int_distribution<size_t> idxDist (0, 4);
 
@@ -124,9 +120,9 @@ static misc::UnitTest tensor_rnd_add_sub("Tensor", "Random_Add_Sub", [](){
 		opDim.insert(opDim.end(), dimensions.begin(), dimensions.end());
 		std::uniform_int_distribution<size_t> numDist (0, misc::product(dimensions));
 		
-		Tensor AS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
-		Tensor BS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
-		Tensor CS = Tensor::random(dimensions, numDist(rnd), rnd, dist);
+		Tensor AS = Tensor::random(dimensions, numDist(rnd));
+		Tensor BS = Tensor::random(dimensions, numDist(rnd));
+		Tensor CS = Tensor::random(dimensions, numDist(rnd));
 		Tensor I = Tensor::identity(opDim);
 		
 		Tensor AF(AS);

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,7 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest sparse_arith_neg("SparseTensor", "Arithmetic_Negatives", [](){
@@ -45,9 +45,6 @@ static misc::UnitTest sparse_arith_neg("SparseTensor", "Arithmetic_Negatives", [
 });
 
 static misc::UnitTest sparse_tripleIdx("SparseTensor", "triple_indices", [](){
-	std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
 	Tensor A({1,1,1}, Tensor::Representation::Sparse);
 	Tensor B({1,1}, Tensor::Representation::Sparse);
 	Tensor C({1,1}, Tensor::Representation::Sparse);

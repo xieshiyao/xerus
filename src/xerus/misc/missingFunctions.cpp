@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,6 +24,7 @@
 
 #include <xerus/misc/missingFunctions.h>
 #include <xerus/misc/check.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus {
     namespace misc {
@@ -32,9 +33,10 @@ namespace xerus {
 			REQUIRE(pipe, "could not start " << _cmd);
 			char buffer[128];
 			std::string result = "";
-			while(!feof(pipe)) {
-				if(fgets(buffer, 128, pipe) != NULL)
+			while(feof(pipe) == 0) {
+				if(fgets(buffer, 128, pipe) != nullptr) {
 					result += buffer;
+				}
 			}
 			pclose(pipe);
 			return result;
@@ -46,5 +48,5 @@ namespace xerus {
 			fputs(_stdin.c_str(), pipe);
 			pclose(pipe);
 		}
-	}
-}
+	} // namespace misc
+} // namespace xerus

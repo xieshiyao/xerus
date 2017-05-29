@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -29,7 +29,7 @@
 namespace xerus {
 	namespace misc {
 		namespace performanceAnalysis {
-			#ifdef PERFORMANCE_ANALYSIS
+			#ifdef XERUS_PERFORMANCE_ANALYSIS
 				const size_t startupTime = uTime();
 				std::map<std::string, std::map<std::string, std::map<std::string, std::pair<size_t, size_t>>>> calls;
 				
@@ -81,8 +81,8 @@ namespace xerus {
 					return mainStream.str();
 				}
 			#else 
-				std::string get_analysis() { return "PERFORMANCE_ANALYSIS must be set to obtain an analysis."; }
+				std::string get_analysis() { return "XERUS_PERFORMANCE_ANALYSIS must be set to obtain an analysis."; }
 			#endif
-		}
-	}
-}
+		} // namespace performanceAnalysis
+	} // namespace misc
+} // namespace xerus

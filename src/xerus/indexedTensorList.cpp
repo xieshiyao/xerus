@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -27,7 +27,7 @@
 
 namespace xerus {
 	namespace internal {
-		IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) : tensors(std::move(_old.tensors)) { } 
+		IndexedTensorList::IndexedTensorList(IndexedTensorList&& _old) noexcept : tensors(std::move(_old.tensors)) { } 
 		
 		IndexedTensorList::IndexedTensorList(IndexedTensor<Tensor>&& _first, IndexedTensor<Tensor>&& _second) {
 			tensors.emplace_back(&_first);
@@ -48,5 +48,5 @@ namespace xerus {
 			_first.tensors.emplace_back(&_second); // Hope this is standardconform. maybe we have to move-construct a new object
 			return std::move(_first);
 		}
-	}
-}
+	} // namespace internal
+} // namespace xerus

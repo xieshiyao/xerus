@@ -1,8 +1,0 @@
-/** @example "TT-Tensors (MPS)"
-
-In this part of the tutorial the basic functionalities of `xerus` for TT-Tensors are introduced. 
-
-
-
-\include ttTensor.cpp
-*/

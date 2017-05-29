@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,66 +20,14 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 using namespace xerus;
 
-// UNIT_TEST(Test, bla,
-// 	Index i,j,k,l;
-// 	Tensor U({2,2});
-// 	Tensor S({2,2});
-// 	Tensor Vt({2,2});
-// 	
-// 	double eps = 0.001;
-// 	
-// 	U[{0,0}] = eps;
-// 	U[{0,1}] = std::sqrt(1-eps*eps);
-// 	U[{1,0}] = std::sqrt(1-eps*eps);
-// 	U[{1,1}] = -eps;
-// 	
-// 	S[{0,0}] = 1/(eps*eps);
-// 	S[{1,1}] = 1/(1-eps*eps);
-// 	
-// 	Vt[{0,0}] = eps;
-// 	Vt[{0,1}] = std::sqrt(1-eps*eps);
-// 	Vt[{1,0}] = -std::sqrt(1-eps*eps);
-// 	Vt[{1,1}] = eps;
-// 	
-// 	LOG(test, "U: " << std::endl << U.to_string());
-// 	LOG(test, "S: " << std::endl << S.to_string());
-// 	LOG(test, "Vt: " << std::endl << Vt.to_string());
-// 	
-// 	
-// 	
-// 	Tensor UU;
-// 	UU(i,k) = U(j,i) * U(j,k);
-// 	LOG(test, "UU: " << std::endl << UU.to_string());
-// 	
-// 	UU(i,k) = U(i,j) * U(k,j);
-// 	LOG(test, "UU: " << std::endl << UU.to_string());
-// 	
-// 	Tensor X;
-// 	
-// 	X(i,l) = U(i,j)*S(j,k)*Vt(k,l);
-// 	LOG(test, "X: " << std::endl << X.to_string());
-// 	
-// 	Tensor M, P, L;
-// 	(M(i,j), L(j,k), P(k,l)) = SVD(X(i,l), 1/(1-eps*eps)); 
-// 	
-// 	LOG(test, "M: " << std::endl << M.to_string());
-// 	LOG(test, "L: " << std::endl << L.to_string());
-// 	LOG(test, "P: " << std::endl << P.to_string());
-// 	
-// 	
-// 	X(i,l) = M(i,j)* L(j,k)* P(k,l);
-// 	
-// 	LOG(test, "X: " << std::endl << X.to_string());
-// )
 
 static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
     //Random numbers
-    std::mt19937_64 rnd;
-    rnd.seed(73);
-	std::normal_distribution<value_t> dist (0.0, 1.0);
+    std::mt19937_64 rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1,3);
 	std::uniform_int_distribution<size_t> rankDist(1,4);
     
@@ -94,9 +42,9 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 		for(size_t d = 2; d <= D; ++d) {
 			stateDims.push_back(dimDist(rnd));
 			ranks.push_back(rankDist(rnd));
-			REQUIRE(d == stateDims.size() && d == ranks.size()+1, "IE");
+			INTERNAL_CHECK(d == stateDims.size() && d == ranks.size()+1, "IE");
 			
-			TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
+			TTTensor X = TTTensor::random(stateDims, ranks);
 			X /= X.frob_norm();
 			
 			Tensor fullX(X);
@@ -116,7 +64,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 			double alpha = std::abs(fullX[posB]/fullX[posA]);
 			double Xn = std::abs(fullX[posA]);
 			
-			size_t position = X.find_largest_entry(alpha, Xn);
+			size_t position = find_largest_entry(X, alpha, Xn);
 			
 			LOG(largestEntry, "Result: " << fullX[position] << " vs " << fullX[posA] << " at positions " << position << " and " << posA);
 			TEST(position == posA);
@@ -148,7 +96,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 // 		interationCounts[0]++;
 // 		for(size_t r = 1; r <= R; ++r) {
 // 			LOG(bla, r);
-// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, r), rnd, dist);
+// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, r), dist);
 // 			size_t maxRank = 0, interationCount = 0;
 // 			clock.step();
 // 			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
@@ -182,7 +130,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 // 		maxRanks[0]++;
 // 		interationCounts[0]++;
 // 		for(size_t d = 2; d <= D; ++d) {
-// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, 2), rnd, dist);
+// 			TTTensor X = TTTensor::random(std::vector<size_t>(d, 2), std::vector<size_t>(d-1, 2), dist);
 // 			size_t maxRank = 0, interationCount = 0;
 // 			clock.step();
 // 			size_t position = X.find_largest_entry(0.99, maxRank, interationCount);
@@ -202,8 +150,7 @@ static misc::UnitTest alg_largestEntry("Algorithm", "LargestEntry", [](){
 /*
 UNIT_TEST(Algorithm, largestEntryData,
     //Random numbers
-	std::random_device rd;
-    std::mt19937_64 rnd(rd());
+//     std::mt19937_64 rnd(rd());
 // 	std::uniform_real_distribution<value_t> dist(0.0, 1.0);
 	std::normal_distribution<value_t> dist(0.0, 1.0);
     
@@ -219,7 +166,7 @@ UNIT_TEST(Algorithm, largestEntryData,
 		std::vector<size_t> stateDims(d,2);
 		std::vector<size_t> ranks(d-1,4);
 		
-		TTTensor X = TTTensor::random(stateDims, ranks, rnd, dist);
+		TTTensor X = TTTensor::random(stateDims, ranks, dist);
 // 		TTTensor X = examples::peaking_diagonals(d, 2);
 		X /= X.frob_norm();
 		

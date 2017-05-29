@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,15 +20,12 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest tensor_factors("Tensor", "Factors", [](){
-    std::mt19937_64 rnd;
-    std::normal_distribution<value_t> dist (0.0, 10.0);
-
-    Tensor A = Tensor::random({2,7,5,5,2,7}, rnd, dist);
-    Tensor B = Tensor::random({2,7,5,5,2,7}, rnd, dist);
+    Tensor A = Tensor::random({2,7,5,5,2,7});
+    Tensor B = Tensor::random({2,7,5,5,2,7});
     Tensor A3 = 3*A;
     Tensor B7 = 7*B;
 	TEST(!A.has_factor());

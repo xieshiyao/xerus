@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,7 +20,7 @@
 
 #include <xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 
 using namespace xerus;
 
@@ -96,7 +96,7 @@ static misc::UnitTest tn_many_access("TensorNetwork", "many_element_access", [](
 	measurments.add({0,1,1,1}, 0);
 	measurments.add({0,1,1,2}, 0);
 	
-	res.measure(measurments);
+	measurments.measure(res);
 	
 	for(size_t m = 0; m < measurments.size(); ++m) {
 		TEST(misc::approx_equal(measurments.measuredValues[m], res[measurments.positions[m]]));

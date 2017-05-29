@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -20,19 +20,16 @@
 
 #include<xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 
 static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims(8,4);
 	std::vector<size_t> stateRank(7,2);
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTensor zero = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor zero = TTTensor::random(stateDims, stateRank);
 	zero *= 1e-16;
 	
 	TTTangentVector tangentZero(X, zero);
@@ -72,7 +69,7 @@ static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
 		MTEST(frob_norm(X-Y) < 1e-8, "hosvdII " << frob_norm(X-Y));
 	}
 	
-	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	const value_t EPS = 1e-3;
 	change *= EPS / frob_norm(change);
 	
@@ -152,15 +149,12 @@ static misc::UnitTest alg_retr("Algorithm", "retractions", [](){
 
 
 static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
-	std::mt19937_64 rnd(0xDEADBEEF);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
 	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTensor delta = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor delta = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange(X, delta);
 	TTTensor Pdelta = TTTensor(tangentChange);
 	TTTensor deltaPdelta = delta - Pdelta;
@@ -174,11 +168,11 @@ static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
 			b.move_core(0);
 			// check Pb = b
 			TTTensor pb = TTTensor(TTTangentVector(X, b));
-			MTEST(frob_norm(b-pb)/frob_norm(b) < 2e-14, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
+			MTEST(frob_norm(b-pb)/frob_norm(b) < 1e-13, n << " " << i << " " << frob_norm(b-pb)/frob_norm(b));
 			
 			// check orthogonality
 			value_t scalarProd = value_t(deltaPdelta(j&0) * b(j&0));
-			MTEST(std::abs(scalarProd) < 3e-10, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
+			MTEST(std::abs(scalarProd) < 1e-9, n << " " << i << " prod: " << scalarProd << " <delta|b> = " << value_t(delta(j&0) * b(j&0)));
 			
 			MTEST(misc::approx_equal(value_t(delta(j&0) * b(j&0)), value_t(Pdelta(j&0) * b(j&0)), 2e-10),  n << " " << i << " " << value_t(delta(j&0) * b(j&0)) << " " << value_t(Pdelta(j&0) * b(j&0)));
 		}
@@ -187,15 +181,12 @@ static misc::UnitTest tttv_ortho("TTTangentVector", "orthogonality", [](){
 
 
 static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
-	std::mt19937_64 rnd(0xDEADBEEF);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims({2,3,5,4,3,2,4,1,2});
 	std::vector<size_t> stateRank({ 2,2,4,1,3,4,2,2});
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange1(X, change);
 	// projection should decrease norm
 	MTEST(frob_norm(change) > frob_norm(TTTensor(tangentChange1)), frob_norm(change) << " " << frob_norm(TTTensor(tangentChange1)));
@@ -210,12 +201,12 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
 		  "norm2 " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
 	
-	TTTensor change2 = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor change2 = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange2(X, change2);
 	
 	scalarProdInTangentSpace = tangentChange1.scalar_product(tangentChange2);
 	scalarProdInEmbeddingSpace = value_t(TTTensor(tangentChange1)(j&0) * TTTensor(tangentChange2)(j&0));
-	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-14), 
+	MTEST(misc::approx_equal(scalarProdInEmbeddingSpace, scalarProdInTangentSpace, 1e-10), 
 		  "scalarProd " << scalarProdInEmbeddingSpace << " " << scalarProdInTangentSpace << " diff " << (scalarProdInEmbeddingSpace-scalarProdInTangentSpace));
 	
 	// test whether copy assignment, += and * work as intended
@@ -227,25 +218,22 @@ static misc::UnitTest tttv_creation("TTTangentVector", "creation", [](){
 	
 	// projection P*P = P
 	tangentChange2 = TTTangentVector(X, TTTensor(tangentChange1));
-	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 3e-15, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
-	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 4e-15, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
+	MTEST((tangentChange2.frob_norm() - tangentChange1.frob_norm())/tangentChange1.frob_norm() < 1e-14, "PP " << tangentChange2.frob_norm() - tangentChange1.frob_norm()/tangentChange1.frob_norm());
+	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 1e-14, "PP2 " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
 	
 	// tangent space of 10*X should be equal to tangent space of X
 	tangentChange2 = TTTangentVector(10 * X, change);
-	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 5e-15, "10X " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
+	MTEST((frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm() < 1e-14, "10X " << (frob_norm(TTTensor(tangentChange1) - TTTensor(tangentChange2)))/tangentChange1.frob_norm());
 });
 
 
 static misc::UnitTest alg_vecTrans("Algorithm", "vectorTransport", [](){
-	std::mt19937_64 rnd(0xC0CAC01A);
-	std::normal_distribution<double> dist (0.0, 1.0);
-	
 	std::vector<size_t> stateDims(8,4);
 	std::vector<size_t> stateRank(7,2);
 	Index j;
 	
-	TTTensor X = TTTensor::random(stateDims, stateRank, rnd, dist);
-	TTTensor change = TTTensor::random(stateDims, stateRank, rnd, dist);
+	TTTensor X = TTTensor::random(stateDims, stateRank);
+	TTTensor change = TTTensor::random(stateDims, stateRank);
 	TTTangentVector tangentChange1(X, change);
 	TTTangentVector tangentChange2(tangentChange1);
 	
@@ -264,7 +252,7 @@ static misc::UnitTest alg_vecTrans("Algorithm", "vectorTransport", [](){
 		ProjectiveVectorTransport(newX, tangentChange2);
 		value_t normNew = tangentChange2.frob_norm();
 		value_t changeAngle = (value_t(TTTensor(tangentChange1)(j&0) * TTTensor(tangentChange2)(j&0)) / normOld / normNew);
-		MTEST(1 - std::abs(changeAngle) < std::max(eps*eps, 5e-16), eps << " 1-angle: " << (1-changeAngle));
+		MTEST(1 - std::abs(changeAngle) < std::max(eps*eps, 1e-15), eps << " 1-angle: " << (1-changeAngle));
 		MTEST(normNew <= normOld + 1e-13, eps << " norm: " << normNew << " vs " << normOld << " diff " << normNew-normOld);
 	}
 });

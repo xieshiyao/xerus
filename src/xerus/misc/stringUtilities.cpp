@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,102 +24,88 @@
 
 #include <xerus/misc/stringUtilities.h>
 #include <memory>
+#include <sstream>
 #include <cxxabi.h>
 
 namespace xerus {
-    namespace misc {
-        
-        std::string demangle_cxa(const std::string &_cxa) {
-            int status;
-            std::unique_ptr<char, void(*)(void*)> realname(abi::__cxa_demangle(_cxa.data(), nullptr, nullptr, &status), &free);
-            if (status != 0) { return _cxa; }
+	namespace misc {
+		
+		std::string demangle_cxa(const std::string &_cxa) {
+			int status;
+			std::unique_ptr<char, void(*)(void*)> realname(abi::__cxa_demangle(_cxa.data(), nullptr, nullptr, &status), &free);
+			if (status != 0) { return _cxa; }
 
-            if (realname) { 
-                return std::string(realname.get()); 
-            } else { 
-                return ""; 
-            }
-        }
+			if (realname) { 
+				return std::string(realname.get()); 
+			} 
+			return ""; 
+		}
 
-        _const_ std::string normalize_pathname(const std::string &_name) {
-            std::vector<std::string> oldpath = explode(_name,'/');
-            std::vector<std::string *> newpath;
-            for (std::string &f : oldpath) {
-                if (f.empty()) continue;
-                if (f==".." && !newpath.empty() && *newpath.back() != "..") {
-                    newpath.pop_back();
-                } else {
-                    newpath.push_back(&f);
-                }
-            }
-            std::string ret;
-            for (std::string *f : newpath) {
-                ret += *f;
-                ret += '/';
-            }
-            if (!ret.empty()) ret.pop_back();
-            return ret;
-        }
+		std::string normalize_pathname(const std::string &_name) {
+			std::vector<std::string> oldpath = explode(_name,'/');
+			std::vector<std::string *> newpath;
+			for (std::string &f : oldpath) {
+				if (f.empty()) { continue; }
+				if (f==".." && !newpath.empty() && *newpath.back() != "..") {
+					newpath.pop_back();
+				} else {
+					newpath.push_back(&f);
+				}
+			}
+			std::string ret;
+			for (std::string *f : newpath) {
+				ret += *f;
+				ret += '/';
+			}
+			if (!ret.empty()) { ret.pop_back(); }
+			return ret;
+		}
 
-        std::vector<std::string> explode(const std::string& _string, const char delim) {
-            std::vector<std::string> result;
-            std::istringstream iss(_string);
+		std::vector<std::string> explode(const std::string& _string, const char _delim) {
+			std::vector<std::string> result;
+			std::istringstream iss(_string);
 
-            std::string token;
-            while(std::getline(iss, token, delim)) {
-                result.push_back(std::move(token));
-            }
+			std::string token;
+			while(std::getline(iss, token, _delim)) {
+				result.push_back(std::move(token));
+			}
 
-            return result;
-        }
+			return result;
+		}
 
-        void replace(std::string& _string, const std::string& _search, const std::string& _replace) {
-            size_t pos = 0;
-            while((pos = _string.find(_search, pos)) != std::string::npos){
-                _string.replace(pos, _search.length(), _replace);
-                pos += _replace.length();
-            }
-        }
-
-        void trim(std::string& _string, const std::string& whitespace) {
-            const size_t strBegin = _string.find_first_not_of(whitespace);
-            if (strBegin == std::string::npos) {
-                _string.clear();
-            } else {
-                _string.erase(0, strBegin);
-                const size_t strEnd = _string.find_last_not_of(whitespace);
-                _string.erase(strEnd+1, _string.length()-strEnd);
-            }
-        }
-        
-        std::string trim(const std::string& _string, const std::string& whitespace) {
+		void replace(std::string& _string, const std::string& _search, const std::string& _replace) {
+			size_t pos = 0;
+			while((pos = _string.find(_search, pos)) != std::string::npos){
+				_string.replace(pos, _search.length(), _replace);
+				pos += _replace.length();
+			}
+		}
+		
+		std::string trim(const std::string& _string, const std::string& whitespace) {
 			const size_t strBegin = _string.find_first_not_of(whitespace);
 			if (strBegin == std::string::npos) {
 				return "";
-			} else {
-				const size_t strEnd = _string.find_last_not_of(whitespace);
-				return _string.substr(strBegin, strEnd - strBegin + 1);
-			}
+			} 
+			const size_t strEnd = _string.find_last_not_of(whitespace);
+			return _string.substr(strBegin, strEnd - strBegin + 1);
 		}
 
-        void reduce(std::string& _string, const std::string& whitespace, const std::string& fill) {
-            // Trim first
-            trim(_string, whitespace);
+		std::string reduce(const std::string& _string, const std::string& whitespace, const std::string& fill) {
+			// Trim first
+			auto trimedString = trim(_string, whitespace); 
 
-            // replace sub ranges
-            auto beginSpace = _string.find_first_of(whitespace);
-            while (beginSpace != std::string::npos)
-            {
-                const auto endSpace = _string.find_first_not_of(whitespace, beginSpace);
-                const auto range = endSpace - beginSpace;
+			// Replace sub ranges
+			auto beginSpace = trimedString.find_first_of(whitespace);
+			while (beginSpace != std::string::npos) {
+				const auto endSpace = trimedString.find_first_not_of(whitespace, beginSpace);
+				const auto range = endSpace - beginSpace;
 
-                _string.replace(beginSpace, range, fill);
+				trimedString.replace(beginSpace, range, fill);
 
-                const auto newStart = beginSpace + fill.length();
-                beginSpace = _string.find_first_of(whitespace, newStart);
-            }
-        }
-
-
-    }
-}
+				const auto newStart = beginSpace + fill.length();
+				beginSpace = trimedString.find_first_of(whitespace, newStart);
+			}
+			return trimedString;
+		}
+	} // namespace misc
+} // namespace xerus

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -37,6 +37,7 @@ namespace xerus {
 	class ALSVariant {
 	public:
 		enum Direction { Increasing, Decreasing };
+		
 	protected:
 		double solve(const TTOperator *_Ap, TTTensor &_x, const TTTensor &_b, size_t _numHalfSweeps, value_t _convergenceEpsilon, PerformanceData &_perfData = NoPerfData) const;
 	
@@ -53,7 +54,7 @@ namespace xerus {
 			ContractedTNCache rhsCache; ///< stacks for the right-hand-side (either xb or xAtb)
 			value_t normB; ///< norm of the (global) right hand side
 			std::pair<size_t, size_t> optimizedRange; ///< range of indices for the nodes of _x that need to be optimized
-			bool cannonicalizeAtTheEnd; ///< whether _x should be cannonicalized at the end
+			bool canonicalizeAtTheEnd; ///< whether _x should be canonicalized at the end
 			size_t corePosAtTheEnd; ///< core position that should be restored at the end of the algorithm
 			std::function<value_t()> energy_f; ///< the energy functional used for this calculation
 			std::function<value_t()> residual_f; ///< the functional to calculate the current residual
@@ -68,7 +69,7 @@ namespace xerus {
 			/**
 			* @brief Finds the range of notes that need to be optimized and orthogonalizes @a _x properly
 			* @details finds full-rank nodes (these can wlog be set to identity and need not be optimized)
-			* requires cannonicalizeAtTheEnd and corePosAtTheEnd to be set
+			* requires canonicalizeAtTheEnd and corePosAtTheEnd to be set
 			* sets optimizedRange
 			* modifies x
 			*/
@@ -136,7 +137,7 @@ namespace xerus {
 				: sites(_sites), numHalfSweeps(_numHalfSweeps), convergenceEpsilon(1e-6), 
 				useResidualForEndCriterion(_useResidual), preserveCorePosition(true), assumeSPD(_assumeSPD), localSolver(_localSolver)
 		{
-			REQUIRE(_sites>0, "");
+			XERUS_REQUIRE(_sites>0, "");
 		}
 		
 		/**

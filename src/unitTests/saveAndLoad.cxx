@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -18,21 +18,22 @@
 // or contact us at contact@libXerus.org.
 
 
-#include<xerus.h>
+#include <xerus.h>
 
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/misc/internal.h"
+#include "../../include/xerus/test/test.h"
 using namespace xerus;
 
 static misc::UnitTest saveload_tensor("SaveAndLoad", "TensorTSV", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
 	xerus::misc::exec("mkdir -p unitTestFiles");
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1, rnd, normalDist);
-		Tensor sX = Tensor::random(dimsX, misc::product(dimsX)/9+1, rnd, normalDist);
+		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1);
+		Tensor sX = Tensor::random(dimsX, misc::product(dimsX)/9+1);
 		
 		Tensor A = sA.dense_copy();
 		Tensor X = sX.dense_copy();
@@ -67,15 +68,15 @@ static misc::UnitTest saveload_tensor("SaveAndLoad", "TensorTSV", [](){
 
 
 static misc::UnitTest saveload_tensorbin("SaveAndLoad", "TensorBinary", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
 	xerus::misc::exec("mkdir -p unitTestFiles");
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1, rnd, normalDist);
-		Tensor sX = Tensor::random(dimsX, misc::product(dimsX)/9+1, rnd, normalDist);
+		Tensor sA = Tensor::random(dimsA, misc::product(dimsA)/9+1);
+		Tensor sX = Tensor::random(dimsX, misc::product(dimsX)/9+1);
 		
 		Tensor A = sA.dense_copy();
 		Tensor X = sX.dense_copy();
@@ -109,15 +110,15 @@ static misc::UnitTest saveload_tensorbin("SaveAndLoad", "TensorBinary", [](){
 
 
 static misc::UnitTest saveload_tntsv("SaveAndLoad", "TensorNetworkTSV", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
 	xerus::misc::exec("mkdir -p unitTestFiles");
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA, rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor X = Tensor::random(dimsX);
 		
 		TensorNetwork ttA = TTOperator(A, 0.33);
 		TensorNetwork ttX = TTTensor(X, 0.33);
@@ -143,15 +144,15 @@ static misc::UnitTest saveload_tntsv("SaveAndLoad", "TensorNetworkTSV", [](){
 
 
 static misc::UnitTest saveload_tnbin("SaveAndLoad", "TensorNetworkBinary", [](){
-	UNIT_TEST_RND;
+	std::mt19937_64 &rnd = xerus::misc::randomEngine;
 	std::uniform_int_distribution<size_t> dimDist(1, 3);
 	std::vector<size_t> dims1, dims2, dimsX, dimsA;
 	
 	xerus::misc::exec("mkdir -p unitTestFiles");
 	
 	for(size_t d = 1; d <= 8; ++d) {
-		Tensor A = Tensor::random(dimsA,  rnd, normalDist);
-		Tensor X = Tensor::random(dimsX, rnd, normalDist);
+		Tensor A = Tensor::random(dimsA);
+		Tensor X = Tensor::random(dimsX);
 		
 		TensorNetwork ttA = TTOperator(A, 0.33);
 		TensorNetwork ttX = TTTensor(X, 0.33);

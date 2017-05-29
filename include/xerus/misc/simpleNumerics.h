@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -25,25 +25,24 @@
 #pragma once
 
 #include "standard.h"
+
 #include <vector>
 #include <limits>
 #include <functional>
 
-namespace xerus {  namespace misc {
+#include <boost/math/tools/polynomial.hpp>
+
+namespace xerus { namespace misc {
+	
 	/// @brief Performs a Romberg Integration (richardson extrapolation of regular riemannian sum) + adaptive refinement
-	double integrate(const std::function<double(double)> &_f, double _a, double _b, double _eps=std::numeric_limits<double>::epsilon(), 
-					uint _minIter=4, uint _maxIter=6, uint _branchFactor=7, 
-					uint _maxRecursion=10, bool _relativeError=true);
+	double integrate(const std::function<double(double)>& _f, double _a, double _b, double _eps = std::numeric_limits<double>::epsilon(), uint _minIter = 4, uint _maxIter = 6, uint _branchFactor = 7, uint _maxRecursion = 10, bool _relativeError = true);
 
-	double integrate_segmented(const std::function<double(double)> &_f, double _a, double _b, double _segmentation, 
-							double _eps=1e-8, uint _minIter=4, uint _maxIter=6, uint _branchFactor=8,
-							uint _maxRecursion=10);
-
+	double integrate_segmented(const std::function<double(double)> &_f, double _a, double _b, double _segmentation, double _eps = 1e-8, uint _minIter = 4, uint _maxIter = 6, uint _branchFactor = 8, uint _maxRecursion = 10);
 	
 	double find_root_bisection(const std::function<double(double)> &_f, double _min, double _max, double _epsilon = 1e-14);
-
+	
 	template<class T>
-	_pure_ T difference(T _a, T _b) {
+	__attribute__((const)) T difference(T _a, T _b) {
 		if (_a > _b) {
 			return (_a-_b);
 		} else {
@@ -61,13 +60,15 @@ namespace xerus {  namespace misc {
 		
 		size_t terms() const;
 		
-		Polynomial &operator-=(const Polynomial &_rhs);
+		Polynomial& operator+=(const Polynomial &_rhs);
+		
+		Polynomial& operator-=(const Polynomial &_rhs);
+		
+		Polynomial& operator*=(double _rhs);
+		
+		Polynomial& operator/=(double _rhs);
 		
 		Polynomial operator*(const Polynomial &_rhs) const;
-		
-		Polynomial &operator/=(double _rhs);
-		
-		Polynomial &operator*=(double _rhs);
 		
 		Polynomial operator*(double _rhs) const;
 		

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -59,6 +59,7 @@ extern "C"
 #include <xerus/blasLapackWrapper.h>
 #include <xerus/misc/basicArraySupport.h>
 #include <xerus/misc/math.h>
+#include <xerus/misc/internal.h>
 
 
 
@@ -72,14 +73,26 @@ namespace xerus {
 		
 		//----------------------------------------------- LEVEL I BLAS ----------------------------------------------------------
 		
+		double one_norm(const double* const _x, const size_t _n) {
+			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			
+			XERUS_PA_START;
+			
+			const double result = cblas_dasum(static_cast<int>(_n), _x, 1);
+			
+			XERUS_PA_END("Dense BLAS", "One Norm", misc::to_string(_n));
+			
+			return result;
+		}
+		
 		double two_norm(const double* const _x, const size_t _n) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			const double result = cblas_dnrm2(static_cast<int>(_n), _x, 1);
 			
-			PA_END("Dense BLAS", "Two Norm", misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Two Norm", misc::to_string(_n));
 			
 			return result;
 		}
@@ -87,11 +100,11 @@ namespace xerus {
 		double dot_product(const double* const _x, const size_t _n, const double* const _y) {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			const double result = cblas_ddot(static_cast<int>(_n), _x, 1, _y, 1);
 			
-			PA_END("Dense BLAS", "Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Dot Product", misc::to_string(_n)+"*"+misc::to_string(_n));
 			
 			return result;
 		}
@@ -106,28 +119,28 @@ namespace xerus {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			if(!_transposed) {
 				cblas_dgemv(CblasRowMajor, CblasNoTrans, static_cast<int>(_m), static_cast<int>(_n), _alpha, _A, static_cast<int>(_n), _y, 1, 0.0, _x, 1);
 			} else {
 				cblas_dgemv(CblasRowMajor, CblasTrans, static_cast<int>(_n), static_cast<int>(_m), _alpha, _A, static_cast<int>(_m) , _y, 1, 0.0, _x, 1);
 			}
 			
-			PA_END("Dense BLAS", "Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Matrix Vector Product", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_n));
 		}
 		
 		void dyadic_vector_product(double* _A, const size_t _m, const size_t _n, const double _alpha, const double*const  _x, const double* const _y) {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			//Blas wants to add the product to A, but we don't.
 			misc::set_zero(_A, _m*_n);
 			
 			cblas_dger(CblasRowMajor, static_cast<int>(_m), static_cast<int>(_n), _alpha, _x, 1, _y, 1, _A, static_cast<int>(_n));
 			
-			PA_END("Dense BLAS", "Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
+			XERUS_PA_END("Dense BLAS", "Dyadic Vector Product", misc::to_string(_m)+" o "+misc::to_string(_n));
 		}
 		
 		
@@ -159,7 +172,7 @@ namespace xerus {
 				REQUIRE(_lda <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 				REQUIRE(_ldb <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 				
-				PA_START;
+				XERUS_PA_START;
 				
 				cblas_dgemm( CblasRowMajor,                             // Array storage format
 						_transposeA ? CblasTrans : CblasNoTrans,        // LHS transposed?
@@ -177,7 +190,7 @@ namespace xerus {
 						static_cast<int>(_rightDim)                     // LDC
 				);
 				
-				PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
+				XERUS_PA_END("Dense BLAS", "Matrix-Matrix-Multiplication", misc::to_string(_leftDim)+"x"+misc::to_string(_middleDim)+" * "+misc::to_string(_middleDim)+"x"+misc::to_string(_rightDim));
 			}
 		}
 		
@@ -198,24 +211,24 @@ namespace xerus {
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			std::unique_ptr<double[]> tmpA(new double[_m*_n]);
 			misc::copy(tmpA.get(), _A, _m*_n);
 			
 			int lapackAnswer = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', static_cast<int>(_m), static_cast<int>(_n), _A, static_cast<int>(_n), _S, _U, static_cast<int>(std::min(_m, _n)), _Vt, static_cast<int>(_n));
-			CHECK(lapackAnswer == 0, error, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
-			CHECK(lapackAnswer == 0, error, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << static_cast<int>(_m) << ", " << static_cast<int>(_n) << ", " << _A << ", " << static_cast<int>(_n) <<", " 
+			CHECK(lapackAnswer == 0, warning, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
+			CHECK(lapackAnswer == 0, warning, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << static_cast<int>(_m) << ", " << static_cast<int>(_n) << ", " << _A << ", " << static_cast<int>(_n) <<", " 
 			<< _S <<", " << _U << ", " << static_cast<int>(std::min(_m, _n)) << ", " << _Vt << ", " << static_cast<int>(_n) << ");");
 			if(lapackAnswer != 0) {
-				LOG(error, "A was: ");
-				for(size_t i=0; i < _m; ++i) {
-					for(size_t j=0; j < _n; ++j) {
-						LOG(error, tmpA[i*_n+j]);
-					}
-				}
+				LOG(warning, "SVD failed ");
+// 				for(size_t i=0; i < _m; ++i) {
+// 					for(size_t j=0; j < _n; ++j) {
+// 						LOG(warning, tmpA[i*_n+j]);
+// 					}
+// 				}
 			}
 			
-			PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
@@ -234,7 +247,7 @@ namespace xerus {
 			REQUIRE(_n > 0, "Dimension n must be larger than zero");
 			REQUIRE(_m > 0, "Dimension m must be larger than zero");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t maxRank = std::min(_m, _n);
@@ -286,7 +299,7 @@ namespace xerus {
 				}
 			}
 			
-			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_m)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_n));
 			
 			return std::make_tuple(std::move(Q), std::move(C), rank);
 		}
@@ -305,10 +318,10 @@ namespace xerus {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			REQUIRE(_m > 0, "Dimension n must be larger than zero");
-			REQUIRE(_n > 0, "Dimension m must be larger than zero");
+			REQUIRE(_m > 0, "Dimension m must be larger than zero");
+			REQUIRE(_n > 0, "Dimension n must be larger than zero");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t maxRank = std::min(_n, _m);
@@ -352,7 +365,7 @@ namespace xerus {
 			std::unique_ptr<double[]> Q(new double[_n*rank]);
 			misc::copy(Q.get(), _A, _n*rank);
 			
-			PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_n)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_m));
+			XERUS_PA_END("Dense LAPACK", "QRP Factorisation", misc::to_string(_n)+"x"+misc::to_string(rank)+" * "+misc::to_string(rank)+"x"+misc::to_string(_m));
 			
 			return std::make_tuple(std::move(C), std::move(Q), rank);
 		}
@@ -382,7 +395,7 @@ namespace xerus {
 			REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: Q:" << _Q << " R: " << _R << " A: " << _A);
 			REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t rank = std::min(_m, _n); 
@@ -421,7 +434,7 @@ namespace xerus {
 				}
 			}
 			
-			PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "QR Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
@@ -449,7 +462,7 @@ namespace xerus {
 			REQUIRE(_Q && _R && _A, "QR decomposition must not be called with null pointers: R " << _R << " Q: " << _Q << " A: " << _A);
 			REQUIRE(_A != _R, "_A and _R must be different, otherwise qr call will fail.");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			// Maximal rank is used by Lapacke
 			const size_t rank = std::min(_m, _n); 
@@ -458,7 +471,7 @@ namespace xerus {
 			const std::unique_ptr<double[]> tau(new double[rank]);
 			
 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgerqf(LAPACK_ROW_MAJOR, static_cast<int>(_m), static_cast<int>(_n), _A, static_cast<int>(_n), tau.get());
-			CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton. Lapacke says: " << lapackAnswer );
+			CHECK(lapackAnswer == 0, error, "Unable to perform QR factorisaton. Lapacke says: " << lapackAnswer << ". Call was: LAPACKE_dgerqf(LAPACK_ROW_MAJOR, "<<static_cast<int>(_m)<<", "<<static_cast<int>(_n)<<", "<<_A<<", "<<static_cast<int>(_n)<<", "<<tau.get()<<");" );
 			
 			
 			// Copy the upper triangular Matrix R (_m x rank) into position.
@@ -473,7 +486,7 @@ namespace xerus {
 			
 			// Create orthogonal matrix Q (in _A). Lapacke expects to get the last rank rows of A...
 			IF_CHECK( lapackAnswer = ) LAPACKE_dorgrq(LAPACK_ROW_MAJOR, static_cast<int>(rank), static_cast<int>(_n), static_cast<int>(rank), _A+(_m-rank)*_n, static_cast<int>(_n), tau.get()); 
-			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the RQ factorisation. Lapacke says: " << lapackAnswer);
+			CHECK(lapackAnswer == 0, error, "Unable to reconstruct Q from the RQ factorisation. Lapacke says: " << lapackAnswer << ". Call was: LAPACKE_dorgrq(LAPACK_ROW_MAJOR, "<<static_cast<int>(rank)<<", "<<static_cast<int>(_n)<<", "<<static_cast<int>(rank)<<", "<<_A+(_m-rank)*_n<<", "<<static_cast<int>(_n)<<", "<<tau.get()<<");");
 
 			
 			//Copy Q (rank x _n) into position
@@ -481,93 +494,233 @@ namespace xerus {
 				misc::copy(_Q, _A+(_m-rank)*_n, rank*_n);
 			}
 			
-			PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "RQ Factorisation", misc::to_string(_m)+"x"+misc::to_string(_n));
 		}
 		
 		
-	/*  TODO we need test cases for these  
-		/// Solves Ax = b for x
-		void solve( double* const _x, const double* const _A, const size_t _n, const double* const _b) {
-			const std::unique_ptr<double[]> tmpA(new double[_n*_n]);
-			array_copy(tmpA.get(), _A, _n*_n);
-			array_copy(_x, _b, _n);
+		static bool is_symmetric(const double* const _A, const size_t _n) {
+			double max = 0;
+			for (size_t i=0; i<_n*_n; ++i) {
+				max = std::max(max, _A[i]);
+			}
 			
-			solve_destructive(_x, tmpA.get(), _n);
+			for (size_t i=0; i<_n; ++i) {
+				for (size_t j=i+1; j<_n; ++j) {
+					if (std::abs(_A[i*_n + j] - _A[i + j*_n]) >= 4 * max * std::numeric_limits<double>::epsilon()) {
+// 						LOG(aslkdjj, std::abs(_A[i*_n + j] - _A[i + j*_n]) << " / " << _A[i*_n + j] << " " << max);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		
+		/// @brief checks whether the diagonal of @a _A is all positive or all negative. returns false otherwise
+		static bool pos_neg_definite_diagonal(const double* const _A, const size_t _n) {
+			bool positive = (_A[0] > 0);
+			const size_t steps=_n+1;
+			if (positive) {
+				for (size_t i=1; i<_n; ++i) {
+					if (_A[i*steps] < std::numeric_limits<double>::epsilon()) {
+						return false;
+					}
+				}
+				return true;
+			} else {
+				for (size_t i=1; i<_n; ++i) {
+					if (_A[i*steps] > -std::numeric_limits<double>::epsilon()) {
+						return false;
+					}
+				}
+				return true;
+			}
+			
 		}
 		
 		/// Solves Ax = b for x
-		void solve_destructive( double* const _bToX, double* const _A, const size_t _n) {
+		/// order of checks and solvers inspired by matlabs mldivide https://de.mathworks.com/help/matlab/ref/mldivide.html
+		void solve(double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _nrhs) {
+			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_nrhs <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			START_TIME;
-			
-			std::unique_ptr<int[]> pivot(new int[_n]);
-			
-			int lapackAnswer = LAPACKE_dgesv(
-				LAPACK_ROW_MAJOR,
-				static_cast<int>(_n),       // Dimensions of A (nxn)
-				1,              // Number of b's, here always one
-				_A,             // The input matrix A, will be destroyed
-				static_cast<int>(_n),       // LDA
-				pivot.get(),    // Output of the pivot ordering
-				_bToX,          // Input the vector b, output the vector x
-				1 );
-			CHECK(lapackAnswer == 0, error, "Unable to solves Ax = b. Lapacke says: " << lapackAnswer);
-			
-			ADD_CALL("Solve ", to_string(_n)+"x"+to_string(_n));
-		}*/
-		
-	
-		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b){
 			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
 			misc::copy(tmpA.get(), _A, _m*_n);
 			
-			const std::unique_ptr<double[]> tmpB(new double[_n]);
-			misc::copy(tmpB.get(), _b, _n);
+			LOG(debug, "solving with...");
 			
-			solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get());
+			// not rectangular -> fallback to least-squares (QR or SVD decomposition to solve)
+			if (_m != _n) {
+				LOG(debug, "SVD");
+				const std::unique_ptr<double[]> tmpB(new double[_m*_nrhs]);
+				misc::copy(tmpB.get(), _b, _m*_nrhs);
+				solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get(), _nrhs);
+				return;
+			}
+			
+			// not symmetric -> LU solver
+			if (!is_symmetric(_A, _n)) {
+				LOG(debug, "LU");
+				XERUS_PA_START;
+				
+				std::unique_ptr<int[]> pivot(new int[_n]);
+				
+				misc::copy(_x, _b, _n);
+				
+				IF_CHECK( int lapackAnswer = ) LAPACKE_dgesv(
+					LAPACK_ROW_MAJOR,
+					static_cast<int>(_n),		// Dimensions of A (nxn)
+					static_cast<int>(_nrhs), 	// Number of rhs b
+					tmpA.get(),					// input: A, output: L and U
+					static_cast<int>(_n),		// LDA
+					pivot.get(),				// output: permutation P
+					_x,							// input: rhs b, output: solution x
+					static_cast<int>(_nrhs)		// ldb
+				);
+				CHECK(lapackAnswer == 0, error, "Unable to solve Ax = b (PLU solver). Lapacke says: " << lapackAnswer);
+				
+				XERUS_PA_END("Dense LAPACK", "Solve (PLU)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+				return;
+			}
+			
+			// positive or negative diagonal -> try cholesky
+			if (pos_neg_definite_diagonal(_A, _n)) {
+				LOG(debug, "trying cholesky");
+				int lapackAnswer = 0;
+				{
+					XERUS_PA_START;
+					
+					lapackAnswer = LAPACKE_dpotrf2(
+						LAPACK_ROW_MAJOR,
+						'U', 					// Upper triangle of A is read
+						static_cast<int>(_n),	// dimensions of A
+						tmpA.get(),				// input: A, output: cholesky factorisation
+						static_cast<int>(_n)	// LDA
+					);
+					
+					XERUS_PA_END("Dense LAPACK", "Cholesky decomposition", misc::to_string(_n)+"x"+misc::to_string(_n));
+				}
+				
+				if (lapackAnswer == 0) {
+					LOG(debug, "cholesky");
+					XERUS_PA_START;
+					
+					misc::copy(_x, _b, _n);
+					
+					lapackAnswer = LAPACKE_dpotrs(
+						LAPACK_ROW_MAJOR,
+						'U',					// upper triangle of cholesky decomp is stored in tmpA
+						static_cast<int>(_n),	// dimensions of A
+						static_cast<int>(_nrhs),// number of rhs
+						tmpA.get(),				// input: cholesky decomp
+						static_cast<int>(_n), 	// lda
+						_x,						// input: rhs b, output: solution x
+						static_cast<int>(_nrhs)	// ldb
+					);
+					CHECK(lapackAnswer == 0, error, "Unable to solve Ax = b (cholesky solver). Lapacke says: " << lapackAnswer);
+					
+					XERUS_PA_END("Dense LAPACK", "Solve (Cholesky)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+					
+					return;
+				} else {
+					// restore tmpA
+					misc::copy(tmpA.get(), _A, _m*_n);
+				}
+			}
+			
+			LOG(debug, "LDL");
+			// non-definite diagonal or choleksy failed -> fallback to LDL^T decomposition
+			XERUS_PA_START;
+			
+			misc::copy(_x, _b, _n);
+			std::unique_ptr<int[]> pivot(new int[_n]);
+			
+			LAPACKE_dsysv(
+				LAPACK_ROW_MAJOR,
+				'U',					// upper triangular part of _A is accessed
+				static_cast<int>(_n),	// dimension of A
+				static_cast<int>(_nrhs),// number of rhs
+				tmpA.get(), 			// input: A, output: part of the LDL decomposition
+				static_cast<int>(_n),	// lda
+				pivot.get(), 			// output: details of blockstructure of D
+				_x,						// input: rhs b, output: solution x
+				static_cast<int>(_nrhs)	// ldb
+			);
+			
+			XERUS_PA_END("Dense LAPACK", "Solve (LDL)", misc::to_string(_n)+"x"+misc::to_string(_n)+"x"+misc::to_string(_nrhs));
+		}
+		
+	
+		void solve_least_squares( double* const _x, const double* const _A, const size_t _m, const size_t _n, const double* const _b, const size_t _p){
+			const std::unique_ptr<double[]> tmpA(new double[_m*_n]);
+			misc::copy(tmpA.get(), _A, _m*_n);
+			
+			const std::unique_ptr<double[]> tmpB(new double[_m*_p]);
+			misc::copy(tmpB.get(), _b, _m*_p);
+			
+			solve_least_squares_destructive(_x, tmpA.get(), _m, _n, tmpB.get(), _p);
 		}
 		
 		
-		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b){
+		void solve_least_squares_destructive( double* const _x, double* const _A, const size_t _m, const size_t _n, double* const _b, const size_t _p){
 			REQUIRE(_m <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
+			REQUIRE(_p <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
-			PA_START;
+			XERUS_PA_START;
 			
 			std::unique_ptr<int[]> pivot(new int[_n]);
 			misc::set_zero(pivot.get(), _n);
+			
+			std::unique_ptr<double[]> signulars(new double[std::min(_n, _m)]);
+			
 			int rank;
 			
 			double* bOrX;
 			if(_m >= _n) {
-				bOrX = _x;
-				misc::copy(bOrX, _b, _n);
-			} else {
 				bOrX = _b;
+			} else {
+				bOrX = _x;
+				misc::copy(bOrX, _b, _m*_p);
+				misc::set_zero(bOrX+_m*_p, (_n-_m)*_p); // Lapacke is unhappy if the array contains NANs...
 			}
 			
-			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
+// 			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsy(
+// 				LAPACK_ROW_MAJOR, 
+// 				static_cast<int>(_m),   // Left dimension of A
+// 				static_cast<int>(_n),   // Right dimension of A
+// 				static_cast<int>(_p),	// Number of rhss
+// 				_A,         			// Matrix A
+// 				static_cast<int>(_n),   // LDA
+// 				bOrX,       			// On input b, on output x
+// 				static_cast<int>(_p),          			// LDB
+// 				pivot.get(),			// Pivot, entries must be zero to allow pivoting
+// 				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+// 				&rank);     			// Outputs the rank of A
+			
+			IF_CHECK( int lapackAnswer = ) LAPACKE_dgelsd(
 				LAPACK_ROW_MAJOR, 
 				static_cast<int>(_m),   // Left dimension of A
 				static_cast<int>(_n),   // Right dimension of A
-				1,          // Number of b's, here always one
-				_A,         // Matrix A
+				static_cast<int>(_p),	// Number of rhss
+				_A,         			// Matrix A
 				static_cast<int>(_n),   // LDA
-				bOrX,       // On input b, on output x
-				1,          // LDB, here always one
-				pivot.get(),// Pivot, entries must be zero to allow pivoting
-				xerus::EPSILON,      // Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
-				&rank);     // Outputs the rank of A
-			CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer);
+				bOrX,       			// On input b, on output x
+				static_cast<int>(_p),	// LDB
+				signulars.get(),		// Pivot, entries must be zero to allow pivoting
+				xerus::EPSILON,      	// Used to determine the accuracy of the Lapacke call. Basically all singular values smaller than RCOND*s[0] are ignored. (s[0] is the largest signular value)
+				&rank);     			// Outputs the rank of A
 			
-			if(_m < _n) {
-				misc::copy(_x, bOrX, _m);
+			CHECK(lapackAnswer == 0, error, "Unable to solves min ||Ax - b||_2 for x. Lapacke says: " << lapackAnswer << " sizes are " << _m << " x " << _n << " * " << _p);
+			
+			if(_m >= _n) { // I.e. bOrX is _b
+				misc::copy(_x, bOrX, _n*_p);
 			}
 			
-			PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n));
+			XERUS_PA_END("Dense LAPACK", "Solve Least Squares", misc::to_string(_m)+"x"+misc::to_string(_n)+" * "+misc::to_string(_p));
 		}
 		
-	}
+	} // namespace blasWrapper
 
-}
+} // namespace xerus
+

@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -52,7 +52,7 @@ namespace xerus {
 			IndexedTensorWritable(const IndexedTensorWritable &_other ) = delete;
 			
 			///@brief Move constructor.
-			IndexedTensorWritable(IndexedTensorWritable &&_other );
+			IndexedTensorWritable(IndexedTensorWritable &&_other ) noexcept;
 			
 			///@brief Constructs an IndexedTensorWritable with the given tensor and takes owership of the tensorObject if requested.
 			IndexedTensorWritable(tensor_type* const _tensorObject, const std::vector<Index>&  _indices, const bool _takeOwnership);

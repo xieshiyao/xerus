@@ -1,0 +1,96 @@
+#tabs {
+    margin: 0 auto;
+    width: 100%;  /* Ancho del contenedor */
+}
+
+input {
+	height: 0;
+	visibility: hidden;
+	margin: 0;
+}
+
+#tabs label {
+	background: #f9f9f9;  /* Fondo de las pestañas */
+	border-radius: .25em .25em 0 0;
+	color: #888;  /* Color del texto de las pestañas */
+	cursor: pointer;
+	display: block;
+	float: left;
+	font-size: 1em;  /* Tamaño del texto de las pestañas */
+	height: 2.5em;
+	line-height: 2.5em;
+	margin-right: .25em;
+	padding: 0 1.5em;
+	margin-bottom: 0; 
+	text-align: center;
+}
+
+
+#tabs label:hover label:active {
+	background: #ddd;  /* Fondo de las pestañas al pasar el cursor por encima */
+	color: #666;  /* Color del texto de las pestañas al pasar el cursor por encima */
+}
+
+input:checked + label {
+	position: relative;
+	z-index: 6;
+}
+
+#content {
+	display: flex;
+	flex-direction: column;
+	min-height: 2em;
+	background: #f1f1f1;  /* Fondo del contenido */
+	border-radius: 0 .25em .25em .25em;
+	padding: 0;
+	position: relative;
+	width: 100%;
+	z-index: 5;
+}
+
+#content section {
+	opacity: 0;
+	padding: 0.5em;
+	position: absolute;
+	z-index: -100;
+}
+
+#content #content1 {
+    position: relative;
+}
+
+#content #content2 {
+	width: 100%;
+}
+
+input#tab1:checked ~ #tabs #content #content1,
+input#tab2:checked ~ #tabs #content #content2 {
+    opacity: 1;
+    z-index: 100;
+}
+
+input#tab1:checked ~ #tabs label[for=tab1] {
+	background: #f1f1f1;
+	color: #444;    
+}
+
+input#tab2:checked ~ #tabs label[for=tab2] {
+	background: #f1f1f1;
+	color: #444;    
+}
+
+input#tab1:checked ~ div #tabs #content #content1,
+input#tab2:checked ~ div #tabs #content #content2 {
+    opacity: 1;
+    z-index: 100;
+}
+
+input#tab1:checked ~ div #tabs label[for=tab1] {
+	background: #f1f1f1;
+	color: #444;    
+}
+
+input#tab2:checked ~ div #tabs label[for=tab2] {
+	background: #f1f1f1;
+	color: #444;    
+}

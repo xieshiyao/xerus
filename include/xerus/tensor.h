@@ -1,5 +1,5 @@
 // // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -32,12 +32,38 @@
 #include "basic.h"
 #include "misc/containerSupport.h"
 #include "misc/fileIO.h"
+#include "misc/random.h"
 
 #include "indexedTensor.h"
 
 namespace xerus {
 	//Forwad declarations
 	class TensorNetwork;
+	
+	// NOTE these two functions are used in the template functions of Tensor so they have to be declared before the class..
+	class Tensor;
+	
+    /** 
+     * @brief Low-level contraction between Tensors.
+     * @param _result Output for the result of the contraction.
+     * @param _lhs left hand side of the contraction.
+     * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
+     * @param _rhs right hand side of the contraction.
+     * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
+     * @param _numModes number of modes that shall be contracted.
+     */
+    void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
+    Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numModes);
+    
+    
+	
+	/**
+	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
+	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
+	 */
+	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
+	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle);
+	
 	
 	/// @brief Class that handles simple (non-decomposed) tensors in a dense or sparse representation.
 	class Tensor final {
@@ -115,16 +141,7 @@ namespace xerus {
 		 * @param _representation (optional) the initial representation of the tensor.
 		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
 		 */
-		explicit Tensor(const DimensionTuple& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
-		
-		
-		/** 
-		 * @brief: Creates a new tensor with the given dimensions.
-		 * @param _dimensions the dimensions of the new tensor.
-		 * @param _representation (optional) the initial representation of the tensor.
-		 * @param _init (optional) inital data treatment, i.e. whether the tensor is to be zero Initialized.
-		 */
-		explicit Tensor(      DimensionTuple&& _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
+		explicit Tensor(DimensionTuple _dimensions, const Representation _representation = Representation::Sparse, const Initialisation _init = Initialisation::Zero);
 		
 		
 		/** 
@@ -132,9 +149,9 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _data inital dense data in row-major order.
 		 */
-		template<ADD_MOVE(Vec, DimensionTuple), ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
+		template<XERUS_ADD_MOVE(Vec, DimensionTuple), XERUS_ADD_MOVE(SPtr, std::shared_ptr<value_t>)>
 		explicit Tensor(Vec&& _dimensions, SPtr&& _data)
-		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Sparse), denseData(std::forward<SPtr>(_data)) { }
+		: dimensions(std::forward<Vec>(_dimensions)), size(misc::product(dimensions)), representation(Representation::Dense), denseData(std::forward<SPtr>(_data)) { }
 		
 		
 		/** 
@@ -181,7 +198,7 @@ namespace xerus {
 		 * @param _N the number of non-zero entries to be created.
 		 * @param _f the function to be used to create each non zero entry. 
 		 */
-		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(const size_t, const size_t)>& _f);
+		Tensor(DimensionTuple _dimensions, const size_t _N, const std::function<std::pair<size_t, value_t>(size_t, size_t)>& _f);
 		
 		
 		/** 
@@ -191,9 +208,9 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-		template<ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor _warn_unused_ random(Dim_T&& _dimensions, generator& _rnd, distribution& _dist) {
-			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Dense, Initialisation::None);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random(DimensionTuple _dimensions, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			Tensor result(std::move(_dimensions), Representation::Dense, Initialisation::None);
 			value_t* const dataPtr = result.denseData.get();
 			for(size_t i = 0; i < result.size; ++i) {
 				dataPtr[i] = _dist(_rnd);
@@ -206,9 +223,61 @@ namespace xerus {
 		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
 		 * @details See the std::vector variant for details.
 		 */
-		template<class generator, class distribution>
-		_inline_ static Tensor _warn_unused_ random(std::initializer_list<size_t>&& _dimensions, generator& _rnd, distribution& _dist) {
-			return Tensor::random(DimensionTuple(std::move(_dimensions)), _rnd, _dist);
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			return Tensor::random(DimensionTuple(std::move(_dimensions)), _dist, _rnd);
+		}
+		
+		
+		/** 
+		 * @brief Constructs a dense Tensor with the given dimensions and uses the given random generator and distribution to assign the values to the entries.
+		 * @details The entries are assigned in the order they are stored (i.e. row-major order). Each assigned is a seperate call to the random distribution.
+		 * @param _dimensions the future dimensions of the Tensor.
+		 * @param _rnd the random generator to be used.
+		 * @param _dist the random distribution to be used.
+		 */
+		template<class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random_orthogonal(DimensionTuple _dimensions1, DimensionTuple _dimensions2, generator& _rnd=xerus::misc::randomEngine) {
+			std::vector<size_t> dimensions = _dimensions1;
+			dimensions.insert(dimensions.end(), _dimensions2.begin(), _dimensions2.end());
+			const size_t m = misc::product(_dimensions1);
+			const size_t n = misc::product(_dimensions2);
+			const size_t max = std::max(m,n);
+			const size_t min = std::min(m,n);
+			Tensor result({max,min}, Representation::Sparse, Initialisation::Zero);
+			
+			typename generator::result_type randomness = 0;
+			const size_t restart = size_t(std::log2(generator::max()));
+			for (size_t i=0; i<min; ++i) {
+				auto idx = i%restart;
+				if (idx == 0) {
+					randomness = _rnd();
+				}
+				if (randomness & (1<<idx)) {
+					result[{i,i}] = 1;
+				} else {
+					result[{i,i}] = -1;
+				}
+			}
+			
+			for (size_t i=0; i<min-1; ++i) { // do k = n-1 to 1 by -1; 
+				Tensor u = Tensor::random({max-i}, misc::defaultNormalDistribution, _rnd);
+				u[0] -= u.frob_norm();
+				u /= u.frob_norm();
+				u.apply_factor();
+				contract(u, u, false, u, false, 0);
+				u *= -2.0;
+				Tensor p = Tensor::identity({max,max});
+				p.offset_add(u, {i,i});
+				contract(result, p, false, result, false, 1);
+			}
+			
+			if (m != max) {
+				reshuffle(result, result, {1,0});
+			}
+			result.reinterpret_dimensions(std::move(dimensions));
+			
+			return result;
 		}
 		
 		
@@ -220,10 +289,10 @@ namespace xerus {
 		 * @param _rnd the random generator to be used.
 		 * @param _dist the random distribution to be used.
 		 */
-		template<ADD_MOVE(Dim_T, DimensionTuple), class generator, class distribution>
-		static Tensor _warn_unused_ random(Dim_T&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
-			Tensor result(std::forward<Dim_T>(_dimensions), Representation::Sparse, Initialisation::Zero);
-			REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		static Tensor XERUS_warn_unused random(DimensionTuple _dimensions, const size_t _N, distribution& _dist=xerus::misc::defaultNormalDistribution, generator& _rnd=xerus::misc::randomEngine) {
+			Tensor result(std::move(_dimensions), Representation::Sparse, Initialisation::Zero);
+			XERUS_REQUIRE(_N <= result.size, " Cannot create " << _N << " non zero entries in a tensor with only " << result.size << " total entries!");
 			
 			std::uniform_int_distribution<size_t> entryDist(0, result.size-1);
 			while(result.sparseData->size() < _N) {
@@ -237,8 +306,8 @@ namespace xerus {
 		 * @brief Constructs a random sparse Tensor with the given dimensions.
 		 * @details See the std::vector variant for details.
 		 */
-		template<class generator, class distribution>
-		_inline_ static Tensor _warn_unused_ random(std::initializer_list<size_t>&& _dimensions, const size_t _N, generator& _rnd, distribution& _dist) {
+		template<class distribution=std::normal_distribution<value_t>, class generator=std::mt19937_64>
+		XERUS_force_inline static Tensor XERUS_warn_unused random(std::initializer_list<size_t>&& _dimensions, const size_t _N, distribution& _dist, generator& _rnd) {
 			return Tensor::random(DimensionTuple(_dimensions), _N, _rnd, _dist);
 		}
 		
@@ -247,7 +316,7 @@ namespace xerus {
 		 * @brief: Returns a Tensor with all entries equal to one.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor _warn_unused_ ones(DimensionTuple _dimensions);
+		static Tensor XERUS_warn_unused ones(DimensionTuple _dimensions);
 		
 		
 		/** 
@@ -255,7 +324,7 @@ namespace xerus {
 		 * @details That is combining the first half of the dimensions and the second half of the dimensions results in an identity matrix.
 		 * @param _dimensions the dimensions of the new tensor. It is required that _dimensions[i] = _dimensions[d/2+i], otherwise this cannot be the identity operator.
 		 */
-		static Tensor _warn_unused_ identity(DimensionTuple _dimensions);
+		static Tensor XERUS_warn_unused identity(DimensionTuple _dimensions);
 		
 		
 		/** 
@@ -263,23 +332,23 @@ namespace xerus {
 		 * @details That is each entry is one if all indices are equal and zero otherwise. Note iff d=2 this coincides with identity.
 		 * @param _dimensions the dimensions of the new tensor.
 		 */
-		static Tensor _warn_unused_ kronecker(DimensionTuple _dimensions);
+		static Tensor XERUS_warn_unused kronecker(DimensionTuple _dimensions);
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor _warn_unused_ dirac(DimensionTuple _dimensions, const MultiIndex& _position);
+		static Tensor XERUS_warn_unused dirac(DimensionTuple _dimensions, const MultiIndex& _position);
 		
 		
 		/** 
-		 * @brief: Returns a Tensor with a single entry equals oen and all other zero.
+		 * @brief: Returns a Tensor with a single entry equals one and all other zero.
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _position The position of the one
 		 */
-		static Tensor _warn_unused_ dirac(DimensionTuple _dimensions, const size_t _position);
+		static Tensor XERUS_warn_unused dirac(DimensionTuple _dimensions, const size_t _position);
 		
 
 		/// @brief Returns a copy of this Tensor that uses a dense representation.
@@ -366,6 +435,12 @@ namespace xerus {
 		 * @return the frobenious norm.
 		 */
 		value_t frob_norm() const;
+		
+		/** 
+		 * @brief Calculates the 1-norm of the tensor.
+		 * @return the 1-norm.
+		 */
+		value_t one_norm() const;
 		
 		
 		/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -650,11 +725,6 @@ namespace xerus {
 		 */
 		void resize_mode(const size_t _mode, const size_t _newDim, size_t _cutPos=~0ul);
 		
-		__attribute__((deprecated("function has been renamed. please use 'resize_mode'"))) 
-		void resize_dimension(const size_t _dimPos, const size_t _newDim, size_t _cutPos=~0ul) {
-			resize_mode(_dimPos, _newDim, _cutPos);
-		}
-		
 		
 		/** 
 		 * @brief Fixes a specific mode to a specific value, effectively reducing the order by one.
@@ -662,11 +732,6 @@ namespace xerus {
 		 * @param _slatePosition the position in the corresponding mode that shall be used. 0 <= _slatePosition < dimension[_mode]
 		 */
 		void fix_mode(const size_t _mode, const size_t _slatePosition);
-		
-		__attribute__((deprecated("function has been renamed. please use 'fix_mode'"))) 
-		void fix_slate(const size_t _dimPos, const size_t _slatePosition) {
-			fix_mode(_dimPos, _slatePosition);
-		}
 		
 		
 		/** 
@@ -678,11 +743,11 @@ namespace xerus {
 		
 		
 		/** 
-		 * @brief Performs the trace over the given indices
-		 * @param _firstIndex the first index involved in the trace.
-		 * @param _secondIndex the second index involved in the trace.
+		 * @brief Performs the trace over the given modes
+		 * @param _firstMode the first mode involved in the trace.
+		 * @param _secondMode the second mode involved in the trace.
 		 */
-		void perform_trace(size_t _firstIndex, size_t _secondIndex);
+		void perform_trace(size_t _firstMode, size_t _secondMode);
 		
 		
 		/** 
@@ -690,7 +755,7 @@ namespace xerus {
 		 * @details In this overload only the current diagonal entries are passed to @a _f, one at a time. At the moment this is only defined for matricies.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_diag_elements(const std::function<void(value_t&)>& _f);
+		void modify_diagonal_entries(const std::function<void(value_t&)>& _f);
 		
 		
 		/** 
@@ -698,7 +763,7 @@ namespace xerus {
 		 * @details In this overload the current diagonal entries are passed to @a _f, one at a time, together with their position on the diagonal. At the moment this is only defined for matricies.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_diag_elements(const std::function<void(value_t&, const size_t)>& _f);
+		void modify_diagonal_entries(const std::function<void(value_t&, const size_t)>& _f);
 		
 		
 		/** 
@@ -706,7 +771,7 @@ namespace xerus {
 		 * @details In this overload only the current entry is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&)>& _f);
+		void modify_entries(const std::function<void(value_t&)>& _f);
 		
 		
 		/** 
@@ -714,7 +779,7 @@ namespace xerus {
 		 * @details In this overload the current entry together with its position, assuming row-major ordering is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&, const size_t)>& _f);
+		void modify_entries(const std::function<void(value_t&, const size_t)>& _f);
 		
 		
 		/** 
@@ -722,7 +787,7 @@ namespace xerus {
 		 * @details In this overload the current entry together with its complete position is passed to @a _f.
 		 * @param _f the function to call to modify each entry.
 		 */
-		void modify_elements(const std::function<void(value_t&, const MultiIndex&)>& _f);
+		void modify_entries(const std::function<void(value_t&, const MultiIndex&)>& _f);
 		
 		/** 
 		 * @brief Adds the given Tensor with the given offsets to this one.
@@ -793,6 +858,20 @@ namespace xerus {
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - External functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
+    /** 
+     * @brief Low-level contraction between Tensors.
+     * @param _result Output for the result of the contraction.
+     * @param _lhs left hand side of the contraction.
+     * @param _rhs right hand side of the contraction.
+     * @param _numModes number of indices that shall be contracted.
+     */
+    XERUS_force_inline void contract(Tensor& _result, const Tensor& _lhs,  const Tensor& _rhs, const size_t _numModes) {
+        contract(_result, _lhs, false, _rhs, false, _numModes);
+    }
+    
+    XERUS_force_inline Tensor contract(const Tensor& _lhs, const Tensor& _rhs, const size_t _numModes) {
+        return contract(_lhs, false, _rhs, false, _numModes);
+    }
 	
 	/*- - - - - - - - - - - - - - - - - - - - - - - - - - Basic arithmetics - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 	
@@ -848,26 +927,14 @@ namespace xerus {
 	* @param _tensor the Tensor of which the frobenious norm shall be calculated.
 	* @return the frobenius norm .
 	*/
-	static _inline_ value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
-	
-	/**
-	 * @brief: Performs a simple reshuffle. Much less powerfull then a full evaluate, but more efficient.
-	 * @details @a _shuffle shall be a vector that gives for every old index, its new position.
-	 */
-	void reshuffle(Tensor& _out, const Tensor& _base, const std::vector<size_t>& _shuffle);
-	Tensor reshuffle(const Tensor& _base, const std::vector<size_t>& _shuffle);
+	static XERUS_force_inline value_t frob_norm(const Tensor& _tensor) { return _tensor.frob_norm(); }
 	
 	/** 
-	 * @brief Low-level contraction between Tensors.
-	 * @param _result Output for the result of the contraction.
-	 * @param _lhs left hand side of the contraction.
-	 * @param _lhsTrans Flags whether the LHS should be transposed (in the matrifications sense).
-	 * @param _rhs right hand side of the contraction.
-	 * @param _rhsTrans Flags whether the RHS should be transposed (in the matrifications sense).
-	 * @param _numIndices number of indices that shall be contracted.
-	 */
-	void contract(Tensor& _result, const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
-	Tensor contract(const Tensor& _lhs, const bool _lhsTrans, const Tensor& _rhs, const bool _rhsTrans, const size_t _numIndices);
+	* @brief Calculates the 1-norm of the given tensor
+	* @param _tensor the Tensor of which the norm shall be calculated.
+	* @return the 1-norm
+	*/
+	static XERUS_force_inline value_t one_norm(const Tensor& _tensor) { return _tensor.one_norm(); }
 	
 	/** 
 	 * @brief Low-Level SVD calculation of a given Tensor @a _input = @a _U @a _S @a _Vt.
@@ -930,14 +997,22 @@ namespace xerus {
 	Tensor pseudo_inverse(const Tensor& _input, const size_t _splitPos);
 	
 	/** 
-	 * @brief Solves the least squares problem ||@a _A @a _x - @a _b||.
-	 * @details The matrification of @a _A is completely defined by the order of @a _b.
-	 * @param _x Output Tensor for the resulting x.
+	 * @brief Solves the least squares problem ||@a _A @a _X - @a _B||_F.
+	 * @param _X Output Tensor for the resulting X.
 	 * @param _A input Tensor A.
-	 * @param _b input Tensor b.
+	 * @param _B input Tensor b.
+	 * @param _extraDegree number of modes that @a _X and @a _B share and for which the least squares problem is independently solved.
 	 */
-	void solve_least_squares(Tensor& _x, const Tensor& _A, const Tensor& _b);
+	void solve_least_squares(Tensor& _X, const Tensor& _A, const Tensor& _B, const size_t _extraDegree = 0);
 	
+	/**
+	 * @brief Solves the equation Ax = b for x. If the solution is not unique, the output need not be the minimal norm solution.
+	 * @param _X Output Tensor for the result
+	 * @param _A input Operator A
+	 * @param _B input right-hand-side b
+	 * @param _extraDegree number of modes that @a _x and @a _B sharefor which the solution should be computed independently.
+	 */
+	void solve(Tensor &_X, const Tensor &_A, const Tensor &_B, size_t _extraDegree = 0);
 	
 	/**
 	 * @brief calculates the entrywise product of two Tensors
@@ -956,7 +1031,7 @@ namespace xerus {
 	
 	/** 
 	* @brief Checks whether two Tensors are approximately entrywise equal.
-	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < _eps is fullfilled for all i.
+	* @details Check whether |@a _a[i] - @a _b[i] |/(|@a _a[i] | + |@a _b[i] | < @a _eps is fullfilled for all i.
 	* @param _a the first test candidate.
 	* @param _b the second test candidate
 	* @param _eps the maximal relative difference between the entries of @a _a and @a _b.
@@ -974,6 +1049,13 @@ namespace xerus {
 	 */
 	bool approx_entrywise_equal(const xerus::Tensor& _tensor, const std::vector<value_t>& _values, const xerus::value_t _eps = EPSILON);
 	
+	/** 
+	 * @brief Prints the Tensor to the given outStream
+	 * @param _out the outstream to be printed to.
+	 * @param _tensor the tensor.
+	 * @return @a _out.
+	 */
+	std::ostream& operator<<(std::ostream& _out, const Tensor& _tensor);
 	
 	namespace misc {
 		/**

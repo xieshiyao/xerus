@@ -6,13 +6,13 @@ CXX = g++
 STRICT_WARNINGS = TRUE
 
 HIGH_OPTIMIZATION = TRUE          # Activates -O3 -march=native and some others
-DEBUG += -D DISABLE_RUNTIME_CHECKS_    # Disable all runtime checks
-DEBUG += -D REPLACE_ALLOCATOR
+DEBUG += -D XERUS_DISABLE_RUNTIME_CHECKS    # Disable all runtime checks
+DEBUG += -D XERUS_REPLACE_ALLOCATOR
 
  DEBUG += -g                # Adds debug symbols
 
 
-LOGGING += -D INFO_                     # Information that is not linked to any unexpected behaviour but might nevertheless be of interest.
+LOGGING += -D XERUS_LOG_INFO                     # Information that is not linked to any unexpected behaviour bu
 
 #=================================================================================================
 # External libraries

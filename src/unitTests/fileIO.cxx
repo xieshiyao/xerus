@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -19,15 +19,14 @@
 
 
 #include<xerus.h>
-#include "../../include/xerus/misc/test.h"
+#include "../../include/xerus/test/test.h"
+#include "../../include/xerus/misc/internal.h"
 
 using namespace xerus;
 
 
 static misc::UnitTest tensor_rw("Tensor", "read_write_file", [](){
-	std::mt19937_64 rnd(0x77778888);
-	std::normal_distribution<double> dist(0.0,1.0);
-	Tensor A = Tensor::random({12,13,14}, rnd, dist);
+	Tensor A = Tensor::random({12,13,14});
 	
 	misc::save_to_file(A, "test.dat", misc::FileFormat::TSV);
 	Tensor Ab = misc::load_from_file<Tensor>("test.dat");
@@ -52,12 +51,10 @@ static misc::UnitTest tensor_rw("Tensor", "read_write_file", [](){
 });
 
 static misc::UnitTest tn_rw("TensorNetwork", "read_write_file", [](){
-	std::mt19937_64 rnd(0x77778888);
-	std::normal_distribution<double> dist(0.0,1.0);
-	Tensor A = Tensor::random({12,13,14}, rnd, dist);
+	Tensor A = Tensor::random({12,13,14});
 	Tensor B = Tensor({12,13,14}, Tensor::Representation::Sparse);
 	B[{1,1,1}] = 1; B[{2,3,4}] = 2; B[{7,10,3}] = 3; B[{5,12,13}] = 4; B[{8,7,6}] = 5;
-	Tensor C = Tensor::random({12,13,14}, rnd, dist);
+	Tensor C = Tensor::random({12,13,14});
 	Index i,j,k,l,m,n;
 	TensorNetwork T;
 	T(k,l,n) = A(i,j,k) * B(i,l,m) * C(n,j,m);
@@ -76,9 +73,7 @@ static misc::UnitTest tn_rw("TensorNetwork", "read_write_file", [](){
 
 
 static misc::UnitTest tt_rw("TT", "read_write_file", [](){
-	std::mt19937_64 rnd(0x77778888);
-	std::normal_distribution<double> dist(0.0,1.0);
-	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2}, rnd, dist);
+	TTTensor A = TTTensor::random({7,8,9,10}, {2,2,2});
 	
 	misc::save_to_file(A, "test.dat");
 	
@@ -86,7 +81,7 @@ static misc::UnitTest tt_rw("TT", "read_write_file", [](){
 	TTTensor Ab = misc::load_from_file<TTTensor>("test.dat");
 	Index i;
 	Ab.require_correct_format();
-	MTEST(Ab.cannonicalized && Ab.corePosition == 0, Ab.cannonicalized << " " << Ab.corePosition);
+	MTEST(Ab.canonicalized && Ab.corePosition == 0, Ab.canonicalized << " " << Ab.corePosition);
 	MTEST(A.dimensions == Ab.dimensions, A.dimensions << " vs " << Ab.dimensions);
 	MTEST(frob_norm(A(i&0)-Ab(i&0))/frob_norm(A) < 6e-16, frob_norm(A(i&0)-Ab(i&0))/frob_norm(A));
 });

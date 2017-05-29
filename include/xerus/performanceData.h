@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -75,13 +75,14 @@ namespace xerus {
 			active(_active), printProgress(_printProgress), errorFunction(_errorFunction), startTime(~0ul), stopTime(~0ul) {}
 		
 		void start() {
+			using ::xerus::misc::operator<<;
 			if (active) {
 				if(printProgress) {
 					std::stringstream ss(additionalInformation);
 					while (ss) {
 						std::string line;
 						std::getline(ss, line);
-						LOG_SHORT(PerformanceData, line);
+						XERUS_LOG_SHORT(PerformanceData, line);
 					}
 				}
 				startTime = misc::uTime();
@@ -138,10 +139,11 @@ namespace xerus {
 		/// @brief The pipe operator allows to add everything that can be converted to string to the additional information in the header. 
 		template<class T>
 		PerformanceData& operator<<(const T &_info) {
+			using ::xerus::misc::operator<<;
 			if (active) {
 				additionalInformation += misc::to_string(_info);
 				if(printProgress) {
-					LOG_SHORT(PerformanceData, _info);
+					XERUS_LOG_SHORT(PerformanceData, _info);
 				}
 			}
 			return *this;

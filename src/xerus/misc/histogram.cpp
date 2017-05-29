@@ -1,5 +1,5 @@
 // Xerus - A General Purpose Tensor Library
-// Copyright (C) 2014-2016 Benjamin Huber and Sebastian Wolf. 
+// Copyright (C) 2014-2017 Benjamin Huber and Sebastian Wolf. 
 // 
 // Xerus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published
@@ -24,6 +24,7 @@
 
 #include <xerus/misc/histogram.h>
 #include <xerus/misc.h>
+#include <xerus/misc/internal.h>
 
 namespace xerus { namespace misc {
 
@@ -85,7 +86,7 @@ namespace xerus { namespace misc {
 			out << ' ' << h.first << ' ' << h.second;
 		}
 		out << "\n# plotable data:\n";
-		if (buckets.size() > 0) {
+		if (!buckets.empty()) {
 			int firstOutput = buckets.begin()->first - 1;
 			int lastOutput = buckets.rbegin()->first + 1;
 			for (int i=firstOutput; i<=lastOutput; ++i) {
@@ -100,5 +101,6 @@ namespace xerus { namespace misc {
 		out.close();
 	}
 
-}}
+} // namespace misc
+} // namespace xerus
 
