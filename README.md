@@ -20,6 +20,7 @@ The source code is licenced under the AGPL v3.0. For more details see the LICENS
 
 Copy the default configuration and modify it for your needs
 > cp config.mk.default config.mk
+
 > nano config.mk
 
 Test whether everything works correctly with
@@ -27,9 +28,10 @@ Test whether everything works correctly with
 
 build (and optionally install) the library with
 > make all -j4
+
 > sudo make install
 
-and you should be ready to use the library. For more details see <a href="https://www.libxerus.org/md_building_xerus.html">the "Building Xerus" page in the documentation</a>.
+and you should be ready to use the library. For more details see <a href="https://www.libxerus.org/building_xerus/">the "Building Xerus" page in the documentation</a>.
 
 
 # Issues #
