@@ -1,0 +1,33 @@
+{% for post in site.posts %}
+  {% if post.section == page.section %}
+    {% unless post.next %}
+            <h1>{{ post.topic }}</h1>
+            <ul>
+    {% else %}
+        {% capture topic %}{{ post.topic }}{% endcapture %}
+        {% capture ntopic %}{{ post.next.topic }}{% endcapture %}
+        {% if topic != ntopic %}
+            </ul>
+            <h1>{{ post.topic }}</h1>
+            <ul>
+        {% endif %}
+    {% endunless %}
+    {% if post.url == page.url %}
+    	<li>{{ post.title }}</li>
+    {% else %}
+    	<li><a href="{{ site.baseurl}}{{ post.url }}">{{ post.title }}</a></li>
+    {% endif %}
+  {% endif %}
+{% endfor %}
+</ul>
+{% if page.section == "Documentation" %}
+     <a href="{{ site.baseurl }}/doxygen/">Doxygen Documentation</a>
+{% elsif page.section == "Examples" %}
+
+{% else %}
+     <a href="{{ site.baseurl }}/documentation.html"><h1>Documentation</h1></a>
+     <a href="{{ site.baseurl }}/examples.html"><h1>Examples</h1></a>
+     <a href="https://git.hemio.de/xerus/xerus/"><h1>Git</h1></a>
+     <a href="https://git.hemio.de/xerus/xerus/issues"><h1>Issue-Tracker</h1></a>
+     <a href="mailto:contact@libxerus.org"><h1>Contact</h1></a>
+{% endif %}

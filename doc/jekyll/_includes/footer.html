@@ -1,0 +1,29 @@
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="visible-sm visible-xs span12 footer navbar-inverse navbar-fixed-bottom">
+          <div class="pagination">
+              {% if page.next %}
+                <a class="btn btn-default" href="{{ site.baseurl}}{{ page.next.url }}" class="previous"><span class="glyphicon glyphicon-chevron-left"></span></a>
+              {% else %}
+                <a class="btn btn-default disabled" href="#" class="previous"><span class="glyphicon glyphicon-chevron-left"></span></a>
+              {% endif %}
+              
+                <div class="btn btn-default footer-menu" tabindex="0"><span class="glyphicon glyphicon-list"></span></div>
+                <div class="footer-menu-content well">
+                {% include sidebar-content.html %}
+                </div>
+                
+                
+              {% if page.previous %}
+                <a class="btn btn-default" href="{{ site.baseurl}}{{ page.previous.url }}" class="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
+              {% else %}
+                <a class="btn btn-default disabled" href="#" class="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
+              {% endif %}
+          </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Xerus Documentation{% if page.title %} - {{ page.title }} {% endif %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{{ site.baseurl }}/js/jquery.min.js"></script>
+    <script src="{{ site.baseurl }}/js/bootstrap.min.js"></script>
+    <link href="{{ site.baseurl }}/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="{{ site.baseurl }}/css/theme.css" rel="stylesheet" type="text/css">
+    <link href="{{ site.baseurl }}/css/syntax.css" rel="stylesheet" type="text/css">
+    <link href="{{ site.baseurl }}/css/tabs.css" rel="stylesheet" type="text/css">
+    <link href="{{ site.baseurl }}/css/footer.css" rel="stylesheet" type="text/css">
+    <script type="text/x-mathjax-config">
+	  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+	</script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</head>
+
+<body>
+
+<header class="navbar navbar-inverse navbar-fixed-top docs-nav" role="banner">
+  <div class="container">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{{ site.baseurl }}/">Xerus</a>
+    </div>
+    <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+      <ul class="nav navbar-nav">
+          {% if page.section == "Documentation" %}
+                    <li class="active"><a href="{{ site.baseurl }}/documentation.html">Documentation</a></li>
+          {% else %}
+                    <li><a href="{{ site.baseurl }}/documentation.html">Documentation</a></li>
+          {% endif %}
+          {% if page.section == "Examples" %}
+                    <li class="active"><a href="{{ site.baseurl }}/examples.html">Examples</a></li>
+          {% else %}
+                    <li><a href="{{ site.baseurl }}/examples.html">Examples</a></li>
+          {% endif %}
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+                    <li><a href="https://git.hemio.de/xerus/xerus">Git</a></li>
+                    <li><a href="https://github.com/libxerus/xerus">Github</a></li>
+                    <li><a href="https://git.hemio.de/xerus/xerus/issues">Issue-Tracker</a></li>
+                </ul>
+    </nav>
+  </div>
+</header>
+
