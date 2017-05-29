@@ -43,5 +43,6 @@ job_build_homepage:
   stage: build_homepage
   script: "make doc; scp -rv doc/html xerusweb:libxerus.org-443/html"
   when: always
-  only: master
+  only: 
+    - master
   allow_failure: true
