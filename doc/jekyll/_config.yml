@@ -9,7 +9,7 @@ description: Documentation for the xerus library.
 #     run it like so: jekyll serve --baseurl=''
 baseurl: ''
 
-permalink: /:title
+permalink: /:title/
 # paginate: 3
 
 highlighter: rouge

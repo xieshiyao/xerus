@@ -20,8 +20,8 @@
       <tab type="filelist" visible="yes" title="" intro=""/>
       <tab type="globals" visible="yes" title="" intro=""/>
     </tab>
-    <tab type="user" url="/documentation.html" title="Documentation"/>  
-	<tab type="user" url="/examples.html" title="Examples"/>  
+    <tab type="user" url="/documentation/" title="Documentation"/>  
+	<tab type="user" url="/examples/" title="Examples"/>  
     <tab type="user" url="https://git.hemio.de/xerus/xerus" title="Git"/>
     <tab type="user" url="https://git.hemio.de/xerus/xerus/issues" title="Issue-Tracker"/>
   </navindex>
