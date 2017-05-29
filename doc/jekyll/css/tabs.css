@@ -53,8 +53,6 @@ input:checked + label {
 	padding: 0.5em;
 	position: absolute;
 	z-index: -100;
-	border-color: #333;
-	border-width: 1px;
 }
 
 .highlighter-rouge {
