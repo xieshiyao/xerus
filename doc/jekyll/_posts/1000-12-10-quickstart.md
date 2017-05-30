@@ -90,22 +90,18 @@ print("ttA ranks:", ttA.ranks())
 ~~~
 __tabsEnd
 
-For the right-hand-side we perform similar operations to obtain a QTT decomposed vector $ b_i = 1 \forall i $.
-As the generating function needs no index information, we create a `[]()->double` lambda function:
+For the right-hand-side we will take a simple tensor that is equal to 1 at every position. As this is a commonly used tensor,
+we can simply use the named constructor provide dby `xerus`.
 
 __tabsStart
 ~~~ cpp
-auto b = xerus::Tensor::ones({512});
-
-b.reinterpret_dimensions(std::vector<size_t>(9, 2));
-xerus::TTTensor ttb(b);
+auto b = xerus::Tensor::ones(std::vector<size_t>(9, 2));
+auto ttb = xerus::TTTensor::ones(b.dimensions);
 ~~~
 __tabsMid
 ~~~ python
-b = xerus.Tensor.ones([512])
-
-b.reinterpret_dimensions([2,]*9)
-ttb = xerus.TTTensor(b)
+b = xerus.Tensor.ones([2,]*9)
+ttb = xerus.TTTensor.ones(b.dimensions)
 ~~~
 __tabsEnd
 

@@ -25,10 +25,8 @@ int main() {
 	std::cout << "ttA ranks: " << ttA.ranks() << std::endl;
 	
 	// the right hand side of the equation both as Tensor and in (Q)TT format
-	auto b = xerus::Tensor::ones({512});
-	
-	b.reinterpret_dimensions(std::vector<size_t>(9, 2));
-	xerus::TTTensor ttb(b);
+	auto b = xerus::Tensor::ones(std::vector<size_t>(9, 2));
+	auto ttb = xerus::TTTensor::ones(b.dimensions);
 	
 	// construct a random initial guess of rank 3 for the ALS algorithm
 	xerus::TTTensor ttx = xerus::TTTensor::random(std::vector<size_t>(9, 2), std::vector<size_t>(8, 3));

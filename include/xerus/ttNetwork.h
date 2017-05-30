@@ -159,7 +159,7 @@ namespace xerus {
 		 * @brief Random constructs a TTNetwork with the given dimensions and ranks limited by the given rank. 
 		 * @details The entries of the componend tensors are sampled independendly using the provided random generator and distribution.
 		 * @param _dimensions the dimensions of the to be created TTNetwork.
-		 * @param _ranks the maximal allowed rank. 
+		 * @param _rank the maximal allowed rank. 
 		 * @param _rnd the random engine to be passed to the constructor of the component tensors.
 		 * @param _dist the random distribution to be passed to the constructor of the component tensors.
 		 */

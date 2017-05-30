@@ -16,7 +16,9 @@ doc: .FORCE parseDoxytags findDoxytag
 	jekyll build --source jekyll/ --destination html/
 
 clean:
-	-rm -r html
+	-rm -rf html
+	-rm -f parseDoxytags findDoxytag
+	-rm -f xerus.tags xerus.tagfile
 
 serve: .FORCE parseDoxytags findDoxytag
 	-mkdir html

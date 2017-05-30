@@ -20,6 +20,8 @@ class TabsConverter < Converter
 			.gsub('<p>__dangerEnd</p>', "</div>")
 			.gsub('<p>__warnStart</p>', "<div class=\"alert alert-warning\">")
 			.gsub('<p>__warnEnd</p>', "</div>")
+			.gsub('<p>__infoStart</p>', "<div class=\"alert alert-info\">")
+			.gsub('<p>__infoEnd</p>', "</div>")
 			.gsub('__breakFix1</a></p>', "")
 			.gsub('<p>__breakFix2', "</a>")
 			.gsub('__version', %x( git describe --tags --always --abbrev=0 ) )

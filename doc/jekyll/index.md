@@ -23,7 +23,7 @@ The key features include:
 * Full python bindings with very similar syntax for easy transitions from and to c++.
 * Calculation with tensors of arbitrary orders using an intuitive Einstein-like notation `A(i,j) = B(i,k,l) * C(k,j,l);`.
 * Full implementation of the Tensor-Train decompositions (MPS) with all neccessary capabilities (including Algorithms like ALS, ADF and CG).
-* Lazy evaluation of multiple tensor contractions featuring heuristics to find the most effective contraction order.
+* Lazy evaluation of (multiple) tensor contractions featuring heuristics to automatically find efficient contraction orders.
 * Direct integration of the `blas` and `lapack`, as high performance linear algebra backends.
 * Fast sparse tensor calculation by usage of the `suiteSparse` sparse matrix capabilities.
 * Capabilites to handle arbitrary Tensor Networks.

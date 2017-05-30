@@ -232,7 +232,7 @@ clean:
 	rm -fr build
 	-rm -f $(TEST_NAME)
 	-rm -f include/xerus.h.gch
-	-rm -r doc/html
+	make -C doc clean
 
 
 
