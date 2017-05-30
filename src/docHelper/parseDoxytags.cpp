@@ -41,7 +41,7 @@ int main() {
 					name = currNamespace+"::"+name;
 				}
 				boost::replace_all(name, " ", "");
-				tags[name] = anchorfile + '#' + anchor;
+				tags.insert({name, anchorfile + '#' + anchor});
 			} else {
 // 				std::cout << "* skipping " << subc.first << std::endl;
 			}

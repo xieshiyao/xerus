@@ -32,13 +32,13 @@ The key features include:
 ## Getting Started
 
 `xerus` can be obtained via [git](https://git.hemio.de/xerus/xerus) or as an archived download via the same link. 
-To build and install the library you might want to check our the [Building xerus](building_xerus) guide.
+To build and install the library you might want to check our the [Building xerus](/building_xerus) guide.
 
 Where to go from there depends on what you want to do with `xerus` and how you learn. You can quickly get a feeling for the library
-by checking out one of the simpler examples like [QTT](quickstart). For most people the more elaborate [documentation](documentation)
+by checking out one of the simpler examples like [QTT](/quickstart). For most people the more elaborate [documentation](/documentation)
 will likely be the place to start though. Apart from the basic usage it also explains the mindset behind many design choices and
 so is adviced reading material regardless of how deep you want to delve into the library. Finally for the most hardcore developers
-out there, there is an elaborate [doxygen documentation](doxygen).
+out there, there is an elaborate [doxygen documentation](/doxygen).
 
 ## Issues
 
