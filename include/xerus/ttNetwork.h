@@ -295,6 +295,11 @@ namespace xerus {
 		
 		virtual void resize_mode(const size_t _mode, const size_t _newDim, const size_t _cutPos=~0ul) override;
 		
+		/**
+		 * @brief Converts all components to use dense representations.
+		 * @note This might be required because not all functionality of TTNetworks is available with sparse component tensors.
+		 */
+		void use_dense_representations();
 		
 		/** 
 		* @brief Complete access to a specific component of the TT decomposition.
