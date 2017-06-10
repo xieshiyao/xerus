@@ -5,7 +5,7 @@
 
 using namespace xerus;
 
-const size_t MAX_NUM_PER_SITE = 64;
+const size_t MAX_NUM_PER_SITE = 32;
 
 Tensor create_M() {
 	Tensor M = -1*Tensor::identity({MAX_NUM_PER_SITE, MAX_NUM_PER_SITE});

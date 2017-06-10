@@ -1,6 +1,6 @@
 import xerus as xe
 
-MAX_NUM_PER_SITE = 64
+MAX_NUM_PER_SITE = 32
 
 def create_M():
 	M = -1 * xe.Tensor.identity([MAX_NUM_PER_SITE, MAX_NUM_PER_SITE])
