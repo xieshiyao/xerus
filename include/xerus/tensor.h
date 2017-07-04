@@ -159,7 +159,7 @@ namespace xerus {
 		 * @param _dimensions the dimensions of the new tensor.
 		 * @param _data inital dense data in row-major order.
 		 */
-		explicit Tensor(DimensionTuple _dimensions, std::unique_ptr<value_t[]>&& _data);
+		explicit Tensor(DimensionTuple _dimensions, std::unique_ptr<value_t>&& _data);
 		
 		
 		/** 
