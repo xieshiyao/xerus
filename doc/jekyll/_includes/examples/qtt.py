@@ -23,9 +23,8 @@ ttA = xe.TTOperator(A)
 print("ttA ranks:", ttA.ranks())
 
 # the right hand side of the equation both as Tensor and in (Q)TT format
-b = xe.Tensor.ones([512])
-b.reinterpret_dimensions([2,]*9)
-ttb = xe.TTTensor(b)
+b = xe.Tensor.ones([2,]*9)
+ttb = xe.TTTensor.ones(b.dimensions)
 
 # construct a random initial guess of rank 3 for the ALS algorithm
 ttx = xe.TTTensor.random([2,]*9, [3,]*8)

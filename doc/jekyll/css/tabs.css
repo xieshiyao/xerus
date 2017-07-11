@@ -46,6 +46,7 @@ input:checked + label {
 	position: relative;
 	width: 100%;
 	z-index: 5;
+	margin-bottom: .25em;
 }
 
 #content section {
@@ -53,6 +54,15 @@ input:checked + label {
 	padding: 0.5em;
 	position: absolute;
 	z-index: -100;
+}
+
+.highlighter-rouge {
+	overflow-x: auto;
+}
+
+.highlighter-rouge pre {
+    min-width: 662px;
+	tab-size: 4;
 }
 
 #content #content1 {

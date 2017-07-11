@@ -60,7 +60,6 @@
     #include "xerus/algorithms/adf.h"
     #include "xerus/algorithms/uqAdf.h"
     #include "xerus/algorithms/iht.h"
-    #include "xerus/algorithms/crossApproximation.h"
     #include "xerus/algorithms/largestEntry.h"
     
 	#include "xerus/examples/specificLowRankTensors.h"

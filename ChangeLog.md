@@ -2,6 +2,11 @@
 
 Potentially breaking changes are marked with an exclamation point '!' at the begin of their description.
 
+* 2017-05-31 v3.0.1
+ * Added TTNetwork::use_dense_representations() to convert all components to dense representation.
+ * Exporting Tensor::dense_copy() and Tensor::sparse_copy() to python.
+ * More examples on the homepage and checks for code-coverage.
+
 * 2017-05-29 v3.0.0
  * Python wrapper now stable.
  * ! REQUIRE macro now logs as error instead of fatal error.

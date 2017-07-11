@@ -208,6 +208,8 @@ void expose_tensor() {
 			.def("use_sparse_representation", &Tensor::use_sparse_representation,
 				(arg("epsilon")=EPSILON)
 			)
+			.def("sparse_copy", &Tensor::sparse_copy)
+			.def("dense_copy", &Tensor::dense_copy)
 			.def("ensure_own_data", &Tensor::ensure_own_data)
 			.def("ensure_own_data_no_copy", &Tensor::ensure_own_data_no_copy)
 			.def("apply_factor", &Tensor::apply_factor)

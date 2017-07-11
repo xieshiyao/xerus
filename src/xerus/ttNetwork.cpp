@@ -447,6 +447,13 @@ namespace xerus {
 	
 	
 	template<bool isOperator>
+	void TTNetwork<isOperator>::use_dense_representations() {
+		for (size_t i = 0; i < degree(); ++i) { 
+			component(i).use_dense_representation(); 
+		}
+	}
+	
+	template<bool isOperator>
 	Tensor& TTNetwork<isOperator>::component(const size_t _idx) {
 		REQUIRE(_idx == 0 || _idx < degree()/N, "Illegal index " << _idx <<" in TTNetwork::component, as there are onyl " << degree()/N << " components.");
 		return *nodes[degree() == 0 ? 0 : _idx+1].tensorObject;

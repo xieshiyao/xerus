@@ -224,7 +224,7 @@ fullTest: $(TUTORIALS) $(TEST_NAME)
 
 
 .FORCE:
-doc: .FORCE
+doc: .FORCE doc/parseDoxytags doc/findDoxytag
 	make -C doc doc
 
 
@@ -232,13 +232,12 @@ clean:
 	rm -fr build
 	-rm -f $(TEST_NAME)
 	-rm -f include/xerus.h.gch
-	-rm -r doc/html
+	make -C doc clean
 
 
 
 benchmark: $(MINIMAL_DEPS) $(LOCAL_HEADERS) benchmark.cxx $(LIB_NAME_STATIC)
 	$(CXX) $(FLAGS) benchmark.cxx $(LIB_NAME_STATIC) $(SUITESPARSE) $(LAPACK_LIBRARIES) $(BLAS_LIBRARIES) $(CALLSTACK_LIBS) -lboost_filesystem -lboost_system -o Benchmark
-
 
 # Build rule for normal misc objects
 build/.miscObjects/%.o: %.cpp $(MINIMAL_DEPS)

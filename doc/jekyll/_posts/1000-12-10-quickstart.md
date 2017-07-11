@@ -13,7 +13,7 @@ demonstrate the general layout and is enough for very basic applications. It is 
 at the more detailed guides for all classes one wishes to use though - or even have a look at the doxygen class documentation for details on all functions.
 
 It is assumed that you have already obtained and compiled the library itself as well as know how to link against it.
-If this is not the case, please refer to the [building xerus](building_xerus) page.
+If this is not the case, please refer to the [building xerus](/building_xerus) page.
 
 In the following we will solve a FEM equation arising from the heat equation using a QTT decomposition and the ALS algorithm.
 
@@ -90,22 +90,18 @@ print("ttA ranks:", ttA.ranks())
 ~~~
 __tabsEnd
 
-For the right-hand-side we perform similar operations to obtain a QTT decomposed vector $ b_i = 1 \forall i $.
-As the generating function needs no index information, we create a `[]()->double` lambda function:
+For the right-hand-side we will take a simple tensor that is equal to 1 at every position. As this is a commonly used tensor,
+we can simply use the named constructor provide dby `xerus`.
 
 __tabsStart
 ~~~ cpp
-auto b = xerus::Tensor::ones({512});
-
-b.reinterpret_dimensions(std::vector<size_t>(9, 2));
-xerus::TTTensor ttb(b);
+auto b = xerus::Tensor::ones(std::vector<size_t>(9, 2));
+auto ttb = xerus::TTTensor::ones(b.dimensions);
 ~~~
 __tabsMid
 ~~~ python
-b = xerus.Tensor.ones([512])
-
-b.reinterpret_dimensions([2,]*9)
-ttb = xerus.TTTensor(b)
+b = xerus.Tensor.ones([2,]*9)
+ttb = xerus.TTTensor.ones(b.dimensions)
 ~~~
 __tabsEnd
 

@@ -33,6 +33,8 @@ To build the python bindings you will furthermore need the python development he
 dnf install python2-numpy python-devel
 ~~~
 
+To build the documentation (i.e. this homepage) locally you will need `jekyll` and `doxygen`.
+
 After downloading the source it is necessary to set a number of options that are somewhat individual to your system and needs. All following build steps assume that these
 options are set in the `config.mk` file. Reasonable default values can be found in the `config.mk.default` file.
 

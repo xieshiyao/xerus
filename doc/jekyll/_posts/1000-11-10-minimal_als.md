@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "The ALS Algorithm"
-date: 1000-12-10
+date: 1000-11-10
 topic: "Examples"
 section: "Examples"
 ---
