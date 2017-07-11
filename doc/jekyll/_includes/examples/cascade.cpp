@@ -130,7 +130,7 @@ double get_mean_concentration(const TTTensor& _res, const size_t _i) {
 		const Tensor weights({MAX_NUM_PER_SITE}, [](const size_t _k){ 
 		return double(_k); 
 	});
-	const Tensor ones = Tensor::ones({1, MAX_NUM_PER_SITE, 1});
+	const Tensor ones = Tensor::ones({MAX_NUM_PER_SITE});
 	
 	for (size_t j = 0; j < _res.degree(); ++j) {
 		if (j == _i) {
