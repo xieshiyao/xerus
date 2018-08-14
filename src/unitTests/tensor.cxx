@@ -302,6 +302,7 @@ static misc::UnitTest tensor_offset_add("Tensor", "Check_Offset_Add", [](){
 	TEST(((*comb)[31] - 3) * ((*comb)[31] - 3) <= 0.01);
 	TEST(((*comb)[35] - 4) * ((*comb)[35] - 4) <= 0.01);
 	TEST(((*comb)[1]) * ((*comb)[1]) <= 0.01);
+	TEST(((*comb)[2]) * ((*comb)[2]) <= 0.01);
 
 });
 
