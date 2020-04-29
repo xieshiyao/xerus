@@ -1421,7 +1421,7 @@ namespace xerus {
 		_rhs.reset(std::move(newDim), std::move(_rhsData));
 	}
 	
-	void calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, Tensor _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
+	value_t calculate_svd(Tensor& _U, Tensor& _S, Tensor& _Vt, Tensor _input, const size_t _splitPos, const size_t _maxRank, const value_t _eps) {
 		REQUIRE(0 <= _eps && _eps < 1, "Epsilon must be fullfill 0 <= _eps < 1.");
 		
 		size_t lhsSize, rhsSize, rank;
@@ -1459,6 +1459,8 @@ namespace xerus {
 			prepare_factorization_output(_U, _Vt, _input, _splitPos, rank, Tensor::Representation::Dense);
 			blasWrapper::svd(_U.override_dense_data(), tmpS.get(), _Vt.override_dense_data(), _input.get_unsanitized_dense_data(), lhsSize, rhsSize);
 		}
+
+        size_t full_rank = rank;
 		
 		// Account for hard threshold
 		if(_maxRank != 0) {
@@ -1466,12 +1468,30 @@ namespace xerus {
 		}
 		
 		// Find rank due to the Epsilon (NOTE the scaling factor can be ignored, as it does not change the ratios).
-		for(size_t j = 1; j < rank; ++j) {
-			if (tmpS[j] <= _eps*tmpS[0]) {
-				rank = j;
-				break;
-			}
-		}
+		//for(size_t j = 1; j < rank; ++j) {
+			//if (tmpS[j] <= _eps*tmpS[0]) {
+				//rank = j;
+				//break;
+			//}
+		//}
+        auto norm_s = std::sqrt(std::accumulate(tmpS.get(), tmpS.get() + rank, 0., [](value_t x, value_t y) { return x + y * y; }));
+        auto eps = _eps * norm_s;
+        auto eps2 = eps * eps;
+        //printf("tmpS =");
+        //for (size_t j = 0; j < rank; ++j) {
+            //printf(" %lf", tmpS[j]);
+        //}
+        //printf("\n");
+        //printf("norm_s = %lf\n", norm_s);
+        //printf("eps = %lf\n", eps);
+        double tmp_norm2 = 0.;
+        for (; rank > 1; --rank) {
+            tmp_norm2 += tmpS[rank-1] * tmpS[rank-1];
+            if (tmp_norm2 > eps2) {
+                break;
+            }
+        }
+
 		
 		// Create tensor from diagonal values
 		_S.reset(Tensor::DimensionTuple(2, rank), Tensor::Representation::Sparse);
@@ -1486,6 +1506,13 @@ namespace xerus {
 		
 		_U.resize_mode(_U.degree()-1, rank);
 		_Vt.resize_mode(0, rank);
+
+        if (rank < full_rank) { 
+            auto norm_eps = std::sqrt(std::accumulate(tmpS.get()+rank, tmpS.get() + full_rank, 0., [](value_t x, value_t y) { return x + y * y; }));
+            return norm_eps / norm_s;
+        } else {
+            return 0;
+        }
 	}
 	
 	

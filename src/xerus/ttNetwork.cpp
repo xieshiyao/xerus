@@ -147,8 +147,9 @@ namespace xerus {
 		
 		
 		Tensor singularValues, newNode;
+        auto eps = _eps / std::sqrt(_tensor.degree() - 1);
 		for(size_t position = numComponents-1; position > 0; --position) {
-			calculate_svd(remains, singularValues, newNode, remains, 1+position*N, _maxRanks[position-1], _eps);
+			calculate_svd(remains, singularValues, newNode, remains, 1+position*N, _maxRanks[position-1], eps);
 			
 			set_component(position, std::move(newNode)); 
 			newNode.reset();
