@@ -212,22 +212,13 @@ namespace xerus {
 			REQUIRE(_n <= static_cast<size_t>(std::numeric_limits<int>::max()), "Dimension to large for BLAS/Lapack");
 			
 			XERUS_PA_START;
-			std::unique_ptr<double[]> tmpA(new double[_m*_n]);
-			//std::unique_ptr<double[]> superb(new double[_m*_n]);
-			misc::copy(tmpA.get(), _A, _m*_n);
 			
             int lapackAnswer = LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', static_cast<int>(_m), static_cast<int>(_n), _A, static_cast<int>(_n), _S, _U, static_cast<int>(std::min(_m, _n)), _Vt, static_cast<int>(_n));
-			//int lapackAnswer = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'S', 'S', static_cast<int>(_m), static_cast<int>(_n), _A, static_cast<int>(_n), _S, _U, static_cast<int>(std::min(_m, _n)), _Vt, static_cast<int>(_n), superb.get());
 			CHECK(lapackAnswer == 0, warning, "Lapack failed to compute SVD. Answer is: " << lapackAnswer);
 			CHECK(lapackAnswer == 0, warning, "Call was: LAPACKE_dgesdd(LAPACK_ROW_MAJOR, 'S', " << static_cast<int>(_m) << ", " << static_cast<int>(_n) << ", " << _A << ", " << static_cast<int>(_n) <<", " 
 			<< _S <<", " << _U << ", " << static_cast<int>(std::min(_m, _n)) << ", " << _Vt << ", " << static_cast<int>(_n) << ");");
 			if(lapackAnswer != 0) {
 				LOG(warning, "SVD failed ");
-// 				for(size_t i=0; i < _m; ++i) {
-// 					for(size_t j=0; j < _n; ++j) {
-// 						LOG(warning, tmpA[i*_n+j]);
-// 					}
-// 				}
 			}
 			
 			XERUS_PA_END("Dense LAPACK", "Singular Value Decomposition", misc::to_string(_m)+"x"+misc::to_string(_n));
